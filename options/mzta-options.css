@@ -1,0 +1,27 @@
+div#miczDescription{
+    padding:0px 15px 0px 15px;
+    font-size: 13px;
+}
+
+div#miczDescription h1{
+    font-size: 15px;
+}
+
+div#miczDonation{
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#miczPrefs {
+    font-size: 13px;
+    padding: 10px;
+}
+
+div#miczRelNotes{
+    position:absolute;
+    right: 0px;
+    top: 0px;
+    padding: 2px 5px 0px 0px;
+}

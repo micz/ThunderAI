@@ -1,0 +1,111 @@
+{
+  "extensionDescription": {
+    "message": "Use ChatGPT to enhance you emails!",
+    "description": "Description of the extension."
+  },
+
+  "menu_title": {
+    "message": "AI",
+    "description": ""
+  },
+
+  "prompt_lang": {
+    "message": "Replay in ",
+    "description": ""
+  },
+
+  "prompt_translate_lang": {
+    "message": "english.",
+    "description": ""
+  },
+
+  "prompt_reply": {
+    "message": "Reply to this",
+    "description": ""
+  },
+
+  "prompt_rewrite_polite": {
+    "message": "Rewrite polite",
+    "description": ""
+  },
+
+  "prompt_rewrite_formal": {
+    "message": "Rewrite formal",
+    "description": ""
+  },
+
+  "prompt_classify": {
+    "message": "Classify",
+    "description": ""
+  },
+
+  "prompt_summarize_this": {
+    "message": "Summarize this",
+    "description": ""
+  },
+
+  "prompt_translate_this": {
+    "message": "Translate this",
+    "description": ""
+  },
+
+  "prompt_selection_needed": {
+    "message": "To proceed, you need to select some text!",
+    "description": ""
+  },
+
+  "chatgpt_win_working": {
+    "message": "Work in progress...",
+    "description": ""
+  },
+
+  "chatgpt_win_job_completed": {
+    "message": "Completed!",
+    "description": ""
+  },
+
+  "chatgpt_win_get_answer": {
+    "message": "Use last answer",
+    "description": ""
+  },
+
+  "chatgpt_win_close": {
+    "message": "Close",
+    "description": ""
+  },
+
+  "prefsInfoTitle": {
+    "message": "Important Information",
+    "description": ""
+  },
+
+  "prefsInfoDesc_1": {
+    "message": "It's not always possibile to get the right file type from the email received by Sharepoint or OneDrive.",
+    "description": ""
+  },
+
+  "prefsInfoDesc_2": {
+    "message": "If this extension can't understand the file type, it will show four buttons: one to use Word, one to use Excel, one to use PowerPoint and one to open the file in the browser.",
+    "description": ""
+  },
+
+  "prefsInfoDesc_3": {
+    "message": "The option to force to use Microsoft Edge is for a scenario where you do not use Edge as the default browser, but is the browser used with your Business account.",
+    "description": ""
+  },
+
+  "prefsDonation_1": {
+    "message": "Do you like this addon?",
+    "description": ""
+  },
+
+  "prefsDonation_2": {
+    "message": "Consider to make a donation!",
+    "description": ""
+  },
+
+  "backToOptionsText": {
+    "message": "Options",
+    "description": ""
+  }
+}

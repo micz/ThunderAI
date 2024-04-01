@@ -1,0 +1,111 @@
+{
+  "extensionDescription": {
+    "message": "Apri un condiviso di un file di SharePoint o OneDrive direttamente con l'applicazione corretta, invece che il browser.",
+    "description": "Descrizione dell'estensione."
+  },
+
+  "menu_title": {
+    "message": "IA",
+    "description": ""
+  },
+
+  "prompt_lang": {
+    "message": "Rispondi in ",
+    "description": ""
+  },
+
+  "prompt_translate_lang": {
+    "message": "italiano.",
+    "description": ""
+  },
+
+  "prompt_reply": {
+    "message": "Rispondi",
+    "description": ""
+  },
+
+  "prompt_rewrite_polite": {
+    "message": "Riscrivi cortese",
+    "description": ""
+  },
+
+  "prompt_rewrite_formal": {
+    "message": "Riscrivi formale",
+    "description": ""
+  },
+
+  "prompt_classify": {
+    "message": "Classifica",
+    "description": ""
+  },
+
+  "prompt_summarize_this": {
+    "message": "Riassumi",
+    "description": ""
+  },
+
+  "prompt_translate_this": {
+    "message": "Traduci",
+    "description": ""
+  },
+
+  "prompt_selection_needed": {
+    "message": "Per procedere è necessario che selezioni del testo!",
+    "description": ""
+  },
+
+  "chatgpt_win_working": {
+    "message": "Elaborazione in corso...",
+    "description": ""
+  },
+
+  "chatgpt_win_job_completed": {
+    "message": "Completato!",
+    "description": ""
+  },
+
+  "chatgpt_win_get_answer": {
+    "message": "Usa l'ultima risposta",
+    "description": ""
+  },
+
+  "chatgpt_win_close": {
+    "message": "Chiudi",
+    "description": ""
+  },
+
+  "prefsInfoTitle": {
+    "message": "Informazioni Importanti",
+    "description": ""
+  },
+
+  "prefsInfoDesc_1": {
+    "message": "Non è sempre possibile capire il tupo di file dalla mail ricevuta da SharePoint o OneDrive.",
+    "description": ""
+  },
+
+  "prefsInfoDesc_2": {
+    "message": "Se questa estensione non riesce a riconoscere il tipo del file, mostrerà quattro pulsanti: uno per usare Word, uno per Excel, uno per PowerPoint e uno per aprire il link nel browser.",
+    "description": ""
+  },
+
+  "prefsInfoDesc_3": {
+    "message": "L'opzione di forzare l'apertura in Microsoft Edge è per lo scenario in cui non stai usando Edge come browser predefinito, ma è il browser con il tuo account aziendale.",
+    "description": ""
+  },
+
+  "prefsDonation_1": {
+    "message": "Ti piace questo componente aggiuntivo?",
+    "description": ""
+  },
+
+  "prefsDonation_2": {
+    "message": "Considera di fare una donazione!",
+    "description": ""
+  },
+
+  "backToOptionsText": {
+    "message": "Opzioni",
+    "description": ""
+  }
+}

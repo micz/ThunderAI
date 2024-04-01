@@ -1,0 +1,45 @@
+{
+    "manifest_version": 2,
+    "name": "ThunderAI",
+    "description": "__MSG_extensionDescription__",
+    "version": "0.1",
+    "author": "Mic (m@micz.it)",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "thunderai@micz.it",
+            "strict_min_version": "115.0"
+        }
+    },
+    "message_display_action": {
+        "default_popup": "messageMenu/mzta-msgmenu.html",
+        "default_title": "__MSG_menu_title__",
+        "default_icon": "images/icon-32px.png"
+    },
+    "compose_action": {
+        "default_popup": "messageMenu/mzta-msgmenu.html",
+        "default_title": "__MSG_menu_title__",
+        "default_icon": "images/icon-32px.png"
+      },
+    "permissions": [
+        "compose",
+        "messagesRead",
+        "storage",
+        "menus",
+        "messagesModify",
+        "tabs",
+        "activeTab",
+        "<all_urls>"
+    ],
+    "background": {
+        "page": "mzta-background.html"
+    },
+    "icons": {
+        "64": "images/icon.png",
+        "32": "images/icon-32px.png",
+        "16": "images/icon-16px.png"
+    },
+    "default_locale": "en",
+	"options_ui": {
+		"page": "options/mzta-options.html"
+	}
+}
