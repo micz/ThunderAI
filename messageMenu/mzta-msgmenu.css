@@ -1,0 +1,16 @@
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 6fr;
+}
+
+.header {
+    font-weight: bold
+}
+
+.grid-container div {
+    margin: 1ex;
+}
+
+.button {
+    cursor: pointer;
+}
