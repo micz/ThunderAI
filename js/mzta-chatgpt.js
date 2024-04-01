@@ -107,15 +107,16 @@ function addCustomDiv(prompt_action,tabId) {
             break;
         case 1:     // do reply
             pulsante.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
-            pulsante.onclick = async function() {  // TODO
+            pulsante.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
+                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId});
                 //console.log(response);
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
         case 2:     // replace text
             pulsante.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
-            pulsante.onclick = async function() {  // TODO
+            pulsante.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
                 //console.log('replace text: '+tabId)
                 browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId});

@@ -44,6 +44,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log('chatgpt_replaceSelectedText: [' + message.tabId +'] ' + message.text)
                     browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text });
                     return true;
+            case 'chatgpt_replyMessage':
+                browser.messageDisplay.getDisplayedMessage(message.tabId).then((mailMessage) => {
+                    browser.compose.beginReply(mailMessage.id, {
+                        type: "reply",
+                        body: message.text
+                    })
+                });
+                break;
             default:
                 break;
         }
