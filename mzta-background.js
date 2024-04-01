@@ -45,10 +45,20 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text });
                     return true;
             case 'chatgpt_replyMessage':
+                //console.log('message.text: ' + message.text);
+                const chunks = message.text.split(/\n{2,}/);
+                const paragraphs = chunks.map((t) => {
+                    const p = document.createElement("p");
+                    p.innerText = t;
+                    return p;
+                });
+                const paragraphsHtmlString = paragraphs.map(p => p.outerHTML).join("");
+                //console.log('paragraphsHtmlString: ' + paragraphsHtmlString);
                 browser.messageDisplay.getDisplayedMessage(message.tabId).then((mailMessage) => {
-                    browser.compose.beginReply(mailMessage.id, {
+                    browser.compose.beginReply(mailMessage.id, "replyToAll", {
                         type: "reply",
-                        body: message.text
+                        body:  paragraphsHtmlString,
+                        isPlainText: false,
                     })
                 });
                 break;

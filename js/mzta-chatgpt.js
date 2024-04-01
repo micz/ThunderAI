@@ -35,9 +35,11 @@ async function chatgpt_getFromDOM(pos) {
           strPos = pos.toString().toLowerCase();
     let response = '';
     if (responseDivs.length) {
-        if (/last|final/.test(strPos)) // get last response
+        if (/last|final/.test(strPos)){ // get last response
+            responseDivs[responseDivs.length - 1].innerHTML = responseDivs[responseDivs.length - 1].innerHTML.replace(/<\\/p>/g, '</p>\\n\\n').replace(/<br\\s*\\/?>/g, '<br>\\n');
             response = responseDivs[responseDivs.length - 1].textContent;
-        else { // get nth response
+            //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
+        } else { // get nth response
             const nthOfResponse = (
 
                 // Calculate base number
@@ -63,6 +65,7 @@ async function chatgpt_getFromDOM(pos) {
             response = responseDivs[nthOfResponse - 1].textContent;
         }
         response = response.replace(/^ChatGPTChatGPT/, ''); // strip sender name
+        //console.log('chatgpt_getFromDOM: ' + response);
     }
     return response;
 }
