@@ -74,6 +74,11 @@
     "description": ""
   },
 
+  "chatgpt_user_not_logged_in": {
+    "message": "Non sei connesso a ChatGPT. Effettua l'accesso con le tue credenziali, chiudi la finestra di ChatGPT e poi ripeti l'azione che avevi tentato. Rimarrai connesso in seguito.",
+    "description": ""
+  },
+
   "prefs_OptionText_chatgpt_win_text": {
     "message": "Dimensioni della finestra di ChatGPT",
     "description": ""

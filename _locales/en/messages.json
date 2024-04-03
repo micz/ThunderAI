@@ -74,6 +74,11 @@
     "description": ""
   },
 
+  "chatgpt_user_not_logged_in": {
+    "message": "You are not logged in to ChatGPT. Please log in with your credentials, close the ChatGPT window, and then repeat the action you attempted. You will remain logged in afterwards.",
+    "description": ""
+  },
+
   "prefs_OptionText_chatgpt_win_text": {
     "message": "ChatGPT window dimensions",
     "description": ""

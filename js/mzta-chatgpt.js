@@ -146,20 +146,26 @@ function operation_done(){
     chatpgt_scrollToBottom();
 }
 
-
+function checkLoggedIn(){
+    return !window.location.href.startsWith('https://chat.openai.com/auth/');
+}
 
 // Nello script di contenuto
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.command === "chatgpt_send") {
-        addCustomDiv(message.action,message.tabId);
-        //console.log(message.prompt);
-        (async () => {
-            //await chatgpt.isLoaded();
-            await chatgpt_sendMsg(message.prompt,'click');
-            await chatgpt_isIdle();
-            // console.log(response);
-            operation_done();
-        })();
+        if(!checkLoggedIn()){
+            // User not logged in
+            alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
+        }else{
+            addCustomDiv(message.action,message.tabId);
+            (async () => {
+                //await chatgpt.isLoaded();
+                await chatgpt_sendMsg(message.prompt,'click');
+                await chatgpt_isIdle();
+                // console.log(response);
+                operation_done();
+            })();
+        }
     }
 });
 
