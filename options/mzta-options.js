@@ -2,7 +2,23 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   document.querySelectorAll(".option-input").forEach(element => {
-    options[element.id] = element.checked;
+    switch (element.type) {
+      case 'checkbox':
+        options[element.id] = element.checked;
+        break;
+      case 'number':
+        options[element.id] = element.valueAsNumber;
+        break;
+      case 'text':
+        options[element.id] = element.value.trim();
+        break;
+      default:
+        if (element.tagName === 'SELECT') {
+          options[element.id] = element.value;
+        }else{
+          console.log('Unhandled input type:', element.type);
+        }
+    }
   });
   browser.storage.sync.set(options);
 }
@@ -10,7 +26,26 @@ function saveOptions(e) {
 function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      element.checked = result[element.id] || false;
+      switch (element.type) {
+        case 'checkbox':
+          element.checked = result[element.id] || false;
+          break;
+        case 'number':
+          element.value = result[element.id] || 0;
+          break;
+        case 'text':
+          element.value = result[element.id] || '';
+          break;
+        default:
+        if (element.tagName === 'SELECT') {
+          element.value = result[element.id] || '';
+          if (element.value === '') {
+            element.selectedIndex = -1;
+          }
+        }else{
+          console.log('Unhandled input type:', element.type);
+        }
+      }
     });
   }
 
