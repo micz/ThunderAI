@@ -1,7 +1,8 @@
 function saveOptions(e) {
   e.preventDefault();
   let options = {};
-  document.querySelectorAll(".option-input").forEach(element => {
+  let element = e.target;
+
     switch (element.type) {
       case 'checkbox':
         options[element.id] = element.checked;
@@ -19,7 +20,7 @@ function saveOptions(e) {
           console.log('Unhandled input type:', element.type);
         }
     }
-  });
+
   browser.storage.sync.set(options);
 }
 
