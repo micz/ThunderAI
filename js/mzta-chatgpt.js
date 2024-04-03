@@ -82,7 +82,7 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "body {padding-top: 100px;}";
     style.innerHTML += "#mzta-ok_btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.innerHTML += "#mzta-ok_btn:hover {background-color: #0056b3;color: white;}";
-    style.innerHTML += "#mzta-curr_msg{}";
+    style.innerHTML += "#mzta-loading{height:50px;display:inline-block;}";
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
@@ -94,8 +94,13 @@ function addCustomDiv(prompt_action,tabId) {
     // span for the text
     var curr_msg = document.createElement('span');
     curr_msg.id='mzta-curr_msg';
-    curr_msg.innerHTML = browser.i18n.getMessage("chatgpt_win_working");
+    curr_msg.innerHTML = browser.i18n.getMessage("chatgpt_win_working")+"<br>";
     divFisso.appendChild(curr_msg);
+
+    var loading = document.createElement('img');
+    loading.src = browser.runtime.getURL("/images/loading.gif");
+    loading.id = "mzta-loading";
+    divFisso.appendChild(loading);
 
     var pulsante = document.createElement('button');
     pulsante.id="mzta-ok_btn";
@@ -137,6 +142,7 @@ function addCustomDiv(prompt_action,tabId) {
 function operation_done(){
     document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_win_job_completed")+"<br>";
     document.getElementById('mzta-ok_btn').style.display = 'inline';
+    document.getElementById('mzta-loading').style.display = 'none';
     chatpgt_scrollToBottom();
 }
 
