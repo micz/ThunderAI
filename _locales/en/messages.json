@@ -74,6 +74,21 @@
     "description": ""
   },
 
+  "prefs_OptionText_chatgpt_win_text": {
+    "message": "ChatGPT window dimensions",
+    "description": ""
+  },
+
+  "prefs_OptionText_chatgpt_win_height": {
+    "message": "Height",
+    "description": ""
+  },
+
+  "prefs_OptionText_chatgpt_win_width": {
+    "message": "Width",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""

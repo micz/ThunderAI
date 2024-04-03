@@ -1,4 +1,5 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
+import { prefs_default } from './options/mzta-options-default.js';
 
 var createdWindowID = null;
 
@@ -71,12 +72,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 
-function openChatGPT(promptText,action,curr_tabId){
+async function openChatGPT(promptText,action,curr_tabId){
+    let prefs = await browser.storage.sync.get(prefs_default);
     return browser.windows.create({
         url: "https://chat.openai.com",
         type: "popup",
-        width: 700,
-        height: 800
+        width: prefs.chatgpt_win_width,
+        height: prefs.chatgpt_win_height
     }).then((newWindow) => {
         console.log("Script started...");
         createdWindowID = newWindow.id;
