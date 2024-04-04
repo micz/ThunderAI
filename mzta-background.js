@@ -74,6 +74,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function openChatGPT(promptText,action,curr_tabId){
     let prefs = await browser.storage.sync.get(prefs_default);
+    prefs = checkScreenDimensions(prefs);
     return browser.windows.create({
         url: "https://chat.openai.com",
         type: "popup",
@@ -92,4 +93,14 @@ async function openChatGPT(promptText,action,curr_tabId){
                     console.error("Error injecting the script: ", err);
                 });
             });
+}
+
+function checkScreenDimensions(prefs){
+    let width = window.screen.width;
+    let height = window.screen.height;
+
+    if(prefs.chatgpt_win_height > height) prefs.chatgpt_win_height = height - 50;
+    if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
+    
+    return prefs;
 }
