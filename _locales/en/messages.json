@@ -99,6 +99,11 @@
     "description": ""
   },
 
+  "prefs_OptionText_default_chatgpt_lang": {
+    "message": "Default language for ChatGPT responses",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""

@@ -1,6 +1,7 @@
 // Modified version derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { defaultPrompts } from '../js/mzta-prompts.js';
+import { getLanguageDisplayName } from '../js/mzta-utils.js'
 
 const addAction = (curr_prompt, promptsContainer) => {
     const promptDiv = document.createElement("div");
@@ -36,7 +37,15 @@ const addAction = (curr_prompt, promptsContainer) => {
         }
         //open chatgpt window
         //console.log("Click menu item...");
-        var fullPrompt = curr_prompt.text + " " + await getDefaultSignature() + " " + browser.i18n.getMessage("prompt_lang") + browser.i18n.getMessage("prompt_translate_lang") + " \"" + msg_text.text + "\" ";
+        let prefs = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
+        let chatgpt_lang = prefs.default_chatgpt_lang;
+
+        var fullPrompt = fullPrompt = curr_prompt.text + (curr_prompt.need_signature ? " " + await getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + msg_text.text + "\" ";
+
+        if(curr_prompt.id == 'prompt_translate_this'){
+              fullPrompt = curr_prompt.text + chatgpt_lang + ". \"" + msg_text.text + "\" ";
+        }
+
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
         browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
     };
