@@ -14,11 +14,6 @@
     "description": ""
   },
 
-  "prompt_translate_lang": {
-    "message": "english.",
-    "description": ""
-  },
-
   "prompt_reply": {
     "message": "Reply to this",
     "description": ""
