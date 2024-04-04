@@ -44,6 +44,11 @@
     "description": ""
   },
 
+  "prompt_this": {
+    "message": "Chedi a ChatGPT",
+    "description": ""
+  },
+
   "prompt_selection_needed": {
     "message": "Per procedere è necessario che selezioni del testo!",
     "description": ""

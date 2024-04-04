@@ -44,6 +44,11 @@
     "description": ""
   },
 
+  "prompt_this": {
+    "message": "Prompt this",
+    "description": ""
+  },
+
   "prompt_selection_needed": {
     "message": "To proceed, you need to select some text!",
     "description": ""

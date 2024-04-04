@@ -26,4 +26,5 @@ export const defaultPrompts = [
     { id: 'prompt_classify', name: "__MSG_prompt_classify__", text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.", type: 0, action: 0, need_selected: 0, need_signature: 0 },
     { id: 'prompt_summarize_this', name: "__MSG_prompt_summarize_this__", text: "Summarize the following email into a bullet point list.", type: 0, action: 0, need_selected: 0, need_signature: 0 },
     { id: 'prompt_translate_this', name: "__MSG_prompt_translate_this__", text: "Translate the following email in ", type: 0, action: 0, need_selected: 0, need_signature: 0 },
+    { id: 'prompt_this', name: "__MSG_prompt_this__", text: "Reply with only the needed text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
 ];
