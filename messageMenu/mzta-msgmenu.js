@@ -42,8 +42,15 @@ const addAction = (curr_prompt, promptsContainer) => {
 
         var fullPrompt = fullPrompt = curr_prompt.text + (curr_prompt.need_signature ? " " + await getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + msg_text.text + "\" ";
 
-        if(curr_prompt.id == 'prompt_translate_this'){
-              fullPrompt = curr_prompt.text + chatgpt_lang + ". \"" + msg_text.text + "\" ";
+        switch(curr_prompt.id){
+            case 'prompt_translate_this':
+                fullPrompt = curr_prompt.text + chatgpt_lang + ". \"" + msg_text.text + "\" ";
+                break;
+            case 'prompt_reply':
+                fullPrompt += "Do not add the subject line to the response."
+                break;
+            default:
+                break;
         }
 
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
