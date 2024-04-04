@@ -36,13 +36,22 @@ const addAction = (curr_prompt, promptsContainer) => {
         }
         //open chatgpt window
         //console.log("Click menu item...");
-        var fullPrompt = curr_prompt.text + " " + browser.i18n.getMessage("prompt_lang") + browser.i18n.getMessage("prompt_translate_lang") + " \"" + msg_text.text + "\" ";
+        var fullPrompt = curr_prompt.text + " " + await getDefaultSignature() + " " + browser.i18n.getMessage("prompt_lang") + browser.i18n.getMessage("prompt_translate_lang") + " \"" + msg_text.text + "\" ";
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
         browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
     };
     promptDiv.appendChild(nameInput);
     promptsContainer.appendChild(promptDiv);
 };
+
+async function getDefaultSignature(){
+    let prefs = await browser.storage.sync.get({default_sign_name: ''});
+    if(prefs.default_sign_name===''){
+        return '';
+    }else{
+        return "Sign the message as " + prefs.default_sign_name + ".";
+    }
+}
 
 async function checkCompose(){
     return await browser.windows.getCurrent().then((currWindow) => {

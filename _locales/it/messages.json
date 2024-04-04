@@ -94,6 +94,12 @@
     "description": ""
   },
 
+  "prefs_OptionText_default_sign_name": {
+    "message": "Nome predefinito della firma",
+    "description": ""
+  },
+
+
   "prefsInfoTitle": {
     "message": "Informazioni Importanti",
     "description": ""

@@ -94,6 +94,11 @@
     "description": ""
   },
 
+  "prefs_OptionText_default_sign_name": {
+    "message": "Default signature name",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""
