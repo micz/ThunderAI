@@ -104,6 +104,21 @@
     "description": ""
   },
 
+  "prefs_OptionText_reply_all": {
+    "message": "Rispondi a tutti",
+    "description": ""
+  },
+
+  "prefs_OptionText_reply_sender": {
+    "message": "Rispondi al mittente",
+    "description": ""
+  },
+
+  "prefs_OptionText_reply_type": {
+    "message": "Modalità di riposta",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Informazioni Importanti",
     "description": ""

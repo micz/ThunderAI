@@ -47,7 +47,9 @@ function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-          element.value = result[element.id] || '';
+          let default_select_value = '';
+          if(element.id == 'reply_type') default_select_value = 'reply_all';
+          element.value = result[element.id] || default_select_value;
           if (element.value === '') {
             element.selectedIndex = -1;
           }

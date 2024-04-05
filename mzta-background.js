@@ -24,7 +24,7 @@ for (let messageTab of messageTabs) {
 }
 
 
-messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
+messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
     // handler function.
     if (message && message.hasOwnProperty("command")){
@@ -55,8 +55,15 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 });
                 const paragraphsHtmlString = paragraphs.map(p => p.outerHTML).join("");
                 //console.log('paragraphsHtmlString: ' + paragraphsHtmlString);
+                let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
+                console.log('reply_type: ' + prefs.reply_type);
+                let replyType = 'replyToAll';
+                if(prefs.reply_type === 'reply_sender'){
+                    replyType = 'replyToSender';
+                }
+                console.log('replyType: ' + replyType);
                 browser.messageDisplay.getDisplayedMessage(message.tabId).then((mailMessage) => {
-                    browser.compose.beginReply(mailMessage.id, "replyToAll", {
+                    browser.compose.beginReply(mailMessage.id, replyType, {
                         type: "reply",
                         body:  paragraphsHtmlString,
                         isPlainText: false,
