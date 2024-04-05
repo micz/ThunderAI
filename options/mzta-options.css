@@ -14,14 +14,54 @@ div#miczDonation{
     font-weight: bold;
 }
 
-#miczPrefs {
+table#miczPrefs {
     font-size: 13px;
     padding: 10px;
+    border-spacing: 0px;
+    
+}
+
+table#miczPrefs td{
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    vertical-align: top;
+    padding: 2px;
+}
+
+table#miczPrefs tr:first-child td {
+    border-top: none;
+}
+  
+table#miczPrefs  tr:last-child td {
+    border-bottom: none;
 }
 
 div#miczRelNotes{
     position:absolute;
     right: 0px;
-    top: 0px;
+    bottom: 2px;
     padding: 2px 5px 0px 0px;
+}
+
+div#miczDescription h1{
+    text-align: center;
+    margin-bottom: 0px;
+}
+
+div#miczDescription p{
+    text-align: justify;
+    margin-top: 0px;
+}
+
+input#chatgpt_win_width{
+    width: 100px;
+}
+
+input#chatgpt_win_height{
+    width: 100px;
+}
+
+span.dims_label{
+    width: 75px;
+    display: inline-block;
 }
