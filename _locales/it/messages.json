@@ -125,17 +125,17 @@
   },
 
   "prefsInfoDesc_1": {
-    "message": "Non è sempre possibile capire il tupo di file dalla mail ricevuta da SharePoint o OneDrive.",
+    "message": "Per evitare che le richieste fatte tramite questa estensione compaiano nella tua cronologia chat di ChatGPT, puoi disattivarle nelle impostazioni. Questo si può fare nelle impostazioni di ChatGPT direttamente nella finestra che appare quando utilizzi l'estensione. Ricorda, questa opzione è valida solo in questo contesto specifico.",
     "description": ""
   },
 
   "prefsInfoDesc_2": {
-    "message": "Se questa estensione non riesce a riconoscere il tipo del file, mostrerà quattro pulsanti: uno per usare Word, uno per Excel, uno per PowerPoint e uno per aprire il link nel browser.",
+    "message": " ",
     "description": ""
   },
 
   "prefsInfoDesc_3": {
-    "message": "L'opzione di forzare l'apertura in Microsoft Edge è per lo scenario in cui non stai usando Edge come browser predefinito, ma è il browser con il tuo account aziendale.",
+    "message": " ",
     "description": ""
   },
 

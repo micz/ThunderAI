@@ -125,17 +125,17 @@
   },
 
   "prefsInfoDesc_1": {
-    "message": "It's not always possibile to get the right file type from the email received by Sharepoint or OneDrive.",
+    "message": "To prevent requests made through this extension from appearing in your ChatGPT chat history, you can disable them in the settings. This can be done directly in the ChatGPT settings within the window that appears when you use the extension. Remember, this option is only valid in this specific context.",
     "description": ""
   },
 
   "prefsInfoDesc_2": {
-    "message": "If this extension can't understand the file type, it will show four buttons: one to use Word, one to use Excel, one to use PowerPoint and one to open the file in the browser.",
+    "message": " ",
     "description": ""
   },
 
   "prefsInfoDesc_3": {
-    "message": "The option to force to use Microsoft Edge is for a scenario where you do not use Edge as the default browser, but is the browser used with your Business account.",
+    "message": " ",
     "description": ""
   },
 
