@@ -125,7 +125,7 @@
   },
 
   "prefsInfoDesc_1": {
-    "message": "To prevent requests made through this extension from appearing in your ChatGPT chat history, you can disable them in the settings. This can be done directly in the ChatGPT settings within the window that appears when you use the extension. Remember, this option is only valid in this specific context.",
+    "message": "To prevent requests made through this extension from appearing in your ChatGPT chat history, you can disable them in the settings. This can be done directly in the ChatGPT settings within the window that appears when you use the extension. Remember, this option is valid only in this specific context and does not apply to other situations where you use ChatGPT.",
     "description": ""
   },
 

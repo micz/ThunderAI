@@ -125,7 +125,7 @@
   },
 
   "prefsInfoDesc_1": {
-    "message": "Per evitare che le richieste fatte tramite questa estensione compaiano nella tua cronologia chat di ChatGPT, puoi disattivarle nelle impostazioni. Questo si può fare nelle impostazioni di ChatGPT direttamente nella finestra che appare quando utilizzi l'estensione. Ricorda, questa opzione è valida solo in questo contesto specifico.",
+    "message": "Per evitare che le richieste fatte tramite questa estensione compaiano nella tua cronologia chat di ChatGPT, puoi disattivarle nelle impostazioni. Questo si può fare nelle impostazioni di ChatGPT direttamente nella finestra che appare quando utilizzi l'estensione. Ricorda che questa opzione è valida esclusivamente in questo contesto specifico e non si applica ad altre situazioni in cui utilizzi ChatGPT.",
     "description": ""
   },
 
