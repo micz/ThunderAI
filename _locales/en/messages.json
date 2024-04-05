@@ -79,6 +79,11 @@
     "description": ""
   },
 
+  "prefs_OptionText_release_notes": {
+    "message": "Release Notes",
+    "description": ""
+  },
+
   "prefs_OptionText_chatgpt_win_text": {
     "message": "ChatGPT window dimensions",
     "description": ""
