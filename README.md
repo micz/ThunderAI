@@ -12,6 +12,7 @@ More info on the homepage: https://micz.it/thunderdbird-addon-thunderai/
 
 
 <br>Thanks to:
-<ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for the method to interact with the ChatGTP frontend.</li>
-<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration and some methods to elaborate the text from ChatGPT.</li>
+<ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
+<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration and certains methods to process the text from ChatGPT.</li>
 </ul>
+<i>The specific references are described in the corresponding source files.</i>
