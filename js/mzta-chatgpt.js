@@ -79,7 +79,7 @@ function addCustomDiv(prompt_action,tabId) {
     // Create <style> element for the CSS
     var style = document.createElement('style');
     style.innerHTML = ".mzta-header-fixed {position: fixed;bottom: 0;left: 0;height:100px;width: 100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;}"
-    style.innerHTML += "body {padding-bottom: 100px;}";
+    style.innerHTML += "body {padding-bottom: 100px;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px;}";
     style.innerHTML += "#mzta-ok_btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.innerHTML += "#mzta-ok_btn:hover {background-color: #0056b3;color: white;}";
     style.innerHTML += "#mzta-loading{height:50px;display:inline-block;}";
