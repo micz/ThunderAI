@@ -1,3 +1,7 @@
+div#miczRelNotes{
+    padding: 10px;
+}
+
 div#miczBackPrefs{
     position:absolute;
     right: 0px;
