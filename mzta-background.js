@@ -79,27 +79,46 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 });
 
 
-async function openChatGPT(promptText,action,curr_tabId){
+async function openChatGPT(promptText, action, curr_tabId) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
-    return browser.windows.create({
+    let newWindow = await browser.windows.create({
         url: "https://chat.openai.com",
         type: "popup",
         width: prefs.chatgpt_win_width,
         height: prefs.chatgpt_win_height
-    }).then((newWindow) => {
-        console.log("Script started...");
-        createdWindowID = newWindow.id;
-        //console.log(promptText);
-        const tabId = newWindow.tabs[0].id;
-        browser.tabs.executeScript(tabId,{code: mzta_script})
-            .then(async () => {
-                console.log("Script injected successfully");
-                browser.tabs.sendMessage(tabId, {command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId});
-                }).catch(err => {
-                    console.error("Error injecting the script: ", err);
-                });
-            });
+    });
+
+    console.log("Script started...");
+    createdWindowID = newWindow.id;
+    const createdTab = newWindow.tabs[0];
+
+    // Wait for tab loaded.
+    await new Promise(resolve => {
+        const tabIsLoaded = tab => {
+            return tab.status == "complete" && tab.url != "about:blank";
+        };
+        const listener = (tabId, changeInfo, updatedTab) => {
+            if (tabIsLoaded(updatedTab)) {
+                browser.tabs.onUpdated.removeListener(listener);
+                resolve();
+            }
+        }
+        // Early exit if loaded already
+        if (tabIsLoaded(createdTab)) {
+            resolve();
+        }
+        browser.tabs.onUpdated.addListener(listener);
+    })
+
+    browser.tabs.executeScript(createdTab.id, { code: mzta_script, matchAboutBlank: false })
+        .then(async () => {
+            console.log("Script injected successfully");
+            browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId });
+        })
+        .catch(err => {
+            console.error("Error injecting the script: ", err);
+        });
 }
 
 function checkScreenDimensions(prefs){
