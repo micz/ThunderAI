@@ -107,9 +107,10 @@ async function openChatGPT(promptText, action, curr_tabId) {
         // Early exit if loaded already
         if (tabIsLoaded(createdTab)) {
             resolve();
+        } else {
+            browser.tabs.onUpdated.addListener(listener);
         }
-        browser.tabs.onUpdated.addListener(listener);
-    })
+    });
 
     browser.tabs.executeScript(createdTab.id, { code: mzta_script, matchAboutBlank: false })
         .then(async () => {
