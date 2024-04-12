@@ -79,10 +79,10 @@ async function checkCompose(){
 document.addEventListener("DOMContentLoaded", async () => {
     let inCompose = await checkCompose();
     //console.log("inCompose: "+inCompose)
-    const actionsContainer = document.getElementById("prompts-container");
+    const promptsContainer = document.getElementById("prompts-container");
     defaultPrompts.forEach((prompt) => {
         if((prompt.type == 0)||((prompt.type == 1)&&(!inCompose))||((prompt.type == 2)&&(inCompose))){
-            addAction(prompt, actionsContainer)
+            addAction(prompt, promptsContainer)
         }
     });
     i18n.updateDocument();
