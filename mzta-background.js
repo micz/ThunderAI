@@ -46,15 +46,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text });
                     return true;
             case 'chatgpt_replyMessage':
-                //console.log('message.text: ' + message.text);
-                const chunks = message.text.split(/\n{2,}/);
-                const paragraphs = chunks.map((t) => {
-                    const p = document.createElement("p");
-                    p.innerText = t;
-                    return p;
-                });
-                const paragraphsHtmlString = paragraphs.map(p => p.outerHTML).join("");
-                //console.log('paragraphsHtmlString: ' + paragraphsHtmlString);
+                const paragraphsHtmlString = message.text;
                 let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
                 console.log('reply_type: ' + prefs.reply_type);
                 let replyType = 'replyToAll';
@@ -62,12 +54,34 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     replyType = 'replyToSender';
                 }
                 console.log('replyType: ' + replyType);
-                browser.messageDisplay.getDisplayedMessage(message.tabId).then((mailMessage) => {
-                    browser.compose.beginReply(mailMessage.id, replyType, {
+                browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
+                    let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
                         type: "reply",
-                        body:  paragraphsHtmlString,
+                        //body:  paragraphsHtmlString,
                         isPlainText: false,
                     })
+                    
+                    // Wait for tab loaded.
+                    await new Promise(resolve => {
+                        const tabIsLoaded = tab => {
+                            return tab.status == "complete" && tab.url != "about:blank";
+                        };
+                        const listener = (tabId, changeInfo, updatedTab) => {
+                            if (tabIsLoaded(updatedTab)) {
+                                browser.tabs.onUpdated.removeListener(listener);
+                                resolve();
+                            }
+                        }
+                        // Early exit if loaded already
+                        if (tabIsLoaded(reply_tab)) {
+                            resolve();
+                        } else {
+                            browser.tabs.onUpdated.addListener(listener);
+                        }
+                    });
+                    // we need to wait for the compose windows to load the content script
+                    setTimeout(() => browser.tabs.sendMessage(reply_tab.id, { command: "insertText", text: paragraphsHtmlString }), 500);
+                    return true;
                 });
                 break;
             default:

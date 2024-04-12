@@ -1,5 +1,7 @@
 // Modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
+console.log('mzta-compose-script.js');
+
 const makeParagraphs = (text, func) => {
   const chunks = text.split(/\n{2,}/);
   if (chunks.length == 1) {
@@ -29,6 +31,17 @@ const insert = function (text) {
   return makeParagraphs(text, function (p) {
     window.document.body.insertBefore(p, window.document.body.firstChild);
   });
+}
+
+const insertReply = function (text) {
+  const prefix = window.document.body.getElementsByClassName("moz-cite-prefix");
+  if (prefix.length > 0) {
+    const divider = prefix[0];
+    let sibling = divider.previousSibling;
+    return makeParagraphs(text, function (p) {
+      window.document.body.insertBefore(p, sibling);
+    });
+  }
 }
 
 
@@ -68,6 +81,10 @@ switch (message.command) {
 
   case "getTextOnly":
       return Promise.resolve(window.document.body.innerText);
+
+  case "insertText":
+    insertReply(message.text);
+    break;
 
   default:
     // do nothing
