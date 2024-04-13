@@ -1,6 +1,6 @@
 // Modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
-console.log('mzta-compose-script.js');
+//console.log('mzta-compose-script.js');
 
 const makeParagraphs = (text, func) => {
   const chunks = text.split(/\n{2,}/);
@@ -84,6 +84,10 @@ switch (message.command) {
 
   case "insertText":
     insertReply(message.text);
+    break;
+
+  case 'promptTooLong':
+    alert(browser.i18n.getMessage('msg_prompt_too_long'));
     break;
 
   default:

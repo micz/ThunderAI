@@ -96,6 +96,12 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 async function openChatGPT(promptText, action, curr_tabId) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
+    console.log('Prompt length: ' + promptText.length);
+    if(promptText.length > 30000 ){
+        // Prompt too long for ChatGPT
+        browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
+        return;
+    }
     let newWindow = await browser.windows.create({
         url: "https://chat.openai.com",
         type: "popup",

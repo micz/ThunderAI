@@ -79,6 +79,11 @@
     "description": ""
   },
 
+  "msg_prompt_too_long": {
+    "message": "Il testo che vuoi inviare a ChatGPT è troppo lungo. Devi ridurlo per poter procedere.",
+    "description": ""
+  },
+
   "prefs_OptionText_release_notes": {
     "message": "Note di rilascio",
     "description": ""

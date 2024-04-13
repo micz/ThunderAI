@@ -79,6 +79,11 @@
     "description": ""
   },
 
+  "msg_prompt_too_long": {
+    "message": "The text you provided is too long. You need to reduce it to use ChatGPT.",
+    "description": ""
+  },
+
   "prefs_OptionText_release_notes": {
     "message": "Release Notes",
     "description": ""
