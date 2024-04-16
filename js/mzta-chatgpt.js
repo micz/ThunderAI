@@ -17,7 +17,7 @@
  */
 
 
-// Original methods derived from https://github.com/KudoAI/chatgpt.js/blob/7eb8463cd61143fa9e1d5a8ec3c14d3c1b286e54/chatgpt.js
+// Some original methods derived from https://github.com/KudoAI/chatgpt.js/blob/7eb8463cd61143fa9e1d5a8ec3c14d3c1b286e54/chatgpt.js
 // Using a full string to inject it in the ChatGPT page to avoid any security error
 
 export const mzta_script = `
