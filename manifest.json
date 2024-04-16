@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "author": "Mic (m@micz.it)",
     "browser_specific_settings": {
         "gecko": {
