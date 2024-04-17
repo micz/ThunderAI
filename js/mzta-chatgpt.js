@@ -56,7 +56,18 @@ async function chatgpt_getFromDOM(pos) {
     if (responseDivs.length) {
         if (/last|final/.test(strPos)){ // get last response
             responseDivs[responseDivs.length - 1].innerHTML = responseDivs[responseDivs.length - 1].innerHTML.replace(/<\\/p>/g, '</p>\\n\\n').replace(/<br\\s*\\/?>/g, '<br>\\n');
+            // Removing the new buttons that let the user change model and insert a number (4 or 3.5 at the end of the text)
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
+            // Select the div with class 'empty:hidden'
+            let divToRemove = doc.querySelector('div.empty\\\\:hidden');
+            if (divToRemove) {
+                divToRemove.remove();
+            }
+            // Extract the new HTML string
+            responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
             response = responseDivs[responseDivs.length - 1].textContent;
+            //console.log('chatgpt_getFromDOM: '+response);
             //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
         } else { // get nth response
             const nthOfResponse = (
