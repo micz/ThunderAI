@@ -129,6 +129,16 @@
     "description": ""
   },
 
+  "prefs_OptionText_chatpgt_use_gpt4": {
+    "message": "Usa il modello ChatGPT-4",
+    "description": ""
+  },
+
+  "prefs_OptionText_chatpgt_use_gpt4_info": {
+    "message": "Dopo aver modificato questa opzione, devi scegliere il modello corretto la prima volta che lo usi.",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Informazioni Importanti",
     "description": ""
