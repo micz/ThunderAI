@@ -50,7 +50,7 @@ const insert = function (text) {
   });
 }
 
-const insertReply = function (text) {
+/*const insertReply = function (text) {
   const prefix = window.document.body.getElementsByClassName("moz-cite-prefix");
   if (prefix.length > 0) {
     const divider = prefix[0];
@@ -59,7 +59,7 @@ const insertReply = function (text) {
       window.document.body.insertBefore(p, sibling);
     });
   }
-}
+}*/
 
 
 browser.runtime.onMessage.addListener((message) => {
@@ -100,7 +100,7 @@ switch (message.command) {
       return Promise.resolve(window.document.body.innerText);
 
   case "insertText":
-    insertReply(message.text);
+    insert(message.text);
     break;
 
   case 'promptTooLong':
