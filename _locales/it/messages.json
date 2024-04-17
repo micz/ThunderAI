@@ -79,6 +79,11 @@
     "description": ""
   },
 
+  "chatgpt_win_model_warnings": {
+    "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato correttamente l'opzione in alto?",
+    "description": ""
+  },
+
   "msg_prompt_too_long": {
     "message": "Il testo che vuoi inviare a ChatGPT è troppo lungo. Devi ridurlo per poter procedere.",
     "description": ""

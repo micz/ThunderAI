@@ -79,6 +79,11 @@
     "description": ""
   },
 
+  "chatgpt_win_model_warning": {
+    "message": "You have set the option to use ChatGPT-4, but it seems that it is not loading correctly. Have you chosen the right model at the top?",
+    "description": ""
+  },
+
   "msg_prompt_too_long": {
     "message": "The text you provided is too long. You need to reduce it to use ChatGPT.",
     "description": ""

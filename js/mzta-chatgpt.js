@@ -113,24 +113,31 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "#mzta-ok_btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.innerHTML += "#mzta-ok_btn:hover {background-color: #0056b3;color: white;}";
     style.innerHTML += "#mzta-loading{height:50px;display:inline-block;}";
+    style.innerHTML += "#mzta-model_warn{height:50px;position:absolute;top:0px;right:3px;width:30%;text-align:right;font-size:12px;color:red;display:none;}";
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
     // Fixed div
-    var divFisso = document.createElement('div');
-    divFisso.classList.add('mzta-header-fixed');
-    divFisso.textContent = '';
+    var fixedDiv = document.createElement('div');
+    fixedDiv.classList.add('mzta-header-fixed');
+    fixedDiv.textContent = '';
+
+    // Model warning div
+    var modelWarnDiv = document.createElement('div');
+    modelWarnDiv.id = 'mzta-model_warn';
+    modelWarnDiv.innerHTML = browser.i18n.getMessage("chatgpt_win_model_warning");
+    fixedDiv.appendChild(modelWarnDiv);
 
     // span for the text
     var curr_msg = document.createElement('span');
     curr_msg.id='mzta-curr_msg';
     curr_msg.innerHTML = browser.i18n.getMessage("chatgpt_win_working")+"<br>";
-    divFisso.appendChild(curr_msg);
+    fixedDiv.appendChild(curr_msg);
 
     var loading = document.createElement('img');
     loading.src = browser.runtime.getURL("/images/loading.gif");
     loading.id = "mzta-loading";
-    divFisso.appendChild(loading);
+    fixedDiv.appendChild(loading);
 
     var pulsante = document.createElement('button');
     pulsante.id="mzta-ok_btn";
@@ -164,10 +171,38 @@ function addCustomDiv(prompt_action,tabId) {
             break;
     }
     pulsante.style.display = 'none';
-    divFisso.appendChild(pulsante);
+    fixedDiv.appendChild(pulsante);
 
-    document.body.insertBefore(divFisso, document.body.firstChild);
+    document.body.insertBefore(fixedDiv, document.body.firstChild);
 }
+
+function checkGPT4Model() {
+  return new Promise((resolve, reject) => {
+    // Set up an interval that shows the waring after 3 seconds
+    const intervalId2 = setTimeout(() => {
+        document.getElementById('mzta-model_warn').style.display = 'inline';      
+    }, 3000);
+    // Set up an interval that checks the value every 100 milliseconds
+    const intervalId = setInterval(() => {
+      // Get the '.text-token-text-secondary' element
+      const element = document.querySelector('.text-token-text-secondary');
+
+      // Check if the element exists and its content is '4'
+      if (element && element.textContent === '4') {
+        console.log("The GPT Model is now '4'");
+        clearInterval(intervalId);
+        clearTimeout(intervalId2);
+        document.getElementById('mzta-model_warn').style.display = 'none'; 
+        resolve("GPT4");
+      } else if (!element) {
+        console.log("Element not found!");
+        clearInterval(intervalId);
+        reject("Element not found.");
+      }
+    }, 100);
+  });
+}
+
 
 function operation_done(){
     document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_win_job_completed")+"<br>";
@@ -189,6 +224,10 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }else{
             addCustomDiv(message.action,message.tabId);
             (async () => {
+                let prefs = await browser.storage.sync.get({chatpgt_use_gpt4:false});
+                if(prefs.chatpgt_use_gpt4){
+				    await checkGPT4Model();
+                }
                 //await chatgpt.isLoaded();
                 await chatgpt_sendMsg(message.prompt,'click');
                 await chatgpt_isIdle();
