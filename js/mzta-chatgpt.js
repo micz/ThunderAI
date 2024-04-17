@@ -113,7 +113,7 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "#mzta-ok_btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.innerHTML += "#mzta-ok_btn:hover {background-color: #0056b3;color: white;}";
     style.innerHTML += "#mzta-loading{height:50px;display:inline-block;}";
-    style.innerHTML += "#mzta-model_warn{height:50px;position:absolute;top:0px;right:3px;width:30%;text-align:right;font-size:12px;color:red;display:none;}";
+    style.innerHTML += "#mzta-model_warn{max-height:100%px;min-width:30%;max-width:50%;position:absolute;top:0px;right:3px;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}";
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
