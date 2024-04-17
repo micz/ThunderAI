@@ -79,8 +79,8 @@
     "description": ""
   },
 
-  "chatgpt_win_model_warnings": {
-    "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato correttamente l'opzione in alto?",
+  "chatgpt_win_model_warning": {
+    "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato correttamente il modello in alto?",
     "description": ""
   },
 
