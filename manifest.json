@@ -11,14 +11,14 @@
         }
     },
     "message_display_action": {
-        "default_popup": "messageMenu/mzta-msgmenu.html",
         "default_title": "__MSG_menu_title__",
-        "default_icon": "images/icon-32px.png"
+        "default_icon": "images/icon-32px.png",
+        "type": "menu"
     },
     "compose_action": {
-        "default_popup": "messageMenu/mzta-msgmenu.html",
         "default_title": "__MSG_menu_title__",
-        "default_icon": "images/icon-32px.png"
+        "default_icon": "images/icon-32px.png",
+        "type":"menu"
       },
     "permissions": [
         "compose",

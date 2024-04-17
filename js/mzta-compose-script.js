@@ -107,6 +107,10 @@ switch (message.command) {
     alert(browser.i18n.getMessage('msg_prompt_too_long'));
     break;
 
+  case 'sendAlert':
+    alert(message.message);
+    break;
+
   default:
     // do nothing
     break;

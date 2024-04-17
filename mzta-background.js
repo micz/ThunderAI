@@ -18,6 +18,7 @@
 
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
+import { mzta_Menus } from './js/mzta-menus.js';
 
 var createdWindowID = null;
 
@@ -40,7 +41,6 @@ for (let messageTab of messageTabs) {
         file: "js/mzta-compose-script.js"
     })
 }
-
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
@@ -169,3 +169,7 @@ function checkScreenDimensions(prefs){
     
     return prefs;
 }
+
+// Menus handling
+const menus = new mzta_Menus(openChatGPT);
+menus.loadMenus();
