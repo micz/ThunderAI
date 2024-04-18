@@ -99,6 +99,11 @@
     "description": ""
   },
 
+  "prefs_status_page": {
+    "message": "Stato del servizio",
+    "description": ""
+  },
+
   "prefs_OptionText_chatgpt_win_text": {
     "message": "Dimensioni della finestra di ChatGPT",
     "description": ""

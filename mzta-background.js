@@ -150,7 +150,10 @@ async function openChatGPT(promptText, action, curr_tabId) {
         }
     });
 
-    browser.tabs.executeScript(createdTab.id, { code: mzta_script, matchAboutBlank: false })
+    let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+    `;
+
+    browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
         .then(async () => {
             console.log("Script injected successfully");
             browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId });

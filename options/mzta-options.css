@@ -43,6 +43,13 @@ div#miczRelNotes{
     padding: 2px 5px 0px 0px;
 }
 
+div#miczStatusPage{
+    position:absolute;
+    left: 0px;
+    bottom: 2px;
+    padding: 2px 0px 0px 5px;
+}
+
 div#miczDescription h1{
     text-align: center;
     margin-bottom: 0px;
