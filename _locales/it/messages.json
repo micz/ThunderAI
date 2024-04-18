@@ -84,6 +84,11 @@
     "description": ""
   },
 
+  "chatgpt_use_gpt35": {
+    "message": "Usa GPT3.5",
+    "description": ""
+  },
+
   "msg_prompt_too_long": {
     "message": "Il testo che vuoi inviare a ChatGPT è troppo lungo. Devi ridurlo per poter procedere.",
     "description": ""
