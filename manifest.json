@@ -28,6 +28,7 @@
         "messagesModify",
         "tabs",
         "activeTab",
+        "accountsRead",
         "<all_urls>"
     ],
     "background": {

@@ -19,6 +19,7 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
+import { getCurrentIdentity } from './js/mzta-utils.js';
 
 var createdWindowID = null;
 
@@ -77,6 +78,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                         type: "reply",
                         //body:  paragraphsHtmlString,
                         isPlainText: false,
+                        identityId: await getCurrentIdentity(mailMessage),
                     })
                     
                     // Wait for tab loaded.

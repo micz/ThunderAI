@@ -18,7 +18,44 @@
 
 
 export function getLanguageDisplayName(languageCode) {
-    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
-    let lang_string = languageDisplay.of(languageCode);
-    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
+   const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
+   let lang_string = languageDisplay.of(languageCode);
+   return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
+}
+
+export async function getCurrentIdentity(msgHeader) {
+  let identities_array = [];
+  let fallback_identity = '';
+  let accounts = await browser.accounts.list();
+     for (let account of accounts) {
+        for (let identity of account.identities) {
+          identities_array.push({id: identity.id, email:identity.email})
+          if(fallback_identity === '') {
+            fallback_identity = {id: identity.id, email:identity.email}
+          }
+        }
+      }
+  // check if the author is an identity
+  let author = extractEmail(msgHeader.author);
+  let author_identity = identities_array.find(identity => identity.email === author);
+  if (author_identity) {
+    return author_identity.id;
   }
+  let correspondents_array = msgHeader.bccList.concat(msgHeader.ccList, msgHeader.recipients);
+  correspondents_array = correspondents_array.map(correspondent => {
+    correspondent = extractEmail(correspondent);
+    return correspondent;
+  });
+  const matching_identity = correspondents_array.map(correspondent => identities_array.find(identity => identity.email === correspondent)).find(identity => identity !== undefined);
+  if(matching_identity) {
+    return matching_identity.id;
+  } else {  // no identity found. using the fallback one
+    return fallback_identity.id;
+  }
+}
+
+function extractEmail(text) {
+  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
+  const match = text.match(emailRegex);
+  return match ? match[0] : '';
+}
