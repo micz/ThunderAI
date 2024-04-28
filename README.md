@@ -1,4 +1,4 @@
-<h1>ThunderAI</h1>
+# ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI
 
 ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT to enhance email management.
 
