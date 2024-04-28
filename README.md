@@ -8,6 +8,8 @@ ThunderAI is a tool for anyone looking to improve their email quality, both in c
 
 There is no need for an API key and is possibile to use this extension even with a free account!
 
+## Changelog
+ThunderAI's changes are logged [here](CHANGELOG.md).
 
 <br>Thanks to:
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
