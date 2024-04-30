@@ -1,6 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
       
       
+<h2>Version 1.0.4 - ??/??/2024</h2>
+<ul>
+    <li>...</li>
+</ul>
 <h2>Version 1.0.3 - 27/04/2024</h2>
 <ul>
     <li>Using the right identity when replying to a message. See issue <a href="https://github.com/micz/ThunderAI/issues/31">#31</a></li>
