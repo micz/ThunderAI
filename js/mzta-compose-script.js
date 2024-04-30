@@ -16,16 +16,33 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Some original methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
+
+const makeParagraphs = (text, func) => {
+  const chunks = text.split(/\n{2,}/);
+  if (chunks.length == 1) {
+    return func(document.createTextNode(text));
+  }
+  const paragraphs = chunks.map((t) => {
+    const p = document.createElement("p");
+    p.innerText = t;
+    return p;
+  });
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    func(paragraphs[i]);
+  }
+};
+
+
 browser.runtime.onMessage.addListener(async (message) => {
 switch (message.command) {
   case "getSelectedText":
     return Promise.resolve(window.getSelection().toString());
 
-  case "replaceSelectedText": // TODO
+  case "replaceSelectedText":
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
-      let fullBody = insert(message.text);
-      await browser.compose.setComposeDetails(message.tabId, {body: fullBody.body.innerHTML});
+      return;
     }
     const sel = window.getSelection();
     if (!sel || sel.type !== "Range" || !sel.rangeCount) {
@@ -36,6 +53,7 @@ switch (message.command) {
     makeParagraphs(message.text, function (p) {
       r.insertNode(p);
     });
+    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     break;
 
   case "getText":

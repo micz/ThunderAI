@@ -19,9 +19,11 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
-import { getCurrentIdentity, replaceBody } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, reloadBody, replaceBody, setBody } from './js/mzta-utils.js';
 
 var createdWindowID = null;
+var original_html = '';
+var modified_html = '';
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -62,7 +64,8 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     break;
             case 'chatgpt_replaceSelectedText':
                     //console.log('chatgpt_replaceSelectedText: [' + message.tabId +'] ' + message.text)
-                    browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text, tabId: message.tabId });
+                    original_html = await getOriginalBody(message.tabId);
+                    await browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text, tabId: message.tabId });
                     return true;
             case 'chatgpt_replyMessage':
                 const paragraphsHtmlString = message.text;
@@ -101,9 +104,14 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     });
                     // we need to wait for the compose windows to load the content script
                     //setTimeout(() => browser.tabs.sendMessage(reply_tab.id, { command: "insertText", text: paragraphsHtmlString, tabId: reply_tab.id }), 500);
-                    setTimeout(() => replaceBody(reply_tab.id, paragraphsHtmlString), 500);
+                    setTimeout(async () => await replaceBody(reply_tab.id, paragraphsHtmlString), 500);
                     return true;
                 });
+                break;
+            case 'compose_reloadBody':
+                modified_html = await getOriginalBody(message.tabId);
+                await setBody(message.tabId, original_html);
+                await setBody(message.tabId, modified_html);
                 break;
             default:
                 break;
