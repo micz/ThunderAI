@@ -60,6 +60,20 @@ function extractEmail(text) {
   return match ? match[0] : '';
 }
 
+export async function reloadBody(tabId){
+  let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  let originalHtmlBody = composeDetails.body + " ";
+  await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
+}
+
+export async function getOriginalBody(tabId){
+  let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  return composeDetails.body;
+}
+
+export async function setBody(tabId, fullHtmlBody){
+  await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
+}
 
 export async function replaceBody(tabId, text){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
