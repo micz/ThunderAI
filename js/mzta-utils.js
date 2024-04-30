@@ -85,6 +85,9 @@ const insertText = function (text, fullBody_string) {
       sibling = divider.previousSibling;
     }
   }
+  let final_p = document.createElement("p");
+  final_p.innerHTML = "<p><br/><br/></p>";
+  fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
   makeParagraphs(text, function (p) {
     fullBody.body.insertBefore(p, fullBody.body.firstChild);
   });
