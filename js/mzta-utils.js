@@ -78,9 +78,9 @@ export async function setBody(tabId, fullHtmlBody){
 export async function replaceBody(tabId, text){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body;
-  console.log('originalHtmlBody: ' + originalHtmlBody);
+  //console.log('originalHtmlBody: ' + originalHtmlBody);
   let fullBody = insertText(text, originalHtmlBody);
-  console.log('fullBody: ' + fullBody);
+  //console.log('fullBody: ' + fullBody);
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
