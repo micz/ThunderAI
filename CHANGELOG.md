@@ -1,11 +1,12 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
       
       
-<h2>Version 1.0.4 - ??/??/2024</h2>
+<h2>Version 1.0.4 - 01/05/2024</h2>
 <ul>
     <li>Stripping the quotation marks from the response.</li>
     <li>Now it is possible to undo text modifications implemented by ChatGPT (CTRL+Z on Windows). See issue <a href="https://github.com/micz/ThunderAI/issues/34">#34</a></li>
     <li>Now closing the compose window after unsaved text modifications implemented by ChatGPT triggers the usual warning message. See issue <a href="https://github.com/micz/ThunderAI/issues/30">#30</a></li>
+    <li>Updated the "Important Information" section on the options page, as it is no longer possible to disable the ChatGPT chat history.</li>
 </ul>
 <h2>Version 1.0.3 - 27/04/2024</h2>
 <ul>
