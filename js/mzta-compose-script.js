@@ -16,8 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-// Modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
+// Some original methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
 const makeParagraphs = (text, func) => {
   const chunks = text.split(/\n{2,}/);
@@ -35,34 +34,7 @@ const makeParagraphs = (text, func) => {
 };
 
 
-const insert = function (text) {
-  const prefix = window.document.body.getElementsByClassName("moz-cite-prefix");
-  if (prefix.length > 0) {
-    const divider = prefix[0];
-    let sibling = divider.previousSibling;
-    while (sibling) {
-      window.document.body.removeChild(sibling);
-      sibling = divider.previousSibling;
-    }
-  }
-  return makeParagraphs(text, function (p) {
-    window.document.body.insertBefore(p, window.document.body.firstChild);
-  });
-}
-
-/*const insertReply = function (text) {
-  const prefix = window.document.body.getElementsByClassName("moz-cite-prefix");
-  if (prefix.length > 0) {
-    const divider = prefix[0];
-    let sibling = divider.previousSibling;
-    return makeParagraphs(text, function (p) {
-      window.document.body.insertBefore(p, sibling);
-    });
-  }
-}*/
-
-
-browser.runtime.onMessage.addListener((message) => {
+browser.runtime.onMessage.addListener(async (message) => {
 switch (message.command) {
   case "getSelectedText":
     return Promise.resolve(window.getSelection().toString());
@@ -70,7 +42,7 @@ switch (message.command) {
   case "replaceSelectedText":
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
-      return insert(message.text);
+      return;
     }
     const sel = window.getSelection();
     if (!sel || sel.type !== "Range" || !sel.rangeCount) {
@@ -81,6 +53,7 @@ switch (message.command) {
     makeParagraphs(message.text, function (p) {
       r.insertNode(p);
     });
+    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     break;
 
   case "getText":
@@ -98,10 +71,6 @@ switch (message.command) {
 
   case "getTextOnly":
       return Promise.resolve(window.document.body.innerText);
-
-  case "insertText":
-    insert(message.text);
-    break;
 
   case 'promptTooLong':
     alert(browser.i18n.getMessage('msg_prompt_too_long'));

@@ -97,6 +97,7 @@ async function chatgpt_getFromDOM(pos) {
             response = responseDivs[nthOfResponse - 1].textContent;
         }
         response = response.replace(/^ChatGPTChatGPT/, ''); // strip sender name
+        response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
         //console.log('chatgpt_getFromDOM: ' + response);
     }
     return response;

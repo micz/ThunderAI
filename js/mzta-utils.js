@@ -59,3 +59,66 @@ function extractEmail(text) {
   const match = text.match(emailRegex);
   return match ? match[0] : '';
 }
+
+export async function reloadBody(tabId){
+  let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  let originalHtmlBody = composeDetails.body + " ";
+  await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
+}
+
+export async function getOriginalBody(tabId){
+  let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  return composeDetails.body;
+}
+
+export async function setBody(tabId, fullHtmlBody){
+  await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
+}
+
+export async function replaceBody(tabId, text){
+  let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  let originalHtmlBody = composeDetails.body;
+  //console.log('originalHtmlBody: ' + originalHtmlBody);
+  let fullBody = insertText(text, originalHtmlBody);
+  //console.log('fullBody: ' + fullBody);
+  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
+}
+
+
+// The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
+
+const insertText = function (text, fullBody_string) {
+  const parser = new DOMParser();
+  let fullBody = parser.parseFromString(fullBody_string, "text/html");
+  const prefix = fullBody.getElementsByClassName("moz-cite-prefix");
+  if (prefix.length > 0) {
+    const divider = prefix[0];
+    let sibling = divider.previousSibling;
+    while (sibling) {
+      fullBody.body.removeChild(sibling);
+      sibling = divider.previousSibling;
+    }
+  }
+  let final_p = document.createElement("p");
+  final_p.innerHTML = "<p><br/><br/></p>";
+  fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
+  makeParagraphs(text, function (p) {
+    fullBody.body.insertBefore(p, fullBody.body.firstChild);
+  });
+  return fullBody.body.innerHTML;
+}
+
+const makeParagraphs = (text, func) => {
+  const chunks = text.split(/\n{2,}/);
+  if (chunks.length == 1) {
+    return func(document.createTextNode(text));
+  }
+  const paragraphs = chunks.map((t) => {
+    const p = document.createElement("p");
+    p.innerText = t;
+    return p;
+  });
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    func(paragraphs[i]);
+  }
+};
