@@ -160,12 +160,12 @@
   },
 
   "prefsInfoDesc_1": {
-    "message": "Per evitare che le richieste fatte tramite questa estensione compaiano nella tua cronologia chat di ChatGPT, puoi disattivarle nelle impostazioni. Questo si può fare nelle impostazioni di ChatGPT direttamente nella finestra che appare quando utilizzi l'estensione. Ricorda che questa opzione è valida esclusivamente in questo contesto specifico e non si applica ad altre situazioni in cui utilizzi ChatGPT.",
+    "message": "Non è più possibile disabilitare la cronologia delle chat di ChatGPT. Pertanto, non c'è modo di impedire che le richieste effettuate tramite questo componente aggiuntivo appaiano nella cronologia delle chat di ChatGPT.",
     "description": ""
   },
 
   "prefsInfoDesc_2": {
-    "message": " ",
+    "message": "Se all'apertura della finestra di ChatGPT, viene mostrata una pagina bianca, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
     "description": ""
   },
 
