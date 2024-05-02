@@ -208,8 +208,10 @@ function checkGPT4Model() {
     // Set up an interval that checks the value every 100 milliseconds
     const intervalId = setInterval(() => {
       // Get the '.text-token-text-secondary' element
-      const element = document.querySelector('.text-token-text-secondary');
+     // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
+     const elements = document.querySelectorAll('[id*=radix] span')
 
+     for(element of elements){
       // Check if the element exists and its content is '4'
       if ((element && element.textContent === '4')||(force_go)) {
         console.log("The GPT Model is now '4'");
@@ -223,6 +225,7 @@ function checkGPT4Model() {
         clearInterval(intervalId);
         reject("Element not found.");
       }
+     }
     }, 200);
   });
 }
