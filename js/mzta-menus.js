@@ -118,7 +118,7 @@ export class mzta_Menus {
 
           browser.menus.create({
             id: id,
-            title: browser.i18n.getMessage(id),
+            title: this.getCustomTextAttribute(id) + browser.i18n.getMessage(id),
             contexts: this.getContexts(id),
             parentId: root
           });
@@ -151,6 +151,17 @@ export class mzta_Menus {
         }
 
     }
-    
+
+    getCustomTextAttribute(id){
+        const curr_prompt = defaultPrompts.find(p => p.id === id);
+        if (!curr_prompt) {
+          return "";
+        }
+        if(curr_prompt.need_custom_text === 1){
+            return "*";
+        }else{
+            return "";
+        }
+    }
 
 }
