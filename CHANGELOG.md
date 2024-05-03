@@ -1,6 +1,10 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
-      
-      
+
+
+<h2>Version 1.0.5 - 03/05/2024</h2>
+<ul>
+    <li>...</li>
+</ul>
 <h2>Version 1.0.4 - 01/05/2024</h2>
 <ul>
     <li>Stripping the quotation marks from the response.</li>
