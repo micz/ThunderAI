@@ -28,21 +28,25 @@
     1: do reply
     2: substitute text
 
-    Only if text selected (attribute need_selected):
+    Only if text selected (need_selected attribute):
     0: no selection needed (use all the message body)
     1: need a selection
 
-    Signature
+    Signature (need_signature attribute):
     0: No signature needed
     1: Signature needed
+
+    Custom Text (need_custom_text attribute):
+    0: No custom text needed
+    1: Custom text needed
 */
 
 export const defaultPrompts = [
-    { id: 'prompt_reply', name: "__MSG_prompt_reply__", text: "Reply to the following email.", type: 1, action: 1, need_selected: 0, need_signature: 1 },
-    { id: 'prompt_rewrite_polite', name: "__MSG_prompt_rewrite_polite__", text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
-    { id: 'prompt_rewrite_formal', name: "__MSG_prompt_rewrite_formal__", text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
-    { id: 'prompt_classify', name: "__MSG_prompt_classify__", text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.", type: 0, action: 0, need_selected: 0, need_signature: 0 },
-    { id: 'prompt_summarize_this', name: "__MSG_prompt_summarize_this__", text: "Summarize the following email into a bullet point list.", type: 0, action: 0, need_selected: 0, need_signature: 0 },
-    { id: 'prompt_translate_this', name: "__MSG_prompt_translate_this__", text: "Translate the following email in ", type: 0, action: 0, need_selected: 0, need_signature: 0 },
-    { id: 'prompt_this', name: "__MSG_prompt_this__", text: "Reply with only the needed text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
+    { id: 'prompt_reply', name: "__MSG_prompt_reply__", text: "Reply to the following email.", type: 1, action: 1, need_selected: 0, need_signature: 1, need_custom_text: 1 },  // need_custom_text set to 1 only for testing
+    { id: 'prompt_rewrite_polite', name: "__MSG_prompt_rewrite_polite__", text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0, need_custom_text: 0 },
+    { id: 'prompt_rewrite_formal', name: "__MSG_prompt_rewrite_formal__", text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0, need_custom_text: 0 },
+    { id: 'prompt_classify', name: "__MSG_prompt_classify__", text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.", type: 0, action: 0, need_selected: 0, need_signature: 0, need_custom_text: 0 },
+    { id: 'prompt_summarize_this', name: "__MSG_prompt_summarize_this__", text: "Summarize the following email into a bullet point list.", type: 0, action: 0, need_selected: 0, need_signature: 0, need_custom_text: 0 },
+    { id: 'prompt_translate_this', name: "__MSG_prompt_translate_this__", text: "Translate the following email in ", type: 0, action: 0, need_selected: 0, need_signature: 0, need_custom_text: 0 },
+    { id: 'prompt_this', name: "__MSG_prompt_this__", text: "Reply with only the needed text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0, need_custom_text: 0 },
 ];
