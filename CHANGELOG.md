@@ -3,7 +3,7 @@
 
 <h2>Version 1.0.5 - 03/05/2024</h2>
 <ul>
-    <li>...</li>
+    <li>Fixed the handling of ChatGPT-4 in a large window. See issue <a href="https://github.com/micz/ThunderAI/issues/38">#38</a></li>
 </ul>
 <h2>Version 1.0.4 - 01/05/2024</h2>
 <ul>
