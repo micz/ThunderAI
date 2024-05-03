@@ -175,8 +175,8 @@ async function openChatGPT(promptText, action, curr_tabId) {
 }
 
 function checkScreenDimensions(prefs){
-    let width = window.screen.width;
-    let height = window.screen.height;
+    let width = window.screen.width - 50;
+    let height = window.screen.height - 50;
 
     if(prefs.chatgpt_win_height > height) prefs.chatgpt_win_height = height - 50;
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
