@@ -220,6 +220,7 @@ function checkGPT4Model() {
         document.getElementById('mzta-model_warn').style.display = 'none';
         document.getElementById('mzta-btn_gpt35').style.display = 'none';
         resolve("GPT4");
+        break;
       } else if (!element) {
         console.log("Element not found!");
         clearInterval(intervalId);
