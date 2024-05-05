@@ -120,6 +120,8 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "#mzta-btn_gpt35 {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.innerHTML += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.innerHTML += "#mzta-status-page:hover{color:#007bff;}";
+    style.innerHTML += "#mzta-custom_text{position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);text-align: center;}";
+    //display:none;
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
@@ -195,6 +197,21 @@ function addCustomDiv(prompt_action,tabId) {
     btn_ok.style.display = 'none';
     fixedDiv.appendChild(btn_ok);
 
+    //div per custom text
+    let customDiv = document.createElement('div');
+    customDiv.id = 'mzta-custom_text';
+    let customTextArea = document.createElement('textarea');
+    customTextArea.id = 'mzta-custom_textarea';
+    customDiv.appendChild(customTextArea);
+    let customBtn = document.createElement('button');
+    customBtn.id = 'mzta-custom_btn';
+    customBtn.innerHTML = 'Send'; //browser.i18n.getMessage("chatgpt_win_custom_text");
+    customBtn.onclick = async function() {
+        //const text = document.getElementById('mzta-custom_textarea').value;
+    }
+    customDiv.appendChild(customBtn);
+    fixedDiv.appendChild(customDiv);
+
     document.body.insertBefore(fixedDiv, document.body.firstChild);
 }
 
@@ -253,6 +270,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             addCustomDiv(message.action,message.tabId);
             (async () => {
                 let prefs = await browser.storage.sync.get({chatpgt_use_gpt4:false});
+                if(mztaDoCustomText === 1){
+                    alert('custom_text');
+                }
                 if(prefs.chatpgt_use_gpt4){
 				    await checkGPT4Model();
                 }
