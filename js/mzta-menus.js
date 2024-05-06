@@ -87,14 +87,15 @@ export class mzta_Menus {
                 default:
                     break;
             }
-    
+
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id);
+            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.need_custom_text);
         };
         this.rootMenu.push(curr_menu_entry);
     };
-    
+
     async getDefaultSignature(){
         let prefs = await browser.storage.sync.get({default_sign_name: ''});
         if(prefs.default_sign_name===''){
@@ -118,7 +119,7 @@ export class mzta_Menus {
 
           browser.menus.create({
             id: id,
-            title: browser.i18n.getMessage(id),
+            title: this.getCustomTextAttribute(id) + browser.i18n.getMessage(id),
             contexts: this.getContexts(id),
             parentId: root
           });
@@ -151,6 +152,17 @@ export class mzta_Menus {
         }
 
     }
-    
+
+    getCustomTextAttribute(id){
+        const curr_prompt = defaultPrompts.find(p => p.id === id);
+        if (!curr_prompt) {
+          return "";
+        }
+        if(curr_prompt.need_custom_text === 1){
+            return "*";
+        }else{
+            return "";
+        }
+    }
 
 }

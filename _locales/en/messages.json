@@ -84,6 +84,16 @@
     "description": ""
   },
 
+  "chatgpt_win_custom_text": {
+    "message": "Insert here the additional text for the prompt.",
+    "description": ""
+  },
+
+  "chatgpt_win_send": {
+    "message": "Send",
+    "description": ""
+  },
+
   "chatgpt_use_gpt35": {
     "message": "Use GPT3.5",
     "description": ""

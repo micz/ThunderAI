@@ -122,7 +122,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 });
 
 
-async function openChatGPT(promptText, action, curr_tabId) {
+async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
     console.log('Prompt length: ' + promptText.length);
@@ -162,6 +162,7 @@ async function openChatGPT(promptText, action, curr_tabId) {
     });
 
     let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+    let mztaDoCustomText=`+ do_custom_text +`;
     `;
 
     browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
