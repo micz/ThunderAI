@@ -164,6 +164,11 @@
     "description": ""
   },
 
+  "prefs_OptionText_btnManagePrompts": {
+    "message": "Gestisci i tuoi prompts",
+    "description": ""
+  },
+
   "prefsInfoTitle": {
     "message": "Informazioni Importanti",
     "description": ""

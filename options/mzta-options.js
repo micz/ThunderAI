@@ -93,4 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
+  document.getElementById('btnManagePrompts').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')});
+      }
+    })
+  });
 }, { once: true });
