@@ -206,7 +206,7 @@ function addCustomDiv(prompt_action,tabId) {
     customDiv.id = 'mzta-custom_text';
     let customInfo = document.createElement('div');
     customInfo.id = 'mzta-custom_info';
-    customInfo.innerHTML = 'Insert here the additional text for the prompt.'; //browser.i18n.getMessage("chatgpt_win_custom_text");
+    customInfo.innerHTML = browser.i18n.getMessage("chatgpt_win_custom_text");
     customDiv.appendChild(customInfo);
     let customTextArea = document.createElement('textarea');
     customTextArea.id = 'mzta-custom_textarea';
@@ -217,11 +217,10 @@ function addCustomDiv(prompt_action,tabId) {
     customDiv.appendChild(customLoading);
     let customBtn = document.createElement('button');
     customBtn.id = 'mzta-custom_btn';
-    customBtn.innerHTML = 'Send'; //browser.i18n.getMessage("chatgpt_win_custom_text");
+    customBtn.innerHTML = browser.i18n.getMessage("chatgpt_win_send");
     customBtn.classList.add('mzta-btn');
-    //customBtn.onclick = customTextBtnClick;
     customBtn.addEventListener("click", () => { customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
-    customTextArea.addEventListener("keydown", (event) => { if(event.keyCode==13 && event.ctrlKey) customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
+    customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
     customDiv.appendChild(customBtn);
     fixedDiv.appendChild(customDiv);
 
