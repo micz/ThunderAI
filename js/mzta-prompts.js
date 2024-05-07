@@ -16,9 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/html/globals.js
+// Modified prompts text derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/html/globals.js
 
-/*  Types (type attribute):
+/*  ================= PROMPTS PROPERTIES ========================================
+
+    ================ BASE PROPERTIES
+
+    Types (type attribute):
     0: always show (when composing a part of the text must be selected if need_selected = 1)
     1: show when reading an email
     2: show when composing a mail (a part of the text must be selected if need_selected = 1)
@@ -39,9 +43,18 @@
     Custom Text (need_custom_text attribute):
     0: No custom text needed
     1: Custom text needed
+
+    ================ USER PROPERTIES
+    Enabled (enabled attribute):
+    0: Disabled
+    1: Enabled
+
+    Position (position attribute):
+    <num>: position number
+
 */
 
-export const defaultPrompts = [
+const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
@@ -113,3 +126,55 @@ export const defaultPrompts = [
         need_custom_text: 0,
     },
 ];
+
+
+export async function getPrompts(){
+    //return await Promise.all([getDefaultPrompts_withProps(), getCustomPrompts()]).then(([defaultPrompts, customPrompts]) => [...defaultPrompts, ...customPrompts]);
+    const defaultPrompts = await getDefaultPrompts_withProps();
+    const customPrompts = await getCustomPrompts();
+    return defaultPrompts.concat(customPrompts);
+}
+
+
+async function getDefaultPrompts_withProps() {
+    let prefs = await browser.storage.sync.get({_default_prompts_properties: null});
+    let defaultPrompts_prop = [...defaultPrompts];
+    if(prefs._default_prompts_properties === null){     // no default prompts properties saved
+        let pos = 1;
+        defaultPrompts_prop.forEach((prompt) => {
+            prompt.position = pos;
+            prompt.enabled = 1;
+            pos++;
+        })
+    } else {    // we have saved the default prompts properties
+        defaultPrompts_prop.forEach((prompt) => {
+            prompt.position = prefs._default_prompts_properties[prompt.id].position;
+            prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+        })
+    }
+    return defaultPrompts_prop;
+}
+
+
+async function getCustomPrompts() {
+    let prefs = await browser.storage.sync.get({_custom_prompt: null});
+    if(prefs._custom_prompt === null){
+        return [];
+    } else {
+        return prefs._custom_prompt;
+    }
+}
+
+export async function setDefaultPromptsProperties(prompts) {
+    let default_prompts_properties = {};
+    prompts.forEach((prompt) => {
+        default_prompts_properties[prompt.id] = {position: prompt.position, enabled: prompt.enabled};
+    });
+    await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
+}
+
+
+export async function setCustomPrompts(prompts) {
+    await browser.storage.sync.set({_custom_prompt: prompts});
+}
+

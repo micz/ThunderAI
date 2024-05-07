@@ -18,11 +18,12 @@
 
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
-import { defaultPrompts } from './mzta-prompts.js';
+import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName } from './mzta-utils.js'
 
 export class mzta_Menus {
 
+    allPrompts = [];
     openChatGPT = null;
     menu_context_compose = 'compose_action_menu';
     menu_context_display = 'message_display_action_menu';
@@ -34,7 +35,13 @@ export class mzta_Menus {
 
     constructor(openChatGPT) {
         this.openChatGPT = openChatGPT;
-        defaultPrompts.forEach((prompt) => {
+        this.allPrompts = [];
+    }
+
+
+    async initialize() {
+        this.allPrompts = await getPrompts();
+        this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
         //this.addMenu(this.rootMenu);
@@ -105,7 +112,8 @@ export class mzta_Menus {
         }
     }
 
-    loadMenus() {
+    async loadMenus() {
+        await this.initialize();
         this.addMenu(this.rootMenu);
         let listeners = this.menu_listeners;
         browser.menus.onClicked.addListener((info, tab) => {
@@ -136,7 +144,7 @@ export class mzta_Menus {
     };
 
     getContexts(id){
-        const curr_prompt = defaultPrompts.find(p => p.id === id);
+        const curr_prompt = this.allPrompts.find(p => p.id === id);
         if (!curr_prompt) {
           return [];
         }
@@ -154,7 +162,7 @@ export class mzta_Menus {
     }
 
     getCustomTextAttribute(id){
-        const curr_prompt = defaultPrompts.find(p => p.id === id);
+        const curr_prompt = this.allPrompts.find(p => p.id === id);
         if (!curr_prompt) {
           return "";
         }
