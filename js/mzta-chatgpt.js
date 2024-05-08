@@ -119,7 +119,8 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}";
     style.innerHTML += "#mzta-btn_gpt35 {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.innerHTML += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
-    style.innerHTML += "#mzta-status-page:hover{color:#007bff;}";
+    style.innerHTML += "#mzta-force-completion{cursor:pointer;position:fixed;bottom:0;right:0;padding-right:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
+    style.innerHTML += "#mzta-status-page:hover, #mzta-force-completion:hover{color:#007bff;}";
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
@@ -149,6 +150,16 @@ function addCustomDiv(prompt_action,tabId) {
     status_page_div.id = 'mzta-status-page';
     status_page_div.innerHTML = '<a href="https://micz.it/thunderdbird-addon-thunderai/status/">'+ mztaStatusPageDesc +'</a>';
     fixedDiv.appendChild(status_page_div);
+
+    //force completion
+    var force_completion_div = document.createElement('div');
+    force_completion_div.id = 'mzta-force-completion';
+    force_completion_div.innerHTML = mztaForceCompletionDesc;
+    force_completion_div.title = mztaForceCompletionTitle;
+    force_completion_div.addEventListener('click', function() {
+        operation_done();
+    });
+    fixedDiv.appendChild(force_completion_div);
 
     // span for the text
     var curr_msg = document.createElement('span');
@@ -236,6 +247,7 @@ function operation_done(){
     document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_win_job_completed")+"<br>";
     document.getElementById('mzta-btn_ok').style.display = 'inline';
     document.getElementById('mzta-loading').style.display = 'none';
+    document.getElementById('mzta-force-completion').style.display = 'none';
     chatpgt_scrollToBottom();
 }
 
