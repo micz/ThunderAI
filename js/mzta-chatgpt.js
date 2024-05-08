@@ -46,7 +46,7 @@ async function chatgpt_isIdle() {
 
 function chatgpt_getRegenerateButton() {
     for (const mainSVG of document.querySelectorAll('main svg')) {
-        if (mainSVG.querySelector('path[d*="M4.5 2.5C5.05228"]')) // regen icon found
+        if (mainSVG.querySelector('path[d*="M3.07 10.876C3.623"]')) // regen icon found
             return mainSVG.parentNode.parentNode;
     }
 }
