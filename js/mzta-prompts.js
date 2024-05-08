@@ -64,6 +64,7 @@ const defaultPrompts = [
         need_selected: 0,
         need_signature: 1,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_rewrite_polite',
@@ -74,6 +75,7 @@ const defaultPrompts = [
         need_selected: 1,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_rewrite_formal',
@@ -84,6 +86,7 @@ const defaultPrompts = [
         need_selected: 1,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_classify',
@@ -94,6 +97,7 @@ const defaultPrompts = [
         need_selected: 0,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_summarize_this',
@@ -104,6 +108,7 @@ const defaultPrompts = [
         need_selected: 0,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_translate_this',
@@ -114,6 +119,7 @@ const defaultPrompts = [
         need_selected: 0,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
     {
         id: 'prompt_this',
@@ -124,6 +130,7 @@ const defaultPrompts = [
         need_selected: 1,
         need_signature: 0,
         need_custom_text: 0,
+        is_default: 1,
     },
 ];
 
