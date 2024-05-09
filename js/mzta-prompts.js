@@ -38,7 +38,7 @@
 */
 
 export const defaultPrompts = [
-    { id: 'prompt_reply', name: "__MSG_prompt_reply__", text: "Reply to the following email. Reply with only the mail text and with no extra comments or other text.", type: 1, action: 1, need_selected: 0, need_signature: 1 },
+    { id: 'prompt_reply', name: "__MSG_prompt_reply__", text: "Reply to the following email. Reply with only the mail text, with greetings and signature, and with no extra comments.", type: 1, action: 1, need_selected: 0, need_signature: 1 },
     { id: 'prompt_rewrite_polite', name: "__MSG_prompt_rewrite_polite__", text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
     { id: 'prompt_rewrite_formal', name: "__MSG_prompt_rewrite_formal__", text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.", type: 2, action: 2, need_selected: 1, need_signature: 0 },
     { id: 'prompt_classify', name: "__MSG_prompt_classify__", text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.", type: 0, action: 0, need_selected: 0, need_signature: 0 },
