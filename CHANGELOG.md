@@ -4,7 +4,7 @@
 <h2>Version 1.0.7 - 09/05/2024</h2>
 <ul>
   <li>Improved the reply prompt to exclude comments and other text beside the mail text.</li>
-  <li>Corretly keeping the signature in a reply even if it's above the quoted email [<a href="https://github.com/micz/ThunderAI/issues/45">#45</a>].</li>
+  <li>Correctly keeping the signature in a reply even if it's above the quoted email [<a href="https://github.com/micz/ThunderAI/issues/45">#45</a>].</li>
 </ul>
 
 <h2>Version 1.0.6 - 08/05/2024</h2>
