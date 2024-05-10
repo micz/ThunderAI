@@ -54,7 +54,8 @@
 
 */
 
-const defaultPrompts = [
+export const defaultPrompts = [     // test in browser
+//const defaultPrompts = [     // production
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
