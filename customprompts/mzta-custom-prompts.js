@@ -19,10 +19,11 @@
 import { getPrompts } from "../js/mzta-prompts.js";
 
 var somethingChanged = false;
+var positionMax = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'id', 'name', 'text', 'type', 'action', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'is_default', attr: 'is_default_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        valueNames: [ { data: ['idnum'] }, 'id', 'name', 'text', 'type', 'action', 'position', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'is_default', attr: 'is_default_val'}, { name: 'enabled', attr: 'checked_val'} ],
         // item: `<tr>
         //     <td class="id"></td>
         //     <td class="name"></td>
@@ -45,6 +46,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td class="name"></td>
                 <td class="text"></td>
                 <td class="properties">
+                    Type: ` + values.type + `
+                    <br>
+                    Action: ` + values.action + `
+                    <br>
                     <input type="checkbox" class="need_selected"` + ((values.is_default == 1) ? 'disabled':'') + `> Need Select
                     <br>
                     <input type="checkbox" class="need_signature" ` + ((values.is_default == 1) ? 'disabled':'') + `> Need Signature
@@ -59,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
+            positionMax = Math.max(positionMax, values.position);
             return output;
         }
     };
@@ -74,19 +80,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const btnSave = document.getElementById('btnSave');
     btnSave.disabled = true;
-    btnSave.addEventListener('click', (e) => {      //TODO
+    btnSave.addEventListener('click', (e) => {
         e.preventDefault();
+        saveAll();
     });
 
     const btnNew = document.getElementById('btnNew');
     btnNew.addEventListener('click', (e) => {
         e.preventDefault();
         document.getElementById('formNew').style.display = 'block';
-    });
-
-    const btnAddNew = document.getElementById('btnNew');
-    btnAddNew.addEventListener('click', (e) => {    //TODO
-        e.preventDefault();
     });
 
     document.querySelectorAll('input').forEach(element => {
@@ -109,16 +111,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     i18n.updateDocument();
+
+    //To add a new item
+    var txtIdNew = document.getElementById('txtIdNew');
+    var txtNameNew = document.getElementById('txtNameNew');
+    var txtTextNew = document.getElementById('txtTextNew');
+    var selectTypeNew = document.getElementById('selectTypeNew');
+    var selectActionNew = document.getElementById('selectActionNew');
+    var selectNeedSelectedNew = document.getElementById('selectNeedSelectedNew');
+    var selectNeedSignatureNew = document.getElementById('selectNeedSignatureNew');
+    var selectNeedCustomTextNew = document.getElementById('selectNeedCustomTextNew');
+
+    const btnAddNew = document.getElementById('btnAddNew');
+    btnAddNew.addEventListener('click', (e) => {    //TODO
+        e.preventDefault();
+        //TODO check the id must be unique and without spaces
+        promptsList.add({
+            id: txtIdNew.value,
+            name: txtNameNew.value,
+            text: txtTextNew.value,
+            type: selectTypeNew.value,
+            action: selectActionNew.value,
+            need_selected: selectNeedSelectedNew.value,
+            need_signature: selectNeedSignatureNew.value,
+            need_custom_text: selectNeedCustomTextNew.value,
+            enabled: 1,
+            position: positionMax + 1,
+            is_default: 0,
+        });
+        //checkSelectedBoxes([selectTypeNew, selectActionNew, selectNeedSelectedNew, selectNeedSignatureNew, selectNeedCustomTextNew]);
+        checkSelectedBoxes();
+        clearFields();
+    });
+
+
 }, { once: true });
   
 
-function checkSelectedBoxes() {
-    const checkboxes = [
-        ...document.querySelectorAll('.need_selected[type="checkbox"]'),
-        ...document.querySelectorAll('.need_signature[type="checkbox"]'),
-        ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
-        ...document.querySelectorAll('.enabled[type="checkbox"]'),
-    ];
+function clearFields() {
+    document.getElementById('txtIdNew').value = '';
+    document.getElementById('txtNameNew').value = '';
+    document.getElementById('txtTextNew').value = '';
+    document.getElementById('selectTypeNew').value = '0';
+    document.getElementById('selectActionNew').value = '0';
+    document.getElementById('selectNeedSelectedNew').value = '0';
+    document.getElementById('selectNeedSignatureNew').value = '0';
+    document.getElementById('selectNeedCustomTextNew').value = '0';
+    document.getElementById('formNew').style.display = 'none';
+}
+
+function checkSelectedBoxes(checkboxes = null) {
+    if(checkboxes == null){
+        checkboxes = [
+            ...document.querySelectorAll('.need_selected[type="checkbox"]'),
+            ...document.querySelectorAll('.need_signature[type="checkbox"]'),
+            ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
+            ...document.querySelectorAll('.enabled[type="checkbox"]'),
+        ];
+    }
 
     // Iterate through the checkboxes
     checkboxes.forEach(checkbox => {
@@ -132,9 +182,14 @@ function checkSelectedBoxes() {
     });
 }
 
-window.addEventListener('beforeunload', function (event) {
-    // Check if any changes have been made
-    if (somethingChanged) {
-        event.preventDefault();
-    }
-});
+//Save all prompts
+function saveAll() {
+    //TODO
+}
+
+// window.addEventListener('beforeunload', function (event) {
+//     // Check if any changes have been made
+//     if (somethingChanged) {
+//         event.preventDefault();
+//     }
+// });

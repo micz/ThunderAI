@@ -54,6 +54,41 @@
     "description": ""
   },
 
+  "customPrompts_btnSave": {
+    "message": "Save All",
+    "description": ""
+  },
+
+  "customPrompts_btnNew": {
+    "message": "Add New",
+    "description": ""
+  },
+
+  "customPrompts_btnAddNewCommit": {
+    "message": "Add the Prompt",
+    "description": ""
+  },
+
+  "customPrompts_add_to_menu": {
+    "message": "Add to menu",
+    "description": ""
+  },
+
+  "customPrompts_add_to_menu_always": {
+    "message": "Always",
+    "description": ""
+  },
+
+  "customPrompts_add_to_menu_reading": {
+    "message": "Reading an email",
+    "description": ""
+  },
+
+  "customPrompts_add_to_menu_composing": {
+    "message": "Composing an email",
+    "description": ""
+  },
+
   "chatgpt_win_working": {
     "message": "Work in progress...",
     "description": ""
