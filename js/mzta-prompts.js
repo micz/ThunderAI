@@ -136,10 +136,11 @@ const defaultPrompts = [
 
 
 export async function getPrompts(){
-    //return await Promise.all([getDefaultPrompts_withProps(), getCustomPrompts()]).then(([defaultPrompts, customPrompts]) => [...defaultPrompts, ...customPrompts]);
     const defaultPrompts = await getDefaultPrompts_withProps();
     const customPrompts = await getCustomPrompts();
-    return defaultPrompts.concat(customPrompts);
+    let output = defaultPrompts.concat(customPrompts);
+    output.sort((a, b) => a.position - b.position);
+    return output;
 }
 
 
