@@ -19,14 +19,14 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay } from './mzta-utils.js'
 
 export class mzta_Menus {
 
     allPrompts = [];
     openChatGPT = null;
-    menu_context_compose = 'compose_action_menu';
-    menu_context_display = 'message_display_action_menu';
+    menu_context_compose = null;
+    menu_context_display = null;
     menu_listeners = {};
 
     rootMenu = [
@@ -34,6 +34,8 @@ export class mzta_Menus {
     ];
 
     constructor(openChatGPT) {
+        this.menu_context_compose = getMenuContextCompose();
+        this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
         this.allPrompts = [];
     }
