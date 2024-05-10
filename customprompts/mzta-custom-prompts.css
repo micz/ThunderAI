@@ -45,3 +45,11 @@ table td {
 table td.properties{
     white-space: nowrap;
 }
+
+.hiddendata{
+    display: none;
+}
+
+#formNew{
+    display: none;
+}

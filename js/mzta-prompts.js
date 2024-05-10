@@ -54,8 +54,7 @@
 
 */
 
-export const defaultPrompts = [     // test in browser
-//const defaultPrompts = [     // production
+const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
@@ -141,13 +140,18 @@ export async function getPrompts(){
     const customPrompts = await getCustomPrompts();
     let output = defaultPrompts.concat(customPrompts);
     output.sort((a, b) => a.position - b.position);
+    for(let i=1; i<=output.length; i++){
+        output[i-1].idnum = i;
+    }
     return output;
 }
 
 
 async function getDefaultPrompts_withProps() {
-    let prefs = await browser.storage.sync.get({_default_prompts_properties: null});
+    //  let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
     let defaultPrompts_prop = [...defaultPrompts];
+    let prefs = {}; //test
+    prefs._default_prompts_properties = null; //test
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {

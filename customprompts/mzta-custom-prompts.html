@@ -10,14 +10,60 @@
         <h1>Manage Prompts</h1>
         <p>Manage your custom prompts.</p>
     </div>
+    <div>
+      <button id="btnSave" disabled>__MSG_customPrompts_btnSave__</button>
+      <button id="btnNew">__MSG_customPrompts_btnNew__</button>
+    </div>
+    <div id="formNew">
+        <label for="txtNameNew">Name:</label>
+        <input type="text" id="txtNameNew" name="name">
+        <br>
+        <label for="txtTextNew">Text:</label>
+        <textarea id="txtTextNew" name="text"></textarea>
+        <br>
+        <label for="selectTypeNew">Type:</label>
+        <select id="selectTypeNew" name="type">
+          <option value="0">Always show</option>
+          <option value="1">When reading an email</option>
+          <option value="2">When composing a mail</option>
+        </select>
+        <br>
+        <label for="selectActionNew">Action:</label>
+        <select id="selectActionNew" name="action">
+          <option value="0">Close button</option>
+          <option value="1">Do reply</option>
+          <option value="2">Substitute text</option>
+        </select>
+        <br>
+        <label for="selectNeedSelectedNew">Need selection:</label>
+        <select id="selectNeedSelectedNew" name="need_selected">
+          <option value="0">No selection needed</option>
+          <option value="1">Need a selection</option>
+        </select>
+        <br>
+        <label for="selectNeedSignatureNew">Need signature:</label>
+        <select id="selectNeedSignatureNew" name="need_signature">
+          <option value="0">No signature needed</option>
+          <option value="1">Signature needed</option>
+        </select>
+        <br>
+        <label for="selectNeedCustomTextNew">Need custom text:</label>
+        <select id="selectNeedCustomTextNew" name="need_custom_text">
+          <option value="0">No custom text needed</option>
+          <option value="1">Custom text needed</option>
+        </select>
+        <br>
+        <button id="btnAddNew">__MSG_customPrompts_btnAddNewCommit__</button>
+    </div>
     <div id="all_prompts">
         <table>
             <thead>
               <tr>
-                <th class="sort" data-sort="id">ID</th>
-                <th class="sort" data-sort="name">Name</th>
-                <th class="sort" data-sort="text">Text</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Text</th>
                 <th>Properties</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody class="list">
