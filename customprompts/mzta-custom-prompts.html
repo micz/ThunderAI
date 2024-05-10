@@ -10,7 +10,21 @@
         <h1>Manage Prompts</h1>
         <p>Manage your custom prompts.</p>
     </div>
-    <script src="mzta-list.js"></script>
+    <div id="all_prompts">
+        <table>
+            <thead>
+              <tr>
+                <th class="sort" data-sort="id">ID</th>
+                <th class="sort" data-sort="name">Name</th>
+                <th class="sort" data-sort="text">Text</th>
+                <th>Properties</th>
+              </tr>
+            </thead>
+            <tbody class="list">
+            </tbody>
+          </table>
+    </div>
+    <script src="list.js"></script>
     <script src="mzta-custom-prompts.js" type="module"></script>
     <script src="../js/mzta-i18n.js"></script>
 </body>

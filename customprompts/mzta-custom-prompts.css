@@ -1,6 +1,6 @@
 @media (prefers-color-scheme: dark) {
     body {
-        background-color: rgb(35, 34, 43);
+        background-color: #1C1B22;
         color: rgb(251, 251, 254);
     }
     
@@ -8,5 +8,40 @@
     a:visited { color: #409EFF; }  
     a:hover { color: #66B1FF; }   
     a:active { color: #66B1FF; }
-    
+
+    table {
+        background-color: #1C1B22;
+    }
+
+    table th {
+        background-color: #23222B;
+        border: 1px solid rgb(251, 251, 254);
+        color: rgb(194, 194, 194);
+        padding: 8px;
+        text-align: left;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #ccc;
+}
+
+table tr {
+    border-bottom: 1px solid #ccc;
+}
+
+table th {
+    padding: 8px;
+    text-align: left;
+}
+
+table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table td.properties{
+    white-space: nowrap;
 }
