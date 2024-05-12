@@ -11,15 +11,13 @@
 
     table {
         background-color: #1C1B22;
+        border: 1px solid #ccc;
     }
 
     table th {
         background-color: #4c4e58;
         border: 1px solid rgb(251, 251, 254);
         color: rgb(194, 194, 194);
-        padding: 8px;
-        text-align: left;
-        cursor: pointer;
     }
 
     table tr:nth-child(even) {
@@ -33,6 +31,11 @@ table {
     border: 1px solid #ccc;
 }
 
+thead {
+    position: sticky;
+    top: 0;
+}
+
 table tr {
     border-bottom: 1px solid #ccc;
 }
@@ -40,6 +43,7 @@ table tr {
 table th {
     padding: 8px;
     text-align: left;
+    cursor: pointer;
 }
 
 table td {
