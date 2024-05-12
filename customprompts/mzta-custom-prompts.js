@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     var selectNeedCustomTextNew = document.getElementById('selectNeedCustomTextNew');
 
     const btnAddNew = document.getElementById('btnAddNew');
-    btnAddNew.addEventListener('click', (e) => {    //TODO
+    btnAddNew.addEventListener('click', (e) => {
         e.preventDefault();
         if(!checkFields()) {
             return;
@@ -353,10 +353,13 @@ function saveAll() {                //TODO
         console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newPrompts));
         let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1);
         console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
-        //let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
+        let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
         setDefaultPromptsProperties(newDefaultPrompts);
+        setCustomPrompts(newCustomPrompts);
     }
 }
+
+
 
 // window.addEventListener('beforeunload', function (event) {
 //     // Check if any changes have been made
