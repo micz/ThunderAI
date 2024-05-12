@@ -14,11 +14,16 @@
     }
 
     table th {
-        background-color: #23222B;
+        background-color: #4c4e58;
         border: 1px solid rgb(251, 251, 254);
         color: rgb(194, 194, 194);
         padding: 8px;
         text-align: left;
+        cursor: pointer;
+    }
+
+    table tr:nth-child(even) {
+        background-color: #2E2F36;
     }
 }
 

@@ -15,14 +15,14 @@
       <button id="btnNew">__MSG_customPrompts_btnNew__</button>
     </div>
     <div id="formNew">
-        <label for="txtIdNew">ID:</label>
-        <input type="text" id="txtIdNew" name="id"> [Must be unique and without spaces]
+        <label for="txtIdNew">*ID:</label>
+        <input type="text" id="txtIdNew" name="id" class="input_new"> [Must be unique and without spaces]
         <br>
-        <label for="txtNameNew">Name:</label>
-        <input type="text" id="txtNameNew" name="name">
+        <label for="txtNameNew">*Name:</label>
+        <input type="text" id="txtNameNew" name="name" class="input_new">
         <br>
-        <label for="txtTextNew">Text:</label>
-        <textarea id="txtTextNew" name="text"></textarea>
+        <label for="txtTextNew">*Text:</label>
+        <textarea id="txtTextNew" name="text" class="input_new"></textarea>
         <br>
         <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
         <select id="selectTypeNew" name="type">
@@ -56,15 +56,18 @@
           <option value="1">Custom text needed</option>
         </select>
         <br>
-        <button id="btnAddNew">__MSG_customPrompts_btnAddNewCommit__</button>
+        * Required fields.
+        <br>
+        <button id="btnAddNew" disabled>__MSG_customPrompts_btnAddNewCommit__</button>
     </div>
     <div id="all_prompts">
         <table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Text</th>
+                <th class="sort" data-sort="id">ID</th>
+                <th class="sort" data-sort="name">Name</th>
+                <th class="sort" data-sort="text">Text</th>
+                <th class="sort" data-sort="type">__MSG_customPrompts_add_to_menu__</th>
                 <th>Properties</th>
                 <th>Action</th>
               </tr>

@@ -151,10 +151,8 @@ export async function getPrompts(){
 
 
 async function getDefaultPrompts_withProps() {
-    //  let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
+    let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
     let defaultPrompts_prop = [...defaultPrompts];
-    let prefs = {}; //test
-    prefs._default_prompts_properties = null; //test
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
@@ -163,7 +161,7 @@ async function getDefaultPrompts_withProps() {
             prompt.enabled = 1;
             pos++;
         })
-    } else {    // we have saved the default prompts properties
+    } else {    // we have saved default prompts properties
         defaultPrompts_prop.forEach((prompt) => {
             prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
             prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
@@ -188,6 +186,7 @@ export async function setDefaultPromptsProperties(prompts) {
     prompts.forEach((prompt) => {
         default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
     });
+    console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
 }
 
