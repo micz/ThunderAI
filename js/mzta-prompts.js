@@ -49,7 +49,10 @@
     0: Disabled
     1: Enabled
 
-    Position (position attribute):
+    Position Display Message (position_display attribute):
+    <num>: position number
+
+    Position Compose Message (position_compose attribute):
     <num>: position number
 
 */
@@ -139,7 +142,7 @@ export async function getPrompts(){
     const defaultPrompts = await getDefaultPrompts_withProps();
     const customPrompts = await getCustomPrompts();
     let output = defaultPrompts.concat(customPrompts);
-    output.sort((a, b) => a.position - b.position);
+    output.sort((a, b) => a.id.localeCompare(b.id));
     for(let i=1; i<=output.length; i++){
         output[i-1].idnum = i;
     }
@@ -155,13 +158,15 @@ async function getDefaultPrompts_withProps() {
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
-            prompt.position = pos;
+            prompt.position_display = pos;
+            prompt.position_compose = pos;
             prompt.enabled = 1;
             pos++;
         })
     } else {    // we have saved the default prompts properties
         defaultPrompts_prop.forEach((prompt) => {
-            prompt.position = prefs._default_prompts_properties[prompt.id].position;
+            prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
+            prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
             prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
         })
     }
@@ -181,7 +186,7 @@ async function getCustomPrompts() {
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {position: prompt.position, enabled: prompt.enabled};
+        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
     });
     await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
 }
