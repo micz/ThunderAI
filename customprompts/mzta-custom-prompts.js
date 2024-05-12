@@ -22,26 +22,11 @@ var promptsList = null;
 var somethingChanged = false;
 var positionMax_compose = 0;
 var positionMax_display = 0;
+var idnumMax = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let options = {
         valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
-        // item: `<tr>
-        //     <td class="id"></td>
-        //     <td class="name"></td>
-        //     <td class="text"></td>
-        //     <td class="properties">
-        //         <input type="checkbox" class="need_selected"> Need Select
-        //         <br>
-        //         <input type="checkbox" class="need_signature"> Need Signature
-        //         <br>
-        //         <input type="checkbox" class="need_custom_text"> Need Custom Text
-        //         <br>
-        //         <span class="is_default">Is Default</span>
-        //         <br>
-        //         <input type="checkbox" class="enabled"> Enabled
-        //     </td>
-        // </tr>`
         item: function(values) {        //TODO: manage ACTION and TYPE edit with the select
             let type_output = '';
             switch(values.type){
@@ -66,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <option value="1"` + ((values.type == 1) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
                 <option value="2"` + ((values.type == 2) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>`) +
-              `<span class="type hiddendata">type</span>
+              `<span class="type hiddendata"></span>
               </td>
                 <td class="properties">
                     Action: <select class="input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `>
@@ -74,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <option value="1"` + ((values.action == 1) ? ' selected':'') + `>Do reply</option>
                     <option value="2"` + ((values.action == 2) ? ' selected':'') + `>Substitute text</option>
                   </select>
-                  <span class="action hiddendata">action</span>
+                  <span class="action hiddendata"></span>
                     <br>
                     <input type="checkbox" class="need_selected input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `> Need Select
                     <br>
@@ -96,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
             positionMax_compose = Math.max(positionMax_compose, values.position_compose);
             positionMax_display = Math.max(positionMax_display, values.position_display);
+            idnumMax = Math.max(idnumMax, values.idnum);
             return output;
         }
     };
@@ -110,70 +96,91 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const btnSave = document.getElementById('btnSave');
     btnSave.disabled = true;
-    btnSave.addEventListener('click', (e) => {
+    
+    // Disable save button and handle save actions
+    function handleSaveClick(e) {
         e.preventDefault();
         saveAll();
         clearFields();
-        document.getElementById('btnSave').disabled = true;
-    });
-
+        btnSave.disabled = true;
+    }
+    btnSave.addEventListener('click', handleSaveClick);
+    
     const btnNew = document.getElementById('btnNew');
-    btnNew.addEventListener('click', (e) => {
+    
+    // Show the new item form
+    function handleNewClick(e) {
         e.preventDefault();
         document.getElementById('formNew').style.display = 'block';
+    }
+    btnNew.addEventListener('click', handleNewClick);
+    
+    // Enable save button on input change
+    function handleInputChange(e) {
+        e.preventDefault();
+        btnSave.disabled = false;
+        somethingChanged = true; // Assumes declaration somewhere in your script
+    }
+    document.querySelectorAll('.input_mod').forEach(element => {
+        element.addEventListener('change', handleInputChange);
+    });
+    
+    // Display selected value next to select input
+    function handleSelectChange(e) {
+        e.preventDefault();
+        const spanElement = e.target.nextElementSibling;
+        spanElement.textContent = e.target.value;
+    }
+    document.querySelectorAll('select.input_mod').forEach(element => {
+        element.addEventListener('change', handleSelectChange);
+    });
+    
+    // Log data ID number from item row and prepare for edit action
+    function handleEditClick(e) {           //TODO
+        e.preventDefault();
+        const tr = e.target.parentNode.parentNode;
+        console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    }
+    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
+    btnEditItem_elements.forEach(element => {
+        element.addEventListener('click', handleEditClick);
+    });
+    
+    // Confirm and log deletion action
+    function handleDeleteClick(e) {             //TODO
+        e.preventDefault();
+        const checkConfirm = window.confirm("Are you sure you want to delete this item?");
+        if (!checkConfirm) {
+            return;
+        }
+        const tr = e.target.parentNode.parentNode;
+        console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    }
+    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
+    btnDeleteItem_elements.forEach(element => {
+        element.addEventListener('click', handleDeleteClick);
     });
 
-    document.querySelectorAll('.input_mod').forEach(element => {
-        element.addEventListener('change', (e) => {
-            e.preventDefault();
-            btnSave.disabled = false;
-            somethingChanged = true;
-        });
-    })
 
-    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
-    if(btnEditItem_elements) {
-        btnEditItem_elements.forEach(element => {
-            element.addEventListener('click', (e) => {
-                e.preventDefault();
-                const tr = e.target.parentNode.parentNode;          //TODO
-                console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-            });
-        });
+    // Handle checkbox changes and log new state
+    function handleCheckboxChange(e) {
+        e.preventDefault();
+        e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
+        console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
     }
+    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
+    checkbox_elements.forEach(element => {
+        element.addEventListener('change', handleCheckboxChange);
+    });
+    
 
-    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
-    if(btnDeleteItem_elements) {
-        btnDeleteItem_elements.forEach(element => {
-            element.addEventListener('click', (e) => {
-                e.preventDefault();
-                const check_confirm = window.confirm("Sei sicuro di voler cancellare questo elemento?");
-                if(!check_confirm) {
-                    return;
-                }
-                const tr = e.target.parentNode.parentNode;          //TODO
-                console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-            });
-        });
-    }
-
+    // for the new prompt form
     let btnNew_elements = document.querySelectorAll(".input_new");
     if(btnNew_elements) {
         btnNew_elements.forEach(element => {
             element.addEventListener('change', (e) => {
                 e.preventDefault();
                 checkFields();
-            });
-        });
-    }
-
-    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
-    if(checkbox_elements) {
-        checkbox_elements.forEach(element => {
-            element.addEventListener('change', (e) => {
-                e.preventDefault();
-                element.setAttribute('checked_val', element.checked ? '1' : '0');
-                console.log('>>>>>>>> checked_val: ' + element.getAttribute('checked_val'));
             });
         });
     }
@@ -196,8 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!checkFields()) {
             return;
         }
-        //TODO check the id must be unique and without spaces
-        promptsList.add({
+        let newItem = promptsList.add({
             id: txtIdNew.value.trim(),
             name: txtNameNew.value.trim(),
             text: txtTextNew.value.trim(),
@@ -210,13 +216,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
+            idnum: idnumMax + 1,
         });
+        idnumMax++;
         //checkSelectedBoxes([selectTypeNew, selectActionNew, selectNeedSelectedNew, selectNeedSignatureNew, selectNeedCustomTextNew]);
-        checkSelectedBoxes();
+        let curr_idnum = newItem[0].values().idnum;
+        let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
+        checkSelectedBoxes(checkboxes);
+        let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
+        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
+        editBtn.addEventListener('click', handleEditClick);
+        //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
+        let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
+        //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
+        deleteBtn.addEventListener('click', handleDeleteClick);
+        // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
+        // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         clearFields();
         somethingChanged = true;
         document.getElementById('btnSave').disabled = false;
         i18n.updateDocument();
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
+          });
     });
 
 }, { once: true });
