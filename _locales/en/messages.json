@@ -89,6 +89,21 @@
     "description": ""
   },
 
+  "customPrompts_close_button": {
+    "message": "Close button",
+    "description": ""
+  },
+
+  "customPrompts_do_reply": {
+    "message": "Do reply",
+    "description": ""
+  },
+
+  "customPrompts_substitute_text": {
+    "message": "Substitute text",
+    "description": ""
+  },
+
   "chatgpt_win_working": {
     "message": "Work in progress...",
     "description": ""

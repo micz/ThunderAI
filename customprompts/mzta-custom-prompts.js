@@ -41,6 +41,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     break;
             }
 
+            let action_output = '';
+            switch(values.action){
+                case 0:
+                    action_output = `<span>__MSG_customPrompts_close_button__</span>`;
+                    break;
+                case 1:
+                    action_output = `<span>__MSG_customPrompts_save_button__</span>`;
+                    break;
+                case 2:
+                    action_output = `<span>__MSG_customPrompts_do_reply__</span>`;
+                    break;
+            }
+
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="id"></td>
                 <td class="name"></td>
@@ -54,12 +67,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               `<span class="type hiddendata"></span>
               </td>
                 <td class="properties">
-                    Action: <select class="input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `>
-                    <option value="0"` + ((values.action == 0) ? ' selected':'') + `>Close button</option>
-                    <option value="1"` + ((values.action == 1) ? ' selected':'') + `>Do reply</option>
-                    <option value="2"` + ((values.action == 2) ? ' selected':'') + `>Substitute text</option>
-                  </select>
-                  <span class="action hiddendata"></span>
+                    Action: ` + ((values.is_default == 1) ? action_output :
+                    `<select class="input_mod">
+                    <option value="0"` + ((values.action == 0) ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
+                    <option value="1"` + ((values.action == 1) ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
+                    <option value="2"` + ((values.action == 2) ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
+                  </select>`) +
+                  `<span class="action hiddendata"></span>
                     <br>
                     <input type="checkbox" class="need_selected input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `> Need Select
                     <br>
