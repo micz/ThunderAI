@@ -27,46 +27,47 @@ var idnumMax = 0;
 document.addEventListener('DOMContentLoaded', async () => {
     let options = {
         valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
-        item: function(values) {        //TODO: manage ACTION and TYPE edit with the select
+        item: function(values) {        //TODO: manage ACTION edit with the select
             let type_output = '';
-            switch(values.type){
-                case 0:
+            switch(String(values.type)){
+                case "0":
                     type_output = `<span>__MSG_customPrompts_add_to_menu_always__</span>`;
                     break;
-                case 1:
+                case "1":
                     type_output = `<span>__MSG_customPrompts_add_to_menu_reading__</span>`;
                     break;
-                case 2:
+                case "2":
                     type_output = `<span>__MSG_customPrompts_add_to_menu_composing__</span>`;
                     break;
             }
 
             let action_output = '';
-            switch(values.action){
-                case 0:
+            switch(String(values.action)){
+                case "0":
                     action_output = `<span>__MSG_customPrompts_close_button__</span>`;
                     break;
-                case 1:
+                case "1":
                     action_output = `<span>__MSG_customPrompts_save_button__</span>`;
                     break;
-                case 2:
+                case "2":
                     action_output = `<span>__MSG_customPrompts_do_reply__</span>`;
                     break;
             }
+            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td class="id"></td>
-                <td class="name"></td>
-                <td class="text"></td>
+                <td><span class="id"></span></td>
+                <td><span class="name"></span></td>
+                <td><span class="text"></span></td>
                 <td>` + ((values.is_default == 1) ? type_output :                
-                `<select class="input_mod">
+                `<select class="input_mod type_output">
                 <option value="0"` + ((values.type == 0) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
                 <option value="1"` + ((values.type == 1) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
                 <option value="2"` + ((values.type == 2) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>`) +
               `<span class="type hiddendata"></span>
               </td>
-                <td class="properties">
+                <td>
                     Action: ` + ((values.is_default == 1) ? action_output :
                     `<select class="input_mod">
                     <option value="0"` + ((values.action == 0) ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
@@ -88,7 +89,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </td>
                 <td>
                 <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Edit</button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Cancel</button>
                 <br>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Ok</button>
                 <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Delete</button>
                </td>
             </tr>`;
@@ -108,17 +111,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     checkSelectedBoxes();
 
-    const btnSave = document.getElementById('btnSave');
-    btnSave.disabled = true;
+    const btnSaveAll = document.getElementById('btnSaveAll');
+    btnSaveAll.disabled = true;
     
     // Disable save button and handle save actions
-    function handleSaveClick(e) {
+    function handleSaveAllClick(e) {
         e.preventDefault();
         saveAll();
         clearFields();
-        btnSave.disabled = true;
     }
-    btnSave.addEventListener('click', handleSaveClick);
+    btnSaveAll.addEventListener('click', handleSaveAllClick);
     
     const btnNew = document.getElementById('btnNew');
     
@@ -132,8 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Enable save button on input change
     function handleInputChange(e) {
         e.preventDefault();
-        btnSave.disabled = false;
-        somethingChanged = true; // Assumes declaration somewhere in your script
+        setSomethingChanged();
     }
     document.querySelectorAll('.input_mod').forEach(element => {
         element.addEventListener('change', handleInputChange);
@@ -153,7 +154,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleEditClick(e) {           //TODO
         e.preventDefault();
         const tr = e.target.parentNode.parentNode;
-        console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+        e.target.style.display = 'none';    // Edit btn
+        tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
+        tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+//        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
+        tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     }
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
@@ -161,20 +167,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     // Confirm and log deletion action
-    function handleDeleteClick(e) {             //TODO
+    function handleDeleteClick(e) {
         e.preventDefault();
         const checkConfirm = window.confirm("Are you sure you want to delete this item?");
         if (!checkConfirm) {
             return;
         }
         const tr = e.target.parentNode.parentNode;
-        console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+        promptsList.remove("id", tr.querySelector('span.id').innerText);
+        setSomethingChanged();
     }
     let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
     btnDeleteItem_elements.forEach(element => {
         element.addEventListener('click', handleDeleteClick);
     });
 
+    function handleCancelClick(e) {
+        e.preventDefault();
+        const tr = e.target.parentNode.parentNode;
+        e.target.style.display = 'none';    // Cancel btn
+        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
+//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    }
+    let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
+    btnCancelItem_elements.forEach(element => {
+        element.addEventListener('click', handleCancelClick);
+    });
+
+    function handleConfirmClick(e) {        //TODO
+        e.preventDefault();
+        const tr = e.target.parentNode.parentNode;
+        e.target.style.display = 'none';    // Cancel btn
+        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
+//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    }
+    let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
+    btnConfirmItem_elements.forEach(element => {
+        element.addEventListener('click', handleConfirmClick);
+    });
+    
 
     // Handle checkbox changes and log new state
     function handleCheckboxChange(e) {
@@ -185,6 +221,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
     checkbox_elements.forEach(element => {
         element.addEventListener('change', handleCheckboxChange);
+    });
+
+    // Handle type select changes and log new state
+    function handleTypeSelectChange(e) {
+        e.preventDefault();
+        const spanElement = e.target.nextElementSibling;
+        spanElement.textContent = e.target.value;
+    }
+    let type_select_elements = document.querySelectorAll("select.type_output");
+    type_select_elements.forEach(element => {
+        element.addEventListener('change', handleTypeSelectChange);
     });
     
 
@@ -233,7 +280,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             idnum: idnumMax + 1,
         });
         idnumMax++;
-        //checkSelectedBoxes([selectTypeNew, selectActionNew, selectNeedSelectedNew, selectNeedSignatureNew, selectNeedCustomTextNew]);
         let curr_idnum = newItem[0].values().idnum;
         let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
         checkSelectedBoxes(checkboxes);
@@ -244,11 +290,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
         //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
         deleteBtn.addEventListener('click', handleDeleteClick);
+        let okBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnConfirmItem`);
+        okBtn.addEventListener('click', handleConfirmClick);
+        let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
+        cancelBtn.addEventListener('click', handleCancelClick);
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         clearFields();
-        somethingChanged = true;
-        document.getElementById('btnSave').disabled = false;
+        setSomethingChanged();
         i18n.updateDocument();
         window.scrollTo({
             top: document.body.scrollHeight,
@@ -316,6 +365,25 @@ function inputClearError(input) {
     document.getElementById(input).style.borderColor = 'green';
 }
 
+function setSomethingChanged(){
+    somethingChanged = true;
+    document.getElementById('btnSaveAll').disabled = false;
+    let msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.innerHTML = 'There are unsaved changes!'
+    msgDisplay.style.display = 'inline';
+    msgDisplay.style.color = 'red';
+}
+
+function setNothingChanged(){
+    somethingChanged = false;
+    document.getElementById('btnSaveAll').disabled = true;
+    let msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.disabled = true;
+    msgDisplay.innerHTML = ''
+    msgDisplay.style.display = 'none';
+    msgDisplay.style.color = '';
+}
+
 function checkSelectedBoxes(checkboxes = null) {
     if(checkboxes == null){
         checkboxes = [
@@ -340,7 +408,7 @@ function checkSelectedBoxes(checkboxes = null) {
 
 //Save all prompts
 async function saveAll() {
-    somethingChanged = false;
+    setNothingChanged();
     if(promptsList != null) {
         promptsList.reIndex();
         let newPrompts = promptsList.items.map(item => {
