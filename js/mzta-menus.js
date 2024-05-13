@@ -46,7 +46,7 @@ export class mzta_Menus {
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
-        //this.addMenu(this.rootMenu);
+        //await this.addMenu(this.rootMenu);
     }
 
     async reload(){
@@ -126,30 +126,34 @@ export class mzta_Menus {
 
     async loadMenus() {
         await this.initialize();
-        this.addMenu(this.rootMenu);
+        await this.addMenu(this.rootMenu);
         let listeners = this.menu_listeners;
         browser.menus.onClicked.addListener((info, tab) => {
             listeners[info.menuItemId] && listeners[info.menuItemId] (info, tab);
           });
     }
 
-    addMenu = (menu, root = null) => {
+    addMenu = async (menu, root = null) => {
         for (let item of menu) {
           let {id, is_default, name, menu, act} = item;
 
-          browser.menus.create({
-            id: id,
-            title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
-            contexts: this.getContexts(id),
-            parentId: root
-          });
+          await new Promise(resolve =>
+            browser.menus.create({
+                id: id,
+                title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
+                contexts: this.getContexts(id),
+                parentId: root
+              },
+              resolve
+            )
+          );
       
           if (act) {
             this.menu_listeners[id] = act;
           }
       
           if (menu) {
-            this.addMenu(menu, id);
+            await this.addMenu(menu, id);
           }
         }
       
