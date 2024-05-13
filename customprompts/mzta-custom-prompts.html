@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ThunderAI - Manage Prompts</title>
+    <title>ThunderAI - __MSG_customPrompts_managePrompts__</title>
     <link rel="stylesheet" href="mzta-custom-prompts.css">
 </head>
 <body>
     <div>
-        <h1>Manage Prompts</h1>
-        <p>Manage your custom prompts.</p>
+        <h1>__MSG_customPrompts_managePrompts__</h1>
+        <p>__MSG_customPrompts_managePrompts_statement__</p>
     </div>
     <div id="command_palette">
       <button id="btnSaveAll" disabled>__MSG_customPrompts_btnSaveAll__</button>
@@ -16,13 +16,13 @@
       <button id="btnNew">__MSG_customPrompts_btnNew__</button>
     </div>
     <div id="formNew">
-        <label for="txtIdNew">*ID:</label>
-        <input type="text" id="txtIdNew" name="id" class="input_new"> [Must be unique and without spaces]
+        <label for="txtIdNew">*__MSG_customPrompts_form_label_ID__:</label>
+        <input type="text" id="txtIdNew" name="id" class="input_new"> [__MSG_customPrompts_form_label_ID_rules__]
         <br>
-        <label for="txtNameNew">*Name:</label>
+        <label for="txtNameNew">*__MSG_customPrompts_form_label_Name__:</label>
         <input type="text" id="txtNameNew" name="name" class="input_new">
         <br>
-        <label for="txtTextNew">*Text:</label>
+        <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
         <textarea id="txtTextNew" name="text" class="input_new"></textarea>
         <br>
         <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
@@ -32,32 +32,20 @@
           <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
         </select>
         <br>
-        <label for="selectActionNew">Action:</label>
+        <label for="selectActionNew">__MSG_customPrompts_form_label_Action__:</label>
         <select id="selectActionNew" name="action">
           <option value="0">__MSG_customPrompts_close_button__</option>
           <option value="1">__MSG_customPrompts_do_reply__</option>
           <option value="2">__MSG_customPrompts_substitute_text__</option>
         </select>
         <br>
-        <label for="selectNeedSelectedNew">Need selection:</label>
-        <select id="selectNeedSelectedNew" name="need_selected">
-          <option value="0">No selection needed</option>
-          <option value="1">Need a selection</option>
-        </select>
+        <input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" value="1"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label>
         <br>
-        <label for="selectNeedSignatureNew">Need signature:</label>
-        <select id="selectNeedSignatureNew" name="need_signature">
-          <option value="0">No signature needed</option>
-          <option value="1">Signature needed</option>
-        </select>
+        <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
         <br>
-        <label for="selectNeedCustomTextNew">Need custom text:</label>
-        <select id="selectNeedCustomTextNew" name="need_custom_text">
-          <option value="0">No custom text needed</option>
-          <option value="1">Custom text needed</option>
-        </select>
+        <input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" value="1"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label>
         <br>
-        * Required fields.
+        * __MSG_customPrompts_form_required_fields__.
         <br>
         <button id="btnAddNew" disabled>__MSG_customPrompts_btnAddNewCommit__</button>
     </div>
@@ -65,12 +53,12 @@
         <table>
             <thead>
               <tr>
-                <th class="sort" data-sort="id">ID</th>
-                <th class="sort" data-sort="name">Name</th>
-                <th class="sort" data-sort="text">Text</th>
+                <th class="sort" data-sort="id">__MSG__customPrompts_form_label_ID__</th>
+                <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
+                <th class="sort" data-sort="text">__MSG_customPrompts_form_label_Text__</th>
                 <th class="sort" data-sort="type">__MSG_customPrompts_add_to_menu__</th>
                 <th>Properties</th>
-                <th>Action</th>
+                <th>__MSG_customPrompts_form_label_Action__</th>
               </tr>
             </thead>
             <tbody class="list">

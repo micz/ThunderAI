@@ -99,6 +99,16 @@
     "description": ""
   },
 
+  "customPrompts_form_label_need_custom_text": {
+    "message": "Need custom text",
+    "description": ""
+  },
+
+  "customPrompts_form_required_fields": {
+    "message": "Required fields",
+    "description": ""
+  },
+
   "customPrompts_btnSaveAll": {
     "message": "Save All",
     "description": ""
