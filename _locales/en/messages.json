@@ -54,6 +54,51 @@
     "description": ""
   },
 
+  "customPrompts_managePrompts": {
+    "message": "Manage Prompts",
+    "description": ""
+  },
+
+  "customPrompts_managePrompts_statement": {
+    "message": "Manage your custom prompts.",
+    "description": ""
+  },
+
+  "customPrompts_form_label_ID": {
+    "message": "ID",
+    "description": ""
+  },
+
+  "customPrompts_form_label_ID_rules": {
+    "message": "Must be unique and without spaces",
+    "description": ""
+  },
+
+  "customPrompts_form_label_Name": {
+    "message": "Name",
+    "description": ""
+  },
+
+  "customPrompts_form_label_Text": {
+    "message": "Text",
+    "description": ""
+  },
+
+  "customPrompts_form_label_Action": {
+    "message": "Action",
+    "description": ""
+  },
+
+  "customPrompts_form_label_need_selected": {
+    "message": "Need selection",
+    "description": ""
+  },
+
+  "customPrompts_form_label_need_signature": {
+    "message": "Need signature",
+    "description": ""
+  },
+
   "customPrompts_btnSaveAll": {
     "message": "Save All",
     "description": ""
