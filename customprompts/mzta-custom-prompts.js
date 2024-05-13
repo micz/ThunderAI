@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               </td>
                 <td>
                     Action: ` + ((values.is_default == 1) ? action_output :
-                    `<select class="input_mod">
+                    `<select class="input_mod type_action">
                     <option value="0"` + ((values.action == 0) ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
                     <option value="1"` + ((values.action == 1) ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
                     <option value="2"` + ((values.action == 2) ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener('change', handleCheckboxChange);
     });
 
-    // Handle type select changes and log new state
+    // Handle "type" select changes and log new state
     function handleTypeSelectChange(e) {
         e.preventDefault();
         const spanElement = e.target.nextElementSibling;
@@ -234,6 +234,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener('change', handleTypeSelectChange);
     });
     
+    // Handle "action" select changes and log new state
+    function handleActionSelectChange(e) {
+        e.preventDefault();
+        const spanElement = e.target.nextElementSibling;
+        spanElement.textContent = e.target.value;
+    }
+    let action_select_elements = document.querySelectorAll("select.action_output");
+    action_select_elements.forEach(element => {
+        element.addEventListener('change', handleActionSelectChange);
+    });
 
     // for the new prompt form
     let btnNew_elements = document.querySelectorAll(".input_new");
