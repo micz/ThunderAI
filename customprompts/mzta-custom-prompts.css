@@ -33,7 +33,28 @@ table {
 
 thead {
     position: sticky;
+    top: 26px;
+}
+
+#command_palette{
+    position: sticky;
     top: 0;
+    padding-top: 1px;
+    height: 26px;
+    width: 100%;
+    background-color: inherit;
+}
+
+#btnNew{
+    float: right;
+}
+
+#btnSaveAll{
+    float: left;
+}
+
+#msgDisplay{
+    padding-left: 40px;
 }
 
 table tr {
