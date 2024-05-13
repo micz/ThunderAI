@@ -114,7 +114,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 await setBody(message.tabId, modified_html);
                 break;
             case 'reload_menus':
-                await mzta_Menus.reload();
+                await menus.reload();
                 console.log('>>>>>>>>>>>>>>>>> Reloaded menus');
                 break;
             default:
