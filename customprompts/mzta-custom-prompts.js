@@ -309,9 +309,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     var txtTextNew = document.getElementById('txtTextNew');
     var selectTypeNew = document.getElementById('selectTypeNew');
     var selectActionNew = document.getElementById('selectActionNew');
-    var selectNeedSelectedNew = document.getElementById('selectNeedSelectedNew');
-    var selectNeedSignatureNew = document.getElementById('selectNeedSignatureNew');
-    var selectNeedCustomTextNew = document.getElementById('selectNeedCustomTextNew');
+    var checkboxNeedSelectedNew = document.getElementById('checkboxNeedSelectedNew');
+    var checkboxNeedSignatureNew = document.getElementById('checkboxNeedSignatureNew');
+    var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
@@ -325,9 +325,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             text: txtTextNew.value.trim(),
             type: selectTypeNew.value,
             action: selectActionNew.value,
-            need_selected: selectNeedSelectedNew.value,
-            need_signature: selectNeedSignatureNew.value,
-            need_custom_text: selectNeedCustomTextNew.value,
+            need_selected: checkboxNeedSelectedNew.value,
+            need_signature: checkboxNeedSignatureNew.value,
+            need_custom_text: checkboxNeedCustomTextNew.value,
             enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
@@ -406,9 +406,9 @@ function clearFields() {
     document.getElementById('txtTextNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
     document.getElementById('selectActionNew').value = '0';
-    document.getElementById('selectNeedSelectedNew').value = '0';
-    document.getElementById('selectNeedSignatureNew').value = '0';
-    document.getElementById('selectNeedCustomTextNew').value = '0';
+    document.getElementById('checkboxNeedSelectedNew').value = '0';
+    document.getElementById('checkboxNeedSignatureNew').value = '0';
+    document.getElementById('checkboxNeedCustomTextNew').value = '0';
     document.getElementById('formNew').style.display = 'none';
 }
 
