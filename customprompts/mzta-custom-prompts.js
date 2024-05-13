@@ -47,40 +47,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                     action_output = `__MSG_customPrompts_close_button__`;
                     break;
                 case "1":
-                    action_output = `__MSG_customPrompts_save_button__`;
+                    action_output = `__MSG_customPrompts_do_reply__`;
                     break;
                 case "2":
-                    action_output = `__MSG_customPrompts_do_reply__`;
+                    action_output = `__MSG_customPrompts_substitute_text__`;
                     break;
             }
             //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td><span class="id id_show"></span><input type="text" class="input_mod hiddendata id_output" value="` + values.id + `" /></td>
-                <td><span class="name name_show"></span><input type="text" class="input_mod hiddendata name_output" value="` + values.name + `" /></td>
-                <td><span class="text text_show"></span><textarea class="input_mod hiddendata text_output">` + values.text + `</textarea></td>
+                <td><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
+                <td><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
+                <td><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
                 <td><span class="type_show">` + type_output + `</span>
-                <select class="input_mod type_output hiddendata">
-                <option value="0"` + ((values.type == 0) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
-                <option value="1"` + ((values.type == 1) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
-                <option value="2"` + ((values.type == 2) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
+                <select class="type_output hiddendata">
+                <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
+                <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
+                <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
               </td>
                 <td>
                     Action: <span class="action_show">` + action_output + `</span>
-                    <select class="input_mod action_output hiddendata">
-                    <option value="0"` + ((values.action == 0) ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
-                    <option value="1"` + ((values.action == 1) ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
-                    <option value="2"` + ((values.action == 2) ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
+                    <select class="action_output hiddendata">
+                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
+                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
+                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                   </select>` +
                   `<span class="action hiddendata"></span>
                     <br>
-                    <input type="checkbox" class="need_selected input_mod" disabled> Need Select
+                    <input type="checkbox" class="need_selected" disabled> Need Select
                     <br>
-                    <input type="checkbox" class="need_signature input_mod" disabled> Need Signature
+                    <input type="checkbox" class="need_signature" disabled> Need Signature
                     <br>
-                    <input type="checkbox" class="need_custom_text input_mod" disabled> Need Custom Text
+                    <input type="checkbox" class="need_custom_text" disabled> Need Custom Text
                     <br>
                     <input type="checkbox" class="enabled input_mod"> Enabled
                     <span class="is_default hiddendata"></span>
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>
                 <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Edit</button>
                 <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Cancel</button>
-                <br>
+                <br><br>
                 <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Ok</button>
                 <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Delete</button>
                </td>
@@ -141,14 +141,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     // Display selected value next to select input
-    function handleSelectChange(e) {
-        e.preventDefault();
-        const spanElement = e.target.nextElementSibling;
-        spanElement.textContent = e.target.value;
-    }
-    document.querySelectorAll('select.input_mod').forEach(element => {
-        element.addEventListener('change', handleSelectChange);
-    });
+    // function handleSelectChange(e) {
+    //     e.preventDefault();
+    //     const spanElement = e.target.nextElementSibling;
+    //     spanElement.textContent = e.target.value;
+    // }
+    // document.querySelectorAll('select.input_mod').forEach(element => {
+    //     element.addEventListener('change', handleSelectChange);
+    // });
     
     // Log data ID number from item row and prepare for edit action
     function handleEditClick(e) {
@@ -232,26 +232,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener('click', handleCancelClick);
     });
 
-    function handleConfirmClick(e) {        //TODO
+    function handleConfirmClick(e) {
         e.preventDefault();
         const tr = e.target.parentNode.parentNode;
-        e.target.style.display = 'none';    // Cancel btn
-        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
-//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+        e.target.style.display = 'none';    // Ok btn
+//        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
+        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
         tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
         tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+        // Update item data
+        tr.querySelector('.id_show').innerText = tr.querySelector('.id_output').value;
+        tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
+        tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+        tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
+        tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+        tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
+        tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
+        // the checkboxes update is handled directly by themselves
+        hideItemRowEditor(tr);
+        setSomethingChanged();
     }
     let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
     btnConfirmItem_elements.forEach(element => {
         element.addEventListener('click', handleConfirmClick);
     });
-    
 
     // Handle checkbox changes and log new state
     function handleCheckboxChange(e) {
         e.preventDefault();
         e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
-        console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
+        //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
     }
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
     checkbox_elements.forEach(element => {
@@ -259,26 +269,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Handle "type" select changes and log new state
-    function handleTypeSelectChange(e) {
-        e.preventDefault();
-        const spanElement = e.target.nextElementSibling;
-        spanElement.textContent = e.target.value;
-    }
-    let type_select_elements = document.querySelectorAll("select.type_output");
-    type_select_elements.forEach(element => {
-        element.addEventListener('change', handleTypeSelectChange);
-    });
+    // function handleTypeSelectChange(e) {
+    //     e.preventDefault();
+    //     const spanElement = e.target.nextElementSibling;
+    //     spanElement.textContent = e.target.value;
+    // }
+    // let type_select_elements = document.querySelectorAll("select.type_output");
+    // type_select_elements.forEach(element => {
+    //     element.addEventListener('change', handleTypeSelectChange);
+    // });
     
     // Handle "action" select changes and log new state
-    function handleActionSelectChange(e) {
-        e.preventDefault();
-        const spanElement = e.target.nextElementSibling;
-        spanElement.textContent = e.target.value;
-    }
-    let action_select_elements = document.querySelectorAll("select.action_output");
-    action_select_elements.forEach(element => {
-        element.addEventListener('change', handleActionSelectChange);
-    });
+    // function handleActionSelectChange(e) {
+    //     e.preventDefault();
+    //     const spanElement = e.target.nextElementSibling;
+    //     spanElement.textContent = e.target.value;
+    // }
+    // let action_select_elements = document.querySelectorAll("select.action_output");
+    // action_select_elements.forEach(element => {
+    //     element.addEventListener('change', handleActionSelectChange);
+    // });
 
     // for the new prompt form
     let btnNew_elements = document.querySelectorAll(".input_new");
