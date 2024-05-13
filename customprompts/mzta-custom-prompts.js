@@ -452,7 +452,7 @@ function checkSelectedBoxes(checkboxes = null) {
     // Iterate through the checkboxes
     checkboxes.forEach(checkbox => {
         // Check if the 'checked' attribute is "0"
-        if (checkbox.getAttribute('checked_val') === "0") {
+        if (checkbox.getAttribute('checked_val') == "0") {
             // Uncheck the checkbox
             checkbox.checked = false;
         } else {
