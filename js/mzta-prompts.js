@@ -138,10 +138,13 @@ const defaultPrompts = [
 ];
 
 
-export async function getPrompts(){
+export async function getPrompts(filterDisabled = false){
     const defaultPrompts = await getDefaultPrompts_withProps();
     const customPrompts = await getCustomPrompts();
     let output = defaultPrompts.concat(customPrompts);
+    if(filterDisabled){
+        output = output.filter(obj => obj.enabled != 0);
+    }
     output.sort((a, b) => a.id.localeCompare(b.id));
     for(let i=1; i<=output.length; i++){
         output[i-1].idnum = i;

@@ -42,7 +42,7 @@ export class mzta_Menus {
 
 
     async initialize() {
-        this.allPrompts = await getPrompts();
+        this.allPrompts = await getPrompts(true);
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
