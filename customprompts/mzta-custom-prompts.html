@@ -16,41 +16,59 @@
       <button id="btnNew">__MSG_customPrompts_btnNew__</button>
     </div>
     <div id="formNew">
-        <label for="txtIdNew">*__MSG_customPrompts_form_label_ID__:</label>
-        <input type="text" id="txtIdNew" name="id" class="input_new"> [__MSG_customPrompts_form_label_ID_rules__]
-        <br>
-        <label for="txtNameNew">*__MSG_customPrompts_form_label_Name__:</label>
-        <input type="text" id="txtNameNew" name="name" class="input_new">
-        <br>
-        <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
-        <textarea id="txtTextNew" name="text" class="input_new"></textarea>
-        <br>
-        <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
-        <select id="selectTypeNew" name="type">
-          <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
-          <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
-          <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
-        </select>
-        <br>
-        <label for="selectActionNew">__MSG_customPrompts_form_label_Action__:</label>
-        <select id="selectActionNew" name="action">
-          <option value="0">__MSG_customPrompts_close_button__</option>
-          <option value="1">__MSG_customPrompts_do_reply__</option>
-          <option value="2">__MSG_customPrompts_substitute_text__</option>
-        </select>
-        <br>
-        <input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" value="1"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label>
-        <br>
-        <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
-        <br>
-        <input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" value="1"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label>
-        <br>
-        * __MSG_customPrompts_form_required_fields__.
+      <table class="width_all">
+        <tr>
+            <td>
+                <label for="txtIdNew">*__MSG_customPrompts_form_label_ID__:</label>
+                <br>
+                <input type="text" id="txtIdNew" name="id" class="input_new">
+                <br><span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>                
+            </td>
+            <td rowspan="2">
+                <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
+                <br>
+                <textarea id="txtTextNew" name="text" class="input_new text_output"></textarea>
+            </td>
+            <td>
+                <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
+                <br>
+                <select id="selectTypeNew" name="type">
+                    <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
+                    <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
+                    <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
+                </select>
+            </td>
+            <td rowspan="2">
+                <input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" value="1"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label>
+                <br>
+                <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
+                <br>
+                <input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" value="1"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <label for="txtNameNew">*__MSG_customPrompts_form_label_Name__:</label>
+              <br>
+              <input type="text" id="txtNameNew" name="name" class="input_new">
+            </td>
+            <td>
+              <label for="selectActionNew">__MSG_customPrompts_form_label_Action__:</label>
+              <br>
+              <select id="selectActionNew" name="action">
+                  <option value="0">__MSG_customPrompts_close_button__</option>
+                  <option value="1">__MSG_customPrompts_do_reply__</option>
+                  <option value="2">__MSG_customPrompts_substitute_text__</option>
+              </select>
+            </td>
+        </tr>
+    </table>
+        <div class="go_right">* __MSG_customPrompts_form_required_fields__.</div>
         <br>
         <button id="btnAddNew" disabled>__MSG_customPrompts_btnAddNewCommit__</button>
     </div>
     <div id="all_prompts">
-        <table>
+        <table class="prompts_list">
             <thead>
               <tr>
                 <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>

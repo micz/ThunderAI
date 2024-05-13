@@ -7,11 +7,11 @@
         background-color: #ffffff; 
     }
 
-    table tr:nth-child(even) {
+    table.prompts_list tr:nth-child(even) {
         background-color: #e9e9e9;
     }
 
-    table tr:nth-child(odd) {
+    table.prompts_list tr:nth-child(odd) {
         background-color: #f3f3f3;
     }
 }
@@ -33,7 +33,7 @@
         border: 1px solid #ccc;
     }
 
-    table th {
+    table.prompts_list th {
         background-color: #4c4e58;
         border: 1px solid rgb(251, 251, 254);
         color: rgb(194, 194, 194);
@@ -43,7 +43,7 @@
         background-color: inherit; 
     }
 
-    table tr:nth-child(even) {
+    table.prompts_list tr:nth-child(even) {
         background-color: #2E2F36;
     }
 }
@@ -83,7 +83,7 @@ table tr {
     border-bottom: 1px solid #ccc;
 }
 
-table th {
+table.prompts_list th {
     padding: 8px;
     text-align: left;
     cursor: pointer;
@@ -94,7 +94,7 @@ table td {
     padding: 8px;
 }
 
-table td.properties{
+table.prompts_list td.properties{
     white-space: nowrap;
 }
 
@@ -104,9 +104,23 @@ table td.properties{
 
 #formNew{
     display: none;
+    width: 100%;
 }
 
 .text_output{
     width: 100%;
     height: 9em;
+}
+
+.go_right{
+    float: right;
+}
+
+.width_all{
+    width: 100%;
+}
+
+.small_label{
+    font-size: small;
+    font-style: italic;
 }
