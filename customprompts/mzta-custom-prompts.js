@@ -76,23 +76,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                   </select>` +
                   `<span class="action hiddendata"></span>
                     <br>
-                    <input type="checkbox" class="need_selected" disabled> Need Select
+                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
                     <br>
-                    <input type="checkbox" class="need_signature" disabled> Need Signature
+                    <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text" disabled> Need Custom Text
+                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
                     <br>
-                    <input type="checkbox" class="enabled input_mod"> Enabled
+                    <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
                 </td>
                 <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Edit</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Cancel</button>
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
                 <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>Ok</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>Delete</button>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Confirm and log deletion action
     function handleDeleteClick(e) {
         e.preventDefault();
-        const checkConfirm = window.confirm("Are you sure you want to delete this item?");
+        const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
         if (!checkConfirm) {
             return;
         }
@@ -424,7 +424,7 @@ function setSomethingChanged(){
     somethingChanged = true;
     document.getElementById('btnSaveAll').disabled = false;
     let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.innerHTML = 'There are unsaved changes!'
+    msgDisplay.innerHTML = browser.i18n.getMessage('customPrompts_unsaved_changes');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'red';
 }

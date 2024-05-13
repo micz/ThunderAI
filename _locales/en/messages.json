@@ -104,8 +104,43 @@
     "description": ""
   },
 
+  "customPrompts_form_label_enabled": {
+    "message": "Enabled",
+    "description": ""
+  },
+
   "customPrompts_form_required_fields": {
     "message": "Required fields",
+    "description": ""
+  },
+
+  "customPrompts_btnEdit": {
+    "message": "Edit",
+    "description": ""
+  },
+
+  "customPrompts_btnCancel": {
+    "message": "Cancel",
+    "description": ""
+  },
+
+  "customPrompts_btnOK": {
+    "message": "OK",
+    "description": ""
+  },
+
+  "customPrompts_btnDelete": {
+    "message": "Delete",
+    "description": ""
+  },
+
+  "customPrompts_btnDelete_confirmText": {
+    "message": "Are you sure you want to delete this item?",
+    "description": ""
+  },
+
+  "customPrompts_unsaved_changes": {
+    "message": "There are unsaved changes!",
     "description": ""
   },
 
