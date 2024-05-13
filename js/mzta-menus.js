@@ -50,9 +50,13 @@ export class mzta_Menus {
     }
 
     async reload(){
+        await browser.menus.removeAll().catch(error => {
+                console.error(">>>>>>>> ERROR removing the menus: ", error);
+            });
+        this.allPrompts = [];
         this.rootMenu = [];
         await this.initialize();
-        this.loadMenus();
+        this.loadMenus();   //why is giving errors saying it's adding an id that is already there?
     }
 
     addAction = (curr_prompt) => {
@@ -152,14 +156,14 @@ export class mzta_Menus {
     };
 
     getContexts(id){
-        console.log(">>>>>>>>> id: " + id);
+        //console.log(">>>>>>>>> id: " + id);
         const curr_prompt = this.allPrompts.find(p => p.id === id);
-        console.log(">>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
+        //console.log(">>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
         if (!curr_prompt) {
           return [];
         }
-        switch(curr_prompt.type){
-            case "0": console.log(">>>>>>>>>> curr_prompt.type: " + curr_prompt.type);
+        switch(String(curr_prompt.type)){
+            case "0":
                 return [this.menu_context_compose, this.menu_context_display];
             case "1":
                 return [this.menu_context_display];
@@ -176,7 +180,7 @@ export class mzta_Menus {
         if (!curr_prompt) {
           return "";
         }
-        if(curr_prompt.need_custom_text === "1"){
+        if(String(curr_prompt.need_custom_text) === "1"){
             return "*";
         }else{
             return "";
