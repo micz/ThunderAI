@@ -75,7 +75,7 @@ export class mzta_Menus {
             const msg_text = await getHighlight();
     
             //check if a selection is needed
-            if(curr_prompt.need_selected && (msg_text.selection==='')){
+            if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
                 //alert(browser.i18n.getMessage('prompt_selection_needed'));
                 const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -94,7 +94,7 @@ export class mzta_Menus {
             let prefs = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
             let chatgpt_lang = prefs.default_chatgpt_lang;
     
-            var fullPrompt = curr_prompt.text + (curr_prompt.need_signature ? " " + await this.getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + body_text + "\" ";
+            var fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + body_text + "\" ";
     
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
