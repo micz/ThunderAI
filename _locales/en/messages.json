@@ -54,8 +54,13 @@
     "description": ""
   },
 
-  "customPrompts_btnSave": {
+  "customPrompts_btnSaveAll": {
     "message": "Save All",
+    "description": ""
+  },
+
+  "customPrompts_save_button": {
+    "message": "Save",
     "description": ""
   },
 
