@@ -27,60 +27,60 @@ var idnumMax = 0;
 document.addEventListener('DOMContentLoaded', async () => {
     let options = {
         valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
-        item: function(values) {        //TODO: manage ACTION edit with the select
+        item: function(values) {
             let type_output = '';
             switch(String(values.type)){
                 case "0":
-                    type_output = `<span>__MSG_customPrompts_add_to_menu_always__</span>`;
+                    type_output = `__MSG_customPrompts_add_to_menu_always__`;
                     break;
                 case "1":
-                    type_output = `<span>__MSG_customPrompts_add_to_menu_reading__</span>`;
+                    type_output = `__MSG_customPrompts_add_to_menu_reading__`;
                     break;
                 case "2":
-                    type_output = `<span>__MSG_customPrompts_add_to_menu_composing__</span>`;
+                    type_output = `__MSG_customPrompts_add_to_menu_composing__`;
                     break;
             }
 
             let action_output = '';
             switch(String(values.action)){
                 case "0":
-                    action_output = `<span>__MSG_customPrompts_close_button__</span>`;
+                    action_output = `__MSG_customPrompts_close_button__`;
                     break;
                 case "1":
-                    action_output = `<span>__MSG_customPrompts_save_button__</span>`;
+                    action_output = `__MSG_customPrompts_save_button__`;
                     break;
                 case "2":
-                    action_output = `<span>__MSG_customPrompts_do_reply__</span>`;
+                    action_output = `__MSG_customPrompts_do_reply__`;
                     break;
             }
             //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td><span class="id"></span></td>
-                <td><span class="name"></span></td>
-                <td><span class="text"></span></td>
-                <td>` + ((values.is_default == 1) ? type_output :                
-                `<select class="input_mod type_output">
+                <td><span class="id id_show"></span><input type="text" class="input_mod hiddendata id_output" value="` + values.id + `" /></td>
+                <td><span class="name name_show"></span><input type="text" class="input_mod hiddendata name_output" value="` + values.name + `" /></td>
+                <td><span class="text text_show"></span><textarea class="input_mod hiddendata text_output">` + values.text + `</textarea></td>
+                <td><span class="type_show">` + type_output + `</span>
+                <select class="input_mod type_output hiddendata">
                 <option value="0"` + ((values.type == 0) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
                 <option value="1"` + ((values.type == 1) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
                 <option value="2"` + ((values.type == 2) ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
-              </select>`) +
+              </select>` +
               `<span class="type hiddendata"></span>
               </td>
                 <td>
-                    Action: ` + ((values.is_default == 1) ? action_output :
-                    `<select class="input_mod type_action">
+                    Action: <span class="action_show">` + action_output + `</span>
+                    <select class="input_mod action_output hiddendata">
                     <option value="0"` + ((values.action == 0) ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
                     <option value="1"` + ((values.action == 1) ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
                     <option value="2"` + ((values.action == 2) ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
-                  </select>`) +
+                  </select>` +
                   `<span class="action hiddendata"></span>
                     <br>
-                    <input type="checkbox" class="need_selected input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `> Need Select
+                    <input type="checkbox" class="need_selected input_mod" disabled> Need Select
                     <br>
-                    <input type="checkbox" class="need_signature input_mod" ` + ((values.is_default == 1) ? ' disabled':'') + `> Need Signature
+                    <input type="checkbox" class="need_signature input_mod" disabled> Need Signature
                     <br>
-                    <input type="checkbox" class="need_custom_text input_mod"` + ((values.is_default == 1) ? ' disabled':'') + `> Need Custom Text
+                    <input type="checkbox" class="need_custom_text input_mod" disabled> Need Custom Text
                     <br>
                     <input type="checkbox" class="enabled input_mod"> Enabled
                     <span class="is_default hiddendata"></span>
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     // Log data ID number from item row and prepare for edit action
-    function handleEditClick(e) {           //TODO
+    function handleEditClick(e) {
         e.preventDefault();
         const tr = e.target.parentNode.parentNode;
         //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
@@ -160,11 +160,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
         tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
+        showItemRowEditor(tr);
     }
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
         element.addEventListener('click', handleEditClick);
     });
+
+    function showItemRowEditor(tr) {
+        tr.querySelector('.id_output').style.display = 'inline';
+        tr.querySelector('.id_show').style.display = 'none';
+        tr.querySelector('.name_output').style.display = 'inline';
+        tr.querySelector('.name_show').style.display = 'none';
+        tr.querySelector('.text_output').style.display = 'inline';
+        tr.querySelector('.text_show').style.display = 'none';
+        tr.querySelector('.type_output').style.display = 'inline';
+        tr.querySelector('.type_show').style.display = 'none';
+        tr.querySelector('.action_output').style.display = 'inline';
+        tr.querySelector('.action_show').style.display = 'none';
+        tr.querySelector('input.need_selected').disabled = false;
+        tr.querySelector('input.need_signature').disabled = false;
+        tr.querySelector('input.need_custom_text').disabled = false;
+    }
+
+    function hideItemRowEditor(tr) {
+        tr.querySelector('.id_output').style.display = 'none';
+        tr.querySelector('.id_show').style.display = 'inline';
+        tr.querySelector('.name_output').style.display = 'none';
+        tr.querySelector('.name_show').style.display = 'inline';
+        tr.querySelector('.text_output').style.display = 'none';
+        tr.querySelector('.text_show').style.display = 'inline';
+        tr.querySelector('.type_output').style.display = 'none';
+        tr.querySelector('.type_show').style.display = 'inline';
+        tr.querySelector('.action_output').style.display = 'none';
+        tr.querySelector('.action_show').style.display = 'inline';
+        tr.querySelector('input.need_selected').disabled = true;
+        tr.querySelector('input.need_signature').disabled = true;
+        tr.querySelector('input.need_custom_text').disabled = true;
+    }
+    
     
     // Confirm and log deletion action
     function handleDeleteClick(e) {
@@ -191,6 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
         tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
         tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+        hideItemRowEditor(tr);
     }
     let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
     btnCancelItem_elements.forEach(element => {
