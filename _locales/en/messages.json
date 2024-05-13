@@ -59,6 +59,41 @@
     "description": ""
   },
 
+  "customPrompts_start_saving": {
+    "message": "Saving prompts...",
+    "description": ""
+  },
+
+  "customPrompts_reindexing_list": {
+    "message": "Reindexing list...",
+    "description": ""
+  },
+
+  "customPrompts_filtering_prompts": {
+    "message": "Filtering prompts...",
+    "description": ""
+  },
+
+  "customPrompts_saving_default_prompts": {
+    "message": "Saving default prompts...",
+    "description": ""
+  },
+
+  "customPrompts_saving_custom_prompts": {
+    "message": "Saving custom prompts...",
+    "description": ""
+  },
+
+  "customPrompts_reloading_menus": {
+    "message": "Reloading menus...",
+    "description": ""
+  },
+
+  "customPrompts_saved": {
+    "message": "Prompts saved!",
+    "description": ""
+  },
+
   "customPrompts_managePrompts_statement": {
     "message": "Manage your custom prompts.",
     "description": ""

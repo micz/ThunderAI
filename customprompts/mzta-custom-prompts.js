@@ -23,6 +23,7 @@ var somethingChanged = false;
 var positionMax_compose = 0;
 var positionMax_display = 0;
 var idnumMax = 0;
+var msgTimeout = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let options = {
@@ -421,6 +422,7 @@ function inputClearError(input) {
 }
 
 function setSomethingChanged(){
+    clearTimeout(msgTimeout);
     somethingChanged = true;
     document.getElementById('btnSaveAll').disabled = false;
     let msgDisplay = document.getElementById('msgDisplay');
@@ -463,8 +465,10 @@ function checkSelectedBoxes(checkboxes = null) {
 
 //Save all prompts
 async function saveAll() {
+    setMessage(browser.i18n.getMessage('customPrompts_start_saving'));
     setNothingChanged();
     if(promptsList != null) {
+        setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
         promptsList.reIndex();
         let newPrompts = promptsList.items.map(item => {
             // For each item in the array, return only the '_values' part
@@ -474,15 +478,37 @@ async function saveAll() {
         //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
         // });
         //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newPrompts));
+        setMessage(browser.i18n.getMessage('customPrompts_filtering_prompts'));
         let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1);
         //console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
         let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
+        setMessage(browser.i18n.getMessage('customPrompts_saving_default_prompts'));
         await setDefaultPromptsProperties(newDefaultPrompts);
+        setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));
         await setCustomPrompts(newCustomPrompts);
+        setMessage(browser.i18n.getMessage('customPrompts_reloading_menus'));
         browser.runtime.sendMessage({command: "reload_menus"});
+        setMessage(browser.i18n.getMessage('customPrompts_saved'),'green');
+        msgTimeout = setTimeout(() => {
+            clearMessage();
+        }, 10000)
     }
 }
 
+function setMessage(msg, color = '') {
+    clearTimeout(msgTimeout);
+    let msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.innerHTML = msg;
+    msgDisplay.style.display = 'inline';
+    msgDisplay.style.color = color;
+}
+
+function clearMessage() {
+    let msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.innerHTML = '';
+    msgDisplay.style.display = 'none';
+    msgDisplay.style.color = '';
+}
 
 
 // window.addEventListener('beforeunload', function (event) {
