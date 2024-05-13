@@ -473,9 +473,9 @@ async function saveAll() {
         // newPrompts.forEach(prompt => {
         //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
         // });
-        console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newPrompts));
+        //console.log('>>>>>>>>>>>>> saveAll: ' + JSON.stringify(newPrompts));
         let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1);
-        console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
+        //console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
         let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
         await setDefaultPromptsProperties(newDefaultPrompts);
         await setCustomPrompts(newCustomPrompts);

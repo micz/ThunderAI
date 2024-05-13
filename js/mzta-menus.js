@@ -134,7 +134,7 @@ export class mzta_Menus {
     }
 
     addMenu = (menu, root = null) => {
-        for (let item of menu) { console.log(">>>>> item: " + JSON.stringify(item));
+        for (let item of menu) {
           let {id, is_default, name, menu, act} = item;
 
           browser.menus.create({
