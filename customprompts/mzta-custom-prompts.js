@@ -339,7 +339,7 @@ function checkSelectedBoxes(checkboxes = null) {
 }
 
 //Save all prompts
-function saveAll() {                //TODO
+async function saveAll() {
     somethingChanged = false;
     if(promptsList != null) {
         promptsList.reIndex();
@@ -354,8 +354,9 @@ function saveAll() {                //TODO
         let newDefaultPrompts = newPrompts.filter(item => item.is_default == 1);
         console.log('>>>>>>>>>>>>> newDefaultPrompts: ' + JSON.stringify(newDefaultPrompts));
         let newCustomPrompts = newPrompts.filter(item => item.is_default == 0);
-        setDefaultPromptsProperties(newDefaultPrompts);
-        setCustomPrompts(newCustomPrompts);
+        await setDefaultPromptsProperties(newDefaultPrompts);
+        await setCustomPrompts(newCustomPrompts);
+        browser.runtime.sendMessage({command: "reload_menus"});
     }
 }
 

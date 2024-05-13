@@ -49,6 +49,12 @@ export class mzta_Menus {
         //this.addMenu(this.rootMenu);
     }
 
+    async reload(){
+        this.rootMenu = [];
+        await this.initialize();
+        this.loadMenus();
+    }
+
     addAction = (curr_prompt) => {
 
         let curr_menu_entry = {id: curr_prompt.id };
@@ -129,7 +135,7 @@ export class mzta_Menus {
 
           browser.menus.create({
             id: id,
-            title: this.getCustomTextAttribute(id) + browser.i18n.getMessage(id),
+            title: this.getCustomTextAttribute(id) + (browser.i18n.getMessage(id) || id),
             contexts: this.getContexts(id),
             parentId: root
           });
@@ -146,16 +152,18 @@ export class mzta_Menus {
     };
 
     getContexts(id){
+        console.log(">>>>>>>>> id: " + id);
         const curr_prompt = this.allPrompts.find(p => p.id === id);
+        console.log(">>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
         if (!curr_prompt) {
           return [];
         }
         switch(curr_prompt.type){
-            case 0:
+            case "0": console.log(">>>>>>>>>> curr_prompt.type: " + curr_prompt.type);
                 return [this.menu_context_compose, this.menu_context_display];
-            case 1:
+            case "1":
                 return [this.menu_context_display];
-            case 2:
+            case "2":
                 return [this.menu_context_compose];
             default:
                 return [];
@@ -168,7 +176,7 @@ export class mzta_Menus {
         if (!curr_prompt) {
           return "";
         }
-        if(curr_prompt.need_custom_text === 1){
+        if(curr_prompt.need_custom_text === "1"){
             return "*";
         }else{
             return "";
