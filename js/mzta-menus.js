@@ -61,7 +61,7 @@ export class mzta_Menus {
 
     addAction = (curr_prompt) => {
 
-        let curr_menu_entry = {id: curr_prompt.id };
+        let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
     
         const getHighlight = async () => {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -134,12 +134,12 @@ export class mzta_Menus {
     }
 
     addMenu = (menu, root = null) => {
-        for (let item of menu) {
-          let {id, menu, act} = item;
+        for (let item of menu) { console.log(">>>>> item: " + JSON.stringify(item));
+          let {id, is_default, name, menu, act} = item;
 
           browser.menus.create({
             id: id,
-            title: this.getCustomTextAttribute(id) + (browser.i18n.getMessage(id) || id),
+            title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
             contexts: this.getContexts(id),
             parentId: root
           });
