@@ -1,6 +1,12 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<h2>Version 1.1.0 - ??/??/2024</h2>
+<ul>
+<li>A prompt can be configured to request additional text from the user.</li>
+<li>Added custom prompts. See more info <a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">here</a>.</li>
+<li>Dark mode added.</li>
+</ul>
 <h2>Version 1.0.6 - 08/05/2024</h2>
 <ul>
 <li>Correctly handling a change in the ChatGPT web interface. See issue <a href="https://github.com/micz/ThunderAI/issues/43">#43</a></li>
