@@ -46,7 +46,6 @@ export class mzta_Menus {
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
-        //await this.addMenu(this.rootMenu);
     }
 
     async reload(){
@@ -55,8 +54,7 @@ export class mzta_Menus {
             });
         this.allPrompts = [];
         this.rootMenu = [];
-        await this.initialize();
-        this.loadMenus();   //why is giving errors saying it's adding an id that is already there?
+        this.loadMenus();
     }
 
     addAction = (curr_prompt) => {
