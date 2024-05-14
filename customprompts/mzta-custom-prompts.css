@@ -86,7 +86,6 @@ table tr {
 table.prompts_list th {
     padding: 8px;
     text-align: left;
-    cursor: pointer;
 }
 
 table td {
@@ -104,6 +103,23 @@ table td.w25{
 
 table.prompts_list td.properties{
     white-space: nowrap;
+}
+
+table .sort {
+    background-image: url(../images/listjs-arrow-sort-inactive.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-right: 14px;
+    cursor: pointer;
+    cursor: hand;
+}
+
+table .sort.asc {
+    background-image: url(../images/listjs-arrow-sort-active-down.png);
+}
+
+table .sort.desc {
+    background-image: url(../images/listjs-arrow-sort-active-up.png);
 }
 
 .hiddendata{
