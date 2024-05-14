@@ -166,6 +166,8 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     });
 
     let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+    let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
+    let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
     let mztaDoCustomText=`+ do_custom_text +`;
     `;
 

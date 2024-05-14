@@ -279,6 +279,16 @@
     "description": ""
   },
 
+  "chatgpt_force_completion": {
+    "message": "force completion",
+    "description": ""
+  },
+
+  "chatgpt_force_completion_title": {
+    "message": "Click here to display the 'Use last answer' button if ChatGPT has finished its work but the button has not appeared.",
+    "description": ""
+  },
+
   "msg_prompt_too_long": {
     "message": "The text you provided is too long. You need to reduce it to use ChatGPT.",
     "description": ""

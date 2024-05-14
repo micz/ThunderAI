@@ -99,6 +99,16 @@
     "description": ""
   },
 
+  "chatgpt_force_completion": {
+    "message": "forza il completamento",
+    "description": ""
+  },
+
+  "chatgpt_force_completion_title": {
+    "message": "Fai clic qui per visualizzare il pulsante 'Usa l'ultima risposta' se ChatGPT ha terminato il suo lavoro ma il pulsante non è apparso.",
+    "description": ""
+  },
+
   "msg_prompt_too_long": {
     "message": "Il testo che vuoi inviare a ChatGPT è troppo lungo. Devi ridurlo per poter procedere.",
     "description": ""
