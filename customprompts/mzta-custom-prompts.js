@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearFields();
     }
     btnSaveAll.addEventListener('click', handleSaveAllClick);
-    
+
     const btnNew = document.getElementById('btnNew');
     
     // Show the new item form
@@ -130,6 +130,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         e.target.disabled = true;
         document.getElementById('formNew').style.display = 'block';
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     }
     btnNew.addEventListener('click', handleNewClick);
     
@@ -327,9 +331,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             text: txtTextNew.value.trim(),
             type: selectTypeNew.value,
             action: selectActionNew.value,
-            need_selected: checkboxNeedSelectedNew.value,
-            need_signature: checkboxNeedSignatureNew.value,
-            need_custom_text: checkboxNeedCustomTextNew.value,
+            need_selected: (checkboxNeedSelectedNew.checked) ? 1 : 0,
+            need_signature: (checkboxNeedSignatureNew.checked) ? 1 : 0,
+            need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
