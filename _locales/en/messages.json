@@ -105,7 +105,7 @@
   },
 
   "customPrompts_form_label_ID_rules": {
-    "message": "Must be unique and without spaces",
+    "message": "Must be unique, lowercase and without spaces",
     "description": ""
   },
 

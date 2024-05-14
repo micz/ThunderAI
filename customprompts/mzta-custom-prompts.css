@@ -138,3 +138,7 @@ table.prompts_list td.properties{
     font-size: small;
     font-style: italic;
 }
+
+#txtIdNew, .id_output{
+    text-transform: lowercase;
+}

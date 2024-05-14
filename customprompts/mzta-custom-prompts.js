@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
         tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
         // Update item data
-        tr.querySelector('.id_show').innerText = tr.querySelector('.id_output').value;
+        tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
         tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
         tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
         tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         let newItem = promptsList.add({
-            id: txtIdNew.value.trim(),
+            id: String(txtIdNew.value.trim()).toLocaleLowerCase(),
             name: txtNameNew.value.trim(),
             text: txtTextNew.value.trim(),
             type: selectTypeNew.value,
