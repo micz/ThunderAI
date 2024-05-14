@@ -38,10 +38,14 @@ export class mzta_Menus {
         this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
         this.allPrompts = [];
+        this.listener = this.listener.bind(this);
     }
 
 
     async initialize() {
+        this.allPrompts = [];
+        this.rootMenu = [];
+        this.menu_listeners = {};
         this.allPrompts = await getPrompts(true);
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
@@ -52,8 +56,7 @@ export class mzta_Menus {
         await browser.menus.removeAll().catch(error => {
                 console.error(">>>>>>>> ERROR removing the menus: ", error);
             });
-        this.allPrompts = [];
-        this.rootMenu = [];
+        this.removeClickListener();
         this.loadMenus();
     }
 
@@ -125,10 +128,22 @@ export class mzta_Menus {
     async loadMenus() {
         await this.initialize();
         await this.addMenu(this.rootMenu);
+        this.addClickListener();
+    }
+
+    listener(info, tab) {
         let listeners = this.menu_listeners;
-        browser.menus.onClicked.addListener((info, tab) => {
-            listeners[info.menuItemId] && listeners[info.menuItemId] (info, tab);
-          });
+        if (listeners[info.menuItemId]) {
+            listeners[info.menuItemId](info, tab);
+        }
+    }
+
+    addClickListener() {
+        browser.menus.onClicked.addListener(this.listener);
+    }
+
+    removeClickListener() {
+        browser.menus.onClicked.removeListener(this.listener);
     }
 
     addMenu = async (menu, root = null) => {
