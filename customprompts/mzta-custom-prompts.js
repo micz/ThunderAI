@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Show the new item form
     function handleNewClick(e) {
         e.preventDefault();
+        e.target.disabled = true;
         document.getElementById('formNew').style.display = 'block';
     }
     btnNew.addEventListener('click', handleNewClick);
@@ -352,6 +353,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         cancelBtn.addEventListener('click', handleCancelClick);
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
+        document.getElementById('btnNew').disabled = false;
         clearFields();
         setSomethingChanged();
         i18n.updateDocument();
