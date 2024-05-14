@@ -165,10 +165,18 @@ async function getDefaultPrompts_withProps() {
             pos++;
         })
     } else {    // we have saved default prompts properties
+        let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
-            prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
-            prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
-            prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+            if(prefs._default_prompts_properties?.[prompt.id]){
+                prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
+                prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
+                prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+            }else{
+                prompt.position_display = pos;
+                prompt.position_compose = pos;
+                prompt.enabled = 1;
+                pos++;
+            }
         })
     }
     return defaultPrompts_prop;
