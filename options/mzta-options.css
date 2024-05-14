@@ -1,3 +1,16 @@
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: rgb(35, 34, 43);
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+    
+}
+
 div#miczDescription{
     padding:0px 15px 0px 15px;
     font-size: 13px;
@@ -71,4 +84,10 @@ input#chatgpt_win_height{
 span.dims_label{
     width: 75px;
     display: inline-block;
+}
+
+#btn_custom_prompts{
+    text-align: center;
+    width: 100%;
+    margin: 10px 0px;
 }

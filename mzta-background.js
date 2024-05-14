@@ -113,6 +113,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 await setBody(message.tabId, original_html);
                 await setBody(message.tabId, modified_html);
                 break;
+            case 'reload_menus':
+                await menus.reload();
+                console.log('>>>>>>>>>>>>>>>>> Reloaded menus');
+                break;
             default:
                 break;
         }
@@ -162,6 +166,8 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     });
 
     let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+    let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
+    let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
     let mztaDoCustomText=`+ do_custom_text +`;
     `;
 
