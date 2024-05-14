@@ -93,12 +93,24 @@ table td {
     padding: 8px;
 }
 
+table td.w08{
+    width: 8vw;
+}
+
+table td.w17{
+    width: 17vw;
+}
+
 table td.w19{
     width: 19vw;
 }
 
 table td.w25{
     width: 25vw;
+}
+
+table td.w40{
+    width: 40vw;
 }
 
 table.prompts_list td.properties{

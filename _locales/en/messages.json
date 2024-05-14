@@ -115,7 +115,7 @@
   },
 
   "customPrompts_form_label_Text": {
-    "message": "Text",
+    "message": "Prompt Text",
     "description": ""
   },
 
@@ -125,17 +125,17 @@
   },
 
   "customPrompts_form_label_need_selected": {
-    "message": "Need selection",
+    "message": "Text selection needed",
     "description": ""
   },
 
   "customPrompts_form_label_need_signature": {
-    "message": "Need signature",
+    "message": "Always add the signature",
     "description": ""
   },
 
   "customPrompts_form_label_need_custom_text": {
-    "message": "Need custom text",
+    "message": "Ask for additional text",
     "description": ""
   },
 
