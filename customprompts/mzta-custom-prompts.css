@@ -105,6 +105,7 @@ table.prompts_list td.properties{
 #formNew{
     display: none;
     width: 100%;
+    padding-bottom: 7px;
 }
 
 .text_output{
@@ -112,8 +113,13 @@ table.prompts_list td.properties{
     height: 9em;
 }
 
-.go_right{
+.go_right_float{
     float: right;
+}
+
+.go_right{
+    width: 100%;
+    text-align: right;
 }
 
 .width_all{
