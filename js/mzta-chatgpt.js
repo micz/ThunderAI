@@ -24,11 +24,19 @@ export const mzta_script = `
 let force_go = false;
 let current_message = null;
 
-async function chatgpt_sendMsg(msg, method ='') {
+async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     const textArea = document.querySelector('form textarea'),
         sendButton = document.querySelector('form button[class*="main-surface-secondary"]');
+    //check if the textarea has been found
+    if(!textArea) {
+        return -2;
+    }
     textArea.value = msg;
     textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
+    //check if the sendbutton has been found
+    if (!sendButton) {
+        return -1;
+    }
     const delaySend = setInterval(() => {
         if (!sendButton?.hasAttribute('disabled')) { // send msg
             method.toLowerCase() == 'click' ? sendButton.click()
@@ -36,6 +44,7 @@ async function chatgpt_sendMsg(msg, method ='') {
             clearInterval(delaySend);
         }
     }, 25);
+    return 0;   //everything is ok
 }
 
 async function chatgpt_isIdle() {
@@ -118,7 +127,7 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.innerHTML += ".mzta-btn:hover {background-color:#0056b3;color:white;}";
     style.innerHTML += "#mzta-loading{height:50px;display:inline-block;}";
-    style.innerHTML += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}";
+    style.innerHTML += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}#mzta-model_warn a{color:blue;text-decoration: underline;}";
     style.innerHTML += "#mzta-btn_gpt35 {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.innerHTML += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.innerHTML += "#mzta-force-completion{cursor:pointer;position:fixed;bottom:0;right:0;padding-right:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
@@ -305,7 +314,19 @@ async function doProceed(message, customText = ''){
         await checkGPT4Model();
     }
     //await chatgpt.isLoaded();
-    await chatgpt_sendMsg(message.prompt+' '+customText,'click');
+    let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
+    switch(send_result){
+        case -1:        // send button not found
+            document.getElementById('mzta-curr_msg').style.display = 'block';
+            document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_sendbutton_not_found_error");
+            break;
+        case -2:    // textarea not found
+            document.getElementById('mzta-model_warn').innerHTML = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            document.getElementById('mzta-model_warn').style.display = 'inline-block';
+            document.getElementById('mzta-curr_msg').innerHTML = "";
+            document.getElementById('mzta-loading').style.display = 'none';
+            break;
+    }
     await chatgpt_isIdle();
     operation_done();
 }
@@ -323,14 +344,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     current_message = message;
                     showCustomTextField();
                 } else {
-                    // let prefs = await browser.storage.sync.get({chatpgt_use_gpt4:false});
-                    // if(prefs.chatpgt_use_gpt4){
-                    //     await checkGPT4Model();
-                    // }
-                    //await chatgpt.isLoaded();
-                    // await chatgpt_sendMsg(message.prompt,'click');
-                    // await chatgpt_isIdle();
-                    // operation_done();
                     await doProceed(message);
                 }
             })();
