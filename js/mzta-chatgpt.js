@@ -26,7 +26,7 @@ let current_message = null;
 
 async function chatgpt_sendMsg(msg, method ='') {
     const textArea = document.querySelector('form textarea'),
-        sendButton = document.querySelector('form button[class*="bottom"]');
+        sendButton = document.querySelector('form button[class*="main-surface-secondary"]');
     textArea.value = msg;
     textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
     const delaySend = setInterval(() => {
@@ -98,6 +98,7 @@ async function chatgpt_getFromDOM(pos) {
             response = responseDivs[nthOfResponse - 1].textContent;
         }
         response = response.replace(/^ChatGPTChatGPT/, ''); // strip sender name
+        response = response.replace(/^ChatGPT/, ''); // strip sender name
         response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
         //console.log('chatgpt_getFromDOM: ' + response);
     }
@@ -262,9 +263,9 @@ function checkGPT4Model() {
      const elements = document.querySelectorAll('[id*=radix] span')
 
      for(element of elements){
-      // Check if the element exists and its content is '4'
-      if ((element && element.textContent === '4')||(force_go)) {
-        console.log("The GPT Model is now '4'");
+      // Check if the element exists and its content is '4' or '4o'
+      if ((element && element.textContent === '4')||(element && element.textContent === '4o')||(force_go)) {
+        console.log("The GPT Model is now '4' or '4o'");
         clearInterval(intervalId);
         clearTimeout(intervalId2);
         document.getElementById('mzta-model_warn').style.display = 'none';
