@@ -25,7 +25,7 @@ let force_go = false;
 
 async function chatgpt_sendMsg(msg, method ='') {
     const textArea = document.querySelector('form textarea'),
-        sendButton = document.querySelector('form button[class*="bottom"]');
+        sendButton = document.querySelector('form button[class*="main-surface-secondary"]');
     textArea.value = msg;
     textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
     const delaySend = setInterval(() => {
