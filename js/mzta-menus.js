@@ -46,7 +46,8 @@ export class mzta_Menus {
         this.allPrompts = [];
         this.rootMenu = [];
         this.menu_listeners = {};
-        this.allPrompts = await getPrompts(true);
+        this.allPrompts = await getPrompts(true);   
+        this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });

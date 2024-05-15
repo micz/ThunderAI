@@ -144,8 +144,9 @@ export async function getPrompts(onlyEnabled = false){
     let output = defaultPrompts.concat(customPrompts);
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
-    }
+    }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
         output.sort((a, b) => a.id.localeCompare(b.id));
+    }
     for(let i=1; i<=output.length; i++){
         output[i-1].idnum = i;
     }
