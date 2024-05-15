@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > ## Custom Prompts are coming!
 > 
-> Try this new feature in the [new pre-release version](https://github.com/micz/ThunderAI/releases/tag/v1.1.0pre1).
+> Try this new feature in the [new pre-release version](https://github.com/micz/ThunderAI/releases/tag/v1.1.0pre2).
 
 <br>
 
