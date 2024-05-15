@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
-                <td><span class="type_show">` + type_output + `</span>
+                <td class="w08"><span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
                 <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
                 <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
