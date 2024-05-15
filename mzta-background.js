@@ -136,7 +136,7 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
         return;
     }
     let newWindow = await browser.windows.create({
-        url: "https://chat.openai.com",
+        url: "https://chatgpt.com",
         type: "popup",
         width: prefs.chatgpt_win_width,
         height: prefs.chatgpt_win_height
