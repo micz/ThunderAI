@@ -223,9 +223,9 @@ function checkGPT4Model() {
      const elements = document.querySelectorAll('[id*=radix] span')
 
      for(element of elements){
-      // Check if the element exists and its content is '4'
-      if ((element && element.textContent === '4')||(force_go)) {
-        console.log("The GPT Model is now '4'");
+      // Check if the element exists and its content is '4' or '4o'
+      if ((element && element.textContent === '4')||(element && element.textContent === '4o')||(force_go)) {
+        console.log("The GPT Model is now '4' or '4o'");
         clearInterval(intervalId);
         clearTimeout(intervalId2);
         document.getElementById('mzta-model_warn').style.display = 'none';
