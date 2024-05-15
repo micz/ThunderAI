@@ -181,15 +181,15 @@ function addCustomDiv(prompt_action,tabId) {
     btn_ok.id="mzta-btn_ok";
     btn_ok.classList.add('mzta-btn');
     //console.log('default: '+prompt_action)
-    switch(prompt_action){ 
+    switch(String(prompt_action)){ 
         default:
-        case 0:     // close window
+        case "0":     // close window
             btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_close");
             btn_ok.onclick = async function() {
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
-        case 1:     // do reply
+        case "1":     // do reply
             btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
@@ -198,7 +198,7 @@ function addCustomDiv(prompt_action,tabId) {
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
-        case 2:     // replace text
+        case "2":     // replace text
             btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
