@@ -260,7 +260,7 @@ function customTextBtnClick(args) {
 
 function checkGPT4Model() {
   return new Promise((resolve, reject) => {
-    // Set up an interval that shows the waring after 2 seconds
+    // Set up an interval that shows the warning after 2 seconds
     const intervalId2 = setTimeout(() => {
         document.getElementById('mzta-model_warn').style.display = 'inline-block';
         document.getElementById('mzta-btn_gpt35').style.display = 'inline';
