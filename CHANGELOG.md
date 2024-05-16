@@ -1,6 +1,11 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+
+<h2>Version 1.0.9 - 16/05/2024</h2>
+  <ul>
+    <li>Improved handling of different versions of the ChatGPT web interface.</li>
+  </ul>
 <h2>Version 1.0.8 - 15/05/2024</h2>
   <ul>
     <li>Fixed changes in the ChatGPT web interface, see <a href="https://github.com/micz/ThunderAI/issues/57">#57</a> and <a href="https://github.com/micz/ThunderAI/issues/62">#62</a>.</li>
