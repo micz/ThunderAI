@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let values = await getPrompts();
 
-    console.log('>>>>>>>>>>>>>>>> values: ' + JSON.stringify(values));
+    //console.log('>>>>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
     promptsList = new List('all_prompts', options, values);
 

@@ -198,7 +198,7 @@ export async function setDefaultPromptsProperties(prompts) {
     prompts.forEach((prompt) => {
         default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
     });
-    console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
+    //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
 }
 
