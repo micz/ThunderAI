@@ -25,7 +25,9 @@ let force_go = false;
 
 async function chatgpt_sendMsg(msg, method ='') {
     const textArea = document.querySelector('form textarea'),
-        sendButton = document.querySelector('form button[class*="main-surface-secondary"]');
+        sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
+        || document.querySelector('form button[class*="main-surface-secondary"]')  // pre-GPT-4o
+        || document.querySelector('[data-testid="send-button"]'); // pre-GPT-4o
     textArea.value = msg;
     textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
     const delaySend = setInterval(() => {
@@ -96,8 +98,7 @@ async function chatgpt_getFromDOM(pos) {
             );
             response = responseDivs[nthOfResponse - 1].textContent;
         }
-        response = response.replace(/^ChatGPTChatGPT/, ''); // strip sender name
-        response = response.replace(/^ChatGPT/, ''); // strip sender name
+        response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
         response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
         //console.log('chatgpt_getFromDOM: ' + response);
     }
