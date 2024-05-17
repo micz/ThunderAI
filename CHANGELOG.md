@@ -4,11 +4,14 @@
 
 
 <h2>Version 1.1.0 - ??/??/2024</h2>
-<ul>
-<li>A prompt can be configured to request additional text from the user.</li>
-<li>Added custom prompts. See more info <a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">here</a>.</li>
-<li>Dark mode added.</li>
-</ul>
+  <ul>
+    <li>A prompt can be configured to request additional text from the user.</li>
+    <li>Added custom prompts. See more info <a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">here</a>.</li>
+    <li>Dark mode added.</li>
+    <li>Added some error messages to handle potential changes in the ChatGPT web interface.</li>
+    <li>German translation added.</li>
+    <li>Log messages improved.</li>
+  </ul>
 
 <h2>Version 1.0.10 - 17/05/2024</h2>
   <ul>
