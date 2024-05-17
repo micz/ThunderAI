@@ -2,6 +2,11 @@
 
 
 
+<h2>Version 1.0.10 - 17/05/2024</h2>
+  <ul>
+    <li>Now using the new URL chatgpt.com.</li>
+    <li>More improvements in handling the ChatGPT web interface.</li>
+  </ul>
 <h2>Version 1.0.9 - 16/05/2024</h2>
   <ul>
     <li>Improved handling of different versions of the ChatGPT web interface.</li>
