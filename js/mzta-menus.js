@@ -55,7 +55,7 @@ export class mzta_Menus {
 
     async reload(){
         await browser.menus.removeAll().catch(error => {
-                console.error(">>>>>>>> ERROR removing the menus: ", error);
+                console.error("[ThunderAI]  ERROR removing the menus: ", error);
             });
         this.removeClickListener();
         this.loadMenus();
