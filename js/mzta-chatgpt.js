@@ -26,7 +26,8 @@ let current_message = null;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     const textArea = document.querySelector('form textarea'),
-        sendButton = document.querySelector('form button[class*="main-surface-secondary"]');
+            sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
+            || document.querySelector('[data-testid="send-button"]'); // pre-GPT-4o
     //check if the textarea has been found
     if(!textArea) {
         return -2;
