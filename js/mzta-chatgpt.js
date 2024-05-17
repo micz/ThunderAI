@@ -254,7 +254,7 @@ function operation_done(){
 }
 
 function checkLoggedIn(){
-    return !window.location.href.startsWith('https://chat.openai.com/auth/');
+    return !window.location.href.startsWith('https://chatgpt.com/auth/');
 }
 
 // Nello script di contenuto
