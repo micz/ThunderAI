@@ -59,6 +59,11 @@
     "description": ""
   },
 
+  "customPrompts_managePrompts_help": {
+    "message": "More info",
+    "description": ""
+  },
+
   "customPrompts_start_saving": {
     "message": "Saving prompts...",
     "description": ""
@@ -91,11 +96,6 @@
 
   "customPrompts_saved": {
     "message": "Prompts saved!",
-    "description": ""
-  },
-
-  "customPrompts_managePrompts_statement": {
-    "message": "Manage your custom prompts.",
     "description": ""
   },
 

@@ -47,6 +47,10 @@
     "message": "Gestisci i prompt",
     "description": ""
   },
+  "customPrompts_managePrompts_help": {
+    "message": "Informazioni",
+    "description": ""
+  },
   "customPrompts_start_saving": {
     "message": "Salvataggio prompt in corso...",
     "description": ""
@@ -73,10 +77,6 @@
   },
   "customPrompts_saved": {
     "message": "Prompt salvati!",
-    "description": ""
-  },
-  "customPrompts_managePrompts_statement": {
-    "message": "Gestisci i tuoi prompt personalizzati.",
     "description": ""
   },
   "customPrompts_form_label_ID": {

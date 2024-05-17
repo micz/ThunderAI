@@ -58,6 +58,11 @@
       "message": "Eingabeaufforderungen verwalten",
       "description": ""
     },
+
+    "customPrompts_managePrompts_help": {
+        "message": "Informationen",
+        "description": ""
+      },
   
     "customPrompts_start_saving": {
       "message": "Eingabeaufforderungen werden gespeichert...",
@@ -91,11 +96,6 @@
   
     "customPrompts_saved": {
       "message": "Eingabeaufforderungen gespeichert!",
-      "description": ""
-    },
-  
-    "customPrompts_managePrompts_statement": {
-      "message": "Verwalten Sie Ihre benutzerdefinierten Eingabeaufforderungen.",
       "description": ""
     },
   
