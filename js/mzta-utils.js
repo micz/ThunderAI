@@ -93,15 +93,31 @@ export async function replaceBody(tabId, text){
 const insertText = function (text, fullBody_string) {
   const parser = new DOMParser();
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
-  const prefix = fullBody.getElementsByClassName("moz-cite-prefix");
-  if (prefix.length > 0) {
-    const divider = prefix[0];
-    let sibling = divider.previousSibling;
+  
+  // looking for the first quoted mail or the signature, which come first in case of "signature above the quote".
+  const prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
+  const prefix_sign = fullBody.getElementsByClassName("moz-signature");
+
+  let firstElement = null;
+  if (prefix_quote.length > 0 && prefix_sign.length > 0) {
+    firstElement = prefix_quote[0].compareDocumentPosition(prefix_sign[0]) & Node.DOCUMENT_POSITION_FOLLOWING ? prefix_quote[0] : prefix_sign[0];
+    //console.log('>>>>>>>>>>>>>>> quote and signature found: ' + JSON.stringify(firstElement.innerHTML))
+    //console.log('>>>>>>>>>>>>>>> DocPosition: ' + prefix_quote[0].compareDocumentPosition(prefix_sign[0]))
+  } else if (prefix_quote.length > 0) {
+    firstElement = prefix_quote[0];
+    //console.log('>>>>>>>>>>>>>>> quote found')
+  } else if (prefix_sign.length > 0) {
+    firstElement = prefix_sign[0];
+    //console.log('>>>>>>>>>>>>>>> signature found')
+  }
+  if (firstElement) {
+    let sibling = firstElement.previousSibling;
     while (sibling) {
       fullBody.body.removeChild(sibling);
-      sibling = divider.previousSibling;
+      sibling = firstElement.previousSibling;
     }
   }
+
   let final_p = document.createElement("p");
   final_p.innerHTML = "<p><br/><br/></p>";
   fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
