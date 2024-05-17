@@ -260,7 +260,7 @@
   },
 
   "chatgpt_sendbutton_not_found_error": {
-    "message": "You have to click the send button to send the prompt.",
+    "message": "Click the send button to submit the prompt.",
     "description": ""
   },
 
