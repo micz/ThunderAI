@@ -1,0 +1,407 @@
+{
+    "extensionDescription": {
+      "message": "Utilisez ChatGPT pour améliorer vos emails!",
+      "description": "Description de l'extension."
+    },
+  
+    "menu_title": {
+      "message": "IA",
+      "description": ""
+    },
+  
+    "prompt_lang": {
+      "message": "Répondre en ",
+      "description": ""
+    },
+  
+    "prompt_reply": {
+      "message": "Répondre à ceci",
+      "description": ""
+    },
+  
+    "prompt_rewrite_polite": {
+      "message": "Réécrire de manière polie",
+      "description": ""
+    },
+  
+    "prompt_rewrite_formal": {
+      "message": "Réécrire de manière formelle",
+      "description": ""
+    },
+  
+    "prompt_classify": {
+      "message": "Classer",
+      "description": ""
+    },
+  
+    "prompt_summarize_this": {
+      "message": "Résumer ceci",
+      "description": ""
+    },
+  
+    "prompt_translate_this": {
+      "message": "Traduire ceci",
+      "description": ""
+    },
+  
+    "prompt_this": {
+      "message": "Proposer ceci",
+      "description": ""
+    },
+  
+    "prompt_selection_needed": {
+      "message": "Pour continuer, vous devez sélectionner du texte!",
+      "description": ""
+    },
+  
+    "customPrompts_managePrompts": {
+      "message": "Gérer les prompts",
+      "description": ""
+    },
+    
+    "customPrompts_managePrompts_help": {
+      "message": "Informations",
+      "description": ""
+    },
+  
+    "customPrompts_start_saving": {
+      "message": "Enregistrement des prompts...",
+      "description": ""
+    },
+  
+    "customPrompts_reindexing_list": {
+      "message": "Réindexation de la liste...",
+      "description": ""
+    },
+  
+    "customPrompts_filtering_prompts": {
+      "message": "Filtrage des prompts...",
+      "description": ""
+    },
+  
+    "customPrompts_saving_default_prompts": {
+      "message": "Enregistrement des prompts par défaut...",
+      "description": ""
+    },
+  
+    "customPrompts_saving_custom_prompts": {
+      "message": "Enregistrement des prompts personnalisées...",
+      "description": ""
+    },
+  
+    "customPrompts_reloading_menus": {
+      "message": "Rechargement des menus...",
+      "description": ""
+    },
+  
+    "customPrompts_saved": {
+      "message": "prompts enregistrées!",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_ID": {
+      "message": "ID",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_ID_rules": {
+      "message": "Doit être unique, en minuscules et sans espaces",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_Name": {
+      "message": "Nom",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_Text": {
+      "message": "Texte de la proposition",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_Action": {
+      "message": "Action",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_need_selected": {
+      "message": "Sélection de texte nécessaire",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_need_signature": {
+      "message": "Toujours ajouter la signature",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_need_custom_text": {
+      "message": "Demander du texte supplémentaire",
+      "description": ""
+    },
+  
+    "customPrompts_form_label_enabled": {
+      "message": "Activé",
+      "description": ""
+    },
+  
+    "customPrompts_form_required_fields": {
+      "message": "Champs obligatoires",
+      "description": ""
+    },
+  
+    "customPrompts_btnEdit": {
+      "message": "Modifier",
+      "description": ""
+    },
+  
+    "customPrompts_btnCancel": {
+      "message": "Annuler",
+      "description": ""
+    },
+  
+    "customPrompts_btnOK": {
+      "message": "OK",
+      "description": ""
+    },
+  
+    "customPrompts_btnDelete": {
+      "message": "Supprimer",
+      "description": ""
+    },
+  
+    "customPrompts_btnDelete_confirmText": {
+      "message": "Êtes-vous sûr de vouloir supprimer cet élément?",
+      "description": ""
+    },
+  
+    "customPrompts_unsaved_changes": {
+      "message": "Il y a des modifications non enregistrées!",
+      "description": ""
+    },
+  
+    "customPrompts_btnSaveAll": {
+      "message": "Tout enregistrer",
+      "description": ""
+    },
+  
+    "customPrompts_save_button": {
+      "message": "Enregistrer",
+      "description": ""
+    },
+  
+    "customPrompts_btnNew": {
+      "message": "Ajouter nouveau",
+      "description": ""
+    },
+  
+    "customPrompts_btnAddNewCommit": {
+      "message": "Ajouter la proposition",
+      "description": ""
+    },
+  
+    "customPrompts_add_to_menu": {
+      "message": "Ajouter au menu",
+      "description": ""
+    },
+  
+    "customPrompts_add_to_menu_always": {
+      "message": "Toujours",
+      "description": ""
+    },
+  
+    "customPrompts_add_to_menu_reading": {
+      "message": "Lors de la lecture d'un email",
+      "description": ""
+    },
+  
+    "customPrompts_add_to_menu_composing": {
+      "message": "Lors de la rédaction d'un email",
+      "description": ""
+    },
+  
+    "customPrompts_close_button": {
+      "message": "Bouton de fermeture",
+      "description": ""
+    },
+  
+    "customPrompts_do_reply": {
+      "message": "Faire une réponse",
+      "description": ""
+    },
+  
+    "customPrompts_substitute_text": {
+      "message": "Remplacer le texte",
+      "description": ""
+    },
+  
+    "chatgpt_win_working": {
+      "message": "Travail en cours...",
+      "description": ""
+    },
+  
+    "chatgpt_win_job_completed": {
+      "message": "Terminé!",
+      "description": ""
+    },
+  
+    "chatgpt_win_get_answer": {
+      "message": "Utiliser la dernière réponse",
+      "description": ""
+    },
+  
+    "chatgpt_win_close": {
+      "message": "Fermer",
+      "description": ""
+    },
+  
+    "chatgpt_textarea_not_found_error": {
+      "message": "Il y a une erreur lors de l'envoi de la proposition à ChatGPT, veuillez réessayer. Si le problème persiste, veuillez <a href=\"https://micz.it/thunderdbird-addon-thunderai/status/\">vérifier le statut du service</a>.",
+      "description": ""
+    },
+  
+    "chatgpt_sendbutton_not_found_error": {
+      "message": "Cliquez sur le bouton d'envoi pour soumettre la proposition.",
+      "description": ""
+    },
+  
+    "chatgpt_user_not_logged_in": {
+      "message": "Vous n'êtes pas connecté à ChatGPT. Veuillez vous connecter avec vos identifiants, fermer la fenêtre ChatGPT, puis répéter l'action que vous avez tentée. Vous resterez connecté par la suite.",
+      "description": ""
+    },
+  
+    "chatgpt_win_model_warning": {
+      "message": "Vous avez choisi l'option d'utiliser ChatGPT-4, mais il semble qu'il ne se charge pas correctement. Avez-vous choisi le bon modèle en haut?",
+      "description": ""
+    },
+  
+    "chatgpt_win_custom_text": {
+      "message": "Insérez ici le texte supplémentaire pour la proposition.",
+      "description": ""
+    },
+  
+    "chatgpt_win_send": {
+      "message": "Envoyer",
+      "description": ""
+    },
+  
+    "chatgpt_use_gpt35": {
+      "message": "Utiliser GPT3.5",
+      "description": ""
+    },
+  
+    "chatgpt_force_completion": {
+      "message": "forcer l'achèvement",
+      "description": ""
+    },
+  
+    "chatgpt_force_completion_title": {
+      "message": "Cliquez ici pour afficher le bouton 'Utiliser la dernière réponse' si ChatGPT a terminé son travail mais que le bouton n'est pas apparu.",
+      "description": ""
+    },
+  
+    "msg_prompt_too_long": {
+      "message": "Le texte que vous avez fourni est trop long. Vous devez le réduire pour utiliser ChatGPT.",
+      "description": ""
+    },
+  
+    "prefs_OptionText_release_notes": {
+      "message": "Notes de version",
+      "description": ""
+    },
+  
+    "prefs_status_page": {
+      "message": "statut du service",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatgpt_win_text": {
+      "message": "Dimensions de la fenêtre ChatGPT",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatgpt_win_height": {
+      "message": "Hauteur",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatgpt_win_width": {
+      "message": "Largeur",
+      "description": ""
+    },
+  
+    "prefs_OptionText_default_sign_name": {
+      "message": "Nom de la signature par défaut",
+      "description": ""
+    },
+  
+    "prefs_OptionText_default_chatgpt_lang": {
+      "message": "Langue par défaut pour les réponses de ChatGPT",
+      "description": ""
+    },
+  
+    "prefs_OptionText_reply_all": {
+      "message": "Répondre à tous",
+      "description": ""
+    },
+  
+    "prefs_OptionText_reply_sender": {
+      "message": "Répondre à l'expéditeur",
+      "description": ""
+    },
+  
+    "prefs_OptionText_reply_type": {
+      "message": "Type de réponse",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatpgt_use_gpt4": {
+      "message": "Utiliser ChatGPT-4",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatpgt_use_gpt4_info": {
+      "message": "Après avoir changé cette option, vous devez choisir le bon modèle la première fois que vous l'utilisez.",
+      "description": ""
+    },
+  
+    "prefs_OptionText_btnManagePrompts": {
+      "message": "Gérer vos prompts",
+      "description": ""
+    },
+  
+    "prefsInfoTitle": {
+      "message": "Informations importantes",
+      "description": ""
+    },
+  
+    "prefsInfoDesc_1": {
+      "message": "Il n'est plus possible de désactiver l'historique des chats ChatGPT. Par conséquent, il n'y a aucun moyen d'empêcher les demandes effectuées via cet addon d'apparaître dans l'historique de vos chats ChatGPT.",
+      "description": ""
+    },
+  
+    "prefsInfoDesc_2": {
+      "message": "Si une page blanche apparaît lors de l'ouverture de la fenêtre ChatGPT, cela signifie qu'il y a un problème de chargement de la page ChatGPT, non lié à l'utilisation de cet addon.",
+      "description": ""
+    },
+  
+    "prefsInfoDesc_3": {
+      "message": " ",
+      "description": ""
+    },
+  
+    "prefsDonation_1": {
+      "message": "Aimez-vous cet addon?",
+      "description": ""
+    },
+  
+    "prefsDonation_2": {
+      "message": "Envisagez de faire un don!",
+      "description": ""
+    },
+  
+    "backToOptionsText": {
+      "message": "Options",
+      "description": ""
+    }
+  }
+  
