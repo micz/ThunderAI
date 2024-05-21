@@ -2,7 +2,6 @@
 
 
 
-
 <h2>Version 1.1.0 - ??/??/2024</h2>
   <ul>
     <li>A prompt can be configured to request additional text from the user.</li>

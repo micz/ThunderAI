@@ -1,5 +1,13 @@
 # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI
 
+> [!IMPORTANT]
+> ## Custom Prompts are coming!
+> 
+> Try this new feature in the [new pre-release version](https://github.com/micz/ThunderAI/releases/tag/v1.1.0pre4).
+
+<br>
+
+
 ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT to enhance email management.
 
 It enables users to analyze, write, correct, and optimize their emails, facilitating more effective and professional communication.

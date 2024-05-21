@@ -136,6 +136,7 @@ function addCustomDiv(prompt_action,tabId) {
     style.innerHTML += "#mzta-custom_loading{height:50px;display:none;}";
     style.innerHTML += "#mzta-custom_textarea{color:black;padding:1px;font-size:15px;width:100%;}";
     style.innerHTML += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
+
     // Add <style> to the page's <head>
     document.head.appendChild(style);
 
