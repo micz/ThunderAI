@@ -1,199 +1,324 @@
 {
   "extensionDescription": {
     "message": "Usa ChatGPT per migliorare le tue email!",
-    "description": "Descrizione dell'estensione."
+    "description": "Description of the extension."
   },
-
   "menu_title": {
     "message": "IA",
     "description": ""
   },
-
   "prompt_lang": {
     "message": "Rispondi in ",
     "description": ""
   },
-
   "prompt_reply": {
     "message": "Rispondi",
     "description": ""
   },
-
   "prompt_rewrite_polite": {
     "message": "Riscrivi cortese",
     "description": ""
   },
-
   "prompt_rewrite_formal": {
     "message": "Riscrivi formale",
     "description": ""
   },
-
   "prompt_classify": {
     "message": "Classifica",
     "description": ""
   },
-
   "prompt_summarize_this": {
     "message": "Riassumi",
     "description": ""
   },
-
   "prompt_translate_this": {
     "message": "Traduci",
     "description": ""
   },
-
   "prompt_this": {
     "message": "Chedi a ChatGPT",
     "description": ""
   },
-
   "prompt_selection_needed": {
     "message": "Per procedere è necessario che selezioni del testo!",
     "description": ""
   },
-
+  "customPrompts_managePrompts": {
+    "message": "Gestisci i prompt",
+    "description": ""
+  },
+  "customPrompts_managePrompts_help": {
+    "message": "Informazioni",
+    "description": ""
+  },
+  "customPrompts_start_saving": {
+    "message": "Salvataggio prompt in corso...",
+    "description": ""
+  },
+  "customPrompts_reindexing_list": {
+    "message": "Indicizzazione lista...",
+    "description": ""
+  },
+  "customPrompts_filtering_prompts": {
+    "message": "Applicazione filtro in corso...",
+    "description": ""
+  },
+  "customPrompts_saving_default_prompts": {
+    "message": "Salvataggio prompt di base...",
+    "description": ""
+  },
+  "customPrompts_saving_custom_prompts": {
+    "message": "Salvataggio prompt personalizzati...",
+    "description": ""
+  },
+  "customPrompts_reloading_menus": {
+    "message": "Caricamento menu aggiornati...",
+    "description": ""
+  },
+  "customPrompts_saved": {
+    "message": "Prompt salvati!",
+    "description": ""
+  },
+  "customPrompts_form_label_ID": {
+    "message": "ID",
+    "description": ""
+  },
+  "customPrompts_form_label_ID_rules": {
+    "message": "Deve essere univoco, minuscolo e senza spazi.",
+    "description": ""
+  },
+  "customPrompts_form_label_Name": {
+    "message": "Nome",
+    "description": ""
+  },
+  "customPrompts_form_label_Text": {
+    "message": "Testo del prompt",
+    "description": ""
+  },
+  "customPrompts_form_label_Action": {
+    "message": "Azione",
+    "description": ""
+  },
+  "customPrompts_form_label_need_selected": {
+    "message": "Necessaria la selezione di testo",
+    "description": ""
+  },
+  "customPrompts_form_label_need_signature": {
+    "message": "Aggiungi sempre la firma",
+    "description": ""
+  },
+  "customPrompts_form_label_need_custom_text": {
+    "message": "Chiedi un testo aggiuntivo",
+    "description": ""
+  },
+  "customPrompts_form_label_enabled": {
+    "message": "Attivo",
+    "description": ""
+  },
+  "customPrompts_form_required_fields": {
+    "message": "Campi obbligatori",
+    "description": ""
+  },
+  "customPrompts_btnEdit": {
+    "message": "Modifica",
+    "description": ""
+  },
+  "customPrompts_btnCancel": {
+    "message": "Annulla",
+    "description": ""
+  },
+  "customPrompts_btnOK": {
+    "message": "OK",
+    "description": ""
+  },
+  "customPrompts_btnDelete": {
+    "message": "Cancella",
+    "description": ""
+  },
+  "customPrompts_btnDelete_confirmText": {
+    "message": "Sei sicuro di voler cancellare questo elemento?",
+    "description": ""
+  },
+  "customPrompts_unsaved_changes": {
+    "message": "Ci sono modifiche non salvate!",
+    "description": ""
+  },
+  "customPrompts_btnSaveAll": {
+    "message": "Salva Tutto",
+    "description": ""
+  },
+  "customPrompts_save_button": {
+    "message": "Salva",
+    "description": ""
+  },
+  "customPrompts_btnNew": {
+    "message": "Aggiungi Nuovo",
+    "description": ""
+  },
+  "customPrompts_btnAddNewCommit": {
+    "message": "Aggiungi il Prompt",
+    "description": ""
+  },
+  "customPrompts_add_to_menu": {
+    "message": "Aggiungi al menu",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_always": {
+    "message": "Sempre",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_reading": {
+    "message": "In lettura di una mail",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_composing": {
+    "message": "In composizione di una mail",
+    "description": ""
+  },
+  "customPrompts_close_button": {
+    "message": "Pulsante chiudi",
+    "description": ""
+  },
+  "customPrompts_do_reply": {
+    "message": "Rispondi",
+    "description": ""
+  },
+  "customPrompts_substitute_text": {
+    "message": "Sostituisci il testo",
+    "description": ""
+  },
   "chatgpt_win_working": {
     "message": "Elaborazione in corso...",
     "description": ""
   },
-
   "chatgpt_win_job_completed": {
     "message": "Completato!",
     "description": ""
   },
-
   "chatgpt_win_get_answer": {
     "message": "Usa l'ultima risposta",
     "description": ""
   },
-
   "chatgpt_win_close": {
     "message": "Chiudi",
     "description": ""
   },
-
   "chatgpt_user_not_logged_in": {
     "message": "Non sei connesso a ChatGPT. Effettua l'accesso con le tue credenziali, chiudi la finestra di ChatGPT e poi ripeti l'azione che avevi tentato. Rimarrai connesso in seguito.",
     "description": ""
   },
-
   "chatgpt_win_model_warning": {
     "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato correttamente il modello in alto?",
     "description": ""
   },
-
+  "chatgpt_win_custom_text": {
+    "message": "Inserisci qui il testo aggiuntivo per il prompt.",
+    "description": ""
+  },
+  "chatgpt_win_send": {
+    "message": "Invia",
+    "description": ""
+  },
   "chatgpt_use_gpt35": {
     "message": "Usa GPT3.5",
     "description": ""
   },
-
   "chatgpt_force_completion": {
     "message": "forza il completamento",
     "description": ""
   },
-
   "chatgpt_force_completion_title": {
     "message": "Fai clic qui per visualizzare il pulsante 'Usa l'ultima risposta' se ChatGPT ha terminato il suo lavoro ma il pulsante non è apparso.",
     "description": ""
   },
-
   "msg_prompt_too_long": {
     "message": "Il testo che vuoi inviare a ChatGPT è troppo lungo. Devi ridurlo per poter procedere.",
     "description": ""
   },
-
   "prefs_OptionText_release_notes": {
     "message": "Note di rilascio",
     "description": ""
   },
-
   "prefs_status_page": {
     "message": "stato del servizio",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_text": {
     "message": "Dimensioni della finestra di ChatGPT",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_height": {
     "message": "Altezza",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_width": {
     "message": "Larghezza",
     "description": ""
   },
-
+  "chatgpt_textarea_not_found_error": {
+    "message": "C'è stato un errore nell'invio del prompt a ChatGPT, per favore riprova. Se il problema persiste, per favore <a href=\"https://micz.it/thunderdbird-addon-thunderai/status/\">controlla lo stato del servizio</a>.",
+    "description": ""
+  },
+  "chatgpt_sendbutton_not_found_error": {
+    "message": "Premi il pulsante per inviare il prompt a ChatGPT.",
+    "description": ""
+  },
   "prefs_OptionText_default_sign_name": {
     "message": "Nome da utilizzare per la firma",
     "description": ""
   },
-
   "prefs_OptionText_default_chatgpt_lang": {
     "message": "Lingua predefinita per le risposte di ChatGPT",
     "description": ""
   },
-
   "prefs_OptionText_reply_all": {
     "message": "Rispondi a tutti",
     "description": ""
   },
-
   "prefs_OptionText_reply_sender": {
     "message": "Rispondi al mittente",
     "description": ""
   },
-
   "prefs_OptionText_reply_type": {
     "message": "Modalità di risposta",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Usa il modello ChatGPT-4",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_use_gpt4_info": {
     "message": "Dopo aver modificato questa opzione, devi scegliere il modello corretto la prima volta che lo usi.",
     "description": ""
   },
-
+  "prefs_OptionText_btnManagePrompts": {
+    "message": "Gestisci i tuoi prompts",
+    "description": ""
+  },
   "prefsInfoTitle": {
     "message": "Informazioni Importanti",
     "description": ""
   },
-
   "prefsInfoDesc_1": {
     "message": "Non è più possibile disabilitare la cronologia delle chat di ChatGPT. Pertanto, non c'è modo di impedire che le richieste effettuate tramite questo componente aggiuntivo appaiano nella cronologia delle chat di ChatGPT.",
     "description": ""
   },
-
   "prefsInfoDesc_2": {
     "message": "Se all'apertura della finestra di ChatGPT, viene mostrata una pagina bianca, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
     "description": ""
   },
-
   "prefsInfoDesc_3": {
     "message": " ",
     "description": ""
   },
-
   "prefsDonation_1": {
     "message": "Ti piace questo componente aggiuntivo?",
     "description": ""
   },
-
   "prefsDonation_2": {
     "message": "Considera di fare una donazione!",
     "description": ""
   },
-
   "backToOptionsText": {
     "message": "Opzioni",
     "description": ""

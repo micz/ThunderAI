@@ -1,0 +1,172 @@
+@media (prefers-color-scheme: light) {
+    table th {
+        background-color: #ffffff;
+    }
+
+    #command_palette{
+        background-color: #ffffff; 
+    }
+
+    table.prompts_list tr:nth-child(even) {
+        background-color: #e9e9e9;
+    }
+
+    table.prompts_list tr:nth-child(odd) {
+        background-color: #f3f3f3;
+    }
+}
+
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1C1B22;
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+
+    table {
+        background-color: #1C1B22;
+        border: 1px solid #ccc;
+    }
+
+    table.prompts_list th {
+        background-color: #4c4e58;
+        border: 1px solid rgb(251, 251, 254);
+        color: rgb(194, 194, 194);
+    }
+
+    #command_palette{
+        background-color: inherit; 
+    }
+
+    table.prompts_list tr:nth-child(even) {
+        background-color: #2E2F36;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #ccc;
+}
+
+thead {
+    position: sticky;
+    top: 26px;
+}
+
+#command_palette{
+    position: sticky;
+    top: 0;
+    padding-top: 1px;
+    height: 26px;
+    width: 100%;
+}
+
+#btnNew{
+    float: right;
+}
+
+#btnSaveAll{
+    float: left;
+}
+
+#msgDisplay{
+    padding-left: 40px;
+}
+
+table tr {
+    border-bottom: 1px solid #ccc;
+}
+
+table.prompts_list th {
+    padding: 8px;
+    text-align: left;
+}
+
+table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table td.w08{
+    width: 8vw;
+}
+
+table td.w17{
+    width: 17vw;
+}
+
+table td.w19{
+    width: 19vw;
+}
+
+table td.w25{
+    width: 25vw;
+}
+
+table td.w40{
+    width: 40vw;
+}
+
+table.prompts_list td.properties{
+    white-space: nowrap;
+}
+
+table .sort {
+    background-image: url(../images/listjs-arrow-sort-inactive.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-right: 14px;
+    cursor: pointer;
+    cursor: hand;
+}
+
+table .sort.asc {
+    background-image: url(../images/listjs-arrow-sort-active-down.png);
+}
+
+table .sort.desc {
+    background-image: url(../images/listjs-arrow-sort-active-up.png);
+}
+
+.hiddendata{
+    display: none;
+}
+
+#formNew{
+    display: none;
+    width: 100%;
+    padding-bottom: 7px;
+}
+
+.text_output{
+    width: 98%;
+    height: 9em;
+}
+
+.go_right_float{
+    float: right;
+}
+
+.go_right{
+    width: 100%;
+    text-align: right;
+}
+
+.width_all{
+    width: 100%;
+}
+
+.small_label{
+    font-size: small;
+    font-style: italic;
+}
+
+#txtIdNew, .id_output{
+    text-transform: lowercase;
+}

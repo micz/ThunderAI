@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ThunderAI - __MSG_customPrompts_managePrompts__</title>
+    <link rel="stylesheet" href="mzta-custom-prompts.css">
+</head>
+<body>
+    <div>
+        <h1>__MSG_customPrompts_managePrompts__</h1>
+        <p><a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">__MSG_customPrompts_managePrompts_help__</a></p>
+    </div>
+    <div id="command_palette">
+      <button id="btnSaveAll" disabled>__MSG_customPrompts_btnSaveAll__</button>
+      <span id="msgDisplay"></span>
+      <button id="btnNew">__MSG_customPrompts_btnNew__</button>
+    </div>
+    <div id="formNew">
+      <table class="width_all">
+        <tr>
+            <td class="w19">
+                <label for="txtIdNew">*__MSG_customPrompts_form_label_ID__:</label>
+                <br>
+                <input type="text" id="txtIdNew" name="id" class="input_new" tabindex="1">
+                <br><span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>                
+            </td>
+            <td rowspan="2" class="w25">
+                <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
+                <br>
+                <textarea id="txtTextNew" name="text" class="input_new text_output" tabindex="3"></textarea>
+            </td>
+            <td class="w19">
+                <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
+                <br>
+                <select id="selectTypeNew" name="type" tabindex="4">
+                    <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
+                    <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
+                    <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
+                </select>
+            </td>
+            <td rowspan="2" class="w19">
+                <input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" value="1" tabindex="6"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label>
+                <br>
+                <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1" tabindex="7"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
+                <br>
+                <input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" value="1" tabindex="8"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label>
+            </td>
+        </tr>
+        <tr>
+            <td class="w19">
+              <label for="txtNameNew">*__MSG_customPrompts_form_label_Name__:</label>
+              <br>
+              <input type="text" id="txtNameNew" name="name" class="input_new" tabindex="2">
+            </td>
+            <td class="w19">
+              <label for="selectActionNew">__MSG_customPrompts_form_label_Action__:</label>
+              <br>
+              <select id="selectActionNew" name="action" tabindex="5">
+                  <option value="0">__MSG_customPrompts_close_button__</option>
+                  <option value="1">__MSG_customPrompts_do_reply__</option>
+                  <option value="2">__MSG_customPrompts_substitute_text__</option>
+              </select>
+            </td>
+        </tr>
+    </table>
+        <div class="go_right_float">* __MSG_customPrompts_form_required_fields__</div>
+        <br>
+        <div class="go_right"><button id="btnAddNew" disabled>__MSG_customPrompts_btnAddNewCommit__</button></div>
+    </div>
+    <div id="all_prompts">
+        <table class="prompts_list">
+            <thead>
+              <tr>
+                <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>
+                <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
+                <th class="sort" data-sort="text">__MSG_customPrompts_form_label_Text__</th>
+                <th class="sort" data-sort="type">__MSG_customPrompts_add_to_menu__</th>
+                <th>Properties</th>
+                <th>__MSG_customPrompts_form_label_Action__</th>
+              </tr>
+            </thead>
+            <tbody class="list">
+            </tbody>
+          </table>
+    </div>
+    <script src="list.js"></script>
+    <script src="mzta-custom-prompts.js" type="module"></script>
+    <script src="../js/mzta-i18n.js"></script>
+</body>
+</html>
+

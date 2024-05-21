@@ -2,25 +2,40 @@
 
 
 
+<h2>Version 1.1.0 - ??/??/2024</h2>
+  <ul>
+    <li>A prompt can be configured to request additional text from the user.</li>
+    <li>Added custom prompts. See more info <a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">here</a>.</li>
+    <li>Dark mode added.</li>
+    <li>Added some error messages to handle potential changes in the ChatGPT web interface.</li>
+    <li>German translation added.</li>
+    <li>French translation added.</li>
+    <li>Log messages improved.</li>
+  </ul>
+
 <h2>Version 1.0.10 - 17/05/2024</h2>
   <ul>
     <li>Now using the new URL chatgpt.com.</li>
     <li>More improvements in handling the ChatGPT web interface.</li>
   </ul>
+
 <h2>Version 1.0.9 - 16/05/2024</h2>
   <ul>
     <li>Improved handling of different versions of the ChatGPT web interface.</li>
   </ul>
+
 <h2>Version 1.0.8 - 15/05/2024</h2>
   <ul>
-    <li>Fixed changes in the ChatGPT web interface, see <a href="https://github.com/micz/ThunderAI/issues/57">#57</a> and <a href="https://github.com/micz/ThunderAI/issues/62">#62</a>.</li>
+    <li>Fixed changes in the ChatGPT web interface [<a href="https://github.com/micz/ThunderAI/issues/57">#57</a>, <a href="https://github.com/micz/ThunderAI/issues/62">#62</a>].</li>
     <li>Correctly handling the model ChatGPT-4o.</li>
   </ul>
+
 <h2>Version 1.0.7 - 09/05/2024</h2>
 <ul>
   <li>Improved the reply prompt to exclude comments and other text beside the mail text.</li>
   <li>Correctly keeping the signature in a reply even if it's above the quoted email [<a href="https://github.com/micz/ThunderAI/issues/45">#45</a>].</li>
 </ul>
+
 <h2>Version 1.0.6 - 08/05/2024</h2>
 <ul>
   <li>Correctly handling a change in the ChatGPT web interface [<a href="https://github.com/micz/ThunderAI/issues/43">#43</a>].</li>

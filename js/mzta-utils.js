@@ -16,6 +16,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+export const getMenuContextCompose = () => 'compose_action_menu';
+export const getMenuContextDisplay = () => 'message_display_action_menu';
+
 
 export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});

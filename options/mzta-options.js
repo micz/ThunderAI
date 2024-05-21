@@ -39,7 +39,7 @@ function saveOptions(e) {
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
         }else{
-          console.log('Unhandled input type:', element.type);
+          console.log('[ThunderAI] Unhandled input type:', element.type);
         }
     }
 
@@ -73,14 +73,14 @@ function restoreOptions() {
             element.selectedIndex = -1;
           }
         }else{
-          console.log('Unhandled input type:', element.type);
+          console.log('[ThunderAI] Unhandled input type:', element.type);
         }
       }
     });
   }
 
   function onError(error) {
-    console.log(`Error: ${error}`);
+    console.log(`[ThunderAI] Error: ${error}`);
   }
 
   let getting = browser.storage.sync.get(null);
@@ -92,5 +92,17 @@ document.addEventListener('DOMContentLoaded', () => {
   i18n.updateDocument();
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
+  });
+  document.getElementById('btnManagePrompts').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')});
+      }
+    })
   });
 }, { once: true });

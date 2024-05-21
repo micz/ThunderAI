@@ -18,14 +18,15 @@
 
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
-import { defaultPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName } from './mzta-utils.js'
+import { getPrompts } from './mzta-prompts.js';
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay } from './mzta-utils.js'
 
 export class mzta_Menus {
 
+    allPrompts = [];
     openChatGPT = null;
-    menu_context_compose = 'compose_action_menu';
-    menu_context_display = 'message_display_action_menu';
+    menu_context_compose = null;
+    menu_context_display = null;
     menu_listeners = {};
 
     rootMenu = [
@@ -33,16 +34,36 @@ export class mzta_Menus {
     ];
 
     constructor(openChatGPT) {
+        this.menu_context_compose = getMenuContextCompose();
+        this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
-        defaultPrompts.forEach((prompt) => {
+        this.allPrompts = [];
+        this.listener = this.listener.bind(this);
+    }
+
+
+    async initialize() {
+        this.allPrompts = [];
+        this.rootMenu = [];
+        this.menu_listeners = {};
+        this.allPrompts = await getPrompts(true);   
+        this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
+        this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
-        //this.addMenu(this.rootMenu);
+    }
+
+    async reload(){
+        await browser.menus.removeAll().catch(error => {
+                console.error("[ThunderAI]  ERROR removing the menus: ", error);
+            });
+        this.removeClickListener();
+        this.loadMenus();
     }
 
     addAction = (curr_prompt) => {
 
-        let curr_menu_entry = {id: curr_prompt.id };
+        let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
     
         const getHighlight = async () => {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -56,7 +77,7 @@ export class mzta_Menus {
             const msg_text = await getHighlight();
     
             //check if a selection is needed
-            if(curr_prompt.need_selected && (msg_text.selection==='')){
+            if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
                 //alert(browser.i18n.getMessage('prompt_selection_needed'));
                 const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -75,7 +96,7 @@ export class mzta_Menus {
             let prefs = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
             let chatgpt_lang = prefs.default_chatgpt_lang;
     
-            var fullPrompt = curr_prompt.text + (curr_prompt.need_signature ? " " + await this.getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + body_text + "\" ";
+            var fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + body_text + "\" ";
     
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
@@ -87,14 +108,15 @@ export class mzta_Menus {
                 default:
                     break;
             }
-    
+
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id);
+            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.need_custom_text);
         };
         this.rootMenu.push(curr_menu_entry);
     };
-    
+
     async getDefaultSignature(){
         let prefs = await browser.storage.sync.get({default_sign_name: ''});
         if(prefs.default_sign_name===''){
@@ -104,53 +126,83 @@ export class mzta_Menus {
         }
     }
 
-    loadMenus() {
-        this.addMenu(this.rootMenu);
-        let listeners = this.menu_listeners;
-        browser.menus.onClicked.addListener((info, tab) => {
-            listeners[info.menuItemId] && listeners[info.menuItemId] (info, tab);
-          });
+    async loadMenus() {
+        await this.initialize();
+        await this.addMenu(this.rootMenu);
+        this.addClickListener();
     }
 
-    addMenu = (menu, root = null) => {
-        for (let item of menu) {
-          let {id, menu, act} = item;
+    listener(info, tab) {
+        let listeners = this.menu_listeners;
+        if (listeners[info.menuItemId]) {
+            listeners[info.menuItemId](info, tab);
+        }
+    }
 
-          browser.menus.create({
-            id: id,
-            title: browser.i18n.getMessage(id),
-            contexts: this.getContexts(id),
-            parentId: root
-          });
+    addClickListener() {
+        browser.menus.onClicked.addListener(this.listener);
+    }
+
+    removeClickListener() {
+        browser.menus.onClicked.removeListener(this.listener);
+    }
+
+    addMenu = async (menu, root = null) => {
+        for (let item of menu) {
+          let {id, is_default, name, menu, act} = item;
+
+          await new Promise(resolve =>
+            browser.menus.create({
+                id: id,
+                title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
+                contexts: this.getContexts(id),
+                parentId: root
+              },
+              resolve
+            )
+          );
       
           if (act) {
             this.menu_listeners[id] = act;
           }
       
           if (menu) {
-            this.addMenu(menu, id);
+            await this.addMenu(menu, id);
           }
         }
       
     };
 
     getContexts(id){
-        const curr_prompt = defaultPrompts.find(p => p.id === id);
+        //console.log(">>>>>>>>> id: " + id);
+        const curr_prompt = this.allPrompts.find(p => p.id === id);
+        //console.log(">>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
         if (!curr_prompt) {
           return [];
         }
-        switch(curr_prompt.type){
-            case 0:
+        switch(String(curr_prompt.type)){
+            case "0":
                 return [this.menu_context_compose, this.menu_context_display];
-            case 1:
+            case "1":
                 return [this.menu_context_display];
-            case 2:
+            case "2":
                 return [this.menu_context_compose];
             default:
                 return [];
         }
 
     }
-    
+
+    getCustomTextAttribute(id){
+        const curr_prompt = this.allPrompts.find(p => p.id === id);
+        if (!curr_prompt) {
+          return "";
+        }
+        if(String(curr_prompt.need_custom_text) === "1"){
+            return "*";
+        }else{
+            return "";
+        }
+    }
 
 }

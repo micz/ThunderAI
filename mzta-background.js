@@ -55,10 +55,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     return true;
             case 'chatgpt_close':
                     browser.windows.remove(createdWindowID).then(() => {
-                        console.log("ChatGPT window closed successfully.");
+                        console.log("[ThunderAI] ChatGPT window closed successfully.");
                         return true;
                     }).catch((error) => {
-                        console.error("Error closing ChatGPT window:", error);
+                        console.error("[ThunderAI] Error closing ChatGPT window:", error);
                         return false;
                     });
                     break;
@@ -113,6 +113,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 await setBody(message.tabId, original_html);
                 await setBody(message.tabId, modified_html);
                 break;
+            case 'reload_menus':
+                await menus.reload();
+                console.log('[ThunderAI] Reloaded menus');
+                break;
             default:
                 break;
         }
@@ -122,10 +126,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 });
 
 
-async function openChatGPT(promptText, action, curr_tabId) {
+async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
-    console.log('Prompt length: ' + promptText.length);
+    console.log('[ThunderAI] Prompt length: ' + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
         browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
@@ -138,7 +142,7 @@ async function openChatGPT(promptText, action, curr_tabId) {
         height: prefs.chatgpt_win_height
     });
 
-    console.log("Script started...");
+    console.log("[ThunderAI] Script started...");
     createdWindowID = newWindow.id;
     const createdTab = newWindow.tabs[0];
 
@@ -164,15 +168,16 @@ async function openChatGPT(promptText, action, curr_tabId) {
     let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
     let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
     let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
+    let mztaDoCustomText=`+ do_custom_text +`;
     `;
 
     browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
         .then(async () => {
-            console.log("Script injected successfully");
+            console.log("[ThunderAI] Script injected successfully");
             browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId });
         })
         .catch(err => {
-            console.error("Error injecting the script: ", err);
+            console.error("[ThunderAI] Error injecting the script: ", err);
         });
 }
 
