@@ -2,6 +2,12 @@
 
 
 
+
+<h2>Version 1.1.1 - 22/05/2024</h2>
+  <ul>
+    <li>Improved handling of CSS in the ChatGPT web interface.</li>
+  </ul>
+
 <h2>Version 1.1.0 - 21/05/2024</h2>
   <ul>
     <li>A prompt can be configured to request additional text from the user.</li>
