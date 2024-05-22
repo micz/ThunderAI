@@ -12,6 +12,12 @@ Starting from version 1.1.0, you can also define your own **custom prompts**! Fi
 
 <br>
 
+## Translations
+Do you want to help translating this addon?
+[Find out how!](https://micz.it/thunderdbird-addon-thunderai/translate/)
+
+<br>
+
 ## Changelog
 ThunderAI's changes are logged [here](CHANGELOG.md).
 
