@@ -432,7 +432,7 @@ function setSomethingChanged(){
     somethingChanged = true;
     document.getElementById('btnSaveAll').disabled = false;
     let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.innerHTML = browser.i18n.getMessage('customPrompts_unsaved_changes');
+    msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'red';
 }
@@ -442,7 +442,7 @@ function setNothingChanged(){
     document.getElementById('btnSaveAll').disabled = true;
     let msgDisplay = document.getElementById('msgDisplay');
     msgDisplay.disabled = true;
-    msgDisplay.innerHTML = ''
+    msgDisplay.textContent = ''
     msgDisplay.style.display = 'none';
     msgDisplay.style.color = '';
 }
@@ -504,14 +504,14 @@ async function saveAll() {
 function setMessage(msg, color = '') {
     clearTimeout(msgTimeout);
     let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.innerHTML = msg;
+    msgDisplay.textContent = msg;
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = color;
 }
 
 function clearMessage() {
     let msgDisplay = document.getElementById('msgDisplay');
-    msgDisplay.innerHTML = '';
+    msgDisplay.textContent = '';
     msgDisplay.style.display = 'none';
     msgDisplay.style.color = '';
 }

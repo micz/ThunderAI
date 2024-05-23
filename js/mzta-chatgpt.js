@@ -148,13 +148,13 @@ function addCustomDiv(prompt_action,tabId) {
     // Model warning div
     var modelWarnDiv = document.createElement('div');
     modelWarnDiv.id = 'mzta-model_warn';
-    modelWarnDiv.innerHTML = browser.i18n.getMessage("chatgpt_win_model_warning");
+    modelWarnDiv.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
     fixedDiv.appendChild(modelWarnDiv);
 
     // GPT-3 Button
     var btn_gpt35 = document.createElement('button');
     btn_gpt35.id="mzta-btn_gpt35";
-    btn_gpt35.innerHTML = browser.i18n.getMessage("chatgpt_use_gpt35");
+    btn_gpt35.textContent = browser.i18n.getMessage("chatgpt_use_gpt35");
     btn_gpt35.onclick = async function() {
         browser.storage.sync.set({chatpgt_use_gpt4: false});
         force_go = true;
@@ -170,7 +170,7 @@ function addCustomDiv(prompt_action,tabId) {
     //force completion
     var force_completion_div = document.createElement('div');
     force_completion_div.id = 'mzta-force-completion';
-    force_completion_div.innerHTML = mztaForceCompletionDesc;
+    force_completion_div.textContent = mztaForceCompletionDesc;
     force_completion_div.title = mztaForceCompletionTitle;
     force_completion_div.addEventListener('click', function() {
         operation_done();
@@ -180,7 +180,8 @@ function addCustomDiv(prompt_action,tabId) {
     // span for the text
     var curr_msg = document.createElement('span');
     curr_msg.id='mzta-curr_msg';
-    curr_msg.innerHTML = browser.i18n.getMessage("chatgpt_win_working")+"<br>";
+    curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_working");
+    curr_msg.style.display = 'block';
     fixedDiv.appendChild(curr_msg);
 
     var loading = document.createElement('img');
@@ -195,13 +196,13 @@ function addCustomDiv(prompt_action,tabId) {
     switch(String(prompt_action)){ 
         default:
         case "0":     // close window
-            btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_close");
+            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_close");
             btn_ok.onclick = async function() {
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
         case "1":     // do reply
-            btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
+            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
                 browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId});
@@ -210,7 +211,7 @@ function addCustomDiv(prompt_action,tabId) {
             };
             break;
         case "2":     // replace text
-            btn_ok.innerHTML = browser.i18n.getMessage("chatgpt_win_get_answer");
+            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
                 //console.log('replace text: '+tabId)
@@ -228,7 +229,7 @@ function addCustomDiv(prompt_action,tabId) {
     customDiv.id = 'mzta-custom_text';
     let customInfo = document.createElement('div');
     customInfo.id = 'mzta-custom_info';
-    customInfo.innerHTML = browser.i18n.getMessage("chatgpt_win_custom_text");
+    customInfo.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
     customDiv.appendChild(customInfo);
     let customTextArea = document.createElement('textarea');
     customTextArea.id = 'mzta-custom_textarea';
@@ -239,7 +240,7 @@ function addCustomDiv(prompt_action,tabId) {
     customDiv.appendChild(customLoading);
     let customBtn = document.createElement('button');
     customBtn.id = 'mzta-custom_btn';
-    customBtn.innerHTML = browser.i18n.getMessage("chatgpt_win_send");
+    customBtn.textContent = browser.i18n.getMessage("chatgpt_win_send");
     customBtn.classList.add('mzta-btn');
     customBtn.addEventListener("click", () => { customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
     customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
@@ -294,7 +295,9 @@ function checkGPT4Model() {
 
 
 function operation_done(){
-    document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_win_job_completed")+"<br>";
+    let curr_msg = document.getElementById('mzta-curr_msg');
+    curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");
+    curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
     document.getElementById('mzta-loading').style.display = 'none';
     document.getElementById('mzta-force-completion').style.display = 'none';
@@ -318,13 +321,15 @@ async function doProceed(message, customText = ''){
     let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
     switch(send_result){
         case -1:        // send button not found
-            document.getElementById('mzta-curr_msg').style.display = 'block';
-            document.getElementById('mzta-curr_msg').innerHTML = browser.i18n.getMessage("chatgpt_sendbutton_not_found_error");
+            let curr_msg = document.getElementById('mzta-curr_msg');
+            curr_msg.style.display = 'block';
+            curr_msg.textContent = browser.i18n.getMessage("chatgpt_sendbutton_not_found_error");
             break;
         case -2:    // textarea not found
-            document.getElementById('mzta-model_warn').innerHTML = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
-            document.getElementById('mzta-model_warn').style.display = 'inline-block';
-            document.getElementById('mzta-curr_msg').innerHTML = "";
+            let curr_model_warn = document.getElementById('mzta-model_warn');
+            curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            curr_model_warn.style.display = 'inline-block';
+            document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';
             break;
     }
