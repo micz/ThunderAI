@@ -3,6 +3,13 @@
 
 
 
+
+<h2>Version 1.1.2 - 23/05/2024</h2>
+  <ul>
+    <li>Minor improvements.</li>
+  </ul>
+
+
 <h2>Version 1.1.1 - 22/05/2024</h2>
   <ul>
     <li>Improved handling of CSS in the ChatGPT web interface.</li>
