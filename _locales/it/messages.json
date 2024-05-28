@@ -256,7 +256,7 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "C'è stato un errore nell'invio del prompt a ChatGPT, per favore riprova. Se il problema persiste, per favore <a href=\"https://micz.it/thunderdbird-addon-thunderai/status/\">controlla lo stato del servizio</a>.",
+    "message": "C'è stato un errore nell'invio del prompt a ChatGPT, per favore riprova. Se il problema persiste, per favore <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">controlla lo stato del servizio</a>.",
     "description": ""
   },
   "chatgpt_sendbutton_not_found_error": {

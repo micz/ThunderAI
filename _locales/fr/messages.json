@@ -255,7 +255,7 @@
     },
   
     "chatgpt_textarea_not_found_error": {
-      "message": "Il y a une erreur lors de l'envoi de la proposition à ChatGPT, veuillez réessayer. Si le problème persiste, veuillez <a href=\"https://micz.it/thunderdbird-addon-thunderai/status/\">vérifier le statut du service</a>.",
+      "message": "Il y a une erreur lors de l'envoi de la proposition à ChatGPT, veuillez réessayer. Si le problème persiste, veuillez <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">vérifier le statut du service</a>.",
       "description": ""
     },
   

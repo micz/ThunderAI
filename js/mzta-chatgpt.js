@@ -1,5 +1,5 @@
 /*
- *  ThunderAI [https://micz.it/thunderdbird-addon-thunderai/]
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
  *  Copyright (C) 2024  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
@@ -164,7 +164,7 @@ function addCustomDiv(prompt_action,tabId) {
     //status page
     var status_page_div = document.createElement('div');
     status_page_div.id = 'mzta-status-page';
-    status_page_div.innerHTML = '<a href="https://micz.it/thunderdbird-addon-thunderai/status/">'+ mztaStatusPageDesc +'</a>';
+    status_page_div.innerHTML = '<a href="https://micz.it/thunderbird-addon-thunderai/status/">'+ mztaStatusPageDesc +'</a>';
     fixedDiv.appendChild(status_page_div);
 
     //force completion

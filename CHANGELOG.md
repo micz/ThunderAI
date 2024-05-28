@@ -18,7 +18,7 @@
 <h2>Version 1.1.0 - 21/05/2024</h2>
   <ul>
     <li>A prompt can be configured to request additional text from the user.</li>
-    <li>Added custom prompts. See more info <a href="https://micz.it/thunderdbird-addon-thunderai/custom-prompts/">here</a>.</li>
+    <li>Added custom prompts. See more info <a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/">here</a>.</li>
     <li>Dark mode added.</li>
     <li>Added some error messages to handle potential changes in the ChatGPT web interface.</li>
     <li>German translation added.</li>
@@ -79,7 +79,7 @@
   <li>Fixed a bug in importing replies text.</li>
   <li>Fixed the handling of the new change model button in the ChatGPT interface.</li>
   <li>Added an option to choose between GPT-3.5 and GPT-4 Models [<a href="https://github.com/micz/ThunderAI/issues/27">#27</a>].</li>
-  <li>Added a link to the <a href="https://micz.it/thunderdbird-addon-thunderai/status/">Status Page</a>, to check if there are known issues in interacting with the ChatGPT web interface.</li>
+  <li>Added a link to the <a href="https://micz.it/thunderbird-addon-thunderai/status/">Status Page</a>, to check if there are known issues in interacting with the ChatGPT web interface.</li>
 </ul>
 
 <h2>Version 1.0.1 - 13/04/2024</h2>
