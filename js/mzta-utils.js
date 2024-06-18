@@ -78,11 +78,11 @@ export async function setBody(tabId, fullHtmlBody){
   await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
 }
 
-export async function replaceBody(tabId, text){
+export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body;
   //console.log('originalHtmlBody: ' + originalHtmlBody);
-  let fullBody = insertText(text, originalHtmlBody);
+  let fullBody = insertHtml(replyHtml, originalHtmlBody);
   //console.log('fullBody: ' + fullBody);
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
@@ -90,9 +90,10 @@ export async function replaceBody(tabId, text){
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
-const insertText = function (text, fullBody_string) {
+const insertHtml = function (replyHtml, fullBody_string) {
   const parser = new DOMParser();
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
+  let reply = parser.parseFromString(replyHtml, "text/html");
   
   // looking for the first quoted mail or the signature, which come first in case of "signature above the quote".
   const prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
@@ -119,25 +120,16 @@ const insertText = function (text, fullBody_string) {
   }
 
   let final_p = document.createElement("p");
-  final_p.innerHTML = "<p><br/><br/></p>";
+  let br1 = document.createElement("br");
+  let br2 = document.createElement("br");
+  final_p.appendChild(br1);
+  final_p.appendChild(br2);
   fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
-  makeParagraphs(text, function (p) {
-    fullBody.body.insertBefore(p, fullBody.body.firstChild);
+  //fullBody.body.insertBefore(reply, fullBody.body.firstChild);
+  let fragment = document.createDocumentFragment();
+  Array.from(reply.body.childNodes).forEach(node => {
+    fragment.appendChild(node);
   });
+  fullBody.body.insertBefore(fragment, fullBody.body.firstChild);
   return fullBody.body.innerHTML;
 }
-
-const makeParagraphs = (text, func) => {
-  const chunks = text.split(/\n{2,}/);
-  if (chunks.length == 1) {
-    return func(document.createTextNode(text));
-  }
-  const paragraphs = chunks.map((t) => {
-    const p = document.createElement("p");
-    p.innerText = t;
-    return p;
-  });
-  for (let i = paragraphs.length - 1; i >= 0; i--) {
-    func(paragraphs[i]);
-  }
-};
