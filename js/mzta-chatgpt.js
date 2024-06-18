@@ -79,10 +79,24 @@ async function chatgpt_getFromDOM(pos) {
             }
             // Extract the new HTML string
             responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
-            response = responseDivs[responseDivs.length - 1].textContent;
+            //response = responseDivs[responseDivs.length - 1].textContent;
+            response = responseDivs[responseDivs.length - 1].innerHTML;
+            const parser2 = new DOMParser();
+            const doc2 = parser2.parseFromString(response, 'text/html');
+
+            // Get all elements in the parsed document
+            const allElements = doc2.body.querySelectorAll('*');
+
+            // Tags to exclude
+            const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
+            // Filter out elements that should be excluded
+            const keepElements = Array.from(allElements).filter(element => !excludeTags.includes(element.tagName.toLowerCase()));
+
+            // Create a new HTML string containing all non-div elements in order
+            response = keepElements.map(element => element.outerHTML).join('');
             //console.log('chatgpt_getFromDOM: '+response);
             //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
-        } else { // get nth response
+        } else { // get nth response            ---      HERE ONLY TEXT FROM RESPONSE, NO HTML
             const nthOfResponse = (
 
                 // Calculate base number
@@ -109,7 +123,7 @@ async function chatgpt_getFromDOM(pos) {
         }
         response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
         response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
-        //console.log('chatgpt_getFromDOM: ' + response);
+        console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
     }
     return response;
 }
