@@ -128,7 +128,9 @@ const insertHtml = function (replyHtml, fullBody_string) {
   //fullBody.body.insertBefore(reply, fullBody.body.firstChild);
   let fragment = document.createDocumentFragment();
   Array.from(reply.body.childNodes).forEach(node => {
-    fragment.appendChild(node);
+    if (node.parentNode === reply.body) {
+      fragment.appendChild(node.cloneNode(true));
+    }
   });
   fullBody.body.insertBefore(fragment, fullBody.body.firstChild);
   return fullBody.body.innerHTML;
