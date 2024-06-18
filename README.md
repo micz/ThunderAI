@@ -25,6 +25,6 @@ ThunderAI's changes are logged [here](CHANGELOG.md).
 
 <br>Thanks to:
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
-<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration and certains methods to process the text from ChatGPT.</li>
+<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
 </ul>
 <i>The specific references are described in the corresponding source files.</i>
