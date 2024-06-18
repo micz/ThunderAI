@@ -76,14 +76,22 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     replyType = 'replyToSender';
                 }
                 //console.log('replyType: ' + replyType);
-                browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
-                    let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
-                        type: "reply",
-                        //body:  paragraphsHtmlString,
-                        isPlainText: false,
-                        identityId: await getCurrentIdentity(mailMessage),
-                    })
-                    
+                // browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
+                //     let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
+                //         type: "reply",
+                //         //body:  paragraphsHtmlString,
+                //         isPlainText: false,
+                //         identityId: await getCurrentIdentity(mailMessage),
+                //     })
+                //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
+                browser.messages.get(message.mailMessageId).then(async (mailMessage) => {
+                let curr_idn = await getCurrentIdentity(mailMessage)
+                let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
+                    type: "reply",
+                    //body:  paragraphsHtmlString,
+                    isPlainText: false,
+                    identityId: curr_idn,
+                })
                     // Wait for tab loaded.
                     await new Promise(resolve => {
                         const tabIsLoaded = tab => {
@@ -92,6 +100,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                         const listener = (tabId, changeInfo, updatedTab) => {
                             if (tabIsLoaded(updatedTab)) {
                                 browser.tabs.onUpdated.removeListener(listener);
+                                console.log(">>>>>>>>>>>> reply_tab: " + tabId);
                                 resolve();
                             }
                         }
@@ -174,7 +183,10 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
         .then(async () => {
             console.log("[ThunderAI] Script injected successfully");
-            browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId });
+            let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+            let mailMessageId = -1;
+            if(mailMessage) mailMessageId = mailMessage.id;
+            browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
         })
         .catch(err => {
             console.error("[ThunderAI] Error injecting the script: ", err);

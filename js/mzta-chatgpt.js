@@ -119,7 +119,7 @@ function chatpgt_scrollToBottom () {
     catch (err) { console.error('[ThunderAI] ', err); }
 }
 
-function addCustomDiv(prompt_action,tabId) {
+function addCustomDiv(prompt_action,tabId,mailMessageId) {
     // Create <style> element for the CSS
     var style = document.createElement('style');
     style.textContent = ".mzta-header-fixed {position: fixed;bottom: 0;left: 0;height:100px;width: 100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
@@ -205,7 +205,7 @@ function addCustomDiv(prompt_action,tabId) {
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
-                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId});
+                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 //console.log(response);
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
@@ -215,7 +215,7 @@ function addCustomDiv(prompt_action,tabId) {
             btn_ok.onclick = async function() {
                 const response = await chatgpt_getFromDOM('last');
                 //console.log('replace text: '+tabId)
-                browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId});
+                browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 //console.log(response);
                 browser.runtime.sendMessage({command: "chatgpt_close"});
             };
@@ -344,7 +344,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // User not logged in
             alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
         }else{
-            addCustomDiv(message.action,message.tabId);
+            addCustomDiv(message.action,message.tabId,message.mailMessageId);
             (async () => {
                 if(mztaDoCustomText === 1){
                     current_message = message;
