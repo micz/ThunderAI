@@ -19,7 +19,7 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
-import { getCurrentIdentity, getOriginalBody, reloadBody, replaceBody, setBody } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody } from './js/mzta-utils.js';
 
 var createdWindowID = null;
 var original_html = '';
@@ -69,6 +69,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     return true;
             case 'chatgpt_replyMessage':
                 const paragraphsHtmlString = message.text;
+                console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                 let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
                 //console.log('reply_type: ' + prefs.reply_type);
                 let replyType = 'replyToAll';
