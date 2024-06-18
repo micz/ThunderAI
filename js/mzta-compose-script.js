@@ -34,7 +34,6 @@ switch (message.command) {
     r.deleteContents();
     const parser = new DOMParser();
     const doc = parser.parseFromString(message.text, 'text/html');
-    console.log(JSON.stringify(doc));
     r.insertNode(doc.body);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     break;
