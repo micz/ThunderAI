@@ -337,7 +337,7 @@ async function doProceed(message, customText = ''){
     operation_done();
 }
 
-// Nello script di contenuto
+// In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.command === "chatgpt_send") {
         if(!checkLoggedIn()){
