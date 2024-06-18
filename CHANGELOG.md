@@ -4,6 +4,11 @@
 
 
 
+<h2>Version 1.1.3 - 18/06/2024</h2>
+  <ul>
+    <li>...</li>
+  </ul>
+
 <h2>Version 1.1.2 - 23/05/2024</h2>
   <ul>
     <li>Minor improvements.</li>
