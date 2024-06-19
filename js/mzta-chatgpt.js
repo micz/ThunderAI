@@ -73,28 +73,27 @@ async function chatgpt_getFromDOM(pos) {
             let parser = new DOMParser();
             let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
             // Select the div with class 'empty:hidden'
-            let divToRemove = doc.querySelector('div.empty\\\\:hidden');
-            if (divToRemove) {
-                divToRemove.remove();
-            }
-            // Extract the new HTML string
-            responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
-            //response = responseDivs[responseDivs.length - 1].textContent;
-            response = responseDivs[responseDivs.length - 1].innerHTML;
-            const parser2 = new DOMParser();
-            const doc2 = parser2.parseFromString(response, 'text/html');
-
-            // Get all elements in the parsed document
-            const allElements = doc2.body.querySelectorAll('*');
-
+            // let divToRemove = doc.querySelector('div.empty\\\\:hidden');
+            // if (divToRemove) {
+            //     divToRemove.remove();
+            // }
+            // // Extract the new HTML string
+            // responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
+            // //response = responseDivs[responseDivs.length - 1].textContent;
+            // response = responseDivs[responseDivs.length - 1].innerHTML;
+            // console.log('chatgpt_getFromDOM original response: '+ response);
+            // const parser2 = new DOMParser();
+            // const doc2 = parser2.parseFromString(response, 'text/html');
             // Tags to exclude
+            //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
             const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
-            // Filter out elements that should be excluded
-            const keepElements = Array.from(allElements).filter(element => !excludeTags.includes(element.tagName.toLowerCase()));
+            const includeTags = ['p', 'ul'];
+            // removeTags(doc.body, excludeTags);
+            response = removeTagsAndReturnHTML(doc.body, excludeTags, includeTags)
+            //console.log(">>>>>>>>> doc.body.innerHTML final: " + doc.body.innerHTML);
+            // response = doc.body.innerHTML;
 
-            // Create a new HTML string containing all non-div elements in order
-            response = keepElements.map(element => element.outerHTML).join('');
-            //console.log('chatgpt_getFromDOM: '+response);
+            //console.log('chatgpt_getFromDOM final response: '+response);
             //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
         } else { // get nth response            ---      HERE ONLY TEXT FROM RESPONSE, NO HTML
             const nthOfResponse = (
@@ -123,7 +122,7 @@ async function chatgpt_getFromDOM(pos) {
         }
         response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
         response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
-        console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
+        //console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
     }
     return response;
 }
@@ -350,6 +349,51 @@ async function doProceed(message, customText = ''){
     await chatgpt_isIdle();
     operation_done();
 }
+
+function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
+    removeTags.forEach(tag => {
+      const elements = rootElement.getElementsByTagName(tag);
+      while (elements.length > 0) {
+        const element = elements[0];
+        // Preserve specified tags and their children
+        preserveTags.forEach(preserveTag => {
+          const preservedElements = element.getElementsByTagName(preserveTag);
+          while (preservedElements.length > 0) {
+            const preservedElement = preservedElements[0];
+            element.parentNode.insertBefore(preservedElement, element);
+          }
+        });
+        // Remove the element and all its remaining children
+        element.parentNode.removeChild(element);
+      }
+    });
+
+    replaceNewlinesWithBr(rootElement);
+
+    // Return the updated HTML as a string
+    return rootElement.innerHTML;
+  }
+
+   // Replace newline characters with <br> tags
+  function replaceNewlinesWithBr(node) {
+    for (let child of Array.from(node.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const parts = child.textContent.split('\\n');
+        if (parts.length > 1) {
+          const fragment = document.createDocumentFragment();
+          parts.forEach((part, index) => {
+            fragment.appendChild(document.createTextNode(part));
+            if (index < parts.length - 1) {
+              fragment.appendChild(document.createElement('br'));
+            }
+          });
+          child.parentNode.replaceChild(fragment, child);
+        }
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        replaceNewlinesWithBr(child);
+      }
+    }
+  }
 
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
