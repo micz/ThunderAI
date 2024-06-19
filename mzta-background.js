@@ -69,7 +69,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     return true;
             case 'chatgpt_replyMessage':
                 const paragraphsHtmlString = message.text;
-                console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
+                //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                 let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
                 //console.log('reply_type: ' + prefs.reply_type);
                 let replyType = 'replyToAll';
@@ -101,7 +101,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                         const listener = (tabId, changeInfo, updatedTab) => {
                             if (tabIsLoaded(updatedTab)) {
                                 browser.tabs.onUpdated.removeListener(listener);
-                                console.log(">>>>>>>>>>>> reply_tab: " + tabId);
+                                //console.log(">>>>>>>>>>>> reply_tab: " + tabId);
                                 resolve();
                             }
                         }
