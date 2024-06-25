@@ -4,6 +4,11 @@
 
 
 
+<h2>Version 1.1.4pre2 - ??/??/2024</h2>
+    <ul>
+      <li>...</li>
+    </ul>
+
 <h2>Version 1.1.3 - 18/06/2024</h2>
   <ul>
     <li>Fixed a bug in replying to a message [<a href="https://github.com/micz/ThunderAI/issues/70">#70</a>].</li>
