@@ -352,27 +352,35 @@ async function doProceed(message, customText = ''){
 
 function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
     removeTags.forEach(tag => {
-      const elements = rootElement.getElementsByTagName(tag);
-      while (elements.length > 0) {
-        const element = elements[0];
-        // Preserve specified tags and their children
-        preserveTags.forEach(preserveTag => {
-          const preservedElements = element.getElementsByTagName(preserveTag);
-          while (preservedElements.length > 0) {
-            const preservedElement = preservedElements[0];
-            element.parentNode.insertBefore(preservedElement, element);
-          }
-        });
-        // Remove the element and all its remaining children
-        element.parentNode.removeChild(element);
-      }
+        const elements = rootElement.getElementsByTagName(tag);
+        while (elements.length > 0) {
+            const element = elements[0];
+            const fragment = document.createDocumentFragment();
+
+            // Preserve specified tags and their children in the correct order
+            let child = element.firstChild;
+            while (child) {
+                console.log(">>>>>>>>>>>> ciclo child: " + child.tagName.toLowerCase());
+                const nextSibling = child.nextSibling;
+                if (preserveTags.includes(child.tagName.toLowerCase())) {
+                    console.log(">>>>>>>>>>>> preserve: " + child.tagName.toLowerCase());
+                    fragment.appendChild(child);
+                }
+                child = nextSibling;
+            }
+
+            // Append preserved elements back to the parent of the removed element
+            element.parentNode.insertBefore(fragment, element);
+
+            // Remove the element and all its remaining children
+            element.parentNode.removeChild(element);
+        }
     });
 
     replaceNewlinesWithBr(rootElement);
-
     // Return the updated HTML as a string
     return rootElement.innerHTML;
-  }
+}
 
    // Replace newline characters with <br> tags
   function replaceNewlinesWithBr(node) {
