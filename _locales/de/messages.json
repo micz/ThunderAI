@@ -275,7 +275,7 @@
     },
   
     "chatgpt_win_model_warning": {
-      "message": "Sie haben die Option zur Verwendung von ChatGPT-4 eingestellt, aber es scheint, dass es nicht korrekt geladen wird. Haben Sie das richtige Modell oben ausgewählt?",
+      "message": "Sie haben die Option zur Verwendung von ChatGPT-4 eingestellt, aber es scheint, dass es nicht korrekt geladen wird. Haben Sie oben das Modell 4 oder 4o gewählt?",
       "description": ""
     },
   
