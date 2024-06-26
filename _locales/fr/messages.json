@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-      "message": "Utilisez ChatGPT pour améliorer vos emails!",
+      "message": "Utilisez ChatGPT pour améliorer vos emails !",
       "description": "Description de l'extension."
     },
   
@@ -50,7 +50,7 @@
     },
   
     "prompt_selection_needed": {
-      "message": "Pour continuer, vous devez sélectionner du texte!",
+      "message": "Pour continuer, vous devez sélectionner du texte !",
       "description": ""
     },
   
@@ -100,7 +100,7 @@
     },
   
     "customPrompts_saved": {
-      "message": "prompts enregistrées!",
+      "message": "prompts enregistrées !",
       "description": ""
     },
   
@@ -175,12 +175,12 @@
     },
   
     "customPrompts_btnDelete_confirmText": {
-      "message": "Êtes-vous sûr de vouloir supprimer cet élément?",
+      "message": "Êtes-vous sûr de vouloir supprimer cet élément ?",
       "description": ""
     },
   
     "customPrompts_unsaved_changes": {
-      "message": "Il y a des modifications non enregistrées!",
+      "message": "Il y a des modifications non enregistrées !",
       "description": ""
     },
   
@@ -245,7 +245,7 @@
     },
   
     "chatgpt_win_job_completed": {
-      "message": "Terminé!",
+      "message": "Terminé !",
       "description": ""
     },
   
@@ -395,12 +395,12 @@
     },
   
     "prefsDonation_1": {
-      "message": "Aimez-vous cet addon?",
+      "message": "Aimez-vous cet addon ?",
       "description": ""
     },
   
     "prefsDonation_2": {
-      "message": "Envisagez de faire un don!",
+      "message": "Envisagez de faire un don !",
       "description": ""
     },
   
