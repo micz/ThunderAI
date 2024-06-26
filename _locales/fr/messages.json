@@ -358,6 +358,16 @@
       "message": "Type de réponse",
       "description": ""
     },
+
+    "prefs_OptionText_chatpgt_keep_formatting": {
+      "message": "Conserver la mise en forme",
+      "description": ""
+    },
+  
+    "prefs_OptionText_chatpgt_keep_formatting_info": {
+      "message": "Conservez la mise en forme et les numéros ou les puces de la réponse de ChatGPT.",
+      "description": ""
+    },
   
     "prefs_OptionText_chatpgt_use_gpt4": {
       "message": "Utiliser ChatGPT-4",

@@ -287,6 +287,14 @@
     "message": "Modalità di risposta",
     "description": ""
   },
+  "prefs_OptionText_chatpgt_keep_formatting": {
+    "message": "Mantieni la formattazione",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_keep_formatting_info": {
+    "message": "Mantieni la formattazione del testo e gli elenchi puntati e numerati della risposta di ChatGPT.",
+    "description": ""
+  },
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Usa il modello ChatGPT-4",
     "description": ""

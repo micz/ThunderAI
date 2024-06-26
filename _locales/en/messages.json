@@ -359,6 +359,16 @@
     "description": ""
   },
 
+  "prefs_OptionText_chatpgt_keep_formatting": {
+    "message": "Keep formatting",
+    "description": ""
+  },
+
+  "prefs_OptionText_chatpgt_keep_formatting_info": {
+    "message": "Keep the formatting and numeral or bullet points from the ChatGPT response.",
+    "description": ""
+  },
+
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Use ChatGPT-4",
     "description": ""
