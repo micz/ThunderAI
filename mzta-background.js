@@ -157,7 +157,7 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     const createdTab = newWindow.tabs[0];
 
     // Wait for tab loaded.
-    /*await new Promise(resolve => {
+    await new Promise(resolve => {
         const tabIsLoaded = tab => {
             return tab.status == "complete" && tab.url != "about:blank";
         };
@@ -173,7 +173,7 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
         } else {
             browser.tabs.onUpdated.addListener(listener);
         }
-    });*/
+    });
 
     let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
     let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
