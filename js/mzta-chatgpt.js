@@ -350,58 +350,62 @@ async function doProceed(message, customText = ''){
     operation_done();
 }
 
+
 function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
-    removeTags.forEach(tag => {
-        const elements = rootElement.getElementsByTagName(tag);
-        while (elements.length > 0) {
-            const element = elements[0];
-            const fragment = document.createDocumentFragment();
+    const fragment = document.createDocumentFragment();
 
-            // Preserve specified tags and their children in the correct order
-            let child = element.firstChild;
-            while (child) {
-                console.log(">>>>>>>>>>>> ciclo child: " + child.tagName.toLowerCase());
-                const nextSibling = child.nextSibling;
-                if (preserveTags.includes(child.tagName.toLowerCase())) {
-                    console.log(">>>>>>>>>>>> preserve: " + child.tagName.toLowerCase());
-                    fragment.appendChild(child);
-                }
-                child = nextSibling;
+    function handleElement(element) {
+        let child = element.firstChild;
+        while (child) {
+            const nextSibling = child.nextSibling;
+            if (preserveTags.includes(child.nodeName.toLowerCase())) {
+                //console.log(">>>>>>>>>>>> preserve child: " + child.tagName.toLowerCase());
+                fragment.appendChild(child);
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                //console.log(">>>>>>>>>>>> handleElement(child): " + child.tagName.toLowerCase());
+                handleElement(child);
             }
-
-            // Append preserved elements back to the parent of the removed element
-            element.parentNode.insertBefore(fragment, element);
-
-            // Remove the element and all its remaining children
-            element.parentNode.removeChild(element);
+            child = nextSibling;
         }
+    }
+
+    removeTags.forEach(tag => {
+        const elements = Array.from(rootElement.getElementsByTagName(tag));
+        elements.forEach(element => {
+            handleElement(element);
+            element.parentNode.insertBefore(fragment.cloneNode(true), element);
+            element.parentNode.removeChild(element);
+            //console.log(">>>>>>>>>>>> removeChild: " + element.tagName.toLowerCase());
+        });
     });
 
     replaceNewlinesWithBr(rootElement);
+    //console.log(">>>>>>>>>>>> rootElement.innerHTML: " + rootElement.innerHTML);
     // Return the updated HTML as a string
     return rootElement.innerHTML;
 }
 
-   // Replace newline characters with <br> tags
-  function replaceNewlinesWithBr(node) {
+// Replace newline characters with <br> tags
+function replaceNewlinesWithBr(node) {
     for (let child of Array.from(node.childNodes)) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        const parts = child.textContent.split('\\n');
-        if (parts.length > 1) {
-          const fragment = document.createDocumentFragment();
-          parts.forEach((part, index) => {
-            fragment.appendChild(document.createTextNode(part));
-            if (index < parts.length - 1) {
-              fragment.appendChild(document.createElement('br'));
+        if (child.nodeType === Node.TEXT_NODE) {
+            const parts = child.textContent.split('\\n');
+            if (parts.length > 1) {
+                const fragment = document.createDocumentFragment();
+                parts.forEach((part, index) => {
+                    fragment.appendChild(document.createTextNode(part));
+                    if (index < parts.length - 1) {
+                        fragment.appendChild(document.createElement('br'));
+                    }
+                });
+                child.parentNode.replaceChild(fragment, child);
             }
-          });
-          child.parentNode.replaceChild(fragment, child);
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+            replaceNewlinesWithBr(child);
         }
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        replaceNewlinesWithBr(child);
-      }
     }
-  }
+}
+
 
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
