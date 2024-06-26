@@ -63,6 +63,11 @@
       "message": "Informations",
       "description": ""
     },
+
+    "customPrompts_managePrompts_info_default": {
+      "message": "Les invites par défaut ne sont pas modifiables. Vous pouvez les désactiver, puis copier le texte de l'invite et le coller dans une nouvelle pour créer une version modifiée.",
+      "description": ""
+    },  
   
     "customPrompts_start_saving": {
       "message": "Enregistrement des prompts...",

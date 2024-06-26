@@ -64,6 +64,11 @@
     "description": ""
   },
 
+  "customPrompts_managePrompts_info_default": {
+    "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
+    "description": ""
+  },
+
   "customPrompts_start_saving": {
     "message": "Saving prompts...",
     "description": ""

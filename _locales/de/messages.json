@@ -63,6 +63,11 @@
         "message": "Informationen",
         "description": ""
       },
+
+    "customPrompts_managePrompts_info_default": {
+      "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen.",
+      "description": ""
+    },
   
     "customPrompts_start_saving": {
       "message": "Eingabeaufforderungen werden gespeichert...",

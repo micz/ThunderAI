@@ -67,6 +67,10 @@
     "message": "Salvataggio prompt di base...",
     "description": ""
   },
+  "customPrompts_managePrompts_info_default": {
+    "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata.",
+    "description": ""
+  },
   "customPrompts_saving_custom_prompts": {
     "message": "Salvataggio prompt personalizzati...",
     "description": ""
