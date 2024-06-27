@@ -61,6 +61,7 @@ div#miczStatusPage{
     left: 0px;
     bottom: 2px;
     padding: 2px 0px 0px 5px;
+    text-transform: capitalize;
 }
 
 div#miczDescription h1{
