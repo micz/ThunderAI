@@ -1,431 +1,346 @@
 {
-    "extensionDescription": {
-      "message": "Verwenden Sie ChatGPT, um Ihre E-Mails zu verbessern!",
-      "description": "Beschreibung der Erweiterung."
-    },
-  
-    "menu_title": {
-      "message": "KI",
-      "description": ""
-    },
-  
-    "prompt_lang": {
-      "message": "Antwort in ",
-      "description": ""
-    },
-  
-    "prompt_reply": {
-      "message": "Darauf antworten",
-      "description": ""
-    },
-  
-    "prompt_rewrite_polite": {
-      "message": "Höflich umschreiben",
-      "description": ""
-    },
-  
-    "prompt_rewrite_formal": {
-      "message": "Formal umschreiben",
-      "description": ""
-    },
-  
-    "prompt_classify": {
-      "message": "Klassifizieren",
-      "description": ""
-    },
-  
-    "prompt_summarize_this": {
-      "message": "Zusammenfassen",
-      "description": ""
-    },
-  
-    "prompt_translate_this": {
-      "message": "Übersetzen",
-      "description": ""
-    },
-  
-    "prompt_this": {
-      "message": "Auffordern",
-      "description": ""
-    },
-  
-    "prompt_selection_needed": {
-      "message": "Um fortzufahren, müssen Sie einen Text auswählen!",
-      "description": ""
-    },
-  
-    "customPrompts_managePrompts": {
-      "message": "Eingabeaufforderungen verwalten",
-      "description": ""
-    },
-
-    "customPrompts_managePrompts_help": {
-        "message": "Informationen",
-        "description": ""
-      },
-
-    "customPrompts_managePrompts_info_default": {
-      "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen.",
-      "description": ""
-    },
-  
-    "customPrompts_start_saving": {
-      "message": "Eingabeaufforderungen werden gespeichert...",
-      "description": ""
-    },
-  
-    "customPrompts_reindexing_list": {
-      "message": "Liste wird neu indiziert...",
-      "description": ""
-    },
-  
-    "customPrompts_filtering_prompts": {
-      "message": "Eingabeaufforderungen werden gefiltert...",
-      "description": ""
-    },
-  
-    "customPrompts_saving_default_prompts": {
-      "message": "Standard-Eingabeaufforderungen werden gespeichert...",
-      "description": ""
-    },
-  
-    "customPrompts_saving_custom_prompts": {
-      "message": "Benutzerdefinierte Eingabeaufforderungen werden gespeichert...",
-      "description": ""
-    },
-  
-    "customPrompts_reloading_menus": {
-      "message": "Menüs werden neu geladen...",
-      "description": ""
-    },
-  
-    "customPrompts_saved": {
-      "message": "Eingabeaufforderungen gespeichert!",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_ID": {
-      "message": "ID",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_ID_rules": {
-      "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_Name": {
-      "message": "Name",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_Text": {
-      "message": "Eingabeaufforderungstext",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_Action": {
-      "message": "Aktion",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_need_selected": {
-      "message": "Textauswahl erforderlich",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_need_signature": {
-      "message": "Immer die Signatur hinzufügen",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_need_custom_text": {
-      "message": "Nach zusätzlichem Text fragen",
-      "description": ""
-    },
-  
-    "customPrompts_form_label_enabled": {
-      "message": "Aktiviert",
-      "description": ""
-    },
-  
-    "customPrompts_form_required_fields": {
-      "message": "Erforderliche Felder",
-      "description": ""
-    },
-  
-    "customPrompts_btnEdit": {
-      "message": "Bearbeiten",
-      "description": ""
-    },
-  
-    "customPrompts_btnCancel": {
-      "message": "Abbrechen",
-      "description": ""
-    },
-  
-    "customPrompts_btnOK": {
-      "message": "OK",
-      "description": ""
-    },
-  
-    "customPrompts_btnDelete": {
-      "message": "Löschen",
-      "description": ""
-    },
-  
-    "customPrompts_btnDelete_confirmText": {
-      "message": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
-      "description": ""
-    },
-  
-    "customPrompts_unsaved_changes": {
-      "message": "Es gibt ungespeicherte Änderungen!",
-      "description": ""
-    },
-  
-    "customPrompts_btnSaveAll": {
-      "message": "Alle speichern",
-      "description": ""
-    },
-  
-    "customPrompts_save_button": {
-      "message": "Speichern",
-      "description": ""
-    },
-  
-    "customPrompts_btnNew": {
-      "message": "Neu hinzufügen",
-      "description": ""
-    },
-  
-    "customPrompts_btnAddNewCommit": {
-      "message": "Eingabeaufforderung hinzufügen",
-      "description": ""
-    },
-  
-    "customPrompts_add_to_menu": {
-      "message": "Zum Menü hinzufügen",
-      "description": ""
-    },
-  
-    "customPrompts_add_to_menu_always": {
-      "message": "Immer",
-      "description": ""
-    },
-  
-    "customPrompts_add_to_menu_reading": {
-      "message": "E-Mail lesen",
-      "description": ""
-    },
-  
-    "customPrompts_add_to_menu_composing": {
-      "message": "E-Mail verfassen",
-      "description": ""
-    },
-  
-    "customPrompts_close_button": {
-      "message": "Schließen",
-      "description": ""
-    },
-  
-    "customPrompts_do_reply": {
-      "message": "Antworten",
-      "description": ""
-    },
-  
-    "customPrompts_substitute_text": {
-      "message": "Text ersetzen",
-      "description": ""
-    },
-  
-    "chatgpt_win_working": {
-      "message": "Arbeit in Arbeit...",
-      "description": ""
-    },
-  
-    "chatgpt_win_job_completed": {
-      "message": "Abgeschlossen!",
-      "description": ""
-    },
-  
-    "chatgpt_win_get_answer": {
-      "message": "Letzte Antwort verwenden",
-      "description": ""
-    },
-  
-    "chatgpt_win_close": {
-      "message": "Schließen",
-      "description": ""
-    },
-  
-    "chatgpt_textarea_not_found_error": {
-      "message": "Es gibt einen Fehler beim Senden der Eingabeaufforderung an ChatGPT. Bitte versuchen Sie es erneut. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">Dienststatus</a>.",
-      "description": ""
-    },
-  
-    "chatgpt_sendbutton_not_found_error": {
-      "message": "Klicken Sie auf die Schaltfläche „Senden“, um die Eingabeaufforderung zu übermitteln.",
-      "description": ""
-    },
-  
-    "chatgpt_user_not_logged_in": {
-      "message": "Sie sind nicht bei ChatGPT angemeldet. Bitte melden Sie sich mit Ihren Anmeldeinformationen an, schließen Sie das ChatGPT-Fenster und wiederholen Sie dann die Aktion, die Sie versucht haben. Danach bleiben Sie angemeldet.",
-      "description": ""
-    },
-  
-    "chatgpt_win_model_warning": {
-      "message": "Sie haben die Option zur Verwendung von ChatGPT-4 eingestellt, aber es scheint, dass es nicht korrekt geladen wird. Haben Sie oben das Modell 4 oder 4o gewählt?",
-      "description": ""
-    },
-  
-    "chatgpt_win_custom_text": {
-      "message": "Fügen Sie hier den zusätzlichen Text für die Eingabeaufforderung ein.",
-      "description": ""
-    },
-  
-    "chatgpt_win_send": {
-      "message": "Senden",
-      "description": ""
-    },
-  
-    "chatgpt_use_gpt35": {
-      "message": "Verwenden Sie GPT3.5",
-      "description": ""
-    },
-  
-    "chatgpt_force_completion": {
-      "message": "Abschluss erzwingen",
-      "description": ""
-    },
-  
-    "chatgpt_force_completion_title": {
-      "message": "Klicken Sie hier, um die Schaltfläche „Letzte Antwort verwenden“ anzuzeigen, wenn ChatGPT seine Arbeit abgeschlossen hat, die Schaltfläche jedoch nicht erschienen ist.",
-      "description": ""
-    },
-  
-    "msg_prompt_too_long": {
-      "message": "Der eingegebene Text ist zu lang. Sie müssen ihn verkürzen, um ChatGPT zu verwenden.",
-      "description": ""
-    },
-  
-    "prefs_OptionText_release_notes": {
-      "message": "Versionshinweise",
-      "description": ""
-    },
-  
-    "prefs_status_page": {
-      "message": "Dienststatus",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatgpt_win_text": {
-      "message": "ChatGPT-Fensterabmessungen",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatgpt_win_height": {
-      "message": "Höhe",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatgpt_win_width": {
-      "message": "Breite",
-      "description": ""
-    },
-  
-    "prefs_OptionText_default_sign_name": {
-      "message": "Standard-Signaturname",
-      "description": ""
-    },
-  
-    "prefs_OptionText_default_chatgpt_lang": {
-      "message": "Standardsprache für ChatGPT-Antworten",
-      "description": ""
-    },
-  
-    "prefs_OptionText_reply_all": {
-      "message": "Allen antworten",
-      "description": ""
-    },
-  
-    "prefs_OptionText_reply_sender": {
-      "message": "Absender antworten",
-      "description": ""
-    },
-  
-    "prefs_OptionText_reply_type": {
-      "message": "Antworttyp",
-      "description": ""
-    },
-
-    "prefs_OptionText_chatpgt_keep_formatting": {
-      "message": "Behalte die Formatierung bei",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatpgt_keep_formatting_info": {
-      "message": "Behalte die Formatierung und die Zahlen oder Aufzählungspunkte aus der ChatGPT-Antwort bei.",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatpgt_use_gpt4": {
-      "message": "Verwenden Sie ChatGPT-4",
-      "description": ""
-    },
-  
-    "prefs_OptionText_chatpgt_use_gpt4_info": {
-      "message": "Nachdem Sie diese Option geändert haben, müssen Sie beim ersten Gebrauch das richtige Modell auswählen.",
-      "description": ""
-    },
-  
-    "prefs_OptionText_btnManagePrompts": {
-      "message": "Verwalten Sie Ihre Eingabeaufforderungen",
-      "description": ""
-    },
-  
-    "prefsInfoTitle": {
-      "message": "Wichtige Informationen",
-      "description": ""
-    },
-  
-    "prefsInfoDesc_1": {
-      "message": "Es ist nicht mehr möglich, den Verlauf der ChatGPT-Chats zu deaktivieren. Daher gibt es keine Möglichkeit, zu verhindern, dass Anfragen, die über dieses Addon gestellt werden, in Ihrem ChatGPT-Chatverlauf erscheinen.",
-      "description": ""
-    },
-  
-    "prefsInfoDesc_2": {
-      "message": "Wenn eine weiße Seite erscheint, wenn das ChatGPT-Fenster geöffnet wird, bedeutet dies, dass es ein Problem beim Laden der ChatGPT-Seite gibt, das nicht mit der Verwendung dieses Add-Ons zusammenhängt.",
-      "description": ""
-    },
-  
-    "prefsInfoDesc_3": {
-      "message": " ",
-      "description": ""
-    },
-  
-    "prefsDonation_1": {
-      "message": "Gefällt Ihnen dieses Addon?",
-      "description": ""
-    },
-  
-    "prefsDonation_2": {
-      "message": "Überlegen Sie, eine Spende zu machen!",
-      "description": ""
-    },
-  
-    "backToOptionsText": {
-      "message": "Optionen",
-      "description": ""
-    },
-    "TranslateText": {
-      "message": "Möchtest du helfen, dieses Add-on zu übersetzen?",
-      "description": ""
-    },
-  
-    "TranslateLink": {
-      "message": "Finde es heraus!",
-      "description": ""
-    }
+  "extensionDescription": {
+    "message": "Verwenden Sie ChatGPT, um Ihre E-Mails zu verbessern!",
+    "description": "Beschreibung der Erweiterung."
+  },
+  "menu_title": {
+    "message": "KI",
+    "description": ""
+  },
+  "prompt_lang": {
+    "message": "Antwort in ",
+    "description": ""
+  },
+  "prompt_reply": {
+    "message": "Darauf antworten",
+    "description": ""
+  },
+  "prompt_rewrite_polite": {
+    "message": "Höflich umschreiben",
+    "description": ""
+  },
+  "prompt_rewrite_formal": {
+    "message": "Formal umschreiben",
+    "description": ""
+  },
+  "prompt_classify": {
+    "message": "Klassifizieren",
+    "description": ""
+  },
+  "prompt_summarize_this": {
+    "message": "Zusammenfassen",
+    "description": ""
+  },
+  "prompt_translate_this": {
+    "message": "Übersetzen",
+    "description": ""
+  },
+  "prompt_this": {
+    "message": "Auffordern",
+    "description": ""
+  },
+  "prompt_selection_needed": {
+    "message": "Um fortzufahren, müssen Sie einen Text auswählen!",
+    "description": ""
+  },
+  "customPrompts_managePrompts": {
+    "message": "Eingabeaufforderungen verwalten",
+    "description": ""
+  },
+  "customPrompts_managePrompts_help": {
+    "message": "Informationen",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default": {
+    "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen.",
+    "description": ""
+  },
+  "customPrompts_start_saving": {
+    "message": "Eingabeaufforderungen werden gespeichert...",
+    "description": ""
+  },
+  "customPrompts_reindexing_list": {
+    "message": "Liste wird neu indiziert...",
+    "description": ""
+  },
+  "customPrompts_filtering_prompts": {
+    "message": "Eingabeaufforderungen werden gefiltert...",
+    "description": ""
+  },
+  "customPrompts_saving_default_prompts": {
+    "message": "Standard-Eingabeaufforderungen werden gespeichert...",
+    "description": ""
+  },
+  "customPrompts_saving_custom_prompts": {
+    "message": "Benutzerdefinierte Eingabeaufforderungen werden gespeichert...",
+    "description": ""
+  },
+  "customPrompts_reloading_menus": {
+    "message": "Menüs werden neu geladen...",
+    "description": ""
+  },
+  "customPrompts_saved": {
+    "message": "Eingabeaufforderungen gespeichert!",
+    "description": ""
+  },
+  "customPrompts_form_label_ID": {
+    "message": "ID",
+    "description": ""
+  },
+  "customPrompts_form_label_ID_rules": {
+    "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein",
+    "description": ""
+  },
+  "customPrompts_form_label_Name": {
+    "message": "Name",
+    "description": ""
+  },
+  "customPrompts_form_label_Text": {
+    "message": "Eingabeaufforderungstext",
+    "description": ""
+  },
+  "customPrompts_form_label_Action": {
+    "message": "Aktion",
+    "description": ""
+  },
+  "customPrompts_form_label_need_selected": {
+    "message": "Textauswahl erforderlich",
+    "description": ""
+  },
+  "customPrompts_form_label_need_signature": {
+    "message": "Immer die Signatur hinzufügen",
+    "description": ""
+  },
+  "customPrompts_form_label_need_custom_text": {
+    "message": "Nach zusätzlichem Text fragen",
+    "description": ""
+  },
+  "customPrompts_form_label_enabled": {
+    "message": "Aktiviert",
+    "description": ""
+  },
+  "customPrompts_form_required_fields": {
+    "message": "Erforderliche Felder",
+    "description": ""
+  },
+  "customPrompts_btnEdit": {
+    "message": "Bearbeiten",
+    "description": ""
+  },
+  "customPrompts_btnCancel": {
+    "message": "Abbrechen",
+    "description": ""
+  },
+  "customPrompts_btnOK": {
+    "message": "OK",
+    "description": ""
+  },
+  "customPrompts_btnDelete": {
+    "message": "Löschen",
+    "description": ""
+  },
+  "customPrompts_btnDelete_confirmText": {
+    "message": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
+    "description": ""
+  },
+  "customPrompts_unsaved_changes": {
+    "message": "Es gibt ungespeicherte Änderungen!",
+    "description": ""
+  },
+  "customPrompts_btnSaveAll": {
+    "message": "Alle speichern",
+    "description": ""
+  },
+  "customPrompts_save_button": {
+    "message": "Speichern",
+    "description": ""
+  },
+  "customPrompts_btnNew": {
+    "message": "Neu hinzufügen",
+    "description": ""
+  },
+  "customPrompts_btnAddNewCommit": {
+    "message": "Eingabeaufforderung hinzufügen",
+    "description": ""
+  },
+  "customPrompts_add_to_menu": {
+    "message": "Zum Menü hinzufügen",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_always": {
+    "message": "Immer",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_reading": {
+    "message": "E-Mail lesen",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_composing": {
+    "message": "E-Mail verfassen",
+    "description": ""
+  },
+  "customPrompts_close_button": {
+    "message": "Schließen",
+    "description": ""
+  },
+  "customPrompts_do_reply": {
+    "message": "Antworten",
+    "description": ""
+  },
+  "customPrompts_substitute_text": {
+    "message": "Text ersetzen",
+    "description": ""
+  },
+  "chatgpt_win_working": {
+    "message": "Arbeit in Arbeit...",
+    "description": ""
+  },
+  "chatgpt_win_job_completed": {
+    "message": "Abgeschlossen!",
+    "description": ""
+  },
+  "chatgpt_win_get_answer": {
+    "message": "Letzte Antwort verwenden",
+    "description": ""
+  },
+  "chatgpt_win_close": {
+    "message": "Schließen",
+    "description": ""
+  },
+  "chatgpt_textarea_not_found_error": {
+    "message": "Es gibt einen Fehler beim Senden der Eingabeaufforderung an ChatGPT. Bitte versuchen Sie es erneut. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">Dienststatus</a>.",
+    "description": ""
+  },
+  "chatgpt_sendbutton_not_found_error": {
+    "message": "Klicken Sie auf die Schaltfläche „Senden“, um die Eingabeaufforderung zu übermitteln.",
+    "description": ""
+  },
+  "chatgpt_user_not_logged_in": {
+    "message": "Sie sind nicht bei ChatGPT angemeldet. Bitte melden Sie sich mit Ihren Anmeldeinformationen an, schließen Sie das ChatGPT-Fenster und wiederholen Sie dann die Aktion, die Sie versucht haben. Danach bleiben Sie angemeldet.",
+    "description": ""
+  },
+  "chatgpt_win_model_warning": {
+    "message": "Sie haben die Option zur Verwendung von ChatGPT-4 eingestellt, aber es scheint, dass es nicht korrekt geladen wird. Haben Sie oben das Modell 4 oder 4o gewählt?",
+    "description": ""
+  },
+  "chatgpt_win_custom_text": {
+    "message": "Fügen Sie hier den zusätzlichen Text für die Eingabeaufforderung ein.",
+    "description": ""
+  },
+  "chatgpt_win_send": {
+    "message": "Senden",
+    "description": ""
+  },
+  "chatgpt_use_gpt35": {
+    "message": "Verwenden Sie GPT3.5",
+    "description": ""
+  },
+  "chatgpt_force_completion": {
+    "message": "Abschluss erzwingen",
+    "description": ""
+  },
+  "chatgpt_force_completion_title": {
+    "message": "Klicken Sie hier, um die Schaltfläche „Letzte Antwort verwenden“ anzuzeigen, wenn ChatGPT seine Arbeit abgeschlossen hat, die Schaltfläche jedoch nicht erschienen ist.",
+    "description": ""
+  },
+  "msg_prompt_too_long": {
+    "message": "Der eingegebene Text ist zu lang. Sie müssen ihn verkürzen, um ChatGPT zu verwenden.",
+    "description": ""
+  },
+  "prefs_OptionText_release_notes": {
+    "message": "Versionshinweise",
+    "description": ""
+  },
+  "prefs_status_page": {
+    "message": "Dienststatus",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_text": {
+    "message": "ChatGPT-Fensterabmessungen",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_height": {
+    "message": "Höhe",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_width": {
+    "message": "Breite",
+    "description": ""
+  },
+  "prefs_OptionText_default_sign_name": {
+    "message": "Standard-Signaturname",
+    "description": ""
+  },
+  "prefs_OptionText_default_chatgpt_lang": {
+    "message": "Standardsprache für ChatGPT-Antworten",
+    "description": ""
+  },
+  "prefs_OptionText_reply_all": {
+    "message": "Allen antworten",
+    "description": ""
+  },
+  "prefs_OptionText_reply_sender": {
+    "message": "Absender antworten",
+    "description": ""
+  },
+  "prefs_OptionText_reply_type": {
+    "message": "Antworttyp",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_keep_formatting": {
+    "message": "Behalte die Formatierung bei",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_keep_formatting_info": {
+    "message": "Behalte die Formatierung und die Zahlen oder Aufzählungspunkte aus der ChatGPT-Antwort bei.",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_use_gpt4": {
+    "message": "Verwenden Sie ChatGPT-4",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_use_gpt4_info": {
+    "message": "Nachdem Sie diese Option geändert haben, müssen Sie beim ersten Gebrauch das richtige Modell auswählen.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts": {
+    "message": "Verwalten Sie Ihre Eingabeaufforderungen",
+    "description": ""
+  },
+  "prefsInfoTitle": {
+    "message": "Wichtige Informationen",
+    "description": ""
+  },
+  "prefsInfoDesc_1": {
+    "message": "Es ist nicht mehr möglich, den Verlauf der ChatGPT-Chats zu deaktivieren. Daher gibt es keine Möglichkeit, zu verhindern, dass Anfragen, die über dieses Addon gestellt werden, in Ihrem ChatGPT-Chatverlauf erscheinen.",
+    "description": ""
+  },
+  "prefsInfoDesc_2": {
+    "message": "Wenn eine weiße Seite erscheint, wenn das ChatGPT-Fenster geöffnet wird, bedeutet dies, dass es ein Problem beim Laden der ChatGPT-Seite gibt, das nicht mit der Verwendung dieses Add-Ons zusammenhängt.",
+    "description": ""
+  },
+  "prefsInfoDesc_3": {
+    "message": " ",
+    "description": ""
+  },
+  "prefsDonation_1": {
+    "message": "Gefällt Ihnen dieses Addon?",
+    "description": ""
+  },
+  "prefsDonation_2": {
+    "message": "Überlegen Sie, eine Spende zu machen!",
+    "description": ""
+  },
+  "backToOptionsText": {
+    "message": "Optionen",
+    "description": ""
+  },
+  "TranslateText": {
+    "message": "Möchtest du helfen, dieses Add-on zu übersetzen?",
+    "description": ""
+  },
+  "TranslateLink": {
+    "message": "Finde es heraus!",
+    "description": ""
   }
-  
+}

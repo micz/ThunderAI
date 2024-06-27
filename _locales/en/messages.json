@@ -3,427 +3,342 @@
     "message": "Use ChatGPT to enhance you emails!",
     "description": "Description of the extension."
   },
-
   "menu_title": {
     "message": "AI",
     "description": ""
   },
-
   "prompt_lang": {
     "message": "Reply in ",
     "description": ""
   },
-
   "prompt_reply": {
     "message": "Reply to this",
     "description": ""
   },
-
   "prompt_rewrite_polite": {
     "message": "Rewrite polite",
     "description": ""
   },
-
   "prompt_rewrite_formal": {
     "message": "Rewrite formal",
     "description": ""
   },
-
   "prompt_classify": {
     "message": "Classify",
     "description": ""
   },
-
   "prompt_summarize_this": {
     "message": "Summarize this",
     "description": ""
   },
-
   "prompt_translate_this": {
     "message": "Translate this",
     "description": ""
   },
-
   "prompt_this": {
     "message": "Prompt this",
     "description": ""
   },
-
   "prompt_selection_needed": {
     "message": "To proceed, you need to select some text!",
     "description": ""
   },
-
   "customPrompts_managePrompts": {
     "message": "Manage Prompts",
     "description": ""
   },
-
   "customPrompts_managePrompts_help": {
     "message": "More info",
     "description": ""
   },
-
   "customPrompts_managePrompts_info_default": {
     "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
     "description": ""
   },
-
   "customPrompts_start_saving": {
     "message": "Saving prompts...",
     "description": ""
   },
-
   "customPrompts_reindexing_list": {
     "message": "Reindexing list...",
     "description": ""
   },
-
   "customPrompts_filtering_prompts": {
     "message": "Filtering prompts...",
     "description": ""
   },
-
   "customPrompts_saving_default_prompts": {
     "message": "Saving default prompts...",
     "description": ""
   },
-
   "customPrompts_saving_custom_prompts": {
     "message": "Saving custom prompts...",
     "description": ""
   },
-
   "customPrompts_reloading_menus": {
     "message": "Reloading menus...",
     "description": ""
   },
-
   "customPrompts_saved": {
     "message": "Prompts saved!",
     "description": ""
   },
-
   "customPrompts_form_label_ID": {
     "message": "ID",
     "description": ""
   },
-
   "customPrompts_form_label_ID_rules": {
     "message": "Must be unique, lowercase and without spaces",
     "description": ""
   },
-
   "customPrompts_form_label_Name": {
     "message": "Name",
     "description": ""
   },
-
   "customPrompts_form_label_Text": {
     "message": "Prompt Text",
     "description": ""
   },
-
   "customPrompts_form_label_Action": {
     "message": "Action",
     "description": ""
   },
-
   "customPrompts_form_label_need_selected": {
     "message": "Text selection needed",
     "description": ""
   },
-
   "customPrompts_form_label_need_signature": {
     "message": "Always add the signature",
     "description": ""
   },
-
   "customPrompts_form_label_need_custom_text": {
     "message": "Ask for additional text",
     "description": ""
   },
-
   "customPrompts_form_label_enabled": {
     "message": "Enabled",
     "description": ""
   },
-
   "customPrompts_form_required_fields": {
     "message": "Required fields",
     "description": ""
   },
-
   "customPrompts_btnEdit": {
     "message": "Edit",
     "description": ""
   },
-
   "customPrompts_btnCancel": {
     "message": "Cancel",
     "description": ""
   },
-
   "customPrompts_btnOK": {
     "message": "OK",
     "description": ""
   },
-
   "customPrompts_btnDelete": {
     "message": "Delete",
     "description": ""
   },
-
   "customPrompts_btnDelete_confirmText": {
     "message": "Are you sure you want to delete this item?",
     "description": ""
   },
-
   "customPrompts_unsaved_changes": {
     "message": "There are unsaved changes!",
     "description": ""
   },
-
   "customPrompts_btnSaveAll": {
     "message": "Save All",
     "description": ""
   },
-
   "customPrompts_save_button": {
     "message": "Save",
     "description": ""
   },
-
   "customPrompts_btnNew": {
     "message": "Add New",
     "description": ""
   },
-
   "customPrompts_btnAddNewCommit": {
     "message": "Add the Prompt",
     "description": ""
   },
-
   "customPrompts_add_to_menu": {
     "message": "Add to menu",
     "description": ""
   },
-
   "customPrompts_add_to_menu_always": {
     "message": "Always",
     "description": ""
   },
-
   "customPrompts_add_to_menu_reading": {
     "message": "Reading an email",
     "description": ""
   },
-
   "customPrompts_add_to_menu_composing": {
     "message": "Composing an email",
     "description": ""
   },
-
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""
   },
-
   "customPrompts_do_reply": {
     "message": "Do reply",
     "description": ""
   },
-
   "customPrompts_substitute_text": {
     "message": "Substitute text",
     "description": ""
   },
-
   "chatgpt_win_working": {
     "message": "Work in progress...",
     "description": ""
   },
-
   "chatgpt_win_job_completed": {
     "message": "Completed!",
     "description": ""
   },
-
   "chatgpt_win_get_answer": {
     "message": "Use last answer",
     "description": ""
   },
-
   "chatgpt_win_close": {
     "message": "Close",
     "description": ""
   },
-
   "chatgpt_textarea_not_found_error": {
     "message": "There is an error sending the prompt to ChatGPT, please retry. If the problem persists, please <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">check the service status</a>.",
     "description": ""
   },
-
   "chatgpt_sendbutton_not_found_error": {
     "message": "Click the send button to submit the prompt.",
     "description": ""
   },
-
   "chatgpt_user_not_logged_in": {
     "message": "You are not logged in to ChatGPT. Please log in with your credentials, close the ChatGPT window, and then repeat the action you attempted. You will remain logged in afterwards.",
     "description": ""
   },
-
   "chatgpt_win_model_warning": {
     "message": "You have set the option to use ChatGPT-4, but it seems that it is not loading correctly. Have you chosen the model 4 or 4o at the top?",
     "description": ""
   },
-
   "chatgpt_win_custom_text": {
     "message": "Insert here the additional text for the prompt.",
     "description": ""
   },
-
   "chatgpt_win_send": {
     "message": "Send",
     "description": ""
   },
-
   "chatgpt_use_gpt35": {
     "message": "Use GPT3.5",
     "description": ""
   },
-
   "chatgpt_force_completion": {
     "message": "force completion",
     "description": ""
   },
-
   "chatgpt_force_completion_title": {
     "message": "Click here to display the 'Use last answer' button if ChatGPT has finished its work but the button has not appeared.",
     "description": ""
   },
-
   "msg_prompt_too_long": {
     "message": "The text you provided is too long. You need to reduce it to use ChatGPT.",
     "description": ""
   },
-
   "prefs_OptionText_release_notes": {
     "message": "Release Notes",
     "description": ""
   },
-
   "prefs_status_page": {
     "message": "service status",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_text": {
     "message": "ChatGPT window dimensions",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_height": {
     "message": "Height",
     "description": ""
   },
-
   "prefs_OptionText_chatgpt_win_width": {
     "message": "Width",
     "description": ""
   },
-
   "prefs_OptionText_default_sign_name": {
     "message": "Default signature name",
     "description": ""
   },
-
   "prefs_OptionText_default_chatgpt_lang": {
     "message": "Default language for ChatGPT responses",
     "description": ""
   },
-
   "prefs_OptionText_reply_all": {
     "message": "Reply to All",
     "description": ""
   },
-
   "prefs_OptionText_reply_sender": {
     "message": "Reply to Sender",
     "description": ""
   },
-
   "prefs_OptionText_reply_type": {
     "message": "Reply type",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_keep_formatting": {
     "message": "Keep formatting",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_keep_formatting_info": {
     "message": "Keep the formatting and numeral or bullet points from the ChatGPT response.",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Use ChatGPT-4",
     "description": ""
   },
-
   "prefs_OptionText_chatpgt_use_gpt4_info": {
     "message": "After changing this option, you have to choose the right model the first time you use it.",
     "description": ""
   },
-
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
     "description": ""
   },
-
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""
   },
-
   "prefsInfoDesc_1": {
     "message": "It is no longer possible to disable the history of ChatGPT chats. Therefore, there is no way to prevent requests made through this addon from appearing in your ChatGPT chat history.",
     "description": ""
   },
-
   "prefsInfoDesc_2": {
     "message": "If a white page appears when opening the ChatGPT window, it means there is a problem loading the ChatGPT page, not related to the use of this add-on.",
     "description": ""
   },
-
   "prefsInfoDesc_3": {
     "message": " ",
     "description": ""
   },
-
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""
   },
-
   "prefsDonation_2": {
     "message": "Consider to make a donation!",
     "description": ""
   },
-
   "backToOptionsText": {
     "message": "Options",
     "description": ""
   },
-
   "TranslateText": {
     "message": "Do you want to help translate this addon?",
     "description": ""
   },
-
   "TranslateLink": {
     "message": "Find out how!",
     "description": ""
