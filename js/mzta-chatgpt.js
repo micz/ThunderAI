@@ -81,6 +81,15 @@ async function chatgpt_getFromDOM(pos) {
                 // Extract the new HTML string
                 responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
                 response = responseDivs[responseDivs.length - 1].textContent;
+                response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
+                response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
+                response = "<body><p>" + response + "</p></body>";
+                //console.log(">>>>>>>>> response: " + JSON.stringify(response));
+                let parser_2 = new DOMParser();
+                let doc_response = parser_2.parseFromString(response, 'text/html');
+                //console.log(">>>>>>>>> doc_response: " + JSON.stringify(doc_response.body.innerHTML));
+                replaceNewlinesWithBr(doc_response.body)
+                response = doc_response.body.innerHTML;
                 // response = responseDivs[responseDivs.length - 1].innerHTML;
             } else {                // Return HTML
                 // Tags to exclude
@@ -119,8 +128,6 @@ async function chatgpt_getFromDOM(pos) {
             );
             response = responseDivs[nthOfResponse - 1].textContent;
         }
-        response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
-        response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
         //console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
     }
     return response;
