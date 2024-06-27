@@ -72,27 +72,26 @@ async function chatgpt_getFromDOM(pos) {
             // Removing the new buttons that let the user change model and insert a number (4 or 3.5 at the end of the text)
             let parser = new DOMParser();
             let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
+            if(!mztaKeepFormatting) {       // Return only TEXT
             // Select the div with class 'empty:hidden'
-            // let divToRemove = doc.querySelector('div.empty\\\\:hidden');
-            // if (divToRemove) {
-            //     divToRemove.remove();
-            // }
-            // // Extract the new HTML string
-            // responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
-            // //response = responseDivs[responseDivs.length - 1].textContent;
-            // response = responseDivs[responseDivs.length - 1].innerHTML;
-            // console.log('chatgpt_getFromDOM original response: '+ response);
-            // const parser2 = new DOMParser();
-            // const doc2 = parser2.parseFromString(response, 'text/html');
-            // Tags to exclude
-            //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
-            const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
-            const includeTags = ['p', 'ul'];
-            // removeTags(doc.body, excludeTags);
-            response = removeTagsAndReturnHTML(doc.body, excludeTags, includeTags)
-            //console.log(">>>>>>>>> doc.body.innerHTML final: " + doc.body.innerHTML);
-            // response = doc.body.innerHTML;
-
+                let divToRemove = doc.querySelector('div.empty\\\\:hidden');
+                if (divToRemove) {
+                    divToRemove.remove();
+                }
+                // Extract the new HTML string
+                responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
+                response = responseDivs[responseDivs.length - 1].textContent;
+                // response = responseDivs[responseDivs.length - 1].innerHTML;
+            } else {                // Return HTML
+                // Tags to exclude
+                //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
+                const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
+                const includeTags = ['p', 'ul'];
+                // removeTags(doc.body, excludeTags);
+                response = removeTagsAndReturnHTML(doc.body, excludeTags, includeTags)
+                //console.log(">>>>>>>>> doc.body.innerHTML final: " + doc.body.innerHTML);
+                // response = doc.body.innerHTML;
+            }
             //console.log('chatgpt_getFromDOM final response: '+response);
             //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
         } else { // get nth response            ---      HERE ONLY TEXT FROM RESPONSE, NO HTML

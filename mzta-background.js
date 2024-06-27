@@ -139,6 +139,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
+    //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     console.log('[ThunderAI] Prompt length: ' + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
@@ -179,6 +180,7 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
     let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
     let mztaDoCustomText=`+ do_custom_text +`;
+    let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
     `;
 
     browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
