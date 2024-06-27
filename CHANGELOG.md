@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 1.1.4pre2 - ??/??/2024</h2>
+<h2>Version 1.1.4pre3 - ??/??/2024</h2>
     <ul>
         <li>Added an option to import text with formatting from ChatGPT, set to false by default [<a href="https://github.com/micz/ThunderAI/issues/70">#70</a>], [<a href="https://github.com/micz/ThunderAI/issues/77">#77</a>].</li>
         <li>Improve the message warning to choose the right model [<a href="https://github.com/micz/ThunderAI/issues/76">#76</a>].</li>
