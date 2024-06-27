@@ -92,3 +92,11 @@ span.dims_label{
     width: 100%;
     margin: 10px 0px;
 }
+
+div#miczTranslate{
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 1em;
+}

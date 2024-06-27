@@ -417,5 +417,15 @@
   "backToOptionsText": {
     "message": "Options",
     "description": ""
+  },
+
+  "TranslateText": {
+    "message": "Do you want to help translate this addon?",
+    "description": ""
+  },
+
+  "TranslateLink": {
+    "message": "Find out how!",
+    "description": ""
   }
 }

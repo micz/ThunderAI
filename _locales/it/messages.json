@@ -334,5 +334,13 @@
   "backToOptionsText": {
     "message": "Opzioni",
     "description": ""
+  },
+  "TranslateText": {
+    "message": "Vuoi aiutare a tradurre questo addon?",
+    "description": ""
+  },
+  "TranslateLink": {
+    "message": "Scopri come!",
+    "description": ""
   }
 }
