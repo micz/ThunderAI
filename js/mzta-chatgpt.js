@@ -72,17 +72,38 @@ async function chatgpt_getFromDOM(pos) {
             // Removing the new buttons that let the user change model and insert a number (4 or 3.5 at the end of the text)
             let parser = new DOMParser();
             let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
+            if(!mztaKeepFormatting) {       // Return only TEXT
             // Select the div with class 'empty:hidden'
-            let divToRemove = doc.querySelector('div.empty\\\\:hidden');
-            if (divToRemove) {
-                divToRemove.remove();
+                let divToRemove = doc.querySelector('div.empty\\\\:hidden');
+                if (divToRemove) {
+                    divToRemove.remove();
+                }
+                // Extract the new HTML string
+                responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
+                response = responseDivs[responseDivs.length - 1].textContent;
+                response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
+                response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
+                response = "<body><p>" + response + "</p></body>";
+                //console.log(">>>>>>>>> response: " + JSON.stringify(response));
+                let parser_2 = new DOMParser();
+                let doc_response = parser_2.parseFromString(response, 'text/html');
+                //console.log(">>>>>>>>> doc_response: " + JSON.stringify(doc_response.body.innerHTML));
+                replaceNewlinesWithBr(doc_response.body)
+                response = doc_response.body.innerHTML;
+                // response = responseDivs[responseDivs.length - 1].innerHTML;
+            } else {                // Return HTML
+                // Tags to exclude
+                //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
+                const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
+                const includeTags = ['p', 'ul'];
+                // removeTags(doc.body, excludeTags);
+                response = removeTagsAndReturnHTML(doc.body, excludeTags, includeTags)
+                //console.log(">>>>>>>>> doc.body.innerHTML final: " + doc.body.innerHTML);
+                // response = doc.body.innerHTML;
             }
-            // Extract the new HTML string
-            responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
-            response = responseDivs[responseDivs.length - 1].textContent;
-            //console.log('chatgpt_getFromDOM: '+response);
+            //console.log('chatgpt_getFromDOM final response: '+response);
             //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
-        } else { // get nth response
+        } else { // get nth response            ---      HERE ONLY TEXT FROM RESPONSE, NO HTML
             const nthOfResponse = (
 
                 // Calculate base number
@@ -107,9 +128,7 @@ async function chatgpt_getFromDOM(pos) {
             );
             response = responseDivs[nthOfResponse - 1].textContent;
         }
-        response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
-        response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
-        //console.log('chatgpt_getFromDOM: ' + response);
+        //console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
     }
     return response;
 }
@@ -336,6 +355,63 @@ async function doProceed(message, customText = ''){
     await chatgpt_isIdle();
     operation_done();
 }
+
+
+function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
+    const fragment = document.createDocumentFragment();
+
+    function handleElement(element) {
+        let child = element.firstChild;
+        while (child) {
+            const nextSibling = child.nextSibling;
+            if (preserveTags.includes(child.nodeName.toLowerCase())) {
+                //console.log(">>>>>>>>>>>> preserve child: " + child.tagName.toLowerCase());
+                fragment.appendChild(child);
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                //console.log(">>>>>>>>>>>> handleElement(child): " + child.tagName.toLowerCase());
+                handleElement(child);
+            }
+            child = nextSibling;
+        }
+    }
+
+    removeTags.forEach(tag => {
+        const elements = Array.from(rootElement.getElementsByTagName(tag));
+        elements.forEach(element => {
+            handleElement(element);
+            element.parentNode.insertBefore(fragment.cloneNode(true), element);
+            element.parentNode.removeChild(element);
+            //console.log(">>>>>>>>>>>> removeChild: " + element.tagName.toLowerCase());
+        });
+    });
+
+    replaceNewlinesWithBr(rootElement);
+    //console.log(">>>>>>>>>>>> rootElement.innerHTML: " + rootElement.innerHTML);
+    // Return the updated HTML as a string
+    return rootElement.innerHTML;
+}
+
+// Replace newline characters with <br> tags
+function replaceNewlinesWithBr(node) {
+    for (let child of Array.from(node.childNodes)) {
+        if (child.nodeType === Node.TEXT_NODE) {
+            const parts = child.textContent.split('\\n');
+            if (parts.length > 1) {
+                const fragment = document.createDocumentFragment();
+                parts.forEach((part, index) => {
+                    fragment.appendChild(document.createTextNode(part));
+                    if (index < parts.length - 1) {
+                        fragment.appendChild(document.createElement('br'));
+                    }
+                });
+                child.parentNode.replaceChild(fragment, child);
+            }
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+            replaceNewlinesWithBr(child);
+        }
+    }
+}
+
 
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {

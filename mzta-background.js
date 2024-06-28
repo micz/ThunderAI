@@ -19,7 +19,7 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
-import { getCurrentIdentity, getOriginalBody, reloadBody, replaceBody, setBody } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody } from './js/mzta-utils.js';
 
 var createdWindowID = null;
 var original_html = '';
@@ -69,6 +69,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     return true;
             case 'chatgpt_replyMessage':
                 const paragraphsHtmlString = message.text;
+                //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                 let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
                 //console.log('reply_type: ' + prefs.reply_type);
                 let replyType = 'replyToAll';
@@ -100,7 +101,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                         const listener = (tabId, changeInfo, updatedTab) => {
                             if (tabIsLoaded(updatedTab)) {
                                 browser.tabs.onUpdated.removeListener(listener);
-                                console.log(">>>>>>>>>>>> reply_tab: " + tabId);
+                                //console.log(">>>>>>>>>>>> reply_tab: " + tabId);
                                 resolve();
                             }
                         }
@@ -138,6 +139,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
+    //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     console.log('[ThunderAI] Prompt length: ' + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
@@ -178,6 +180,7 @@ async function openChatGPT(promptText, action, curr_tabId, do_custom_text = 0) {
     let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
     let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
     let mztaDoCustomText=`+ do_custom_text +`;
+    let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
     `;
 
     browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })

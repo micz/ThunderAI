@@ -13,7 +13,8 @@ Starting from version 1.1.0, you can also define your own **custom prompts**! Fi
 <br>
 
 ## Translations
-Do you want to help translating this addon?
+Do you want to help translate this addon?
+
 [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)
 
 <br>
@@ -25,6 +26,6 @@ ThunderAI's changes are logged [here](CHANGELOG.md).
 
 <br>Thanks to:
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
-<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration and certains methods to process the text from ChatGPT.</li>
+<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
 </ul>
 <i>The specific references are described in the corresponding source files.</i>

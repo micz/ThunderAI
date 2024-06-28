@@ -67,6 +67,10 @@
     "message": "Salvataggio prompt di base...",
     "description": ""
   },
+  "customPrompts_managePrompts_info_default": {
+    "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata.",
+    "description": ""
+  },
   "customPrompts_saving_custom_prompts": {
     "message": "Salvataggio prompt personalizzati...",
     "description": ""
@@ -208,7 +212,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato correttamente il modello in alto?",
+    "message": "Hai impostato l'opzione per utilizzare ChatGPT-4, ma sembra che non si stia caricando. Hai selezionato il modello 4 o 4o in alto?",
     "description": ""
   },
   "chatgpt_win_custom_text": {
@@ -283,6 +287,14 @@
     "message": "Modalità di risposta",
     "description": ""
   },
+  "prefs_OptionText_chatpgt_keep_formatting": {
+    "message": "Mantieni la formattazione",
+    "description": ""
+  },
+  "prefs_OptionText_chatpgt_keep_formatting_info": {
+    "message": "Mantieni la formattazione del testo e gli elenchi puntati e numerati della risposta di ChatGPT.",
+    "description": ""
+  },
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Usa il modello ChatGPT-4",
     "description": ""
@@ -321,6 +333,14 @@
   },
   "backToOptionsText": {
     "message": "Opzioni",
+    "description": ""
+  },
+  "TranslateText": {
+    "message": "Vuoi aiutare a tradurre questo addon?",
+    "description": ""
+  },
+  "TranslateLink": {
+    "message": "Scopri come!",
     "description": ""
   }
 }

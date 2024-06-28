@@ -16,24 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Some methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
-
-const makeParagraphs = (text, func) => {
-  const chunks = text.split(/\n{2,}/);
-  if (chunks.length == 1) {
-    return func(document.createTextNode(text));
-  }
-  const paragraphs = chunks.map((t) => {
-    const p = document.createElement("p");
-    p.innerText = t;
-    return p;
-  });
-  for (let i = paragraphs.length - 1; i >= 0; i--) {
-    func(paragraphs[i]);
-  }
-};
-
-
 browser.runtime.onMessage.addListener(async (message) => {
 switch (message.command) {
   case "getSelectedText":
@@ -50,9 +32,9 @@ switch (message.command) {
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
-    makeParagraphs(message.text, function (p) {
-      r.insertNode(p);
-    });
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.text, 'text/html');
+    r.insertNode(doc.body);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     break;
 
