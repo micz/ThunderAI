@@ -153,6 +153,19 @@ export async function getPrompts(onlyEnabled = false){
     return output;
 }
 
+export function preparePromptsForExport(prompts){
+    let output = [...prompts];
+    output.forEach(prompt => {
+        if(prompt.is_default == 1){
+            Object.keys(prompt).forEach(key => {
+                if(!['enabled', 'position_compose', 'position_display'].includes(key)){
+                    delete prompt[key];
+                }
+            })
+        }
+    });
+    return output;
+}
 
 async function getDefaultPrompts_withProps() {
     let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
