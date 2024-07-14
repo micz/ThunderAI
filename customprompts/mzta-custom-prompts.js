@@ -367,6 +367,28 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
     });
 
+    //Import Export
+
+    const btnExportAll = document.getElementById('btnExportAll');
+    btnExportAll.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportPrompts();
+    });
+
+    function exportPrompts() {
+        alert("test export all");
+    }
+
+    const btnImport = document.getElementById('btnImport');
+    btnImport.addEventListener('click', (e) => {
+        e.preventDefault();
+        importPrompts();
+    });
+
+    function importPrompts() {
+        alert("test import");
+    }
+
 }, { once: true });
  
 
