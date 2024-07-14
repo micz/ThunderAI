@@ -30,6 +30,7 @@
         "tabs",
         "activeTab",
         "accountsRead",
+        "downloads",
         "<all_urls>"
     ],
     "background": {
