@@ -106,7 +106,12 @@ export class mzta_Menus {
     
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
-                    fullPrompt = curr_prompt.text + chatgpt_lang + ". \"" + body_text + "\" ";
+                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
+                    let chatgpt_lang2 = prefs2.default_chatgpt_lang;
+                    if(chatgpt_lang2 === ''){
+                        chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
+                    }
+                    fullPrompt = curr_prompt.text + chatgpt_lang2 + ". \"" + body_text + "\" ";
                     break;
                 case 'prompt_reply':
                     fullPrompt += "Do not add the subject line to the response."
