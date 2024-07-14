@@ -342,5 +342,13 @@
   "TranslateLink": {
     "message": "Find out how!",
     "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Export all Prompts",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Import new Prompts",
+    "description": ""
   }
 }
