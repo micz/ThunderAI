@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts } from "../js/mzta-prompts.js";
+import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport } from "../js/mzta-prompts.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -375,8 +375,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         exportPrompts();
     });
 
-    function exportPrompts() {
-        alert("test export all");
+    async function exportPrompts() {
+        const manifest = browser.runtime.getManifest();
+        const addonVersion = manifest.version;
+        const outputPrompts = preparePromptsForExport(await getPrompts());
+        let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
+        const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
+            type: "application/json",
+          });
+        const currentDate = new Date();
+        const time_stamp = `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(currentDate.getDate()).padStart(2, '0')}${String(currentDate.getHours()).padStart(2, '0')}${String(currentDate.getMinutes()).padStart(2, '0')}${String(currentDate.getSeconds()).padStart(2, '0')}`;
+        messenger.downloads.download({
+            url: URL.createObjectURL(blob),
+            filename: `thunderai-prompts-${time_stamp}.json`,
+            saveAs: true,
+        });
     }
 
     const btnImport = document.getElementById('btnImport');
