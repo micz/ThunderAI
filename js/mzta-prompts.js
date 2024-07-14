@@ -158,7 +158,7 @@ export function preparePromptsForExport(prompts){
     output.forEach(prompt => {
         if(prompt.is_default == 1){
             Object.keys(prompt).forEach(key => {
-                if(!['enabled', 'position_compose', 'position_display'].includes(key)){
+                if(!['id', 'enabled', 'position_compose', 'position_display'].includes(key)){
                     delete prompt[key];
                 }
             })
