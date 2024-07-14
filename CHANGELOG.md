@@ -3,7 +3,10 @@
 
 
 
-
+<h2>Version 1.2.0 - ??/07/2024</h2>
+    <ul>
+      <li>...</li>
+    </ul>
 <h2>Version 1.1.4 - 28/06/2024</h2>
     <ul>
         <li>Added an option to import text with formatting from ChatGPT, set to false by default [<a href="https://github.com/micz/ThunderAI/issues/70">#70</a>], [<a href="https://github.com/micz/ThunderAI/issues/77">#77</a>].</li>
