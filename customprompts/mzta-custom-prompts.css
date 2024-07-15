@@ -175,4 +175,9 @@ table .sort.desc {
     position: absolute;
     right:10px;
     top:10px;
+    text-align: right;
+}
+
+#btnExportAll{
+    margin-bottom: 3px;
 }
