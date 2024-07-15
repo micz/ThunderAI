@@ -5,7 +5,8 @@
 
 <h2>Version 1.2.0 - ??/07/2024</h2>
     <ul>
-      <li>...</li>
+      <li>If no default language is set in the options, the language present in the text sent to ChatGPT will be used [<a href="https://github.com/micz/ThunderAI/issues/53">#53</a>].</li>
+        <li>...</li>
     </ul>
 <h2>Version 1.1.4 - 28/06/2024</h2>
     <ul>
