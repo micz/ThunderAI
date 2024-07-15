@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport } from "../js/mzta-prompts.js";
+import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -26,91 +26,12 @@ var idnumMax = 0;
 var msgTimeout = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
-        item: function(values) {
-            let type_output = '';
-            switch(String(values.type)){
-                case "0":
-                    type_output = `__MSG_customPrompts_add_to_menu_always__`;
-                    break;
-                case "1":
-                    type_output = `__MSG_customPrompts_add_to_menu_reading__`;
-                    break;
-                case "2":
-                    type_output = `__MSG_customPrompts_add_to_menu_composing__`;
-                    break;
-            }
-
-            let action_output = '';
-            switch(String(values.action)){
-                case "0":
-                    action_output = `__MSG_customPrompts_close_button__`;
-                    break;
-                case "1":
-                    action_output = `__MSG_customPrompts_do_reply__`;
-                    break;
-                case "2":
-                    action_output = `__MSG_customPrompts_substitute_text__`;
-                    break;
-            }
-            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
-
-            let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
-                <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
-                <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
-                <td class="w08"><span class="type_show">` + type_output + `</span>
-                <select class="type_output hiddendata">
-                <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
-                <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
-                <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
-              </select>` +
-              `<span class="type hiddendata"></span>
-              </td>
-                <td class="w17">
-                    Action: <span class="action_show">` + action_output + `</span>
-                    <select class="action_output hiddendata">
-                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
-                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
-                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
-                  </select>` +
-                  `<span class="action hiddendata"></span>
-                    <br>
-                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
-                    <br>
-                    <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
-                    <br>
-                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
-                    <br>
-                    <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
-                    <span class="is_default hiddendata"></span>
-                    <span class="position_compose hiddendata"></span>
-                    <span class="position_display hiddendata"></span>
-                </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
-               </td>
-            </tr>`;
-            //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
-            positionMax_compose = Math.max(positionMax_compose, values.position_compose);
-            positionMax_display = Math.max(positionMax_display, values.position_display);
-            idnumMax = Math.max(idnumMax, values.idnum);
-            return output;
-        }
-    };
-
+    
     let values = await getPrompts();
 
     //console.log('>>>>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    promptsList = new List('all_prompts', options, values);
-
-    checkSelectedBoxes();
+    loadPromptsList(values);
 
     const btnSaveAll = document.getElementById('btnSaveAll');
     btnSaveAll.disabled = true;
@@ -399,11 +320,141 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function importPrompts() {
-        alert("test import");
+        if(confirm(browser.i18n.getMessage("importPrompts_confirmText"))) {
+            //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from exportPrompts(), and if so, add it to the list
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.click();
+            input.onchange = async () => {
+                setMessage(browser.i18n.getMessage('customPrompts_start_import'));
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const json = reader.result;
+                    try {
+                        const obj = JSON.parse(json);
+                        if(obj.id !== 'thunderai-prompts') {
+                            alert(browser.i18n.getMessage("importPrompts_invalidFile"));
+                            setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                            return;
+                        }
+                        // if(obj.addon_version !== manifest.version) {
+                        //     alert(browser.i18n.getMessage("importPrompts_invalidVersion"));
+                        //     return;
+                        // }
+                        if(!Array.isArray(obj.prompts)) {
+                            alert(browser.i18n.getMessage("importPrompts_invalidPrompts"));
+                            setMessage(browser.i18n.getMessage('customPrompts_invalidPrompts'),'red');
+                            return;
+                        }
+                        //setCustomPrompts(obj.prompts);
+                        promptsList.clear();
+                        loadPromptsList(await preparePromptsForImport(obj.prompts));
+                        setSomethingChanged();
+                        i18n.updateDocument();
+                        // browser.runtime.sendMessage({command: "reload_menus"});
+                        setMessage(browser.i18n.getMessage('customPrompts_import_completed'));
+                        msgTimeout = setTimeout(() => {
+                            clearMessage();
+                        }, 10000);
+                    } catch(err) {
+                        alert(browser.i18n.getMessage("importPrompts_invalidFile") + ' ' + err);
+                        setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                        return;
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+        };
     }
 
 }, { once: true });
- 
+
+function loadPromptsList(values){
+    let options = {
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        item: function(values) {
+            let type_output = '';
+            switch(String(values.type)){
+                case "0":
+                    type_output = `__MSG_customPrompts_add_to_menu_always__`;
+                    break;
+                case "1":
+                    type_output = `__MSG_customPrompts_add_to_menu_reading__`;
+                    break;
+                case "2":
+                    type_output = `__MSG_customPrompts_add_to_menu_composing__`;
+                    break;
+            }
+
+            let action_output = '';
+            switch(String(values.action)){
+                case "0":
+                    action_output = `__MSG_customPrompts_close_button__`;
+                    break;
+                case "1":
+                    action_output = `__MSG_customPrompts_do_reply__`;
+                    break;
+                case "2":
+                    action_output = `__MSG_customPrompts_substitute_text__`;
+                    break;
+            }
+            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
+
+            let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
+                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
+                <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
+                <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
+                <td class="w08"><span class="type_show">` + type_output + `</span>
+                <select class="type_output hiddendata">
+                <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
+                <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
+                <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
+              </select>` +
+              `<span class="type hiddendata"></span>
+              </td>
+                <td class="w17">
+                    Action: <span class="action_show">` + action_output + `</span>
+                    <select class="action_output hiddendata">
+                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
+                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
+                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
+                  </select>` +
+                  `<span class="action hiddendata"></span>
+                    <br>
+                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
+                    <br>
+                    <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
+                    <br>
+                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
+                    <br>
+                    <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
+                    <span class="is_default hiddendata"></span>
+                    <span class="position_compose hiddendata"></span>
+                    <span class="position_display hiddendata"></span>
+                </td>
+                <td>
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
+                <br><br>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+               </td>
+            </tr>`;
+            //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
+            positionMax_compose = Math.max(positionMax_compose, values.position_compose);
+            positionMax_display = Math.max(positionMax_display, values.position_display);
+            idnumMax = Math.max(idnumMax, values.idnum);
+            return output;
+        }
+    };
+
+    promptsList = new List('all_prompts', options, values);
+
+    checkSelectedBoxes();
+}
 
 function checkFields() {
     //console.log('>>>>>>>>>>>>> typeof promptsList: ' + typeof promptsList);
