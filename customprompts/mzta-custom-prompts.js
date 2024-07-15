@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         setSomethingChanged();
                         i18n.updateDocument();
                         // browser.runtime.sendMessage({command: "reload_menus"});
-                        setMessage(browser.i18n.getMessage('customPrompts_import_completed'));
+                        setMessage(browser.i18n.getMessage('customPrompts_import_completed'), 'orange');
                         msgTimeout = setTimeout(() => {
                             clearMessage();
                         }, 10000);
