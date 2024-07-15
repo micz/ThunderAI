@@ -167,6 +167,21 @@ export function preparePromptsForExport(prompts){
     return output;
 }
 
+export async function preparePromptsForImport(prompts){
+    const output = await getPrompts();
+    prompts.forEach(prompt => {
+        if(output.some(p => p.id == prompt.id)){
+            Object.keys(prompt).forEach(key => {
+               output.find(p => p.id == prompt.id)[key] = prompt[key];
+            })
+        }else{
+            output.push(prompt);
+        }
+    });
+    //console.log(">>>>>>>>>>> preparePromptsForImport: " + JSON.stringify(output));
+    return output;
+}
+
 async function getDefaultPrompts_withProps() {
     let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
     let defaultPrompts_prop = [...defaultPrompts];
