@@ -352,7 +352,7 @@
     "description": ""
   },
   "importPrompts_confirmText": {
-    "message": "You are about to import new prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added. If everything is correct after the import, click on the 'Save' button.",
+    "message": "You are about to import new prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added. If everything is correct after the import, click on the 'Save All' button.",
     "description": ""
   },
   "customPrompts_start_import": {
@@ -360,7 +360,7 @@
     "description": ""
   },
   "customPrompts_import_completed": {
-    "message": "Custom Prompts import completed!",
+    "message": "Custom Prompts import completed! You need to click on the 'Save All' button to save your changes.",
     "description": ""
   },
   "importPrompts_invalidFile": {
