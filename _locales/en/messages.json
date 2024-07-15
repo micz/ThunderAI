@@ -350,5 +350,25 @@
   "customPrompts_Import": {
     "message": "Import new Prompts",
     "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "You are about to import new prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added. If everything is correct after the import, click on the 'Save' button.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Starting Custom Promptsimport...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Custom Prompts import completed!",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "The file you're trying to import is not a valid Custom Prompts file.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "The file you're trying to import does not contain any valid prompts.",
+    "description": ""
   }
 }
