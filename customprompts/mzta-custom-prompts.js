@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function importPrompts() {
-        if(confirm(browser.i18n.getMessage("importPrompts_confirmText"))) {
+        if(confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
             //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from exportPrompts(), and if so, add it to the list
             const input = document.createElement('input');
             input.type = 'file';
