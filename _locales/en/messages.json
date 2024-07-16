@@ -60,7 +60,7 @@
     "description": ""
   },
   "customPrompts_managePrompts_info_default_3": {
-    "message": "If everything is correct after the import, click on the 'Save All' button.",
+    "message": "If everything is correct, after the import click on the 'Save All' button.",
     "description": ""
   },
   "customPrompts_start_saving": {
