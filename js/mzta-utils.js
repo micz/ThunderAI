@@ -135,3 +135,15 @@ const insertHtml = function (replyHtml, fullBody_string) {
   fullBody.body.insertBefore(fragment, fullBody.body.firstChild);
   return fullBody.body.innerHTML;
 }
+
+export function i18nConditionalGet(str) {
+  // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
+  // using the browser.i18n API
+  // else we return the original string
+  // Check if the string starts with '__MSG_' and ends with '__'
+  if (str.startsWith('__MSG_') && str.endsWith('__')) {
+      // Remove '__MSG_' from the beginning and '__' from the end
+      return browser.i18n.getMessage(str.substring(6, str.length - 2));
+  }
+  return str; // Return the original string if the conditions are not met
+}
