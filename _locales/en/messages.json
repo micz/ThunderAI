@@ -378,5 +378,9 @@
   "importPrompts_invalidPrompts": {
     "message": "The file you're trying to import does not contain any valid prompts.",
     "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Currently used prompt name",
+    "description": ""
   }
 }

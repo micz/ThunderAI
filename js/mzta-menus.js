@@ -123,7 +123,7 @@ export class mzta_Menus {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.need_custom_text);
+            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
         };
         this.rootMenu.push(curr_menu_entry);
     };

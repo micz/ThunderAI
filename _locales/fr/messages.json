@@ -378,5 +378,9 @@
   "importPrompts_invalidPrompts": {
     "message": "Le fichier que vous essayez d'importer ne contient aucune prompt valide.",
     "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Nom du prompt actuellement utilisé",
+    "description": ""
   }
 }

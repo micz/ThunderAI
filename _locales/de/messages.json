@@ -378,5 +378,9 @@
   "importPrompts_invalidPrompts": {
     "message": "Die Datei, die Sie importieren möchten, enthält keine gültigen Prompts.",
     "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Derzeit verwendeter Prompt-Name",
+    "description": ""
   }
 }
