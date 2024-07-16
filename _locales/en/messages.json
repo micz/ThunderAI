@@ -364,15 +364,15 @@
     "description": ""
   },
   "customPrompts_start_import": {
-    "message": "Starting Custom Prompts import...",
+    "message": "Starting custom prompts import...",
     "description": ""
   },
   "customPrompts_import_completed": {
-    "message": "Custom Prompts import completed! You need to click on the 'Save All' button to save your changes.",
+    "message": "Custom prompts import completed! You need to click on the 'Save All' button to save your changes.",
     "description": ""
   },
   "importPrompts_invalidFile": {
-    "message": "The file you're trying to import is not a valid Custom Prompts file.",
+    "message": "The file you're trying to import is not a valid custom prompts file.",
     "description": ""
   },
   "importPrompts_invalidPrompts": {
