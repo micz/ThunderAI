@@ -58,15 +58,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     btnNew.addEventListener('click', handleNewClick);
     
-    // Enable save button on input change
-    function handleInputChange(e) {
-        e.preventDefault();
-        setSomethingChanged();
-    }
-    document.querySelectorAll('.input_mod').forEach(element => {
-        element.addEventListener('change', handleInputChange);
-    });
-    
     // Display selected value next to select input
     // function handleSelectChange(e) {
     //     e.preventDefault();
@@ -352,6 +343,12 @@ function handleCheckboxChange(e) {
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
 }
 
+// Enable save button on input change
+function handleInputChange(e) {
+    e.preventDefault();
+    setSomethingChanged();
+}
+
 //========= handling an item in a row - END
 
 
@@ -460,6 +457,10 @@ function loadPromptsList(values){
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
     checkbox_elements.forEach(element => {
         element.addEventListener('change', handleCheckboxChange);
+    });
+
+    document.querySelectorAll('.input_mod').forEach(element => {
+        element.addEventListener('change', handleInputChange);
     });
 }
 
