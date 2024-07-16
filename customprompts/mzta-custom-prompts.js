@@ -78,123 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // });
     
     // Log data ID number from item row and prepare for edit action
-    function handleEditClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-        e.target.style.display = 'none';    // Edit btn
-        tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-        tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
-//        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
-        showItemRowEditor(tr);
-    }
-    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
-    btnEditItem_elements.forEach(element => {
-        element.addEventListener('click', handleEditClick);
-    });
-
-    function showItemRowEditor(tr) {
-        tr.querySelector('.id_output').style.display = 'inline';
-        tr.querySelector('.id_show').style.display = 'none';
-        tr.querySelector('.name_output').style.display = 'inline';
-        tr.querySelector('.name_show').style.display = 'none';
-        tr.querySelector('.text_output').style.display = 'inline';
-        tr.querySelector('.text_show').style.display = 'none';
-        tr.querySelector('.type_output').style.display = 'inline';
-        tr.querySelector('.type_show').style.display = 'none';
-        tr.querySelector('.action_output').style.display = 'inline';
-        tr.querySelector('.action_show').style.display = 'none';
-        tr.querySelector('input.need_selected').disabled = false;
-        tr.querySelector('input.need_signature').disabled = false;
-        tr.querySelector('input.need_custom_text').disabled = false;
-    }
-
-    function hideItemRowEditor(tr) {
-        tr.querySelector('.id_output').style.display = 'none';
-        tr.querySelector('.id_show').style.display = 'inline';
-        tr.querySelector('.name_output').style.display = 'none';
-        tr.querySelector('.name_show').style.display = 'inline';
-        tr.querySelector('.text_output').style.display = 'none';
-        tr.querySelector('.text_show').style.display = 'inline';
-        tr.querySelector('.type_output').style.display = 'none';
-        tr.querySelector('.type_show').style.display = 'inline';
-        tr.querySelector('.action_output').style.display = 'none';
-        tr.querySelector('.action_show').style.display = 'inline';
-        tr.querySelector('input.need_selected').disabled = true;
-        tr.querySelector('input.need_signature').disabled = true;
-        tr.querySelector('input.need_custom_text').disabled = true;
-    }
     
-    
-    // Confirm and log deletion action
-    function handleDeleteClick(e) {
-        e.preventDefault();
-        const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
-        if (!checkConfirm) {
-            return;
-        }
-        const tr = e.target.parentNode.parentNode;
-        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-        promptsList.remove("id", tr.querySelector('span.id').innerText);
-        setSomethingChanged();
-    }
-    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
-    btnDeleteItem_elements.forEach(element => {
-        element.addEventListener('click', handleDeleteClick);
-    });
-
-    function handleCancelClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        e.target.style.display = 'none';    // Cancel btn
-        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
-//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
-        hideItemRowEditor(tr);
-    }
-    let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
-    btnCancelItem_elements.forEach(element => {
-        element.addEventListener('click', handleCancelClick);
-    });
-
-    function handleConfirmClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        e.target.style.display = 'none';    // Ok btn
-//        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
-        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
-        // Update item data
-        tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
-        tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
-        tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
-        tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
-        tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
-        tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
-        tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
-        // the checkboxes update is handled directly by themselves
-        hideItemRowEditor(tr);
-        setSomethingChanged();
-    }
-    let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
-    btnConfirmItem_elements.forEach(element => {
-        element.addEventListener('click', handleConfirmClick);
-    });
-
-    // Handle checkbox changes and log new state
-    function handleCheckboxChange(e) {
-        e.preventDefault();
-        e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
-        //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
-    }
-    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
-    checkbox_elements.forEach(element => {
-        element.addEventListener('change', handleCheckboxChange);
-    });
-
     // Handle "type" select changes and log new state
     // function handleTypeSelectChange(e) {
     //     e.preventDefault();
@@ -289,7 +173,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     //Import Export
-
     const btnExportAll = document.getElementById('btnExportAll');
     btnExportAll.addEventListener('click', (e) => {
         e.preventDefault();
@@ -371,6 +254,106 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 }, { once: true });
+
+//========= handling an item in a row 
+function handleEditClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    e.target.style.display = 'none';    // Edit btn
+    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+//        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
+    showItemRowEditor(tr);
+}
+
+function showItemRowEditor(tr) {
+    tr.querySelector('.id_output').style.display = 'inline';
+    tr.querySelector('.id_show').style.display = 'none';
+    tr.querySelector('.name_output').style.display = 'inline';
+    tr.querySelector('.name_show').style.display = 'none';
+    tr.querySelector('.text_output').style.display = 'inline';
+    tr.querySelector('.text_show').style.display = 'none';
+    tr.querySelector('.type_output').style.display = 'inline';
+    tr.querySelector('.type_show').style.display = 'none';
+    tr.querySelector('.action_output').style.display = 'inline';
+    tr.querySelector('.action_show').style.display = 'none';
+    tr.querySelector('input.need_selected').disabled = false;
+    tr.querySelector('input.need_signature').disabled = false;
+    tr.querySelector('input.need_custom_text').disabled = false;
+}
+
+function hideItemRowEditor(tr) {
+    tr.querySelector('.id_output').style.display = 'none';
+    tr.querySelector('.id_show').style.display = 'inline';
+    tr.querySelector('.name_output').style.display = 'none';
+    tr.querySelector('.name_show').style.display = 'inline';
+    tr.querySelector('.text_output').style.display = 'none';
+    tr.querySelector('.text_show').style.display = 'inline';
+    tr.querySelector('.type_output').style.display = 'none';
+    tr.querySelector('.type_show').style.display = 'inline';
+    tr.querySelector('.action_output').style.display = 'none';
+    tr.querySelector('.action_show').style.display = 'inline';
+    tr.querySelector('input.need_selected').disabled = true;
+    tr.querySelector('input.need_signature').disabled = true;
+    tr.querySelector('input.need_custom_text').disabled = true;
+}
+
+// Confirm and log deletion action
+function handleDeleteClick(e) {
+    e.preventDefault();
+    const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
+    if (!checkConfirm) {
+        return;
+    }
+    const tr = e.target.parentNode.parentNode;
+    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    promptsList.remove("id", tr.querySelector('span.id').innerText);
+    setSomethingChanged();
+}
+
+function handleCancelClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    e.target.style.display = 'none';    // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
+//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    hideItemRowEditor(tr);
+}
+
+function handleConfirmClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    e.target.style.display = 'none';    // Ok btn
+//        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
+    tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    // Update item data
+    tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
+    tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
+    tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+    tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
+    tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+    tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
+    tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
+    // the checkboxes update is handled directly by themselves
+    hideItemRowEditor(tr);
+    setSomethingChanged();
+}
+
+// Handle checkbox changes and log new state
+function handleCheckboxChange(e) {
+    e.preventDefault();
+    e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
+    //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
+}
+
+//========= handling an item in a row - END
+
 
 function loadPromptsList(values){
     let options = {
@@ -454,6 +437,30 @@ function loadPromptsList(values){
     promptsList = new List('all_prompts', options, values);
 
     checkSelectedBoxes();
+    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
+    btnEditItem_elements.forEach(element => {
+        element.addEventListener('click', handleEditClick);
+    });
+
+    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
+    btnDeleteItem_elements.forEach(element => {
+        element.addEventListener('click', handleDeleteClick);
+    });
+
+    let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
+    btnCancelItem_elements.forEach(element => {
+        element.addEventListener('click', handleCancelClick);
+    });
+
+    let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
+    btnConfirmItem_elements.forEach(element => {
+        element.addEventListener('click', handleConfirmClick);
+    });
+
+    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
+    checkbox_elements.forEach(element => {
+        element.addEventListener('change', handleCheckboxChange);
+    });
 }
 
 function checkFields() {
