@@ -180,6 +180,7 @@ export async function preparePromptsForImport(prompts){
             output.push(prompt);
         }
     });
+    output.sort((a, b) => a.id.localeCompare(b.id));
     //console.log(">>>>>>>>>>> preparePromptsForImport: " + JSON.stringify(output));
     return output;
 }
