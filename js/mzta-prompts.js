@@ -162,6 +162,8 @@ export function preparePromptsForExport(prompts){
                     delete prompt[key];
                 }
             })
+        }else{
+            delete prompt['idnum'];
         }
     });
     return output;
