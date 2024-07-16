@@ -364,7 +364,7 @@
     "description": ""
   },
   "customPrompts_start_import": {
-    "message": "Starting Custom Promptsimport...",
+    "message": "Starting Custom Prompts import...",
     "description": ""
   },
   "customPrompts_import_completed": {
