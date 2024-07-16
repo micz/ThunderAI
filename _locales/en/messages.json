@@ -352,11 +352,11 @@
     "description": ""
   },
   "customPrompts_ExportAll": {
-    "message": "Export all Prompts",
+    "message": "Export all prompts",
     "description": ""
   },
   "customPrompts_Import": {
-    "message": "Import new Prompts",
+    "message": "Import new prompts",
     "description": ""
   },
   "importPrompts_confirmText": {
