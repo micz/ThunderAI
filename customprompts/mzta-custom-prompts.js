@@ -238,9 +238,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         i18n.updateDocument();
                         // browser.runtime.sendMessage({command: "reload_menus"});
                         setMessage(browser.i18n.getMessage('customPrompts_import_completed'), 'orange');
-                        msgTimeout = setTimeout(() => {
-                            clearMessage();
-                        }, 10000);
+                        // msgTimeout = setTimeout(() => {
+                        //     clearMessage();
+                        // }, 10000);
                     } catch(err) {
                         alert(browser.i18n.getMessage("importPrompts_invalidFile") + ' ' + err);
                         setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
