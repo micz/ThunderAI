@@ -1,7 +1,7 @@
 {
   "extensionDescription": {
     "message": "Utilisez ChatGPT pour améliorer vos emails !",
-    "description": "Description de l'extension."
+    "description":  "Description de l'extension."
   },
   "menu_title": {
     "message": "IA",
@@ -53,6 +53,14 @@
   },
   "customPrompts_managePrompts_info_default": {
     "message": "Les invites par défaut ne sont pas modifiables. Vous pouvez les désactiver, puis copier le texte de l'invite et le coller dans une nouvelle pour créer une version modifiée.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_2": {
+    "message": "Vous pouvez importer et exporter les prompts. Les prompts existantes avec le même ID seront écrasées. Les prompts avec de nouveaux ID seront ajoutées.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_3": {
+    "message": "Si tout est correct, après l'importation, cliquez sur le bouton 'Tout enregistrer'.",
     "description": ""
   },
   "customPrompts_start_saving": {
@@ -341,6 +349,38 @@
   },
   "TranslateLink": {
     "message": "Découvrez comment !",
+    "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Exporter toutes les prompts",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Importer de nouvelles prompts",
+    "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "Vous êtes sur le point d'importer de nouvelles prompts.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Début de l'importation des prompts personnalisées...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Importation des prompts personnalisées terminée ! Vous devez cliquer sur le bouton 'Enregistrer tout' pour enregistrer vos modifications.",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "Le fichier que vous essayez d'importer n'est pas un fichier de prompts personnalisées valide.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "Le fichier que vous essayez d'importer ne contient aucune prompt valide.",
+    "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Nom du prompt actuellement utilisé",
     "description": ""
   }
 }

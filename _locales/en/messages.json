@@ -55,6 +55,14 @@
     "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
     "description": ""
   },
+  "customPrompts_managePrompts_info_default_2": {
+    "message": "You can import and export the prompts. Existing prompts with the same ID will be overwritten. Prompts with new IDs will be added.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_3": {
+    "message": "If everything is correct, after the import click on the 'Save All' button.",
+    "description": ""
+  },
   "customPrompts_start_saving": {
     "message": "Saving prompts...",
     "description": ""
@@ -341,6 +349,38 @@
   },
   "TranslateLink": {
     "message": "Find out how!",
+    "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Export all prompts",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Import new prompts",
+    "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "You are about to import new prompts.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Starting custom prompts import...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Custom prompts import completed! You need to click on the 'Save All' button to save your changes.",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "The file you're trying to import is not a valid custom prompts file.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "The file you're trying to import does not contain any valid prompts.",
+    "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Currently used prompt name",
     "description": ""
   }
 }

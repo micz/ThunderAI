@@ -155,6 +155,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-custom_loading{height:50px;display:none;}";
     style.textContent += "#mzta-custom_textarea{color:black;padding:1px;font-size:15px;width:100%;}";
     style.textContent += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
+    style.textContent += "#mzta-prompt-name{font-size:13px;font-style:italic;color:#919191;position:fixed;bottom:75px;;left:0;padding-left:5px;}";
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
@@ -179,6 +180,13 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         force_go = true;
     };
     modelWarnDiv.appendChild(btn_gpt35);
+    
+    //prompt name
+    var prompt_name_div = document.createElement('div');
+    prompt_name_div.id = 'mzta-prompt-name';
+    prompt_name_div.title= browser.i18n.getMessage("currently_used_prompt");
+    prompt_name_div.textContent = mztaPromptName;
+    fixedDiv.appendChild(prompt_name_div);
 
     //status page
     var status_page_div = document.createElement('div');

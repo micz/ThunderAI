@@ -51,6 +51,18 @@
     "message": "Informazioni",
     "description": ""
   },
+  "customPrompts_managePrompts_info_default": {
+    "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_2": {
+    "message": "Puoi importare ed esportare i prompt. I prompt esistenti con lo stesso ID verranno sovrascritti. I prompt con nuovi ID verranno aggiunti.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_3": {
+    "message": "Se tutto è corretto, dopo l'importazione fai clic sul pulsante 'Salva Tutto'.",
+    "description": ""
+  },
   "customPrompts_start_saving": {
     "message": "Salvataggio prompt in corso...",
     "description": ""
@@ -65,10 +77,6 @@
   },
   "customPrompts_saving_default_prompts": {
     "message": "Salvataggio prompt di base...",
-    "description": ""
-  },
-  "customPrompts_managePrompts_info_default": {
-    "message": "I prompt predefiniti non sono modificabili. Puoi disattivarli, quindi copiare il testo del prompt e incollarlo in uno nuovo per crearne una versione modificata.",
     "description": ""
   },
   "customPrompts_saving_custom_prompts": {
@@ -207,6 +215,14 @@
     "message": "Chiudi",
     "description": ""
   },
+  "chatgpt_textarea_not_found_error": {
+    "message": "C'è stato un errore nell'invio del prompt a ChatGPT, per favore riprova. Se il problema persiste, per favore <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">controlla lo stato del servizio</a>.",
+    "description": ""
+  },
+  "chatgpt_sendbutton_not_found_error": {
+    "message": "Premi il pulsante per inviare il prompt a ChatGPT.",
+    "description": ""
+  },
   "chatgpt_user_not_logged_in": {
     "message": "Non sei connesso a ChatGPT. Effettua l'accesso con le tue credenziali, chiudi la finestra di ChatGPT e poi ripeti l'azione che avevi tentato. Rimarrai connesso in seguito.",
     "description": ""
@@ -257,14 +273,6 @@
   },
   "prefs_OptionText_chatgpt_win_width": {
     "message": "Larghezza",
-    "description": ""
-  },
-  "chatgpt_textarea_not_found_error": {
-    "message": "C'è stato un errore nell'invio del prompt a ChatGPT, per favore riprova. Se il problema persiste, per favore <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">controlla lo stato del servizio</a>.",
-    "description": ""
-  },
-  "chatgpt_sendbutton_not_found_error": {
-    "message": "Premi il pulsante per inviare il prompt a ChatGPT.",
     "description": ""
   },
   "prefs_OptionText_default_sign_name": {
@@ -341,6 +349,38 @@
   },
   "TranslateLink": {
     "message": "Scopri come!",
+    "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Esporta tutti i prompt",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Importa i nuovi prompt",
+    "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "Stai per importare nuovi prompt.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Inizio importazione dei prompt personalizzati...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Importazione dei prompt personalizzati completata! È necessario fare clic sul pulsante 'Salva Tutto' per salvare le modifiche.",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "Il file che stai cercando di importare non è un file valido di prompt personalizzati.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "Il file che stai cercando di importare non contiene alcun prompt valido.",
+    "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Nome del prompt attualmente utilizzato",
     "description": ""
   }
 }

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts } from "../js/mzta-prompts.js";
+import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -26,91 +26,12 @@ var idnumMax = 0;
 var msgTimeout = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
-        item: function(values) {
-            let type_output = '';
-            switch(String(values.type)){
-                case "0":
-                    type_output = `__MSG_customPrompts_add_to_menu_always__`;
-                    break;
-                case "1":
-                    type_output = `__MSG_customPrompts_add_to_menu_reading__`;
-                    break;
-                case "2":
-                    type_output = `__MSG_customPrompts_add_to_menu_composing__`;
-                    break;
-            }
-
-            let action_output = '';
-            switch(String(values.action)){
-                case "0":
-                    action_output = `__MSG_customPrompts_close_button__`;
-                    break;
-                case "1":
-                    action_output = `__MSG_customPrompts_do_reply__`;
-                    break;
-                case "2":
-                    action_output = `__MSG_customPrompts_substitute_text__`;
-                    break;
-            }
-            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
-
-            let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
-                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
-                <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
-                <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
-                <td class="w08"><span class="type_show">` + type_output + `</span>
-                <select class="type_output hiddendata">
-                <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
-                <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
-                <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
-              </select>` +
-              `<span class="type hiddendata"></span>
-              </td>
-                <td class="w17">
-                    Action: <span class="action_show">` + action_output + `</span>
-                    <select class="action_output hiddendata">
-                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
-                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
-                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
-                  </select>` +
-                  `<span class="action hiddendata"></span>
-                    <br>
-                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
-                    <br>
-                    <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
-                    <br>
-                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
-                    <br>
-                    <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
-                    <span class="is_default hiddendata"></span>
-                    <span class="position_compose hiddendata"></span>
-                    <span class="position_display hiddendata"></span>
-                </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
-               </td>
-            </tr>`;
-            //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
-            positionMax_compose = Math.max(positionMax_compose, values.position_compose);
-            positionMax_display = Math.max(positionMax_display, values.position_display);
-            idnumMax = Math.max(idnumMax, values.idnum);
-            return output;
-        }
-    };
-
+    
     let values = await getPrompts();
 
     //console.log('>>>>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
-    promptsList = new List('all_prompts', options, values);
-
-    checkSelectedBoxes();
+    loadPromptsList(values);
 
     const btnSaveAll = document.getElementById('btnSaveAll');
     btnSaveAll.disabled = true;
@@ -137,15 +58,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     btnNew.addEventListener('click', handleNewClick);
     
-    // Enable save button on input change
-    function handleInputChange(e) {
-        e.preventDefault();
-        setSomethingChanged();
-    }
-    document.querySelectorAll('.input_mod').forEach(element => {
-        element.addEventListener('change', handleInputChange);
-    });
-    
     // Display selected value next to select input
     // function handleSelectChange(e) {
     //     e.preventDefault();
@@ -157,123 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // });
     
     // Log data ID number from item row and prepare for edit action
-    function handleEditClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-        e.target.style.display = 'none';    // Edit btn
-        tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-        tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
-//        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
-        showItemRowEditor(tr);
-    }
-    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
-    btnEditItem_elements.forEach(element => {
-        element.addEventListener('click', handleEditClick);
-    });
-
-    function showItemRowEditor(tr) {
-        tr.querySelector('.id_output').style.display = 'inline';
-        tr.querySelector('.id_show').style.display = 'none';
-        tr.querySelector('.name_output').style.display = 'inline';
-        tr.querySelector('.name_show').style.display = 'none';
-        tr.querySelector('.text_output').style.display = 'inline';
-        tr.querySelector('.text_show').style.display = 'none';
-        tr.querySelector('.type_output').style.display = 'inline';
-        tr.querySelector('.type_show').style.display = 'none';
-        tr.querySelector('.action_output').style.display = 'inline';
-        tr.querySelector('.action_show').style.display = 'none';
-        tr.querySelector('input.need_selected').disabled = false;
-        tr.querySelector('input.need_signature').disabled = false;
-        tr.querySelector('input.need_custom_text').disabled = false;
-    }
-
-    function hideItemRowEditor(tr) {
-        tr.querySelector('.id_output').style.display = 'none';
-        tr.querySelector('.id_show').style.display = 'inline';
-        tr.querySelector('.name_output').style.display = 'none';
-        tr.querySelector('.name_show').style.display = 'inline';
-        tr.querySelector('.text_output').style.display = 'none';
-        tr.querySelector('.text_show').style.display = 'inline';
-        tr.querySelector('.type_output').style.display = 'none';
-        tr.querySelector('.type_show').style.display = 'inline';
-        tr.querySelector('.action_output').style.display = 'none';
-        tr.querySelector('.action_show').style.display = 'inline';
-        tr.querySelector('input.need_selected').disabled = true;
-        tr.querySelector('input.need_signature').disabled = true;
-        tr.querySelector('input.need_custom_text').disabled = true;
-    }
     
-    
-    // Confirm and log deletion action
-    function handleDeleteClick(e) {
-        e.preventDefault();
-        const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
-        if (!checkConfirm) {
-            return;
-        }
-        const tr = e.target.parentNode.parentNode;
-        //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
-        promptsList.remove("id", tr.querySelector('span.id').innerText);
-        setSomethingChanged();
-    }
-    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
-    btnDeleteItem_elements.forEach(element => {
-        element.addEventListener('click', handleDeleteClick);
-    });
-
-    function handleCancelClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        e.target.style.display = 'none';    // Cancel btn
-        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
-//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
-        hideItemRowEditor(tr);
-    }
-    let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
-    btnCancelItem_elements.forEach(element => {
-        element.addEventListener('click', handleCancelClick);
-    });
-
-    function handleConfirmClick(e) {
-        e.preventDefault();
-        const tr = e.target.parentNode.parentNode;
-        e.target.style.display = 'none';    // Ok btn
-//        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
-        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-        tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-        tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
-        // Update item data
-        tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
-        tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
-        tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
-        tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
-        tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
-        tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
-        tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
-        // the checkboxes update is handled directly by themselves
-        hideItemRowEditor(tr);
-        setSomethingChanged();
-    }
-    let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
-    btnConfirmItem_elements.forEach(element => {
-        element.addEventListener('click', handleConfirmClick);
-    });
-
-    // Handle checkbox changes and log new state
-    function handleCheckboxChange(e) {
-        e.preventDefault();
-        e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
-        //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
-    }
-    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
-    checkbox_elements.forEach(element => {
-        element.addEventListener('change', handleCheckboxChange);
-    });
-
     // Handle "type" select changes and log new state
     // function handleTypeSelectChange(e) {
     //     e.preventDefault();
@@ -367,8 +163,306 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
     });
 
+    //Import Export
+    const btnExportAll = document.getElementById('btnExportAll');
+    btnExportAll.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportPrompts();
+    });
+
+    async function exportPrompts() {
+        const manifest = browser.runtime.getManifest();
+        const addonVersion = manifest.version;
+        const outputPrompts = preparePromptsForExport(await getPrompts());
+        let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
+        const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
+            type: "application/json",
+          });
+        const currentDate = new Date();
+        const time_stamp = `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(currentDate.getDate()).padStart(2, '0')}${String(currentDate.getHours()).padStart(2, '0')}${String(currentDate.getMinutes()).padStart(2, '0')}${String(currentDate.getSeconds()).padStart(2, '0')}`;
+        messenger.downloads.download({
+            url: URL.createObjectURL(blob),
+            filename: `thunderai-prompts-${time_stamp}.json`,
+            saveAs: true,
+        });
+    }
+
+    const btnImport = document.getElementById('btnImport');
+    btnImport.addEventListener('click', (e) => {
+        e.preventDefault();
+        importPrompts();
+    });
+
+    function importPrompts() {
+        if(confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
+            //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from exportPrompts(), and if so, add it to the list
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.click();
+            input.onchange = async () => {
+                setMessage(browser.i18n.getMessage('customPrompts_start_import'));
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const json = reader.result;
+                    try {
+                        const obj = JSON.parse(json);
+                        if(obj.id !== 'thunderai-prompts') {
+                            alert(browser.i18n.getMessage("importPrompts_invalidFile"));
+                            setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                            return;
+                        }
+                        // if(obj.addon_version !== manifest.version) {
+                        //     alert(browser.i18n.getMessage("importPrompts_invalidVersion"));
+                        //     return;
+                        // }
+                        if(!Array.isArray(obj.prompts)) {
+                            alert(browser.i18n.getMessage("importPrompts_invalidPrompts"));
+                            setMessage(browser.i18n.getMessage('customPrompts_invalidPrompts'),'red');
+                            return;
+                        }
+                        //setCustomPrompts(obj.prompts);
+                        promptsList.clear();
+                        loadPromptsList(await preparePromptsForImport(obj.prompts));
+                        setSomethingChanged();
+                        i18n.updateDocument();
+                        // browser.runtime.sendMessage({command: "reload_menus"});
+                        setMessage(browser.i18n.getMessage('customPrompts_import_completed'), 'orange');
+                        // msgTimeout = setTimeout(() => {
+                        //     clearMessage();
+                        // }, 10000);
+                    } catch(err) {
+                        alert(browser.i18n.getMessage("importPrompts_invalidFile") + ' ' + err);
+                        setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                        return;
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+        };
+    }
+
 }, { once: true });
- 
+
+//========= handling an item in a row 
+function handleEditClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    e.target.style.display = 'none';    // Edit btn
+    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+//        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
+    showItemRowEditor(tr);
+}
+
+function showItemRowEditor(tr) {
+    tr.querySelector('.id_output').style.display = 'inline';
+    tr.querySelector('.id_show').style.display = 'none';
+    tr.querySelector('.name_output').style.display = 'inline';
+    tr.querySelector('.name_show').style.display = 'none';
+    tr.querySelector('.text_output').style.display = 'inline';
+    tr.querySelector('.text_show').style.display = 'none';
+    tr.querySelector('.type_output').style.display = 'inline';
+    tr.querySelector('.type_show').style.display = 'none';
+    tr.querySelector('.action_output').style.display = 'inline';
+    tr.querySelector('.action_show').style.display = 'none';
+    tr.querySelector('input.need_selected').disabled = false;
+    tr.querySelector('input.need_signature').disabled = false;
+    tr.querySelector('input.need_custom_text').disabled = false;
+}
+
+function hideItemRowEditor(tr) {
+    tr.querySelector('.id_output').style.display = 'none';
+    tr.querySelector('.id_show').style.display = 'inline';
+    tr.querySelector('.name_output').style.display = 'none';
+    tr.querySelector('.name_show').style.display = 'inline';
+    tr.querySelector('.text_output').style.display = 'none';
+    tr.querySelector('.text_show').style.display = 'inline';
+    tr.querySelector('.type_output').style.display = 'none';
+    tr.querySelector('.type_show').style.display = 'inline';
+    tr.querySelector('.action_output').style.display = 'none';
+    tr.querySelector('.action_show').style.display = 'inline';
+    tr.querySelector('input.need_selected').disabled = true;
+    tr.querySelector('input.need_signature').disabled = true;
+    tr.querySelector('input.need_custom_text').disabled = true;
+}
+
+// Confirm and log deletion action
+function handleDeleteClick(e) {
+    e.preventDefault();
+    const checkConfirm = window.confirm(browser.i18n.getMessage("customPrompts_btnDelete_confirmText"));
+    if (!checkConfirm) {
+        return;
+    }
+    const tr = e.target.parentNode.parentNode;
+    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    promptsList.remove("id", tr.querySelector('span.id').innerText);
+    setSomethingChanged();
+}
+
+function handleCancelClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    e.target.style.display = 'none';    // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
+//        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    hideItemRowEditor(tr);
+}
+
+function handleConfirmClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    e.target.style.display = 'none';    // Ok btn
+//        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
+    tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
+    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    // Update item data
+    tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
+    tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
+    tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+    tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
+    tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+    tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
+    tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
+    // the checkboxes update is handled directly by themselves
+    hideItemRowEditor(tr);
+    setSomethingChanged();
+}
+
+// Handle checkbox changes and log new state
+function handleCheckboxChange(e) {
+    e.preventDefault();
+    e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
+    //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
+}
+
+// Enable save button on input change
+function handleInputChange(e) {
+    e.preventDefault();
+    setSomethingChanged();
+}
+
+//========= handling an item in a row - END
+
+
+function loadPromptsList(values){
+    let options = {
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        item: function(values) {
+            let type_output = '';
+            switch(String(values.type)){
+                case "0":
+                    type_output = `__MSG_customPrompts_add_to_menu_always__`;
+                    break;
+                case "1":
+                    type_output = `__MSG_customPrompts_add_to_menu_reading__`;
+                    break;
+                case "2":
+                    type_output = `__MSG_customPrompts_add_to_menu_composing__`;
+                    break;
+            }
+
+            let action_output = '';
+            switch(String(values.action)){
+                case "0":
+                    action_output = `__MSG_customPrompts_close_button__`;
+                    break;
+                case "1":
+                    action_output = `__MSG_customPrompts_do_reply__`;
+                    break;
+                case "2":
+                    action_output = `__MSG_customPrompts_substitute_text__`;
+                    break;
+            }
+            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
+
+            let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
+                <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
+                <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
+                <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
+                <td class="w08"><span class="type_show">` + type_output + `</span>
+                <select class="type_output hiddendata">
+                <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
+                <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
+                <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
+              </select>` +
+              `<span class="type hiddendata"></span>
+              </td>
+                <td class="w17">
+                    Action: <span class="action_show">` + action_output + `</span>
+                    <select class="action_output hiddendata">
+                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
+                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
+                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
+                  </select>` +
+                  `<span class="action hiddendata"></span>
+                    <br>
+                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
+                    <br>
+                    <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
+                    <br>
+                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
+                    <br>
+                    <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
+                    <span class="is_default hiddendata"></span>
+                    <span class="position_compose hiddendata"></span>
+                    <span class="position_display hiddendata"></span>
+                </td>
+                <td>
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
+                <br><br>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+               </td>
+            </tr>`;
+            //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
+            positionMax_compose = Math.max(positionMax_compose, values.position_compose);
+            positionMax_display = Math.max(positionMax_display, values.position_display);
+            idnumMax = Math.max(idnumMax, values.idnum);
+            return output;
+        }
+    };
+
+    promptsList = new List('all_prompts', options, values);
+
+    checkSelectedBoxes();
+    let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
+    btnEditItem_elements.forEach(element => {
+        element.addEventListener('click', handleEditClick);
+    });
+
+    let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
+    btnDeleteItem_elements.forEach(element => {
+        element.addEventListener('click', handleDeleteClick);
+    });
+
+    let btnCancelItem_elements = document.querySelectorAll(".btnCancelItem");
+    btnCancelItem_elements.forEach(element => {
+        element.addEventListener('click', handleCancelClick);
+    });
+
+    let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
+    btnConfirmItem_elements.forEach(element => {
+        element.addEventListener('click', handleConfirmClick);
+    });
+
+    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
+    checkbox_elements.forEach(element => {
+        element.addEventListener('change', handleCheckboxChange);
+    });
+
+    document.querySelectorAll('.input_mod').forEach(element => {
+        element.addEventListener('change', handleInputChange);
+    });
+}
 
 function checkFields() {
     //console.log('>>>>>>>>>>>>> typeof promptsList: ' + typeof promptsList);

@@ -3,7 +3,12 @@
 
 
 
-
+<h2>Version 1.2.0 - ??/07/2024</h2>
+    <ul>
+      <li>If no default language is set in the options, the language present in the text sent to ChatGPT will be used [<a href="https://github.com/micz/ThunderAI/issues/53">#53</a>].</li>
+        <li>Added the functionality to import and export custom prompts [<a href="https://github.com/micz/ThunderAI/issues/65">#65</a>].</li>
+        <li>Showing the currently used prompt name in the ChatGPT window [<a href="https://github.com/micz/ThunderAI/issues/20">#20</a>].</li>
+    </ul>
 <h2>Version 1.1.4 - 28/06/2024</h2>
     <ul>
         <li>Added an option to import text with formatting from ChatGPT, set to false by default [<a href="https://github.com/micz/ThunderAI/issues/70">#70</a>], [<a href="https://github.com/micz/ThunderAI/issues/77">#77</a>].</li>

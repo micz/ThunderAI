@@ -55,6 +55,14 @@
     "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen.",
     "description": ""
   },
+  "customPrompts_managePrompts_info_default_2": {
+    "message": "Sie können die Prompts importieren und exportieren. Bestehende Prompts mit derselben ID werden überschrieben. Prompts mit neuen IDs werden hinzugefügt.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_3": {
+    "message": "Wenn alles korrekt ist, klicken Sie nach dem Import auf die Schaltfläche 'Alle speichern'.",
+    "description": ""
+  },
   "customPrompts_start_saving": {
     "message": "Eingabeaufforderungen werden gespeichert...",
     "description": ""
@@ -341,6 +349,38 @@
   },
   "TranslateLink": {
     "message": "Finde es heraus!",
+    "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Alle Prompts exportieren",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Neue Prompts importieren",
+    "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "Sie sind dabei, neue Prompts zu importieren.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Import von benutzerdefinierten Prompts startet...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Import von benutzerdefinierten Prompts abgeschlossen! Sie müssen auf die Schaltfläche 'Alle speichern' klicken, um Ihre Änderungen zu speichern.",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "Die Datei, die Sie importieren möchten, ist keine gültige Datei für benutzerdefinierte Prompts.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "Die Datei, die Sie importieren möchten, enthält keine gültigen Prompts.",
+    "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Derzeit verwendeter Prompt-Name",
     "description": ""
   }
 }

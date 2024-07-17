@@ -93,14 +93,25 @@ export class mzta_Menus {
             }
             //open chatgpt window
             //console.log("Click menu item...");
-            let prefs = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
+            let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
             let chatgpt_lang = prefs.default_chatgpt_lang;
+            //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
+            if(chatgpt_lang === ''){
+                chatgpt_lang = 'Reply in the language it is written.';
+            }else{
+                chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
+            }
     
-            var fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + browser.i18n.getMessage("prompt_lang") + chatgpt_lang + ". \"" + body_text + "\" ";
+            var fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + body_text + "\" ";
     
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
-                    fullPrompt = curr_prompt.text + chatgpt_lang + ". \"" + body_text + "\" ";
+                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
+                    let chatgpt_lang2 = prefs2.default_chatgpt_lang;
+                    if(chatgpt_lang2 === ''){
+                        chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
+                    }
+                    fullPrompt = curr_prompt.text + chatgpt_lang2 + ". \"" + body_text + "\" ";
                     break;
                 case 'prompt_reply':
                     fullPrompt += "Do not add the subject line to the response."
@@ -112,7 +123,7 @@ export class mzta_Menus {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.need_custom_text);
+            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
         };
         this.rootMenu.push(curr_menu_entry);
     };

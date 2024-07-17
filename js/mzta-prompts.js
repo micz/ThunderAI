@@ -153,6 +153,37 @@ export async function getPrompts(onlyEnabled = false){
     return output;
 }
 
+export function preparePromptsForExport(prompts){
+    let output = [...prompts];
+    output.forEach(prompt => {
+        if(prompt.is_default == 1){
+            Object.keys(prompt).forEach(key => {
+                if(!['id', 'enabled', 'position_compose', 'position_display'].includes(key)){
+                    delete prompt[key];
+                }
+            })
+        }else{
+            delete prompt['idnum'];
+        }
+    });
+    return output;
+}
+
+export async function preparePromptsForImport(prompts){
+    const output = await getPrompts();
+    prompts.forEach(prompt => {
+        if(output.some(p => p.id == prompt.id)){
+            Object.keys(prompt).forEach(key => {
+               output.find(p => p.id == prompt.id)[key] = prompt[key];
+            })
+        }else{
+            output.push(prompt);
+        }
+    });
+    output.sort((a, b) => a.id.localeCompare(b.id));
+    //console.log(">>>>>>>>>>> preparePromptsForImport: " + JSON.stringify(output));
+    return output;
+}
 
 async function getDefaultPrompts_withProps() {
     let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production

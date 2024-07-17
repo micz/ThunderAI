@@ -61,7 +61,7 @@ function restoreOptions() {
           break;
         case 'text':
           let default_text_value = '';
-          if(element.id == 'default_chatgpt_lang') default_text_value = getLanguageDisplayName(browser.i18n.getUILanguage());
+          if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
           element.value = result[element.id] || default_text_value;
           break;
         default:
