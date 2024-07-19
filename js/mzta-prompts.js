@@ -44,6 +44,10 @@
     0: No custom text needed
     1: Custom text needed
 
+    Define response language (define_response_lang attribute):
+    0: Do not include a statement about the response language in the prompt.
+    1: Include a statement about the response language in the prompt.
+
     ================ USER PROPERTIES
     Enabled (enabled attribute):
     0: Disabled
@@ -67,6 +71,7 @@ const defaultPrompts = [
         need_selected: "0",
         need_signature: "1",
         need_custom_text: "0",
+        define_response_lang: "1",
         is_default: "1",
     },
     {
@@ -78,6 +83,7 @@ const defaultPrompts = [
         need_selected: "1",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "1",
         is_default: "1",
     },
     {
@@ -89,6 +95,7 @@ const defaultPrompts = [
         need_selected: "1",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "1",
         is_default: "1",
     },
     {
@@ -100,6 +107,7 @@ const defaultPrompts = [
         need_selected: "0",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "1",
         is_default: "1",
     },
     {
@@ -111,6 +119,7 @@ const defaultPrompts = [
         need_selected: "0",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "1",
         is_default: "1",
     },
     {
@@ -122,6 +131,7 @@ const defaultPrompts = [
         need_selected: "0",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "0",
         is_default: "1",
     },
     {
@@ -133,6 +143,7 @@ const defaultPrompts = [
         need_selected: "1",
         need_signature: "0",
         need_custom_text: "0",
+        define_response_lang: "0",
         is_default: "1",
     },
 ];
