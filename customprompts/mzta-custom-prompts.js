@@ -621,7 +621,7 @@ function clearMessage() {
 
 if(await isThunderbird128OrGreater()){
     window.addEventListener('beforeunload', function (event) {
-        // Check if any changes have been made
+        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
         if (somethingChanged) {
             event.preventDefault();
         }
