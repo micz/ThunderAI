@@ -17,6 +17,7 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
+import { isThunderbird128OrGreater } from "../js/mzta-utils.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -618,9 +619,11 @@ function clearMessage() {
 }
 
 
-// window.addEventListener('beforeunload', function (event) {
-//     // Check if any changes have been made
-//     if (somethingChanged) {
-//         event.preventDefault();
-//     }
-// });
+if(await isThunderbird128OrGreater()){
+    window.addEventListener('beforeunload', function (event) {
+        // Check if any changes have been made
+        if (somethingChanged) {
+            event.preventDefault();
+        }
+    });    
+}
