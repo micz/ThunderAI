@@ -75,7 +75,8 @@ async function chatgpt_getFromDOM(pos) {
             let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
             if(!mztaKeepFormatting) {       // Return only TEXT
             // Select the div with class 'empty:hidden'
-                response = responseDivs[responseDivs.length - 1].textContent;
+                let correct_div = responseDivs[responseDivs.length - 1].querySelector('div[data-message-author-role="assistant"]');
+                response = correct_div.textContent;
                 //console.log(">>>>>>>>>> response: " + response);
                 response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
                 response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
