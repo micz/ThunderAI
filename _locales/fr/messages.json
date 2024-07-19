@@ -382,5 +382,9 @@
   "currently_used_prompt": {
     "message": "Nom du prompt actuellement utilisé",
     "description": ""
+  },
+  "customprompts_form_label_define_response_lang": {
+    "message": "Définir la langue de réponse dans le prompt.",
+    "description": ""
   }
 }
