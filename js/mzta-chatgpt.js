@@ -65,6 +65,7 @@ function chatgpt_getRegenerateButton() {
 async function chatgpt_getFromDOM(pos) {
     const responseDivs = document.querySelectorAll('div[data-testid*="conversation-turn"]:nth-child(odd)'),
           strPos = pos.toString().toLowerCase();
+          //console.log(">>>>>>>>>>>>> responseDivs.length: "+ responseDivs.length);
     let response = '';
     if (responseDivs.length) {
         if (/last|final/.test(strPos)){ // get last response
@@ -74,13 +75,8 @@ async function chatgpt_getFromDOM(pos) {
             let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
             if(!mztaKeepFormatting) {       // Return only TEXT
             // Select the div with class 'empty:hidden'
-                let divToRemove = doc.querySelector('div.empty\\\\:hidden');
-                if (divToRemove) {
-                    divToRemove.remove();
-                }
-                // Extract the new HTML string
-                responseDivs[responseDivs.length - 1].innerHTML = doc.body.innerHTML;
                 response = responseDivs[responseDivs.length - 1].textContent;
+                //console.log(">>>>>>>>>> response: " + response);
                 response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
                 response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
                 response = "<body><p>" + response + "</p></body>";
@@ -90,7 +86,6 @@ async function chatgpt_getFromDOM(pos) {
                 //console.log(">>>>>>>>> doc_response: " + JSON.stringify(doc_response.body.innerHTML));
                 replaceNewlinesWithBr(doc_response.body)
                 response = doc_response.body.innerHTML;
-                // response = responseDivs[responseDivs.length - 1].innerHTML;
             } else {                // Return HTML
                 // Tags to exclude
                 //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
