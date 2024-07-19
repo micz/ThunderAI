@@ -3,6 +3,11 @@
 
 
 
+<h2>Version 1.2.1 - ??/07/2024</h2>
+      <ul>
+        <li>Fixed changes in the ChatGPT web interface when importing in plain text [<a href="https://github.com/micz/ThunderAI/issues/87">#87</a>].</li>
+        <li>...</li>
+      </ul>
 <h2>Version 1.2.0 - 17/07/2024</h2>
     <ul>
       <li>If no default language is set in the options, the language present in the text sent to ChatGPT will be used [<a href="https://github.com/micz/ThunderAI/issues/53">#53</a>].</li>
