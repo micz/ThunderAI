@@ -99,7 +99,7 @@ export class mzta_Menus {
                 chatgpt_lang = prefs.default_chatgpt_lang;
                 //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
                 if(chatgpt_lang === ''){
-                    chatgpt_lang = 'Reply in the language it is written.';
+                    chatgpt_lang = 'Reply in the same language.';
                 }else{
                     chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
                 }
