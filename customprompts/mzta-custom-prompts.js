@@ -17,6 +17,7 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
+import { isThunderbird128OrGreater } from "../js/mzta-utils.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -114,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedSelectedNew = document.getElementById('checkboxNeedSelectedNew');
     var checkboxNeedSignatureNew = document.getElementById('checkboxNeedSignatureNew');
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
+    var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
@@ -130,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_selected: (checkboxNeedSelectedNew.checked) ? 1 : 0,
             need_signature: (checkboxNeedSignatureNew.checked) ? 1 : 0,
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
+            define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
@@ -273,6 +276,7 @@ function showItemRowEditor(tr) {
     tr.querySelector('input.need_selected').disabled = false;
     tr.querySelector('input.need_signature').disabled = false;
     tr.querySelector('input.need_custom_text').disabled = false;
+    tr.querySelector('input.define_response_lang').disabled = false;
 }
 
 function hideItemRowEditor(tr) {
@@ -289,6 +293,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_selected').disabled = true;
     tr.querySelector('input.need_signature').disabled = true;
     tr.querySelector('input.need_custom_text').disabled = true;
+    tr.querySelector('input.define_response_lang').disabled = true;
 }
 
 // Confirm and log deletion action
@@ -354,7 +359,7 @@ function handleInputChange(e) {
 
 function loadPromptsList(values){
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -409,6 +414,8 @@ function loadPromptsList(values){
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
                     <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
+                    <br>
+                    <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
                     <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
                     <span class="is_default hiddendata"></span>
@@ -547,6 +554,7 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('.need_selected[type="checkbox"]'),
             ...document.querySelectorAll('.need_signature[type="checkbox"]'),
             ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
+            ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
             ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }
@@ -611,9 +619,11 @@ function clearMessage() {
 }
 
 
-// window.addEventListener('beforeunload', function (event) {
-//     // Check if any changes have been made
-//     if (somethingChanged) {
-//         event.preventDefault();
-//     }
-// });
+if(await isThunderbird128OrGreater()){
+    window.addEventListener('beforeunload', function (event) {
+        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
+        if (somethingChanged) {
+            event.preventDefault();
+        }
+    });    
+}

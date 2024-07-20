@@ -87,6 +87,43 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
+export function i18nConditionalGet(str) {
+  // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
+  // using the browser.i18n API
+  // else we return the original string
+  // Check if the string starts with '__MSG_' and ends with '__'
+  if (str.startsWith('__MSG_') && str.endsWith('__')) {
+      // Remove '__MSG_' from the beginning and '__' from the end
+      return browser.i18n.getMessage(str.substring(6, str.length - 2));
+  }
+  return str; // Return the original string if the conditions are not met
+}
+
+export async function isThunderbird128OrGreater(){
+  try {
+    const info = await browser.runtime.getBrowserInfo();
+    const version = info.version;
+    return compareThunderbirdVersions(version, '128.0') >= 0;
+  } catch (error) {
+    console.error('[ThunderAI] Error retrieving browser information:', error);
+    return false;
+  }
+}
+
+function compareThunderbirdVersions(v1, v2) {
+  const v1parts = v1.split('.').map(Number);
+  const v2parts = v2.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(v1parts.length, v2parts.length); i++) {
+    const v1part = v1parts[i] || 0;
+    const v2part = v2parts[i] || 0;
+    if (v1part > v2part) return 1;
+    if (v1part < v2part) return -1;
+  }
+  return 0;
+}
+
+
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
@@ -134,16 +171,4 @@ const insertHtml = function (replyHtml, fullBody_string) {
   });
   fullBody.body.insertBefore(fragment, fullBody.body.firstChild);
   return fullBody.body.innerHTML;
-}
-
-export function i18nConditionalGet(str) {
-  // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
-  // using the browser.i18n API
-  // else we return the original string
-  // Check if the string starts with '__MSG_' and ends with '__'
-  if (str.startsWith('__MSG_') && str.endsWith('__')) {
-      // Remove '__MSG_' from the beginning and '__' from the end
-      return browser.i18n.getMessage(str.substring(6, str.length - 2));
-  }
-  return str; // Return the original string if the conditions are not met
 }

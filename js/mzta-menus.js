@@ -93,13 +93,16 @@ export class mzta_Menus {
             }
             //open chatgpt window
             //console.log("Click menu item...");
-            let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
-            let chatgpt_lang = prefs.default_chatgpt_lang;
-            //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
-            if(chatgpt_lang === ''){
-                chatgpt_lang = 'Reply in the language it is written.';
-            }else{
-                chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
+            let chatgpt_lang = '';
+            if(String(curr_prompt.define_response_lang) == "1"){
+                let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
+                chatgpt_lang = prefs.default_chatgpt_lang;
+                //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
+                if(chatgpt_lang === ''){
+                    chatgpt_lang = 'Reply in the same language.';
+                }else{
+                    chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
+                }
             }
     
             var fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + body_text + "\" ";
