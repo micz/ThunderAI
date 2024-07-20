@@ -146,55 +146,62 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
         return;
     }
-    let newWindow = await browser.windows.create({
-        url: "https://chatgpt.com",
-        type: "popup",
-        width: prefs.chatgpt_win_width,
-        height: prefs.chatgpt_win_height
-    });
 
-    console.log("[ThunderAI] Script started...");
-    createdWindowID = newWindow.id;
-    const createdTab = newWindow.tabs[0];
-
-    // Wait for tab loaded.
-    await new Promise(resolve => {
-        const tabIsLoaded = tab => {
-            return tab.status == "complete" && tab.url != "about:blank";
-        };
-        const listener = (tabId, changeInfo, updatedTab) => {
-            if (tabIsLoaded(updatedTab)) {
-                browser.tabs.onUpdated.removeListener(listener);
-                resolve();
-            }
-        }
-        // Early exit if loaded already
-        if (tabIsLoaded(createdTab)) {
-            resolve();
-        } else {
-            browser.tabs.onUpdated.addListener(listener);
-        }
-    });
-
-    let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
-    let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
-    let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
-    let mztaDoCustomText=`+ do_custom_text +`;
-    let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
-    let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
-    `;
-
-    browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
-        .then(async () => {
-            console.log("[ThunderAI] Script injected successfully");
-            let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-            let mailMessageId = -1;
-            if(mailMessage) mailMessageId = mailMessage.id;
-            browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
-        })
-        .catch(err => {
-            console.error("[ThunderAI] Error injecting the script: ", err);
+    if(!prefs.api_active){
+        // We are using the ChatGPT web interface
+        let newWindow = await browser.windows.create({
+            url: "https://chatgpt.com",
+            type: "popup",
+            width: prefs.chatgpt_win_width,
+            height: prefs.chatgpt_win_height
         });
+
+        console.log("[ThunderAI] Script started...");
+        createdWindowID = newWindow.id;
+        const createdTab = newWindow.tabs[0];
+
+        // Wait for tab loaded.
+        await new Promise(resolve => {
+            const tabIsLoaded = tab => {
+                return tab.status == "complete" && tab.url != "about:blank";
+            };
+            const listener = (tabId, changeInfo, updatedTab) => {
+                if (tabIsLoaded(updatedTab)) {
+                    browser.tabs.onUpdated.removeListener(listener);
+                    resolve();
+                }
+            }
+            // Early exit if loaded already
+            if (tabIsLoaded(createdTab)) {
+                resolve();
+            } else {
+                browser.tabs.onUpdated.addListener(listener);
+            }
+        });
+
+        let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+        let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
+        let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
+        let mztaDoCustomText=`+ do_custom_text +`;
+        let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
+        let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+        `;
+
+        browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
+            .then(async () => {
+                console.log("[ThunderAI] Script injected successfully");
+                let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId = -1;
+                if(mailMessage) mailMessageId = mailMessage.id;
+                browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+            })
+            .catch(err => {
+                console.error("[ThunderAI] Error injecting the script: ", err);
+            });
+    }else{
+        // We are using the ChatGPT API
+
+    }
 }
 
 function checkScreenDimensions(prefs){
