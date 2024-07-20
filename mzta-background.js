@@ -156,7 +156,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             height: prefs.chatgpt_win_height
         });
 
-        console.log("[ThunderAI] Script started...");
+        console.log("[ThunderAI] ChatGPT web interface script started...");
         createdWindowID = newWindow.id;
         const createdTab = newWindow.tabs[0];
 
@@ -189,14 +189,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
             .then(async () => {
-                console.log("[ThunderAI] Script injected successfully");
+                console.log("[ThunderAI] ChatGPT web interface script injected successfully");
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                 let mailMessageId = -1;
                 if(mailMessage) mailMessageId = mailMessage.id;
                 browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
             })
             .catch(err => {
-                console.error("[ThunderAI] Error injecting the script: ", err);
+                console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
             });
     }else{
         // We are using the ChatGPT API
