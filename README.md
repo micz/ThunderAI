@@ -8,7 +8,8 @@ ThunderAI is a tool for anyone looking to improve their email quality, both in c
 
 There is no need for an API key and is possibile to use this extension even with a free account!
 
-Starting from version 1.1.0, you can also define your own **custom prompts**! Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)!
+Starting from version 1.1.0, you can also define your own **custom prompts**, and from version 1.2.0 you can import and export all the prompts!
+Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)!
 
 <br>
 
