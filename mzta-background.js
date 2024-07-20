@@ -200,7 +200,12 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             });
     }else{
         // We are using the ChatGPT API
-
+        let newWindow = await browser.windows.create({
+            url: browser.runtime.getURL('api_webchat/index.html'),
+            type: "popup",
+            width: prefs.chatgpt_win_width,
+            height: prefs.chatgpt_win_height
+        });
     }
 }
 
