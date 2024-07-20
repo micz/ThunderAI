@@ -18,7 +18,6 @@
 
 
 import { prefs_default } from './mzta-options-default.js';
-import { getLanguageDisplayName } from '../js/mzta-utils.js'
 
 function saveOptions(e) {
   e.preventDefault();
