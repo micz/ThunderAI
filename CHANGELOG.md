@@ -3,6 +3,10 @@
 
 
 
+<h2>Version 2.0.0 - ??/??/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 1.2.1 - 20/07/2024</h2>
       <ul>
         <li>Fixed changes in the ChatGPT web interface when importing in plain text [<a href="https://github.com/micz/ThunderAI/issues/87">#87</a>].</li>
