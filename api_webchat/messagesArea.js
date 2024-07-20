@@ -1,52 +1,52 @@
 const messagesAreaTemplate = document.createElement('template');
-messagesAreaTemplate.innerHTML = `
-    <style>
-        :host {
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Adjust as needed */
-            overflow-y: auto; /* Makes the area scrollable */
-        }
-        #messages {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* Align messages to the bottom */
-            min-height: 100%; /* Ensure it takes the full height */
-            margin: var(--margin);
-        }
-        .message {
-            margin-bottom: var(--margin);
-            line-height: 1.3;
-        }
 
-        .token {
-            display: inline; /* Tokens are inline elements */
-            opacity: 0; /* Start with the token invisible */
-            animation: fadeIn 1000ms forwards; /* Apply the fade-in animation */
+const messagesAreaStyle = document.createElement('style');
+messagesAreaStyle.textContent = `
+    :host {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto;
+    }
+    #messages {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        min-height: 100%;
+        margin: var(--margin);
+    }
+    .message {
+        margin-bottom: var(--margin);
+        line-height: 1.3;
+    }
+    .token {
+        display: inline;
+        opacity: 0;
+        animation: fadeIn 1000ms forwards;
+    }
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
         }
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-        h2 {
-            font-weight: bold;
-            font-size: 1rem;
-            margin-top: 20px;
-        }
-
-
-    </style>
-    <div id="messages"></div>
+    }
+    h2 {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-top: 20px;
+    }
 `;
+messagesAreaTemplate.content.appendChild(messagesAreaStyle);
 
+const messagesDiv = document.createElement('div');
+messagesDiv.id = 'messages';
+messagesAreaTemplate.content.appendChild(messagesDiv);
 
 class MessagesArea extends HTMLElement {
     constructor() {
         super();
-        this.accumulatingMessageEl = null; // No initial message container
+        this.accumulatingMessageEl = null;
 
-        const shadowRoot = this.attachShadow({mode: 'open'});
+        const shadowRoot = this.attachShadow({ mode: 'open' });
         shadowRoot.appendChild(messagesAreaTemplate.content.cloneNode(true));
 
         this.messages = shadowRoot.querySelector('#messages');
@@ -63,7 +63,7 @@ class MessagesArea extends HTMLElement {
         }
 
         this.accumulatingMessageEl = document.createElement('div');
-        this.accumulatingMessageEl.classList.add('message', 'bot'); // Tag as 'bot' message
+        this.accumulatingMessageEl.classList.add('message', 'bot');
         this.messages.appendChild(this.accumulatingMessageEl);
     }
 
@@ -76,13 +76,13 @@ class MessagesArea extends HTMLElement {
     }
 
     appendUserMessage(messageText, source="You") {
-        console.log("appendUserMessage: "+messageText);
+        console.log("appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         header.textContent = source;
         this.messages.appendChild(header);
 
         const messageElement = document.createElement('div');
-        messageElement.classList.add('message', 'user'); // Tag as 'user' message
+        messageElement.classList.add('message', 'user');
         messageElement.textContent = messageText;
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
@@ -108,22 +108,27 @@ class MessagesArea extends HTMLElement {
     scrollToBottom() {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
+
     flushAccumulatingMessage() {
         if (this.accumulatingMessageEl) {
-            // remove all the animation spans and interpret the text as markdown. 
+            // Raccogliere tutti i token in un testo completo
             let fullText = '';
             this.accumulatingMessageEl.querySelectorAll('.token').forEach(tokenEl => {
                 fullText += tokenEl.textContent;
             });
 
-            // Convert Markdown to HTML
-            let htmlText = marked.parse(fullText);
-            console.log("htmlText: "+htmlText);
-            this.accumulatingMessageEl.innerHTML = htmlText;
+            // Convertire Markdown in nodi DOM usando la libreria markdown-it
+            const md = window.markdownit();
+            const html = md.render(fullText);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            this.accumulatingMessageEl.innerHTML = ''; // Rimuovere i token esistenti
+            Array.from(tempDiv.childNodes).forEach(node => {
+                this.accumulatingMessageEl.appendChild(node);
+            });
 
-            this.accumulatingMessageEl = null; // Clear the reference for the next message
+            this.accumulatingMessageEl = null;
         }
-        //this.scrollToBottom();
     }
 }
 
