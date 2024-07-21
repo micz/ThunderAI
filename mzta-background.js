@@ -210,6 +210,25 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         createdWindowID = newWindow.id;
         let createdTab = newWindow.tabs[0];
 
+        // Wait for tab loaded.
+        await new Promise(resolve => {
+            const tabIsLoaded = tab => {
+                return tab.status == "complete" && tab.url != "about:blank";
+            };
+            const listener = (tabId, changeInfo, updatedTab) => {
+                if (tabIsLoaded(updatedTab)) {
+                    browser.tabs.onUpdated.removeListener(listener);
+                    resolve();
+                }
+            }
+            // Early exit if loaded already
+            if (tabIsLoaded(createdTab)) {
+                resolve();
+            } else {
+                browser.tabs.onUpdated.addListener(listener);
+            }
+        });
+
         let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
         let mailMessageId = -1;
         if(mailMessage) mailMessageId = mailMessage.id;
