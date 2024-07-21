@@ -35,10 +35,11 @@ messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
 const params = new URLSearchParams(window.location.search);
-let api_key_chatgpt = await browser.storage.sync.get({api_key_chatgpt: ''});
+let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
 // const openaiApiKey = params.get('openapi-key');
-worker.postMessage({ type: 'init', api_key_chatgpt: api_key_chatgpt });
-if( api_key_chatgpt !== null ) {
+//console.log(">>>>>>>>>>> api_key_chatgpt: " + prefs_api_key.api_key_chatgpt);
+worker.postMessage({ type: 'init', api_key_chatgpt: prefs_api_key.api_key_chatgpt });
+if( prefs_api_key.api_key_chatgpt !== null ) {
     messagesArea.appendUserMessage("Will attempt to connect to OpenAI using API key provided.", "");
 } else {
     messagesArea.appendUserMessage("No OpenAI API key provided. Using mock data.", "");
