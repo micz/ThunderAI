@@ -22,6 +22,23 @@
 
 import { OpenAI } from '../js/api/openai.js';
 
+//========================== for testing
+const MOCK_TOKENS = ['Good', ' morning', ' Mr', ' Plop', 'py', ',', 'and', ' I', ' said',  '\n', '"', 'Good', ' morn', 'ing', ' Mrs',' Plop', 'py', ,'"', '\n', 'Oh', ' how', ' the', ' win', 'ter', ' even', 'ings', ' must', ' just', ' fly'];
+
+function mockDelay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function processMockTokens() {
+    for (const token of MOCK_TOKENS) {
+        await mockDelay(Math.random() * 50 + 50); // Random delay between 100ms and 150ms
+        postMessage({ type: 'newToken', payload: { token } });
+    }
+    postMessage({ type: 'tokensDone' });
+}
+//========================== for testing - END
+
+
 let api_key_chatgpt = null;
 let openai = null;
 
@@ -35,6 +52,21 @@ self.onmessage = async function(event) {
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
         
+
+        // ============================== TESTING
+        // Simulate sending the message to an HTTP endpoint
+        await mockDelay(1000); // Wait for 1 second
+
+        // Notify that the chat message was sent
+        postMessage({ type: 'messageSent' });
+
+        // Start processing tokens
+        await processMockTokens();
+        return;
+        // ============================== TESTING - END
+
+
+
         // https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
         // 4096 output tokens
         // 128,000 input tokens
