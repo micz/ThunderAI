@@ -133,18 +133,18 @@ class MessagesArea extends HTMLElement {
 
     flushAccumulatingMessage() {
         if (this.accumulatingMessageEl) {
-            // Raccogliere tutti i token in un testo completo
+            // Collect all tokens in a full text
             let fullText = '';
             this.accumulatingMessageEl.querySelectorAll('.token').forEach(tokenEl => {
                 fullText += tokenEl.textContent;
             });
 
-            // Convertire Markdown in nodi DOM usando la libreria markdown-it
+            // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
             const html = md.render(fullText);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = html;
-            this.accumulatingMessageEl.innerHTML = ''; // Rimuovere i token esistenti
+            this.accumulatingMessageEl.innerHTML = ''; // Remove existing tokens
             Array.from(tempDiv.childNodes).forEach(node => {
                 this.accumulatingMessageEl.appendChild(node);
             });
