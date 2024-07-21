@@ -87,7 +87,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = "Bot";
+            header.textContent = "ChatGTP";
             this.messages.appendChild(header);
         }
 
