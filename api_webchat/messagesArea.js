@@ -112,7 +112,7 @@ class MessagesArea extends HTMLElement {
 
     appendUserMessage(messageText, source="You") {
         this.fullTextHTML = "";
-        console.log("appendUserMessage: " + messageText);
+        console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         header.textContent = source;
         this.messages.appendChild(header);
@@ -211,7 +211,7 @@ class MessagesArea extends HTMLElement {
 
 
     appendBotMessage(messageText) {
-        console.log("appendBotMessage: " + messageText);
+        console.log("[ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
 
