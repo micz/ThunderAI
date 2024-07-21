@@ -51,6 +51,13 @@ messagesAreaStyle.textContent = `
         line-height: 1.3;
         text-align: center;
     }
+    .action-buttons button {
+        display: inline;
+        margin: 0 10px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
     @keyframes fadeIn {
         to {
             opacity: 1;
@@ -147,7 +154,6 @@ class MessagesArea extends HTMLElement {
 
     addActionButtons(promptData = null) {
         if(promptData == null) { return; }
-        if(promptData.action == 0) { return; }  // No action needed
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
@@ -166,7 +172,13 @@ class MessagesArea extends HTMLElement {
                     break;
             }
         });
-        actionButtons.appendChild(actionButton);
+        const closeButton = document.createElement('button');
+        closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
+        closeButton.addEventListener('click', () => {
+            browser.runtime.sendMessage({command: "chatgpt_close"});    // close window
+        });
+        if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
+        actionButtons.appendChild(closeButton);
         this.messages.appendChild(actionButtons);
         this.scrollToBottom();
     }
