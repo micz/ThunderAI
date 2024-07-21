@@ -60,7 +60,7 @@ worker.onmessage = function(event) {
     }
 };
 
-
+// handling commands from the backgoound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     if (message.command === "chatgpt_send") {
