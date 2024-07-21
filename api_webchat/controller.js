@@ -47,13 +47,14 @@ worker.onmessage = function(event) {
     const { type, payload } = event.data;
     switch (type) {
         case 'messageSent':
-            messageInput.handleMessageSent();
+            //messageInput.handleMessageSent();
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
             break;
         case 'tokensDone':
             messagesArea.handleTokensDone();
+            messageInput.handleMessageSent();
             break;
         case 'error':
             messagesArea.appendBotMessage(payload);
