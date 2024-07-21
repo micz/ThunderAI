@@ -59,13 +59,13 @@ worker.onmessage = function(event) {
             messagesArea.appendBotMessage(payload);
             break;
         default:
-            console.error('Unknown event type from worker:', type);
+            console.error('[ThunderAI] Unknown event type from API worker:', type);
     }
 };
 
 // handling commands from the backgoound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
+    //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     if (message.command === "chatgpt_send") {
         //send the received prompt to the chatgpt api
         messageInput._setMessageInputValue(message.prompt);
