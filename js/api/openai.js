@@ -63,15 +63,17 @@ export class OpenAI {
         }),
     });
 
-    if (!response.ok) {
-        const errorDetail = await response.text();
-        let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-        console.log(err_msg);
-        throw new Error(err_msg);
-    }
+    // if (!response.ok) {
+    //     const errorDetail = await response.text();
+    //     let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+    //     console.log(err_msg);
+    //     throw new Error(err_msg);
+    // }
 
-    const responseData = await response.json();
-    return responseData.choices[0].message.content;
+    // const responseData = await response.json();
+    // return responseData.choices[0].message.content;
+
+    return response;
   }
 
 }

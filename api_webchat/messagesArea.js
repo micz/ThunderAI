@@ -152,6 +152,26 @@ class MessagesArea extends HTMLElement {
             this.accumulatingMessageEl = null;
         }
     }
+
+    appendBotMessage(messageText) {
+        console.log("appendBotMessage: " + messageText);
+
+        const lastMessage = this.messages.lastElementChild;
+        const isLastMessageFromUser = lastMessage && lastMessage.classList.contains('user');
+
+        if (isLastMessageFromUser) {
+            const header = document.createElement('h2');
+            header.textContent = "Bot";
+            this.messages.appendChild(header);
+        }
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'bot');
+        messageElement.textContent = messageText;
+        this.messages.appendChild(messageElement);
+        this.scrollToBottom();
+    }
+
 }
 
 customElements.define('messages-area', MessagesArea);

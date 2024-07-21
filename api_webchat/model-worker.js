@@ -52,6 +52,15 @@ self.onmessage = async function(event) {
         // });
     const response = await openai.fetchResponse("gpt-4o-mini", conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
+
+        if (!response.ok) {
+            const errorJSON = await response.json();
+            const errorDetail = JSON.stringify(errorJSON);
+            console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+            postMessage({ type: 'error', payload: errorJSON.error.message });
+            throw new Error("[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
     

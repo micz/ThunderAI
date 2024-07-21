@@ -55,6 +55,9 @@ worker.onmessage = function(event) {
         case 'tokensDone':
             messagesArea.handleTokensDone();
             break;
+        case 'error':
+            messagesArea.appendBotMessage(payload);
+            break;
         default:
             console.error('Unknown event type from worker:', type);
     }
