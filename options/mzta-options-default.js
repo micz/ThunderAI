@@ -23,5 +23,5 @@ export const prefs_default = {
     chatgpt_keep_formatting: false,
     default_chatgpt_lang: '',
     api_active: false,
-    api_key: '',
+    api_key_chatgpt: '',
 }
