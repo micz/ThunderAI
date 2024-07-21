@@ -49,6 +49,7 @@ messagesAreaStyle.textContent = `
     }
     .action-buttons {
         line-height: 1.3;
+        text-align: center;
     }
     @keyframes fadeIn {
         to {
@@ -59,6 +60,9 @@ messagesAreaStyle.textContent = `
         font-weight: bold;
         font-size: 1rem;
         margin-top: 20px;
+    }
+    hr {
+        width: 100%;
     }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
@@ -103,6 +107,7 @@ class MessagesArea extends HTMLElement {
     handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
         this.addActionButtons(promptData);
+        this.addDivider();
     }
 
     appendUserMessage(messageText, source="You") {
@@ -146,12 +151,19 @@ class MessagesArea extends HTMLElement {
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
-        actionButton.textContent = 'Send';
+        actionButton.textContent = 'Use this answer';
+        //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
         actionButton.addEventListener('click', () => {
             alert('action: ' + promptData.action);
         });
         actionButtons.appendChild(actionButton);
         this.messages.appendChild(actionButtons);
+        this.scrollToBottom();
+    }
+
+    addDivider() {
+        const divider = document.createElement('hr');
+        this.messages.appendChild(divider);
         this.scrollToBottom();
     }
 

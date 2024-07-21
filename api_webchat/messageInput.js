@@ -109,7 +109,12 @@ class MessageInput extends HTMLElement {
     }
 
     handleMessageSent() {
-        console.log("handleMessageSent");
+        console.log("[ThunderAI] handleMessageSent");
+        this._messageInputField.value = '';
+    }
+
+    enableInput() {
+        console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
         this._sendButton.removeAttribute('disabled');
         this._messageInputField.removeAttribute('disabled');
@@ -130,6 +135,7 @@ class MessageInput extends HTMLElement {
         this._sendButton.setAttribute('disabled', 'disabled');
         this._messageInputField.setAttribute('disabled', 'disabled');
         let messageContent = this._messageInputField.value;
+        this._messageInputField.value = '';
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
