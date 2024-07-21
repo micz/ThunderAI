@@ -51,7 +51,7 @@ self.onmessage = async function(event) {
         //         stream: true,
         //     }),
         // });
-    const response = await openai.fetchResponse("gpt-4-1106-preview", conversationHistory); //4096);
+    const response = await openai.fetchResponse("gpt-4o-mini", conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
