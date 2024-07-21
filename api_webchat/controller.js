@@ -39,7 +39,7 @@ let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
 // const openaiApiKey = params.get('openapi-key');
 //console.log(">>>>>>>>>>> api_key_chatgpt: " + prefs_api_key.api_key_chatgpt);
 worker.postMessage({ type: 'init', api_key_chatgpt: prefs_api_key.api_key_chatgpt });
-messagesArea.appendUserMessage("Will attempt to connect to OpenAI using API key provided.", "");
+messagesArea.appendUserMessage("Will attempt to connect to OpenAI using the API key provided.", "");
 
 // Event listeners for worker messages
 // TODO I'm sure there's a better way to do this
