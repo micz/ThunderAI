@@ -100,9 +100,9 @@ class MessagesArea extends HTMLElement {
         this.worker = worker;
     }
 
-    handleTokensDone() {
+    handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
-        this.addActionButtons();
+        this.addActionButtons(promptData);
     }
 
     appendUserMessage(messageText, source="You") {
@@ -140,13 +140,15 @@ class MessagesArea extends HTMLElement {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
-    addActionButtons() {
+    addActionButtons(promptData = null) {
+        if(promptData == null) { return; }
+        if(promptData.action == 0) { return; }  // No action needed
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
         actionButton.textContent = 'Send';
         actionButton.addEventListener('click', () => {
-            alert(this.fullTextHTML);
+            alert('action: ' + promptData.action);
         });
         actionButtons.appendChild(actionButton);
         this.messages.appendChild(actionButtons);

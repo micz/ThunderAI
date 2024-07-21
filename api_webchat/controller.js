@@ -34,6 +34,9 @@ const messageInput = document.querySelector('message-input');
 messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
+// Data received from the user
+let promptData = {};
+
 const params = new URLSearchParams(window.location.search);
 //let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
 let prefs_api_key = ''  // only for testing
@@ -54,7 +57,7 @@ worker.onmessage = function(event) {
             messagesArea.handleNewToken(payload.token);
             break;
         case 'tokensDone':
-            messagesArea.handleTokensDone();
+            messagesArea.handleTokensDone(promptData);
             messageInput.handleMessageSent();
             break;
         case 'error':
@@ -70,6 +73,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     if (message.command === "chatgpt_send") {
         //send the received prompt to the chatgpt api
+        promptData = message;
         messageInput._setMessageInputValue(message.prompt);
         messageInput._handleNewChatMessage();
     }
