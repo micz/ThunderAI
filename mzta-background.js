@@ -158,7 +158,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         console.log("[ThunderAI] ChatGPT web interface script started...");
         createdWindowID = newWindow.id;
-        const createdTab = newWindow.tabs[0];
+        let createdTab = newWindow.tabs[0];
 
         // Wait for tab loaded.
         await new Promise(resolve => {
@@ -206,6 +206,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             width: prefs.chatgpt_win_width,
             height: prefs.chatgpt_win_height
         });
+
+        createdWindowID = newWindow.id;
+        let createdTab = newWindow.tabs[0];
+
+        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+        let mailMessageId = -1;
+        if(mailMessage) mailMessageId = mailMessage.id;
+
+        browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
     }
 }
 

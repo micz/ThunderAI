@@ -135,6 +135,10 @@ class MessageInput extends HTMLElement {
         }
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }
+
+    _setMessageInputValue(msg) {
+        this._messageInputField.value = msg;
+    }
 }
 
 customElements.define('message-input', MessageInput);

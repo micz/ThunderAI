@@ -64,3 +64,13 @@ worker.onmessage = function(event) {
             console.error('Unknown event type from worker:', type);
     }
 };
+
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
+    if (message.command === "chatgpt_send") {
+        //send the received prompt to the chatgpt api
+        messageInput._setMessageInputValue(message.prompt);
+        messageInput._handleNewChatMessage();
+    }
+});
