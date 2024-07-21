@@ -64,6 +64,9 @@ messagesDiv.id = 'messages';
 messagesAreaTemplate.content.appendChild(messagesDiv);
 
 class MessagesArea extends HTMLElement {
+
+    fullTextHTML = "";
+
     constructor() {
         super();
         this.accumulatingMessageEl = null;
@@ -95,9 +98,11 @@ class MessagesArea extends HTMLElement {
 
     handleTokensDone() {
         this.flushAccumulatingMessage();
+        this.addActionButtons();
     }
 
     appendUserMessage(messageText, source="You") {
+        this.fullTextHTML = "";
         console.log("appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         header.textContent = source;
@@ -134,7 +139,14 @@ class MessagesArea extends HTMLElement {
     addActionButtons() {
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
+        const actionButton = document.createElement('button');
+        actionButton.textContent = 'Send';
+        actionButton.addEventListener('click', () => {
+            alert(this.fullText);
+        });
+        actionButtons.appendChild(actionButton);
         this.messages.appendChild(actionButtons);
+        this.scrollToBottom();
     }
 
     flushAccumulatingMessage() {
@@ -148,6 +160,8 @@ class MessagesArea extends HTMLElement {
             // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
             const html = md.render(fullText);
+
+            this.fullTextHTML += html;
     
             // Create a new DOM parser
             const parser = new DOMParser();
@@ -162,14 +176,16 @@ class MessagesArea extends HTMLElement {
             Array.from(doc.body.childNodes).forEach(node => {
                 this.accumulatingMessageEl.appendChild(node);
             });
-    
+  
             this.accumulatingMessageEl = null;
         }
     }
-    
+
 
     appendBotMessage(messageText) {
         console.log("appendBotMessage: " + messageText);
+
+        this.fullTextHTML = messageText;
 
         const lastMessage = this.messages.lastElementChild;
         const isLastMessageFromUser = lastMessage && lastMessage.classList.contains('user');
