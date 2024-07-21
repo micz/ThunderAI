@@ -35,7 +35,7 @@ messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
 // Data received from the user
-let promptData = {};
+let promptData = null;
 
 const params = new URLSearchParams(window.location.search);
 //let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
