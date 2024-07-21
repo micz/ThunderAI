@@ -1,6 +1,6 @@
-// The controller wires up all the components and workers together, 
-// managing the dependencies. A kind of "DI" class. 
-const worker = new Worker('model-worker.js');
+// The controller wires up all the components and workers together,
+// managing the dependencies. A kind of "DI" class.
+const worker = new Worker('model-worker.js', { type: 'module' });
 
 const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
@@ -11,12 +11,13 @@ messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
 const params = new URLSearchParams(window.location.search);
-const openaiApiKey = params.get('openapi-key');
-worker.postMessage({ type: 'init', openaiApiKey: openaiApiKey });
-if( openaiApiKey !== null ) {
-    messagesArea.appendUserMessage("Will attempt to connect to OpenAI using API key provided.", source="");
+let api_key_chatgpt = await browser.storage.sync.get({api_key_chatgpt: ''});
+// const openaiApiKey = params.get('openapi-key');
+worker.postMessage({ type: 'init', api_key_chatgpt: api_key_chatgpt });
+if( api_key_chatgpt !== null ) {
+    messagesArea.appendUserMessage("Will attempt to connect to OpenAI using API key provided.", "");
 } else {
-    messagesArea.appendUserMessage("No OpenAI API key provided. Using mock data.", source="");
+    messagesArea.appendUserMessage("No OpenAI API key provided. Using mock data.", "");
 }
 
 

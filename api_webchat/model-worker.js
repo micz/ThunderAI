@@ -1,6 +1,9 @@
+import { OpenAI } from '../js/api/openai.js';
 const MOCK_TOKENS = ['Good', ' morning', ' Mr', ' Plop', 'py', ',', 'and', ' I', ' said',  '\n', '"', 'Good', ' morn', 'ing', ' Mrs',' Plop', 'py', ,'"', '\n', 'Oh', ' how', ' the', ' win', 'ter', ' even', 'ings', ' must', ' just', ' fly'];
-const API_URL = "https://api.openai.com/v1/chat/completions";
-let openaiApiKey;
+
+let api_key_chatgpt = null;
+let  openai = null;
+
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 
@@ -18,10 +21,11 @@ async function processMockTokens() {
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openaiApiKey = event.data.openaiApiKey;
+        api_key_chatgpt = event.data.api_key_chatgpt;
+        openai = new OpenAI(api_key_chatgpt, true);
     } else if (event.data.type === 'chatMessage') {
         // MOCK
-        if( openaiApiKey === null ) {
+        if( api_key_chatgpt === null ) {
             // Simulate sending the message to an HTTP endpoint
             await mockDelay(1000); // Wait for 1 second
 
@@ -38,18 +42,19 @@ self.onmessage = async function(event) {
             // https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
             // 4096 output tokens
             // 128,000 input tokens
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${openaiApiKey}`,
-                },
-                body: JSON.stringify({
-                    model: "gpt-4-1106-preview",
-                    messages: conversationHistory,
-                    stream: true,
-                }),
-            });
+            // const response = await fetch(API_URL, {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //         "Authorization": `Bearer ${openaiApiKey}`,
+            //     },
+            //     body: JSON.stringify({
+            //         model: "gpt-4-1106-preview",
+            //         messages: conversationHistory,
+            //         stream: true,
+            //     }),
+            // });
+        const response = await openai.fetchResponse("gpt-4-1106-preview", conversationHistory); //4096);
             postMessage({ type: 'messageSent' });
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");

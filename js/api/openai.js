@@ -22,9 +22,11 @@
 export class OpenAI {
 
   apiKey = '';
+  stream = false;
 
-  constructor(apiKey) {
+  constructor(apiKey, stream) {
     this.apiKey = apiKey;
+    this.stream = stream;
   }
 
 
@@ -46,7 +48,7 @@ export class OpenAI {
     return await response.json();
   }
 
-  fetchResponse = async (model, messages, maxTokens) => {
+  fetchResponse = async (model, messages, maxTokens = 0) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { 
@@ -54,8 +56,9 @@ export class OpenAI {
             Authorization: "Bearer "+ this.apiKey
         },
         body: JSON.stringify({ 
-            model, 
-            messages: messages, 
+            model: model, 
+            messages: messages,
+            stream: this.stream,
             ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
         }),
     });
