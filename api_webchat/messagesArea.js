@@ -35,7 +35,8 @@ messagesAreaStyle.textContent = `
         flex-direction: column;
         justify-content: flex-end;
         min-height: 100%;
-        margin: var(--margin);
+        margin-left: var(--margin);
+        margin-right: var(--margin);
     }
     .message {
         margin-bottom: var(--margin);
@@ -45,6 +46,9 @@ messagesAreaStyle.textContent = `
         display: inline;
         opacity: 0;
         animation: fadeIn 1000ms forwards;
+    }
+    .action-buttons {
+        line-height: 1.3;
     }
     @keyframes fadeIn {
         to {
