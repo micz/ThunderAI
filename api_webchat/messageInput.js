@@ -20,7 +20,6 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
