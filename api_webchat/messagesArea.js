@@ -20,7 +20,6 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
