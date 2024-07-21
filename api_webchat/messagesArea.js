@@ -131,6 +131,12 @@ class MessagesArea extends HTMLElement {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
+    addActionButtons() {
+        const actionButtons = document.createElement('div');
+        actionButtons.classList.add('action-buttons');
+        this.messages.appendChild(actionButtons);
+    }
+
     flushAccumulatingMessage() {
         if (this.accumulatingMessageEl) {
             // Collect all tokens in a full text
@@ -138,20 +144,29 @@ class MessagesArea extends HTMLElement {
             this.accumulatingMessageEl.querySelectorAll('.token').forEach(tokenEl => {
                 fullText += tokenEl.textContent;
             });
-
+    
             // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
             const html = md.render(fullText);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            this.accumulatingMessageEl.innerHTML = ''; // Remove existing tokens
-            Array.from(tempDiv.childNodes).forEach(node => {
+    
+            // Create a new DOM parser
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+    
+            // Remove existing tokens
+            while (this.accumulatingMessageEl.firstChild) {
+                this.accumulatingMessageEl.removeChild(this.accumulatingMessageEl.firstChild);
+            }
+    
+            // Append new nodes
+            Array.from(doc.body.childNodes).forEach(node => {
                 this.accumulatingMessageEl.appendChild(node);
             });
-
+    
             this.accumulatingMessageEl = null;
         }
     }
+    
 
     appendBotMessage(messageText) {
         console.log("appendBotMessage: " + messageText);
