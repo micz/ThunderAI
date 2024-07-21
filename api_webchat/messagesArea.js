@@ -146,7 +146,7 @@ class MessagesArea extends HTMLElement {
         const actionButton = document.createElement('button');
         actionButton.textContent = 'Send';
         actionButton.addEventListener('click', () => {
-            alert(this.fullText);
+            alert(this.fullTextHTML);
         });
         actionButtons.appendChild(actionButton);
         this.messages.appendChild(actionButtons);
