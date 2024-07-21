@@ -35,7 +35,8 @@ messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
 const params = new URLSearchParams(window.location.search);
-let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
+//let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
+let prefs_api_key = ''  // only for testing
 // const openaiApiKey = params.get('openapi-key');
 //console.log(">>>>>>>>>>> api_key_chatgpt: " + prefs_api_key.api_key_chatgpt);
 worker.postMessage({ type: 'init', api_key_chatgpt: prefs_api_key.api_key_chatgpt });
