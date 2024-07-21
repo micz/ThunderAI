@@ -20,11 +20,10 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-
 import { OpenAI } from '../js/api/openai.js';
 
 let api_key_chatgpt = null;
-let  openai = null;
+let openai = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
