@@ -147,6 +147,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         return;
     }
 
+    // check if the API is present, otherwise open the web interface
+    if (prefs.api_key_chatgpt == '') {
+        prefs.connection_type = 'chatgpt_web';
+    }
+
     switch(prefs.connection_type){
         case 'chatgpt_web':
         // We are using the ChatGPT web interface
