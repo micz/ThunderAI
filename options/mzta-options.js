@@ -18,6 +18,7 @@
 
 
 import { prefs_default } from './mzta-options-default.js';
+import { OpenAI } from '../js/api/openai.js';
 
 function saveOptions(e) {
   e.preventDefault();
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     element.addEventListener("change", saveOptions);
   });
   showConnectionOptions();
+  
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
     browser.tabs.query({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')}).then((tabs) => {
@@ -133,7 +135,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     })
   });
+
   document.getElementById("connection_type").addEventListener("change", showConnectionOptions);
   document.getElementById("connection_type").addEventListener("change", warnAPIKeyEmpty);
   document.getElementById("api_key_chatgpt").addEventListener("change", warnAPIKeyEmpty);
+
+  let prefs = await browser.storage.sync.get({api_key_chatgpt: '', model_chatgpt: ''});
+  let openai = new OpenAI(prefs.api_key_chatgpt, true);
+  let select_model_chatgpt = document.getElementById('model_chatgpt');
+
+  const option = document.createElement('option');
+  option.value = prefs.model_chatgpt;
+  option.text = prefs.model_chatgpt;
+  select_model_chatgpt.appendChild(option);
+
+  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', () => {
+    openai.fetchModels().then((data) => {
+      console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
+      data.forEach(model => {
+        if (!Array.from(select_model_chatgpt.options).some(option => option.value === model.id)) {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.text = model.id;
+          select_model_chatgpt.appendChild(option);
+        }
+      });
+    })
+  });
 }, { once: true });
