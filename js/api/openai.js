@@ -45,7 +45,10 @@ export class OpenAI {
         console.log(err_msg);
         throw new Error(err_msg);
     }
-    return await response.json();
+
+    let output = await response.json();
+
+    return output.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
   }
 
   fetchResponse = async (model, messages, maxTokens = 0) => {
