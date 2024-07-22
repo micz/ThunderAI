@@ -386,5 +386,21 @@
   "customprompts_form_label_define_response_lang": {
     "message": "Définir la langue de réponse dans le prompt.",
     "description": ""
+  },
+  "prefs_Connection_type": {
+  "message": "Type de connexion",
+  "description": ""
+  },
+  "prefs_Connection_type_ChatGTP_Web": {
+    "message": "Interface Web ChatGTP",
+    "description": ""
+  },
+  "prefs_Connection_type_ChatGTP_API": {
+    "message": "API OpenAI ChatGTP",
+    "description": ""
+  },
+  "prefs_prefs_ChatGPT_API_Key": {
+    "message": "Clé API ChatGPT",
+    "description": ""
   }
 }

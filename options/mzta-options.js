@@ -45,9 +45,10 @@ function saveOptions(e) {
   browser.storage.sync.set(options);
 }
 
-function restoreOptions() {
+async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      //console.log("[ThunderAI] Options restoring " + element.id + " = " + result[element.id]);
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -67,6 +68,7 @@ function restoreOptions() {
         if (element.tagName === 'SELECT') {
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
+          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
           element.value = result[element.id] || default_select_value;
           if (element.value === '') {
             element.selectedIndex = -1;
@@ -78,20 +80,47 @@ function restoreOptions() {
     });
   }
 
-  function onError(error) {
-    console.log(`[ThunderAI] Error: ${error}`);
-  }
-
-  let getting = browser.storage.sync.get(null);
-  getting.then(setCurrentChoice, onError);
+  let getting = await browser.storage.sync.get(prefs_default);
+  setCurrentChoice(getting);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  restoreOptions();
+function showConnectionOptions() {
+  let chatgpt_web_display = 'table-row';
+  let chatgpt_api_display = 'none';
+  if (document.getElementById("connection_type").value === "chatgpt_web") {
+    chatgpt_web_display = 'table-row';
+  }else{
+    chatgpt_web_display = 'none';
+  }
+  if (document.getElementById("connection_type").value === "chatgpt_api") {
+    chatgpt_api_display = 'table-row';
+  }else{
+    chatgpt_api_display = 'none';
+  }
+  document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
+    element.style.display = chatgpt_web_display;
+  });
+  document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
+    element.style.display = chatgpt_api_display;
+  });
+}
+
+function warnAPIKeyEmpty() {
+  let apiKeyInput = document.getElementById('api_key_chatgpt');
+  if(apiKeyInput.value === ''){
+    apiKeyInput.style.border = '2px solid red';
+  }else{
+    apiKeyInput.style.border = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await restoreOptions();
   i18n.updateDocument();
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
+  showConnectionOptions();
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
     browser.tabs.query({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')}).then((tabs) => {
@@ -104,4 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
   });
+  document.getElementById("connection_type").addEventListener("change", showConnectionOptions);
+  document.getElementById("connection_type").addEventListener("change", warnAPIKeyEmpty);
+  document.getElementById("api_key_chatgpt").addEventListener("change", warnAPIKeyEmpty);
 }, { once: true });
