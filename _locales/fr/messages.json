@@ -399,7 +399,7 @@
     "message": "API OpenAI ChatGTP",
     "description": ""
   },
-  "prefs_prefs_ChatGPT_API_Key": {
+  "prefs_ChatGPT_API_Key": {
     "message": "Clé API ChatGPT",
     "description": ""
   }
