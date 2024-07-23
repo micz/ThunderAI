@@ -402,5 +402,13 @@
   "prefs_ChatGPT_API_Key": {
     "message": "Chiave API ChatGPT",
     "description": ""
+  },
+    "ChatGPT_Models": {
+    "message": "Modelli ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models_Fetch": {
+    "message": "Aggiorna l'elenco dei modelli ChatGPT",
+    "description": ""
   }
 }
