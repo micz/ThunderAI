@@ -108,10 +108,17 @@ function showConnectionOptions() {
 
 function warnAPIKeyEmpty() {
   let apiKeyInput = document.getElementById('api_key_chatgpt');
+  let btnFetchModels = document.getElementById('btnUpdateChatGPTModels');
+  let modelChatGPT = document.getElementById('model_chatgpt');
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
+    btnFetchModels.disabled = true;
+    modelChatGPT.disabled = true;
+    modelChatGPT.selectedIndex = -1;
   }else{
     apiKeyInput.style.border = 'none';
+    btnFetchModels.disabled = false;
+    modelChatGPT.disabled = false;
   }
 }
 
