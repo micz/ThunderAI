@@ -88,12 +88,16 @@ async function restoreOptions() {
 function showConnectionOptions() {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
-  if (document.getElementById("connection_type").value === "chatgpt_web") {
+  let conntype_select = document.getElementById("connection_type");
+  let parent = conntype_select.parentElement.parentElement.parentElement;
+  parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
+  parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
+  if (conntype_select.value === "chatgpt_web") {
     chatgpt_web_display = 'table-row';
   }else{
     chatgpt_web_display = 'none';
   }
-  if (document.getElementById("connection_type").value === "chatgpt_api") {
+  if (conntype_select.value === "chatgpt_api") {
     chatgpt_api_display = 'table-row';
   }else{
     chatgpt_api_display = 'none';
@@ -128,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
+
   showConnectionOptions();
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
@@ -143,8 +148,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   });
 
-  document.getElementById("connection_type").addEventListener("change", showConnectionOptions);
-  document.getElementById("connection_type").addEventListener("change", warnAPIKeyEmpty);
+  let conntype_select = document.getElementById("connection_type");
+  conntype_select.addEventListener("change", showConnectionOptions);
+  conntype_select.addEventListener("change", warnAPIKeyEmpty);
   document.getElementById("api_key_chatgpt").addEventListener("change", warnAPIKeyEmpty);
 
   let prefs = await browser.storage.sync.get({api_key_chatgpt: '', model_chatgpt: ''});
