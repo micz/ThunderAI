@@ -42,7 +42,7 @@ export class OpenAI {
     if (!response.ok) {
         const errorDetail = await response.text();
         let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-        console.log(err_msg);
+        console.error(err_msg);
         return false;
     }
 
