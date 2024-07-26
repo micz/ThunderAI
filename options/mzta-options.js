@@ -164,6 +164,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', () => {
     openai.fetchModels().then((data) => {
+      if(!data){
+        console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+        return;
+      }
       console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
       data.forEach(model => {
         if (!Array.from(select_model_chatgpt.options).some(option => option.value === model.id)) {

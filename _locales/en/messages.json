@@ -406,10 +406,13 @@
   "ChatGPT_Models": {
     "message": "ChatGPT Models",
     "description": ""
-  }
-  ,
+  },
   "ChatGPT_Models_Fetch": {
     "message": "Update ChatGPT Models list",
+    "description": ""
+  },
+  "ChatGPT_Models_Error_fetching": {
+    "message": "Error trying to fetch ChatGPT models",
     "description": ""
   }
 }
