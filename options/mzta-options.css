@@ -93,8 +93,14 @@ div#miczTranslate{
 }
 
 .conntype_chatgpt_web, .conntype_chatgpt_web2{
+    background-color: rgb(255, 209, 183);
+}
+
+/* color to be used for a local LLM
+.conntype_chatgpt_web,.conntype_local_llm{
     background-color: rgb(205, 255, 205);
 }
+*/
 
 @media (prefers-color-scheme: dark) {
     body {
@@ -112,6 +118,12 @@ div#miczTranslate{
     }
 
     .conntype_chatgpt_web,.conntype_chatgpt_web2{
+        background-color: rgb(39, 11, 0);
+    }
+
+    /* color to be used for a local LLM
+    .conntype_chatgpt_web,.conntype_local_llm{
         background-color: rgb(0, 39, 0);
     }
+    */
 }
