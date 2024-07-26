@@ -31,7 +31,7 @@ export class OpenAI {
 
 
   fetchModels = async () => {
-    const response = await fetch("https://api.openai.com/v1/models", {
+    const response = await fetch("https://api.openai.com/v1/mod3els", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export class OpenAI {
         const errorDetail = await response.text();
         let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
         console.log(err_msg);
-        throw new Error(err_msg);
+        return false;
     }
 
     let output = await response.json();
