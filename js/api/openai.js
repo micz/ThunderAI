@@ -31,7 +31,7 @@ export class OpenAI {
 
 
   fetchModels = async () => {
-    const response = await fetch("https://api.openai.com/v1/mod3els", {
+    const response = await fetch("https://api.openai.com/v1/models", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
