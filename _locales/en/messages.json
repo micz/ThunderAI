@@ -414,5 +414,9 @@
   "ChatGPT_Models_Error_fetching": {
     "message": "Error trying to fetch ChatGPT models",
     "description": ""
+  },
+  "ChatGPT_Models_Loading": {
+    "message": "Loading...",
+    "description": ""
   }
 }

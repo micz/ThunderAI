@@ -163,8 +163,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   select_model_chatgpt.appendChild(option);
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', () => {
+    document.getElementById('model_fetch_loading').style.display = 'inline';
     openai.fetchModels().then((data) => {
       if(!data){
+        document.getElementById('model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         return;
@@ -178,6 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           select_model_chatgpt.appendChild(option);
         }
       });
+      document.getElementById('model_fetch_loading').style.display = 'none';
     })
   });
 }, { once: true });

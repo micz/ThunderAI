@@ -102,6 +102,11 @@ div#miczTranslate{
 }
 */
 
+#model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);
