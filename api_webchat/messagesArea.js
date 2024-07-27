@@ -39,11 +39,15 @@ messagesAreaStyle.textContent = `
         margin-right: var(--margin);
     }
     .message {
-        margin-bottom: var(--margin);
+        margin: 0;
         line-height: 1.3;
         padding: 5px;
         border-radius: 10px;
 
+    }
+    .message p{
+        margin: 0;
+        padding: 0;
     }
     .token {
         display: inline;
@@ -77,10 +81,12 @@ messagesAreaStyle.textContent = `
     .error{
         background: lightcoral;
         color: white;
+        margin-bottom: var(--margin);
     }
     .info{
         background: lightblue;
         color: navy;
+        margin-bottom: var(--margin);
     }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
