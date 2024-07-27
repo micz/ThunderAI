@@ -41,6 +41,9 @@ messagesAreaStyle.textContent = `
     .message {
         margin-bottom: var(--margin);
         line-height: 1.3;
+        padding: 5px;
+        border-radius: 10px;
+
     }
     .token {
         display: inline;
@@ -74,8 +77,10 @@ messagesAreaStyle.textContent = `
     .error{
         background: lightcoral;
         color: white;
-        padding: 5px;
-        border-radius: 10px;
+    }
+    .info{
+        background: lightblue;
+        color: navy;
     }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
@@ -123,15 +128,24 @@ class MessagesArea extends HTMLElement {
         this.addDivider();
     }
 
-    appendUserMessage(messageText, source="You") {
+    appendUserMessage(messageText, type="user") {
         this.fullTextHTML = "";
         console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
+        let source = "You";
+        switch (type) {
+            case "user":
+                source = "You";
+                break;
+            case "info":
+                source = "Information";
+                break;
+        }
         header.textContent = source;
         this.messages.appendChild(header);
 
         const messageElement = document.createElement('div');
-        messageElement.classList.add('message', 'user');
+        messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
