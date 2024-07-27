@@ -410,5 +410,13 @@
   "ChatGPT_Models_Fetch": {
     "message": "Aggiorna l'elenco dei modelli ChatGPT",
     "description": ""
+  },
+  "ChatGPT_Models_Error_fetching": {
+  "message": "Errore durante il recupero dei modelli di ChatGPT",
+  "description": ""
+  },
+  "ChatGPT_Models_Loading": {
+    "message": "Caricamento in corso...",
+    "description": ""
   }
 }
