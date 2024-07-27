@@ -71,6 +71,12 @@ messagesAreaStyle.textContent = `
     hr {
         width: 100%;
     }
+    .error{
+        background: lightcoral;
+        color: white;
+        padding: 5px;
+        border-radius: 10px;
+    }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
 
@@ -126,6 +132,27 @@ class MessagesArea extends HTMLElement {
 
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', 'user');
+        messageElement.textContent = messageText;
+        this.messages.appendChild(messageElement);
+        this.scrollToBottom();
+    }
+
+    appendBotMessage(messageText, type="bot") {
+        console.log("[ThunderAI] appendBotMessage: " + messageText);
+
+        this.fullTextHTML = messageText;
+
+        const lastMessage = this.messages.lastElementChild;
+        const isLastMessageFromUser = lastMessage && lastMessage.classList.contains('user');
+
+        if (isLastMessageFromUser) {
+            const header = document.createElement('h2');
+            header.textContent = "Chat GPT";
+            this.messages.appendChild(header);
+        }
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
@@ -219,28 +246,6 @@ class MessagesArea extends HTMLElement {
   
             this.accumulatingMessageEl = null;
         }
-    }
-
-
-    appendBotMessage(messageText) {
-        console.log("[ThunderAI] appendBotMessage: " + messageText);
-
-        this.fullTextHTML = messageText;
-
-        const lastMessage = this.messages.lastElementChild;
-        const isLastMessageFromUser = lastMessage && lastMessage.classList.contains('user');
-
-        if (isLastMessageFromUser) {
-            const header = document.createElement('h2');
-            header.textContent = "Bot";
-            this.messages.appendChild(header);
-        }
-
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', 'bot');
-        messageElement.textContent = messageText;
-        this.messages.appendChild(messageElement);
-        this.scrollToBottom();
     }
 
 }
