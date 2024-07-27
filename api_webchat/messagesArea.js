@@ -161,7 +161,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = "Chat GPT";
+            header.textContent = "Chat GPT" + (type=='error' ? " - Error" : "");
             this.messages.appendChild(header);
         }
 
