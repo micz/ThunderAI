@@ -324,7 +324,7 @@
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "To use the ChatGPT API, you need an OpenAI API Key and must choose a model. If you fail to do so, ThunderAI will fall back to using the ChatGPT web interface.",
+    "message": "To use the ChatGPT API, you need an OpenAI ChatGPT API Key and must choose a model. If you fail to do so, ThunderAI will fall back to using the ChatGPT web interface.",
     "description": ""
   },
   "prefsInfoDesc_3": {
