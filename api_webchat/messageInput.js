@@ -49,7 +49,6 @@ messagesInputStyle .textContent = `
         height: 36px;
         cursor: pointer;
         border-radius: 10px;
-        border: 2px solid darkgrey;
     }
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
