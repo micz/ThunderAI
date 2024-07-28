@@ -37,9 +37,25 @@ messageInput.setMessagesArea(messagesArea);
 // Data received from the user
 let promptData = null;
 
+// ============================== TESTING
+// let browser = {
+//     i18n: {
+//         getMessage: async function(key) {
+//             return key;
+//         }
+//     },
+//     storage: {
+//         sync: {
+//             get: async function(key) {
+//                 return 'apitest';
+//             }
+//         }
+//     }
+// }
+// ============================== TESTING - END
+
 const params = new URLSearchParams(window.location.search);
-//let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
-let prefs_api_key = ''  // only for testing
+let prefs_api_key = await browser.storage.sync.get({api_key_chatgpt: ''});
 // const openaiApiKey = params.get('openapi-key');
 //console.log(">>>>>>>>>>> api_key_chatgpt: " + prefs_api_key.api_key_chatgpt);
 worker.postMessage({ type: 'init', api_key_chatgpt: prefs_api_key.api_key_chatgpt });

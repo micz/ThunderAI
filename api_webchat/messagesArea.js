@@ -200,6 +200,27 @@ class MessagesArea extends HTMLElement {
     }
 
     addActionButtons(promptData = null) {
+        // ============================== TESTING
+        // promptData = {
+        //     action: "1",
+        //     tabId: 1,
+        //     mailMessageId: 1
+        // }
+        // let browser = {
+        //     i18n: {
+        //         getMessage: async function(key) {
+        //             return key;
+        //         }
+        //     },
+        //     storage: {
+        //         sync: {
+        //             get: async function(key) {
+        //                 return 'apitest';
+        //             }
+        //         }
+        //     }
+        // }
+        // ============================== TESTING - END
         if(promptData == null) { return; }
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');

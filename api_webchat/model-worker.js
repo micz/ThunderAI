@@ -48,21 +48,22 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         api_key_chatgpt = event.data.api_key_chatgpt;
+        //console.log(">>>>>>>>>>> api_key_chatgpt: " + api_key_chatgpt);
         openai = new OpenAI(api_key_chatgpt, true);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
         
 
         // ============================== TESTING
-        // Simulate sending the message to an HTTP endpoint
-        await mockDelay(1000); // Wait for 1 second
+        // // Simulate sending the message to an HTTP endpoint
+        // await mockDelay(1000); // Wait for 1 second
 
-        // Notify that the chat message was sent
-        postMessage({ type: 'messageSent' });
+        // // Notify that the chat message was sent
+        // postMessage({ type: 'messageSent' });
 
-        // Start processing tokens
-        await processMockTokens();
-        return;
+        // // Start processing tokens
+        // await processMockTokens();
+        // return;
         // ============================== TESTING - END
 
 
