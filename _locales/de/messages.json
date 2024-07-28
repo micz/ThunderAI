@@ -324,7 +324,7 @@
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": " ",
+    "message": "Um die ChatGPT-API zu verwenden, benötigen Sie einen OpenAI ChatGPT-API-Schlüssel und müssen ein Modell auswählen. Falls Sie dies nicht tun, wird ThunderAI auf die Verwendung der ChatGPT-Webschnittstelle zurückgreifen.",
     "description": ""
   },
   "prefsInfoDesc_3": {
