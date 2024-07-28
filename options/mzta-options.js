@@ -119,10 +119,16 @@ function warnAPIKeyEmpty() {
     btnFetchModels.disabled = true;
     modelChatGPT.disabled = true;
     modelChatGPT.selectedIndex = -1;
+    modelChatGPT.style.border = 'none';
   }else{
     apiKeyInput.style.border = 'none';
     btnFetchModels.disabled = false;
     modelChatGPT.disabled = false;
+    if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
+      modelChatGPT.style.border = '2px solid red';
+    }else{
+      modelChatGPT.style.border = 'none';
+    }
   }
 }
 
