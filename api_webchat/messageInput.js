@@ -50,6 +50,12 @@ messagesInputStyle .textContent = `
         cursor: pointer;
         border-radius: 10px;
     }
+    @media (prefers-color-scheme: dark) {
+    #messageInputField {
+        background-color: #303030;
+        color: #ffffff;
+    }
+}
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
 

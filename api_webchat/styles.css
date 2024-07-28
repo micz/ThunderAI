@@ -40,3 +40,10 @@ p {
     margin: 0 0 10px 0;
 }
 
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #000000;
+        color: #ffffff;
+    }
+}
