@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "It is no longer possible to disable the history of ChatGPT chats. Therefore, there is no way to prevent requests made through this addon from appearing in your ChatGPT chat history.",
+    "message": "If a blank or white page appears when opening the ChatGPT web interface window, it means there is a problem loading the ChatGPT page, not related to the use of this add-on.",
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "If a white page appears when opening the ChatGPT window, it means there is a problem loading the ChatGPT page, not related to the use of this add-on.",
+    "message": " ",
     "description": ""
   },
   "prefsInfoDesc_3": {

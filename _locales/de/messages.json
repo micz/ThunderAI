@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Es ist nicht mehr möglich, den Verlauf der ChatGPT-Chats zu deaktivieren. Daher gibt es keine Möglichkeit, zu verhindern, dass Anfragen, die über dieses Addon gestellt werden, in Ihrem ChatGPT-Chatverlauf erscheinen.",
+    "message": "Wenn eine weiße Seite erscheint, wenn das ChatGPT-Fenster geöffnet wird, bedeutet dies, dass es ein Problem beim Laden der ChatGPT-Seite gibt, das nicht mit der Verwendung dieses Add-Ons zusammenhängt.",
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Wenn eine weiße Seite erscheint, wenn das ChatGPT-Fenster geöffnet wird, bedeutet dies, dass es ein Problem beim Laden der ChatGPT-Seite gibt, das nicht mit der Verwendung dieses Add-Ons zusammenhängt.",
+    "message": " ",
     "description": ""
   },
   "prefsInfoDesc_3": {

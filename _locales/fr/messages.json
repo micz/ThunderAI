@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Il n'est plus possible de désactiver l'historique des chats ChatGPT. Par conséquent, il n'y a aucun moyen d'empêcher les demandes effectuées via cet addon d'apparaître dans l'historique de vos chats ChatGPT.",
+    "message": "Si une page blanche apparaît lors de l'ouverture de la fenêtre ChatGPT, cela signifie qu'il y a un problème de chargement de la page ChatGPT, non lié à l'utilisation de cet addon.",
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Si une page blanche apparaît lors de l'ouverture de la fenêtre ChatGPT, cela signifie qu'il y a un problème de chargement de la page ChatGPT, non lié à l'utilisation de cet addon.",
+    "message": " ",
     "description": ""
   },
   "prefsInfoDesc_3": {

@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Non è più possibile disabilitare la cronologia delle chat di ChatGPT. Pertanto, non c'è modo di impedire che le richieste effettuate tramite questo componente aggiuntivo appaiano nella cronologia delle chat di ChatGPT.",
+    "message": "Se all'apertura della finestra dell'interfaccia web di ChatGPT, viene mostrata una pagina bianca o vuota, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Se all'apertura della finestra di ChatGPT, viene mostrata una pagina bianca, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
+    "message": " ",
     "description": ""
   },
   "prefsInfoDesc_3": {
