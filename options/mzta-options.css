@@ -88,11 +88,11 @@ div#miczTranslate{
     margin-bottom: 1em;
 }
 
-.conntype_chatgpt_api, .conntype_chatgpt_api2{
+tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
     background-color: rgb(185, 220, 252);
 }
 
-.conntype_chatgpt_web, .conntype_chatgpt_web2{
+tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
     background-color: rgb(255, 209, 183);
 }
 
@@ -118,11 +118,11 @@ div#miczTranslate{
     a:hover { color: #66B1FF; }   
     a:active { color: #66B1FF; }
     
-    .conntype_chatgpt_api, .conntype_chatgpt_api2{
+    tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
         background-color: rgb(0, 0, 58);
     }
 
-    .conntype_chatgpt_web,.conntype_chatgpt_web2{
+    tr.conntype_chatgpt_web,tr.conntype_chatgpt_web2{
         background-color: rgb(39, 11, 0);
     }
 
