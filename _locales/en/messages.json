@@ -418,5 +418,17 @@
   "ChatGPT_Models_Loading": {
     "message": "Loading...",
     "description": ""
+  },
+  "error": {
+    "message": "ThunderAI Error!",
+    "description": ""
+  },
+  "chatgpt_empty_apikey": {
+    "message": "You've not added an API Key a model for the ChatGPT API. Please insert one in the options page.",
+    "description": ""
+  },
+  "chatgpt_empty_model": {
+    "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
+    "description": ""
   }
 }

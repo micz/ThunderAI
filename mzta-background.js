@@ -149,6 +149,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
     // check if the API is present, otherwise open the web interface
     if (prefs.api_key_chatgpt == '') {
+        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
+        prefs.connection_type = 'chatgpt_web';
+    }
+    if (prefs.model_chatgpt == '') {
+        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
         prefs.connection_type = 'chatgpt_web';
     }
 
@@ -253,6 +258,15 @@ function checkScreenDimensions(prefs){
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
     
     return prefs;
+}
+
+function showNotification(title, message) {
+    browser.notifications.create({
+        "type": "basic",
+        "title": title,
+        "iconUrl": browser.extension.getURL("images/icon.png"),
+        "message": message
+    });
 }
 
 // Menus handling
