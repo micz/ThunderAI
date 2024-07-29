@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   showConnectionOptions();
-  warnAPIKeyEmpty();
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
@@ -161,7 +160,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("chatgpt_api_key").addEventListener("change", warnAPIKeyEmpty);
 
   let prefs = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-  let openai = new OpenAI(prefs.chatgpt_api_key, true);
   let select_chatgpt_model = document.getElementById('chatgpt_model');
 
   const option = document.createElement('option');
@@ -169,8 +167,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(option);
 
-  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', () => {
+  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
     document.getElementById('model_fetch_loading').style.display = 'inline';
+    let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, true);
     openai.fetchModels().then((data) => {
       if(!data){
         document.getElementById('model_fetch_loading').style.display = 'none';
@@ -189,5 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       document.getElementById('model_fetch_loading').style.display = 'none';
     })
+    
+    warnAPIKeyEmpty();
   });
 }, { once: true });
