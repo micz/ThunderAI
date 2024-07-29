@@ -227,14 +227,15 @@ class MessagesArea extends HTMLElement {
         const actionButton = document.createElement('button');
         actionButton.textContent = 'Use this answer';
         //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+        const fullTextHTMLAtAssignment = this.fullTextHTML;
         actionButton.addEventListener('click', () => {
             switch(promptData.action) {
                 case "1":     // do reply
-                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: this.fullTextHTML, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     browser.runtime.sendMessage({command: "chatgpt_close"});
                     break;
                 case "2":     // replace text
-                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: this.fullTextHTML, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     //console.log(response);
                     browser.runtime.sendMessage({command: "chatgpt_close"});
                     break;
