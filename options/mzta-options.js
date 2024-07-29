@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   showConnectionOptions();
+  warnAPIKeyEmpty();
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
