@@ -138,6 +138,10 @@ class MessageInput extends HTMLElement {
     }
 
     _handleNewChatMessage() {
+        //do nothing if input is empty
+        if ((!this._messageInputField.value)||(this._messageInputField.value.trim().length === 0)) {
+            return;
+        }
         // prevent user from interacting while we're waiting
         this._sendButton.setAttribute('disabled', 'disabled');
         this._messageInputField.setAttribute('disabled', 'disabled');
