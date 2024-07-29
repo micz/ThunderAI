@@ -111,9 +111,9 @@ function showConnectionOptions() {
 }
 
 function warnAPIKeyEmpty() {
-  let apiKeyInput = document.getElementById('api_key_chatgpt');
+  let apiKeyInput = document.getElementById('chatgpt_api_key');
   let btnFetchModels = document.getElementById('btnUpdateChatGPTModels');
-  let modelChatGPT = document.getElementById('model_chatgpt');
+  let modelChatGPT = document.getElementById('chatgpt_model');
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchModels.disabled = true;
@@ -157,16 +157,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", showConnectionOptions);
   conntype_select.addEventListener("change", warnAPIKeyEmpty);
-  document.getElementById("api_key_chatgpt").addEventListener("change", warnAPIKeyEmpty);
+  document.getElementById("chatgpt_api_key").addEventListener("change", warnAPIKeyEmpty);
 
-  let prefs = await browser.storage.sync.get({api_key_chatgpt: '', model_chatgpt: ''});
-  let openai = new OpenAI(prefs.api_key_chatgpt, true);
-  let select_model_chatgpt = document.getElementById('model_chatgpt');
+  let prefs = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
+  let openai = new OpenAI(prefs.chatgpt_api_key, true);
+  let select_chatgpt_model = document.getElementById('chatgpt_model');
 
   const option = document.createElement('option');
-  option.value = prefs.model_chatgpt;
-  option.text = prefs.model_chatgpt;
-  select_model_chatgpt.appendChild(option);
+  option.value = prefs.chatgpt_model;
+  option.text = prefs.chatgpt_model;
+  select_chatgpt_model.appendChild(option);
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', () => {
     document.getElementById('model_fetch_loading').style.display = 'inline';
@@ -179,11 +179,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
       data.forEach(model => {
-        if (!Array.from(select_model_chatgpt.options).some(option => option.value === model.id)) {
+        if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
           option.value = model.id;
           option.text = model.id;
-          select_model_chatgpt.appendChild(option);
+          select_chatgpt_model.appendChild(option);
         }
       });
       document.getElementById('model_fetch_loading').style.display = 'none';

@@ -148,11 +148,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     }
 
     // check if the API is present, otherwise open the web interface
-    if (prefs.api_key_chatgpt == '') {
+    if (prefs.chatgpt_api_key == '') {
         showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
         prefs.connection_type = 'chatgpt_web';
     }
-    if (prefs.model_chatgpt == '') {
+    if (prefs.chatgpt_model == '') {
         showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
         prefs.connection_type = 'chatgpt_web';
     }

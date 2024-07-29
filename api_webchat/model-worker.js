@@ -39,8 +39,8 @@ import { OpenAI } from '../js/api/openai.js';
 //========================== for testing - END
 
 
-let api_key_chatgpt = null;
-let model_chatgpt = '';
+let chatgpt_api_key = null;
+let chatgpt_model = '';
 let openai = null;
 
 let conversationHistory = [];
@@ -48,10 +48,10 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        api_key_chatgpt = event.data.api_key_chatgpt;
-        model_chatgpt = event.data.model_chatgpt;
-        //console.log(">>>>>>>>>>> api_key_chatgpt: " + api_key_chatgpt);
-        openai = new OpenAI(api_key_chatgpt, model_chatgpt, true);
+        chatgpt_api_key = event.data.chatgpt_api_key;
+        chatgpt_model = event.data.chatgpt_model;
+        //console.log(">>>>>>>>>>> chatgpt_api_key: " + chatgpt_api_key);
+        openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
         

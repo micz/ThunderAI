@@ -55,10 +55,10 @@ let promptData = null;
 // ============================== TESTING - END
 
 const params = new URLSearchParams(window.location.search);
-let prefs_api = await browser.storage.sync.get({api_key_chatgpt: '', model_chatgpt: ''});
+let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
 // const openaiApiKey = params.get('openapi-key');
-//console.log(">>>>>>>>>>> api_key_chatgpt: " + prefs_api_key.api_key_chatgpt);
-worker.postMessage({ type: 'init', api_key_chatgpt: prefs_api.api_key_chatgpt, model_chatgpt: prefs_api.model_chatgpt});
+//console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
+worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
 messagesArea.appendUserMessage(browser.i18n.getMessage("chagtp_api_connecting"), "info");
 
 // Event listeners for worker messages
