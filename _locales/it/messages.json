@@ -418,5 +418,17 @@
   "ChatGPT_Models_Loading": {
     "message": "Caricamento in corso...",
     "description": ""
+  },
+  "error": {
+    "message": "Errore ThunderAI!",
+    "description": ""
+  },
+  "chatgpt_empty_apikey": {
+    "message": "Non hai aggiunto una chiave API per l'API di ChatGPT. Per favore, inseriscine una nella pagina delle opzioni.",
+    "description": ""
+  },
+  "chatgpt_empty_model": {
+    "message": "Non hai scelto un modello per l'API di ChatGPT. Per favore, scegline uno nella pagina delle opzioni.",
+    "description": ""
   }
 }

@@ -388,8 +388,8 @@
     "description": ""
   },
   "prefs_Connection_type": {
-  "message": "Verbindungstyp",
-  "description": ""
+    "message": "Verbindungstyp",
+    "description": ""
   },
   "prefs_Connection_type_ChatGTP_Web": {
     "message": "ChatGTP Weboberfläche",
@@ -412,11 +412,23 @@
     "description": ""
   },
   "ChatGPT_Models_Error_fetching": {
-  "message": "Fehler beim Abrufen der ChatGPT-Modelle",
-  "description": ""
+    "message": "Fehler beim Abrufen der ChatGPT-Modelle",
+    "description": ""
   },
   "ChatGPT_Models_Loading": {
     "message": "Laden...",
+    "description": ""
+  },
+  "error": {
+    "message": "ThunderAI-Fehler!",
+    "description": ""
+  },
+  "chatgpt_empty_apikey": {
+    "message": "Sie haben keinen API-Schlüssel für das ChatGPT-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein.",
+    "description": ""
+  },
+  "chatgpt_empty_model": {
+    "message": "Sie haben kein Modell für das ChatGPT-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
     "description": ""
   }
 }
