@@ -3,8 +3,10 @@
 
 
 
-<h2>Version 2.0.0 - ??/??/2024</h2>
+<h2>Version 2.0.0pre1 - ??/??/2024</h2>
       <ul>
+        <li>Added OpenAI ChatGPT API connection [<a href="https://github.com/micz/ThunderAI/issues/40">#40</a>].</li>
+        <li>Information text in the options page improved.</li>
         <li>...</li>
       </ul>
 <h2>Version 1.2.1 - 20/07/2024</h2>
