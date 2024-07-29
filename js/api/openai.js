@@ -22,10 +22,12 @@
 export class OpenAI {
 
   apiKey = '';
+  model = '';
   stream = false;
 
-  constructor(apiKey, stream) {
+  constructor(apiKey, model, stream) {
     this.apiKey = apiKey;
+    this.model = model;
     this.stream = stream;
   }
 
@@ -51,7 +53,7 @@ export class OpenAI {
     return output.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
   }
 
-  fetchResponse = async (model, messages, maxTokens = 0) => {
+  fetchResponse = async (messages, maxTokens = 0) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { 
@@ -59,7 +61,7 @@ export class OpenAI {
             Authorization: "Bearer "+ this.apiKey
         },
         body: JSON.stringify({ 
-            model: model, 
+            model: this.model, 
             messages: messages,
             stream: this.stream,
             ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})

@@ -105,8 +105,10 @@ class MessageInput extends HTMLElement {
         this._messageInputField.focus();
     }
 
-    init(worker) {
+    async init(worker) {
         this.worker = worker;
+        let prefs_api = await browser.storage.sync.get({model_chatgpt: ''});
+        this._sendButton.title = await browser.i18n.getMessage("chagtp_api_send_button") + ": " + prefs_api.model_chatgpt;
     }
 
     setMessagesArea(messagesAreaComponent) {

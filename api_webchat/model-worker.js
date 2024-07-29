@@ -24,7 +24,7 @@ import { OpenAI } from '../js/api/openai.js';
 
 //========================== for testing
 // const MOCK_TOKENS = ['Good', ' morning', ' Mr', ' Plop', 'py', ',', 'and', ' I', ' said',  '\n', '"', 'Good', ' morn', 'ing', ' Mrs',' Plop', 'py', ,'"', '\n', 'Oh', ' how', ' the', ' win', 'ter', ' even', 'ings', ' must', ' just', ' fly'];
-
+//
 // function mockDelay(ms) {
 //     return new Promise(resolve => setTimeout(resolve, ms));
 // }
@@ -40,6 +40,7 @@ import { OpenAI } from '../js/api/openai.js';
 
 
 let api_key_chatgpt = null;
+let model_chatgpt = '';
 let openai = null;
 
 let conversationHistory = [];
@@ -48,8 +49,9 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         api_key_chatgpt = event.data.api_key_chatgpt;
+        model_chatgpt = event.data.model_chatgpt;
         //console.log(">>>>>>>>>>> api_key_chatgpt: " + api_key_chatgpt);
-        openai = new OpenAI(api_key_chatgpt, true);
+        openai = new OpenAI(api_key_chatgpt, model_chatgpt, true);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
         
@@ -83,7 +85,7 @@ self.onmessage = async function(event) {
         //         stream: true,
         //     }),
         // });
-    const response = await openai.fetchResponse("gpt-4o-mini", conversationHistory); //4096);
+    const response = await openai.fetchResponse(conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {

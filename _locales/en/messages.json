@@ -430,5 +430,9 @@
   "chatgpt_empty_model": {
     "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
     "description": ""
+  },
+  "chagtp_api_send_button": {
+    "message": "Using model",
+    "description": ""
   }
 }
