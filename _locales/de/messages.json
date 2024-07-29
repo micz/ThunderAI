@@ -430,5 +430,13 @@
   "chatgpt_empty_model": {
     "message": "Sie haben kein Modell für das ChatGPT-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
     "description": ""
+  },
+  "chagtp_api_send_button": {
+    "message": "Modell wird verwendet",
+    "description": ""
+  },
+  "chagtp_api_connecting": {
+    "message": "Versucht, eine Verbindung zu OpenAI ChatGPT mit dem angegebenen API-Schlüssel herzustellen...",
+    "description": ""
   }
 }
