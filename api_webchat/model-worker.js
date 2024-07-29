@@ -23,19 +23,19 @@
 import { OpenAI } from '../js/api/openai.js';
 
 //========================== for testing
-const MOCK_TOKENS = ['Good', ' morning', ' Mr', ' Plop', 'py', ',', 'and', ' I', ' said',  '\n', '"', 'Good', ' morn', 'ing', ' Mrs',' Plop', 'py', ,'"', '\n', 'Oh', ' how', ' the', ' win', 'ter', ' even', 'ings', ' must', ' just', ' fly'];
+// const MOCK_TOKENS = ['Good', ' morning', ' Mr', ' Plop', 'py', ',', 'and', ' I', ' said',  '\n', '"', 'Good', ' morn', 'ing', ' Mrs',' Plop', 'py', ,'"', '\n', 'Oh', ' how', ' the', ' win', 'ter', ' even', 'ings', ' must', ' just', ' fly'];
 
-function mockDelay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+// function mockDelay(ms) {
+//     return new Promise(resolve => setTimeout(resolve, ms));
+// }
 
-async function processMockTokens() {
-    for (const token of MOCK_TOKENS) {
-        await mockDelay(Math.random() * 50 + 50); // Random delay between 100ms and 150ms
-        postMessage({ type: 'newToken', payload: { token } });
-    }
-    postMessage({ type: 'tokensDone' });
-}
+// async function processMockTokens() {
+//     for (const token of MOCK_TOKENS) {
+//         await mockDelay(Math.random() * 50 + 50); // Random delay between 100ms and 150ms
+//         postMessage({ type: 'newToken', payload: { token } });
+//     }
+//     postMessage({ type: 'tokensDone' });
+// }
 //========================== for testing - END
 
 
