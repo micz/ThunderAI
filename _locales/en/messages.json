@@ -434,5 +434,9 @@
   "chagtp_api_send_button": {
     "message": "Using model",
     "description": ""
+  },
+  "chagtp_api_connecting": {
+    "message": "Will attempt to connect to OpenAI ChatGPT using the API key provided...",
+    "description": ""
   }
 }
