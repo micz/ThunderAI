@@ -146,55 +146,108 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
         return;
     }
-    let newWindow = await browser.windows.create({
-        url: "https://chatgpt.com",
-        type: "popup",
-        width: prefs.chatgpt_win_width,
-        height: prefs.chatgpt_win_height
-    });
 
-    console.log("[ThunderAI] Script started...");
-    createdWindowID = newWindow.id;
-    const createdTab = newWindow.tabs[0];
+    // check if the API is present, otherwise open the web interface
+    if (prefs.chatgpt_api_key == '') {
+        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
+        prefs.connection_type = 'chatgpt_web';
+    }
+    if (prefs.chatgpt_model == '') {
+        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
+        prefs.connection_type = 'chatgpt_web';
+    }
 
-    // Wait for tab loaded.
-    await new Promise(resolve => {
-        const tabIsLoaded = tab => {
-            return tab.status == "complete" && tab.url != "about:blank";
-        };
-        const listener = (tabId, changeInfo, updatedTab) => {
-            if (tabIsLoaded(updatedTab)) {
-                browser.tabs.onUpdated.removeListener(listener);
-                resolve();
-            }
-        }
-        // Early exit if loaded already
-        if (tabIsLoaded(createdTab)) {
-            resolve();
-        } else {
-            browser.tabs.onUpdated.addListener(listener);
-        }
-    });
-
-    let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
-    let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
-    let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
-    let mztaDoCustomText=`+ do_custom_text +`;
-    let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
-    let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
-    `;
-
-    browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
-        .then(async () => {
-            console.log("[ThunderAI] Script injected successfully");
-            let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-            let mailMessageId = -1;
-            if(mailMessage) mailMessageId = mailMessage.id;
-            browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
-        })
-        .catch(err => {
-            console.error("[ThunderAI] Error injecting the script: ", err);
+    switch(prefs.connection_type){
+        case 'chatgpt_web':
+        // We are using the ChatGPT web interface
+        let newWindow = await browser.windows.create({
+            url: "https://chatgpt.com",
+            type: "popup",
+            width: prefs.chatgpt_win_width,
+            height: prefs.chatgpt_win_height
         });
+
+        console.log("[ThunderAI] ChatGPT web interface script started...");
+        createdWindowID = newWindow.id;
+        let createdTab = newWindow.tabs[0];
+
+        // Wait for tab loaded.
+        await new Promise(resolve => {
+            const tabIsLoaded = tab => {
+                return tab.status == "complete" && tab.url != "about:blank";
+            };
+            const listener = (tabId, changeInfo, updatedTab) => {
+                if (tabIsLoaded(updatedTab)) {
+                    browser.tabs.onUpdated.removeListener(listener);
+                    resolve();
+                }
+            }
+            // Early exit if loaded already
+            if (tabIsLoaded(createdTab)) {
+                resolve();
+            } else {
+                browser.tabs.onUpdated.addListener(listener);
+            }
+        });
+
+        let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+        let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
+        let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
+        let mztaDoCustomText=`+ do_custom_text +`;
+        let mztaKeepFormatting=`+ prefs.chatgpt_keep_formatting +`;
+        let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+        `;
+
+        browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
+            .then(async () => {
+                console.log("[ThunderAI] ChatGPT web interface script injected successfully");
+                let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId = -1;
+                if(mailMessage) mailMessageId = mailMessage.id;
+                browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+            })
+            .catch(err => {
+                console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
+            });
+    break;  // chatgpt_web
+    case 'chatgpt_api':
+        // We are using the ChatGPT API
+        let newWindow2 = await browser.windows.create({
+            url: browser.runtime.getURL('api_webchat/index.html'),
+            type: "popup",
+            width: prefs.chatgpt_win_width,
+            height: prefs.chatgpt_win_height
+        });
+
+        createdWindowID = newWindow2.id;
+        let createdTab2 = newWindow2.tabs[0];
+
+        // Wait for tab loaded.         // TODO This is needed in 128+, but doesn't work in 115
+        // await new Promise(resolve => {
+        //     const tabIsLoaded2 = tab => {
+        //         return tab.status == "complete" && tab.url != "about:blank";
+        //     };
+        //     const listener2 = (tabId, changeInfo, updatedTab) => {
+        //         if (tabIsLoaded2(updatedTab)) {
+        //             browser.tabs.onUpdated.removeListener(listener2);
+        //             resolve();
+        //         }
+        //     }
+        //     // Early exit if loaded already
+        //     if (tabIsLoaded2(createdTab2)) {
+        //         resolve();
+        //     } else {
+        //         browser.tabs.onUpdated.addListener(listener2);
+        //     }
+        // });
+
+        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+        let mailMessageId = -1;
+        if(mailMessage) mailMessageId = mailMessage.id;
+
+        browser.tabs.sendMessage(createdTab2.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
+        break;  // chatgpt_api
+    }
 }
 
 function checkScreenDimensions(prefs){
@@ -205,6 +258,15 @@ function checkScreenDimensions(prefs){
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
     
     return prefs;
+}
+
+function showNotification(title, message) {
+    browser.notifications.create({
+        "type": "basic",
+        "title": title,
+        "iconUrl": browser.extension.getURL("images/icon.png"),
+        "message": message
+    });
 }
 
 // Menus handling

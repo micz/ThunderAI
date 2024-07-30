@@ -1,16 +1,3 @@
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: rgb(35, 34, 43);
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-    
-}
-
 div#miczDescription{
     padding:0px 15px 0px 15px;
     font-size: 13px;
@@ -99,4 +86,49 @@ div#miczTranslate{
     font-size: 14px;
     font-weight: bold;
     margin-bottom: 1em;
+}
+
+tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
+    background-color: rgb(185, 220, 252);
+}
+
+tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
+    background-color: rgb(255, 209, 183);
+}
+
+/* color to be used for a local LLM
+.conntype_chatgpt_web,.conntype_local_llm{
+    background-color: rgb(205, 255, 205);
+}
+*/
+
+#model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: rgb(35, 34, 43);
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+    
+    tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
+        background-color: rgb(0, 0, 58);
+    }
+
+    tr.conntype_chatgpt_web,tr.conntype_chatgpt_web2{
+        background-color: rgb(39, 11, 0);
+    }
+
+    /* color to be used for a local LLM
+    .conntype_chatgpt_web,.conntype_local_llm{
+        background-color: rgb(0, 39, 0);
+    }
+    */
 }

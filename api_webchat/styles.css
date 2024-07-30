@@ -1,0 +1,49 @@
+/* Global styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    height: 100vh; /* Full viewport height */
+}
+
+#appContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Full height of the viewport */
+    max-width: 768px; /* Max width of 768px */
+    width: 100%; /* Use full width up to 768px */
+    margin: 0 auto; /* Center horizontally without affecting vertical alignment */
+}
+
+messages-area {
+    flex-grow: 1;
+    overflow: auto;
+}
+
+/* Colors */
+:root {
+    --red: #ff0000;
+    --green: #00ff00;
+    --margin: 10px;
+    --padding: 10px;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 10px 0;
+    font-weight: normal;
+}
+
+p {
+    margin: 0 0 10px 0;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #000000;
+        color: #ffffff;
+    }
+}

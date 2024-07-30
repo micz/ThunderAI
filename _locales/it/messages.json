@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Non è più possibile disabilitare la cronologia delle chat di ChatGPT. Pertanto, non c'è modo di impedire che le richieste effettuate tramite questo componente aggiuntivo appaiano nella cronologia delle chat di ChatGPT.",
+    "message": "Se all'apertura della finestra dell'interfaccia web di ChatGPT, viene mostrata una pagina bianca o vuota, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Se all'apertura della finestra di ChatGPT, viene mostrata una pagina bianca, significa che c'è un problema di caricamento della pagina di ChatGPT, non relativo all'utilizzo di questo componente aggiuntivo.",
+    "message": "Per utilizzare l'API di ChatGPT, è necessaria una OpenAI ChatGPT API Key e devi scegliere un modello. Se non lo fai, ThunderAI utilizzerà l'interfaccia web di ChatGPT.",
     "description": ""
   },
   "prefsInfoDesc_3": {
@@ -385,6 +385,58 @@
   },
   "customprompts_form_label_define_response_lang": {
     "message": "Definisci la lingua di risposta nel prompt.",
+    "description": ""
+  },
+  "prefs_Connection_type": {
+  "message": "Tipo di connessione",
+  "description": ""
+  },
+  "prefs_Connection_type_ChatGTP_Web": {
+    "message": "Interfaccia Web ChatGTP",
+    "description": ""
+  },
+  "prefs_Connection_type_ChatGTP_API": {
+    "message": "API OpenAI per ChatGTP",
+    "description": ""
+  },
+  "prefs_ChatGPT_API_Key": {
+    "message": "Chiave API ChatGPT",
+    "description": ""
+  },
+    "ChatGPT_Models": {
+    "message": "Modelli ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models_Fetch": {
+    "message": "Aggiorna l'elenco dei modelli ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models_Error_fetching": {
+  "message": "Errore durante il recupero dei modelli di ChatGPT",
+  "description": ""
+  },
+  "ChatGPT_Models_Loading": {
+    "message": "Caricamento in corso...",
+    "description": ""
+  },
+  "error": {
+    "message": "Errore ThunderAI!",
+    "description": ""
+  },
+  "chatgpt_empty_apikey": {
+    "message": "Non hai aggiunto una chiave API per l'API di ChatGPT. Per favore, inseriscine una nella pagina delle opzioni.",
+    "description": ""
+  },
+  "chatgpt_empty_model": {
+    "message": "Non hai scelto un modello per l'API di ChatGPT. Per favore, scegline uno nella pagina delle opzioni.",
+    "description": ""
+  },
+  "chagtp_api_send_button": {
+    "message": "Modello utilizzato",
+    "description": ""
+  },
+  "chagtp_api_connecting": {
+    "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita...",
     "description": ""
   }
 }

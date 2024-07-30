@@ -22,4 +22,7 @@ export const prefs_default = {
     chatpgt_use_gpt4: false,
     chatgpt_keep_formatting: false,
     default_chatgpt_lang: '',
+    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api'
+    chatgpt_api_key: '',
+    chatgpt_model: '',
 }
