@@ -245,7 +245,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let mailMessageId = -1;
         if(mailMessage) mailMessageId = mailMessage.id;
 
-        browser.tabs.sendMessage(createdTab2.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+        browser.tabs.sendMessage(createdTab2.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
         break;  // chatgpt_api
     }
 }
