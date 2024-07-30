@@ -31,7 +31,7 @@ ThunderAI's changes are logged [here](CHANGELOG.md).
 
 <br>
 
-<br>Thanks to:
+## Thanks to
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
 <li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
 <li><a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface.
