@@ -6,7 +6,7 @@ It enables users to analyze, write, correct, and optimize their emails, facilita
 
 ThunderAI is a tool for anyone looking to improve their email quality, both in content and grammar, making the writing process quicker and more intuitive. 
 
-You can also define your own **custom prompts**, and from version 1.2.0 you can import and export all the prompts!
+You can also define, export and import your own **custom prompts**!
 Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)!
 
 
