@@ -89,7 +89,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     if (message.command === "chatgpt_send") {
         //send the received prompt to the chatgpt api
-        if(message.do_custom_text) {
+        if(message.do_custom_text=="1") {
             let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
             if(userInput !== null) {
                 message.prompt += " " + userInput;
