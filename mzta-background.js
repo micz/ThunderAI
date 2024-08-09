@@ -147,14 +147,16 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         return;
     }
 
-    // check if the API is present, otherwise open the web interface
-    if (prefs.chatgpt_api_key == '') {
-        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
-        prefs.connection_type = 'chatgpt_web';
-    }
-    if (prefs.chatgpt_model == '') {
-        showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
-        prefs.connection_type = 'chatgpt_web';
+    if(prefs.connection_type === 'chatgpt_api'){
+        // check if the API is present, otherwise open the web interface
+        if (prefs.chatgpt_api_key == '') {
+            showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
+            prefs.connection_type = 'chatgpt_web';
+        }
+        if (prefs.chatgpt_model == '') {
+            showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
+            prefs.connection_type = 'chatgpt_web';
+}
     }
 
     switch(prefs.connection_type){
