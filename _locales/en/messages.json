@@ -207,8 +207,12 @@
     "message": "Completed!",
     "description": ""
   },
+  "chatgpt_win_job_completed_select": {
+    "message": "Select the text you want to use and click the button.",
+    "description": ""
+  },
   "chatgpt_win_get_answer": {
-    "message": "Use last answer",
+    "message": "Use the selected answer",
     "description": ""
   },
   "chatgpt_win_close": {
@@ -293,14 +297,6 @@
   },
   "prefs_OptionText_reply_type": {
     "message": "Reply type",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_keep_formatting": {
-    "message": "Keep formatting",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_keep_formatting_info": {
-    "message": "Keep the formatting and numeral or bullet points from the ChatGPT response.",
     "description": ""
   },
   "prefs_OptionText_chatpgt_use_gpt4": {

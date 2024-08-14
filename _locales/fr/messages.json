@@ -207,8 +207,12 @@
     "message": "Terminé !",
     "description": ""
   },
+  "chatgpt_win_job_completed_select": {
+    "message": "Sélectionnez le texte que vous souhaitez utiliser et cliquez sur le bouton.",
+    "description": ""
+  },
   "chatgpt_win_get_answer": {
-    "message": "Utiliser la dernière réponse",
+    "message": "Utilisez la réponse sélectionnée",
     "description": ""
   },
   "chatgpt_win_close": {
@@ -293,14 +297,6 @@
   },
   "prefs_OptionText_reply_type": {
     "message": "Type de réponse",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_keep_formatting": {
-    "message": "Conserver la mise en forme",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_keep_formatting_info": {
-    "message": "Conservez la mise en forme et les numéros ou les puces de la réponse de ChatGPT.",
     "description": ""
   },
   "prefs_OptionText_chatpgt_use_gpt4": {
