@@ -45,12 +45,18 @@ export class OpenAI {
         const errorDetail = await response.text();
         let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
         console.error(err_msg);
-        return false;
+        let output = {};
+        output.ok = false;
+        output.error = errorDetail;
+        return output;
     }
 
-    let output = await response.json();
+    let output = {};
+    output.ok = true;
+    let output_response = await response.json();
+    output.response = output_response.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
 
-    return output.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
+    return output;
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {

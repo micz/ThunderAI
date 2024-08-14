@@ -171,14 +171,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('model_fetch_loading').style.display = 'inline';
     let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, true);
     openai.fetchModels().then((data) => {
-      if(!data){
+      if(!data.ok){
+        let errorDetail = JSON.parse(data.error);
         document.getElementById('model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail.error.message);
         return;
       }
       //console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
-      data.forEach(model => {
+      data.response.forEach(model => {
         if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
           option.value = model.id;
