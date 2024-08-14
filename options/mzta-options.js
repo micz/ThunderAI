@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         return;
       }
-      console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
+      //console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
       data.forEach(model => {
         if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
