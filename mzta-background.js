@@ -156,7 +156,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         if (prefs.chatgpt_model == '') {
             showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
             prefs.connection_type = 'chatgpt_web';
-}
+        }
     }
 
     switch(prefs.connection_type){
