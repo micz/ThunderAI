@@ -23,6 +23,7 @@
 export const mzta_script = `
 let force_go = false;
 let current_message = null;
+let current_action = null;
 let selectionChangeTimeout = null;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
@@ -161,6 +162,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             };
             break;
         case "1":     // do reply
+            btn_ok.disabled = true;
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
@@ -170,6 +172,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             };
             break;
         case "2":     // replace text
+            btn_ok.disabled = true;
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
@@ -181,7 +184,6 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             break;
     }
     btn_ok.style.display = 'none';
-    btn_ok.disabled = true;
     fixedDiv.appendChild(btn_ok);
 
     //div per custom text
@@ -384,7 +386,9 @@ function isSomethingSelected() {
 document.addEventListener("selectionchange", function() {
      // Clear any previous timeout to reset the delay
      clearTimeout(selectionChangeTimeout);
-
+     if(current_action === '0'){
+         return;
+     }
      // Set a timeout to delay the execution of the callback
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
@@ -405,6 +409,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // User not logged in
             alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
         }else{
+            current_action = message.action;
             addCustomDiv(message.action,message.tabId,message.mailMessageId);
             (async () => {
                 if(mztaDoCustomText === 1){
