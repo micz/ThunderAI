@@ -417,6 +417,13 @@ function selectContentOnMouseMove(event) {
 }
 
 function selectContentOnMouseUp(event) {
+    var excludedArea = document.querySelector('.mzta-header-fixed');
+
+    if (excludedArea && excludedArea.contains(event.target)) {
+        // If the click was inside the excluded area, do nothing
+        return;
+    }
+
     if ((!isDragging)&&(!isSomethingSelected())) {
         // If no dragging has occurred, execute the selection code
         selectContentOnClick(event);
