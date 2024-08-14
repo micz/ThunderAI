@@ -227,7 +227,8 @@ class MessagesArea extends HTMLElement {
         const actionButton = document.createElement('button');
         actionButton.textContent = 'Use this answer';
         //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
-        const fullTextHTMLAtAssignment = this.fullTextHTML;
+        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
+        //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         actionButton.addEventListener('click', () => {
             switch(promptData.action) {
                 case "1":     // do reply
