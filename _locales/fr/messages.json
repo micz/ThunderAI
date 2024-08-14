@@ -204,11 +204,11 @@
     "description": ""
   },
   "chatgpt_win_job_completed": {
-    "message": "Terminé !",
+    "message": "Terminé ! Sélectionnez le texte que vous souhaitez utiliser et cliquez sur le bouton.",
     "description": ""
   },
   "chatgpt_win_get_answer": {
-    "message": "Utiliser la dernière réponse",
+    "message": "Utilisez la réponse sélectionnée",
     "description": ""
   },
   "chatgpt_win_close": {

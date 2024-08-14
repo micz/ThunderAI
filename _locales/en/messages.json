@@ -208,7 +208,7 @@
     "description": ""
   },
   "chatgpt_win_get_answer": {
-    "message": "Use last answer",
+    "message": "Use the selected answer",
     "description": ""
   },
   "chatgpt_win_close": {
