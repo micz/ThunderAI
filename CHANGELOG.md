@@ -10,7 +10,7 @@
   <li>Added a better error message when there is an error fetching models.</li>
   <li>When selecting a correct model in the options page, the field is no more highlighted in red [<a href="https://github.com/micz/ThunderAI/issues/100">#100</a>].</li>
   <li>When using the ChatGPT API, the double quotes at the beginning and end of the response are removed [<a href="https://github.com/micz/ThunderAI/issues/99">#99</a>].</li>
-  <li>...</li>
+  <li><i>[ChatGPT Web]</i>"Keep formatting" option removed.</li>
 </ul>
 <h2>Version 2.0.1 - 09/08/2024</h2>
       <ul>
