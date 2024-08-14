@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   option.value = prefs.chatgpt_model;
   option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(option);
+  select_chatgpt_model.addEventListener("change", warnAPIKeyEmpty);
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
     document.getElementById('model_fetch_loading').style.display = 'inline';
