@@ -260,6 +260,9 @@ function checkGPT4Model() {
 function operation_done(){
     let curr_msg = document.getElementById('mzta-curr_msg');
     curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");
+    if(current_action != '0'){
+        curr_msg.textContent += " " + browser.i18n.getMessage("chatgpt_win_job_completed_select"); 
+    }
     curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
     document.getElementById('mzta-loading').style.display = 'none';

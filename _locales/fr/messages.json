@@ -204,7 +204,11 @@
     "description": ""
   },
   "chatgpt_win_job_completed": {
-    "message": "Terminé ! Sélectionnez le texte que vous souhaitez utiliser et cliquez sur le bouton.",
+    "message": "Terminé !",
+    "description": ""
+  },
+  "chatgpt_win_job_completed_select": {
+    "message": "Sélectionnez le texte que vous souhaitez utiliser et cliquez sur le bouton.",
     "description": ""
   },
   "chatgpt_win_get_answer": {
