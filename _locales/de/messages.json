@@ -295,14 +295,6 @@
     "message": "Antworttyp",
     "description": ""
   },
-  "prefs_OptionText_chatpgt_keep_formatting": {
-    "message": "Behalte die Formatierung bei",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_keep_formatting_info": {
-    "message": "Behalte die Formatierung und die Zahlen oder Aufzählungspunkte aus der ChatGPT-Antwort bei.",
-    "description": ""
-  },
   "prefs_OptionText_chatpgt_use_gpt4": {
     "message": "Verwenden Sie ChatGPT-4",
     "description": ""
