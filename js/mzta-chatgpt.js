@@ -425,6 +425,10 @@ function selectContentOnMouseUp(event) {
 }
 
 function selectContentOnClick(event) {
+    if(current_action === '0'){
+        return;
+    }
+
     // Prevent the default behavior of the click
     event.preventDefault();
 
