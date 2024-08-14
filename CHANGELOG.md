@@ -14,7 +14,7 @@
 </ul>
 <h2>Version 2.0.1 - 09/08/2024</h2>
       <ul>
-        <li>No more notifying a missing API Key or model when using the web interface.</li>
+        <li><i>[ChatGPT Web]</i> No more notifying a missing API Key or model when using the web interface.</li>
       </ul>
 <h2>Version 2.0.0 - 30/07/2024</h2>
       <ul>
