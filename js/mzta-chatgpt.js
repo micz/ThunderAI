@@ -25,6 +25,7 @@ let force_go = false;
 let current_message = null;
 let current_action = null;
 let selectionChangeTimeout = null;
+let isDragging = false;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     const textArea = document.querySelector('form textarea'),
@@ -370,7 +371,7 @@ function getSelectedHtml() {
         tempDiv.appendChild(range.cloneContents());
         
         // Return the HTML of the selected content
-        return tempDiv.innerHTML;
+        return tempDiv.innerHTML.replace(/^<p>&quot;/, '<p>').replace(/&quot;<\\/p>$/, '</p>'); // strip quotation marks;
     }
     return "";
 }
@@ -402,6 +403,56 @@ document.addEventListener("selectionchange", function() {
      }, 300); // Delay in milliseconds
 });
 
+function selectContentOnMouseDown(event) {
+    // Reset the dragging flag when the mouse is pressed down
+    isDragging = false;
+}
+
+function selectContentOnMouseMove(event) {
+    // Set the dragging flag to true if the mouse moves
+    isDragging = true;
+}
+
+function selectContentOnMouseUp(event) {
+    if ((!isDragging)&&(!isSomethingSelected())) {
+        // If no dragging has occurred, execute the selection code
+        selectContentOnClick(event);
+    }
+    // Remove the event listeners to prevent future executions
+    // document.removeEventListener('mousedown', selectContentOnMouseDown);
+    // document.removeEventListener('mousemove', selectContentOnMouseMove);
+    // document.removeEventListener('mouseup', selectContentOnMouseUp);
+}
+
+function selectContentOnClick(event) {
+    // Prevent the default behavior of the click
+    event.preventDefault();
+
+    // Get the element that was clicked
+    var clickedElement = event.target;
+
+    // Traverse the DOM upwards to find the nearest parent div
+    var parentDiv = clickedElement.closest('div');
+
+    if (parentDiv) {
+        // Create a range object
+        var range = document.createRange();
+
+        // Select the contents of the div
+        range.selectNodeContents(parentDiv);
+
+        // Get the selection object
+        var selection = window.getSelection();
+
+        // Clear any existing selections
+        selection.removeAllRanges();
+
+        // Add the new range to the selection
+        selection.addRange(range);
+    }
+}
+
+
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.command === "chatgpt_send") {
@@ -418,6 +469,10 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 } else {
                     await doProceed(message);
                 }
+                    // Add an event listener to the document to detect clicks
+                    document.addEventListener('mousedown', selectContentOnMouseDown);
+                    document.addEventListener('mousemove', selectContentOnMouseMove);
+                    document.addEventListener('mouseup', selectContentOnMouseUp);
             })();
         }
     }
