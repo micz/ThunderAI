@@ -23,6 +23,7 @@
 export const mzta_script = `
 let force_go = false;
 let current_message = null;
+let selectionChangeTimeout = null;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     const textArea = document.querySelector('form textarea'),
@@ -62,73 +63,6 @@ function chatgpt_getRegenerateButton() {
     }
 }
 
-async function chatgpt_getFromDOM(pos) {
-    const responseDivs = document.querySelectorAll('div[data-testid*="conversation-turn"]:nth-child(odd)'),
-          strPos = pos.toString().toLowerCase();
-          //console.log(">>>>>>>>>>>>> responseDivs.length: "+ responseDivs.length);
-    let response = '';
-    if (responseDivs.length) {
-        if (/last|final/.test(strPos)){ // get last response
-            responseDivs[responseDivs.length - 1].innerHTML = responseDivs[responseDivs.length - 1].innerHTML.replace(/<\\/p>/g, '</p>\\n\\n').replace(/<br\\s*\\/?>/g, '<br>\\n');
-            // Removing the new buttons that let the user change model and insert a number (4 or 3.5 at the end of the text)
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(responseDivs[responseDivs.length - 1].innerHTML, 'text/html');
-            if(!mztaKeepFormatting) {       // Return only TEXT
-            // Select the div with class 'empty:hidden'
-                let correct_div = responseDivs[responseDivs.length - 1].querySelector('div[data-message-author-role="assistant"]');
-                response = correct_div.textContent;
-                //console.log(">>>>>>>>>> response: " + response);
-                response = response.replace(/^ChatGPT(?:ChatGPT)?/, ''); // strip sender name
-                response = response.trim().replace(/^"|"$/g, ''); // strip quotation marks
-                response = "<body><p>" + response + "</p></body>";
-                //console.log(">>>>>>>>> response: " + JSON.stringify(response));
-                let parser_2 = new DOMParser();
-                let doc_response = parser_2.parseFromString(response, 'text/html');
-                //console.log(">>>>>>>>> doc_response: " + JSON.stringify(doc_response.body.innerHTML));
-                replaceNewlinesWithBr(doc_response.body)
-                response = doc_response.body.innerHTML;
-            } else {                // Return HTML
-                // Tags to exclude
-                //console.log(">>>>>>>>> doc.body.innerHTML original: " + doc.body.innerHTML);
-                const excludeTags = ['div', 'text', 'svg', 'path', 'button'];
-                const includeTags = ['p', 'ul'];
-                // removeTags(doc.body, excludeTags);
-                response = removeTagsAndReturnHTML(doc.body, excludeTags, includeTags)
-                //console.log(">>>>>>>>> doc.body.innerHTML final: " + doc.body.innerHTML);
-                // response = doc.body.innerHTML;
-            }
-            //console.log('chatgpt_getFromDOM final response: '+response);
-            //console.log('chatgpt_getFromDOM: [HTML] ' + responseDivs[responseDivs.length - 1].innerHTML.replace(/<div[^>]*>/gi, '').replace(/<\\/div>/gi, '').replace(/<svg[^>]*>/gi, '').replace(/<\\/svg>/gi, '').replace(/<path[^>]*>/gi, '').replace(/<\\/path>/gi, '').replace(/<text[^>]*>/gi, '').replace(/<\\/text>/gi, '').replace(/<span[^>]*>/gi, '').replace(/<\\/span>/gi, '').replace(/<button[^>]*>/gi, '').replace(/<\\/button>/gi, ''));
-        } else { // get nth response            ---      HERE ONLY TEXT FROM RESPONSE, NO HTML
-            const nthOfResponse = (
-
-                // Calculate base number
-                Number.isInteger(pos) ? pos : // do nothing for integers
-                /^\d+/.test(strPos) ? /^\d+/.exec(strPos)[0] : // extract first digits for strings w/ them
-                ( // convert words to integers for digitless strings
-                    /^(?:1|one|fir)(?:st)?$/.test(strPos) ? 1
-                    : /^(?:2|tw(?:o|en|el(?:ve|f))|seco)(?:nd|t[yi])?(?:e?th)?$/.test(strPos) ? 2
-                    : /^(?:3|th(?:ree|ir?))(?:rd|teen|t[yi])?(?:e?th)?$/.test(strPos) ? 3
-                    : /^(?:4|fou?r)(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 4
-                    : /^(?:5|fi(?:ve|f))(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 5
-                    : /^(?:6|six)(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 6
-                    : /^(?:7|seven)(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 7
-                    : /^(?:8|eight?)(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 8
-                    : /^(?:9|nine?)(?:teen|t[yi])?(?:e?th)?$/.test(strPos) ? 9
-                    : /^(?:10|ten)(?:th)?$/.test(strPos) ? 10 : 1 )
-
-                // Transform base number if suffixed
-                * ( /(ty|ieth)$/.test(strPos) ? 10 : 1 ) // x 10 if -ty/ieth
-                + ( /teen(th)?$/.test(strPos) ? 10 : 0 ) // + 10 if -teen/teenth
-
-            );
-            response = responseDivs[nthOfResponse - 1].textContent;
-        }
-        //console.log('>>>>>>>>>>>>>> chatgpt_getFromDOM: ' + JSON.stringify(response));
-    }
-    return response;
-}
-
 function chatpgt_scrollToBottom () {
     try { document.querySelector('button[class*="cursor"][class*="bottom"]').click(); }
     catch (err) { console.error('[ThunderAI] ', err); }
@@ -141,6 +75,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "body {padding-bottom: 100px;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.textContent += ".mzta-btn:hover {background-color:#0056b3;color:white;}";
+    style.textContent += ".btn_disabled {background-color: #6a829b !important;color: white !important;cursor: not-allowed;}";
+    style.textContent += ".btn_disabled:hover {background-color:#6a829b !important;color:white !important;}";
     style.textContent += "#mzta-loading{height:50px;display:inline-block;}";
     style.textContent += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}#mzta-model_warn a{color:blue;text-decoration: underline;}";
     style.textContent += "#mzta-btn_gpt35 {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
@@ -227,7 +163,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         case "1":     // do reply
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
-                const response = await chatgpt_getFromDOM('last');
+                const response = getSelectedHtml();
                 browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 //console.log(response);
                 browser.runtime.sendMessage({command: "chatgpt_close"});
@@ -236,7 +172,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         case "2":     // replace text
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
-                const response = await chatgpt_getFromDOM('last');
+                const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
                 browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 //console.log(response);
@@ -245,6 +181,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             break;
     }
     btn_ok.style.display = 'none';
+    btn_ok.disabled = true;
     fixedDiv.appendChild(btn_ok);
 
     //div per custom text
@@ -416,6 +353,50 @@ function replaceNewlinesWithBr(node) {
     }
 }
 
+function getSelectedHtml() {
+    // Get the Selection object
+    var selection = window.getSelection();
+    
+    if (selection.rangeCount > 0) {
+        // Get the first selected range
+        var range = selection.getRangeAt(0);
+        
+        // Create a new temporary div
+        var tempDiv = document.createElement("div");
+        
+        // Clone the contents of the range into the temporary div
+        tempDiv.appendChild(range.cloneContents());
+        
+        // Return the HTML of the selected content
+        return tempDiv.innerHTML;
+    }
+    return "";
+}
+
+function isSomethingSelected() {
+    // Get the Selection object
+    var selection = window.getSelection();
+    
+    // Check if the selection range count is greater than 0 and the selection is not empty
+    return selection.rangeCount > 0 && !selection.isCollapsed;
+}
+
+document.addEventListener("selectionchange", function() {
+     // Clear any previous timeout to reset the delay
+     clearTimeout(selectionChangeTimeout);
+
+     // Set a timeout to delay the execution of the callback
+     selectionChangeTimeout = setTimeout(function() {
+        let btn_ok = document.getElementById('mzta-btn_ok');
+        if (isSomethingSelected()) {
+            btn_ok.disabled = false;
+            btn_ok.classList.remove('btn_disabled');
+        } else {
+            btn_ok.disabled = true;
+            btn_ok.classList.add('btn_disabled');
+        }
+     }, 300); // Delay in milliseconds
+});
 
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
