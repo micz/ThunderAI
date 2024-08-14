@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 2.0.2 - ??/??/2024</h2>
+<h2>Version 2.0.2 - 15/08/2024</h2>
 <ul>
   <li><i>[ChatGPT Web]</i> Now, the ChatGPT response must be selected by the user to be retrieved by ThunderAI. A single click on the text should work, but it's also possible to select the text manually [<a href="https://github.com/micz/ThunderAI/issues/104">#104</a>].</li>
   <li>Added a better error message when there is an error fetching models.</li>
