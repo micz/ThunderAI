@@ -239,7 +239,7 @@ function checkGPT4Model() {
      for(element of elements){
       // Check if the element exists and its content is '4' or '4o'
       if ((element && element.textContent === '4')||(element && element.textContent === '4o')||(force_go)) {
-        console.log("[ThunderAI] The GPT Model is now '4' or '4o'");
+        // console.log("[ThunderAI] The GPT Model is now '4' or '4o'");
         clearInterval(intervalId);
         clearTimeout(intervalId2);
         document.getElementById('mzta-model_warn').style.display = 'none';
@@ -247,7 +247,7 @@ function checkGPT4Model() {
         resolve("GPT4");
         break;
       } else if (!element) {
-        console.log("[ThunderAI] Element not found!");
+        console.error("[ThunderAI] Element not found!");
         clearInterval(intervalId);
         reject("Element not found.");
       }

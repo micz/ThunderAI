@@ -55,7 +55,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             //         return true;
             case 'chatgpt_close':
                     browser.windows.remove(createdWindowID).then(() => {
-                        console.log("[ThunderAI] ChatGPT window closed successfully.");
+                        // console.log("[ThunderAI] ChatGPT window closed successfully.");
                         return true;
                     }).catch((error) => {
                         console.error("[ThunderAI] Error closing ChatGPT window:", error);
@@ -169,7 +169,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             height: prefs.chatgpt_win_height
         });
 
-        console.log("[ThunderAI] ChatGPT web interface script started...");
+        // console.log("[ThunderAI] ChatGPT web interface script started...");
         createdWindowID = newWindow.id;
         let createdTab = newWindow.tabs[0];
 
@@ -201,7 +201,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
             .then(async () => {
-                console.log("[ThunderAI] ChatGPT web interface script injected successfully");
+                // console.log("[ThunderAI] ChatGPT web interface script injected successfully");
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                 let mailMessageId = -1;
                 if(mailMessage) mailMessageId = mailMessage.id;
