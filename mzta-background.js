@@ -223,24 +223,24 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         createdWindowID = newWindow2.id;
         let createdTab2 = newWindow2.tabs[0];
 
-        // Wait for tab loaded.         // TODO This is needed in 128+, but doesn't work in 115
-        // await new Promise(resolve => {
-        //     const tabIsLoaded2 = tab => {
-        //         return tab.status == "complete" && tab.url != "about:blank";
-        //     };
-        //     const listener2 = (tabId, changeInfo, updatedTab) => {
-        //         if (tabIsLoaded2(updatedTab)) {
-        //             browser.tabs.onUpdated.removeListener(listener2);
-        //             resolve();
-        //         }
-        //     }
-        //     // Early exit if loaded already
-        //     if (tabIsLoaded2(createdTab2)) {
-        //         resolve();
-        //     } else {
-        //         browser.tabs.onUpdated.addListener(listener2);
-        //     }
-        // });
+        // Wait for tab loaded.
+        await new Promise(resolve => {
+            const tabIsLoaded2 = tab => {
+                return tab.status == "complete" && tab.url != "about:blank";
+            };
+            const listener2 = (tabId, changeInfo, updatedTab) => {
+                if (tabIsLoaded2(updatedTab)) {
+                    browser.tabs.onUpdated.removeListener(listener2);
+                    resolve();
+                }
+            }
+            // Early exit if loaded already
+            if (tabIsLoaded2(createdTab2)) {
+                resolve();
+            } else {
+                browser.tabs.onUpdated.addListener(listener2);
+            }
+        });
 
         let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
         let mailMessageId = -1;
