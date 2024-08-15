@@ -116,12 +116,12 @@ class MessageInput extends HTMLElement {
     }
 
     handleMessageSent() {
-        console.log("[ThunderAI] handleMessageSent");
+        // console.log("[ThunderAI] handleMessageSent");
         this._messageInputField.value = '';
     }
 
     enableInput() {
-        console.log("[ThunderAI] enableInput");
+        // console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
         this._sendButton.removeAttribute('disabled');
         this._messageInputField.removeAttribute('disabled');

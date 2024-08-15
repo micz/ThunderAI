@@ -136,7 +136,7 @@ class MessagesArea extends HTMLElement {
 
     appendUserMessage(messageText, type="user") {
         this.fullTextHTML = "";
-        console.log("[ThunderAI] appendUserMessage: " + messageText);
+        // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         let source = "You";
         switch (type) {
@@ -158,7 +158,7 @@ class MessagesArea extends HTMLElement {
     }
 
     appendBotMessage(messageText, type="bot") {
-        console.log("[ThunderAI] appendBotMessage: " + messageText);
+        // console.log("[ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
 
@@ -232,12 +232,12 @@ class MessagesArea extends HTMLElement {
         actionButton.addEventListener('click', () => {
             switch(promptData.action) {
                 case "1":     // do reply
-                    console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+                    // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     browser.runtime.sendMessage({command: "chatgpt_close"});
                     break;
                 case "2":     // replace text
-                console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+                    // console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     //console.log(response);
                     browser.runtime.sendMessage({command: "chatgpt_close"});
@@ -247,7 +247,7 @@ class MessagesArea extends HTMLElement {
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
         closeButton.addEventListener('click', () => {
-            console.log("[ThunderAI] (close) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+            // console.log("[ThunderAI] (close) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
             browser.runtime.sendMessage({command: "chatgpt_close"});    // close window
         });
         if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
