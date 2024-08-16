@@ -3,6 +3,11 @@
 
 
 
+
+<h2>Version 2.0.4 - 16/08/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.0.3 - 15/08/2024</h2>
       <ul>
         <li><i>[ChatGPT API]</i> Fixed a loading bug in Thunderbird 128+ [<a href="https://github.com/micz/ThunderAI/issues/107">#107</a>].</li>
