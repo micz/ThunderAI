@@ -36,7 +36,8 @@ messagesAreaStyle.textContent = `
         min-height: 100%;
         margin-left: var(--margin);
         margin-right: var(--margin);
-        overflow-y: auto;
+        overflow-x: hidden;
+        overflow-y: scroll;
         max-height: 100%;
     }
     .message {
