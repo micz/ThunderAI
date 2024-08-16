@@ -33,10 +33,11 @@ messagesAreaStyle.textContent = `
     #messages {
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
         min-height: 100%;
         margin-left: var(--margin);
         margin-right: var(--margin);
+        overflow-y: auto;
+        max-height: 100%;
     }
     .message {
         margin: 0;
