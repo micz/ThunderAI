@@ -39,7 +39,7 @@ function saveOptions(e) {
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
         }else{
-          console.log('[ThunderAI] Unhandled input type:', element.type);
+          console.error("[ThunderAI] Unhandled input type:", element.type);
         }
     }
 
@@ -75,7 +75,7 @@ async function restoreOptions() {
             element.selectedIndex = -1;
           }
         }else{
-          console.log('[ThunderAI] Unhandled input type:', element.type);
+          console.error("[ThunderAI] Unhandled input type:", element.type);
         }
       }
     });
