@@ -125,7 +125,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 break;
             case 'reload_menus':
                 await menus.reload();
-                console.log('[ThunderAI] Reloaded menus');
+                //console.log("[ThunderAI] Reloaded menus");
                 break;
             default:
                 break;
@@ -140,7 +140,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     let prefs = await browser.storage.sync.get(prefs_default);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
-    console.log('[ThunderAI] Prompt length: ' + promptText.length);
+    //console.log("[ThunderAI] Prompt length: " + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
         browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
