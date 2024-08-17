@@ -31,6 +31,11 @@ ThunderAI's changes are logged [here](CHANGELOG.md).
 
 <br>
 
+## Privacy and Permissions
+You can find all the information on [this page](https://micz.it/thunderbird-addon-thunderai/privacy-permissions/).
+
+<br>
+
 ## Thanks to
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
 <li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
