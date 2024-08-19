@@ -235,14 +235,15 @@ class MessagesArea extends HTMLElement {
             switch(promptData.action) {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
-                    browser.runtime.sendMessage({command: "chatgpt_close"});
+                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
+                        browser.runtime.sendMessage({command: "chatgpt_close"});
+                    });
                     break;
                 case "2":     // replace text
                     // console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
-                    //console.log(response);
-                    browser.runtime.sendMessage({command: "chatgpt_close"});
+                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
+                        browser.runtime.sendMessage({command: "chatgpt_close"});
+                    });
                     break;
             }
         });
