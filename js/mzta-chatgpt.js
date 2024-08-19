@@ -167,9 +167,9 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
-                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                //console.log(response);
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId}).then(() => {
+                    browser.runtime.sendMessage({command: "chatgpt_close"});
+                });
             };
             break;
         case "2":     // replace text
@@ -178,9 +178,9 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
-                browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                //console.log(response);
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId}).then(() => {
+                    browser.runtime.sendMessage({command: "chatgpt_close"});
+                });
             };
             break;
     }
