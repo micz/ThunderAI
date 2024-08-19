@@ -4,9 +4,9 @@
 
 
 
-<h2>Version 2.0.6 - ??/08/2024</h2>
+<h2>Version 2.0.6 - 19/08/2024</h2>
   <ul>
-    <li>...</li>
+    <li>Some minor improvements.</li>
   </ul>
 <h2>Version 2.0.5 - 19/08/2024</h2>
   <ul>
