@@ -3,6 +3,11 @@
 
 
 
+
+<h2>Version 2.0.6 - ??/08/2024</h2>
+  <ul>
+    <li>...</li>
+  </ul>
 <h2>Version 2.0.5 - 19/08/2024</h2>
   <ul>
     <li><i>[ChatGPT Web]</i> Modified the permissions for the ChatGPT web interface, now requiring only the <code>https://*.chatgpt.com/*</code> and not all sites.</li>
