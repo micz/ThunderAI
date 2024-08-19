@@ -1,9 +1,12 @@
  # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI Release Notes
 
 
+<li><i>[ChatGPT Web]</i> Modified the permissions for the ChatGPT web interface, now requiring only the <code>https://*.chatgpt.com/*</code> and not all sites.</li>
 
-
-
+<h2>Version 2.0.5 - ??/??/2024</h2>
+  <ul>
+    <li>...</li>
+  </ul>
 <h2>Version 2.0.4 - 16/08/2024</h2>
       <ul>
         <li><i>[ChatGPT API]</i> Fixed the vertical scroolbar with long reponses [<a href="https://github.com/micz/ThunderAI/issues/108">#108</a>].</li>
