@@ -434,5 +434,13 @@
   "chagtp_api_connecting": {
     "message": "Will attempt to connect to OpenAI ChatGPT using the API key provided...",
     "description": ""
+  },
+  "Debug": {
+    "message": "Debug",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Activate the debug system",
+    "description": ""
   }
 }
