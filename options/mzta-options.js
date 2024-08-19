@@ -18,7 +18,10 @@
 
 
 import { prefs_default } from './mzta-options-default.js';
+import { taLogger } from '../js/mzta-logger.js';
 import { OpenAI } from '../js/api/openai.js';
+
+let taLog = new taLogger("mzta-options",true);
 
 function saveOptions(e) {
   e.preventDefault();
@@ -49,7 +52,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      //console.log("[ThunderAI] Options restoring " + element.id + " = " + result[element.id]);
+      taLog.log("Options restoring " + element.id + " = " + result[element.id]);
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -179,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail.error.message);
         return;
       }
-      //console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
+      taLog.log("ChatGPT models: " + JSON.stringify(data));
       data.response.forEach(model => {
         if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
