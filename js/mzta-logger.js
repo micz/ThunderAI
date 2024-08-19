@@ -23,7 +23,7 @@ export class taLogger {
 
     constructor(prefix, do_debug) {
         this.do_debug = do_debug;
-        this.prefix = "[ThunderAI Logger |" + prefix + "] ";
+        this.prefix = "[ThunderAI Logger | " + prefix + "] ";
     }
 
     log(msg, do_debug = -1) {
@@ -32,12 +32,10 @@ export class taLogger {
     }
 
     error(msg, do_debug = -1) {
-        if(do_debug !== -1) this.do_debug = do_debug;
-        if(this.do_debug === true) console.error(this.prefix + msg);
+        console.error(this.prefix + msg);
     }
 
     warn(msg, do_debug = -1) {
-        if(do_debug !== -1) this.do_debug = do_debug;
-        if(this.do_debug === true) console.warn(this.prefix + msg);
+        console.warn(this.prefix + msg);
     }  
 };
