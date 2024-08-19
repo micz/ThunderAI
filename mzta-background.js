@@ -19,11 +19,15 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
+import { taLogger } from './js/mzta-logger.js';
 import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, isThunderbird128OrGreater } from './js/mzta-utils.js';
 
 var createdWindowID = null;
 var original_html = '';
 var modified_html = '';
+
+let prefs_debug = await browser.storage.sync.get({do_debug: false});
+let taLog = new taLogger("mzta-background",prefs_debug.do_debug);
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -55,10 +59,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             //         return true;
             case 'chatgpt_close':
                     browser.windows.remove(createdWindowID).then(() => {
-                        // console.log("[ThunderAI] ChatGPT window closed successfully.");
+                        taLog.log("ChatGPT window closed successfully.");
                         return true;
                     }).catch((error) => {
-                        console.error("[ThunderAI] Error closing ChatGPT window:", error);
+                        taLog.error("Error closing ChatGPT window:", error);
                         return false;
                     });
                     break;
@@ -125,7 +129,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 break;
             case 'reload_menus':
                 await menus.reload();
-                //console.log("[ThunderAI] Reloaded menus");
+                taLog.log("[ThunderAI] Reloaded menus");
                 break;
             default:
                 break;
@@ -138,9 +142,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
+    taLog = new taLogger("mzta-background",prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
-    //console.log("[ThunderAI] Prompt length: " + promptText.length);
+    taLog.log("[ThunderAI] Prompt length: " + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
         browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
@@ -169,7 +174,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             height: prefs.chatgpt_win_height
         });
 
-        // console.log("[ThunderAI] ChatGPT web interface script started...");
+        taLog.log("[ThunderAI] ChatGPT web interface script started...");
         createdWindowID = newWindow.id;
         let createdTab = newWindow.tabs[0];
 
@@ -201,7 +206,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
             .then(async () => {
-                // console.log("[ThunderAI] ChatGPT web interface script injected successfully");
+                taLog.log("[ThunderAI] ChatGPT web interface script injected successfully");
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                 let mailMessageId = -1;
                 if(mailMessage) mailMessageId = mailMessage.id;
