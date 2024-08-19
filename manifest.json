@@ -32,7 +32,7 @@
         "accountsRead",
         "downloads",
         "notifications",
-        "<all_urls>"
+        "https://*.chatgpt.com/*"
     ],
     "background": {
         "page": "mzta-background.html"
