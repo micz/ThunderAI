@@ -31,11 +31,11 @@ export class taLogger {
         if(this.do_debug === true) console.log(this.prefix + msg);
     }
 
-    error(msg, do_debug = -1) {
+    error(msg) {
         console.error(this.prefix + msg);
     }
 
-    warn(msg, do_debug = -1) {
+    warn(msg) {
         console.warn(this.prefix + msg);
     }  
 };
