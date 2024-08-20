@@ -86,16 +86,21 @@ worker.onmessage = function(event) {
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
-    if (message.command === "chatgpt_send") {
-        //send the received prompt to the chatgpt api
-        if(message.do_custom_text=="1") {
-            let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
-            if(userInput !== null) {
-                message.prompt += " " + userInput;
+    switch (message.command) {
+        case "chatgpt_send":
+            //send the received prompt to the chatgpt api
+            if(message.do_custom_text=="1") {
+                let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
+                if(userInput !== null) {
+                    message.prompt += " " + userInput;
+                }
             }
-        }
-        promptData = message;
-        messageInput._setMessageInputValue(message.prompt);
-        messageInput._handleNewChatMessage();
+            promptData = message;
+            messageInput._setMessageInputValue(message.prompt);
+            messageInput._handleNewChatMessage();
+            break;
+        case "api_error":
+            messagesArea.appendBotMessage(message.error,'error');
+            break;
     }
 });

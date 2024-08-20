@@ -152,18 +152,6 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         return;
     }
 
-    if(prefs.connection_type === 'chatgpt_api'){
-        // check if the API is present, otherwise open the web interface
-        if (prefs.chatgpt_api_key == '') {
-            showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_apikey'));
-            prefs.connection_type = 'chatgpt_web';
-        }
-        if (prefs.chatgpt_model == '') {
-            showNotification(browser.i18n.getMessage('error'),browser.i18n.getMessage('chatgpt_empty_model'));
-            prefs.connection_type = 'chatgpt_web';
-        }
-    }
-
     switch(prefs.connection_type){
         case 'chatgpt_web':
         // We are using the ChatGPT web interface
@@ -252,6 +240,16 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
         let mailMessageId = -1;
         if(mailMessage) mailMessageId = mailMessage.id;
+
+        // check if the config is present, or give a message error
+        if (prefs.chatgpt_api_key == '') {
+            browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
+            return;
+        }
+        if (prefs.chatgpt_model == '') {
+            browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
+            return;
+        }
 
         browser.tabs.sendMessage(createdTab2.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
         break;  // chatgpt_api
