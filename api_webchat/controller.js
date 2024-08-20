@@ -24,7 +24,7 @@
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
-const worker = new Worker('model-worker.js', { type: 'module' });
+const worker = new Worker('model-worker-openai.js', { type: 'module' });
 
 const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
