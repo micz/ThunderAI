@@ -20,11 +20,25 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+// Get the LLM to be used
+const urlParams = new URLSearchParams(window.location.search);
+const llm = urlParams.get('llm');
 
+console.log(">>>>>>>>>>> llm: " + llm);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
-const worker = new Worker('model-worker-openai.js', { type: 'module' });
+let worker = null;
+
+switch (llm) {
+    case "chatgpt_api":
+        worker = new Worker('model-worker-openai.js', { type: 'module' });
+        break;
+    case "ollama_api": {
+        worker = new Worker('model-worker-ollama.js', { type: 'module' });
+        break;
+    }
+}
 
 const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
@@ -55,11 +69,24 @@ let promptData = null;
 // ============================== TESTING - END
 
 const params = new URLSearchParams(window.location.search);
-let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-// const openaiApiKey = params.get('openapi-key');
-//console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
-worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
-messagesArea.appendUserMessage(browser.i18n.getMessage("chagtp_api_connecting"), "info");
+
+switch (llm) {
+    case "chatgpt_api":
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
+        //console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
+        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting"), "info");
+        break;
+    case "ollama_api": {
+        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+        //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " " + prefs_api.ollama_host + " ...", "info");
+        break;
+    }
+}
+
+
 
 // Event listeners for worker messages
 worker.onmessage = function(event) {

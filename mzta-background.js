@@ -208,7 +208,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     case 'chatgpt_api':
         // We are using the ChatGPT API
         let newWindow2 = await browser.windows.create({
-            url: browser.runtime.getURL('api_webchat/index.html'),
+            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type),
             type: "popup",
             width: prefs.chatgpt_win_width,
             height: prefs.chatgpt_win_height
@@ -239,8 +239,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         }
 
         let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-        let mailMessageId = -1;
-        if(mailMessage) mailMessageId = mailMessage.id;
+        let mailMessageId2 = -1;
+        if(mailMessage) mailMessageId2 = mailMessage.id;
 
         // check if the config is present, or give a message error
         if (prefs.chatgpt_api_key == '') {
@@ -252,13 +252,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             return;
         }
 
-        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
+        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
         break;  // chatgpt_api
 
         case 'ollama_api':
             // We are using the Ollama API
             let newWindow3 = await browser.windows.create({
-                url: browser.runtime.getURL('api_webchat/index.html'),
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type),
                 type: "popup",
                 width: prefs.chatgpt_win_width,
                 height: prefs.chatgpt_win_height
@@ -302,7 +302,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 return;
             }
     
-            browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
+            browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
             break;  // ollama_api
     }
 }

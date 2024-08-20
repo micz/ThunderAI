@@ -55,4 +55,29 @@ export class Ollama {
   
       return output;
     }
+
+    
+  fetchResponse = async (messages) => {
+    try {
+      const response = await fetch(this.host + "/api/generate", {
+          method: "POST",
+          headers: { 
+              "Content-Type": "application/json", 
+          },
+          body: JSON.stringify({ 
+              model: this.model, 
+              prompt: messages.join(' '),
+              stream: this.stream,
+          }),
+      });
+      return response;
+    }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
+    }
+  }
 }
