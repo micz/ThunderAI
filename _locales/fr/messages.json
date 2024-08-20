@@ -431,7 +431,7 @@
     "message": "Utilisation du modèle",
     "description": ""
   },
-  "chagtp_api_connecting": {
+  "chagpt_api_connecting": {
     "message": "Tentative de connexion à OpenAI ChatGPT en utilisant la clé API fournie...",
     "description": ""
   }
