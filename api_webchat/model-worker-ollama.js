@@ -37,7 +37,7 @@ self.onmessage = async function(event) {
         ollama = new Ollama(ollama_host, ollama_model, true);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
-        
+        //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
     const response = await ollama.fetchResponse(conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
 
@@ -68,7 +68,8 @@ self.onmessage = async function(event) {
                 break;
             }
             // lots of low-level Ollama response parsing stuff
-            const chunk = decoder.decode(value); console.log(">>>>>>>>>>>>> chunk: " + chunk);
+            const chunk = decoder.decode(value);
+            //console.log(">>>>>>>>>>>>> chunk: " + chunk);
             const lines = chunk.split("\n");
             const parsedLines = lines
                 .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
@@ -76,32 +77,14 @@ self.onmessage = async function(event) {
                 .map((line) => JSON.parse(line)); // Parse the JSON string
     
             for (const parsedLine of parsedLines) {
-                const { response } = parsedLine;
+                const { message } = parsedLine;
+                const { content } = message;
                 // Update the UI with the new content
-                if (response) {
-                    assistantResponseAccumulator += response;
-                    postMessage({ type: 'newToken', payload: { token: response } });
+                if (content) {
+                    assistantResponseAccumulator += content;
+                    postMessage({ type: 'newToken', payload: { token: content } });
                 }
             }
         }
     }
 };
-
-function parsePartialResponse(responseText) {
-    // Logica di parsing dei dati parziali
-    // Potresti voler spezzare i chunk in linee o altri delimitatori
-    const lines = responseText.split("\n");
-
-    // Filtro le linee valide e faccio il parsing di ogni linea JSON
-    return lines
-        .filter(line => line.trim().length > 0)
-        .map(line => {
-            try {
-                return JSON.parse(line);
-            } catch (e) {
-                console.warn('Error parsing line:', line);
-                return null;
-            }
-        })
-        .filter(parsed => parsed !== null);
-}

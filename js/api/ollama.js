@@ -57,27 +57,55 @@ export class Ollama {
     }
 
     
-  fetchResponse = async (messages) => {
-    try {
-      const response = await fetch(this.host + "/api/generate", {
-          method: "POST",
-          headers: { 
-              "Content-Type": "application/json", 
-          },
-          body: JSON.stringify({ 
-              model: this.model, 
-              prompt: messages.join(' '),
-              stream: this.stream,
-          }),
-      });
-      return response;
-    }catch (error) {
-        console.error("[ThunderAI] Ollama API request failed: " + error);
-        let output = {};
-        output.is_exception = true;
-        output.ok = false;
-        output.error = "Ollama API request failed: " + error;
-        return output;
+    fetchResponse = async (messages) => {
+      try {
+        //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
+        const response = await fetch(this.host + "/api/chat", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json", 
+            },
+            body: JSON.stringify({ 
+                model: this.model, 
+                messages: messages,
+                stream: this.stream,
+            }),
+        });
+        return response;
+      }catch (error) {
+          console.error("[ThunderAI] Ollama API request failed: " + error);
+          let output = {};
+          output.is_exception = true;
+          output.ok = false;
+          output.error = "Ollama API request failed: " + error;
+          return output;
+      }
     }
-  }
+
+
+    // fetchResponse = async (messages) => {
+    //   try {
+    //     let sending = messages.join(' ');
+    //     console.log(">>>>>>>>>>  sending: " + sending);
+    //     const response = await fetch(this.host + "/api/generate", {
+    //         method: "POST",
+    //         headers: { 
+    //             "Content-Type": "application/json", 
+    //         },
+    //         body: JSON.stringify({ 
+    //             model: this.model, 
+    //             prompt: sending,
+    //             stream: this.stream,
+    //         }),
+    //     });
+    //     return response;
+    //   }catch (error) {
+    //       console.error("[ThunderAI] Ollama API request failed: " + error);
+    //       let output = {};
+    //       output.is_exception = true;
+    //       output.ok = false;
+    //       output.error = "Ollama API request failed: " + error;
+    //       return output;
+    //   }
+    // }
 }
