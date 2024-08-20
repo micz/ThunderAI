@@ -102,7 +102,12 @@ tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
 }
 */
 
-#model_fetch_loading{
+#chatgpt_model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
+#ollama_model_fetch_loading{
     display: none;
     font-style: italic;
 }

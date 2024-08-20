@@ -462,5 +462,9 @@
   "Ollama_Models_Error_fetching": {
     "message": "Error trying to fetch Ollama models",
     "description": ""
+  },
+  "Ollama_Models_Error_NoModels": {
+    "message": "No models found",
+    "description": ""
   }
 }
