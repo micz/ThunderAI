@@ -62,7 +62,6 @@ worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, c
 messagesArea.appendUserMessage(browser.i18n.getMessage("chagtp_api_connecting"), "info");
 
 // Event listeners for worker messages
-// TODO I'm sure there's a better way to do this
 worker.onmessage = function(event) {
     const { type, payload } = event.data;
     switch (type) {
