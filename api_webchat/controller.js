@@ -87,8 +87,8 @@ worker.onmessage = function(event) {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     switch (message.command) {
-        case "chatgpt_send":
-            //send the received prompt to the chatgpt api
+        case "api_send":
+            //send the received prompt to the llm api
             if(message.do_custom_text=="1") {
                 let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
                 if(userInput !== null) {
