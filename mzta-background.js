@@ -317,15 +317,6 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-function showNotification(title, message) {
-    browser.notifications.create({
-        "type": "basic",
-        "title": title,
-        "iconUrl": browser.extension.getURL("images/icon.png"),
-        "message": message
-    });
-}
-
 // Menus handling
 const menus = new mzta_Menus(openChatGPT);
 menus.loadMenus();
