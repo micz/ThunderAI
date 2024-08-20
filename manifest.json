@@ -31,7 +31,6 @@
         "activeTab",
         "accountsRead",
         "downloads",
-        "notifications",
         "https://*.chatgpt.com/*"
     ],
     "background": {
