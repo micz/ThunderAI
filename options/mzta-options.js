@@ -91,10 +91,12 @@ async function restoreOptions() {
 function showConnectionOptions() {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
+  let ollama_api_display = 'none';
   let conntype_select = document.getElementById("connection_type");
   let parent = conntype_select.parentElement.parentElement.parentElement;
+    parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
   parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
-  parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
+  parent.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
   if (conntype_select.value === "chatgpt_web") {
     chatgpt_web_display = 'table-row';
   }else{
@@ -105,11 +107,19 @@ function showConnectionOptions() {
   }else{
     chatgpt_api_display = 'none';
   }
+  if (conntype_select.value === "ollama_api") {
+    ollama_api_display = 'table-row';
+  }else{
+    ollama_api_display = 'none';
+  }
   document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
   });
   document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
     element.style.display = chatgpt_api_display;
+  });
+  document.querySelectorAll(".conntype_ollama_api").forEach(element => {
+    element.style.display = ollama_api_display;
   });
 }
 

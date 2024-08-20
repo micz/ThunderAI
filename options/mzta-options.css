@@ -126,6 +126,10 @@ tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
         background-color: rgb(39, 11, 0);
     }
 
+    tr.conntype_ollama_api, tr.conntype_ollama_api2{
+        background-color: rgb(7, 58, 0);
+    }
+
     /* color to be used for a local LLM
     .conntype_chatgpt_web,.conntype_local_llm{
         background-color: rgb(0, 39, 0);

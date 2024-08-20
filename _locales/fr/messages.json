@@ -411,7 +411,7 @@
     "message": "Erreur lors de la récupération des modèles ChatGPT",
     "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Chargement...",
     "description": ""
   },

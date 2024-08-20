@@ -70,6 +70,7 @@
             <select id="connection_type" name="connection_type" class="option-input">
               <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGTP_Web__</option>
               <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGTP_API__</option>
+              <option value="ollama_api">__MSG_prefs_Connection_type_Ollama_API__</option>
             </select>
           </label>
         </td>
@@ -104,9 +105,34 @@
           </label>
         </td>
         <td>
-          <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="model_fetch_loading">__MSG_ChatGPT_Models_Loading__</span><br>
+          <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="model_fetch_loading">__MSG_Loading__</span><br>
           <label>
             <select id="chatgpt_model" name="chatgpt_model" class="option-input">
+            </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_ollama_api">
+        <td><label>
+          <span>__MSG_prefs_Ollama_Host__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="text" id="ollama_host" name="ollama_host" class="option-input" style="width:28em" />
+            &nbsp;<span></span>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_ollama_api">
+        <td>
+          <label>
+            <span>__MSG_Ollama_Models__</span>
+          </label>
+        </td>
+        <td>
+          <button id="btnUpdateChatGPTModels">__MSG_Ollama_Models_Fetch__</button> <span id="model_fetch_loading">__MSG_Loading__</span><br>
+          <label>
+            <select id="ollama_model" name="ollama_model" class="option-input">
             </select>
           </label>
         </td>

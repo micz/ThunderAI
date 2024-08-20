@@ -411,7 +411,7 @@
   "message": "Errore durante il recupero dei modelli di ChatGPT",
   "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Caricamento in corso...",
     "description": ""
   },

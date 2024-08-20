@@ -411,7 +411,7 @@
     "message": "Error trying to fetch ChatGPT models",
     "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Loading...",
     "description": ""
   },
@@ -441,6 +441,26 @@
   },
   "prefs_OptionText_do_debug_info": {
     "message": "Activate the debug system",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "Ollama API (Local LLM)",
+    "description": ""
+  },
+  "prefs_Ollama_Host": {
+    "message": "Host Address",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Ollama Models",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Update Ollama Models list",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Error trying to fetch Ollama models",
     "description": ""
   }
 }

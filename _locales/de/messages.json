@@ -411,7 +411,7 @@
     "message": "Fehler beim Abrufen der ChatGPT-Modelle",
     "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Laden...",
     "description": ""
   },
