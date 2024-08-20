@@ -5,6 +5,7 @@
 
 <h2>Version 2.1.0 - ??/??/2024</h2>
   <ul>
+    <li>Improved error messages for connection errors.</li>
     <li>...</li>
   </ul>
 <h2>Version 2.0.5 - 19/08/2024</h2>
