@@ -90,11 +90,12 @@ self.onmessage = async function(event) {
 
         if (!response.ok) {
             let error_message = '';
+            let errorDetail = '';
             if(response.is_exception === true){
                 error_message = response.error;
             }else{
                 const errorJSON = await response.json();
-                const errorDetail = JSON.stringify(errorJSON);
+                errorDetail = JSON.stringify(errorJSON);
                 error_message = errorJSON.error.message;
                 //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
             }
