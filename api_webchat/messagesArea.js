@@ -231,19 +231,17 @@ class MessagesArea extends HTMLElement {
         //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        actionButton.addEventListener('click', () => {
+        actionButton.addEventListener('click', async () => {
             switch(promptData.action) {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
-                        browser.runtime.sendMessage({command: "chatgpt_close"});
-                    });
+                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_close"});
                     break;
                 case "2":     // replace text
                     // console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
-                        browser.runtime.sendMessage({command: "chatgpt_close"});
-                    });
+                    await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_close"});
                     break;
             }
         });
