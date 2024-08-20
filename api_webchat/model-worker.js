@@ -89,10 +89,16 @@ self.onmessage = async function(event) {
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
-            const errorJSON = await response.json();
-            const errorDetail = JSON.stringify(errorJSON);
-            //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
-            postMessage({ type: 'error', payload: errorJSON.error.message });
+            let error_message = '';
+            if(response.is_exception === true){
+                error_message = response.error;
+            }else{
+                const errorJSON = await response.json();
+                const errorDetail = JSON.stringify(errorJSON);
+                error_message = errorJSON.error.message;
+                //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+            }
+            postMessage({ type: 'error', payload: error_message });
             throw new Error("[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
         }
 
