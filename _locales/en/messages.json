@@ -466,5 +466,13 @@
   "Ollama_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "You've not added an Host Address for the Ollama API. Please insert one in the options page.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "You've not choosen a model for the Ollama API. Please choose one in the options page.",
+    "description": ""
   }
 }

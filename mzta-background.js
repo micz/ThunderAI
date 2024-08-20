@@ -204,6 +204,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
             });
     break;  // chatgpt_web
+
     case 'chatgpt_api':
         // We are using the ChatGPT API
         let newWindow2 = await browser.windows.create({
@@ -251,8 +252,58 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             return;
         }
 
-        browser.tabs.sendMessage(createdTab2.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
+        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
         break;  // chatgpt_api
+
+        case 'ollama_api':
+            // We are using the Ollama API
+            let newWindow3 = await browser.windows.create({
+                url: browser.runtime.getURL('api_webchat/index.html'),
+                type: "popup",
+                width: prefs.chatgpt_win_width,
+                height: prefs.chatgpt_win_height
+            });
+    
+            createdWindowID = newWindow3.id;
+            let createdTab3 = newWindow3.tabs[0];
+    
+            if(await isThunderbird128OrGreater()){
+                // Wait for tab loaded.
+                await new Promise(resolve => {
+                    const tabIsLoaded3 = tab => {
+                        return tab.status == "complete" && tab.url != "about:blank";
+                    };
+                    const listener3 = (tabId, changeInfo, updatedTab) => {
+                        if (tabIsLoaded3(updatedTab)) {
+                            browser.tabs.onUpdated.removeListener(listener3);
+                            resolve();
+                        }
+                    }
+                    // Early exit if loaded already
+                    if (tabIsLoaded3(createdTab3)) {
+                        resolve();
+                    } else {
+                        browser.tabs.onUpdated.addListener(listener3);
+                    }
+                });
+            }
+    
+            let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+            let mailMessageId3 = -1;
+            if(mailMessage3) mailMessageId3 = mailMessage3.id;
+    
+            // check if the config is present, or give a message error
+            if (prefs.ollama_host == '') {
+                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                return;
+            }
+            if (prefs.ollama_model == '') {
+                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                return;
+            }
+    
+            browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, do_custom_text: do_custom_text});
+            break;  // ollama_api
     }
 }
 
