@@ -432,7 +432,7 @@
     "description": ""
   },
   "chagpt_api_connecting": {
-    "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita...",
+    "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita",
     "description": ""
   }
 }

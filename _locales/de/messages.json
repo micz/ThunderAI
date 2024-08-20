@@ -432,7 +432,7 @@
     "description": ""
   },
   "chagpt_api_connecting": {
-    "message": "Versucht, eine Verbindung zu OpenAI ChatGPT mit dem angegebenen API-Schlüssel herzustellen...",
+    "message": "Versucht, eine Verbindung zu OpenAI ChatGPT mit dem angegebenen API-Schlüssel herzustellen",
     "description": ""
   }
 }

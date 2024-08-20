@@ -42,6 +42,7 @@ import { OpenAI } from '../js/api/openai.js';
 let chatgpt_api_key = null;
 let chatgpt_model = '';
 let openai = null;
+let stopStreaming = false;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -107,6 +108,13 @@ self.onmessage = async function(event) {
         const decoder = new TextDecoder("utf-8");
     
         while (true) {
+            if (stopStreaming) {
+                stopStreaming = false;
+                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                assistantResponseAccumulator = '';
+                postMessage({ type: 'tokensDone' });
+                break;
+            }
             const { done, value } = await reader.read();
             if (done) {
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
@@ -133,5 +141,7 @@ self.onmessage = async function(event) {
                 }
             }
         }
+    } else if (event.data.type === 'stop') {
+        stopStreaming = true;
     }
 };

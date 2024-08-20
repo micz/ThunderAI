@@ -50,6 +50,12 @@ messagesInputStyle .textContent = `
         cursor: pointer;
         border-radius: 10px;
     }
+    #stopButton {
+        width: 44px;
+        height: 36px;
+        cursor: pointer;
+        border-radius: 10px;
+    }
     @media (prefers-color-scheme: dark) {
     #messageInputField {
         background-color: #303030;
@@ -87,7 +93,32 @@ sendIcon.appendChild(sendPath);
 sendButton.appendChild(sendIcon);
 messageInputTemplate.content.appendChild(sendButton);
 
+const stopButton = document.createElement('button');
+stopButton.id = 'stopButton';
+stopButton.style.display = 'none';
+
+const stopIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+stopIcon.setAttribute('width', '24');
+stopIcon.setAttribute('height', '24');
+stopIcon.setAttribute('viewBox', '0 0 24 24');
+stopIcon.setAttribute('fill', 'none');
+stopIcon.classList.add('text-white', 'dark:text-black');
+
+const stopRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+stopRect.setAttribute('x', '6');
+stopRect.setAttribute('y', '6');
+stopRect.setAttribute('width', '12');
+stopRect.setAttribute('height', '12');
+stopRect.setAttribute('fill', 'currentColor');
+
+stopIcon.appendChild(stopRect);
+stopButton.appendChild(stopIcon);
+messageInputTemplate.content.appendChild(stopButton);
+
 class MessageInput extends HTMLElement {
+
+    model = '';
+
     constructor() {
         super();
         const shadowRoot = this.attachShadow({ mode: 'open' });
@@ -95,9 +126,11 @@ class MessageInput extends HTMLElement {
 
         this._messageInputField = shadowRoot.querySelector('#messageInputField');
         this._sendButton = shadowRoot.querySelector('#sendButton');
+        this._stopButton = shadowRoot.querySelector('#stopButton');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
+        this._stopButton.addEventListener('click', this._handleStopClick.bind(this));
     }
 
     connectedCallback() {
@@ -107,12 +140,16 @@ class MessageInput extends HTMLElement {
 
     async init(worker) {
         this.worker = worker;
-        let prefs_api = await browser.storage.sync.get({chatgpt_model: ''});
-        this._sendButton.title = await browser.i18n.getMessage("chagtp_api_send_button") + ": " + prefs_api.chatgpt_model;
     }
 
     setMessagesArea(messagesAreaComponent) {
         this.messagesAreaComponent = messagesAreaComponent;
+    }
+
+    setModel(model){
+        this.model = model;
+        this._sendButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
+        this._stopButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
     }
 
     handleMessageSent() {
@@ -123,8 +160,12 @@ class MessageInput extends HTMLElement {
     enableInput() {
         // console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
-        this._sendButton.removeAttribute('disabled');
         this._messageInputField.removeAttribute('disabled');
+        this._sendButton.removeAttribute('disabled');
+        this._sendButton.style.display = 'block';
+        this._stopButton.setAttribute('disabled', 'disabled');
+        this._stopButton.style.display = 'none';
+        this._stopButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
     }
 
     _handleKeyDown(event) {
@@ -137,6 +178,12 @@ class MessageInput extends HTMLElement {
         this._handleNewChatMessage();
     }
 
+    _handleStopClick() {
+        this.worker.postMessage({ type: 'stop' });
+        this._stopButton.setAttribute('disabled', 'disabled');
+        this._stopButton.title = 'Stopping...';
+    }
+
     _handleNewChatMessage() {
         //do nothing if input is empty
         if ((!this._messageInputField.value)||(this._messageInputField.value.trim().length === 0)) {
@@ -144,6 +191,9 @@ class MessageInput extends HTMLElement {
         }
         // prevent user from interacting while we're waiting
         this._sendButton.setAttribute('disabled', 'disabled');
+        this._sendButton.style.display = 'none';
+        this._stopButton.removeAttribute('disabled');
+        this._stopButton.style.display = 'block';
         this._messageInputField.setAttribute('disabled', 'disabled');
         let messageContent = this._messageInputField.value;
         this._messageInputField.value = '';

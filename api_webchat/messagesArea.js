@@ -100,6 +100,7 @@ messagesAreaTemplate.content.appendChild(messagesDiv);
 class MessagesArea extends HTMLElement {
 
     fullTextHTML = "";
+    llmName = "LLM";
 
     constructor() {
         super();
@@ -117,7 +118,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = "ChatGTP";
+            header.textContent = this.llmName;
             this.messages.appendChild(header);
         }
 
@@ -128,6 +129,10 @@ class MessagesArea extends HTMLElement {
 
     init(worker) {
         this.worker = worker;
+    }
+
+    setLLMName(llmName) {
+        this.llmName = llmName;
     }
 
     handleTokensDone(promptData = null) {

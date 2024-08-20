@@ -68,24 +68,25 @@ let promptData = null;
 // }
 // ============================== TESTING - END
 
-const params = new URLSearchParams(window.location.search);
-
 switch (llm) {
     case "chatgpt_api":
         let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
         //console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
+        messageInput.setModel(prefs_api.chatgpt_model);
+        messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting"), "info");
+        messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " " + prefs_api.chatgpt_model + " ...", "info");
         break;
     case "ollama_api": {
         let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
         //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
+        messageInput.setModel(prefs_api.ollama_model);
+        messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " " + prefs_api.ollama_host + " ...", "info");
+        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " " + prefs_api.ollama_host + " " +browser.i18n.getMessage("AndModel") + " " + prefs_api.ollama_model + " ...", "info");
         break;
     }
 }
-
 
 
 // Event listeners for worker messages

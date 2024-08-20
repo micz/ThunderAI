@@ -25,66 +25,80 @@ import { Ollama } from '../js/api/ollama.js';
 let ollama_host = null;
 let ollama_model = '';
 let ollama = null;
+let stopStreaming = false;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
-    if (event.data.type === 'init') {
-        ollama_host = event.data.ollama_host;
-        ollama_model = event.data.ollama_model;
-        //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
-        ollama = new Ollama(ollama_host, ollama_model, true);
-    } else if (event.data.type === 'chatMessage') {
-        conversationHistory.push({ role: 'user', content: event.data.message });
-        //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
-    const response = await ollama.fetchResponse(conversationHistory); //4096);
-        postMessage({ type: 'messageSent' });
+    switch (event.data.type) {
+        case 'init':
+            ollama_host = event.data.ollama_host;
+            ollama_model = event.data.ollama_model;
+            //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
+            ollama = new Ollama(ollama_host, ollama_model, true);
+            break;  // init
+        case 'chatMessage':
+            conversationHistory.push({ role: 'user', content: event.data.message });
+            //console.log(">>>>>>>>>>> conversationHistory: " + JSON.stringify(conversationHistory));
+            const response = await ollama.fetchResponse(conversationHistory); //4096);
+            postMessage({ type: 'messageSent' });
 
-        if (!response.ok) {
-            let error_message = '';
-            let errorDetail = '';
-            if(response.is_exception === true){
-                error_message = response.error;
-            }else{
-                const errorJSON = await response.json();
-                errorDetail = JSON.stringify(errorJSON);
-                error_message = errorJSON.error;
-                //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+            if (!response.ok) {
+                let error_message = '';
+                let errorDetail = '';
+                if(response.is_exception === true){
+                    error_message = response.error;
+                }else{
+                    const errorJSON = await response.json();
+                    errorDetail = JSON.stringify(errorJSON);
+                    error_message = errorJSON.error;
+                    //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                }
+                postMessage({ type: 'error', payload: "Ollama API request failed: " + error_message });
+                throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
             }
-            postMessage({ type: 'error', payload: "Ollama API request failed: " + error_message });
-            throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
-        }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-    
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
-                assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
-                break;
-            }
-            // lots of low-level Ollama response parsing stuff
-            const chunk = decoder.decode(value);
-            //console.log(">>>>>>>>>>>>> chunk: " + chunk);
-            const lines = chunk.split("\n");
-            const parsedLines = lines
-                .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
-                .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                .map((line) => JSON.parse(line)); // Parse the JSON string
-    
-            for (const parsedLine of parsedLines) {
-                const { message } = parsedLine;
-                const { content } = message;
-                // Update the UI with the new content
-                if (content) {
-                    assistantResponseAccumulator += content;
-                    postMessage({ type: 'newToken', payload: { token: content } });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+        
+            while (true) {
+                if (stopStreaming) {
+                    stopStreaming = false;
+                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                    assistantResponseAccumulator = '';
+                    postMessage({ type: 'tokensDone' });
+                    break;
+                }
+                const { done, value } = await reader.read();
+                if (done) {
+                    conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                    assistantResponseAccumulator = '';
+                    postMessage({ type: 'tokensDone' });
+                    break;
+                }
+                // lots of low-level Ollama response parsing stuff
+                const chunk = decoder.decode(value);
+                //console.log(">>>>>>>>>>>>> chunk: " + chunk);
+                const lines = chunk.split("\n");
+                const parsedLines = lines
+                    .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
+                    .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                    .map((line) => JSON.parse(line)); // Parse the JSON string
+        
+                for (const parsedLine of parsedLines) {
+                    const { message } = parsedLine;
+                    const { content } = message;
+                    // Update the UI with the new content
+                    if (content) {
+                        assistantResponseAccumulator += content;
+                        postMessage({ type: 'newToken', payload: { token: content } });
+                    }
                 }
             }
-        }
-    }
+            break; //chatMessage
+        case 'stop':
+            stopStreaming = true;
+            break; //stop
+     }
 };
