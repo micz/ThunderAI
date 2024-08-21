@@ -28,8 +28,8 @@ let selectionChangeTimeout = null;
 let isDragging = false;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    const textArea = document.querySelector('form textarea'),
-            sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
+    const textArea = document.querySelector('form textarea');
+    let sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
             || document.querySelector('[data-testid="send-button"]'); // pre-GPT-4o
     //check if the textarea has been found
     if(!textArea) {
@@ -42,10 +42,15 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
         return -1;
     }
     const delaySend = setInterval(() => {
+        //console.log(">>>>>>>>>> sendButton disabled: " + sendButton?.hasAttribute('disabled'));
         if (!sendButton?.hasAttribute('disabled')) { // send msg
             method.toLowerCase() == 'click' ? sendButton.click()
                 : textArea.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 13, bubbles: true }));
             clearInterval(delaySend);
+        }else{
+            //console.error(">>>>>>>>>> The sendButton seems to be disabled! Trying again...");
+         sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
+            || document.querySelector('[data-testid="send-button"]');
         }
     }, 25);
     return 0;   //everything is ok
@@ -285,6 +290,7 @@ async function doProceed(message, customText = ''){
     }
     //await chatgpt.isLoaded();
     let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
+    console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found
             let curr_msg = document.getElementById('mzta-curr_msg');
