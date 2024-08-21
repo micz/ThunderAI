@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 2.0.7 - 21/08/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.0.6 - 19/08/2024</h2>
   <ul>
     <li>Some minor improvements.</li>
