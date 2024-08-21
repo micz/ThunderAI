@@ -24,7 +24,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
 
-console.log(">>>>>>>>>>> llm: " + llm);
+//console.log(">>>>>>>>>>> llm: " + llm);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
@@ -105,6 +105,7 @@ worker.onmessage = function(event) {
             break;
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
+            messageInput.enableInput();
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -129,6 +130,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
+            messageInput.enableInput();
             break;
     }
 });
