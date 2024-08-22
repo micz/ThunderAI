@@ -196,20 +196,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         while(!done1){
             try {
-                browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
-                    .then(async () => {
-                        taLog.log("[ThunderAI] ChatGPT web interface script injected successfully");
-                        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-                        let mailMessageId = -1;
-                        if(mailMessage) mailMessageId = mailMessage.id;
-                        browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
-                    })
-                    .catch(err => {
-                        console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
-                    });
+                await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
+                let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId = -1;
+                if(mailMessage) mailMessageId = mailMessage.id;
+                browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+                taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                 done1 = true;
             } catch (error) {
-                console.error('[ThunderAI] Error sending message to ChatGPT Web Interface: ', error);
+                console.error('[ThunderAI] ChatGPT Web error injecting the script: ', error);
                 done1 = false;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
