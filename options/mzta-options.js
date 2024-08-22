@@ -220,36 +220,42 @@ select_ollama_model.appendChild(ollama_option);
   document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
     document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
     let ollama = new Ollama(document.getElementById("ollama_host").value, true);
-    let data = await ollama.fetchModels();
-    if(!data){
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
-      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      return;
-    }
-    if(!data.ok){
-      let errorDetail = JSON.parse(data.error);
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
-      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail.error.message);
-      return;
-    }
-    if(data.response.models.length == 0){
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
-      console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("Ollama_Models_Error_NoModels"));
-      return;
-    }
-    taLog.log("Ollama models: " + JSON.stringify(data));
-    data.response.models.forEach(model => {
-      if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
-        const option = document.createElement('option');
-        option.value = model.model;
-        option.text = model.name + " (" + model.model + ")";
-        select_ollama_model.appendChild(option);
+    try {
+      let data = await ollama.fetchModels();
+      if(!data){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        return;
       }
-    });
-    document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      if(!data.ok){
+        let errorDetail = JSON.parse(data.error);
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail.error.message);
+        return;
+      }
+      if(data.response.models.length == 0){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("Ollama_Models_Error_NoModels"));
+        return;
+      }
+      taLog.log("Ollama models: " + JSON.stringify(data));
+      data.response.models.forEach(model => {
+        if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
+          const option = document.createElement('option');
+          option.value = model.model;
+          option.text = model.name + " (" + model.model + ")";
+          select_ollama_model.appendChild(option);
+        }
+      });
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+    } catch (error) {
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
+    }
     
     warnAPIKeyEmpty();
   });
