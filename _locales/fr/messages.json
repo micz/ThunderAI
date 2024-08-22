@@ -320,7 +320,7 @@
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Pour utiliser l'API ChatGPT, vous avez besoin d'une clé API OpenAI ChatGPT et devez choisir un modèle. Si vous ne le faites pas, ThunderAI utilisera l'interface web de ChatGPT par défaut.",
+    "message": "Pour utiliser l'API ChatGPT, vous avez besoin d'une clé API OpenAI ChatGPT et devez choisir un modèle.",
     "description": ""
   },
   "prefsInfoDesc_3": {
