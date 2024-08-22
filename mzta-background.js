@@ -142,7 +142,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
-    taLog = new taLogger("mzta-background",prefs.do_debug);
+    taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     taLog.log("[ThunderAI] Prompt length: " + promptText.length);
