@@ -167,23 +167,23 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let createdTab = newWindow.tabs[0];
 
         // Wait for tab loaded.
-        await new Promise(resolve => {
-            const tabIsLoaded = tab => {
-                return tab.status == "complete" && tab.url != "about:blank";
-            };
-            const listener = (tabId, changeInfo, updatedTab) => {
-                if (tabIsLoaded(updatedTab)) {
-                    browser.tabs.onUpdated.removeListener(listener);
-                    resolve();
-                }
-            }
-            // Early exit if loaded already
-            if (tabIsLoaded(createdTab)) {
-                resolve();
-            } else {
-                browser.tabs.onUpdated.addListener(listener);
-            }
-        });
+        // await new Promise(resolve => {
+        //     const tabIsLoaded = tab => {
+        //         return tab.status == "complete" && tab.url != "about:blank";
+        //     };
+        //     const listener = (tabId, changeInfo, updatedTab) => {
+        //         if (tabIsLoaded(updatedTab)) {
+        //             browser.tabs.onUpdated.removeListener(listener);
+        //             resolve();
+        //         }
+        //     }
+        //     // Early exit if loaded already
+        //     if (tabIsLoaded(createdTab)) {
+        //         resolve();
+        //     } else {
+        //         browser.tabs.onUpdated.addListener(listener);
+        //     }
+        // });
 
         let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
         let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
@@ -192,17 +192,28 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
         `;
 
-        browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
-            .then(async () => {
-                taLog.log("[ThunderAI] ChatGPT web interface script injected successfully");
-                let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-                let mailMessageId = -1;
-                if(mailMessage) mailMessageId = mailMessage.id;
-                browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
-            })
-            .catch(err => {
-                console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
-            });
+        let done1 = false;
+
+        while(!done1){
+            try {
+                browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
+                    .then(async () => {
+                        taLog.log("[ThunderAI] ChatGPT web interface script injected successfully");
+                        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                        let mailMessageId = -1;
+                        if(mailMessage) mailMessageId = mailMessage.id;
+                        browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+                    })
+                    .catch(err => {
+                        console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
+                    });
+                done1 = true;
+            } catch (error) {
+                console.error('[ThunderAI] Error sending message to ChatGPT Web Interface: ', error);
+                done1 = false;
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
     break;  // chatgpt_web
 
     case 'chatgpt_api':
@@ -217,26 +228,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         createdWindowID = newWindow2.id;
         let createdTab2 = newWindow2.tabs[0];
 
-        if(await isThunderbird128OrGreater()){
-            // Wait for tab loaded.
-            await new Promise(resolve => {
-                const tabIsLoaded2 = tab => {
-                    return tab.status == "complete" && tab.url != "about:blank";
-                };
-                const listener2 = (tabId, changeInfo, updatedTab) => {
-                    if (tabIsLoaded2(updatedTab)) {
-                        browser.tabs.onUpdated.removeListener(listener2);
-                        resolve();
-                    }
-                }
-                // Early exit if loaded already
-                if (tabIsLoaded2(createdTab2)) {
-                    resolve();
-                } else {
-                    browser.tabs.onUpdated.addListener(listener2);
-                }
-            });
-        }
+        // if(await isThunderbird128OrGreater()){
+        //     // Wait for tab loaded.
+        //     await new Promise(resolve => {
+        //         const tabIsLoaded2 = tab => {
+        //             return tab.status == "complete" && tab.url != "about:blank";
+        //         };
+        //         const listener2 = (tabId, changeInfo, updatedTab) => {
+        //             if (tabIsLoaded2(updatedTab)) {
+        //                 browser.tabs.onUpdated.removeListener(listener2);
+        //                 resolve();
+        //             }
+        //         }
+        //         // Early exit if loaded already
+        //         if (tabIsLoaded2(createdTab2)) {
+        //             resolve();
+        //         } else {
+        //             browser.tabs.onUpdated.addListener(listener2);
+        //         }
+        //     });
+        // }
 
         let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
         let mailMessageId2 = -1;
@@ -252,7 +263,18 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             return;
         }
 
-        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+        let done2 = false;
+
+        while(!done2){
+            try {
+                browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                done2 = true;
+            } catch (error) {
+                console.error('[ThunderAI] Error sending message to OpenAI ChatGPI API: ', error);
+                done2 = false;
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
         break;  // chatgpt_api
 
         case 'ollama_api':
@@ -267,26 +289,26 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             createdWindowID = newWindow3.id;
             let createdTab3 = newWindow3.tabs[0];
     
-            if(await isThunderbird128OrGreater()){
+           // if(await isThunderbird128OrGreater()){
                 // Wait for tab loaded.
-                await new Promise(resolve => {
-                    const tabIsLoaded3 = tab => {
-                        return tab.status == "complete" && tab.url != "about:blank";
-                    };
-                    const listener3 = (tabId, changeInfo, updatedTab) => {
-                        if (tabIsLoaded3(updatedTab)) {
-                            browser.tabs.onUpdated.removeListener(listener3);
-                            resolve();
-                        }
-                    }
-                    // Early exit if loaded already
-                    if (tabIsLoaded3(createdTab3)) {
-                        resolve();
-                    } else {
-                        browser.tabs.onUpdated.addListener(listener3);
-                    }
-                });
-            }
+                // await new Promise(resolve => {
+                //     const tabIsLoaded3 = tab => {
+                //         return tab.status == "complete" && tab.url != "about:blank";
+                //     };
+                //     const listener3 = (tabId, changeInfo, updatedTab) => {
+                //         if (tabIsLoaded3(updatedTab)) {
+                //             browser.tabs.onUpdated.removeListener(listener3);
+                //             resolve();
+                //         }
+                //     }
+                //     // Early exit if loaded already
+                //     if (tabIsLoaded3(createdTab3)) {
+                //         resolve();
+                //     } else {
+                //         browser.tabs.onUpdated.addListener(listener3);
+                //     }
+                // });
+            //}
     
             let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
             let mailMessageId3 = -1;
@@ -301,8 +323,19 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
                 return;
             }
-    
-            browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+            
+            let done3 = false;
+
+            while(!done3){
+                try {
+                   await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                   done3 = true;
+                } catch (error) {
+                    console.error('[ThunderAI] Error sending message to Ollama API: ', error);
+                    done3 = false;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
             break;  // ollama_api
     }
 }
