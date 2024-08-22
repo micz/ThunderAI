@@ -10,6 +10,7 @@
     <li><i>[ChatGPT API][Ollama API]</i> Added a "Stop" button to stop the current elaboration [<a href="https://github.com/micz/ThunderAI/issues/113">#113</a>].
     <li><i>[ChatGPT API]</i> If the configuration is missing the model or the API key, an error message is now provided, and there is no more fallback to the ChatGPT web interface [<a href="https://github.com/micz/ThunderAI/issues/111">#111</a>].</li>
     <li><i>[ChatGPT API][Ollama API]</i> Improved chat colors scheme for darkmode.</li>
+    <li><i>[ChatGPT API][Ollama API]</i> Added a status message to give feedback to the user about the current operation [<a href="https://github.com/micz/ThunderAI/issues/119">#119</a>].</li>
     <li>...</li>
   </ul>
 <h2>Version 2.0.5 - 19/08/2024</h2>
