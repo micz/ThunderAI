@@ -201,11 +201,12 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mailMessageId = -1;
                 if(mailMessage) mailMessageId = mailMessage.id;
                 browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+                taLog.log('[ChatGPT Web] Connection succeded!');
                 taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                 done1 = true;
             } catch (error) {
-                console.error('[ThunderAI] [ChatGPT Web] Error connecting to the window chat: ', error);
-                console.error('[ThunderAI] [ChatGPT Web] trying again...');
+                taLog.warn('[ChatGPT Web] Error connecting to the window chat: ', error);
+                taLog.warn('[ChatGPT Web] Trying again...');
                 done1 = false;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -264,10 +265,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         while(!done2){
             try {
                 browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                taLog.log('[OpenAI ChatGPI] Connection succeded!');
                 done2 = true;
             } catch (error) {
-                console.error('[ThunderAI] [OpenAI ChatGPI API] Error connecting to the window chat: ', error);
-                console.error('[ThunderAI] [OpenAI ChatGPI API] trying again...');
+                taLog.warn('[OpenAI ChatGPI API] Error connecting to the window chat: ', error);
+                taLog.warn('[OpenAI ChatGPI API] Trying again...');
                 done2 = false;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -326,10 +328,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             while(!done3){
                 try {
                    await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                   taLog.log('[Ollama API] Connection succeded!');
                    done3 = true;
                 } catch (error) {
-                    console.error('[ThunderAI] [Ollama API] Error connecting to the window chat: ', error);
-                    console.error('[ThunderAI] [Ollama API] trying again...');
+                    taLog.warn('[Ollama API] Error connecting to the window chat: ', error);
+                    taLog.warn('[Ollama API] Trying again...');
                     done3 = false;
                 }
                 await new Promise(resolve => setTimeout(resolve, 500));
