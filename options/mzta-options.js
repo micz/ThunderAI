@@ -124,7 +124,7 @@ function showConnectionOptions() {
   });
 }
 
-function warnAPIKeyEmpty() {
+function warn_ChatGPT_APIKeyEmpty() {
   let apiKeyInput = document.getElementById('chatgpt_api_key');
   let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
   let modelChatGPT = document.getElementById('chatgpt_model');
@@ -142,6 +142,28 @@ function warnAPIKeyEmpty() {
       modelChatGPT.style.border = '2px solid red';
     }else{
       modelChatGPT.style.border = 'none';
+    }
+  }
+}
+
+function warn_Ollama_HostEmpty() {
+  let hostInput = document.getElementById('ollama_host');
+  let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
+  let modelOllama = document.getElementById('ollama_model');
+  if(hostInput.value === ''){
+    hostInput.style.border = '2px solid red';
+    btnFetchOllamaModels.disabled = true;
+    modelOllama.disabled = true;
+    modelOllama.selectedIndex = -1;
+    modelOllama.style.border = 'none';
+  }else{
+    hostInput.style.border = 'none';
+    btnFetchOllamaModels.disabled = false;
+    modelOllama.disabled = false;
+    if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
+      modelOllama.style.border = '2px solid red';
+    }else{
+      modelOllama.style.border = 'none';
     }
   }
 }
@@ -170,8 +192,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", showConnectionOptions);
-  conntype_select.addEventListener("change", warnAPIKeyEmpty);
-  document.getElementById("chatgpt_api_key").addEventListener("change", warnAPIKeyEmpty);
+  conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
+  document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
 
   let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: ''});
   
@@ -181,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   chatgpt_option.value = prefs.chatgpt_model;
   chatgpt_option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(chatgpt_option);
-  select_chatgpt_model.addEventListener("change", warnAPIKeyEmpty);
+  select_chatgpt_model.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
     document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
@@ -206,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
     })
     
-    warnAPIKeyEmpty();
+    warn_ChatGPT_APIKeyEmpty();
   });
 
 // Ollama API Model fetching
@@ -215,7 +239,7 @@ const ollama_option = document.createElement('option');
 ollama_option.value = prefs.ollama_model;
 ollama_option.text = prefs.ollama_model;
 select_ollama_model.appendChild(ollama_option);
-// select_ollama_model.addEventListener("change", warnAPIKeyEmpty);
+select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
 
   document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
     document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
@@ -257,6 +281,6 @@ select_ollama_model.appendChild(ollama_option);
       alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
     }
     
-    warnAPIKeyEmpty();
+    warn_Ollama_HostEmpty();
   });
 }, { once: true });
