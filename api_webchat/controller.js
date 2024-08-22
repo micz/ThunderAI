@@ -101,6 +101,7 @@ worker.onmessage = function(event) {
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
+            messageInput.setStatusMessage('Receiving data...');
             break;
         case 'tokensDone':
             messagesArea.handleTokensDone(promptData);

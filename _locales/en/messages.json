@@ -490,5 +490,9 @@
   "ollama_api_request_failed": {
     "message": "Ollama API request failed",
     "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "Waiting for the server response",
+    "description": ""
   }
 }

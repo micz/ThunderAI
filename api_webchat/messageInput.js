@@ -56,6 +56,16 @@ messagesInputStyle .textContent = `
         cursor: pointer;
         border-radius: 10px;
     }
+    #statusLogger{
+        font-size: 0.8rem;
+        position: absolute;
+        bottom: 1.5em;
+        right: 5em;
+        border: 1px solid lightgrey;
+        border-radius: 5px;
+        padding: 5px;
+        background: #212121;
+    }
     @media (prefers-color-scheme: dark) {
     #messageInputField {
         background-color: #303030;
@@ -115,6 +125,12 @@ stopIcon.appendChild(stopRect);
 stopButton.appendChild(stopIcon);
 messageInputTemplate.content.appendChild(stopButton);
 
+const statusLogger = document.createElement('div');
+statusLogger.id = 'statusLogger';
+statusLogger.textContent = '';
+statusLogger.style.display = 'none';
+messageInputTemplate.content.appendChild(statusLogger);
+
 class MessageInput extends HTMLElement {
 
     model = '';
@@ -127,6 +143,7 @@ class MessageInput extends HTMLElement {
         this._messageInputField = shadowRoot.querySelector('#messageInputField');
         this._sendButton = shadowRoot.querySelector('#sendButton');
         this._stopButton = shadowRoot.querySelector('#stopButton');
+        this._statusLogger = shadowRoot.querySelector('#statusLogger');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
@@ -166,6 +183,20 @@ class MessageInput extends HTMLElement {
         this._stopButton.setAttribute('disabled', 'disabled');
         this._stopButton.style.display = 'none';
         this._stopButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
+        this.hideStatusMessage();
+        this.setStatusMessage('');
+    }
+
+    setStatusMessage(message) {
+        this._statusLogger.textContent = message;
+    }
+
+    showStatusMessage() {
+        this._statusLogger.style.display = 'block';
+    }
+
+    hideStatusMessage() {
+        this._statusLogger.style.display = 'none';
     }
 
     _handleKeyDown(event) {
@@ -200,6 +231,8 @@ class MessageInput extends HTMLElement {
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
+        this.setStatusMessage(browser.i18n.getMessage('WaitingServerReponse') + '...');
+        this.showStatusMessage();
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }
 
