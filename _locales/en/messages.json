@@ -482,5 +482,13 @@
   "andModel": {
     "message": "and model",
     "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "The connection to the server was unexpectedly interrupted",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "Ollama API request failed",
+    "description": ""
   }
 }

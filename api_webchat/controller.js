@@ -79,10 +79,13 @@ switch (llm) {
         break;
     case "ollama_api": {
         let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+        let i18nStrings = {};
+        i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
+        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model});
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " " + prefs_api.ollama_host + " " +browser.i18n.getMessage("AndModel") + " " + prefs_api.ollama_model + " ...", "info");
         break;
     }
