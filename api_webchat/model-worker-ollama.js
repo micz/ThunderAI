@@ -65,9 +65,11 @@ self.onmessage = async function(event) {
             while (true) {
                 if (stopStreaming) {
                     stopStreaming = false;
+                    reader.cancel();
                     conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                     assistantResponseAccumulator = '';
                     postMessage({ type: 'tokensDone' });
+
                     break;
                 }
                 const { done, value } = await reader.read();
