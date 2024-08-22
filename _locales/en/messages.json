@@ -494,5 +494,9 @@
   "WaitingServerReponse": {
     "message": "Waiting for the server response",
     "description": ""
+  },
+  "prefs_Ollama_Host_Info": {
+    "message": "Something like",
+    "description": ""
   }
 }
