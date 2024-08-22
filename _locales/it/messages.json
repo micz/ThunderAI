@@ -284,7 +284,7 @@
     "description": ""
   },
   "prefs_OptionText_default_chatgpt_lang": {
-    "message": "Lingua predefinita per le risposte di ChatGPT",
+    "message": "Lingua predefinita per le risposte",
     "description": ""
   },
   "prefs_OptionText_reply_all": {
