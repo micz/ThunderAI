@@ -26,6 +26,10 @@ export class taLogger {
         this.prefix = "[ThunderAI Logger | " + prefix + "] ";
     }
 
+    changeDebug(do_debug) {
+        this.do_debug = do_debug;
+    }
+
     log(msg, do_debug = -1) {
         if(do_debug !== -1) this.do_debug = do_debug;
         if(this.do_debug === true) console.log(this.prefix + msg);
@@ -37,5 +41,5 @@ export class taLogger {
 
     warn(msg) {
         console.warn(this.prefix + msg);
-    }  
+    }
 };
