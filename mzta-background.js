@@ -204,7 +204,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                 done1 = true;
             } catch (error) {
-                console.error('[ThunderAI] ChatGPT Web error injecting the script: ', error);
+                console.error('[ThunderAI] [ChatGPT Web] Error connecting to the window chat: ', error);
+                console.error('[ThunderAI] [ChatGPT Web] trying again...');
                 done1 = false;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -265,7 +266,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
                 done2 = true;
             } catch (error) {
-                console.error('[ThunderAI] Error sending message to OpenAI ChatGPI API: ', error);
+                console.error('[ThunderAI] [OpenAI ChatGPI API] Error connecting to the window chat: ', error);
+                console.error('[ThunderAI] [OpenAI ChatGPI API] trying again...');
                 done2 = false;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -326,7 +328,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                    await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
                    done3 = true;
                 } catch (error) {
-                    console.error('[ThunderAI] Error sending message to Ollama API: ', error);
+                    console.error('[ThunderAI] [Ollama API] Error connecting to the window chat: ', error);
+                    console.error('[ThunderAI] [Ollama API] trying again...');
                     done3 = false;
                 }
                 await new Promise(resolve => setTimeout(resolve, 500));
