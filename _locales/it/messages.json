@@ -324,7 +324,7 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": " ",
+    "message": "Per utilizzare l'integrazione con Ollama, è necessario configurare un server Ollama locale. Una volta che il server è attivo, inserisci il suo indirizzo nel campo designato all'interno dell'applicazione. Per garantire una corretta comunicazione tra l'app e il server Ollama, ricorda di impostare OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsDonation_1": {

@@ -324,7 +324,7 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": " ",
+    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between the app and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsDonation_1": {
