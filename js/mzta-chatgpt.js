@@ -426,6 +426,29 @@ function selectContentOnMouseUp(event) {
         // If no dragging has occurred, execute the selection code
         selectContentOnClick(event);
     }
+
+
+    // Capture the text selection and insert markers
+    const selection = window.getSelection();
+    
+    if (!selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+
+        // Create and insert the markers
+        const startMarker = createMarker('start-marker');
+        const endMarker = createMarker('end-marker');
+
+        range.insertNode(startMarker);
+
+        //selection.removeAllRanges();
+        range.setStartAfter(startMarker);
+
+        range.collapse(false);
+        range.insertNode(endMarker);
+
+        //selection.removeAllRanges();
+    }
+
     // Remove the event listeners to prevent future executions
     // document.removeEventListener('mousedown', selectContentOnMouseDown);
     // document.removeEventListener('mousemove', selectContentOnMouseMove);
@@ -436,32 +459,69 @@ function selectContentOnClick(event) {
     if(current_action === '0'){
         return;
     }
-
     // Prevent the default behavior of the click
     event.preventDefault();
-
     // Get the element that was clicked
     var clickedElement = event.target;
-
     // Traverse the DOM upwards to find the nearest parent div
     var parentDiv = clickedElement.closest('div');
-
     if (parentDiv) {
         // Create a range object
         var range = document.createRange();
-
         // Select the contents of the div
         range.selectNodeContents(parentDiv);
-
         // Get the selection object
         var selection = window.getSelection();
-
         // Clear any existing selections
         selection.removeAllRanges();
-
         // Add the new range to the selection
         selection.addRange(range);
     }
+}
+
+// Function to create a marker with draggable attribute
+function createMarker(id) {
+    const marker = document.createElement('span');
+    marker.id = id;
+    marker.textContent = '||||';
+    marker.draggable = true;
+    marker.style.cursor = 'move';
+    
+    marker.addEventListener('dragstart', onDragStart);
+    marker.addEventListener('dragover', onDragOver);
+    marker.addEventListener('drop', onDrop);
+    marker.addEventListener('dragend', onDragEnd);
+    
+    return marker;
+}
+
+// Function called at the start of the drag
+function onDragStart(event) {
+    event.dataTransfer.setData('text/plain', event.target.id);
+}
+
+// Allow dragover (necessary to enable drop)
+function onDragOver(event) {
+    event.preventDefault();
+}
+
+// Function called at the time of the drop
+function onDrop(event) {
+    event.preventDefault();
+    
+    const id = event.dataTransfer.getData('text/plain');
+    const draggedElement = document.getElementById(id);
+    
+    if (draggedElement) {
+        const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+        range.insertNode(draggedElement);
+    }
+}
+
+// Function called at the end of the drag (can be used for cleanup or other actions)
+function onDragEnd(event) {
+    // Optional actions at the end of the drag, e.g., removing any remaining selections
+    window.getSelection().removeAllRanges();
 }
 
 
