@@ -23,6 +23,7 @@
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
+const call_id = urlParams.get('call_id');
 
 //console.log(">>>>>>>>>>> llm: " + llm);
 
@@ -35,6 +36,7 @@ switch (llm) {
         worker = new Worker('model-worker-openai.js', { type: 'module' });
         break;
     case "ollama_api": {
+        browser.runtime.sendMessage({command: "ollama_api_ready_"+call_id});
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
         break;
     }

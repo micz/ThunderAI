@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, isThunderbird128OrGreater } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID } from './js/mzta-utils.js';
 
 var createdWindowID = null;
 var original_html = '';
@@ -278,65 +278,56 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         case 'ollama_api':
             // We are using the Ollama API
-            let newWindow3 = await browser.windows.create({
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type),
+
+            taLog.log("Ollama API window opening...");
+
+            let rand_call_id = '_ollama_' + generateCallID();
+
+            await browser.windows.create({
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id),
                 type: "popup",
                 width: prefs.chatgpt_win_width,
                 height: prefs.chatgpt_win_height
             });
-    
-            createdWindowID = newWindow3.id;
-            let createdTab3 = newWindow3.tabs[0];
-    
-           // if(await isThunderbird128OrGreater()){
-                // Wait for tab loaded.
-                // await new Promise(resolve => {
-                //     const tabIsLoaded3 = tab => {
-                //         return tab.status == "complete" && tab.url != "about:blank";
-                //     };
-                //     const listener3 = (tabId, changeInfo, updatedTab) => {
-                //         if (tabIsLoaded3(updatedTab)) {
-                //             browser.tabs.onUpdated.removeListener(listener3);
-                //             resolve();
-                //         }
-                //     }
-                //     // Early exit if loaded already
-                //     if (tabIsLoaded3(createdTab3)) {
-                //         resolve();
-                //     } else {
-                //         browser.tabs.onUpdated.addListener(listener3);
-                //     }
-                // });
-            //}
-    
-            let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-            let mailMessageId3 = -1;
-            if(mailMessage3) mailMessageId3 = mailMessage3.id;
-    
-            // check if the config is present, or give a message error
-            if (prefs.ollama_host == '') {
-                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
-                return;
-            }
-            if (prefs.ollama_model == '') {
-                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
-                return;
-            }
-            
-            let done3 = false;
 
-            while(!done3){
-                try {
-                   await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
-                   taLog.log('[Ollama API] Connection succeded!');
-                   done3 = true;
-                } catch (error) {
-                    taLog.warn('[Ollama API] Error connecting to the window chat: ', error);
-                    taLog.warn('[Ollama API] Trying again...');
-                    done3 = false;
+            browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+
+                if (message.command === "ollama_api_ready_"+rand_call_id) {
+                    taLog.log("Ollama API window ready.");
+    
+                    let newWindow = await browser.windows.get(message.window_id);
+                    let createdTab3 = newWindow.tabs[0];
+                       
+                    let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                    let mailMessageId3 = -1;
+                if(mailMessage3) mailMessageId3 = mailMessage3.id;
+            
+                    // check if the config is present, or give a message error
+                    if (prefs.ollama_host == '') {
+                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                        return;
+                    }
+                    if (prefs.ollama_model == '') {
+                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                        return;
+                    }
+                    
+                    let done3 = false;
+
+                    while(!done3){
+                        try {
+                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                        taLog.log('[Ollama API] Connection succeded!');
+                        done3 = true;
+                        } catch (error) {
+                            taLog.warn('[Ollama API] Error connecting to the window chat: ', error);
+                            taLog.warn('[Ollama API] Trying again...');
+                            done3 = false;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
                 }
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
+            });
             break;  // ollama_api
     }
 }
