@@ -229,7 +229,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             if (message.command === "openai_api_ready_"+rand_call_id) {
 
-                let newWindow2 = await browser.windows.get(message.window_id);
+                let newWindow2 = await browser.windows.get(message.window_id, {populate: true});
                 let createdTab2 = newWindow2.tabs[0];
 
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
@@ -246,20 +246,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     return;
                 }
 
-                let done2 = false;
-
-                while(!done2){
-                    try {
-                        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
-                        taLog.log('[OpenAI ChatGPI] Connection succeded!');
-                        done2 = true;
-                    } catch (error) {
-                        taLog.warn('[OpenAI ChatGPI API] Error connecting to the window chat: ', error);
-                        taLog.warn('[OpenAI ChatGPI API] Trying again...');
-                        done2 = false;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
+                browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                taLog.log('[OpenAI ChatGPI] Connection succeded!');
                 browser.runtime.onMessage.removeListener(arguments.callee);
             }
         });
@@ -279,45 +267,37 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 height: prefs.chatgpt_win_height
             });
 
-            browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+            const listener3 = async (message, sender, sendResponse) => {
 
                 if (message.command === "ollama_api_ready_"+rand_call_id2) {
                     taLog.log("Ollama API window ready.");
-    
-                    let newWindow3 = await browser.windows.get(message.window_id);
+                    taLog.log("message.window_id: " + message.window_id)
+                    let newWindow3 = await browser.windows.get(message.window_id, {populate: true});
                     let createdTab3 = newWindow3.tabs[0];
-                       
+                    taLog.log(">>>>>> createdTab3.id: " + createdTab3.id)
                     let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                     let mailMessageId3 = -1;
                     if(mailMessage3) mailMessageId3 = mailMessage3.id;
+                    taLog.log(">>>>>> mailMessageId3: " + mailMessageId3)
             
                     // check if the config is present, or give a message error
                     if (prefs.ollama_host == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
                         return;
                     }
                     if (prefs.ollama_model == '') {
-                        browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
                         return;
                     }
-                    
-                    let done3 = false;
 
-                    while(!done3){
-                        try {
-                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
-                        taLog.log('[Ollama API] Connection succeded!');
-                        done3 = true;
-                        } catch (error) {
-                            taLog.warn('[Ollama API] Error connecting to the window chat: ', error);
-                            taLog.warn('[Ollama API] Trying again...');
-                            done3 = false;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                    browser.runtime.onMessage.removeListener(arguments.callee);
+                    await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                    taLog.log('[Ollama API] Connection succeded!');
+                    browser.runtime.onMessage.removeListener(listener3);
                 }
-            });
+            }
+
+            browser.runtime.onMessage.addListener(listener3);
+
             break;  // ollama_api
     }
 }
