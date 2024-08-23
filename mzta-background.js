@@ -20,9 +20,8 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, isThunderbird128OrGreater } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID } from './js/mzta-utils.js';
 
-var createdWindowID = null;
 var original_html = '';
 var modified_html = '';
 
@@ -58,7 +57,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
             case 'chatgpt_close':
-                    browser.windows.remove(createdWindowID).then(() => {
+                    browser.windows.remove(message.window_id).then(() => {
                         taLog.log("ChatGPT window closed successfully.");
                         return true;
                     }).catch((error) => {
@@ -163,146 +162,123 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         });
 
         taLog.log("[ThunderAI] ChatGPT web interface script started...");
-        createdWindowID = newWindow.id;
         let createdTab = newWindow.tabs[0];
+        let newWindowId = newWindow.id;
 
-        // Wait for tab loaded.
-        await new Promise(resolve => {
-            const tabIsLoaded = tab => {
-                return tab.status == "complete" && tab.url != "about:blank";
-            };
-            const listener = (tabId, changeInfo, updatedTab) => {
-                if (tabIsLoaded(updatedTab)) {
-                    browser.tabs.onUpdated.removeListener(listener);
-                    resolve();
-                }
-            }
-            // Early exit if loaded already
-            if (tabIsLoaded(createdTab)) {
-                resolve();
-            } else {
-                browser.tabs.onUpdated.addListener(listener);
-            }
-        });
-
-        let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+        let pre_script = `let mztaWinId = `+ newWindowId +`;
+        let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
         let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
         let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
         let mztaDoCustomText=`+ do_custom_text +`;
         let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
         `;
 
-        browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false })
-            .then(async () => {
-                taLog.log("[ThunderAI] ChatGPT web interface script injected successfully");
+        let done1 = false;
+
+        while(!done1){
+            try {
+                await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                 let mailMessageId = -1;
                 if(mailMessage) mailMessageId = mailMessage.id;
                 browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
-            })
-            .catch(err => {
-                console.error("[ThunderAI] ChatGPT web interface error injecting the script: ", err);
-            });
+                taLog.log('[ChatGPT Web] Connection succeded!');
+                taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
+                done1 = true;
+            } catch (error) {
+                taLog.warn('[ChatGPT Web] Error connecting to the window chat: ', error);
+                taLog.warn('[ChatGPT Web] Trying again...');
+                done1 = false;
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
     break;  // chatgpt_web
 
     case 'chatgpt_api':
         // We are using the ChatGPT API
-        let newWindow2 = await browser.windows.create({
-            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type),
+
+        let rand_call_id = '_openai_' + generateCallID();
+
+        await browser.windows.create({
+            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id),
             type: "popup",
             width: prefs.chatgpt_win_width,
             height: prefs.chatgpt_win_height
         });
 
-        createdWindowID = newWindow2.id;
-        let createdTab2 = newWindow2.tabs[0];
+        browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
-        if(await isThunderbird128OrGreater()){
-            // Wait for tab loaded.
-            await new Promise(resolve => {
-                const tabIsLoaded2 = tab => {
-                    return tab.status == "complete" && tab.url != "about:blank";
-                };
-                const listener2 = (tabId, changeInfo, updatedTab) => {
-                    if (tabIsLoaded2(updatedTab)) {
-                        browser.tabs.onUpdated.removeListener(listener2);
-                        resolve();
-                    }
+            if (message.command === "openai_api_ready_"+rand_call_id) {
+
+                let newWindow2 = await browser.windows.get(message.window_id, {populate: true});
+                let createdTab2 = newWindow2.tabs[0];
+
+                let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                let mailMessageId2 = -1;
+                if(mailMessage) mailMessageId2 = mailMessage.id;
+
+                // check if the config is present, or give a message error
+                if (prefs.chatgpt_api_key == '') {
+                    browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
+                    return;
                 }
-                // Early exit if loaded already
-                if (tabIsLoaded2(createdTab2)) {
-                    resolve();
-                } else {
-                    browser.tabs.onUpdated.addListener(listener2);
+                if (prefs.chatgpt_model == '') {
+                    browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
+                    return;
                 }
-            });
-        }
 
-        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-        let mailMessageId2 = -1;
-        if(mailMessage) mailMessageId2 = mailMessage.id;
-
-        // check if the config is present, or give a message error
-        if (prefs.chatgpt_api_key == '') {
-            browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_apikey')});
-            return;
-        }
-        if (prefs.chatgpt_model == '') {
-            browser.tabs.sendMessage(createdTab2.id, { command: "api_error", error: browser.i18n.getMessage('chatgpt_empty_model')});
-            return;
-        }
-
-        browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                taLog.log('[OpenAI ChatGPI] Connection succeded!');
+                browser.runtime.onMessage.removeListener(arguments.callee);
+            }
+        });
         break;  // chatgpt_api
 
         case 'ollama_api':
             // We are using the Ollama API
-            let newWindow3 = await browser.windows.create({
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type),
+
+            taLog.log("Ollama API window opening...");
+
+            let rand_call_id2 = '_ollama_' + generateCallID();
+
+            await browser.windows.create({
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2),
                 type: "popup",
                 width: prefs.chatgpt_win_width,
                 height: prefs.chatgpt_win_height
             });
-    
-            createdWindowID = newWindow3.id;
-            let createdTab3 = newWindow3.tabs[0];
-    
-            if(await isThunderbird128OrGreater()){
-                // Wait for tab loaded.
-                await new Promise(resolve => {
-                    const tabIsLoaded3 = tab => {
-                        return tab.status == "complete" && tab.url != "about:blank";
-                    };
-                    const listener3 = (tabId, changeInfo, updatedTab) => {
-                        if (tabIsLoaded3(updatedTab)) {
-                            browser.tabs.onUpdated.removeListener(listener3);
-                            resolve();
-                        }
+
+            const listener3 = async (message, sender, sendResponse) => {
+
+                if (message.command === "ollama_api_ready_"+rand_call_id2) {
+                    taLog.log("Ollama API window ready.");
+                    taLog.log("message.window_id: " + message.window_id)
+                    let newWindow3 = await browser.windows.get(message.window_id, {populate: true});
+                    let createdTab3 = newWindow3.tabs[0];
+                    taLog.log(">>>>>> createdTab3.id: " + createdTab3.id)
+                    let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                    let mailMessageId3 = -1;
+                    if(mailMessage3) mailMessageId3 = mailMessage3.id;
+                    taLog.log(">>>>>> mailMessageId3: " + mailMessageId3)
+            
+                    // check if the config is present, or give a message error
+                    if (prefs.ollama_host == '') {
+                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
+                        return;
                     }
-                    // Early exit if loaded already
-                    if (tabIsLoaded3(createdTab3)) {
-                        resolve();
-                    } else {
-                        browser.tabs.onUpdated.addListener(listener3);
+                    if (prefs.ollama_model == '') {
+                        await browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
+                        return;
                     }
-                });
+
+                    await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                    taLog.log('[Ollama API] Connection succeded!');
+                    browser.runtime.onMessage.removeListener(listener3);
+                }
             }
-    
-            let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-            let mailMessageId3 = -1;
-            if(mailMessage3) mailMessageId3 = mailMessage3.id;
-    
-            // check if the config is present, or give a message error
-            if (prefs.ollama_host == '') {
-                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_host')});
-                return;
-            }
-            if (prefs.ollama_model == '') {
-                browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
-                return;
-            }
-    
-            browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+
+            browser.runtime.onMessage.addListener(listener3);
+
             break;  // ollama_api
     }
 }
