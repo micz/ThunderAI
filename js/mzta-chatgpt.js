@@ -159,7 +159,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         case "0":     // close window
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_close");
             btn_ok.onclick = async function() {
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
             break;
         case "1":     // do reply

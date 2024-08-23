@@ -22,7 +22,6 @@ import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
 import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID } from './js/mzta-utils.js';
 
-var createdWindowID = null;
 var original_html = '';
 var modified_html = '';
 
@@ -58,7 +57,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
             case 'chatgpt_close':
-                    browser.windows.remove(createdWindowID).then(() => {
+                    browser.windows.remove(message.window_id).then(() => {
                         taLog.log("ChatGPT window closed successfully.");
                         return true;
                     }).catch((error) => {
@@ -163,29 +162,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         });
 
         taLog.log("[ThunderAI] ChatGPT web interface script started...");
-        createdWindowID = newWindow.id;
         let createdTab = newWindow.tabs[0];
+        let newWindowId = newWindow.id;
 
-        // Wait for tab loaded.
-        // await new Promise(resolve => {
-        //     const tabIsLoaded = tab => {
-        //         return tab.status == "complete" && tab.url != "about:blank";
-        //     };
-        //     const listener = (tabId, changeInfo, updatedTab) => {
-        //         if (tabIsLoaded(updatedTab)) {
-        //             browser.tabs.onUpdated.removeListener(listener);
-        //             resolve();
-        //         }
-        //     }
-        //     // Early exit if loaded already
-        //     if (tabIsLoaded(createdTab)) {
-        //         resolve();
-        //     } else {
-        //         browser.tabs.onUpdated.addListener(listener);
-        //     }
-        // });
-
-        let pre_script = `let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+        let pre_script = `let mztaWinId = `+ newWindowId +`;
+        let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
         let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
         let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
         let mztaDoCustomText=`+ do_custom_text +`;
