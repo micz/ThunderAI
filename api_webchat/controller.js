@@ -33,10 +33,11 @@ let worker = null;
 
 switch (llm) {
     case "chatgpt_api":
+        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-openai.js', { type: 'module' });
         break;
     case "ollama_api": {
-        browser.runtime.sendMessage({command: "ollama_api_ready_"+call_id});
+        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
         break;
     }
