@@ -399,7 +399,7 @@
     "message": "ChatGPT API-Schlüssel",
     "description": ""
   },
-    "ChatGPT_Models": {
+  "ChatGPT_Models": {
     "message": "ChatGPT-Modelle",
     "description": ""
   },
@@ -433,6 +433,70 @@
   },
   "chagpt_api_connecting": {
     "message": "Versucht, eine Verbindung zu OpenAI ChatGPT mit dem angegebenen API-Schlüssel herzustellen",
+    "description": ""
+  },
+  "Debug": {
+    "message": "Debuggen",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Aktiviere das Debug-System",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "Ollama API (Lokales LLM)",
+    "description": ""
+  },
+  "prefs_Ollama_Host": {
+    "message": "Host-Adresse",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Ollama-Modelle",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Liste der Ollama-Modelle aktualisieren",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Fehler beim Abrufen der Ollama-Modelle",
+    "description": ""
+  },
+  "Ollama_Models_Error_NoModels": {
+    "message": "Keine Modelle gefunden",
+    "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "Sie haben keine Host-Adresse für die Ollama API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "Sie haben kein Modell für die Ollama API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
+    "description": ""
+  },
+  "ollama_api_connecting": {
+    "message": "Es wird versucht, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen.",
+    "description": ""
+  },
+  "andModel": {
+    "message": "und Modell",
+    "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "Die Verbindung zum Server wurde unerwartet unterbrochen.",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "Anfrage an die Ollama API fehlgeschlagen.",
+    "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "Warten auf die Serverantwort.",
+    "description": ""
+  },
+  "prefs_Ollama_Host_Info": {
+    "message": "Etwas wie",
     "description": ""
   }
 }

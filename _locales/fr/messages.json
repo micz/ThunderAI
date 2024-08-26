@@ -399,7 +399,7 @@
     "message": "Clé API ChatGPT",
     "description": ""
   },
-    "ChatGPT_Models": {
+  "ChatGPT_Models": {
     "message": "Modèles ChatGPT",
     "description": ""
   },
@@ -433,6 +433,70 @@
   },
   "chagpt_api_connecting": {
     "message": "Tentative de connexion à OpenAI ChatGPT en utilisant la clé API fournie",
+    "description": ""
+  },
+  "Debug": {
+    "message": "Debug",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Activer le système de débogage",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "API Ollama (LLM local)",
+    "description": ""
+  },
+  "prefs_Ollama_Host": {
+    "message": "Adresse de l'hôte",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Modèles Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Mettre à jour la liste des modèles Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Erreur lors de la tentative de récupération des modèles Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Error_NoModels": {
+    "message": "Aucun modèle trouvé",
+    "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "Vous n'avez pas ajouté d'adresse d'hôte pour l'API Ollama. Veuillez en insérer une sur la page des options.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "Vous n'avez pas choisi de modèle pour l'API Ollama. Veuillez en choisir un sur la page des options.",
+    "description": ""
+  },
+  "ollama_api_connecting": {
+    "message": "Tentative de connexion au serveur local Ollama en utilisant l'hôte",
+    "description": ""
+  },
+  "andModel": {
+    "message": "et le modèle",
+    "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "La connexion au serveur a été interrompue de manière inattendue",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "La demande d'API Ollama a échoué",
+    "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "En attente de la réponse du serveur",
+    "description": ""
+  },
+  "prefs_Ollama_Host_Info": {
+    "message": "Quelque chose comme",
     "description": ""
   }
 }
