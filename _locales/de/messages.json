@@ -476,7 +476,7 @@
     "description": ""
   },
   "ollama_api_connecting": {
-    "message": "Es wird versucht, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen.",
+    "message": "Versuch, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen",
     "description": ""
   },
   "andModel": {
