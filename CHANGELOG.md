@@ -12,6 +12,7 @@
     <li><i>[ChatGPT API][Ollama API]</i> Added a status message to give feedback to the user about the current operation [<a href="https://github.com/micz/ThunderAI/issues/119">#119</a>].</li>
     <li>Improved the internal messaging system between the background script and the chat windows [<a href="https://github.com/micz/ThunderAI/issues/117">#117</a>].</li>
     <li>Improved error messages for connection errors.</li>
+  </ul>
 <h2>Version 2.0.7 - 21/08/2024</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fixed an issue with automatically sending the prompt.</li>
