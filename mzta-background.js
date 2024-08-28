@@ -214,7 +214,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             height: prefs.chatgpt_win_height
         });
 
-        browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+        const listener2 = async (message, sender, sendResponse) => {
 
             if (message.command === "openai_api_ready_"+rand_call_id) {
 
@@ -237,9 +237,12 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
                 browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
                 taLog.log('[OpenAI ChatGPI] Connection succeded!');
-                browser.runtime.onMessage.removeListener(arguments.callee);
+                browser.runtime.onMessage.removeListener(listener2);
             }
-        });
+        }
+
+        browser.runtime.onMessage.addListener(listener2);
+
         break;  // chatgpt_api
 
         case 'ollama_api':
