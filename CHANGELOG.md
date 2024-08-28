@@ -3,6 +3,11 @@
 
 
 
+
+<h2>Version 2.1.1 - 28/08/2024</h2>
+  <ul>
+    <li>...</li>
+  </ul>
 <h2>Version 2.1.0 - 28/08/2024</h2>
   <ul>
     <li><i>[Ollama API]</i> It's now possible to use a local LMM using <a href="https://ollama.com/" target="_blank">Ollama</a> [<a href="https://github.com/micz/ThunderAI/issues/79">#79</a>].</li>
