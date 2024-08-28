@@ -43,9 +43,17 @@ let messageTabs = openTabs.filter(
     tab => ["mail", "messageDisplay"].includes(tab.type)
 );
 for (let messageTab of messageTabs) {
-    browser.tabs.executeScript(messageTab.id, {
-        file: "js/mzta-compose-script.js"
-    })
+    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
+        continue;
+    }
+    try {
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/mzta-compose-script.js"
+        })
+    } catch (error) {
+        console.error("[ThunderAI] Error injecting message display script:", error);
+        console.error("[ThunderAI] Message tab:", messageTab.url);
+    }
 }
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
