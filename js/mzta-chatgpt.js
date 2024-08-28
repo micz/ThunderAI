@@ -173,7 +173,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
                 await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
             break;
         case "2":     // replace text
@@ -183,7 +183,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
                 await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
             break;
     }
