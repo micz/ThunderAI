@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Usa ChatGPT per migliorare le tue email!",
+    "message": "Usa ChatGPT o Ollama per migliorare le tue email!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -284,7 +284,7 @@
     "description": ""
   },
   "prefs_OptionText_default_chatgpt_lang": {
-    "message": "Lingua predefinita per le risposte di ChatGPT",
+    "message": "Lingua predefinita per le risposte",
     "description": ""
   },
   "prefs_OptionText_reply_all": {
@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "Per utilizzare l'API di ChatGPT, è necessaria una OpenAI ChatGPT API Key e devi scegliere un modello. Se non lo fai, ThunderAI utilizzerà l'interfaccia web di ChatGPT.",
+    "message": "Per utilizzare l'API di ChatGPT, è necessaria una OpenAI ChatGPT API Key e devi scegliere un modello.",
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": " ",
+    "message": "Per utilizzare l'integrazione con Ollama, è necessario configurare un server Ollama locale. Una volta che il server è attivo, inserisci il suo indirizzo nel campo designato all'interno dell'applicazione. Per garantire una corretta comunicazione tra l'app e il server Ollama, ricorda di impostare OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsDonation_1": {
@@ -384,8 +384,8 @@
     "description": ""
   },
   "prefs_Connection_type": {
-  "message": "Tipo di connessione",
-  "description": ""
+    "message": "Tipo di connessione",
+    "description": ""
   },
   "prefs_Connection_type_ChatGTP_Web": {
     "message": "Interfaccia Web ChatGTP",
@@ -399,7 +399,7 @@
     "message": "Chiave API ChatGPT",
     "description": ""
   },
-    "ChatGPT_Models": {
+  "ChatGPT_Models": {
     "message": "Modelli ChatGPT",
     "description": ""
   },
@@ -408,10 +408,10 @@
     "description": ""
   },
   "ChatGPT_Models_Error_fetching": {
-  "message": "Errore durante il recupero dei modelli di ChatGPT",
-  "description": ""
+    "message": "Errore durante il recupero dei modelli di ChatGPT",
+    "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Caricamento in corso...",
     "description": ""
   },
@@ -431,8 +431,72 @@
     "message": "Modello utilizzato",
     "description": ""
   },
-  "chagtp_api_connecting": {
-    "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita...",
+  "chagpt_api_connecting": {
+    "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita",
+    "description": ""
+  },
+  "Debug": {
+    "message": "Debug",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Attiva il sistema di debug",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "API Ollama (LLM Locale)",
+    "description": ""
+  },
+  "prefs_Ollama_Host": {
+    "message": "Indirizzo dell'host",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Modelli Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Aggiorna la lista dei modelli Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Errore nel tentativo di recuperare i modelli Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Error_NoModels": {
+    "message": "Nessun modello trovato",
+    "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "Non hai aggiunto un indirizzo host per l'API Ollama. Per favore, inseriscine uno nella pagina delle opzioni.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "Non hai scelto un modello per l'API Ollama. Per favore, scegline uno nella pagina delle opzioni.",
+    "description": ""
+  },
+  "ollama_api_connecting": {
+    "message": "Tentativo di connettersi al server locale Ollama usando l'host",
+    "description": ""
+  },
+  "andModel": {
+    "message": "e il modello",
+    "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "La connessione al server è stata interrotta inaspettatamente",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "La richiesta all'API Ollama è fallita",
+    "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "In attesa della risposta del server",
+    "description": ""
+  },
+  "prefs_Ollama_Host_Info": {
+    "message": "Qualcosa come",
     "description": ""
   }
 }

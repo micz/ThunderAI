@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use ChatGPT to enhance you emails!",
+    "message": "Use ChatGPT or Ollama to enhance you emails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -284,7 +284,7 @@
     "description": ""
   },
   "prefs_OptionText_default_chatgpt_lang": {
-    "message": "Default language for ChatGPT responses",
+    "message": "Default language for the responses",
     "description": ""
   },
   "prefs_OptionText_reply_all": {
@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_2": {
-    "message": "To use the ChatGPT API, you need an OpenAI ChatGPT API Key and must choose a model. If you fail to do so, ThunderAI will fall back to using the ChatGPT web interface.",
+    "message": "To use the ChatGPT API, you need an OpenAI ChatGPT API Key and must choose a model.",
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": " ",
+    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between the app and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsDonation_1": {
@@ -411,7 +411,7 @@
     "message": "Error trying to fetch ChatGPT models",
     "description": ""
   },
-  "ChatGPT_Models_Loading": {
+  "Loading": {
     "message": "Loading...",
     "description": ""
   },
@@ -431,8 +431,72 @@
     "message": "Using model",
     "description": ""
   },
-  "chagtp_api_connecting": {
-    "message": "Will attempt to connect to OpenAI ChatGPT using the API key provided...",
+  "chagpt_api_connecting": {
+    "message": "Attempting to connect to OpenAI ChatGPT using the API key provided",
+    "description": ""
+  },
+  "Debug": {
+    "message": "Debug",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Activate the debug system",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "Ollama API (Local LLM)",
+    "description": ""
+  },
+  "prefs_Ollama_Host": {
+    "message": "Host Address",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Ollama Models",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Update Ollama Models list",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Error trying to fetch Ollama models",
+    "description": ""
+  },
+  "Ollama_Models_Error_NoModels": {
+    "message": "No models found",
+    "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "You've not added an Host Address for the Ollama API. Please insert one in the options page.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "You've not choosen a model for the Ollama API. Please choose one in the options page.",
+    "description": ""
+  },
+  "ollama_api_connecting": {
+    "message": "Attempting to connect to the Ollama Local Server using the host",
+    "description": ""
+  },
+  "andModel": {
+    "message": "and model",
+    "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "The connection to the server was unexpectedly interrupted",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "Ollama API request failed",
+    "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "Waiting for the server response",
+    "description": ""
+  },
+  "prefs_Ollama_Host_Info": {
+    "message": "Something like",
     "description": ""
   }
 }

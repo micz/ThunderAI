@@ -43,7 +43,7 @@ p {
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
     body {
-        background-color: #000000;
-        color: #ffffff;
+        background-color: rgb(33, 33, 33);
+        color: rgb(236, 236, 236);
     }
 }

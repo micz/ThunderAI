@@ -60,21 +60,29 @@ export class OpenAI {
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json", 
-            Authorization: "Bearer "+ this.apiKey
-        },
-        body: JSON.stringify({ 
-            model: this.model, 
-            messages: messages,
-            stream: this.stream,
-            ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
-        }),
-    });
-
-    return response;
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { 
+              "Content-Type": "application/json", 
+              Authorization: "Bearer "+ this.apiKey
+          },
+          body: JSON.stringify({ 
+              model: this.model, 
+              messages: messages,
+              stream: this.stream,
+              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+          }),
+      });
+      return response;
+    }catch (error) {
+        console.error("[ThunderAI] OpenAI API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "OpenAI API request failed: " + error;
+        return output;
+    }
   }
 
   async countTokensUsingAPI(model, text) {

@@ -164,7 +164,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         case "0":     // close window
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_close");
             btn_ok.onclick = async function() {
-                browser.runtime.sendMessage({command: "chatgpt_close"});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
             break;
         case "1":     // do reply
@@ -172,9 +172,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
-                browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId}).then(() => {
-                    browser.runtime.sendMessage({command: "chatgpt_close"});
-                });
+                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
         case "2":     // replace text
@@ -183,9 +182,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
-                browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId}).then(() => {
-                    browser.runtime.sendMessage({command: "chatgpt_close"});
-                });
+                await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                browser.runtime.sendMessage({command: "chatgpt_close"});
             };
             break;
     }

@@ -20,11 +20,28 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+// Get the LLM to be used
+const urlParams = new URLSearchParams(window.location.search);
+const llm = urlParams.get('llm');
+const call_id = urlParams.get('call_id');
 
+//console.log(">>>>>>>>>>> llm: " + llm);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
-const worker = new Worker('model-worker.js', { type: 'module' });
+let worker = null;
+
+switch (llm) {
+    case "chatgpt_api":
+        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        worker = new Worker('model-worker-openai.js', { type: 'module' });
+        break;
+    case "ollama_api": {
+        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        worker = new Worker('model-worker-ollama.js', { type: 'module' });
+        break;
+    }
+}
 
 const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
@@ -54,15 +71,31 @@ let promptData = null;
 // }
 // ============================== TESTING - END
 
-const params = new URLSearchParams(window.location.search);
-let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-// const openaiApiKey = params.get('openapi-key');
-//console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
-worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
-messagesArea.appendUserMessage(browser.i18n.getMessage("chagtp_api_connecting"), "info");
+switch (llm) {
+    case "chatgpt_api":
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
+        //console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
+        messageInput.setModel(prefs_api.chatgpt_model);
+        messagesArea.setLLMName("ChatGPT");
+        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " " + prefs_api.chatgpt_model + " ...", "info");
+        break;
+    case "ollama_api": {
+        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+        let i18nStrings = {};
+        i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
+        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
+        messageInput.setModel(prefs_api.ollama_model);
+        messagesArea.setLLMName("Ollama Local");
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " " + prefs_api.ollama_host + " " +browser.i18n.getMessage("AndModel") + " " + prefs_api.ollama_model + " ...", "info");
+        break;
+    }
+}
+
 
 // Event listeners for worker messages
-// TODO I'm sure there's a better way to do this
 worker.onmessage = function(event) {
     const { type, payload } = event.data;
     switch (type) {
@@ -71,6 +104,7 @@ worker.onmessage = function(event) {
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
+            messageInput.setStatusMessage('Receiving data...');
             break;
         case 'tokensDone':
             messagesArea.handleTokensDone(promptData);
@@ -78,6 +112,7 @@ worker.onmessage = function(event) {
             break;
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
+            messageInput.enableInput();
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -87,16 +122,22 @@ worker.onmessage = function(event) {
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
-    if (message.command === "chatgpt_send") {
-        //send the received prompt to the chatgpt api
-        if(message.do_custom_text=="1") {
-            let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
-            if(userInput !== null) {
-                message.prompt += " " + userInput;
+    switch (message.command) {
+        case "api_send":
+            //send the received prompt to the llm api
+            if(message.do_custom_text=="1") {
+                let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
+                if(userInput !== null) {
+                    message.prompt += " " + userInput;
+                }
             }
-        }
-        promptData = message;
-        messageInput._setMessageInputValue(message.prompt);
-        messageInput._handleNewChatMessage();
+            promptData = message;
+            messageInput._setMessageInputValue(message.prompt);
+            messageInput._handleNewChatMessage();
+            break;
+        case "api_error":
+            messagesArea.appendBotMessage(message.error,'error');
+            messageInput.enableInput();
+            break;
     }
 });

@@ -16,15 +16,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export const prefs_default = {
-    do_debug: false,
-    chatgpt_win_height: 800,
-    chatgpt_win_width: 700,
-    chatpgt_use_gpt4: false,
-    default_chatgpt_lang: '',
-    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api'
-    chatgpt_api_key: '',
-    chatgpt_model: '',
-    ollama_host: '',
-    ollama_model: '',
-}
+export class taLogger {
+
+    do_debug = false;
+    prefix = "";
+
+    constructor(prefix, do_debug) {
+        this.do_debug = do_debug;
+        this.prefix = "[ThunderAI Logger | " + prefix + "] ";
+    }
+
+    changeDebug(do_debug) {
+        this.do_debug = do_debug;
+    }
+
+    log(msg, do_debug = -1) {
+        if(do_debug !== -1) this.do_debug = do_debug;
+        if(this.do_debug === true) console.log(this.prefix + msg);
+    }
+
+    error(msg) {
+        console.error(this.prefix + msg);
+    }
+
+    warn(msg) {
+        console.warn(this.prefix + msg);
+    }
+};

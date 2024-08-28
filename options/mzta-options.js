@@ -18,7 +18,11 @@
 
 
 import { prefs_default } from './mzta-options-default.js';
+import { taLogger } from '../js/mzta-logger.js';
 import { OpenAI } from '../js/api/openai.js';
+import { Ollama } from '../js/api/ollama.js';
+
+let taLog = new taLogger("mzta-options",true);
 
 function saveOptions(e) {
   e.preventDefault();
@@ -49,7 +53,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      //console.log("[ThunderAI] Options restoring " + element.id + " = " + result[element.id]);
+      taLog.log("Options restoring " + element.id + " = " + result[element.id]);
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -88,10 +92,12 @@ async function restoreOptions() {
 function showConnectionOptions() {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
+  let ollama_api_display = 'none';
   let conntype_select = document.getElementById("connection_type");
   let parent = conntype_select.parentElement.parentElement.parentElement;
+    parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
   parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
-  parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
+  parent.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
   if (conntype_select.value === "chatgpt_web") {
     chatgpt_web_display = 'table-row';
   }else{
@@ -102,32 +108,62 @@ function showConnectionOptions() {
   }else{
     chatgpt_api_display = 'none';
   }
+  if (conntype_select.value === "ollama_api") {
+    ollama_api_display = 'table-row';
+  }else{
+    ollama_api_display = 'none';
+  }
   document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
   });
   document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
     element.style.display = chatgpt_api_display;
   });
+  document.querySelectorAll(".conntype_ollama_api").forEach(element => {
+    element.style.display = ollama_api_display;
+  });
 }
 
-function warnAPIKeyEmpty() {
+function warn_ChatGPT_APIKeyEmpty() {
   let apiKeyInput = document.getElementById('chatgpt_api_key');
-  let btnFetchModels = document.getElementById('btnUpdateChatGPTModels');
+  let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
   let modelChatGPT = document.getElementById('chatgpt_model');
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
-    btnFetchModels.disabled = true;
+    btnFetchChatGPTModels.disabled = true;
     modelChatGPT.disabled = true;
     modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = 'none';
   }else{
     apiKeyInput.style.border = 'none';
-    btnFetchModels.disabled = false;
+    btnFetchChatGPTModels.disabled = false;
     modelChatGPT.disabled = false;
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
     }else{
       modelChatGPT.style.border = 'none';
+    }
+  }
+}
+
+function warn_Ollama_HostEmpty() {
+  let hostInput = document.getElementById('ollama_host');
+  let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
+  let modelOllama = document.getElementById('ollama_model');
+  if(hostInput.value === ''){
+    hostInput.style.border = '2px solid red';
+    btnFetchOllamaModels.disabled = true;
+    modelOllama.disabled = true;
+    modelOllama.selectedIndex = -1;
+    modelOllama.style.border = 'none';
+  }else{
+    hostInput.style.border = 'none';
+    btnFetchOllamaModels.disabled = false;
+    modelOllama.disabled = false;
+    if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
+      modelOllama.style.border = '2px solid red';
+    }else{
+      modelOllama.style.border = 'none';
     }
   }
 }
@@ -156,30 +192,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", showConnectionOptions);
-  conntype_select.addEventListener("change", warnAPIKeyEmpty);
-  document.getElementById("chatgpt_api_key").addEventListener("change", warnAPIKeyEmpty);
+  conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
+  document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
 
-  let prefs = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
+  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: ''});
+  
+  // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = document.getElementById('chatgpt_model');
-
-  const option = document.createElement('option');
-  option.value = prefs.chatgpt_model;
-  option.text = prefs.chatgpt_model;
-  select_chatgpt_model.appendChild(option);
-  select_chatgpt_model.addEventListener("change", warnAPIKeyEmpty);
+  const chatgpt_option = document.createElement('option');
+  chatgpt_option.value = prefs.chatgpt_model;
+  chatgpt_option.text = prefs.chatgpt_model;
+  select_chatgpt_model.appendChild(chatgpt_option);
+  select_chatgpt_model.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
-    document.getElementById('model_fetch_loading').style.display = 'inline';
-    let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, true);
+    document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
+    let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, '', true);
     openai.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail = JSON.parse(data.error);
-        document.getElementById('model_fetch_loading').style.display = 'none';
+        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail.error.message);
         return;
       }
-      //console.log(">>>>>>>>> ChatGPT models: " + JSON.stringify(data));
+      taLog.log("ChatGPT models: " + JSON.stringify(data));
       data.response.forEach(model => {
         if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
@@ -188,9 +227,60 @@ document.addEventListener('DOMContentLoaded', async () => {
           select_chatgpt_model.appendChild(option);
         }
       });
-      document.getElementById('model_fetch_loading').style.display = 'none';
+      document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
     })
     
-    warnAPIKeyEmpty();
+    warn_ChatGPT_APIKeyEmpty();
+  });
+
+// Ollama API Model fetching
+let select_ollama_model = document.getElementById('ollama_model');
+const ollama_option = document.createElement('option');
+ollama_option.value = prefs.ollama_model;
+ollama_option.text = prefs.ollama_model;
+select_ollama_model.appendChild(ollama_option);
+select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
+
+  document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
+    document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
+    let ollama = new Ollama(document.getElementById("ollama_host").value, true);
+    try {
+      let data = await ollama.fetchModels();
+      if(!data){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        return;
+      }
+      if(!data.ok){
+        let errorDetail = JSON.parse(data.error);
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail.error.message);
+        return;
+      }
+      if(data.response.models.length == 0){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("Ollama_Models_Error_NoModels"));
+        return;
+      }
+      taLog.log("Ollama models: " + JSON.stringify(data));
+      data.response.models.forEach(model => {
+        if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
+          const option = document.createElement('option');
+          option.value = model.model;
+          option.text = model.name + " (" + model.model + ")";
+          select_ollama_model.appendChild(option);
+        }
+      });
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+    } catch (error) {
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
+    }
+    
+    warn_Ollama_HostEmpty();
   });
 }, { once: true });

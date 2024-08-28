@@ -42,6 +42,7 @@ import { OpenAI } from '../js/api/openai.js';
 let chatgpt_api_key = null;
 let chatgpt_model = '';
 let openai = null;
+let stopStreaming = false;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -89,10 +90,17 @@ self.onmessage = async function(event) {
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
-            const errorJSON = await response.json();
-            const errorDetail = JSON.stringify(errorJSON);
-            //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
-            postMessage({ type: 'error', payload: errorJSON.error.message });
+            let error_message = '';
+            let errorDetail = '';
+            if(response.is_exception === true){
+                error_message = response.error;
+            }else{
+                const errorJSON = await response.json();
+                errorDetail = JSON.stringify(errorJSON);
+                error_message = errorJSON.error.message;
+                //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+            }
+            postMessage({ type: 'error', payload: error_message });
             throw new Error("[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
         }
 
@@ -100,6 +108,14 @@ self.onmessage = async function(event) {
         const decoder = new TextDecoder("utf-8");
     
         while (true) {
+            if (stopStreaming) {
+                stopStreaming = false;
+                reader.cancel();
+                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                assistantResponseAccumulator = '';
+                postMessage({ type: 'tokensDone' });
+                break;
+            }
             const { done, value } = await reader.read();
             if (done) {
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
@@ -126,5 +142,7 @@ self.onmessage = async function(event) {
                 }
             }
         }
+    } else if (event.data.type === 'stop') {
+        stopStreaming = true;
     }
 };

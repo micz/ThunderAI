@@ -1,6 +1,6 @@
 # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI
 
-ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT to enhance email management.
+ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT or Ollama to enhance email management.
 
 It enables users to analyse, write, correct, and optimize their emails, facilitating more effective and professional communication.
 
@@ -11,10 +11,20 @@ Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
 
 
 > [!TIP]
-> There is no need for an API key and is possibile to use this extension even with a free account!
+> **Using ChatGPT**
+> 
+> There is no need for an API key and is possibile to use this extension even with a free account, using the web interface!
 > 
 > Starting from version 2.0.0, if you want to connect with the OpenAI API integration, now you can use an API Key!
 
+<br>
+
+> [!TIP]
+> **Using Ollama**
+>
+> From version 2.1.0 is possible to use a local Ollama server!
+>
+> Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
 
 
 <br>

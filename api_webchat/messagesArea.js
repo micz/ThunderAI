@@ -100,6 +100,7 @@ messagesAreaTemplate.content.appendChild(messagesDiv);
 class MessagesArea extends HTMLElement {
 
     fullTextHTML = "";
+    llmName = "LLM";
 
     constructor() {
         super();
@@ -117,7 +118,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = "ChatGTP";
+            header.textContent = this.llmName;
             this.messages.appendChild(header);
         }
 
@@ -128,6 +129,10 @@ class MessagesArea extends HTMLElement {
 
     init(worker) {
         this.worker = worker;
+    }
+
+    setLLMName(llmName) {
+        this.llmName = llmName;
     }
 
     handleTokensDone(promptData = null) {
@@ -231,27 +236,25 @@ class MessagesArea extends HTMLElement {
         //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        actionButton.addEventListener('click', () => {
+        actionButton.addEventListener('click', async () => {
             switch(promptData.action) {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
-                        browser.runtime.sendMessage({command: "chatgpt_close"});
-                    });
+                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
                 case "2":     // replace text
                     // console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId}).then(() => {
-                        browser.runtime.sendMessage({command: "chatgpt_close"});
-                    });
+                    await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
             }
         });
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
-        closeButton.addEventListener('click', () => {
+        closeButton.addEventListener('click', async () => {
             // console.log("[ThunderAI] (close) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-            browser.runtime.sendMessage({command: "chatgpt_close"});    // close window
+            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
         if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
         actionButtons.appendChild(closeButton);
