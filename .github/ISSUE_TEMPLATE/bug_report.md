@@ -13,6 +13,11 @@ Report the Thunderbird version and Operating System you're using.
 **ThunderAI version**
 Report the add-on version you're using.
 
+**AI Integration**
+- [ ] ChatGPT Web Interface
+- [ ] OpenAI ChatGPT API
+- [ ] Ollama API
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
