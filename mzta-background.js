@@ -182,8 +182,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         `;
 
         let done1 = false;
+        let try_num = 0;
 
         while(!done1){
+            if(try_num > 30){
+                taLog.error('[ChatGPT Web] Impossible to connect to the window chat!');
+                break;
+            }
             try {
                 await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
@@ -194,9 +199,10 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                 done1 = true;
             } catch (error) {
-                taLog.warn('[ChatGPT Web] Error connecting to the window chat: ', error);
+                taLog.warn('[ChatGPT Web] Error connecting to the window chat: ' + error);
                 taLog.warn('[ChatGPT Web] Trying again...');
                 done1 = false;
+                try_num++;
             }
             await new Promise(resolve => setTimeout(resolve, 500));
         }
