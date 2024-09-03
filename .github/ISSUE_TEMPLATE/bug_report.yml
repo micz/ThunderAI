@@ -25,14 +25,14 @@ body:
         ## Environment
   - type: input
     validations:
-      required: false
+      required: true
     attributes:
       label: Which Operative System are you using?
       description: >
         Like Windows 10 or MacOSX.
   - type: input
     validations:
-      required: false
+      required: true
     attributes:
       label: Which version of Thunderbird has the issue?
       description: >
