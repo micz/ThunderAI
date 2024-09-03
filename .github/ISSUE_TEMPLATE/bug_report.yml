@@ -34,7 +34,7 @@ body:
     validations:
       required: true
     attributes:
-      label: Which version of Thunderbird has the issue?
+      label: Which version of Thunderbird are you using?
       description: >
         Thunderbird version like 115.14.0 or 128.1.
   - type: input
