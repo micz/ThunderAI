@@ -288,7 +288,7 @@ async function doProceed(message, customText = ''){
     }
     //await chatgpt.isLoaded();
     let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
-    console.log(">>>>>>>>>>> send_result: " + send_result);
+    //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found
             let curr_msg = document.getElementById('mzta-curr_msg');
@@ -308,10 +308,25 @@ async function doProceed(message, customText = ''){
             curr_model_warn.style.display = 'inline-block';
             document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';
+            let btn_retry = document.createElement('button');
+            btn_retry.id="mzta-btn_retry";
+            btn_retry.classList.add('mzta-btn');
+            btn_retry.style.position = 'absolute';
+            btn_retry.style.top = '5px';
+            btn_retry.style.right = '5px';
+            btn_retry.textContent = browser.i18n.getMessage("chatgpt_btn_retry");
+            btn_retry.addEventListener('click', function() {
+                doRetry();
+            });
+            curr_model_warn.insertAdjacentElement('afterend', btn_retry);
             break;
     }
     await chatgpt_isIdle();
     operation_done();
+}
+
+function doRetry(){
+    doProceed(current_message);
 }
 
 
@@ -486,10 +501,10 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
         }else{
             current_action = message.action;
+            current_message = message;
             addCustomDiv(message.action,message.tabId,message.mailMessageId);
             (async () => {
                 if(mztaDoCustomText === 1){
-                    current_message = message;
                     showCustomTextField();
                 } else {
                     await doProceed(message);

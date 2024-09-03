@@ -220,7 +220,7 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "There is an error sending the prompt to ChatGPT, please retry. If the problem persists, please <a href=\"$URL$\">check the service status</a>.",
+    "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please <a href=\"$URL$\">check the service status</a>.",
     "description": "",
     "placeholders": {
       "url": {
@@ -228,6 +228,10 @@
         "example": "https://micz.it/thunderbird-addon-thunderai/status/"
       }
     }
+  },
+  "chatgpt_btn_retry": {
+    "message": "Retry",
+    "description": ""
   },
   "chatgpt_sendbutton_not_found_error": {
     "message": "Click the send button to submit the prompt.",
