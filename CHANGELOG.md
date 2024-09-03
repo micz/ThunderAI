@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 2.1.2 - ??/??/2024</h2>
+  <ul>
+    <li>...</li>
+  </ul>
 <h2>Version 2.1.1 - 28/08/2024</h2>
   <ul>
     <li><i>[ChatGPT API]</i> Fixed a bug in handling the chat window.</li>
