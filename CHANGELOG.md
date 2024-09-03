@@ -7,6 +7,7 @@
 <h2>Version 2.1.2 - ??/??/2024</h2>
   <ul>
     <li><i>[ChatGPT API]</i> The URL in the prompt sending error message is now correctly clickable [<a href="https://github.com/micz/ThunderAI/issues/123">#123</a>].</li>
+    <li><i>[ChatGPT API]</i> If the web interface loads slowly, a button is now shown to retry sending the prompt [<a href="https://github.com/micz/ThunderAI/issues/122">#122</a>].</li>
     <li>...</li>
   </ul>
 <h2>Version 2.1.1 - 28/08/2024</h2>
