@@ -297,7 +297,14 @@ async function doProceed(message, customText = ''){
             break;
         case -2:    // textarea not found
             let curr_model_warn = document.getElementById('mzta-model_warn');
-            curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            let message = browser.i18n.getMessage("chatgpt_textarea_not_found_error","https://micz.it/thunderbird-addon-thunderai/status/");
+            let parts = message.split(/<a href="([^"]+)">([^<]+)<\\/a>/);
+            curr_model_warn.textContent = parts[0];
+            let link = document.createElement('a');
+            link.href = parts[1];
+            link.textContent = parts[2];
+            curr_model_warn.appendChild(link);
+            curr_model_warn.appendChild(document.createTextNode(parts[3]));
             curr_model_warn.style.display = 'inline-block';
             document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';

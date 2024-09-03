@@ -220,8 +220,14 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "Es gibt einen Fehler beim Senden der Eingabeaufforderung an ChatGPT. Bitte versuchen Sie es erneut. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">Dienststatus</a>.",
-    "description": ""
+    "message": "Es gibt einen Fehler beim Senden der Eingabeaufforderung an ChatGPT. Bitte versuchen Sie es erneut. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den <a href=\"$URL$\">Dienststatus</a>.",
+    "description": "",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "https://micz.it/thunderbird-addon-thunderai/status/"
+      }
+    }
   },
   "chatgpt_sendbutton_not_found_error": {
     "message": "Klicken Sie auf die Schaltfläche „Senden“, um die Eingabeaufforderung zu übermitteln.",
