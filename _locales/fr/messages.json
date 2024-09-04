@@ -220,7 +220,17 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "Il y a une erreur lors de l'envoi de la proposition à ChatGPT, veuillez réessayer. Si le problème persiste, veuillez <a href=\"https://micz.it/thunderbird-addon-thunderai/status/\">vérifier le statut du service</a>.",
+    "message": "Il semble que la page ChatGPT mette trop de temps à charger. Si elle finit de charger, cliquez sur le bouton à droite. Si le problème persiste, veuillez <a href=\"$URL$\">vérifier le statut du service</a>.",
+    "description": "",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "https://micz.it/thunderbird-addon-thunderai/status/"
+      }
+    }
+  },
+  "chatgpt_btn_retry": {
+    "message": "Réessayer",
     "description": ""
   },
   "chatgpt_sendbutton_not_found_error": {

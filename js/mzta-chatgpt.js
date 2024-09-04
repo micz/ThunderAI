@@ -22,8 +22,11 @@
 
 export const mzta_script = `
 let force_go = false;
+let do_force_completion = false;
 let current_message = null;
 let current_action = null;
+let current_tabId = null;
+let current_mailMessageId = null;
 let selectionChangeTimeout = null;
 let isDragging = false;
 
@@ -59,19 +62,22 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
 async function chatgpt_isIdle() {
     return new Promise(resolve => {
         const intervalId = setInterval(() => {
-            if (chatgpt_getRegenerateButton()) {
+            if (chatgpt_getRegenerateButton() || do_force_completion) {
                 clearInterval(intervalId); resolve(true);
 }}, 100);});}
 
 function chatgpt_getRegenerateButton() {
     for (const mainSVG of document.querySelectorAll('main svg')) {
-        if (mainSVG.querySelector('path[d*="M3.07 10.876C3.623"]')) // regen icon found
+        if (mainSVG.querySelector('path[d^="M3.06957"]')) // regen icon found
             return mainSVG.parentNode.parentNode;
     }
 }
 
 function chatpgt_scrollToBottom () {
-    try { document.querySelector('button[class*="cursor"][class*="bottom"]').click(); }
+    try { 
+        //document.querySelector('button[class*="cursor"][class*="bottom"]').click();
+        document.querySelector('path[d^="M12 21C11.7348"]').parentNode.parentNode.click();
+    }
     catch (err) { console.error('[ThunderAI] ', err); }
 }
 
@@ -139,7 +145,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     force_completion_div.textContent = mztaForceCompletionDesc;
     force_completion_div.title = mztaForceCompletionTitle;
     force_completion_div.addEventListener('click', function() {
-        operation_done();
+        do_force_completion = true;
     });
     fixedDiv.appendChild(force_completion_div);
 
@@ -288,7 +294,7 @@ async function doProceed(message, customText = ''){
     }
     //await chatgpt.isLoaded();
     let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
-    console.log(">>>>>>>>>>> send_result: " + send_result);
+    //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found
             let curr_msg = document.getElementById('mzta-curr_msg');
@@ -297,14 +303,36 @@ async function doProceed(message, customText = ''){
             break;
         case -2:    // textarea not found
             let curr_model_warn = document.getElementById('mzta-model_warn');
-            curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
+            let message = browser.i18n.getMessage("chatgpt_textarea_not_found_error","https://micz.it/thunderbird-addon-thunderai/status/");
+            let parts = message.split(/<a href="([^"]+)">([^<]+)<\\/a>/);
+            curr_model_warn.textContent = parts[0];
+            let link = document.createElement('a');
+            link.href = parts[1];
+            link.textContent = parts[2];
+            curr_model_warn.appendChild(link);
+            curr_model_warn.appendChild(document.createTextNode(parts[3]));
             curr_model_warn.style.display = 'inline-block';
             document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';
+            let btn_retry = document.createElement('button');
+            btn_retry.id="mzta-btn_retry";
+            btn_retry.classList.add('mzta-btn');
+            btn_retry.style.position = 'absolute';
+            btn_retry.style.top = '5px';
+            btn_retry.style.right = '5px';
+            btn_retry.textContent = browser.i18n.getMessage("chatgpt_btn_retry");
+            btn_retry.addEventListener('click', function() {
+                doRetry();
+            });
+            curr_model_warn.insertAdjacentElement('afterend', btn_retry);
             break;
     }
     await chatgpt_isIdle();
     operation_done();
+}
+
+function doRetry(){
+    doProceed(current_message);
 }
 
 
@@ -470,30 +498,50 @@ function selectContentOnClick(event) {
     }
 }
 
+function run(){
+    if(!checkLoggedIn()){
+        // User not logged in
+        alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
+    }else{
+        addCustomDiv(current_action,current_tabId,current_mailMessageId);
+        (async () => {
+            if(mztaDoCustomText === 1){
+                showCustomTextField();
+            } else {
+                await doProceed(current_message);
+            }
+            // Add an event listener to the document to detect clicks
+            document.addEventListener('mousedown', selectContentOnMouseDown);
+            document.addEventListener('mousemove', selectContentOnMouseMove);
+            document.addEventListener('mouseup', selectContentOnMouseUp);
+        })();
+    }
+}
 
 // In the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.command === "chatgpt_send") {
-        if(!checkLoggedIn()){
-            // User not logged in
-            alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
-        }else{
+    //console.log(">>>>>>>>>>>>> content.js onMessage: " + JSON.stringify(message));
+    switch(message.command) {
+        case "chatgpt_send":
             current_action = message.action;
-            addCustomDiv(message.action,message.tabId,message.mailMessageId);
-            (async () => {
-                if(mztaDoCustomText === 1){
-                    current_message = message;
-                    showCustomTextField();
-                } else {
-                    await doProceed(message);
-                }
-                    // Add an event listener to the document to detect clicks
-                    document.addEventListener('mousedown', selectContentOnMouseDown);
-                    document.addEventListener('mousemove', selectContentOnMouseMove);
-                    document.addEventListener('mouseup', selectContentOnMouseUp);
-            })();
-        }
+            current_message = message;
+            current_tabId = message.tabId;
+            current_mailMessageId = message.mailMessageId;
+            run();
+            break;
+        case "chatgpt_alive":
+            sendResponse({isAlive: true});
+            break;
     }
 });
+
+let checkTab = setInterval(() => {
+    let customDiv = document.getElementById('mzta-custom_text');
+    if(customDiv){
+        clearInterval(checkTab);
+    }else{
+        run();
+    }
+}, 1000);
 
 `
