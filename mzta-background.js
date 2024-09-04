@@ -56,6 +56,12 @@ for (let messageTab of messageTabs) {
     }
 }
 
+browser.contentScripts.register({
+    matches: ["https://*.chatgpt.com/*"],
+    js: [{file: "js/mzta-chatgpt-loader.js"}],
+    runAt: "document_idle"
+  });
+
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
     // handler function.
@@ -161,35 +167,38 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
     switch(prefs.connection_type){
         case 'chatgpt_web':
+
+        let rand_call_id = '_chatgptweb_' + generateCallID();
+
         // We are using the ChatGPT web interface
         let newWindow = await browser.windows.create({
-            url: "https://chatgpt.com",
+            url: "https://chatgpt.com?call_id=" + rand_call_id,
             type: "popup",
             width: prefs.chatgpt_win_width,
             height: prefs.chatgpt_win_height
         });
 
-        taLog.log("[ThunderAI] ChatGPT web interface script started...");
-        let createdTab = newWindow.tabs[0];
         let newWindowId = newWindow.id;
+        let createdTab = newWindow.tabs[0];
 
-        let pre_script = `let mztaWinId = `+ newWindowId +`;
-        let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
-        let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
-        let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
-        let mztaDoCustomText=`+ do_custom_text +`;
-        let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
-        `;
+        const listener = async (message, sender, sendResponse) => {
 
-        let done1 = false;
-        let try_num = 0;
+            if (message.command === "chatgpt_web_ready_" + rand_call_id) {
 
-        while(!done1){
-            if(try_num > 30){
-                taLog.error('[ChatGPT Web] Impossible to connect to the window chat!');
-                break;
-            }
-            try {
+                taLog.log("[ThunderAI] ChatGPT web interface script started...");
+
+                let pre_script = `let mztaWinId = `+ newWindowId +`;
+                let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
+                let mztaForceCompletionDesc="`+ browser.i18n.getMessage("chatgpt_force_completion") +`";
+                let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
+                let mztaDoCustomText=`+ do_custom_text +`;
+                let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+                `;
+
+                taLog.log("Waiting 1 sec");
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                taLog.log("Waiting 1 sec done");
+                
                 await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
                 let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                 let mailMessageId = -1;
@@ -197,24 +206,20 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
                 taLog.log('[ChatGPT Web] Connection succeded!');
                 taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
-                done1 = true;
-            } catch (error) {
-                taLog.warn('[ChatGPT Web] Error connecting to the window chat: ' + error);
-                taLog.warn('[ChatGPT Web] Trying again...');
-                done1 = false;
-                try_num++;
+                browser.runtime.onMessage.removeListener(listener);
             }
-            await new Promise(resolve => setTimeout(resolve, 500));
         }
-    break;  // chatgpt_web
+
+        browser.runtime.onMessage.addListener(listener);
+        break;  // chatgpt_web
 
     case 'chatgpt_api':
         // We are using the ChatGPT API
 
-        let rand_call_id = '_openai_' + generateCallID();
+        let rand_call_id2 = '_openai_' + generateCallID();
 
         await browser.windows.create({
-            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id),
+            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2),
             type: "popup",
             width: prefs.chatgpt_win_width,
             height: prefs.chatgpt_win_height
@@ -222,7 +227,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         const listener2 = async (message, sender, sendResponse) => {
 
-            if (message.command === "openai_api_ready_"+rand_call_id) {
+            if (message.command === "openai_api_ready_"+rand_call_id2) {
 
                 let newWindow2 = await browser.windows.get(message.window_id, {populate: true});
                 let createdTab2 = newWindow2.tabs[0];
@@ -256,10 +261,10 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             taLog.log("Ollama API window opening...");
 
-            let rand_call_id2 = '_ollama_' + generateCallID();
+            let rand_call_id3 = '_ollama_' + generateCallID();
 
             await browser.windows.create({
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2),
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3),
                 type: "popup",
                 width: prefs.chatgpt_win_width,
                 height: prefs.chatgpt_win_height
@@ -267,7 +272,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             const listener3 = async (message, sender, sendResponse) => {
 
-                if (message.command === "ollama_api_ready_"+rand_call_id2) {
+                if (message.command === "ollama_api_ready_"+rand_call_id3) {
                     taLog.log("Ollama API window ready.");
                     taLog.log("message.window_id: " + message.window_id)
                     let newWindow3 = await browser.windows.get(message.window_id, {populate: true});
