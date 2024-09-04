@@ -123,7 +123,7 @@ function compareThunderbirdVersions(v1, v2) {
   return 0;
 }
 
-export function generateCallID(length) {
+export function generateCallID(length = 10) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   const charactersLength = characters.length;
