@@ -220,14 +220,8 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "Il semble que la page ChatGPT mette trop de temps à charger. Si elle finit de charger, cliquez sur le bouton à droite. Si le problème persiste, veuillez <a href=\"$URL$\">vérifier le statut du service</a>.",
-    "description": "",
-    "placeholders": {
-      "url": {
-        "content": "$1",
-        "example": "https://micz.it/thunderbird-addon-thunderai/status/"
-      }
-    }
+    "message": "Il semble que la page ChatGPT mette trop de temps à charger. Si elle finit de charger, cliquez sur le bouton à droite. Si le problème persiste, veuillez vérifier le statut du service.",
+    "description": ""
   },
   "chatgpt_btn_retry": {
     "message": "Réessayer",

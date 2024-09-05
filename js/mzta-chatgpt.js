@@ -303,7 +303,7 @@ async function doProceed(message, customText = ''){
             break;
         case -2:    // textarea not found
             let curr_model_warn = document.getElementById('mzta-model_warn');
-            let message = browser.i18n.getMessage("chatgpt_textarea_not_found_error","https://micz.it/thunderbird-addon-thunderai/status/");
+            let message = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
             let parts = message.split(/<a href="([^"]+)">([^<]+)<\\/a>/);
             curr_model_warn.textContent = parts[0];
             let link = document.createElement('a');
