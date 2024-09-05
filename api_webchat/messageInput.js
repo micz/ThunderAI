@@ -64,11 +64,15 @@ messagesInputStyle .textContent = `
         border: 1px solid lightgrey;
         border-radius: 5px;
         padding: 5px;
-        background: #212121;
+        background: #F2F2F2;
     }
     @media (prefers-color-scheme: dark) {
     #messageInputField {
         background-color: #303030;
+        color: #ffffff;
+    }
+    #statusLogger{
+        background: #212121;
         color: #ffffff;
     }
 }
