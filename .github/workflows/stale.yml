@@ -1,0 +1,24 @@
+name: 'Close stale issues'
+on:
+  schedule:
+    - cron: '30 12 * * *'
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-message: >
+            There hasn't been any activity on this issue in the past 7 days.
+            It will be closed in 3 days if no further activity occurs.
+          close-issue-message: >
+            This issue was closed because there hasn't been any activity in the past 10 days.
+            Feel free to open it again if needed.
+          days-before-stale: 7
+          days-before-close: 3
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          remove-stale-when-updated: true
+          stale-issue-label: "stale"
+          exempt-issue-labels: "no-stale,new-feature,enhancement,bug"
