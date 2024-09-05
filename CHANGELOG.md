@@ -6,7 +6,7 @@
 
   <h2>Version 2.1.3 - 04/09/2024</h2>
   <ul>
-    <li><i>[ChatGPT API]</i> Removed a link to the status page in an error message as requested by Thunderbird Addon Reviewer.</li>
+    <li><i>[ChatGPT API]</i> Removed a link to the status page in an error message as requested by Thunderbird Addon Reviewer. Reverted [<a href="https://github.com/micz/ThunderAI/issues/123">#123</a>].</li>
   </ul>
 <h2>Version 2.1.2 - 04/09/2024</h2>
   <ul>
