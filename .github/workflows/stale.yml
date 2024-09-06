@@ -22,4 +22,4 @@ jobs:
           days-before-pr-close: -1
           remove-stale-when-updated: true
           stale-issue-label: "stale"
-          exempt-issue-labels: "no-stale,new-feature,enhancement,bug"
+          exempt-issue-labels: "no-stale,new feature,enhancement,bug"
