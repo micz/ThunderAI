@@ -4,6 +4,9 @@ on:
     - cron: '30 12 * * *'
   workflow_dispatch:
 
+permissions:
+  issues: write
+
 jobs:
   stale:
     runs-on: ubuntu-latest
