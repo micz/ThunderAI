@@ -46,6 +46,12 @@ You can find all the information on [this page](https://micz.it/thunderbird-addo
 
 <br>
 
+## Support this addon!
+Are you using this addon in your Thunderbird?
+<br>Consider to support the development making a small donation. [Click here!](https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderAI&currency_code=EUR)
+
+<br>
+
 ## Thanks to
 <ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
 <li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
