@@ -31,17 +31,30 @@ let selectionChangeTimeout = null;
 let isDragging = false;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
-    const textArea = document.querySelector('form textarea');
-    let sendButton = document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
+    let textArea = document.getElementById('prompt-textarea')
+    let old_textArea = false;
+    if(!textArea){
+        textArea = document.querySelector('form textarea');
+        old_textArea = true;
+    }
+    let sendButton = document.querySelector('path[d*="M15.1918 8.90615C15.6381"]')?.parentNode.parentNode  // from sept-2024;
+            || document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
             || document.querySelector('[data-testid="send-button"]'); // pre-GPT-4o
     //check if the textarea has been found
     if(!textArea) {
+        console.error("[ThunderAI] Textarea not found!");
         return -2;
     }
-    textArea.value = msg;
-    textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
+    if(old_textArea){
+        textArea.value = msg;
+        textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
+    } else {    // from sept 2024
+        textArea.innerText = msg;
+        textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
     //check if the sendbutton has been found
     if (!sendButton) {
+        console.error("[ThunderAI] Send button not found!");
         return -1;
     }
     const delaySend = setInterval(() => {
