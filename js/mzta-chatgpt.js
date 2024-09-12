@@ -105,7 +105,6 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += ".btn_disabled:hover {background-color:#6a829b !important;color:white !important;}";
     style.textContent += "#mzta-loading{height:50px;display:inline-block;}";
     style.textContent += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}#mzta-model_warn a{color:blue;text-decoration: underline;}";
-    style.textContent += "#mzta-btn_gpt35 {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.textContent += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.textContent += "#mzta-force-completion{cursor:pointer;position:fixed;bottom:0;right:0;padding-right:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.textContent += "#mzta-status-page:hover, #mzta-force-completion:hover{color:#007bff;}";
@@ -129,16 +128,6 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     modelWarnDiv.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
     fixedDiv.appendChild(modelWarnDiv);
 
-    // GPT-3 Button
-    var btn_gpt35 = document.createElement('button');
-    btn_gpt35.id="mzta-btn_gpt35";
-    btn_gpt35.textContent = browser.i18n.getMessage("chatgpt_use_gpt35");
-    btn_gpt35.onclick = async function() {
-        browser.storage.sync.set({chatpgt_use_gpt4: false});
-        force_go = true;
-    };
-    modelWarnDiv.appendChild(btn_gpt35);
-    
     //prompt name
     var prompt_name_div = document.createElement('div');
     prompt_name_div.id = 'mzta-prompt-name';
@@ -245,40 +234,6 @@ function customTextBtnClick(args) {
     args.customDiv.style.display = 'none';
 }
 
-function checkGPT4Model() {
-  return new Promise((resolve, reject) => {
-    // Set up an interval that shows the warning after 2 seconds
-    const intervalId2 = setTimeout(() => {
-        document.getElementById('mzta-model_warn').style.display = 'inline-block';
-        document.getElementById('mzta-btn_gpt35').style.display = 'inline';
-    }, 2000);
-    // Set up an interval that checks the value every 100 milliseconds
-    const intervalId = setInterval(() => {
-      // Get the '.text-token-text-secondary' element
-     // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
-     const elements = document.querySelectorAll('[id*=radix] span')
-
-     for(element of elements){
-      // Check if the element exists and its content is '4' or '4o'
-      if ((element && element.textContent === '4')||(element && element.textContent === '4o')||(force_go)) {
-        // console.log("[ThunderAI] The GPT Model is now '4' or '4o'");
-        clearInterval(intervalId);
-        clearTimeout(intervalId2);
-        document.getElementById('mzta-model_warn').style.display = 'none';
-        document.getElementById('mzta-btn_gpt35').style.display = 'none';
-        resolve("GPT4");
-        break;
-      } else if (!element) {
-        console.error("[ThunderAI] Element not found!");
-        clearInterval(intervalId);
-        reject("Element not found.");
-      }
-     }
-    }, 200);
-  });
-}
-
-
 function operation_done(){
     let curr_msg = document.getElementById('mzta-curr_msg');
     curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");
@@ -301,11 +256,6 @@ function showCustomTextField(){
 }
 
 async function doProceed(message, customText = ''){
-    let prefs = await browser.storage.sync.get({chatpgt_use_gpt4:false});
-    if(prefs.chatpgt_use_gpt4){
-        await checkGPT4Model();
-    }
-    //await chatgpt.isLoaded();
     let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){

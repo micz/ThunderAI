@@ -20,7 +20,6 @@ export const prefs_default = {
     do_debug: false,
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
-    chatpgt_use_gpt4: false,
     default_chatgpt_lang: '',
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api'
     chatgpt_api_key: '',

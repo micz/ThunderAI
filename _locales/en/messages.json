@@ -303,14 +303,6 @@
     "message": "Reply type",
     "description": ""
   },
-  "prefs_OptionText_chatpgt_use_gpt4": {
-    "message": "Use ChatGPT-4",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_use_gpt4_info": {
-    "message": "After changing this option, you have to choose the right model the first time you use it.",
-    "description": ""
-  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
     "description": ""
