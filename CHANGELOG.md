@@ -7,6 +7,7 @@
 
 <h2>Version 2.2.0 - ??/??/2024</h2>
     <ul>
+      <li><i>[ChatGPT Web]</i> Removed the option to force che ChatGPT4 model over ChatGPT3.5, since it was useless now.</li>
       <li>...</li>
     </ul>
 <h2>Version 2.1.4 - 11/09/2024</h2>
