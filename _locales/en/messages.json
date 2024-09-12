@@ -534,5 +534,13 @@
   "OpenAIComp_api_request_failed": {
     "message": "OpenAI Comp API request failed",
     "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Chat Name",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "This is the name that will be used in the AI chat.",
+    "description": ""
   }
 }
