@@ -206,11 +206,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
-
-  showConnectionOptions();
-  warn_ChatGPT_APIKeyEmpty();
-  warn_Ollama_HostEmpty();
-  warn_OpenAIComp_HostEmpty();
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
@@ -372,4 +367,10 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
     
     warn_OpenAIComp_HostEmpty();
   });
+
+  showConnectionOptions();
+  warn_ChatGPT_APIKeyEmpty();
+  warn_Ollama_HostEmpty();
+  warn_OpenAIComp_HostEmpty();
+
 }, { once: true });
