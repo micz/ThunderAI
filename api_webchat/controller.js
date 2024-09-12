@@ -36,11 +36,14 @@ switch (llm) {
         browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-openai.js', { type: 'module' });
         break;
-    case "ollama_api": {
+    case "ollama_api":
         browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
         break;
-    }
+    case "openai_comp_api":
+        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        worker = new Worker('model-worker-openai_comp.js', { type: 'module' });
+        break;
 }
 
 const messagesArea = document.querySelector('messages-area');
@@ -90,6 +93,17 @@ switch (llm) {
         messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
+        break;
+    }
+    case "openai_comp_api": {
+        let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_chat_name: ''});
+        let i18nStrings = {};
+        i18nStrings["OpenAIComp_api_request_failed"] = browser.i18n.getMessage('OpenAIComp_api_request_failed');
+        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        messageInput.setModel(prefs_api.openai_comp_model);
+        messagesArea.setLLMName(prefs_api.openai_chat_name);
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, i18nStrings: i18nStrings});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
         break;
     }
 }

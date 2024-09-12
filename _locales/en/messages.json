@@ -530,5 +530,9 @@
   "OpenAIComp_api_connecting": {
     "message": "Attempting to connect to the OpenAI Compatible API Local Server using the host",
     "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "OpenAI Comp API request failed",
+    "description": ""
   }
 }
