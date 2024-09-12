@@ -451,7 +451,11 @@
     "message": "Ollama API (Local LLM)",
     "description": ""
   },
-  "prefs_Ollama_Host": {
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "OpenAI Compatible API",
+    "description": ""
+  },
+  "prefs_API_Host": {
     "message": "Host Address",
     "description": ""
   },
@@ -499,8 +503,32 @@
     "message": "Waiting for the server response",
     "description": ""
   },
-  "prefs_Ollama_Host_Info": {
+  "prefs_API_Host_Info": {
     "message": "Something like",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "OpenAI Compatible API Models",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Update OpenAI Compatible API Models list",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Error trying to fetch OpenAI Compatible API models",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "You've not added an Host Address for the OpenAI Compatible API. Please insert one in the options page.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "You've not choosen a model for the OpenAI Compatible API. Please choose one in the options page.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Attempting to connect to the OpenAI Compatible API Local Server using the host",
     "description": ""
   }
 }

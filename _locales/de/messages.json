@@ -451,7 +451,7 @@
     "message": "Ollama API (Lokales LLM)",
     "description": ""
   },
-  "prefs_Ollama_Host": {
+  "prefs_API_Host": {
     "message": "Host-Adresse",
     "description": ""
   },
@@ -499,7 +499,7 @@
     "message": "Warten auf die Serverantwort.",
     "description": ""
   },
-  "prefs_Ollama_Host_Info": {
+  "prefs_API_Host_Info": {
     "message": "Etwas wie",
     "description": ""
   }

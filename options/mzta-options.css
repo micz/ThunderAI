@@ -96,11 +96,13 @@ tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
     background-color: rgb(255, 209, 183);
 }
 
-/* color to be used for a local LLM
-.conntype_chatgpt_web,.conntype_local_llm{
-    background-color: rgb(205, 255, 205);
+tr.conntype_ollama_api, tr.conntype_ollama_api2{
+    background-color: rgb(177, 238, 169);
 }
-*/
+
+tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
+    background-color: rgb(213, 169, 238);
+}
 
 #chatgpt_model_fetch_loading{
     display: none;
@@ -108,6 +110,11 @@ tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
 }
 
 #ollama_model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
+#openai_comp_model_fetch_loading{
     display: none;
     font-style: italic;
 }
@@ -135,9 +142,8 @@ tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
         background-color: rgb(7, 58, 0);
     }
 
-    /* color to be used for a local LLM
-    .conntype_chatgpt_web,.conntype_local_llm{
-        background-color: rgb(0, 39, 0);
+    tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
+        background-color: rgb(89, 20, 129);
     }
-    */
+
 }
