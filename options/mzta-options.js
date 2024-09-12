@@ -208,6 +208,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   showConnectionOptions();
+  warn_ChatGPT_APIKeyEmpty();
+  warn_Ollama_HostEmpty();
+  warn_OpenAIComp_HostEmpty();
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
