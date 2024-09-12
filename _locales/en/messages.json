@@ -471,7 +471,7 @@
     "message": "Error trying to fetch Ollama models",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""
   },

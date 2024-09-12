@@ -178,6 +178,28 @@ function warn_Ollama_HostEmpty() {
   }
 }
 
+function warn_OpenAIComp_HostEmpty() {
+  let hostInput = document.getElementById('openai_comp_host');
+  let btnUpdateOpenAICompModels = document.getElementById('btnUpdateOpenAICompModels');
+  let modelOpenAIComp = document.getElementById('openai_comp_model');
+  if(hostInput.value === ''){
+    hostInput.style.border = '2px solid red';
+    btnUpdateOpenAICompModels.disabled = true;
+    modelOpenAIComp.disabled = true;
+    modelOpenAIComp.selectedIndex = -1;
+    modelOpenAIComp.style.border = 'none';
+  }else{
+    hostInput.style.border = 'none';
+    btnUpdateOpenAICompModels.disabled = false;
+    modelOpenAIComp.disabled = false;
+    if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
+      modelOpenAIComp.style.border = '2px solid red';
+    }else{
+      modelOpenAIComp.style.border = 'none';
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
   i18n.updateDocument();
@@ -204,10 +226,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", showConnectionOptions);
   conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
+  conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
+  document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
 
-  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: ''});
+  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: ''});
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = document.getElementById('chatgpt_model');
@@ -272,7 +296,7 @@ select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
       if(data.response.models.length == 0){
         document.getElementById('ollama_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("Ollama_Models_Error_NoModels"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
         return;
       }
       taLog.log("Ollama models: " + JSON.stringify(data));
@@ -292,5 +316,57 @@ select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
     }
     
     warn_Ollama_HostEmpty();
+  });
+
+
+// OpenAI Comp API Model fetching
+let select_openai_comp_model = document.getElementById('openai_comp_model');
+const openai_comp_option = document.createElement('option');
+openai_comp_option.value = prefs.openai_comp_model;
+openai_comp_option.text = prefs.openai_comp_model;
+select_openai_comp_model.appendChild(openai_comp_option);
+select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
+
+  document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
+    document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
+    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value, true);
+    try {
+      let data = await openai_comp.fetchModels();
+      if(!data){
+        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+        return;
+      }
+      if(!data.ok){
+        let errorDetail = JSON.parse(data.error);
+        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail.error.message);
+        return;
+      }
+      if(data.response.models.length == 0){
+        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
+        return;
+      }
+      taLog.log("OpenAI Comp models: " + JSON.stringify(data));
+      data.response.models.forEach(model => {
+        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.model)) {
+          const option = document.createElement('option');
+          option.value = model.model;
+          option.text = model.name + " (" + model.model + ")";
+          select_openai_comp_model.appendChild(option);
+        }
+      });
+      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+    } catch (error) {
+      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+      taLog.error(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+      alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + error.message);
+    }
+    
+    warn_OpenAIComp_HostEmpty();
   });
 }, { once: true });

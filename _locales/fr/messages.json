@@ -467,7 +467,7 @@
     "message": "Erreur lors de la tentative de récupération des modèles Ollama",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "Aucun modèle trouvé",
     "description": ""
   },

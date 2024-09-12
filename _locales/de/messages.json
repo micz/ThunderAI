@@ -467,7 +467,7 @@
     "message": "Fehler beim Abrufen der Ollama-Modelle",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "Keine Modelle gefunden",
     "description": ""
   },
