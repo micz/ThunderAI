@@ -22,9 +22,11 @@ export const prefs_default = {
     chatgpt_win_width: 700,
     chatpgt_use_gpt4: false,
     default_chatgpt_lang: '',
-    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api'
+    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api'
     chatgpt_api_key: '',
     chatgpt_model: '',
     ollama_host: '',
     ollama_model: '',
+    openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
+    openai_comp_model: '',
 }
