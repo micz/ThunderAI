@@ -25,7 +25,8 @@ const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
 const call_id = urlParams.get('call_id');
 
-//console.log(">>>>>>>>>>> llm: " + llm);
+// console.log(">>>>>>>>>>> llm: " + llm);
+// console.log(">>>>>>>>>>> call_id: " + call_id);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
@@ -102,7 +103,7 @@ switch (llm) {
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.openai_comp_model);
         messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
         break;
     }
