@@ -44,5 +44,10 @@
     "default_locale": "en",
 	"options_ui": {
 		"page": "options/mzta-options.html"
-	}
+	},
+    "commands": {
+        "_thunderai__do_action": {
+        "description": ""
+        }
+    }
 }

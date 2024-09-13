@@ -32,12 +32,14 @@ let prefs_debug = await browser.storage.sync.get({do_debug: false});
 let taLog = new taLogger("mzta-background",prefs_debug.do_debug);
 
 browser.composeScripts.register({
-    js: [{file: "/js/mzta-compose-script.js"}]
+    js: [{ file: "js/mzta-compose-script.js" }],
+    css: [{ file: "css/mzta-compose-styles.css" }],
 });
 
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }],
+    css: [{ file: "css/mzta-compose-styles.css" }],
 });
 
 // Inject script and CSS in all already open message tabs.
@@ -52,7 +54,10 @@ for (let messageTab of messageTabs) {
     try {
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
-        })
+        });
+        await browser.tabs.insertCSS(messageTab.id, {
+            file: "css/mzta-compose-styles.css"
+        });
     } catch (error) {
         console.error("[ThunderAI] Error injecting message display script:", error);
         console.error("[ThunderAI] Message tab:", messageTab.url);
@@ -64,6 +69,32 @@ browser.contentScripts.register({
     js: [{file: "js/mzta-chatgpt-loader.js"}],
     runAt: "document_idle"
   });
+
+// Shortcut
+messenger.commands.update({
+    name: "_thunderai__do_action",
+    shortcut: "Ctrl+Alt+A"
+}).then(() => {
+    taLog.log('Shortcut registered successfully!');
+}).catch((error) => {
+    taLog.error('Error registering shortcut: ' + error);
+});
+
+// Listen for shortcut command
+messenger.commands.onCommand.addListener((command, tab) => {
+    if (command === "_thunderai__do_action") {
+        handleShortcut(tab);
+    }
+  });
+  
+  
+  function handleShortcut(tab) {
+    console.log("Shortcut triggered!");
+    if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
+        return;
+    }
+    browser.tabs.sendMessage(tab.id, { command: "searchPrompt" });
+  }
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate

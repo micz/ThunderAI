@@ -62,8 +62,112 @@ switch (message.command) {
     alert(message.message);
     break;
 
+  case 'searchPrompt':
+    searchPrompt();
+    break;
+
   default:
     // do nothing
     break;
-}    
+}
 });
+
+const autocompleteData = [
+  'Apple',
+  'Apricot',
+  'Avocado',
+  'Banana',
+  'Blackberry',
+  'Blueberry',
+  'Cherry',
+  'Coconut',
+  'Date',
+  'Dragonfruit',
+  'Elderberry',
+  'Fig',
+  'Grape',
+  'Grapefruit',
+  'Guava',
+  'Honeydew',
+  'Jackfruit',
+  'Kiwi',
+  'Lemon',
+  'Lime',
+  'Mango',
+  'Melon',
+  'Nectarine',
+  'Orange',
+  'Papaya',
+  'Peach',
+  'Pear',
+  'Pineapple',
+  'Plum',
+  'Pomegranate',
+  'Raspberry',
+  'Strawberry',
+  'Watermelon'
+];
+
+function searchPrompt(){
+  const banner = document.createElement('div');
+  banner.id = 'mzta_search_banner';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'mzta_search_input';
+  input.placeholder = 'Search a prompt...';
+  banner.appendChild(input);
+
+  const autocompleteList = document.createElement('div');
+  autocompleteList.classList.add('mzta_autocomplete-items');
+  autocompleteList.style.display = 'none';
+  banner.appendChild(autocompleteList);
+
+  // Function to filter and display autocomplete suggestions
+  input.addEventListener('input', function() {
+    const query = this.value.trim().toLowerCase();
+    autocompleteList.innerHTML = ''; // Clear previous suggestions
+
+    if (query === '') {
+        autocompleteList.style.display = 'none';
+        return;
+    }
+
+    // Filter data based on the query
+    const filteredData = autocompleteData.filter(item => item.toLowerCase().startsWith(query));
+
+    if (filteredData.length === 0) {
+        autocompleteList.style.display = 'none';
+        return;
+    }
+
+    // Create a div for each filtered result
+    filteredData.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('mzta_autocomplete-item');
+        itemDiv.textContent = item;
+
+        // Add a mousedown event to select the item
+        itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click
+            e.preventDefault(); // Prevents the input from losing focus
+            input.value = item;
+            autocompleteList.style.display = 'none';
+        });
+
+        autocompleteList.appendChild(itemDiv);
+    });
+
+    autocompleteList.style.display = 'block';
+  });
+
+  // Handle the input field losing focus to hide the banner
+  input.addEventListener('blur', function() {
+    // Use a timeout to allow clicking on suggestions before hiding
+    setTimeout(() => {
+        banner.remove();
+    }, 200);
+  });
+
+  document.body.insertBefore(banner, document.body.firstChild);
+  input.focus();
+}
