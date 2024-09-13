@@ -21,6 +21,7 @@ import { prefs_default } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
+import { OpenAIComp } from '../js/api/openai_comp.js'
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -260,7 +261,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
       document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
-    })
+    });
     
     warn_ChatGPT_APIKeyEmpty();
   });
@@ -328,14 +329,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
     let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value, true);
-    try {
-      let data = await openai_comp.fetchModels();
-      if(!data){
-        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        return;
-      }
+    openai_comp.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail = JSON.parse(data.error);
         document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
@@ -343,27 +337,17 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
         alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail.error.message);
         return;
       }
-      if(data.response.models.length == 0){
-        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
-        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
-        return;
-      }
-      taLog.log("OpenAI Comp models: " + JSON.stringify(data));
-      data.response.models.forEach(model => {
-        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.model)) {
+      taLog.log("OpenAIComp models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
           const option = document.createElement('option');
-          option.value = model.model;
-          option.text = model.name + " (" + model.model + ")";
+          option.value = model.id;
+          option.text = model.id;
           select_openai_comp_model.appendChild(option);
         }
       });
       document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
-    } catch (error) {
-      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
-      taLog.error(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-      alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + error.message);
-    }
+    });
     
     warn_OpenAIComp_HostEmpty();
   });
