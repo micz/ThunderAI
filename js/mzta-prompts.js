@@ -197,7 +197,7 @@ export async function preparePromptsForImport(prompts){
 }
 
 async function getDefaultPrompts_withProps() {
-    let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
+    let prefs = await browser.storage.local.get({_default_prompts_properties: null}); //production
     let defaultPrompts_prop = [...defaultPrompts];
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
@@ -227,7 +227,7 @@ async function getDefaultPrompts_withProps() {
 
 
 async function getCustomPrompts() {
-    let prefs = await browser.storage.sync.get({_custom_prompt: null});
+    let prefs = await browser.storage.local.get({_custom_prompt: null});
     if(prefs._custom_prompt === null){
         return [];
     } else {
@@ -241,11 +241,11 @@ export async function setDefaultPromptsProperties(prompts) {
         default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
-    await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
+    await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
 
 export async function setCustomPrompts(prompts) {
-    await browser.storage.sync.set({_custom_prompt: prompts});
+    await browser.storage.local.set({_custom_prompt: prompts});
 }
 
