@@ -17,7 +17,7 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
-import { isThunderbird128OrGreater } from "../js/mzta-utils.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace } from "../js/mzta-utils.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -27,6 +27,8 @@ var idnumMax = 0;
 var msgTimeout = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    
+    setStorageSpace();
     
     let values = await getPrompts();
 
@@ -601,6 +603,7 @@ async function saveAll() {
             clearMessage();
         }, 10000)
     }
+    setStorageSpace();
 }
 
 function setMessage(msg, color = '') {
@@ -616,6 +619,11 @@ function clearMessage() {
     msgDisplay.textContent = '';
     msgDisplay.style.display = 'none';
     msgDisplay.style.color = '';
+}
+
+async function setStorageSpace() {
+    let storage_space = await getCustomPromptsUsedSpace();
+    document.getElementById('storage_space').textContent = storage_space;
 }
 
 

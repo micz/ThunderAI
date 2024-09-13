@@ -538,5 +538,9 @@
   "prefs_OpenAIComp_ChatName_Info": {
     "message": "This is the name that will be used in the AI chat.",
     "description": ""
+  },
+  "StorageSpace": {
+    "message": "Total storage space occupied",
+    "description": ""
   }
 }
