@@ -211,7 +211,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         }
 
         browser.runtime.onMessage.addListener(listener);
-        break;  // chatgpt_web
+        break;  // chatgpt_web - END
 
     case 'chatgpt_api':
         // We are using the ChatGPT API
@@ -247,14 +247,14 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 }
 
                 browser.tabs.sendMessage(createdTab2.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
-                taLog.log('[OpenAI ChatGPI] Connection succeded!');
+                taLog.log('[OpenAI ChatGPT] Connection succeded!');
                 browser.runtime.onMessage.removeListener(listener2);
             }
         }
 
         browser.runtime.onMessage.addListener(listener2);
 
-        break;  // chatgpt_api
+        break;  // chatgpt_api - END
 
         case 'ollama_api':
             // We are using the Ollama API
@@ -301,7 +301,50 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             browser.runtime.onMessage.addListener(listener3);
 
-            break;  // ollama_api
+            break;  // ollama_api - END
+
+            case 'openai_comp_api':
+                // We are using the OpenAI Comp API
+        
+                let rand_call_id4 = '_openai_comp_api_' + generateCallID();
+        
+                await browser.windows.create({
+                    url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4),
+                    type: "popup",
+                    width: prefs.chatgpt_win_width,
+                    height: prefs.chatgpt_win_height
+                });
+        
+                const listener4 = async (message, sender, sendResponse) => {
+        console.log(">>>>>>>>>>>>>> message: " + JSON.stringify(message));
+                    if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
+        
+                        let newWindow4 = await browser.windows.get(message.window_id, {populate: true});
+                        let createdTab4 = newWindow4.tabs[0];
+        
+                        let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
+                        let mailMessageId4 = -1;
+                        if(mailMessage) mailMessageId4 = mailMessage.id;
+        
+                        // check if the config is present, or give a message error
+                        if (prefs.chatgpt_api_key == '') {
+                            browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
+                            return;
+                        }
+                        if (prefs.chatgpt_model == '') {
+                            browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
+                            return;
+                        }
+        
+                        browser.tabs.sendMessage(createdTab4.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text});
+                        taLog.log('[OpenAI Comp API] Connection succeded!');
+                        browser.runtime.onMessage.removeListener(listener4);
+                    }
+                }
+        
+                browser.runtime.onMessage.addListener(listener4);
+        
+                break;  // openai_comp_api
     }
 }
 
