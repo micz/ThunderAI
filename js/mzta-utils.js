@@ -182,3 +182,68 @@ const insertHtml = function (replyHtml, fullBody_string) {
   fullBody.body.insertBefore(fragment, fullBody.body.firstChild);
   return fullBody.body.innerHTML;
 }
+
+export async function getCustomPromptsUsedSpace(){
+  let customprompts_space = await browser.storage.local.getBytesInUse("_custom_prompt");
+  return formatBytes(customprompts_space);
+}
+
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const step = 1024;
+  const suffixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const index = Math.floor(Math.log(bytes) / Math.log(step));
+  const value = bytes / Math.pow(step, index);
+  // Ensure the index does not exceed the suffix array length
+  const suffix = suffixes[index] || suffixes[suffixes.length - 1];
+  return `${value.toFixed(decimals)} ${suffix}`;
+}
+
+// We need to migrate the Custom Prompts storage from storage.sync to storage.local
+// because the storage.sync has a too narrow limit, see https://github.com/micz/ThunderAI/issues/129
+export async function migrateCustomPromptsStorage(){
+  //check if storage.sync has custom prompts
+  let custom_prompts_sync = await browser.storage.sync.get({_custom_prompt: null});
+  if(custom_prompts_sync._custom_prompt === null){
+    // There are no custom prompts in storage.sync, nothing to do
+    // console.log("migrateCustomPromptsStorage: no custom prompts in storage.sync, nothing to do");
+    return;
+  }
+
+  //check if storage.local has custom prompts
+  let custom_prompts_local = await browser.storage.local.get({_custom_prompt: null});
+  if(custom_prompts_local._custom_prompt !== null){
+    // There are custom prompts in storage.local, nothing to do
+    // console.log("migrateCustomPromptsStorage: there are custom prompts in storage.local, nothing to do");
+    return;
+  }
+
+  //copy custom prompts from storage.sync to storage.local
+  await browser.storage.local.set({_custom_prompt: custom_prompts_sync._custom_prompt});
+  await browser.storage.sync.remove("_custom_prompt");
+  // console.log("migrateCustomPromptsStorage: migrated custom prompts from storage.sync to storage.local");
+}
+
+// Do the same for the default prompts properties
+export async function migrateDefaultPromptsPropStorage(){
+  //check if storage.sync has default prompts properties
+  let default_prompts_properties_sync = await browser.storage.sync.get({_default_prompts_properties: null});
+  if(default_prompts_properties_sync._default_prompts_properties === null){
+    // There are no default prompts properties in storage.sync, nothing to do
+    // console.log("migrateDefaultPromptsPropStorage: no default prompts properties in storage.sync, nothing to do");
+    return;
+  }
+
+  //check if storage.local has default prompts properties
+  let default_prompts_properties_local = await browser.storage.local.get({_default_prompts_properties: null});
+  if(default_prompts_properties_local._default_prompts_properties !== null){
+    // There are default prompts properties in storage.local, nothing to do
+    // console.log("migrateDefaultPromptsPropStorage: there are default prompts properties in storage.local, nothing to do");
+    return;
+  }
+
+  //copy default prompts properties from storage.sync to storage.local
+  await browser.storage.local.set({_default_prompts_properties: default_prompts_properties_sync._default_prompts_properties});
+  await browser.storage.sync.remove("_default_prompts_properties");
+  // console.log("migrateDefaultPromptsPropStorage: migrated default prompts properties from storage.sync to storage.local");
+}
