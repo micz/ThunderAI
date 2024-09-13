@@ -53,7 +53,7 @@ export class OpenAIComp {
     let output = {};
     output.ok = true;
     let output_response = await response.json();
-    output.response = output_response.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
+    output.response = output_response.data;
 
     return output;
   }
