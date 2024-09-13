@@ -312,7 +312,7 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "If a blank or white page appears when opening the ChatGPT web interface window, it means there is a problem loading the ChatGPT page, not related to the use of this add-on.",
+    "message": "It could happen that the ChatGPT web interface changes in a way that breaks how the addon works. Check the \"Service Status\" page linked at the bottom of this page. Also, remember that the first time you use ThunderAI, you need to log in to ChatGPT.",
     "description": ""
   },
   "prefsInfoDesc_2": {
@@ -320,11 +320,11 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between the app and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
+    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsInfoDesc_4": {
-    "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between the app and the local server remember to correctly set the CORS settings.",
+    "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the local server remember to set the CORS settings correctly.",
     "description": ""
   },
   "prefsDonation_1": {

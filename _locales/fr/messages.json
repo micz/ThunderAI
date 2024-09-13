@@ -312,7 +312,7 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Si une page blanche apparaît lors de l'ouverture de la fenêtre ChatGPT, cela signifie qu'il y a un problème de chargement de la page ChatGPT, non lié à l'utilisation de cet addon.",
+    "message": "Il est possible que l'interface web de ChatGPT change de manière à perturber le fonctionnement de l'addon. Consultez la page \"État du service\" située en bas de cette page. N'oubliez pas non plus que la première fois que vous utilisez ThunderAI, vous devez vous connecter à ChatGPT.",
     "description": ""
   },
   "prefsInfoDesc_2": {
@@ -320,7 +320,7 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": "Pour utiliser l'intégration avec Ollama, vous devez configurer un serveur Ollama local. Une fois que le serveur est en marche, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour garantir une communication adéquate entre l'application et le serveur Ollama, n'oubliez pas de définir OLLAMA_ORIGINS=moz-extension://*.",
+    "message": "Pour utiliser l'intégration avec Ollama, vous devez configurer un serveur Ollama local. Une fois que le serveur est en marche, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour garantir une communication adéquate entre ThunderAI et le serveur Ollama, n'oubliez pas de définir OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
   "prefsDonation_1": {
