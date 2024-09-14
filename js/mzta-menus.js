@@ -237,4 +237,23 @@ export class mzta_Menus {
         }
     }
 
+
+    async executeMenuAction(id) {
+        // Retrieve the action callback from the menu listeners using the provided ID
+        const action = this.menu_listeners[id];
+        
+        if (action) {
+            try {
+                // Execute the action callback
+                await action();
+            } catch (error) {
+                // Log any errors that occur during execution
+                console.error(`Error executing action for menu item ${id}:`, error);
+            }
+        } else {
+            // Warn if no action is found for the provided ID
+            console.warn(`No action found for menu item ID: ${id}`);
+        }
+    }
+
 }
