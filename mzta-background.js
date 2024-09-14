@@ -70,14 +70,16 @@ browser.contentScripts.register({
     runAt: "document_idle"
   });
 
+let ThunderAI_Shortcut = "Ctrl+Alt+A";
+
 // Shortcut
 messenger.commands.update({
     name: "_thunderai__do_action",
-    shortcut: "Ctrl+Alt+A"
+    shortcut: ThunderAI_Shortcut
 }).then(() => {
-    taLog.log('Shortcut registered successfully!');
+    taLog.log('Shortcut [' + ThunderAI_Shortcut + '] registered successfully!');
 }).catch((error) => {
-    taLog.error('Error registering shortcut: ' + error);
+    taLog.error('Error registering shortcut [' + ThunderAI_Shortcut + ']: ' + error);
 });
 
 // Listen for shortcut command
@@ -93,7 +95,7 @@ async function handleShortcut(tab) {
     if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
         return;
     }
-    browser.tabs.sendMessage(tab.id, { command: "searchPrompt", _prompts_data: menus.shortcutMenu, tab_type: tab.type });
+    browser.tabs.sendMessage(tab.id, { command: "searchPrompt", _prompts_data: menus.shortcutMenu, tabId: tab.id, _tab_type: tab.type });
 }
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -177,6 +179,10 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             case 'reload_menus':
                 await menus.reload();
                 taLog.log("[ThunderAI] Reloaded menus");
+                break;
+            case 'shortcut_do_prompt':
+                taLog.log("Executing shortcut, promptId: " + message.promptId);
+                menus.executeMenuAction(message.promptId);
                 break;
             default:
                 break;
@@ -350,7 +356,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 });
         
                 const listener4 = async (message, sender, sendResponse) => {
-        console.log(">>>>>>>>>>>>>> message: " + JSON.stringify(message));
+                    //console.log(">>>>>>>>>>>>>> message: " + JSON.stringify(message));
                     if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
         
                         let newWindow4 = await browser.windows.get(message.window_id, {populate: true});
