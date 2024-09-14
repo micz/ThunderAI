@@ -64,7 +64,22 @@ switch (message.command) {
     break;
 
   case 'searchPrompt':
-    searchPrompt(message._prompts_data, message.tabId, message._tab_type);
+    let filtering = 0;
+    switch(message._tab_type){
+      case "mail":
+      case "messageDisplay":
+        filtering = 1;
+        break;
+      case "messageCompose":
+        filtering = 2;
+        break;
+      default:
+        filtering = 0;
+        break;
+
+    }
+    let active_prompts = filterPromptsForTab(message._prompts_data, filtering);
+    searchPrompt(active_prompts, message.tabId, message._tab_type);
     break;
 
   default:
@@ -263,4 +278,25 @@ async function searchPrompt(allPrompts, tabId, tabType){
 function sendPrompt(prompt_id, tabId){
   console.log(">>>>>>>>>>>>> [ThunderAI] sendPrompt: " + prompt_id);
   browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+}
+
+function filterPromptsForTab(prompts_data, filtering){
+  // If filtering is 0, return the original array without any filters (btw it should not happen)
+  if (filtering === 0) {
+    return prompts_data;
+  }
+
+  // Define the types to include based on the value of filtering
+  let allowedTypes;
+  if (filtering === 1) {
+      allowedTypes = ["0", "1"];
+  } else if (filtering === 2) {
+      allowedTypes = ["0", "2"];
+  } else {
+      // If filtering has an unexpected value, return the original data
+      return prompts_data;
+  }
+
+  // Filter the array based on the allowed types
+  return prompts_data.filter(prompt => allowedTypes.includes(prompt.type));
 }
