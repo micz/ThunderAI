@@ -88,12 +88,12 @@ messenger.commands.onCommand.addListener((command, tab) => {
   });
   
   
-function handleShortcut(tab) {
-    console.log("Shortcut triggered!");
+async function handleShortcut(tab) {
+    taLog.log("Shortcut triggered!");
     if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
         return;
     }
-    browser.tabs.sendMessage(tab.id, { command: "searchPrompt" });
+    browser.tabs.sendMessage(tab.id, { command: "searchPrompt", _prompts_data: menus.shortcutMenu, tab_type: tab.type });
 }
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {

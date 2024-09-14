@@ -45,6 +45,10 @@
     background-color: #e9e9e9;
 }
 
+.mzta_autocomplete-item-active {
+    background-color: #e9e9e9;
+}
+
 
 @media (prefers-color-scheme: dark) {
 
@@ -68,6 +72,10 @@
     }
     
     .mzta_autocomplete-item:hover {
+        background-color: #444444;
+    }
+
+    .mzta_autocomplete-item-active {
         background-color: #444444;
     }
 }

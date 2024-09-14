@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 browser.runtime.onMessage.addListener(async (message) => {
 switch (message.command) {
   case "getSelectedText":
@@ -63,7 +64,7 @@ switch (message.command) {
     break;
 
   case 'searchPrompt':
-    searchPrompt();
+    searchPrompt(message._prompts_data, message.tab_type);
     break;
 
   default:
@@ -72,43 +73,10 @@ switch (message.command) {
 }
 });
 
-const autocompleteData = [
-  'Apple',
-  'Apricot',
-  'Avocado',
-  'Banana',
-  'Blackberry',
-  'Blueberry',
-  'Cherry',
-  'Coconut',
-  'Date',
-  'Dragonfruit',
-  'Elderberry',
-  'Fig',
-  'Grape',
-  'Grapefruit',
-  'Guava',
-  'Honeydew',
-  'Jackfruit',
-  'Kiwi',
-  'Lemon',
-  'Lime',
-  'Mango',
-  'Melon',
-  'Nectarine',
-  'Orange',
-  'Papaya',
-  'Peach',
-  'Pear',
-  'Pineapple',
-  'Plum',
-  'Pomegranate',
-  'Raspberry',
-  'Strawberry',
-  'Watermelon'
-];
 
-function searchPrompt(){
+async function searchPrompt(allPrompts, tabType){
+  console.log(">>>>>>>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
+  console.log(">>>>>>>>>>>>>>> tabType: " + tabType);
   const banner = document.createElement('div');
   banner.id = 'mzta_search_banner';
 
@@ -131,19 +99,29 @@ function searchPrompt(){
   autocompleteList.style.display = 'none';
   banner.appendChild(autocompleteList);
 
+  // Initialize variables to track focus and selection
+  let currentFocus = -1; // Tracks the currently highlighted item
+  let selectedId = null; // Tracks the ID of the selected item
+
   // Function to filter and display autocomplete suggestions
   input.addEventListener('input', function() {
     const query = this.value.trim().toLowerCase();
     autocompleteList.innerHTML = ''; // Clear previous suggestions
+    currentFocus = -1; // Reset the highlighted index
+    selectedId = null; // Reset the selected ID since input has changed
 
-    // commented out to show all the prompts when the input is empty
-    // if (query === '') {
-    //     autocompleteList.style.display = 'none';
-    //     return;
-    // }
+    // Uncomment the following lines if you want to hide suggestions when input is empty
+    /*
+    if (query === '') {
+        autocompleteList.style.display = 'none';
+        return;
+    }
+    */
 
     // Filter data based on the query
-    const filteredData = autocompleteData.filter(item => item.toLowerCase().startsWith(query));
+    const filteredData = allPrompts.filter(item => 
+      item.label.toLowerCase().startsWith(query)
+    );
 
     if (filteredData.length === 0) {
         autocompleteList.style.display = 'none';
@@ -154,12 +132,15 @@ function searchPrompt(){
     filteredData.forEach(item => {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('mzta_autocomplete-item');
-        itemDiv.textContent = item;
+        itemDiv.textContent = item.label;
+        itemDiv.setAttribute('data-id', item.id);
 
         // Add a mousedown event to select the item
         itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click
             e.preventDefault(); // Prevents the input from losing focus
-            input.value = item;
+            input.value = item.label;
+            selectedId = item.id; // Store the selected item's ID
+            console.log('>>>>>>>>>>>>> mousedown selectedId:', selectedId);
             autocompleteList.style.display = 'none';
         });
 
@@ -168,6 +149,63 @@ function searchPrompt(){
 
     autocompleteList.style.display = 'block';
   });
+
+  // Add a keydown event listener to handle arrow navigation and selection
+  input.addEventListener('keydown', function (e) {
+      const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
+      if ((autocompleteList.style.display === 'none' || items.length === 0) && (e.key !== 'Enter')) {
+          return; // Do nothing if the autocomplete list is not visible
+      }
+
+      if (e.key === 'ArrowDown') {
+          // Navigate down the list
+          currentFocus++;
+          if (currentFocus >= items.length) currentFocus = 0; // Wrap to the first item
+          addActive(items);
+          e.preventDefault(); // Prevent cursor from moving to the end
+      } else if (e.key === 'ArrowUp') {
+          // Navigate up the list
+          currentFocus--;
+          if (currentFocus < 0) currentFocus = items.length - 1; // Wrap to the last item
+          addActive(items);
+          e.preventDefault(); // Prevent cursor from moving to the start
+      } else if (e.key === 'Enter') {
+          console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
+          if (selectedId) {
+            // If an item is already selected, call sendPrompt with the selected ID
+            e.preventDefault();
+            sendPrompt(selectedId); // Call your sendPrompt function
+            banner.remove(); // Optionally remove the banner after sending the prompt
+        } else {
+          // If no item is selected yet, select the highlighted item
+          // Select the highlighted item, or the first item if none is highlighted
+          e.preventDefault(); // Prevent form submission if inside a form
+          if (currentFocus > -1) {
+              if (items[currentFocus]) {
+                  items[currentFocus].dispatchEvent(new Event('mousedown')); // Trigger the mousedown event
+              }
+          } else if (items.length > 0) {
+              // If no item is highlighted, select the first item
+              items[0].dispatchEvent(new Event('mousedown'));
+          }
+        }
+      }
+  });
+
+  // Function to add the "active" class to the current item
+  function addActive(items) {
+      removeActive(items); // Remove the "active" class from all items
+      if (currentFocus >= items.length) currentFocus = 0;
+      if (currentFocus < 0) currentFocus = items.length - 1;
+      items[currentFocus].classList.add('mzta_autocomplete-item-active'); // Add "active" class to the current item
+  }
+
+  // Function to remove the "active" class from all items
+  function removeActive(items) {
+      for (let i = 0; i < items.length; i++) {
+          items[i].classList.remove('mzta_autocomplete-item-active');
+      }
+  }
 
   // Handle the input field losing focus to hide the banner
   input.addEventListener('blur', function() {
@@ -182,4 +220,8 @@ function searchPrompt(){
     input.focus();
     input.dispatchEvent(new InputEvent('input', { bubbles: true }));
   }, 100);
+}
+
+function sendPrompt(prompt_id){
+  console.log(">>>>>>>>>>>>> [ThunderAI] sendPrompt: " + prompt_id);
 }
