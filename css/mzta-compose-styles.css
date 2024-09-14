@@ -30,10 +30,9 @@
     border-top: none;
     z-index: 1001;
     background-color: #fff;
-    max-height: 150px;
     overflow-y: auto;
     width: 12em;
-    max-height: 30em;
+    max-height: 11em;
 }
 
 .mzta_autocomplete-item {
