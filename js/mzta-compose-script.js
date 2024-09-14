@@ -112,14 +112,22 @@ function searchPrompt(){
   const banner = document.createElement('div');
   banner.id = 'mzta_search_banner';
 
+  const img = document.createElement('img');
+  img.src = browser.runtime.getURL('images/icon-16px.png');
+  img.id="mzta_search_icon";
+  img.title = "ThunderAI";
+  img.width = 16;
+  img.height = 16;
+  banner.appendChild(img);
+
   const input = document.createElement('input');
   input.type = 'text';
   input.id = 'mzta_search_input';
-  input.placeholder = 'Search a prompt...';
+  input.placeholder = browser.i18n.getMessage('SearchPrompt');
   banner.appendChild(input);
 
   const autocompleteList = document.createElement('div');
-  autocompleteList.classList.add('mzta_autocomplete-items');
+  autocompleteList.id = 'mzta_autocomplete-items';
   autocompleteList.style.display = 'none';
   banner.appendChild(autocompleteList);
 
@@ -128,10 +136,11 @@ function searchPrompt(){
     const query = this.value.trim().toLowerCase();
     autocompleteList.innerHTML = ''; // Clear previous suggestions
 
-    if (query === '') {
-        autocompleteList.style.display = 'none';
-        return;
-    }
+    // commented out to show all the prompts when the input is empty
+    // if (query === '') {
+    //     autocompleteList.style.display = 'none';
+    //     return;
+    // }
 
     // Filter data based on the query
     const filteredData = autocompleteData.filter(item => item.toLowerCase().startsWith(query));
@@ -169,5 +178,8 @@ function searchPrompt(){
   });
 
   document.body.insertBefore(banner, document.body.firstChild);
-  input.focus();
+  setTimeout(() => {
+    input.focus();
+    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  }, 100);
 }

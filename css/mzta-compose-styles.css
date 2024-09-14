@@ -13,15 +13,27 @@
   align-items: center; 
 }
 
-.mzta_autocomplete-items {
+#mzta_search_icon{
+  position: absolute;
+  left: 0.7em;
+}
+
+#mzta_search_input{
+  width: 12em;
+}
+
+#mzta_autocomplete-items {
     position: absolute;
+    top: 2em;
+    left: 2em;
     border: 1px solid #ccc;
     border-top: none;
     z-index: 1001;
     background-color: #fff;
     max-height: 150px;
     overflow-y: auto;
-    width: 300px;
+    width: 12em;
+    max-height: 30em;
 }
 
 .mzta_autocomplete-item {
@@ -46,7 +58,7 @@
         color:#ffffff;
     }
 
-    .mzta_autocomplete-items {
+    #mzta_autocomplete-items {
         border: 1px solid #555;
         background-color: #2c2c2c;
     }
