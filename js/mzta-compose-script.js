@@ -230,6 +230,11 @@ async function searchPrompt(allPrompts, tabId, tabType){
       if (currentFocus >= items.length) currentFocus = 0;
       if (currentFocus < 0) currentFocus = items.length - 1;
       items[currentFocus].classList.add('mzta_autocomplete-item-active'); // Add "active" class to the current item
+      // Ensure the active item is visible within the scrollable list
+      items[currentFocus].scrollIntoView({
+        behavior: 'auto', // You can change to 'smooth' if you prefer smooth scrolling
+        block: 'nearest', // Align the item to the nearest edge of the visible area
+      });
   }
 
   // Function to remove the "active" class from all items
