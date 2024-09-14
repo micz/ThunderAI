@@ -64,7 +64,7 @@ switch (message.command) {
     break;
 
   case 'searchPrompt':
-    searchPrompt(message._prompts_data, message.tab_type);
+    searchPrompt(message._prompts_data, message.tabId, message._tab_type);
     break;
 
   default:
@@ -74,7 +74,7 @@ switch (message.command) {
 });
 
 
-async function searchPrompt(allPrompts, tabType){
+async function searchPrompt(allPrompts, tabId, tabType){
   console.log(">>>>>>>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
   console.log(">>>>>>>>>>>>>>> tabType: " + tabType);
   const banner = document.createElement('div');
@@ -128,6 +128,16 @@ async function searchPrompt(allPrompts, tabType){
         return;
     }
 
+    // Prepend numbers to the first 10 items
+    Array.from(filteredData).slice(0, 10).forEach((item, index) => {
+      const number = (index < 9) ? (index + 1).toString() : '0';
+      // Check if the number is already prepended to avoid duplication
+      if (!item.numberPrepended) {
+          item.label = `${number}. ${item.label}`;
+          item.numberPrepended = 'true'; // Mark as prepended
+      }
+    });
+
     // Create a div for each filtered result
     filteredData.forEach(item => {
         const itemDiv = document.createElement('div');
@@ -152,44 +162,66 @@ async function searchPrompt(allPrompts, tabType){
 
   // Add a keydown event listener to handle arrow navigation and selection
   input.addEventListener('keydown', function (e) {
-      const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
-      if ((autocompleteList.style.display === 'none' || items.length === 0) && (e.key !== 'Enter')) {
-          return; // Do nothing if the autocomplete list is not visible
-      }
+    // Handle Escape key to remove the banner
+    if (e.key === 'Escape') {
+      e.preventDefault(); // Prevent any default behavior
+      banner.remove(); // Remove the banner
+      return; // Exit the handler
+    }
+  
+    const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
+    if ((autocompleteList.style.display === 'none' || items.length === 0)
+          && (e.key !== 'Enter')
+          && !['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) 
+        {
+        return; // Do nothing if the autocomplete list is not visible
+    }
 
-      if (e.key === 'ArrowDown') {
-          // Navigate down the list
-          currentFocus++;
-          if (currentFocus >= items.length) currentFocus = 0; // Wrap to the first item
-          addActive(items);
-          e.preventDefault(); // Prevent cursor from moving to the end
-      } else if (e.key === 'ArrowUp') {
-          // Navigate up the list
-          currentFocus--;
-          if (currentFocus < 0) currentFocus = items.length - 1; // Wrap to the last item
-          addActive(items);
-          e.preventDefault(); // Prevent cursor from moving to the start
-      } else if (e.key === 'Enter') {
-          console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
-          if (selectedId) {
-            // If an item is already selected, call sendPrompt with the selected ID
-            e.preventDefault();
-            sendPrompt(selectedId); // Call your sendPrompt function
-            banner.remove(); // Optionally remove the banner after sending the prompt
-        } else {
-          // If no item is selected yet, select the highlighted item
-          // Select the highlighted item, or the first item if none is highlighted
-          e.preventDefault(); // Prevent form submission if inside a form
-          if (currentFocus > -1) {
-              if (items[currentFocus]) {
-                  items[currentFocus].dispatchEvent(new Event('mousedown')); // Trigger the mousedown event
-              }
-          } else if (items.length > 0) {
-              // If no item is highlighted, select the first item
-              items[0].dispatchEvent(new Event('mousedown'));
-          }
+    // Handle number key presses (1-9,0) to select the corresponding item directly
+    if (['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) {
+      // Map '1' to index 0, '2' to 1, ..., '9' to 8, '0' to 9
+      const numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
+      if (items[numIndex]) {
+          e.preventDefault(); // Prevent any default behavior
+          // Dispatch a mousedown event to simulate a click/select action
+          items[numIndex].dispatchEvent(new Event('mousedown'));
+          return; // Exit after handling the number key
+      }
+    }
+
+    if (e.key === 'ArrowDown') {
+        // Navigate down the list
+        currentFocus++;
+        if (currentFocus >= items.length) currentFocus = 0; // Wrap to the first item
+        addActive(items);
+        e.preventDefault(); // Prevent cursor from moving to the end
+    } else if (e.key === 'ArrowUp') {
+        // Navigate up the list
+        currentFocus--;
+        if (currentFocus < 0) currentFocus = items.length - 1; // Wrap to the last item
+        addActive(items);
+        e.preventDefault(); // Prevent cursor from moving to the start
+    } else if (e.key === 'Enter') {
+        console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
+        if (selectedId) {
+          // If an item is already selected, call sendPrompt with the selected ID
+          e.preventDefault();
+          sendPrompt(selectedId, tabId); // Call your sendPrompt function
+          banner.remove(); // Optionally remove the banner after sending the prompt
+      } else {
+        // If no item is selected yet, select the highlighted item
+        // Select the highlighted item, or the first item if none is highlighted
+        e.preventDefault(); // Prevent form submission if inside a form
+        if (currentFocus > -1) {
+            if (items[currentFocus]) {
+                items[currentFocus].dispatchEvent(new Event('mousedown')); // Trigger the mousedown event
+            }
+        } else if (items.length > 0) {
+            // If no item is highlighted, select the first item
+            items[0].dispatchEvent(new Event('mousedown'));
         }
       }
+    }
   });
 
   // Function to add the "active" class to the current item
@@ -217,11 +249,13 @@ async function searchPrompt(allPrompts, tabType){
 
   document.body.insertBefore(banner, document.body.firstChild);
   setTimeout(() => {
-    input.focus();
     input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    input.focus();
   }, 100);
 }
 
-function sendPrompt(prompt_id){
+
+function sendPrompt(prompt_id, tabId){
   console.log(">>>>>>>>>>>>> [ThunderAI] sendPrompt: " + prompt_id);
+  browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
 }
