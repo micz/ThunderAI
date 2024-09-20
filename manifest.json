@@ -14,12 +14,12 @@
     "message_display_action": {
         "default_title": "__MSG_menu_title__",
         "default_icon": "images/icon-32px.png",
-        "type": "menu"
+        "default_popup": "popup/mzta-popup.html"
     },
     "compose_action": {
         "default_title": "__MSG_menu_title__",
         "default_icon": "images/icon-32px.png",
-        "type":"menu"
+        "default_popup": "popup/mzta-popup.html"
       },
     "permissions": [
         "compose",
@@ -44,5 +44,10 @@
     "default_locale": "en",
 	"options_ui": {
 		"page": "options/mzta-options.html"
-	}
+	},
+    "commands": {
+        "_thunderai__do_action": {
+        "description": ""
+        }
+    }
 }

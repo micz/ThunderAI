@@ -542,5 +542,9 @@
   "StorageSpace": {
     "message": "Total storage space occupied",
     "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Search a prompt",
+    "description": ""
   }
 }
