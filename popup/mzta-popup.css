@@ -1,48 +1,46 @@
 body {
     background-color: rgb(122, 180, 255);
-}
-
-#mzta_popup{
-    width: 10em;
-    height: 11em;
-    background-color: rgb(122, 180, 255);
-    padding: 0;
+    font-size: 14px;
 }
 
 #mzta_search_banner{
     background-color: rgb(122, 180, 255);
     color:black;
-    border-radius: 5px;
     width: fit-content;
     height: fit-content;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
-    width: fit-content;
-    height: 2em;
-    z-index: 1000;
+    width: 10em;
+    max-height: 11em;
+    min-height: 1em;
+    padding: 0;
+    overflow-y: auto;
   }
   
   #mzta_search_input{
     width: 12em;
+    position: fixed;
+    top:0;
+    left:0;
+    width: -moz-available;
+    z-index: 1001;
+    font-size: 13px;
   }
   
   #mzta_autocomplete-items {
-      position: absolute;
-      top: 2em;
+      position: relative;
+      top: 1.5em;
       left: 0em;
-      border: 1px solid #ccc;
-      border-top: none;
-      z-index: 1001;
+      border: none;
+      z-index: 1000;
       background-color: #fff;
-      overflow-y: auto;
       width: 10em;
-      max-height: 11em;
   }
   
   .mzta_autocomplete-item {
-      padding: 8px;
+      padding: 4px;
       cursor: pointer;
   }
   
@@ -61,11 +59,7 @@ body {
         background-color: #27272a;
     }
 
-    #mzta_popup{
-        background-color: #27272a;
-    }
-
-    input {
+    #mzta_search_input {
         background-color: #27272a;
         color: #ffffff;
     }
@@ -76,7 +70,6 @@ body {
     }
 
     #mzta_autocomplete-items {
-        border: 1px solid #555;
         background-color: #2c2c2c;
     }
     
