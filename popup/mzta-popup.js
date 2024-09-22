@@ -36,6 +36,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
  let input = document.getElementById('mzta_search_input');
  let autocompleteList = document.getElementById('mzta_autocomplete-items');
+ let _spacer_div = document.getElementById('_spacer_div');
  let banner = document.getElementById('mzta_search_banner');
 
  // Initialize variables to track focus and selection
@@ -66,6 +67,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
    if (filteredData.length === 0) {
        autocompleteList.style.display = 'none';
+       _spacer_div.style.display = 'none';
        return;
    }
 
@@ -95,12 +97,14 @@ async function searchPrompt(allPrompts, tabId, tabType){
            selectedId = item.id; // Store the selected item's ID
            console.log('>>>>>>>>>>>>> mousedown selectedId:', selectedId);
            autocompleteList.style.display = 'none';
+           _spacer_div.style.display = 'none';
        });
 
        autocompleteList.appendChild(itemDiv);
    });
 
    autocompleteList.style.display = 'block';
+   _spacer_div.style.display = 'block';
  });
 
  // Add a keydown event listener to handle arrow navigation and selection
