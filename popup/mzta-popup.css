@@ -1,10 +1,10 @@
 body {
-    background-color: rgb(122, 180, 255);
+    background-color: #FAFAFA;
     font-size: 14px;
 }
 
 #mzta_search_banner{
-    background-color: rgb(122, 180, 255);
+    background-color: #FAFAFA;
     color:black;
     width: fit-content;
     height: fit-content;
@@ -32,7 +32,7 @@ body {
     margin-top: 1.5em;
     border: none;
     z-index: 1000;
-    background-color: #fff;
+    background-color: #FAFAFA;
     width: 10em;
     overflow-y: auto;
   }
@@ -54,16 +54,16 @@ body {
   @media (prefers-color-scheme: dark) {
 
     body{   
-        background-color: #27272a;
+        background-color: #2c2c2c;
     }
 
     #mzta_search_input {
-        background-color: #27272a;
+        background-color: #2c2c2c;
         color: #ffffff;
     }
 
     #mzta_search_banner{
-        background-color: #27272a;
+        background-color: #2c2c2c;
         color:#ffffff;
     }
 
