@@ -18,6 +18,8 @@
 
 import { taStore } from "../js/mzta-store.js";
 
+let menuSendImmediately = false;
+
 document.addEventListener('DOMContentLoaded', async () => {
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     console.log(">>>>>>>>>>>>>> reponse: " + JSON.stringify(reponse));
@@ -29,6 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log(">>>>>>>>>>>>> _prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
     console.log(">>>>>>>>>>>>>> active_prompts: " + JSON.stringify(active_prompts));
+    let prefs_send = await browser.storage.sync.get({dynamic_menu_force_enter: false});
+    menuSendImmediately = prefs_send.dynamic_menu_force_enter;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 }, { once: true });
@@ -113,6 +117,9 @@ async function searchPrompt(allPrompts, tabId, tabType){
         console.log('>>>>>>>>>>>>> select_prompt selectedId:', selectedId);
         autocompleteList.style.display = 'none';
         _spacer_div.style.display = 'none';
+        if(menuSendImmediately){
+            sendPrompt(selectedId, tabId);
+        }
     });
 
        autocompleteList.appendChild(itemDiv);
