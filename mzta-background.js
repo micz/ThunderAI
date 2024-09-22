@@ -195,7 +195,7 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
                 menus.executeMenuAction(message.promptId);
-                brea
+                break;
             default:
                 break;
         }
