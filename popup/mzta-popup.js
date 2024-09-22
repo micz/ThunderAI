@@ -45,6 +45,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
  // Function to filter and display autocomplete suggestions
  input.addEventListener('input', function() {
    const query = this.value.trim().toLowerCase();
+   console.log(">>>>>>>>>>>> query: " + query);
    autocompleteList.innerHTML = ''; // Clear previous suggestions
    currentFocus = -1; // Reset the highlighted index
    selectedId = null; // Reset the selected ID since input has changed
@@ -59,8 +60,9 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
    // Filter data based on the query
    const filteredData = allPrompts.filter(item => 
-     item.label.toLowerCase().startsWith(query)
+     item.label.toLowerCase().includes(query)
    );
+  //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
    if (filteredData.length === 0) {
        autocompleteList.style.display = 'none';
@@ -76,6 +78,8 @@ async function searchPrompt(allPrompts, tabId, tabType){
          item.numberPrepended = 'true'; // Mark as prepended
      }
    });
+
+  //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
    // Create a div for each filtered result
    filteredData.forEach(item => {
