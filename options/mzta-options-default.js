@@ -29,4 +29,5 @@ export const prefs_default = {
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
     openai_comp_model: '',
     openai_comp_chat_name: 'OpenAI Comp',
+    dynamic_menu_force_enter: false,
 }
