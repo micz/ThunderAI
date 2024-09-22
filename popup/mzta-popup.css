@@ -1,6 +1,8 @@
 body {
     background-color: #FAFAFA;
     font-size: 14px;
+    padding: 0;
+    margin:3px;
 }
 
 #mzta_search_banner{
@@ -35,6 +37,7 @@ body {
     background-color: #FAFAFA;
     width: 10em;
     overflow-y: auto;
+    padding: 0;
   }
   
   .mzta_autocomplete-item {
