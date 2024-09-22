@@ -13,10 +13,9 @@ body {
     align-items: center;
     position: relative;
     width: 10em;
-    max-height: 11em;
+    max-height: 12em;
     min-height: 1em;
     padding: 0;
-    overflow-y: auto;
   }
   
   #mzta_search_input{
@@ -30,13 +29,12 @@ body {
   }
   
   #mzta_autocomplete-items {
-      position: relative;
-      top: 1.5em;
-      left: 0em;
-      border: none;
-      z-index: 1000;
-      background-color: #fff;
-      width: 10em;
+    margin-top: 1.5em;
+    border: none;
+    z-index: 1000;
+    background-color: #fff;
+    width: 10em;
+    overflow-y: auto;
   }
   
   .mzta_autocomplete-item {
