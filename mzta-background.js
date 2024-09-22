@@ -90,6 +90,20 @@ async function handleShortcut(tab) {
     if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
         return;
     }
+    switch (tab.type) {
+        case "mail":
+        case "messageDisplay":
+            browser.messageDisplayAction.openPopup();
+            break;
+        case "messageCompose":
+            browser.composeAction.openPopup();
+            break;
+        default:
+            break;
+    }    
+}
+
+async function preparePopupMenu(tab) {
     await taStore.setSessionData("lastShortcutTabId", tab.id);
     await taStore.setSessionData("lastShortcutTabType", tab.type);
     await taStore.setSessionData("lastShortcutPromptsData", menus.shortcutMenu);
@@ -98,13 +112,10 @@ async function handleShortcut(tab) {
         case "mail":
         case "messageDisplay":
             taStore.setSessionData("lastShortcutFiltering", 1);
-            browser.messageDisplayAction.openPopup();
             break;
         case "messageCompose":
             taStore.setSessionData("lastShortcutFiltering", 2);
-            browser.composeAction.openPopup();
             break;
-        
         default:
             break;
     }
@@ -187,14 +198,25 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 modified_html = await getOriginalBody(message.tabId);
                 await setBody(message.tabId, original_html);
                 await setBody(message.tabId, modified_html);
+                return true;
                 break;
             case 'reload_menus':
                 await menus.reload();
                 taLog.log("[ThunderAI] Reloaded menus");
+                return true;
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
                 menus.executeMenuAction(message.promptId);
+                return true;
+                break;
+            case 'popup_menu_ready':
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if(tabs.length == 0){
+                    return Promise.resolve(false);
+                }
+                preparePopupMenu(tabs[0]);
+                return Promise.resolve(true);
                 break;
             default:
                 break;

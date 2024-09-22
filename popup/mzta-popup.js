@@ -19,6 +19,9 @@
 import { taStore } from "../js/mzta-store.js";
 
 document.addEventListener('DOMContentLoaded', async () => {
+    let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
+    console.log(">>>>>>>>>>>>>> reponse: " + JSON.stringify(reponse));
+
     let tabId = await taStore.getSessionData("lastShortcutTabId");
     let tabType = await taStore.getSessionData("lastShortcutTabType");
     let filtering = await taStore.getSessionData("lastShortcutFiltering");
@@ -36,6 +39,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
  let input = document.getElementById('mzta_search_input');
  let autocompleteList = document.getElementById('mzta_autocomplete-items');
+ let autocompleteListLoading = document.getElementById('mzta_autocomplete-items-loading');
  let _spacer_div = document.getElementById('_spacer_div');
  let banner = document.getElementById('mzta_search_banner');
 
@@ -103,6 +107,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
        autocompleteList.appendChild(itemDiv);
    });
 
+   autocompleteListLoading.style.display = 'none';
    autocompleteList.style.display = 'block';
    _spacer_div.style.display = 'block';
  });
