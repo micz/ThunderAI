@@ -47,7 +47,7 @@
 	},
     "commands": {
         "_thunderai__do_action": {
-        "description": ""
+        "description": "Opens the ThunderAI prompts menu"
         }
     }
 }
