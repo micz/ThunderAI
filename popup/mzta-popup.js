@@ -102,7 +102,18 @@ async function searchPrompt(allPrompts, tabId, tabType){
            console.log('>>>>>>>>>>>>> mousedown selectedId:', selectedId);
            autocompleteList.style.display = 'none';
            _spacer_div.style.display = 'none';
+           sendPrompt(selectedId, tabId);
        });
+
+       // Add a select_prompt event to select the item
+       itemDiv.addEventListener('select_prompt', function(e) { // Use select_prompt instead of click
+        e.preventDefault(); // Prevents the input from losing focus
+        input.value = item.label;
+        selectedId = item.id; // Store the selected item's ID
+        console.log('>>>>>>>>>>>>> select_prompt selectedId:', selectedId);
+        autocompleteList.style.display = 'none';
+        _spacer_div.style.display = 'none';
+    });
 
        autocompleteList.appendChild(itemDiv);
    });
@@ -129,8 +140,8 @@ async function searchPrompt(allPrompts, tabId, tabType){
      const numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
      if (items[numIndex]) {
          e.preventDefault(); // Prevent any default behavior
-         // Dispatch a mousedown event to simulate a click/select action
-         items[numIndex].dispatchEvent(new Event('mousedown'));
+         // Dispatch a select_prompt event to simulate a click/select action
+         items[numIndex].dispatchEvent(new Event('select_prompt'));
          return; // Exit after handling the number key
      }
    }
@@ -153,18 +164,18 @@ async function searchPrompt(allPrompts, tabId, tabType){
          // If an item is already selected, call sendPrompt with the selected ID
          e.preventDefault();
          sendPrompt(selectedId, tabId); // Call your sendPrompt function
-         banner.remove(); // Remove the banner after sending the prompt
+         //banner.remove(); // Remove the banner after sending the prompt
      } else {
        // If no item is selected yet, select the highlighted item
        // Select the highlighted item, or the first item if none is highlighted
        e.preventDefault(); // Prevent form submission if inside a form
        if (currentFocus > -1) {
            if (items[currentFocus]) {
-               items[currentFocus].dispatchEvent(new Event('mousedown')); // Trigger the mousedown event
+               items[currentFocus].dispatchEvent(new Event('select_prompt')); // Trigger the select_prompt event
            }
        } else if (items.length > 0) {
            // If no item is highlighted, select the first item
-           items[0].dispatchEvent(new Event('mousedown'));
+           items[0].dispatchEvent(new Event('select_prompt'));
        }
      }
    }
