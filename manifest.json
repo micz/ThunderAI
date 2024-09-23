@@ -44,5 +44,13 @@
     "default_locale": "en",
 	"options_ui": {
 		"page": "options/mzta-options.html"
-	}
+	},
+    "content_scripts": [
+        {
+            "matches": ["https://*.chatgpt.com/*"],
+            "js": ["js/tb115_segmenter/tb115_loader.js"],
+            "all_frames": true,
+            "run_at": "document_start"
+        }
+    ]
 }
