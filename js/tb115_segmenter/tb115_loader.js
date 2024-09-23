@@ -22,7 +22,7 @@ console.log("[ThunderAI] Intl.Segmenter: " + Intl.Segmenter);
 
 (function() {
     if('Segmenter' in Intl){
-        console.log('[ThunderAI] TB128+ detected. Intl.Segmenter is already supported.');
+        // console.log('[ThunderAI] TB128+ detected. Intl.Segmenter is already supported.');
         return;
     }
     // Creates a <script> element to inject polyfill.js into the page context
