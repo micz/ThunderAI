@@ -562,5 +562,13 @@
   "prefs_OptionText_dynamic_menu_force_enter_info": {
     "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the hightlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
     "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_prompt_alphabetically": {
+    "message": "Menu: order alphabetically",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_prompt_alphabetically_info": {
+    "message": "If checked, the prompts in the menu will be ordered alphabetically.",
+    "description": ""
   }
 }
