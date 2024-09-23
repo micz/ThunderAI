@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 2.1.5 - ??/09/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.1.4 - 11/09/2024</h2>
       <ul>
         <li><i>[ChatGPT API][Ollama API]</i> Fixed the colors of the light theme in the chat window status logger.</li>
