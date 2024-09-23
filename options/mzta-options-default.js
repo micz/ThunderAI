@@ -30,5 +30,5 @@ export const prefs_default = {
     openai_comp_model: '',
     openai_comp_chat_name: 'OpenAI Comp',
     dynamic_menu_force_enter: false,
-    dynamic_menu_order_prompt_alphabetically: true,
+    dynamic_menu_order_alphabet: true,
 }

@@ -42,6 +42,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function searchPrompt(allPrompts, tabId, tabType){
  taLog.log("tabType: " + tabType);
 
+ let prefs_order = await browser.storage.sync.get({dynamic_menu_order_alphabet: true});
+
+ if(prefs_order.dynamic_menu_order_alphabet){
+  allPrompts.sort((a, b) => a.label.localeCompare(b.label));
+ }
+
+ // console.log(">>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
+
  let input = document.getElementById('mzta_search_input');
  let autocompleteList = document.getElementById('mzta_autocomplete-items');
  let autocompleteListLoading = document.getElementById('mzta_autocomplete-items-loading');
