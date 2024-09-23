@@ -49,5 +49,13 @@
         "_thunderai__do_action": {
         "description": "Opens the ThunderAI prompts menu"
         }
-    }
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://*.chatgpt.com/*"],
+            "js": ["js/tb115_segmenter/tb115_loader.js"],
+            "all_frames": true,
+            "run_at": "document_start"
+        }
+    ]
 }
