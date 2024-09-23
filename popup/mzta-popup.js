@@ -17,29 +17,30 @@
  */
 
 import { taStore } from "../js/mzta-store.js";
+import { taLogger } from "../js/mzta-logger.js";
 
 let menuSendImmediately = false;
+let taLog = console;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false});
+    taLog = new taLogger("mzta-popup",prefs.do_debug);
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
-    console.log(">>>>>>>>>>>>>> reponse: " + JSON.stringify(reponse));
-
+    taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
     let tabId = await taStore.getSessionData("lastShortcutTabId");
     let tabType = await taStore.getSessionData("lastShortcutTabType");
     let filtering = await taStore.getSessionData("lastShortcutFiltering");
     let _prompts_data = await taStore.getSessionData("lastShortcutPromptsData");
-    console.log(">>>>>>>>>>>>> _prompts_data: " + JSON.stringify(_prompts_data));
+    taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
-    console.log(">>>>>>>>>>>>>> active_prompts: " + JSON.stringify(active_prompts));
-    let prefs_send = await browser.storage.sync.get({dynamic_menu_force_enter: false});
-    menuSendImmediately = prefs_send.dynamic_menu_force_enter;
+    taLog.log("active_prompts: " + JSON.stringify(active_prompts));
+    menuSendImmediately = prefs.dynamic_menu_force_enter;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 }, { once: true });
 
 async function searchPrompt(allPrompts, tabId, tabType){
- console.log(">>>>>>>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
- console.log(">>>>>>>>>>>>>>> tabType: " + tabType);
+ taLog.log("tabType: " + tabType);
 
  let input = document.getElementById('mzta_search_input');
  let autocompleteList = document.getElementById('mzta_autocomplete-items');
@@ -54,7 +55,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
  // Function to filter and display autocomplete suggestions
  input.addEventListener('input', function() {
    const query = this.value.trim().toLowerCase();
-   console.log(">>>>>>>>>>>> query: " + query);
+  // console.log(">>>>>>>>>>>> query: " + query);
    autocompleteList.innerHTML = ''; // Clear previous suggestions
    currentFocus = -1; // Reset the highlighted index
    selectedId = null; // Reset the selected ID since input has changed
@@ -71,7 +72,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
    const filteredData = allPrompts.filter(item => 
      item.label.toLowerCase().includes(query)
    );
-  //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
+   taLog.log("filteredData: " + JSON.stringify(filteredData));
 
    if (filteredData.length === 0) {
        autocompleteList.style.display = 'none';
@@ -103,7 +104,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
            e.preventDefault(); // Prevents the input from losing focus
            input.value = item.label;
            selectedId = item.id; // Store the selected item's ID
-           console.log('>>>>>>>>>>>>> mousedown selectedId:', selectedId);
+           taLog.log('mousedown selectedId:', selectedId);
            autocompleteList.style.display = 'none';
            _spacer_div.style.display = 'none';
            sendPrompt(selectedId, tabId);
@@ -114,7 +115,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
         e.preventDefault(); // Prevents the input from losing focus
         input.value = item.label;
         selectedId = item.id; // Store the selected item's ID
-        console.log('>>>>>>>>>>>>> select_prompt selectedId:', selectedId);
+        // console.log('>>>>>>>>>>>>> select_prompt selectedId:', selectedId);
         autocompleteList.style.display = 'none';
         _spacer_div.style.display = 'none';
         if(menuSendImmediately){
@@ -166,7 +167,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
        addActive(items);
        e.preventDefault(); // Prevent cursor from moving to the start
    } else if (e.key === 'Enter') {
-       console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
+      //  console.log(">>>>>>>>>>>>>> keydown == enter selectedId: " + selectedId);
        if (selectedId) {
          // If an item is already selected, call sendPrompt with the selected ID
          e.preventDefault();
@@ -217,7 +218,7 @@ document.body.insertBefore(banner, document.body.firstChild);
 
 
 function sendPrompt(prompt_id, tabId){
- console.log(">>>>>>>>>>>>> [ThunderAI] sendPrompt: " + prompt_id);
+ taLog.log("sendPrompt: " + prompt_id);
  browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
 }
 
