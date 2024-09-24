@@ -570,5 +570,9 @@
   "prefs_OptionText_dynamic_menu_order_alphabet_info": {
     "message": "If checked, the prompts in the menu will be ordered alphabetically.",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Set to 0 if you experience issues opening the chat window.",
+    "description": ""
   }
 }
