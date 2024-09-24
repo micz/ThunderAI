@@ -358,8 +358,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             taLog.log("[ollama_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
 
             if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options.width = prefs.chatgpt_win_width,
-                win_options.height = prefs.chatgpt_win_height
+                win_options3.width = prefs.chatgpt_win_width,
+                win_options3.height = prefs.chatgpt_win_height
             }
 
             await browser.windows.create(win_options3);
@@ -410,14 +410,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 taLog.log("[openai_comp_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
 
                 if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                    win_options.width = prefs.chatgpt_win_width,
-                    win_options.height = prefs.chatgpt_win_height
+                    win_options4.width = prefs.chatgpt_win_width,
+                    win_options4.height = prefs.chatgpt_win_height
                 }
         
                 await browser.windows.create(win_options4);
         
                 const listener4 = async (message, sender, sendResponse) => {
-        console.log(">>>>>>>>>>>>>> message: " + JSON.stringify(message));
                     if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
         
                         let newWindow4 = await browser.windows.get(message.window_id, {populate: true});
@@ -428,11 +427,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         if(mailMessage) mailMessageId4 = mailMessage.id;
         
                         // check if the config is present, or give a message error
-                        if (prefs.chatgpt_api_key == '') {
+                        if (prefs.openai_comp_host == '') {
                             browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
                             return;
                         }
-                        if (prefs.chatgpt_model == '') {
+                        if (prefs.openai_comp_model == '') {
                             browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
                             return;
                         }
