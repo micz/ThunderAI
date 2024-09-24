@@ -241,16 +241,22 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
     switch(prefs.connection_type){
         case 'chatgpt_web':
+        // We are using the ChatGPT web interface
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
 
-        // We are using the ChatGPT web interface
-        let newWindow = await browser.windows.create({
+        let win_options = {
             url: "https://chatgpt.com?call_id=" + rand_call_id,
             type: "popup",
-            width: prefs.chatgpt_win_width,
-            height: prefs.chatgpt_win_height
-        });
+        }
+        
+        taLog.log("[chatgpt_web] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+
+        if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+            win_options.width = prefs.chatgpt_win_width,
+            win_options.height = prefs.chatgpt_win_height
+        }
+        let newWindow = await browser.windows.create(win_options);
 
         let newWindowId = newWindow.id;
         let createdTab = newWindow.tabs[0];
@@ -288,16 +294,23 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         break;  // chatgpt_web - END
 
     case 'chatgpt_api':
-        // We are using the ChatGPT API
+         // We are using the ChatGPT API
 
         let rand_call_id2 = '_openai_' + generateCallID();
 
-        await browser.windows.create({
+        let win_options2 = {
             url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2),
             type: "popup",
-            width: prefs.chatgpt_win_width,
-            height: prefs.chatgpt_win_height
-        });
+        }
+
+        taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+
+        if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+            win_options2.width = prefs.chatgpt_win_width,
+            win_options2.height = prefs.chatgpt_win_height
+        }
+
+        await browser.windows.create(win_options2);
 
         const listener2 = async (message, sender, sendResponse) => {
 
@@ -331,18 +344,25 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         break;  // chatgpt_api - END
 
         case 'ollama_api':
-            // We are using the Ollama API
+             // We are using the Ollama API
 
             taLog.log("Ollama API window opening...");
 
             let rand_call_id3 = '_ollama_' + generateCallID();
 
-            await browser.windows.create({
+            let win_options3 = {
                 url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3),
                 type: "popup",
-                width: prefs.chatgpt_win_width,
-                height: prefs.chatgpt_win_height
-            });
+            }
+
+            taLog.log("[ollama_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+
+            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+                win_options.width = prefs.chatgpt_win_width,
+                win_options.height = prefs.chatgpt_win_height
+            }
+
+            await browser.windows.create(win_options3);
 
             const listener3 = async (message, sender, sendResponse) => {
 
@@ -381,13 +401,20 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 // We are using the OpenAI Comp API
         
                 let rand_call_id4 = '_openai_comp_api_' + generateCallID();
-        
-                await browser.windows.create({
+
+                let win_options4 = {
                     url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4),
                     type: "popup",
-                    width: prefs.chatgpt_win_width,
-                    height: prefs.chatgpt_win_height
-                });
+                }
+
+                taLog.log("[openai_comp_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+
+                if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+                    win_options.width = prefs.chatgpt_win_width,
+                    win_options.height = prefs.chatgpt_win_height
+                }
+        
+                await browser.windows.create(win_options4);
         
                 const listener4 = async (message, sender, sendResponse) => {
         console.log(">>>>>>>>>>>>>> message: " + JSON.stringify(message));
