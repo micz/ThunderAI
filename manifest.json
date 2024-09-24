@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "2.2.0pre2",
+    "version": "2.2.0pre3",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
@@ -14,12 +14,12 @@
     "message_display_action": {
         "default_title": "__MSG_menu_title__",
         "default_icon": "images/icon-32px.png",
-        "type": "menu"
+        "default_popup": "popup/mzta-popup.html"
     },
     "compose_action": {
         "default_title": "__MSG_menu_title__",
         "default_icon": "images/icon-32px.png",
-        "type":"menu"
+        "default_popup": "popup/mzta-popup.html"
       },
     "permissions": [
         "compose",
@@ -44,5 +44,18 @@
     "default_locale": "en",
 	"options_ui": {
 		"page": "options/mzta-options.html"
-	}
+	},
+    "commands": {
+        "_thunderai__do_action": {
+        "description": "Opens the ThunderAI prompts menu"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://*.chatgpt.com/*"],
+            "js": ["js/tb115_segmenter/tb115_loader.js"],
+            "all_frames": true,
+            "run_at": "document_start"
+        }
+    ]
 }

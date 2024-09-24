@@ -327,6 +327,14 @@
     "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the local server remember to set the CORS settings correctly.",
     "description": ""
   },
+  "prefsInfoDesc_5": {
+    "message": "Remember that you can open the ThunderAI menu using the keyboard shortcut CTRL+ALT+A.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "You can change the shortcut clicking on the cogwheel icon at the top right of this page and choosing \"Manage Extension Shortcut\".",
+    "description": ""
+  },
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""
@@ -541,6 +549,26 @@
   },
   "StorageSpace": {
     "message": "Total storage space occupied",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Search prompts",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menu: immediate prompt send",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the hightlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menu: order alphabetically",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "If checked, the prompts in the menu will be ordered alphabetically.",
     "description": ""
   }
 }

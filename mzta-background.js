@@ -20,6 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
+import { taStore } from './js/mzta-store.js';
 import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
@@ -64,6 +65,61 @@ browser.contentScripts.register({
     js: [{file: "js/mzta-chatgpt-loader.js"}],
     runAt: "document_idle"
   });
+
+let ThunderAI_Shortcut = "Ctrl+Alt+A";
+
+// Shortcut
+messenger.commands.update({
+    name: "_thunderai__do_action",
+    shortcut: ThunderAI_Shortcut
+}).then(() => {
+    taLog.log('Shortcut [' + ThunderAI_Shortcut + '] registered successfully!');
+}).catch((error) => {
+    taLog.error('Error registering shortcut [' + ThunderAI_Shortcut + ']: ' + error);
+});
+
+// Listen for shortcut command
+messenger.commands.onCommand.addListener((command, tab) => {
+    if (command === "_thunderai__do_action") {
+        handleShortcut(tab);
+    }
+});
+    
+async function handleShortcut(tab) {
+    taLog.log("Shortcut triggered!");
+    if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
+        return;
+    }
+    switch (tab.type) {
+        case "mail":
+        case "messageDisplay":
+            browser.messageDisplayAction.openPopup();
+            break;
+        case "messageCompose":
+            browser.composeAction.openPopup();
+            break;
+        default:
+            break;
+    }    
+}
+
+async function preparePopupMenu(tab) {
+    await taStore.setSessionData("lastShortcutTabId", tab.id);
+    await taStore.setSessionData("lastShortcutTabType", tab.type);
+    await taStore.setSessionData("lastShortcutPromptsData", menus.shortcutMenu);
+    console.log(">>>>>>>> menus.shortcutMenu: " + JSON.stringify(menus.shortcutMenu));
+    switch (tab.type) {
+        case "mail":
+        case "messageDisplay":
+            taStore.setSessionData("lastShortcutFiltering", 1);
+            break;
+        case "messageCompose":
+            taStore.setSessionData("lastShortcutFiltering", 2);
+            break;
+        default:
+            break;
+    }
+}
 
 messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
@@ -142,10 +198,25 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 modified_html = await getOriginalBody(message.tabId);
                 await setBody(message.tabId, original_html);
                 await setBody(message.tabId, modified_html);
+                return true;
                 break;
             case 'reload_menus':
                 await menus.reload();
                 taLog.log("[ThunderAI] Reloaded menus");
+                return true;
+                break;
+            case 'shortcut_do_prompt':
+                taLog.log("Executing shortcut, promptId: " + message.promptId);
+                menus.executeMenuAction(message.promptId);
+                return true;
+                break;
+            case 'popup_menu_ready':
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if(tabs.length == 0){
+                    return Promise.resolve(false);
+                }
+                preparePopupMenu(tabs[0]);
+                return Promise.resolve(true);
                 break;
             default:
                 break;
