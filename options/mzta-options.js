@@ -63,7 +63,7 @@ async function restoreOptions() {
           let default_number_value = 0;
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
-          element.value = result[element.id] || default_number_value;
+          element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
           let default_text_value = '';
