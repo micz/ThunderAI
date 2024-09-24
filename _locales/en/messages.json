@@ -552,7 +552,7 @@
     "description": ""
   },
   "SearchPrompt": {
-    "message": "Search a prompt",
+    "message": "Search prompts",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter": {
