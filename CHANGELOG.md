@@ -9,7 +9,7 @@
     <ul>
       <li><i>[ChatGPT Web]</i> Removed the option to force the ChatGPT4 model over ChatGPT3.5, since it was useless now.</li>
       <li><i>[OpenAI Comp API]</i> Added a new integration method to use a local LLM via an API compatible with OpenAI's API specifications [<a href="https://github.com/micz/ThunderAI/issues/126">#126</a>].</li>
-      <li>Custom Prompts storage space incremented to 5MB, using <pre>storage.local<pre>. Added also the total occupied space at the bottom of the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/129">#129</a>].</li>
+      <li>Custom Prompts storage space incremented to 5MB, using <i>storage.local</i>. Added also the total occupied space at the bottom of the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/129">#129</a>].</li>
       <li><i>[ChatGPT Web]</i> Updated the information in the option page.</li>
       <li>A new dynamic menu for selecting prompts has been added. In addition to clicking the ThunderAI button, you can now use the CTRL+ALT+A keyboard shortcut [<a href="https://github.com/micz/ThunderAI/issues/130">#130</a>].</li>
       <li>Added an option to order alphabetically the prompts in the menu.</li>
