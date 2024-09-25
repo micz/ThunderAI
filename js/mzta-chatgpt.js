@@ -37,9 +37,9 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
         textArea = document.querySelector('form textarea');
         old_textArea = true;
     }
-    let sendButton = document.querySelector('path[d*="M15.1918 8.90615C15.6381"]')?.parentNode.parentNode  // from sept-2024;
-            || document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode  // post-GPT-4o;
-            || document.querySelector('[data-testid="send-button"]'); // pre-GPT-4o
+    let sendButton = document.querySelector('[data-testid="send-button"]') // pre-GPT-4o
+            || document.querySelector('path[d*="M15.1918 8.90615C15.6381"]')?.parentNode.parentNode  // from sept-2024;
+            || document.querySelector('path[d*="M15.192 8.906a1.143"]')?.parentNode.parentNode;  // post-GPT-4o;
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
