@@ -20,6 +20,7 @@
 
 import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet } from './mzta-utils.js'
+import { taLogger } from './mzta-logger.js';
 
 export class mzta_Menus {
 
@@ -28,6 +29,7 @@ export class mzta_Menus {
     menu_context_compose = null;
     menu_context_display = null;
     menu_listeners = {};
+    logger = null;
 
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
@@ -37,12 +39,13 @@ export class mzta_Menus {
     //{ id: 'ItemD', label: 'LabelD' },
     ];
 
-    constructor(openChatGPT) {
+    constructor(openChatGPT, do_debug = false) {
         this.menu_context_compose = getMenuContextCompose();
         this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
         this.allPrompts = [];
         this.listener = this.listener.bind(this);
+        this.logger = new taLogger('mzta_Menus', do_debug);
     }
 
 
@@ -182,6 +185,8 @@ export class mzta_Menus {
     addMenu = async (menu, root = null) => {
         for (let item of menu) {
           let {id, is_default, name, menu, act} = item;
+
+          this.logger.log("addMenu: " + id);
 
           await new Promise(resolve =>
             browser.menus.create({
