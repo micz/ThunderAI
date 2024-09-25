@@ -169,7 +169,7 @@ export function preparePromptsForExport(prompts){
     output.forEach(prompt => {
         if(prompt.is_default == 1){
             Object.keys(prompt).forEach(key => {
-                if(!['id', 'enabled', 'position_compose', 'position_display'].includes(key)){
+                if(!['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'].includes(key)){
                     delete prompt[key];
                 }
             })
@@ -214,6 +214,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+                prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -238,7 +239,7 @@ async function getCustomPrompts() {
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
+        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled, need_custom_text: prompt.need_custom_text};
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
@@ -248,4 +249,3 @@ export async function setDefaultPromptsProperties(prompts) {
 export async function setCustomPrompts(prompts) {
     await browser.storage.local.set({_custom_prompt: prompts});
 }
-

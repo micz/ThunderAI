@@ -18,6 +18,7 @@
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
 import { isThunderbird128OrGreater, getCustomPromptsUsedSpace } from "../js/mzta-utils.js";
+import { taLogger } from "../js/mzta-logger.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -25,8 +26,12 @@ var positionMax_compose = 0;
 var positionMax_display = 0;
 var idnumMax = 0;
 var msgTimeout = null;
+let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    let prefs_debug = await browser.storage.sync.get({do_debug: false});
+    taLog = new taLogger("mzta-custom-prompts", prefs_debug.do_debug);
     
     setStorageSpace();
     
@@ -415,7 +420,7 @@ function loadPromptsList(values){
                     <br>
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
+                    <input type="checkbox" class="need_custom_text input_mod" > __MSG_customPrompts_form_label_need_custom_text__
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
@@ -584,6 +589,7 @@ async function saveAll() {
             // For each item in the array, return only the '_values' part
             return item.values();
         });
+        taLog.log('newPrompts: ' + JSON.stringify(newPrompts));
         // newPrompts.forEach(prompt => {
         //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
         // });
