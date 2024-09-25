@@ -459,5 +459,5 @@ function checkScreenDimensions(prefs){
 }
 
 // Menus handling
-const menus = new mzta_Menus(openChatGPT);
+const menus = new mzta_Menus(openChatGPT, prefs_debug.do_debug);
 menus.loadMenus();
