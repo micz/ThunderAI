@@ -62,8 +62,8 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Anything in the Thunderbird console logs that might be useful? Open the console using the keyboard shortcut CTRL+SHIFT+J.
-      description: For example, error message, or stack traces.
+      label: Anything in the Thunderbird console logs that might be useful?
+      description: For example, error message, or stack traces. Open the console using the keyboard shortcut CTRL+SHIFT+J.
       render: txt
   - type: textarea
     id: additional
