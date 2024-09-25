@@ -15,6 +15,7 @@
       <li>A new dynamic menu for selecting prompts has been added. In addition to clicking the ThunderAI button, you can now use the CTRL+ALT+A keyboard shortcut [<a href="https://micz.it/thunderbird-addon-thunderai/dynamic-menu/">More info</a>] [<a href="https://github.com/micz/ThunderAI/issues/130">#130</a>].</li>
       <li>Added an option to order alphabetically the prompts in the menu.</li>
       <li>Allow 0 as the dimensions for the chat window in the options page to prevent issues, such as those encountered with NixOS/Hyprland [<a href="https://github.com/micz/ThunderAI/issues/137">#137</a>].</li>
+      <li>Is now possible to ask for additional text before sending the prompts also for default prompts [<a href="https://github.com/micz/ThunderAI/issues/135">#135</a>].</li>
       <li>...</li>
     </ul>
 <h2>Version 2.1.4 - 11/09/2024</h2>
