@@ -420,7 +420,7 @@ function loadPromptsList(values){
                     <br>
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text input_mod" > __MSG_customPrompts_form_label_need_custom_text__
+                    <input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
