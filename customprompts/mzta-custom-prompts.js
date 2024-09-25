@@ -365,6 +365,7 @@ function handleInputChange(e) {
 
 
 function loadPromptsList(values){
+    // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
     let options = {
         valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
         item: function(values) {
