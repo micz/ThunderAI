@@ -57,8 +57,8 @@ Are you using this addon in your Thunderbird?
 ### Translations
 - English (en-US)	: [Mic](https://github.com/micz/)
 - Italian (it)		: [Mic](https://github.com/micz/)
-- French (fr)		: ChatGPT
-- German (de)		: ChatGPT
+- French (fr)		: Generated automatically
+- German (de)		: Generated automatically
 
 <br>
 
