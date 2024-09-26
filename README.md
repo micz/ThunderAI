@@ -72,16 +72,14 @@ Are you using this addon in your Thunderbird?
 <br>
 
 ### Miscellaneous
-<a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.
-
-<a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.
-
-<a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface.
+- <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend
+- <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
+- <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 
 
 <br>
 
 ### Graphics
-Addon icon thanks for the help to ChatGPT-4 ;-)
-
-<a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
+- Addon icon thanks for the help to ChatGPT-4 ;-)
+- <a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
+- [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
