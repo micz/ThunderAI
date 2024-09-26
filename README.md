@@ -52,10 +52,27 @@ Are you using this addon in your Thunderbird?
 
 <br>
 
-## Thanks to
-<ul><li><a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.</li>
-<li><a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.</li>
-<li><a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface.</li>
-<li><a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG.</li>
-</ul>
-<i>The specific references are described in the corresponding source files.</i>
+## Attributions
+
+### Translations
+- English (en-US)	: [Mic](https://github.com/micz/)
+- Italian (it)		: [Mic](https://github.com/micz/)
+- French (fr)		: ChatGPT
+- German (de)		: ChatGPT
+
+<br>
+
+### Miscellaneous
+<a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend.
+
+<a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration.
+
+<a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface.
+
+
+<br>
+
+### Graphics
+Addon icon thanks for the help to ChatGPT-4 ;-)
+
+<a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
