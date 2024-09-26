@@ -26,6 +26,13 @@ Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
 >
 > Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
 
+<br>
+
+> [!TIP]
+> **Using an OpenAI Compatible API**
+>
+> From version 2.2.0 is possible to use a local OpenAI Compatible API server, like LM Studio!
+
 
 <br>
 
