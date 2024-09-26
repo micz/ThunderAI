@@ -55,10 +55,12 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
-- English (en-US)	: [Mic](https://github.com/micz/)
-- Italian (it)		: [Mic](https://github.com/micz/)
-- French (fr)		: Generated automatically
-- German (de)		: Generated automatically
+- Brazilian Portuguese (pt-br): Bruno Pereira de Souza
+- English (en-US): [Mic](https://github.com/micz/)
+- French (fr): Generated automatically
+- German (de): Generated automatically
+- Italian (it): [Mic](https://github.com/micz/)
+
 
 <br>
 
