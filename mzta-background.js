@@ -107,7 +107,7 @@ async function preparePopupMenu(tab) {
     await taStore.setSessionData("lastShortcutTabId", tab.id);
     await taStore.setSessionData("lastShortcutTabType", tab.type);
     await taStore.setSessionData("lastShortcutPromptsData", menus.shortcutMenu);
-    console.log(">>>>>>>> menus.shortcutMenu: " + JSON.stringify(menus.shortcutMenu));
+    //console.log(">>>>>>>> menus.shortcutMenu: " + JSON.stringify(menus.shortcutMenu));
     switch (tab.type) {
         case "mail":
         case "messageDisplay":
