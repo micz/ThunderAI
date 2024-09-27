@@ -572,7 +572,7 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_win_dims_info": {
-    "message": "Set to 0 if you experience issues opening the chat window.",
+    "message": "Set to 0 if you don't want to specify the window size.",
     "description": ""
   }
 }
