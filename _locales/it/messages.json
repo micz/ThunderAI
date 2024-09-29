@@ -323,6 +323,18 @@
     "message": "Per utilizzare l'integrazione con Ollama, è necessario configurare un server Ollama locale. Una volta che il server è attivo, inserisci il suo indirizzo nel campo designato all'interno dell'applicazione. Per garantire una corretta comunicazione tra ThunderAI e il server Ollama, ricorda di impostare OLLAMA_ORIGINS=moz-extension://*.",
     "description": ""
   },
+  "prefsInfoDesc_4": {
+    "message": "Per utilizzare questa integrazione, è necessario configurare un server locale compatibile con l'API di OpenAI, come LM Studio. Una volta avviato il server, inserisci il suo indirizzo nella pagina delle opzioni. Per garantire una corretta comunicazione tra ThunderAI e il server locale, ricorda di configurare correttamente le impostazioni CORS.",
+    "description": ""
+  },
+  "prefsInfoDesc_5": {
+    "message": "Ricorda che puoi aprire il menu di ThunderAI utilizzando la combinazione di tasti CTRL+ALT+A.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "Puoi modificare la scorciatoia cliccando sull'icona a forma di ingranaggio in alto a destra di questa pagina e scegliendo \"Gestisci scorciatoie da tastiera\".",
+    "description": ""
+  },
   "prefsDonation_1": {
     "message": "Ti piace questo componente aggiuntivo?",
     "description": ""
@@ -443,6 +455,10 @@
     "message": "API Ollama (LLM Locale)",
     "description": ""
   },
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "API compatibile con OpenAI",
+    "description": ""
+  },
   "prefs_API_Host": {
     "message": "Indirizzo dell'host",
     "description": ""
@@ -493,6 +509,70 @@
   },
   "prefs_API_Host_Info": {
     "message": "Qualcosa come",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "Modelli dell'API compatibile con OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Aggiorna la lista dei modelli dell'API compatibile con OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Errore durante il tentativo di recuperare i modelli dell'API compatibile con OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "Non hai aggiunto un indirizzo del server per l'API compatibile con OpenAI. Inseriscine uno nella pagina delle opzioni.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "Non hai scelto un modello per l'API compatibile con OpenAI. Scegline uno nella pagina delle opzioni.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Tentativo di connessione al server locale dell'API compatibile con OpenAI utilizzando l'host",
+    "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "Richiesta all'API compatibile con OpenAI fallita",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Nome della chat",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "Questo è il nome che verrà utilizzato nella chat con l'IA.",
+    "description": ""
+  },
+  "StorageSpace": {
+    "message": "Spazio di archiviazione totale occupato",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Cerca prompt",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menu: invio immediato del prompt",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "Se selezionato, l'utilizzo della combinazione di tasti CTRL+ALT+A invierà automaticamente il prompt evidenziato dal menu. In caso contrario, verrà visualizzato il nome del prompt, richiedendo un'ulteriore pressione del tasto Invio per inviarlo.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menu: ordina alfabeticamente",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "Se selezionato, i prompt nel menu verranno ordinati in ordine alfabetico.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Imposta su 0 se non desideri specificare la dimensione della finestra.",
     "description": ""
   }
 }
