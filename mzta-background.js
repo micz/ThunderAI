@@ -386,7 +386,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         await browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
                         return;
                     }
-
+                    console.log(">>>>>> [ThunderAI] Ollama API about to send message to createdTab3.id: " + createdTab3.id);
                     await browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
                     taLog.log('[Ollama API] Connection succeded!');
                     browser.runtime.onMessage.removeListener(listener3);

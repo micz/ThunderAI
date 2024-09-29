@@ -93,7 +93,7 @@ switch (llm) {
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
-        console.log("(>>>>>> [ThunderAI] Ollama init done.");
+        console.log(">>>>>> [ThunderAI] Ollama init done.");
         try{
             messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
         }catch(e){
@@ -142,7 +142,7 @@ worker.onmessage = function(event) {
 
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
+    console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     switch (message.command) {
         case "api_send":
             //send the received prompt to the llm api
