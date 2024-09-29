@@ -93,7 +93,13 @@ switch (llm) {
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
+        console.log("(>>>>>> [ThunderAI] Ollama init done.");
+        try{
+            messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
+        }catch(e){
+            console.error(">>>>>> [ThunderAI] messagesArea.appendUserMessage failed: " + JSON.stringify(e));
+        }
+        console.log(">>>>>> [ThunderAI] messagesArea.appendUserMessage done.");
         break;
     }
     case "openai_comp_api": {

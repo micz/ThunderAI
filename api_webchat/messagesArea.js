@@ -143,7 +143,7 @@ class MessagesArea extends HTMLElement {
 
     appendUserMessage(messageText, type="user") {
         this.fullTextHTML = "";
-        // console.log("[ThunderAI] appendUserMessage: " + messageText);
+        console.log(">>>>>> [ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         let source = "You";
         switch (type) {
@@ -161,11 +161,12 @@ class MessagesArea extends HTMLElement {
         messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         this.messages.appendChild(messageElement);
+        console.log(">>>>>> [ThunderAI] appendUserMessage done.");
         this.scrollToBottom();
     }
 
     appendBotMessage(messageText, type="bot") {
-        // console.log("[ThunderAI] appendBotMessage: " + messageText);
+        console.log("(>>>>>> [ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
 
@@ -182,6 +183,7 @@ class MessagesArea extends HTMLElement {
         messageElement.classList.add('message', type);
         messageElement.textContent = messageText;
         this.messages.appendChild(messageElement);
+        console.log("(>>>>>> [ThunderAI] appendBotMessage done.");
         this.scrollToBottom();
     }
 
