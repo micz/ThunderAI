@@ -89,9 +89,9 @@ switch (llm) {
         messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
         break;
     case "ollama_api": {
-        let prefs_api ={};
+        let prefs_api = {};
         try{
-            await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+            prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
         }catch(e){
             prefs_api.ollama_host = '';
             prefs_api.ollama_model = '';
