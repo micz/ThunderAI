@@ -37,7 +37,8 @@ function saveOptions(e) {
       case 'number':
         options[element.id] = element.valueAsNumber;
         break;
-      case 'text':
+        case 'text':
+        case 'password':
         options[element.id] = element.value.trim();
         break;
       default:
@@ -54,7 +55,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + result[element.id]);
+      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -66,6 +67,7 @@ async function restoreOptions() {
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
+        case 'password':
           let default_text_value = '';
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
           element.value = result[element.id] || default_text_value;
@@ -144,15 +146,15 @@ function warn_ChatGPT_APIKeyEmpty() {
     btnFetchChatGPTModels.disabled = true;
     modelChatGPT.disabled = true;
     modelChatGPT.selectedIndex = -1;
-    modelChatGPT.style.border = 'none';
+    modelChatGPT.style.border = '';
   }else{
-    apiKeyInput.style.border = 'none';
+    apiKeyInput.style.border = '';
     btnFetchChatGPTModels.disabled = false;
     modelChatGPT.disabled = false;
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
     }else{
-      modelChatGPT.style.border = 'none';
+      modelChatGPT.style.border = '';
     }
   }
 }
@@ -166,9 +168,9 @@ function warn_Ollama_HostEmpty() {
     btnFetchOllamaModels.disabled = true;
     modelOllama.disabled = true;
     modelOllama.selectedIndex = -1;
-    modelOllama.style.border = 'none';
+    modelOllama.style.border = '';
   }else{
-    hostInput.style.border = 'none';
+    hostInput.style.border = '';
     btnFetchOllamaModels.disabled = false;
     modelOllama.disabled = false;
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
@@ -188,15 +190,15 @@ function warn_OpenAIComp_HostEmpty() {
     btnUpdateOpenAICompModels.disabled = true;
     modelOpenAIComp.disabled = true;
     modelOpenAIComp.selectedIndex = -1;
-    modelOpenAIComp.style.border = 'none';
+    modelOpenAIComp.style.border = '';
   }else{
-    hostInput.style.border = 'none';
+    hostInput.style.border = '';
     btnUpdateOpenAICompModels.disabled = false;
     modelOpenAIComp.disabled = false;
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
     }else{
-      modelOpenAIComp.style.border = 'none';
+      modelOpenAIComp.style.border = '';
     }
   }
 }
@@ -356,5 +358,16 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_ChatGPT_APIKeyEmpty();
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
+
+  const passwordField = document.getElementById('chatgpt_api_key');
+  const toggleIcon = document.getElementById('togglePassword');
+  const icon_img = document.getElementById('pwd-icon');
+
+  toggleIcon.addEventListener('click', () => {
+      const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField.setAttribute('type', type);
+
+      icon_img.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
+  });
 
 }, { once: true });

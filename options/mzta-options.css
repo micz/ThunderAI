@@ -109,6 +109,33 @@ tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
     font-style: italic;
 }
 
+.chatgpt_api_key-container {
+    position: relative;
+    width: 100%;
+}
+
+.chatgpt_api_key-container input {
+    width: -moz-available;
+    margin-right: 25px;
+}
+
+input[type="text"], input[type="password"]{
+    border-radius: 4px;
+    padding: 2px;
+}
+
+input.option-input[type="text"]{
+    width: -moz-available;
+}
+
+.chatgpt_api_key-container .toggle-icon {
+    position: absolute;
+    right: 0px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
 #ollama_model_fetch_loading{
     display: none;
     font-style: italic;

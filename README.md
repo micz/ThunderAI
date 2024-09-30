@@ -83,3 +83,4 @@ Are you using this addon in your Thunderbird?
 - Addon icon thanks for the help to ChatGPT-4 ;-)
 - <a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
+- [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide api key field

@@ -104,10 +104,12 @@
           <span>__MSG_prefs_ChatGPT_API_Key__</span>
         </label></td>
         <td>
-          <label>
-            <input type="text" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input" style="width:20em" />
-            &nbsp;<span></span>
-          </label>
+          <div class="chatgpt_api_key-container">
+            <label>
+              <input type="password" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input"/>
+            </label>
+            <span class="toggle-icon" id="togglePassword"><img src="../images/pwd-show.png" id="pwd-icon"></span>
+          </div>
         </td>
       </tr>
       <tr class="conntype_chatgpt_api">
@@ -131,8 +133,7 @@
         </label></td>
         <td>
           <label>
-            <input type="text" id="ollama_host" name="ollama_host" class="option-input" style="width:14em" />
-            &nbsp;<span></span>
+            <input type="text" id="ollama_host" name="ollama_host" class="option-input"/>
           </label>
         </td>
       </tr>
@@ -157,8 +158,7 @@
         </label></td>
         <td>
           <label>
-            <input type="text" id="openai_comp_host" name="openai_comp_host" class="option-input" style="width:14em" />
-            &nbsp;<span></span>
+            <input type="text" id="openai_comp_host" name="openai_comp_host" class="option-input" />
           </label>
         </td>
       </tr>
@@ -182,9 +182,8 @@
         </label></td>
         <td>
           <label>
-            <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" style="width:14em" />
+            <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" />
             <br>__MSG_prefs_OpenAIComp_ChatName_Info__
-            &nbsp;<span></span>
           </label>
         </td>
       </tr>
