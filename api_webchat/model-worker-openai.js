@@ -106,6 +106,7 @@ self.onmessage = async function(event) {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
+        let chunk = '';
     
         while (true) {
             if (stopStreaming) {
@@ -124,16 +125,24 @@ self.onmessage = async function(event) {
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
-            const chunk = decoder.decode(value);
+            chunk += decoder.decode(value);
+            console.log(">>>>>>>>>>>>>> [ThunderAI] chunk: " + JSON.stringify(chunk));
             const lines = chunk.split("\n");
-            const parsedLines = lines
-                .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                // .map((line) => JSON.parse(line)); // Parse the JSON string
-                .map((line) => {
-                    console.log(">>>>>>>>>>>>> [ThunderAI] line: " + JSON.stringify(line));
-                    return JSON.parse(line);
-                });
+            let parsedLines = [];
+            try{
+                parsedLines = lines
+                    .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
+                    .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                    // .map((line) => JSON.parse(line)); // Parse the JSON string
+                    .map((line) => {
+                        console.log(">>>>>>>>>>>>> [ThunderAI] line: " + JSON.stringify(line));
+                        return JSON.parse(line);
+                    });
+                    chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
+                    console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
+            }catch(e){
+                console.error(">>>>>>>>>>>>> [ThunderAI] error: " + JSON.stringify(e));
+            }
     
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;
