@@ -23,21 +23,26 @@ export class OpenAIComp {
 
   host = '';
   model = '';
+  apiKey = '';
   stream = false;
 
-  constructor(host, model, stream = false) {
+  constructor(host, model, apiKey = '', stream = false) {
     this.host = host.trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
+    this.apiKey = apiKey;
   }
 
 
   fetchModels = async () => {
+    const curr_headers = {
+      "Content-Type": "application/json",
+    };
+    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+
     const response = await fetch(this.host + "/v1/models", {
         method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: curr_headers,
     });
 
     if (!response.ok) {
@@ -59,12 +64,15 @@ export class OpenAIComp {
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
+    const curr_headers = {
+      "Content-Type": "application/json",
+    };
+    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+
     try {
       const response = await fetch(this.host + "/v1/chat/completions", {
           method: "POST",
-          headers: { 
-              "Content-Type": "application/json",
-          },
+          headers: curr_headers,
           body: JSON.stringify({ 
               model: this.model, 
               messages: messages,
