@@ -25,8 +25,17 @@ const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
 const call_id = urlParams.get('call_id');
 
-// console.log(">>>>>>>>>>> llm: " + llm);
-// console.log(">>>>>>>>>>> call_id: " + call_id);
+// Data received from the user
+let promptData = null;
+
+const messageInput = document.querySelector('message-input');
+const messagesArea = document.querySelector('messages-area');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log(">>>>>>>>>> controller.js DOMContentLoaded");
+
+ console.log(">>>>>>>>>>> llm: " + llm);
+ console.log(">>>>>>>>>>> call_id: " + call_id);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
@@ -38,12 +47,15 @@ switch (llm) {
         worker = new Worker('model-worker-openai.js', { type: 'module' });
         break;
     case "ollama_api":
+        console.log(">>>>>>>> [ThunderAI] ollama_api sending I'm ready message...");
         try{
             browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         }catch(e){
             console.error(">>>>>> [ThunderAI] Failed to send ollama_api_ready: " + JSON.stringify(e));
         }
+        console.log(">>>>>> [ThunderAI] ollama_api I'm ready message sent.");
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
+        console.log(">>>>>> [ThunderAI] ollama_api worker initialized.");
         break;
     case "openai_comp_api":
         browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
@@ -51,16 +63,11 @@ switch (llm) {
         break;
 }
 
-const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
 
 // Initialize the messageInput component and pass the worker to it
-const messageInput = document.querySelector('message-input');
 messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
-
-// Data received from the user
-let promptData = null;
 
 // ============================== TESTING
 // let browser = {
@@ -86,7 +93,9 @@ switch (llm) {
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
+        console.log(">>>>>> [ThunderAI] chatgpt_api worker initialized.");
         messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
+        console.log(">>>>> [ThunderAI] messagesArea.appendUserMessage done.");
         break;
     case "ollama_api": {
         let prefs_api = {};
@@ -126,7 +135,6 @@ switch (llm) {
     }
 }
 
-
 // Event listeners for worker messages
 worker.onmessage = function(event) {
     console.log(">>>>>>>>>> [ThunderAI] controller.js onmessage: " + JSON.stringify(event));
@@ -151,6 +159,8 @@ worker.onmessage = function(event) {
             console.error('[ThunderAI] Unknown event type from API worker:', type);
     }
 };
+
+}, { once: true });
 
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
