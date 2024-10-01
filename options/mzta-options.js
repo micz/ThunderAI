@@ -330,7 +330,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
 
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
-    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value, true);
+    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true);
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail = JSON.parse(data.error);
