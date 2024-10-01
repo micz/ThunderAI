@@ -129,7 +129,11 @@ self.onmessage = async function(event) {
             const parsedLines = lines
                 .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
                 .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                .map((line) => JSON.parse(line)); // Parse the JSON string
+                // .map((line) => JSON.parse(line)); // Parse the JSON string
+                .map((line) => {
+                    console.log(">>>>>>>>>>>>> [ThunderAI] line: " + JSON.stringify(line));
+                    return JSON.parse(line);
+                });
     
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;
