@@ -109,12 +109,12 @@ tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
     font-style: italic;
 }
 
-.chatgpt_api_key-container {
+.api_key-container {
     position: relative;
     width: 100%;
 }
 
-.chatgpt_api_key-container input {
+.api_key-container input {
     width: -moz-available;
     margin-right: 25px;
 }
@@ -128,7 +128,7 @@ input.option-input[type="text"]{
     width: -moz-available;
 }
 
-.chatgpt_api_key-container .toggle-icon {
+.api_key-container .toggle-icon {
     position: absolute;
     right: 0px;
     top: 50%;
@@ -171,6 +171,10 @@ input.option-input[type="text"]{
 
     tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
         background-color: rgb(89, 20, 129);
+    }
+
+    .api_key-container .toggle-icon img {
+        filter: invert(1);
     }
 
 }

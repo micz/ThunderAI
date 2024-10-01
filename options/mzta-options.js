@@ -55,7 +55,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -359,15 +359,26 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
 
-  const passwordField = document.getElementById('chatgpt_api_key');
-  const toggleIcon = document.getElementById('togglePassword');
-  const icon_img = document.getElementById('pwd-icon');
+  const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
+  const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
+  const icon_img_chatgpt_api_key = document.getElementById('pwd-icon_chatgpt_api_key');
 
-  toggleIcon.addEventListener('click', () => {
-      const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordField.setAttribute('type', type);
+  toggleIcon_chatgpt_api_key.addEventListener('click', () => {
+      const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_chatgpt_api_key.setAttribute('type', type);
 
-      icon_img.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
+      icon_img_chatgpt_api_key.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
+  });
+
+  const passwordField_openai_comp_api_key = document.getElementById('openai_comp_api_key');
+  const toggleIcon_openai_comp_api_key = document.getElementById('toggle_openai_comp_api_key');
+  const icon_img_openai_comp_api_key = document.getElementById('pwd-icon_openai_comp_api_key');
+
+  toggleIcon_openai_comp_api_key.addEventListener('click', () => {
+      const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_openai_comp_api_key.setAttribute('type', type);
+
+      icon_img_openai_comp_api_key.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
   });
 
 }, { once: true });

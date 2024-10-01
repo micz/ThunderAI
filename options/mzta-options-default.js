@@ -28,6 +28,7 @@ export const prefs_default = {
     ollama_model: '',
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
     openai_comp_model: '',
+    openai_comp_api_key: '',
     openai_comp_chat_name: 'OpenAI Comp',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,

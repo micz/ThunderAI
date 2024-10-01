@@ -574,5 +574,13 @@
   "prefs_OptionText_chatgpt_win_dims_info": {
     "message": "Set to 0 if you don't want to specify the window size.",
     "description": ""
+  },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "OpenAI Comp API Key",
+    "description": ""
+  },
+  "Optional": {
+    "message": "Optional",
+    "description": ""
   }
 }
