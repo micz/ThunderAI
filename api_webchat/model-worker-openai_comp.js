@@ -24,6 +24,7 @@ import { OpenAIComp } from '../js/api/openai_comp.js';
 
 let openai_comp_host = null;
 let openai_comp_model = '';
+let openai_comp_api_key = '';
 let openai_comp = null;
 let stopStreaming = false;
 
@@ -34,7 +35,8 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         openai_comp_host = event.data.openai_comp_host;
         openai_comp_model = event.data.openai_comp_model;
-        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, true);
+        openai_comp_api_key = event.data.openai_comp_api_key;
+        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
 
