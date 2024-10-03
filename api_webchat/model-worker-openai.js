@@ -63,7 +63,7 @@ self.onmessage = async function(event) {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
-        let chunk = '';
+        let buffer = '';
     
         while (true) {
             if (stopStreaming) {
@@ -82,12 +82,12 @@ self.onmessage = async function(event) {
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
-            chunk += decoder.decode(value);
-            taLog.log("chunk: " + JSON.stringify(chunk));
-            const lines = chunk.split("\n");
+            const chunk = decoder.decode(value);
+            buffer += chunk;
+            taLog.log("buffer " + buffer);
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
             let parsedLines = [];
-            chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
-            taLog.log("last chunk: " + JSON.stringify(chunk));
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
@@ -98,7 +98,7 @@ self.onmessage = async function(event) {
                         return JSON.parse(line);
                     });
             }catch(e){
-                taLog.warn("broken chunk: " + e);
+                taLog.error("Error parsing lines: " + e);
             }
     
             for (const parsedLine of parsedLines) {

@@ -68,7 +68,7 @@ self.onmessage = async function(event) {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
-            let chunk = '';
+            let buffer= '';
     
             try {
                 while (true) {
@@ -89,12 +89,12 @@ self.onmessage = async function(event) {
                         break;
                     }
                     // lots of low-level Ollama response parsing stuff
-                    chunk += decoder.decode(value);
-                    taLog.log("chunk: " + chunk);
-                    const lines = chunk.split("\n");
+                    const chunk = decoder.decode(value);
+                    buffer += chunk;
+                    taLog.log("buffer: " + buffer);
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
                     let parsedLines = [];
-                    chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
-                    taLog.log("last chunk: " + JSON.stringify(chunk));
                     try{
                         parsedLines = lines
                             .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
@@ -105,7 +105,7 @@ self.onmessage = async function(event) {
                                 return JSON.parse(line);
                             });
                     }catch(e){
-                        taLog.warn("broken chunk: " + e);
+                        taLog.error("Error parsing lines: " + e);
                     }
             
                     for (const parsedLine of parsedLines) {
@@ -133,3 +133,16 @@ self.onmessage = async function(event) {
             break; //stop
      }
 };
+
+
+// Function to split a string in half
+function splitStringInHalf(inputString) {
+    // Get the middle index of the string
+    const middleIndex = Math.ceil(inputString.length / 2);
+  
+    // Split the string into two halves
+    const firstHalf = inputString.slice(0, middleIndex);
+    const secondHalf = inputString.slice(middleIndex);
+  
+    return { firstHalf, secondHalf };
+  }
