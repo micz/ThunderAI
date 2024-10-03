@@ -60,6 +60,7 @@ self.onmessage = async function(event) {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
+        let chunk = '';
     
         while (true) {
             if (stopStreaming) {
@@ -78,12 +79,25 @@ self.onmessage = async function(event) {
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
-            const chunk = decoder.decode(value);
+            chunk += decoder.decode(value);
+            // console.log(">>>>>>>>>>>>>> [ThunderAI] chunk: " + JSON.stringify(chunk));
             const lines = chunk.split("\n");
-            const parsedLines = lines
-                .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                .map((line) => JSON.parse(line)); // Parse the JSON string
+            let parsedLines = [];
+            chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
+            // console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
+            try{
+                parsedLines = lines
+                    .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
+                    .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                    // .map((line) => JSON.parse(line)); // Parse the JSON string
+                    .map((line) => {
+                        // console.log(">>>>>>>>>>>>> [ThunderAI] line: " + JSON.stringify(line));
+                        return JSON.parse(line);
+                    });
+            }catch(e){
+                // console.error(">>>>>>>>>>>>> [ThunderAI] error: " + e);
+                console.warn("[ThunderAI | model-worker-openai_comp] broken chunk: " + e);
+            }
     
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;

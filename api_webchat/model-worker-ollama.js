@@ -63,6 +63,7 @@ self.onmessage = async function(event) {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
+            let chunk = '';
     
             try {
                 while (true) {
@@ -83,13 +84,19 @@ self.onmessage = async function(event) {
                         break;
                     }
                     // lots of low-level Ollama response parsing stuff
-                    const chunk = decoder.decode(value);
+                    chunk += decoder.decode(value);
                     //console.log(">>>>>>>>>>>>> chunk: " + chunk);
                     const lines = chunk.split("\n");
-                    const parsedLines = lines
-                        .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
-                        .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                        .map((line) => JSON.parse(line)); // Parse the JSON string
+                    let parsedLines = [];
+                    chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
+                    try{
+                        parsedLines = lines
+                            .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
+                            .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                            .map((line) => JSON.parse(line)); // Parse the JSON string
+                    }catch(e){
+                        console.warn("[ThunderAI | model-worker-ollama] broken chunk: " + e);
+                    }
             
                     for (const parsedLine of parsedLines) {
                         const { message } = parsedLine;
