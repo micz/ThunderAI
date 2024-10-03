@@ -31,8 +31,7 @@ let promptData = null;
 const messageInput = document.querySelector('message-input');
 const messagesArea = document.querySelector('messages-area');
 
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log(">>>>>>>>>> controller.js DOMContentLoaded");
+console.log(">>>>>>>>>> controller.js DOMContentLoaded");
 
  console.log(">>>>>>>>>>> llm: " + llm);
  console.log(">>>>>>>>>>> call_id: " + call_id);
@@ -43,22 +42,21 @@ let worker = null;
 
 switch (llm) {
     case "chatgpt_api":
-        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        console.log(">>>>>>>> [ThunderAI] chatgpt_api sending I'm ready message...");
+        // browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        console.log(">>>>>> [ThunderAI] chatgpt_api I'm ready message sent.");
         worker = new Worker('model-worker-openai.js', { type: 'module' });
+        console.log(">>>>>> [ThunderAI] chatgpt_api worker initialized.");
         break;
     case "ollama_api":
         console.log(">>>>>>>> [ThunderAI] ollama_api sending I'm ready message...");
-        try{
-            browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
-        }catch(e){
-            console.error(">>>>>> [ThunderAI] Failed to send ollama_api_ready: " + JSON.stringify(e));
-        }
+        // browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         console.log(">>>>>> [ThunderAI] ollama_api I'm ready message sent.");
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
         console.log(">>>>>> [ThunderAI] ollama_api worker initialized.");
         break;
     case "openai_comp_api":
-        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        // browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-openai_comp.js', { type: 'module' });
         break;
 }
@@ -93,19 +91,14 @@ switch (llm) {
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
-        console.log(">>>>>> [ThunderAI] chatgpt_api worker initialized.");
+        console.log(">>>>>> [ThunderAI] chatgpt_api worker post init message.");
         messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
         console.log(">>>>> [ThunderAI] messagesArea.appendUserMessage done.");
+        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     case "ollama_api": {
         let prefs_api = {};
-        try{
-            prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
-        }catch(e){
-            prefs_api.ollama_host = '';
-            prefs_api.ollama_model = '';
-            console.error(">>>>>> [ThunderAI] Failed to get ollama_api prefs: " + JSON.stringify(e));
-        }
+        prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
         let i18nStrings = {};
         i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
@@ -114,6 +107,7 @@ switch (llm) {
         messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
         console.log(">>>>>> [ThunderAI] Ollama init done.");
+        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         try{
             messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
         }catch(e){
@@ -131,6 +125,7 @@ switch (llm) {
         messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
         worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
+        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
 }
@@ -159,8 +154,6 @@ worker.onmessage = function(event) {
             console.error('[ThunderAI] Unknown event type from API worker:', type);
     }
 };
-
-}, { once: true });
 
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
