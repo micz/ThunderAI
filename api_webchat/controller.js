@@ -77,33 +77,33 @@ let promptData = null;
 
 switch (llm) {
     case "chatgpt_api":
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', do_debug: false});
         //console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
-        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
+        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, do_debug: prefs_api.do_debug});
         messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
         break;
     case "ollama_api": {
-        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: '', do_debug: false});
         let i18nStrings = {};
         i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
         break;
     }
     case "openai_comp_api": {
-        let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_chat_name: ''});
+        let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_chat_name: '', do_debug: false});
         let i18nStrings = {};
         i18nStrings["OpenAIComp_api_request_failed"] = browser.i18n.getMessage('OpenAIComp_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.openai_comp_model);
         messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
-        worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
         break;
     }
