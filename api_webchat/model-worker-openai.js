@@ -21,11 +21,14 @@
  */
 
 import { OpenAI } from '../js/api/openai.js';
+import { taLogger } from '../js/mzta-logger.js';
 
 let chatgpt_api_key = null;
 let chatgpt_model = '';
 let openai = null;
 let stopStreaming = false;
+let do_debug = false;
+let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -34,8 +37,9 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         chatgpt_api_key = event.data.chatgpt_api_key;
         chatgpt_model = event.data.chatgpt_model;
-        //console.log(">>>>>>>>>>> chatgpt_api_key: " + chatgpt_api_key);
         openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
+        do_debug = event.data.do_debug;
+        taLog = new taLogger('model-worker-openai', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
 
@@ -51,7 +55,7 @@ self.onmessage = async function(event) {
                 const errorJSON = await response.json();
                 errorDetail = JSON.stringify(errorJSON);
                 error_message = errorJSON.error.message;
-                //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                taLog.error("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
             }
             postMessage({ type: 'error', payload: error_message });
             throw new Error("[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
@@ -79,23 +83,22 @@ self.onmessage = async function(event) {
             }
             // lots of low-level OpenAI response parsing stuff
             chunk += decoder.decode(value);
-            // console.log(">>>>>>>>>>>>>> [ThunderAI] chunk: " + JSON.stringify(chunk));
+            taLog.log("chunk: " + JSON.stringify(chunk));
             const lines = chunk.split("\n");
             let parsedLines = [];
             chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
-            // console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
+            taLog.log("last chunk: " + JSON.stringify(chunk));
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
                     .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
-                        // console.log(">>>>>>>>>>>>> [ThunderAI] line: " + JSON.stringify(line));
+                        taLog.log("line: " + JSON.stringify(line));
                         return JSON.parse(line);
                     });
             }catch(e){
-                // console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
-                console.warn("[ThunderAI | model-worker-openai] broken chunk: " + e);
+                taLog.warn("broken chunk: " + e);
             }
     
             for (const parsedLine of parsedLines) {
