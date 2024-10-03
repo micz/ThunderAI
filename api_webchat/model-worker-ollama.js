@@ -21,12 +21,15 @@
  */
 
 import { Ollama } from '../js/api/ollama.js';
+import { taLogger } from '../js/mzta-logger.js';
 
 let ollama_host = null;
 let ollama_model = '';
 let ollama = null;
 let stopStreaming = false;
 let i18nStrings = null;
+let do_debug = false;
+let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
@@ -38,7 +41,9 @@ self.onmessage = async function(event) {
             ollama_model = event.data.ollama_model;
             //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
             ollama = new Ollama(ollama_host, ollama_model, true);
+            do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
+            taLog = new taLogger('model-worker-ollama', do_debug);
             break;  // init
         case 'chatMessage':
             conversationHistory.push({ role: 'user', content: event.data.message });
@@ -55,7 +60,7 @@ self.onmessage = async function(event) {
                     const errorJSON = await response.json();
                     errorDetail = JSON.stringify(errorJSON);
                     error_message = errorJSON.error;
-                    //console.log(">>>>>>>>>>>>> errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                    taLog.log("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
                 }
                 postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + error_message });
                 throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
@@ -85,17 +90,22 @@ self.onmessage = async function(event) {
                     }
                     // lots of low-level Ollama response parsing stuff
                     chunk += decoder.decode(value);
-                    //console.log(">>>>>>>>>>>>> chunk: " + chunk);
+                    taLog.log("chunk: " + chunk);
                     const lines = chunk.split("\n");
                     let parsedLines = [];
                     chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
+                    taLog.log("last chunk: " + JSON.stringify(chunk));
                     try{
                         parsedLines = lines
                             .map((line) => line.replace(/^chunk: /, "").trim()) // Remove the "chunk: " prefix
                             .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
-                            .map((line) => JSON.parse(line)); // Parse the JSON string
+                            // .map((line) => JSON.parse(line)); // Parse the JSON string
+                            .map((line) => {
+                                taLog.log("line: " + JSON.stringify(line));
+                                return JSON.parse(line);
+                            });
                     }catch(e){
-                        console.warn("[ThunderAI | model-worker-ollama] broken chunk: " + e);
+                        taLog.warn("broken chunk: " + e);
                     }
             
                     for (const parsedLine of parsedLines) {
