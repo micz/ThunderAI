@@ -141,7 +141,8 @@ self.onmessage = async function(event) {
                     chunk = chunk.substring(chunk.lastIndexOf('\n') + 1);
                     console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
             }catch(e){
-                console.error(">>>>>>>>>>>>> [ThunderAI] error: " + JSON.stringify(e));
+                console.log(">>>>>>>>>>>>>> [ThunderAI] last chunk: " + JSON.stringify(chunk));
+                console.error(">>>>>>>>>>>>> [ThunderAI] error: " + e);
             }
     
             for (const parsedLine of parsedLines) {
