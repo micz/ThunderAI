@@ -574,5 +574,9 @@
   "prefs_OptionText_chatgpt_win_dims_info": {
     "message": "Réglez sur 0 si vous ne souhaitez pas spécifier la taille de la fenêtre.",
     "description": ""
+  },
+  "Optional": {
+    "message": "Optionnel",
+    "description": ""
   }
 }
