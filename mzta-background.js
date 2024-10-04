@@ -357,11 +357,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 function handleOllamaApi(createdTab3) {
                     taLog.log("Ollama API window ready.");
                     taLog.log("message.window_id: " + message.window_id)
-                    taLog.log(">>>>>> createdTab3.id: " + createdTab3.id)
+                    taLog.log("createdTab3.id: " + createdTab3.id)
                     // let mailMessage3 = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                     let mailMessageId3 = -1;
                     if(mailMessage) mailMessageId3 = mailMessage.id;
-                    taLog.log(">>>>>> mailMessageId3: " + mailMessageId3)
+                    taLog.log("mailMessageId3: " + mailMessageId3)
             
                     // check if the config is present, or give a message error
                     if (prefs.ollama_host == '') {
@@ -372,7 +372,6 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
                         return;
                     }
-                    console.log(">>>>>> [ThunderAI] Ollama API about to send message to createdTab3.id: " + createdTab3.id);
                     browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
                     taLog.log('[Ollama API] Connection succeded!');
                     browser.runtime.onMessage.removeListener(listener3);
