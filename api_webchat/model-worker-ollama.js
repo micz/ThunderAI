@@ -133,16 +133,3 @@ self.onmessage = async function(event) {
             break; //stop
      }
 };
-
-
-// Function to split a string in half
-function splitStringInHalf(inputString) {
-    // Get the middle index of the string
-    const middleIndex = Math.ceil(inputString.length / 2);
-  
-    // Split the string into two halves
-    const firstHalf = inputString.slice(0, middleIndex);
-    const secondHalf = inputString.slice(middleIndex);
-  
-    return { firstHalf, secondHalf };
-  }
