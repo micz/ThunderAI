@@ -407,6 +407,36 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         
                 let rand_call_id4 = '_openai_comp_api_' + generateCallID();
 
+      
+                const listener4 = async (message, sender, sendResponse) => {
+
+                    function handleOpenAICompApi(createdTab) {
+                        let mailMessageId4 = -1;
+                        if(mailMessage) mailMessageId4 = mailMessage.id;
+        
+                        // check if the config is present, or give a message error
+                        if (prefs.openai_comp_host == '') {
+                            browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
+                            return;
+                        }
+                        if (prefs.openai_comp_model == '') {
+                            browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
+                            return;
+                        }
+        
+                        browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text});
+                        taLog.log('[OpenAI Comp API] Connection succeded!');
+                        browser.runtime.onMessage.removeListener(listener4);
+                    }
+
+                    if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
+                        return handleOpenAICompApi(sender.tab);
+                    }
+                    return false;
+                }
+        
+                browser.runtime.onMessage.addListener(listener4);
+
                 let win_options4 = {
                     url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4),
                     type: "popup",
@@ -420,34 +450,6 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 }
         
                 await browser.windows.create(win_options4);
-        
-                const listener4 = async (message, sender, sendResponse) => {
-                    if (message.command === "openai_comp_api_ready_"+rand_call_id4) {
-        
-                        let newWindow4 = await browser.windows.get(message.window_id, {populate: true});
-                        let createdTab4 = newWindow4.tabs[0];
-        
-                        // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
-                        let mailMessageId4 = -1;
-                        if(mailMessage) mailMessageId4 = mailMessage.id;
-        
-                        // check if the config is present, or give a message error
-                        if (prefs.openai_comp_host == '') {
-                            browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_host')});
-                            return;
-                        }
-                        if (prefs.openai_comp_model == '') {
-                            browser.tabs.sendMessage(createdTab4.id, { command: "api_error", error: browser.i18n.getMessage('OpenAIComp_empty_model')});
-                            return;
-                        }
-        
-                        browser.tabs.sendMessage(createdTab4.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text});
-                        taLog.log('[OpenAI Comp API] Connection succeded!');
-                        browser.runtime.onMessage.removeListener(listener4);
-                    }
-                }
-        
-                browser.runtime.onMessage.addListener(listener4);
         
                 break;  // openai_comp_api
     }
