@@ -211,12 +211,12 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'reload_menus':
                 menus.reload();
                 taLog.log("Reloading menus");
-                return true;
+                return Promise.resolve(true);
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
                 menus.executeMenuAction(message.promptId);
-                return true;
+                return Promise.resolve(true);
                 break;
             case 'popup_menu_ready':
                 async function _popup_menu_ready() {
