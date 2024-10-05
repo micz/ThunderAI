@@ -165,6 +165,7 @@ export class mzta_Menus {
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
+        this.logger.log("Menus loaded");
     }
 
     listener(info, tab) {
