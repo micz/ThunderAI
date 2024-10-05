@@ -121,7 +121,7 @@ async function preparePopupMenu(tab) {
     }
 }
 
-messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
     // handler function.
     if (message && message.hasOwnProperty("command")){
@@ -139,70 +139,78 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                     });
                     break;
             case 'chatgpt_replaceSelectedText':
-                    //console.log('chatgpt_replaceSelectedText: [' + message.tabId +'] ' + message.text)
-                    original_html = await getOriginalBody(message.tabId);
-                    await browser.tabs.sendMessage(message.tabId, { command: "replaceSelectedText", text: message.text, tabId: message.tabId });
+                async function _replaceSelectedText(tabId, text) {
+                    //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
+                    original_html = await getOriginalBody(tabId);
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId });
                     return true;
-            case 'chatgpt_replyMessage':
-                const paragraphsHtmlString = message.text;
-                //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
-                let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
-                //console.log('reply_type: ' + prefs.reply_type);
-                let replyType = 'replyToAll';
-                if(prefs.reply_type === 'reply_sender'){
-                    replyType = 'replyToSender';
                 }
-                //console.log('replyType: ' + replyType);
-                // browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
-                //     let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
-                //         type: "reply",
-                //         //body:  paragraphsHtmlString,
-                //         isPlainText: false,
-                //         identityId: await getCurrentIdentity(mailMessage),
-                //     })
-                //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
-                browser.messages.get(message.mailMessageId).then(async (mailMessage) => {
-                let curr_idn = await getCurrentIdentity(mailMessage)
-                let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
-                    type: "reply",
-                    //body:  paragraphsHtmlString,
-                    isPlainText: false,
-                    identityId: curr_idn,
-                })
-                    // Wait for tab loaded.
-                    await new Promise(resolve => {
-                        const tabIsLoaded = tab => {
-                            return tab.status == "complete" && tab.url != "about:blank";
-                        };
-                        const listener = (tabId, changeInfo, updatedTab) => {
-                            if (tabIsLoaded(updatedTab)) {
-                                browser.tabs.onUpdated.removeListener(listener);
-                                //console.log(">>>>>>>>>>>> reply_tab: " + tabId);
-                                resolve();
+                return _replaceSelectedText(message.tabId, message.text);
+            case 'chatgpt_replyMessage':
+                async function _replyMessage(message) {
+                    const paragraphsHtmlString = message.text;
+                    //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
+                    let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
+                    //console.log('reply_type: ' + prefs.reply_type);
+                    let replyType = 'replyToAll';
+                    if(prefs.reply_type === 'reply_sender'){
+                        replyType = 'replyToSender';
+                    }
+                    //console.log('replyType: ' + replyType);
+                    // browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
+                    //     let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
+                    //         type: "reply",
+                    //         //body:  paragraphsHtmlString,
+                    //         isPlainText: false,
+                    //         identityId: await getCurrentIdentity(mailMessage),
+                    //     })
+                    //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
+                    let _mailMessage = await browser.messages.get(message.mailMessageId);
+                    let curr_idn = await getCurrentIdentity(_mailMessage)
+                    let reply_tab = await browser.compose.beginReply(_mailMessage.id, replyType, {
+                        type: "reply",
+                        //body:  paragraphsHtmlString,
+                        isPlainText: false,
+                        identityId: curr_idn,
+                    })
+                        // Wait for tab loaded.
+                        await new Promise(resolve => {
+                            const tabIsLoaded = tab => {
+                                return tab.status == "complete" && tab.url != "about:blank";
+                            };
+                            const listener = (tabId, changeInfo, updatedTab) => {
+                                if (tabIsLoaded(updatedTab)) {
+                                    browser.tabs.onUpdated.removeListener(listener);
+                                    //console.log(">>>>>>>>>>>> reply_tab: " + tabId);
+                                    resolve();
+                                }
                             }
-                        }
-                        // Early exit if loaded already
-                        if (tabIsLoaded(reply_tab)) {
-                            resolve();
-                        } else {
-                            browser.tabs.onUpdated.addListener(listener);
-                        }
-                    });
-                    // we need to wait for the compose windows to load the content script
-                    //setTimeout(() => browser.tabs.sendMessage(reply_tab.id, { command: "insertText", text: paragraphsHtmlString, tabId: reply_tab.id }), 500);
-                    setTimeout(async () => await replaceBody(reply_tab.id, paragraphsHtmlString), 500);
-                    return true;
-                });
+                            // Early exit if loaded already
+                            if (tabIsLoaded(reply_tab)) {
+                                resolve();
+                            } else {
+                                browser.tabs.onUpdated.addListener(listener);
+                            }
+                        });
+                        // we need to wait for the compose windows to load the content script
+                        //setTimeout(() => browser.tabs.sendMessage(reply_tab.id, { command: "insertText", text: paragraphsHtmlString, tabId: reply_tab.id }), 500);
+                        setTimeout(async () => await replaceBody(reply_tab.id, paragraphsHtmlString), 500);
+                        return true;
+                }
+                return _replyMessage(message);
                 break;
             case 'compose_reloadBody':
-                modified_html = await getOriginalBody(message.tabId);
-                await setBody(message.tabId, original_html);
-                await setBody(message.tabId, modified_html);
-                return true;
+                async function _reloadBody(tabId) {
+                    modified_html = await getOriginalBody(tabId);
+                    await setBody(tabId, original_html);
+                    await setBody(tabId, modified_html);
+                    return true;
+                }
+                return _reloadBody(message.tabId);
                 break;
             case 'reload_menus':
-                await menus.reload();
-                taLog.log("[ThunderAI] Reloaded menus");
+                menus.reload();
+                taLog.log("Reloading menus");
                 return true;
                 break;
             case 'shortcut_do_prompt':
@@ -211,12 +219,15 @@ messenger.runtime.onMessage.addListener(async (message, sender, sendResponse) =>
                 return true;
                 break;
             case 'popup_menu_ready':
-                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                if(tabs.length == 0){
-                    return Promise.resolve(false);
+                async function _popup_menu_ready() {
+                    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    if(tabs.length == 0){
+                        return false;
+                    }
+                    await preparePopupMenu(tabs[0]);
+                    return true;
                 }
-                preparePopupMenu(tabs[0]);
-                return Promise.resolve(true);
+                return _popup_menu_ready();
                 break;
             default:
                 break;
