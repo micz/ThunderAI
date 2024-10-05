@@ -103,22 +103,24 @@ async function handleShortcut(tab) {
     }    
 }
 
-async function preparePopupMenu(tab) {
-    await taStore.setSessionData("lastShortcutTabId", tab.id);
-    await taStore.setSessionData("lastShortcutTabType", tab.type);
-    await taStore.setSessionData("lastShortcutPromptsData", menus.shortcutMenu);
-    //console.log(">>>>>>>> menus.shortcutMenu: " + JSON.stringify(menus.shortcutMenu));
+function preparePopupMenu(tab) {
+    let output = {};
+    output.lastShortcutTabId = tab.id;
+    output.lastShortcutTabType = tab.type;
+    output.lastShortcutPromptsData = menus.shortcutMenu;
+    output.lastShortcutFiltering = 0;
     switch (tab.type) {
         case "mail":
         case "messageDisplay":
-            taStore.setSessionData("lastShortcutFiltering", 1);
+            output.lastShortcutFiltering = 1;
             break;
         case "messageCompose":
-            taStore.setSessionData("lastShortcutFiltering", 2);
+            output.lastShortcutFiltering = 2;
             break;
         default:
             break;
     }
+    return output;
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -224,8 +226,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if(tabs.length == 0){
                         return false;
                     }
-                    await preparePopupMenu(tabs[0]);
-                    return true;
+                    return preparePopupMenu(tabs[0]);
+                    //return true;
                 }
                 return _popup_menu_ready();
                 break;

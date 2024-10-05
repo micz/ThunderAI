@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
-    let tabId = await taStore.getSessionData("lastShortcutTabId");
-    let tabType = await taStore.getSessionData("lastShortcutTabType");
-    let filtering = await taStore.getSessionData("lastShortcutFiltering");
-    let _prompts_data = await taStore.getSessionData("lastShortcutPromptsData");
+    let tabId = reponse.lastShortcutTabId;
+    let tabType = reponse.lastShortcutTabType;
+    let filtering = reponse.lastShortcutFiltering;
+    let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
