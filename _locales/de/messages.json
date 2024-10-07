@@ -1,7 +1,7 @@
 {
   "extensionDescription": {
     "message": "Verwende ChatGPT oder Ollama, um deine E-Mails zu verbessern!",
-    "description": "Beschreibung der Erweiterung."
+    "description": "Description of the extension."
   },
   "menu_title": {
     "message": "KI",
@@ -303,14 +303,6 @@
     "message": "Antworttyp",
     "description": ""
   },
-  "prefs_OptionText_chatpgt_use_gpt4": {
-    "message": "Verwenden Sie ChatGPT-4",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_use_gpt4_info": {
-    "message": "Nachdem Sie diese Option geändert haben, müssen Sie beim ersten Gebrauch das richtige Modell auswählen.",
-    "description": ""
-  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Verwalten Sie Ihre Eingabeaufforderungen",
     "description": ""
@@ -320,7 +312,7 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Wenn eine weiße Seite erscheint, wenn das ChatGPT-Fenster geöffnet wird, bedeutet dies, dass es ein Problem beim Laden der ChatGPT-Seite gibt, das nicht mit der Verwendung dieses Add-Ons zusammenhängt.",
+    "message": "Es könnte passieren, dass sich die Weboberfläche von ChatGPT ändert und dadurch die Funktionsweise des Add-ons beeinträchtigt wird. Überprüfen Sie die Seite \"Service Status\", die unten auf dieser Seite verlinkt ist. Denken Sie auch daran, dass Sie sich beim ersten Mal, wenn Sie ThunderAI verwenden, bei ChatGPT anmelden müssen.",
     "description": ""
   },
   "prefsInfoDesc_2": {
@@ -328,7 +320,19 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": "Um die Integration mit Ollama zu nutzen, müssen Sie einen lokalen Ollama-Server einrichten. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld in der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen der App und dem Ollama-Server sicherzustellen, denken Sie daran, OLLAMA_ORIGINS=moz-extension://* festzulegen.",
+    "message": "Um die Integration mit Ollama zu nutzen, müssen Sie einen lokalen Ollama-Server einrichten. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld in der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen der ThunderAI und dem Ollama-Server sicherzustellen, denken Sie daran, OLLAMA_ORIGINS=moz-extension://* festzulegen.",
+    "description": ""
+  },
+  "prefsInfoDesc_4": {
+    "message": "Um diese Integration zu nutzen, müssen Sie einen lokalen Server einrichten, der mit der OpenAI-API kompatibel ist, wie z.B. LM Studio. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld innerhalb der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen ThunderAI und dem lokalen Server sicherzustellen, denken Sie daran, die CORS-Einstellungen korrekt zu konfigurieren.",
+    "description": ""
+  },
+  "prefsInfoDesc_5": {
+    "message": "Denken Sie daran, dass Sie das ThunderAI-Menü mit der Tastenkombination STRG+ALT+A öffnen können.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "Sie können die Tastenkombination ändern, indem Sie auf das Zahnradsymbol oben rechts auf dieser Seite klicken und \"Erweiterungskürzel verwalten\" auswählen.",
     "description": ""
   },
   "prefsDonation_1": {
@@ -451,7 +455,11 @@
     "message": "Ollama API (Lokales LLM)",
     "description": ""
   },
-  "prefs_Ollama_Host": {
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "OpenAI-kompatible API",
+    "description": ""
+  },
+  "prefs_API_Host": {
     "message": "Host-Adresse",
     "description": ""
   },
@@ -467,7 +475,7 @@
     "message": "Fehler beim Abrufen der Ollama-Modelle",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "Keine Modelle gefunden",
     "description": ""
   },
@@ -499,8 +507,76 @@
     "message": "Warten auf die Serverantwort.",
     "description": ""
   },
-  "prefs_Ollama_Host_Info": {
+  "prefs_API_Host_Info": {
     "message": "Etwas wie",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "OpenAI-kompatible API-Modelle",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Aktualisiere die Liste der OpenAI-kompatiblen API-Modelle.",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Fehler beim Abrufen der OpenAI-kompatiblen API-Modelle.",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "Sie haben keine Host-Adresse für die OpenAI-kompatible API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen.",
+    "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Chat-Name",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "Dies ist der Name, der im AI-Chat verwendet wird.",
+    "description": ""
+  },
+  "StorageSpace": {
+    "message": "Gesamtspeicherplatz belegt",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Suchanfragen",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menü: Sofortige Aufforderung senden",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "Wenn diese Option aktiviert ist, wird die Tastenkombination STRG+ALT+A den hervorgehobenen Prompt aus dem Menü automatisch senden. Andernfalls wird der Prompt-Name dem Benutzer angezeigt, und es ist ein weiterer Druck auf die Eingabetaste erforderlich, um ihn zu senden.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menü: Alphabetisch sortieren",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "Wenn diese Option aktiviert ist, werden die Prompts im Menü alphabetisch sortiert.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Auf 0 setzen, wenn Sie die Fenstergröße nicht angeben möchten.",
+    "description": ""
+  },
+  "Optional": {
+    "message": "Optional",
     "description": ""
   }
 }

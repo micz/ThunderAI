@@ -1,7 +1,7 @@
 {
   "extensionDescription": {
     "message": "Utilise ChatGPT ou Ollama pour améliorer tes e-mails !",
-    "description":  "Description de l'extension."
+    "description": "Description of the extension."
   },
   "menu_title": {
     "message": "IA",
@@ -303,14 +303,6 @@
     "message": "Type de réponse",
     "description": ""
   },
-  "prefs_OptionText_chatpgt_use_gpt4": {
-    "message": "Utiliser ChatGPT-4",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_use_gpt4_info": {
-    "message": "Après avoir changé cette option, vous devez choisir le bon modèle la première fois que vous l'utilisez.",
-    "description": ""
-  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Gérer vos prompts",
     "description": ""
@@ -320,7 +312,7 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "Si une page blanche apparaît lors de l'ouverture de la fenêtre ChatGPT, cela signifie qu'il y a un problème de chargement de la page ChatGPT, non lié à l'utilisation de cet addon.",
+    "message": "Il est possible que l'interface web de ChatGPT change de manière à perturber le fonctionnement de l'addon. Consultez la page \"État du service\" située en bas de cette page. N'oubliez pas non plus que la première fois que vous utilisez ThunderAI, vous devez vous connecter à ChatGPT.",
     "description": ""
   },
   "prefsInfoDesc_2": {
@@ -328,7 +320,19 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": "Pour utiliser l'intégration avec Ollama, vous devez configurer un serveur Ollama local. Une fois que le serveur est en marche, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour garantir une communication adéquate entre l'application et le serveur Ollama, n'oubliez pas de définir OLLAMA_ORIGINS=moz-extension://*.",
+    "message": "Pour utiliser l'intégration avec Ollama, vous devez configurer un serveur Ollama local. Une fois que le serveur est en marche, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour garantir une communication adéquate entre ThunderAI et le serveur Ollama, n'oubliez pas de définir OLLAMA_ORIGINS=moz-extension://*.",
+    "description": ""
+  },
+  "prefsInfoDesc_4": {
+    "message": "Pour utiliser cette intégration, vous devez configurer un serveur local compatible avec l'API OpenAI, tel que LM Studio. Une fois le serveur lancé, entrez son adresse dans le champ prévu à cet effet dans l'application. Pour assurer une communication correcte entre ThunderAI et le serveur local, n'oubliez pas de configurer correctement les paramètres CORS.",
+    "description": ""
+  },
+  "prefsInfoDesc_5": {
+    "message": "N'oubliez pas que vous pouvez ouvrir le menu ThunderAI en utilisant le raccourci clavier CTRL+ALT+A.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "Vous pouvez changer le raccourci en cliquant sur l'icône de l'engrenage en haut à droite de cette page et en choisissant \"Gérer le raccourci de l'extension\".",
     "description": ""
   },
   "prefsDonation_1": {
@@ -451,7 +455,11 @@
     "message": "API Ollama (LLM local)",
     "description": ""
   },
-  "prefs_Ollama_Host": {
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "API compatible OpenAI",
+    "description": ""
+  },
+  "prefs_API_Host": {
     "message": "Adresse de l'hôte",
     "description": ""
   },
@@ -467,7 +475,7 @@
     "message": "Erreur lors de la tentative de récupération des modèles Ollama",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "Aucun modèle trouvé",
     "description": ""
   },
@@ -499,8 +507,76 @@
     "message": "En attente de la réponse du serveur",
     "description": ""
   },
-  "prefs_Ollama_Host_Info": {
+  "prefs_API_Host_Info": {
     "message": "Quelque chose comme",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "Modèles d'API compatibles OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Mettre à jour la liste des modèles d'API compatibles OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Erreur lors de la tentative de récupération des modèles d'API compatibles OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "Vous n'avez pas ajouté d'adresse hôte pour l'API compatible OpenAI. Veuillez en insérer une dans la page des options.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "Vous n'avez pas choisi de modèle pour l'API compatible OpenAI. Veuillez en choisir un dans la page des options.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Tentative de connexion au serveur local de l'API compatible OpenAI en utilisant l'hôte",
+    "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "La requête de l'API compatible OpenAI a échoué",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Nom du chat",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "C'est le nom qui sera utilisé dans le chat de l'IA.",
+    "description": ""
+  },
+  "StorageSpace": {
+    "message": "Espace de stockage total occupé",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Rechercher des invites",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menu : Envoi immédiat de l'invite",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "Si cette option est cochée, le raccourci clavier CTRL+ALT+A enverra automatiquement l'invite sélectionnée dans le menu. Sinon, le nom de l'invite sera affiché à l'utilisateur, nécessitant une nouvelle pression sur la touche Entrée pour l'envoyer.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menu : Trier par ordre alphabétique",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "Si cette option est cochée, les invites dans le menu seront triées par ordre alphabétique.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Réglez sur 0 si vous ne souhaitez pas spécifier la taille de la fenêtre.",
+    "description": ""
+  },
+  "Optional": {
+    "message": "Optionnel",
     "description": ""
   }
 }

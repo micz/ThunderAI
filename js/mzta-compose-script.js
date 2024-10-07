@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-browser.runtime.onMessage.addListener(async (message) => {
+browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
   case "getSelectedText":
     return Promise.resolve(window.getSelection().toString());
@@ -24,11 +24,11 @@ switch (message.command) {
   case "replaceSelectedText":
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
-      return;
+      return false;
     }
     const sel = window.getSelection();
     if (!sel || sel.type !== "Range" || !sel.rangeCount) {
-      return;
+      return false;
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
@@ -36,6 +36,7 @@ switch (message.command) {
     const doc = parser.parseFromString(message.text, 'text/html');
     r.insertNode(doc.body);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
+    return Promise.resolve(true);
     break;
 
   case "getText":
@@ -56,14 +57,17 @@ switch (message.command) {
 
   case 'promptTooLong':
     alert(browser.i18n.getMessage('msg_prompt_too_long'));
+    return Promise.resolve(true);
     break;
 
   case 'sendAlert':
     alert(message.message);
+    return Promise.resolve(true);
     break;
 
   default:
     // do nothing
+    return false;
     break;
 }    
 });

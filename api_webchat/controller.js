@@ -25,7 +25,16 @@ const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
 const call_id = urlParams.get('call_id');
 
-//console.log(">>>>>>>>>>> llm: " + llm);
+// Data received from the user
+let promptData = null;
+
+const messageInput = document.querySelector('message-input');
+const messagesArea = document.querySelector('messages-area');
+
+//console.log(">>>>>>>>>> controller.js DOMContentLoaded");
+
+// console.log(">>>>>>>>>>> llm: " + llm);
+// console.log(">>>>>>>>>>> call_id: " + call_id);
 
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
@@ -33,63 +42,53 @@ let worker = null;
 
 switch (llm) {
     case "chatgpt_api":
-        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         worker = new Worker('model-worker-openai.js', { type: 'module' });
         break;
-    case "ollama_api": {
-        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+    case "ollama_api":
         worker = new Worker('model-worker-ollama.js', { type: 'module' });
         break;
-    }
+    case "openai_comp_api":
+        worker = new Worker('model-worker-openai_comp.js', { type: 'module' });
+        break;
 }
 
-const messagesArea = document.querySelector('messages-area');
 messagesArea.init(worker);
 
 // Initialize the messageInput component and pass the worker to it
-const messageInput = document.querySelector('message-input');
 messageInput.init(worker);
 messageInput.setMessagesArea(messagesArea);
 
-// Data received from the user
-let promptData = null;
-
-// ============================== TESTING
-// let browser = {
-//     i18n: {
-//         getMessage: async function(key) {
-//             return key;
-//         }
-//     },
-//     storage: {
-//         sync: {
-//             get: async function(key) {
-//                 return 'apitest';
-//             }
-//         }
-//     }
-// }
-// ============================== TESTING - END
-
 switch (llm) {
     case "chatgpt_api":
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-        //console.log(">>>>>>>>>>> chatgpt_api_key: " + prefs_api_key.chatgpt_api_key);
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', do_debug: false});
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
-        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model});
+        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, do_debug: prefs_api.do_debug});
         messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
+        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     case "ollama_api": {
-        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
+        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: '', do_debug: false});
         let i18nStrings = {};
         i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        //console.log(">>>>>>>>>>> ollama_host: " + prefs_api_key.ollama_host);
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
+        break;
+    }
+    case "openai_comp_api": {
+        let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_chat_name: '', do_debug: false});
+        let i18nStrings = {};
+        i18nStrings["OpenAIComp_api_request_failed"] = browser.i18n.getMessage('OpenAIComp_api_request_failed');
+        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
+        messageInput.setModel(prefs_api.openai_comp_model);
+        messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
+        worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
+        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
 }
@@ -121,7 +120,6 @@ worker.onmessage = function(event) {
 
 // handling commands from the backgound page
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    //console.log(">>>>>>>>>>>>> controller.js onMessage: " + JSON.stringify(message));
     switch (message.command) {
         case "api_send":
             //send the received prompt to the llm api

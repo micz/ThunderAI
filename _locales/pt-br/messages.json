@@ -1,0 +1,506 @@
+{
+    "extensionDescription": {
+        "message": "Use o ChatGPT ou o Ollama para aprimorar seus e-mails!",
+        "description": "Description of the extension."
+    },
+    "menu_title": {
+        "message": "IA",
+        "description": ""
+    },
+    "prompt_lang": {
+        "message": "Responda em",
+        "description": ""
+    },
+    "prompt_reply": {
+        "message": "Responda a isso",
+        "description": ""
+    },
+    "prompt_rewrite_polite": {
+        "message": "Reescreva de forma educada",
+        "description": ""
+    },
+    "prompt_rewrite_formal": {
+        "message": "Reescreva de forma formal",
+        "description": ""
+    },
+    "prompt_classify": {
+        "message": "Classificar",
+        "description": ""
+    },
+    "prompt_summarize_this": {
+        "message": "Resuma isso",
+        "description": ""
+    },
+    "prompt_translate_this": {
+        "message": "Traduza isso",
+        "description": ""
+    },
+    "prompt_this": {
+        "message": "Prompt isso",
+        "description": ""
+    },
+    "prompt_selection_needed": {
+        "message": "Para prosseguir, você precisa selecionar algum texto!",
+        "description": ""
+    },
+    "customPrompts_managePrompts": {
+        "message": "Gerenciar Prompts",
+        "description": ""
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Mais informações",
+        "description": ""
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Os prompts padrão não são editáveis. Você pode desativá-los, copiar o texto do prompt e colá-lo em um novo para criar uma versão modificada.",
+        "description": ""
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Você pode importar e exportar os prompts. Prompts existentes com o mesmo ID serão sobrescritos. Prompts com novos IDs serão adicionados.",
+        "description": ""
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Se tudo estiver correto, após a importação, clique no botão 'Salvar Tudo'.",
+        "description": ""
+    },
+    "customPrompts_start_saving": {
+        "message": "Salvando prompts...",
+        "description": ""
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Reindexando lista...",
+        "description": ""
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtrando prompts...",
+        "description": ""
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Salvando prompts padrão...",
+        "description": ""
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Salvando prompts personalizados...",
+        "description": ""
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Recarregando menus...",
+        "description": ""
+    },
+    "customPrompts_saved": {
+        "message": "Prompts salvos!",
+        "description": ""
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID",
+        "description": ""
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Deve ser único, em letras minúsculas e sem espaços.",
+        "description": ""
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nome",
+        "description": ""
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Texto do Prompt",
+        "description": ""
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Ação",
+        "description": ""
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Seleção de texto necessária",
+        "description": ""
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Sempre adicione a assinatura",
+        "description": ""
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Peça por texto adicional",
+        "description": ""
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ativado",
+        "description": ""
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Campos obrigatórios\n",
+        "description": ""
+    },
+    "customPrompts_btnEdit": {
+        "message": "Editar",
+        "description": ""
+    },
+    "customPrompts_btnCancel": {
+        "message": "Cancelar",
+        "description": ""
+    },
+    "customPrompts_btnOK": {
+        "message": "OK",
+        "description": ""
+    },
+    "customPrompts_btnDelete": {
+        "message": "Deletar",
+        "description": ""
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Você tem certeza de que deseja excluir este item?",
+        "description": ""
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Existem alterações não salvas!",
+        "description": ""
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Salvar Tudo",
+        "description": ""
+    },
+    "customPrompts_save_button": {
+        "message": "Salvar",
+        "description": ""
+    },
+    "customPrompts_btnNew": {
+        "message": "Adicionar Novo",
+        "description": ""
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Adicionar o Prompt",
+        "description": ""
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Adicionar ao menu",
+        "description": ""
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Sempre",
+        "description": ""
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Lendo um e-mail",
+        "description": ""
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Redigindo um e-mail",
+        "description": ""
+    },
+    "customPrompts_close_button": {
+        "message": "Botão fechar",
+        "description": ""
+    },
+    "customPrompts_do_reply": {
+        "message": "Fazer uma resposta",
+        "description": ""
+    },
+    "customPrompts_substitute_text": {
+        "message": "Substituir texto",
+        "description": ""
+    },
+    "chatgpt_win_working": {
+        "message": "Trabalho em andamento...",
+        "description": ""
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Concluído!",
+        "description": ""
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Selecione o texto que você deseja usar e clique no botão.",
+        "description": ""
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Usar a resposta selecionada",
+        "description": ""
+    },
+    "chatgpt_win_close": {
+        "message": "Fechar",
+        "description": ""
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Parece que a página do ChatGPT está demorando muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o status do serviço.",
+        "description": ""
+    },
+    "chatgpt_btn_retry": {
+        "message": "Tentar novamente",
+        "description": ""
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Clique no botão enviar para enviar o prompt.",
+        "description": ""
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Você não está logado no ChatGPT. Por favor, faça login com suas credenciais, feche a janela do ChatGPT e, em seguida, repita a ação que você tentou. Você permanecerá logado depois.",
+        "description": ""
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Você definiu a opção para usar o ChatGPT-4, mas parece que não está carregando corretamente. Você escolheu o modelo 4 ou 4o na parte superior?",
+        "description": ""
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Insira aqui o texto adicional para o prompt.",
+        "description": ""
+    },
+    "chatgpt_win_send": {
+        "message": "Enviar",
+        "description": ""
+    },
+    "chatgpt_use_gpt35": {
+        "message": "Usar GPT-3.5",
+        "description": ""
+    },
+    "chatgpt_force_completion": {
+        "message": "forçar conclusão",
+        "description": ""
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Clique aqui para exibir o botão 'Usar última resposta' se o ChatGPT tiver terminado seu trabalho, mas o botão não apareceu.",
+        "description": ""
+    },
+    "msg_prompt_too_long": {
+        "message": "O texto que você forneceu é muito longo. Você precisa reduzi-lo para usar o ChatGPT.",
+        "description": ""
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Notas de versão",
+        "description": ""
+    },
+    "prefs_status_page": {
+        "message": "status do serviço",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Dimensões da janela do ChatGPT",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Altura",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Largura",
+        "description": ""
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Nome da assinatura padrão",
+        "description": ""
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Idioma padrão para as respostas",
+        "description": ""
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Responder a Todos",
+        "description": ""
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Responder ao Remetente",
+        "description": ""
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Tipo de resposta",
+        "description": ""
+    },
+    "prefs_OptionText_chatpgt_use_gpt4": {
+        "message": "Usar ChatGPT-4",
+        "description": ""
+    },
+    "prefs_OptionText_chatpgt_use_gpt4_info": {
+        "message": "Após alterar esta opção, você deve escolher o modelo correto na primeira vez que usá-lo.",
+        "description": ""
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Gerenciar seus prompts",
+        "description": ""
+    },
+    "prefsInfoTitle": {
+        "message": "Informações importantes",
+        "description": ""
+    },
+    "prefsInfoDesc_1": {
+        "message": "Se uma página em branco ou branca aparecer ao abrir a janela da interface web do ChatGPT, isso significa que há um problema ao carregar a página do ChatGPT, não relacionado ao uso deste complemento.",
+        "description": ""
+    },
+    "prefsInfoDesc_2": {
+        "message": "Para usar a API do ChatGPT, você precisa de uma chave de API do OpenAI ChatGPT e deve escolher um modelo.",
+        "description": ""
+    },
+    "prefsInfoDesc_3": {
+        "message": "Para usar a integração com o Ollama, você precisa configurar um servidor local do Ollama. Uma vez que o servidor esteja em funcionamento, insira seu endereço no campo designado dentro do aplicativo. Para garantir a comunicação adequada entre o aplicativo e o servidor do Ollama, lembre-se de definir OLLAMA_ORIGINS=moz-extension://*.",
+        "description": ""
+    },
+    "prefsDonation_1": {
+        "message": "Você gosta deste complemento?",
+        "description": ""
+    },
+    "prefsDonation_2": {
+        "message": "Considere fazer uma doação!",
+        "description": ""
+    },
+    "backToOptionsText": {
+        "message": "Opções",
+        "description": ""
+    },
+    "TranslateText": {
+        "message": "Você quer ajudar a traduzir este complemento?",
+        "description": ""
+    },
+    "TranslateLink": {
+        "message": "Descubra como!",
+        "description": ""
+    },
+    "customPrompts_ExportAll": {
+        "message": "Exportar todos os prompts",
+        "description": ""
+    },
+    "customPrompts_Import": {
+        "message": "Importar novos prompts",
+        "description": ""
+    },
+    "importPrompts_confirmText": {
+        "message": "Você está prestes a importar novos prompts.",
+        "description": ""
+    },
+    "customPrompts_start_import": {
+        "message": "Iniciando a importação de prompts personalizados...",
+        "description": ""
+    },
+    "customPrompts_import_completed": {
+        "message": "Importação de prompts personalizados concluída! Você precisa clicar no botão 'Salvar tudo' para salvar suas alterações.",
+        "description": ""
+    },
+    "importPrompts_invalidFile": {
+        "message": "O arquivo que você está tentando importar não é um arquivo de prompts personalizados válido.",
+        "description": ""
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "O arquivo que você está tentando importar não contém nenhum prompt válido.",
+        "description": ""
+    },
+    "currently_used_prompt": {
+        "message": "Nome do prompt atualmente utilizado",
+        "description": ""
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Defina o idioma da resposta no prompt",
+        "description": ""
+    },
+    "prefs_Connection_type": {
+        "message": "Tipo de Conexão",
+        "description": ""
+    },
+    "prefs_Connection_type_ChatGTP_Web": {
+        "message": "Interface Web do ChatGPT",
+        "description": ""
+    },
+    "prefs_Connection_type_ChatGTP_API": {
+        "message": "API OpenAI do ChatGPT",
+        "description": ""
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "Chave da API do ChatGPT",
+        "description": ""
+    },
+    "ChatGPT_Models": {
+        "message": "Modelos do ChatGPT",
+        "description": ""
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Atualizar lista de modelos do ChatGPT",
+        "description": ""
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Erro ao tentar buscar os modelos do ChatGPT",
+        "description": ""
+    },
+    "Loading": {
+        "message": "Carregando...",
+        "description": ""
+    },
+    "error": {
+        "message": "Erro ThunderAI!",
+        "description": ""
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Você não adicionou uma chave de API para a API do ChatGPT. Por favor, insira uma na página de opções.",
+        "description": ""
+    },
+    "chatgpt_empty_model": {
+        "message": "Você não escolheu um modelo para a API do ChatGPT. Por favor, escolha um na página de opções.",
+        "description": ""
+    },
+    "chagtp_api_send_button": {
+        "message": "Usando modelo",
+        "description": ""
+    },
+    "chagpt_api_connecting": {
+        "message": "Tentando conectar ao OpenAI ChatGPT usando a chave de API fornecida",
+        "description": ""
+    },
+    "Debug": {
+        "message": "Depurar",
+        "description": ""
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Ativar o sistema de depuração",
+        "description": ""
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "API Ollama (LLM Local)",
+        "description": ""
+    },
+    "prefs_Ollama_Host": {
+        "message": "Endereço do Host",
+        "description": ""
+    },
+    "Ollama_Models": {
+        "message": "Modelos do Ollama",
+        "description": ""
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Atualizar lista de modelos do Ollama",
+        "description": ""
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Erro ao tentar buscar os modelos do Ollama",
+        "description": ""
+    },
+    "Ollama_Models_Error_NoModels": {
+        "message": "Nenhum modelo encontrado",
+        "description": ""
+    },
+    "ollama_empty_host": {
+        "message": "Você não adicionou um endereço de host para a API do Ollama. Por favor, insira um na página de opções.",
+        "description": ""
+    },
+    "ollama_empty_model": {
+        "message": "Você não escolheu um modelo para a API do Ollama. Por favor, escolha um na página de opções.",
+        "description": ""
+    },
+    "ollama_api_connecting": {
+        "message": "Tentando conectar ao servidor local do Ollama usando o host.",
+        "description": ""
+    },
+    "andModel": {
+        "message": "e modelo",
+        "description": ""
+    },
+    "error_connection_interrupted": {
+        "message": "A conexão com o servidor foi interrompida inesperadamente.",
+        "description": ""
+    },
+    "ollama_api_request_failed": {
+        "message": "A solicitação da API do Ollama falhou",
+        "description": ""
+    },
+    "WaitingServerReponse": {
+        "message": "Aguardando a resposta do servidor",
+        "description": ""
+    },
+    "prefs_Ollama_Host_Info": {
+        "message": "Algo como",
+        "description": ""
+    }
+}

@@ -150,9 +150,11 @@ const defaultPrompts = [
 
 
 export async function getPrompts(onlyEnabled = false){
-    const defaultPrompts = await getDefaultPrompts_withProps();
+    const _defaultPrompts = await getDefaultPrompts_withProps();
+    // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
-    let output = defaultPrompts.concat(customPrompts);
+    // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
+    let output = _defaultPrompts.concat(customPrompts);
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
@@ -161,6 +163,7 @@ export async function getPrompts(onlyEnabled = false){
     for(let i=1; i<=output.length; i++){
         output[i-1].idnum = i;
     }
+    // console.log('>>>>>>>>>>>> getPrompts output: ' + JSON.stringify(output));
     return output;
 }
 
@@ -169,7 +172,7 @@ export function preparePromptsForExport(prompts){
     output.forEach(prompt => {
         if(prompt.is_default == 1){
             Object.keys(prompt).forEach(key => {
-                if(!['id', 'enabled', 'position_compose', 'position_display'].includes(key)){
+                if(!['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'].includes(key)){
                     delete prompt[key];
                 }
             })
@@ -181,7 +184,9 @@ export function preparePromptsForExport(prompts){
 }
 
 export async function preparePromptsForImport(prompts){
+    // console.log(">>>>>>>>>>> preparePromptsForImport prompts: " + JSON.stringify(prompts));
     const output = await getPrompts();
+    // console.log(">>>>>>>>>>> preparePromptsForImport output: " + JSON.stringify(output));
     prompts.forEach(prompt => {
         if(output.some(p => p.id == prompt.id)){
             Object.keys(prompt).forEach(key => {
@@ -192,13 +197,17 @@ export async function preparePromptsForImport(prompts){
         }
     });
     output.sort((a, b) => a.id.localeCompare(b.id));
-    //console.log(">>>>>>>>>>> preparePromptsForImport: " + JSON.stringify(output));
+    // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
 }
 
 async function getDefaultPrompts_withProps() {
-    let prefs = await browser.storage.sync.get({_default_prompts_properties: null}); //production
-    let defaultPrompts_prop = [...defaultPrompts];
+    let prefs = await browser.storage.local.get({_default_prompts_properties: null});
+    // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps prefs: ' + JSON.stringify(prefs));
+    //let defaultPrompts_prop = [...defaultPrompts];
+    let defaultPrompts_prop = JSON.parse(JSON.stringify(defaultPrompts));
+    // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps defaultPrompts: ' + JSON.stringify(defaultPrompts));
+    // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
@@ -207,6 +216,7 @@ async function getDefaultPrompts_withProps() {
             prompt.enabled = 1;
             pos++;
         })
+        // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [no prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     } else {    // we have saved default prompts properties
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
@@ -214,6 +224,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
+                prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -221,13 +232,14 @@ async function getDefaultPrompts_withProps() {
                 pos++;
             }
         })
+        // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     }
     return defaultPrompts_prop;
 }
 
 
 async function getCustomPrompts() {
-    let prefs = await browser.storage.sync.get({_custom_prompt: null});
+    let prefs = await browser.storage.local.get({_custom_prompt: null});
     if(prefs._custom_prompt === null){
         return [];
     } else {
@@ -238,14 +250,13 @@ async function getCustomPrompts() {
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled};
+        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled, need_custom_text: prompt.need_custom_text};
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
-    await browser.storage.sync.set({_default_prompts_properties: default_prompts_properties});
+    await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
 
 export async function setCustomPrompts(prompts) {
-    await browser.storage.sync.set({_custom_prompt: prompts});
+    await browser.storage.local.set({_custom_prompt: prompts});
 }
-

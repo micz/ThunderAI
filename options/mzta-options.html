@@ -18,7 +18,7 @@
         </td>
       </tr>
       <tr>
-        <td></td>
+        <td><i>__MSG_prefs_OptionText_chatgpt_win_dims_info__</i></td>
         <td>
           <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_width__</span>
           <input type="number" id="chatgpt_win_width" name="chatgpt_win_width" class="option-input" />
@@ -60,6 +60,28 @@
         </td>
       </tr>
       <tr>
+        <td><label>
+          <span>__MSG_prefs_OptionText_dynamic_menu_order_alphabet__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="dynamic_menu_order_alphabet" name="dynamic_menu_order_alphabet" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_dynamic_menu_order_alphabet_info__</span>
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td><label>
+          <span>__MSG_prefs_OptionText_dynamic_menu_force_enter__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="dynamic_menu_force_enter" name="dynamic_menu_force_enter" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_dynamic_menu_force_enter_info__</span>
+          </label>
+        </td>
+      </tr>
+      <tr>
         <td>
           <label>
             <span>__MSG_prefs_Connection_type__</span>
@@ -71,31 +93,23 @@
               <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGTP_Web__</option>
               <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGTP_API__</option>
               <option value="ollama_api">__MSG_prefs_Connection_type_Ollama_API__</option>
+              <option value="openai_comp_api">__MSG_prefs_Connection_type_OpenAI_Comp_API__</option>
             </select>
           </label>
         </td>
       </tr>
       <tr>
-      <tr class="conntype_chatgpt_web">
-        <td><label>
-          <span>__MSG_prefs_OptionText_chatpgt_use_gpt4__</span>
-        </label></td>
-        <td>
-          <label>
-            <input type="checkbox" id="chatpgt_use_gpt4" name="chatpgt_use_gpt4" class="option-input" />
-            &nbsp;<span>__MSG_prefs_OptionText_chatpgt_use_gpt4_info__</span>
-          </label>
-        </td>
-      </tr>
       <tr class="conntype_chatgpt_api">
         <td><label>
           <span>__MSG_prefs_ChatGPT_API_Key__</span>
         </label></td>
         <td>
-          <label>
-            <input type="text" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input" style="width:28em" />
-            &nbsp;<span></span>
-          </label>
+          <div class="api_key-container">
+            <label>
+              <input type="password" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input"/>
+            </label>
+            <span class="toggle-icon" id="toggle_chatgpt_api_key"><img src="../images/pwd-show.png" id="pwd-icon_chatgpt_api_key"></span>
+          </div>
         </td>
       </tr>
       <tr class="conntype_chatgpt_api">
@@ -114,13 +128,12 @@
       </tr>
       <tr class="conntype_ollama_api">
         <td><label>
-          <span>__MSG_prefs_Ollama_Host__</span>
-          <br><i style="font-size:smaller;">__MSG_prefs_Ollama_Host_Info__ http://127.0.0.1:11434</i>
+          <span>__MSG_prefs_API_Host__</span>
+          <br><i style="font-size:smaller;">__MSG_prefs_API_Host_Info__ http://127.0.0.1:11434</i>
         </label></td>
         <td>
           <label>
-            <input type="text" id="ollama_host" name="ollama_host" class="option-input" style="width:28em" />
-            &nbsp;<span></span>
+            <input type="text" id="ollama_host" name="ollama_host" class="option-input"/>
           </label>
         </td>
       </tr>
@@ -138,8 +151,58 @@
           </label>
         </td>
       </tr>
-      <tr>
+      <tr class="conntype_openai_comp_api">
         <td><label>
+          <span>__MSG_prefs_API_Host__</span>
+          <br><i style="font-size:smaller;">__MSG_prefs_API_Host_Info__ http://localhost:1234</i>
+        </label></td>
+        <td>
+          <label>
+            <input type="text" id="openai_comp_host" name="openai_comp_host" class="option-input" />
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_openai_comp_api">
+        <td><label>
+          <span>__MSG_prefs_OpenAIComp_API_Key__</span>
+          <br><i style="font-size:smaller;">__MSG_Optional__</i>
+        </label></td>
+        <td>
+          <div class="api_key-container">
+            <label>
+              <input type="password" id="openai_comp_api_key" name="openai_comp_api_key" class="option-input"/>
+            </label>
+            <span class="toggle-icon" id="toggle_openai_comp_api_key"><img src="../images/pwd-show.png" id="pwd-icon_openai_comp_api_key"></span>
+          </div>
+        </td>
+      </tr>
+      <tr class="conntype_openai_comp_api">
+        <td>
+          <label>
+            <span>__MSG_OpenAIComp_Models__</span>
+          </label>
+        </td>
+        <td>
+          <button id="btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="openai_comp_model_fetch_loading">__MSG_Loading__</span><br>
+          <label>
+            <select id="openai_comp_model" name="openai_comp_model" class="option-input">
+            </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_openai_comp_api">
+        <td><label>
+          <span>__MSG_prefs_OpenAIComp_ChatName__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" />
+            <br>__MSG_prefs_OpenAIComp_ChatName_Info__
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td style="width:20em"><label>
           <span>__MSG_Debug__</span>
         </label></td>
         <td>
@@ -155,9 +218,14 @@
     </div>
     <div id="miczDescription">
       <h1>__MSG_prefsInfoTitle__</h1>
-      <p><span class="conntype_chatgpt_web">__MSG_prefsInfoDesc_1__<br/></span>
-        <span class="conntype_chatgpt_api">__MSG_prefsInfoDesc_2__<br/></span>
-          <span class="conntype_ollama_api">__MSG_prefsInfoDesc_3__</span></p>
+      <p>
+        <span class="conntype_chatgpt_web">__MSG_prefsInfoDesc_1__<br></span>
+        <span class="conntype_chatgpt_api">__MSG_prefsInfoDesc_2__<br></span>
+        <span class="conntype_ollama_api">__MSG_prefsInfoDesc_3__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_customPrompts_managePrompts_help__</a>]<br></span>
+        <span class="conntype_openai_comp_api">__MSG_prefsInfoDesc_4__</span>
+        <br><span>__MSG_prefsInfoDesc_5__
+          <br>__MSG_prefsInfoDesc_6__</span>
+      </p>
     </div>
     <div id="miczTranslate">__MSG_TranslateText__ <a href="https://micz.it/thunderbird-addon-thunderai/translate/">__MSG_TranslateLink__</a></div>
     <div id="miczDonation">__MSG_prefsDonation_1__<br/><a href="http://micz.it/thunderbird-addon-thunderai/donate/">__MSG_prefsDonation_2__</a></div>

@@ -2017,4 +2017,3 @@ module.exports = naturalCompare;
 /******/ 	return __webpack_require__("./src/index.js");
 /******/ })()
 ;
-//# sourceMappingURL=./list.js.map

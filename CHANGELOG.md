@@ -4,6 +4,24 @@
 
 
 
+
+<h2>Version 2.2.0 - ??/??/2024</h2>
+    <ul>
+      <li><i>[ChatGPT Web]</i> Removed the option to force the ChatGPT4 model over ChatGPT3.5, since it was useless now.</li>
+      <li><i>[ChatGPT Web]</i> Minor internal improvements.</li>
+      <li><i>[OpenAI Comp API]</i> Added a new integration method to use a local LLM via an API compatible with OpenAI's API specifications [<a href="https://github.com/micz/ThunderAI/issues/126">#126</a>].</li>
+      <li>Custom Prompts storage space incremented to 5MB, using <i>storage.local</i>. Added also the total occupied space at the bottom of the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/129">#129</a>].</li>
+      <li><i>[ChatGPT Web]</i> Updated the information in the option page.</li>
+      <li>A new dynamic menu for selecting prompts has been added. In addition to clicking the ThunderAI button, you can now use the CTRL+ALT+A keyboard shortcut [<a href="https://micz.it/thunderbird-addon-thunderai/dynamic-menu/">More info</a>] [<a href="https://github.com/micz/ThunderAI/issues/130">#130</a>].</li>
+      <li>Added an option to order alphabetically the prompts in the menu.</li>
+      <li>Allow 0 as the dimensions for the chat window in the options page to prevent issues, such as those encountered with NixOS/Hyprland [<a href="https://github.com/micz/ThunderAI/issues/137">#137</a>].</li>
+      <li>Is now possible to ask for additional text before sending the prompts also for default prompts [<a href="https://github.com/micz/ThunderAI/issues/135">#135</a>].</li>
+      <li>Fixed a bug that occurred when importing prompts after an export without closing the Custom Prompts page.</li>
+      <li>Brazilian Portuguese (pt-br) translation added, thanks to Bruno Pereira de Souza.</li>
+      <li><i>[Ollama API]</i> Added a link to the <a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">CORS information page</a>.</li>
+      <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Improved handling of streaming responses even in case of broken chunks [<a href="https://github.com/micz/ThunderAI/issues/147">#147</a>].</li>
+      <li>Fixed a race condition that occurred when opening the chat window under certain circumstances. Thanks to <a href="https://github.com/jobisoft" target="_blank">@jobisoft</a> for helping refine the code, and to <a href="https://github.com/Mikilio" target="_blank">@Mikilio</a> and <a href="https://github.com/mattcaron" target="_blank">@mattcaron</a> for the extensive testing [<a href="https://github.com/micz/ThunderAI/issues/143">#143</a>].</li>
+    </ul>
 <h2>Version 2.1.5 - 23/09/2024</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Working again in Thunderbird 115. Implemented a workaround for <i>Intl.Segmenter</i> [<a href="https://github.com/micz/ThunderAI/issues/139">#139</a>].</li>

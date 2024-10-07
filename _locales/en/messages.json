@@ -303,14 +303,6 @@
     "message": "Reply type",
     "description": ""
   },
-  "prefs_OptionText_chatpgt_use_gpt4": {
-    "message": "Use ChatGPT-4",
-    "description": ""
-  },
-  "prefs_OptionText_chatpgt_use_gpt4_info": {
-    "message": "After changing this option, you have to choose the right model the first time you use it.",
-    "description": ""
-  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
     "description": ""
@@ -320,7 +312,7 @@
     "description": ""
   },
   "prefsInfoDesc_1": {
-    "message": "If a blank or white page appears when opening the ChatGPT web interface window, it means there is a problem loading the ChatGPT page, not related to the use of this add-on.",
+    "message": "It could happen that the ChatGPT web interface changes in a way that breaks how the addon works. Check the \"Service Status\" page linked at the bottom of this page. Also, remember that the first time you use ThunderAI, you need to log in to ChatGPT.",
     "description": ""
   },
   "prefsInfoDesc_2": {
@@ -328,7 +320,19 @@
     "description": ""
   },
   "prefsInfoDesc_3": {
-    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between the app and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
+    "message": "To use the integration with Ollama, you need to set up a local Ollama server. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the Ollama server remember to set OLLAMA_ORIGINS=moz-extension://*.",
+    "description": ""
+  },
+  "prefsInfoDesc_4": {
+    "message": "To use this integration, you need to set up a local server compatible with the OpenAI API, like LM Studio. Once the server is running, enter its address in the designated field within the application. To ensure proper communication between ThunderAI and the local server remember to set the CORS settings correctly.",
+    "description": ""
+  },
+  "prefsInfoDesc_5": {
+    "message": "Remember that you can open the ThunderAI menu using the keyboard shortcut CTRL+ALT+A.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "You can change the shortcut clicking on the cogwheel icon at the top right of this page and choosing \"Manage Extension Shortcut\".",
     "description": ""
   },
   "prefsDonation_1": {
@@ -451,7 +455,11 @@
     "message": "Ollama API (Local LLM)",
     "description": ""
   },
-  "prefs_Ollama_Host": {
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "OpenAI Compatible API",
+    "description": ""
+  },
+  "prefs_API_Host": {
     "message": "Host Address",
     "description": ""
   },
@@ -467,7 +475,7 @@
     "message": "Error trying to fetch Ollama models",
     "description": ""
   },
-  "Ollama_Models_Error_NoModels": {
+  "API_Models_Error_NoModels": {
     "message": "No models found",
     "description": ""
   },
@@ -499,8 +507,80 @@
     "message": "Waiting for the server response",
     "description": ""
   },
-  "prefs_Ollama_Host_Info": {
+  "prefs_API_Host_Info": {
     "message": "Something like",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "OpenAI Compatible API Models",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Update OpenAI Compatible API Models list",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Error trying to fetch OpenAI Compatible API models",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "You've not added an Host Address for the OpenAI Compatible API. Please insert one in the options page.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "You've not choosen a model for the OpenAI Compatible API. Please choose one in the options page.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Attempting to connect to the OpenAI Compatible API Local Server using the host",
+    "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "OpenAI Comp API request failed",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Chat Name",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "This is the name that will be used in the AI chat.",
+    "description": ""
+  },
+  "StorageSpace": {
+    "message": "Total storage space occupied",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Search prompts",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menu: immediate prompt send",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the hightlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menu: order alphabetically",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "If checked, the prompts in the menu will be ordered alphabetically.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Set to 0 if you don't want to specify the window size.",
+    "description": ""
+  },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "OpenAI Comp API Key",
+    "description": ""
+  },
+  "Optional": {
+    "message": "Optional",
     "description": ""
   }
 }

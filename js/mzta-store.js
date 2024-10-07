@@ -16,20 +16,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export const prefs_default = {
-    do_debug: false,
-    chatgpt_win_height: 800,
-    chatgpt_win_width: 700,
-    default_chatgpt_lang: '',
-    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api'
-    chatgpt_api_key: '',
-    chatgpt_model: '',
-    ollama_host: '',
-    ollama_model: '',
-    openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
-    openai_comp_model: '',
-    openai_comp_api_key: '',
-    openai_comp_chat_name: 'OpenAI Comp',
-    dynamic_menu_force_enter: false,
-    dynamic_menu_order_alphabet: true,
-}
+
+export const taStore = {
+
+    async setSessionData (key, value) {
+        let obj = {};
+        obj[key] = value;
+        await browser.storage.session.set(obj);
+    },
+
+    async getSessionData (key) {
+        let output = await browser.storage.session.get(key);
+        return output[key];
+    },
+};

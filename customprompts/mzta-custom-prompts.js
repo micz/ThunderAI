@@ -17,7 +17,8 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
-import { isThunderbird128OrGreater } from "../js/mzta-utils.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace } from "../js/mzta-utils.js";
+import { taLogger } from "../js/mzta-logger.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -25,8 +26,14 @@ var positionMax_compose = 0;
 var positionMax_display = 0;
 var idnumMax = 0;
 var msgTimeout = null;
+let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    let prefs_debug = await browser.storage.sync.get({do_debug: false});
+    taLog = new taLogger("mzta-custom-prompts", prefs_debug.do_debug);
+    
+    setStorageSpace();
     
     let values = await getPrompts();
 
@@ -358,6 +365,7 @@ function handleInputChange(e) {
 
 
 function loadPromptsList(values){
+    // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
     let options = {
         valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
         item: function(values) {
@@ -413,7 +421,7 @@ function loadPromptsList(values){
                     <br>
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text" disabled> __MSG_customPrompts_form_label_need_custom_text__
+                    <input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
@@ -582,6 +590,7 @@ async function saveAll() {
             // For each item in the array, return only the '_values' part
             return item.values();
         });
+        taLog.log('newPrompts: ' + JSON.stringify(newPrompts));
         // newPrompts.forEach(prompt => {
         //     console.log('>>>>>>>>>>>>> id: ' + JSON.stringify(prompt));
         // });
@@ -601,6 +610,7 @@ async function saveAll() {
             clearMessage();
         }, 10000)
     }
+    setStorageSpace();
 }
 
 function setMessage(msg, color = '') {
@@ -616,6 +626,11 @@ function clearMessage() {
     msgDisplay.textContent = '';
     msgDisplay.style.display = 'none';
     msgDisplay.style.color = '';
+}
+
+async function setStorageSpace() {
+    let storage_space = await getCustomPromptsUsedSpace();
+    document.getElementById('storage_space').textContent = storage_space;
 }
 
 

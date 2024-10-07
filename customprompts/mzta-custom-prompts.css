@@ -16,38 +16,6 @@
     }
 }
 
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-
-    table {
-        background-color: #1C1B22;
-        border: 1px solid #ccc;
-    }
-
-    table.prompts_list th {
-        background-color: #4c4e58;
-        border: 1px solid rgb(251, 251, 254);
-        color: rgb(194, 194, 194);
-    }
-
-    #command_palette{
-        background-color: inherit; 
-    }
-
-    table.prompts_list tr:nth-child(even) {
-        background-color: #2E2F36;
-    }
-}
-
 table {
     border-collapse: collapse;
     border-spacing: 0;
@@ -180,4 +148,54 @@ table .sort.desc {
 
 #btnExportAll{
     margin-bottom: 3px;
+}
+
+.storage_space{
+    font-size: 0.8em;
+    font-weight: normal;
+    font-style: italic;
+    color: rgb(41, 41, 41);
+    text-align: right;
+    margin-right: 1px;
+}
+
+.page_title{
+    margin-bottom: 0px;
+}
+
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1C1B22;
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+
+    table {
+        background-color: #1C1B22;
+        border: 1px solid #ccc;
+    }
+
+    table.prompts_list th {
+        background-color: #4c4e58;
+        border: 1px solid rgb(251, 251, 254);
+        color: rgb(194, 194, 194);
+    }
+
+    #command_palette{
+        background-color: inherit; 
+    }
+
+    table.prompts_list tr:nth-child(even) {
+        background-color: #2E2F36;
+    }
+
+    .storage_space{
+        color: rgb(182, 182, 182);
+    }    
+
 }

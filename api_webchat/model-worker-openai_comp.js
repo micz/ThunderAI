@@ -20,13 +20,15 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAI } from '../js/api/openai.js';
+import { OpenAIComp } from '../js/api/openai_comp.js';
 import { taLogger } from '../js/mzta-logger.js';
 
-let chatgpt_api_key = null;
-let chatgpt_model = '';
-let openai = null;
+let openai_comp_host = null;
+let openai_comp_model = '';
+let openai_comp_api_key = '';
+let openai_comp = null;
 let stopStreaming = false;
+let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
 
@@ -35,15 +37,17 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        chatgpt_api_key = event.data.chatgpt_api_key;
-        chatgpt_model = event.data.chatgpt_model;
-        openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
+        openai_comp_host = event.data.openai_comp_host;
+        openai_comp_model = event.data.openai_comp_model;
+        openai_comp_api_key = event.data.openai_comp_api_key;
+        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true);
         do_debug = event.data.do_debug;
-        taLog = new taLogger('model-worker-openai', do_debug);
+        i18nStrings = event.data.i18nStrings;
+        taLog = new taLogger('model-worker-openai_comp', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
 
-    const response = await openai.fetchResponse(conversationHistory); //4096);
+    const response = await openai_comp.fetchResponse(conversationHistory); //4096);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
@@ -55,10 +59,10 @@ self.onmessage = async function(event) {
                 const errorJSON = await response.json();
                 errorDetail = JSON.stringify(errorJSON);
                 error_message = errorJSON.error.message;
-                taLog.error("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                taLog.log("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
             }
-            postMessage({ type: 'error', payload: error_message });
-            throw new Error("[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + error_message });
+            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
         }
 
         const reader = response.body.getReader();
@@ -84,7 +88,7 @@ self.onmessage = async function(event) {
             // lots of low-level OpenAI response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            taLog.log("buffer: " + buffer);
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];

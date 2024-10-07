@@ -19,7 +19,8 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet } from './mzta-utils.js'
+import { taLogger } from './mzta-logger.js';
 
 export class mzta_Menus {
 
@@ -28,23 +29,30 @@ export class mzta_Menus {
     menu_context_compose = null;
     menu_context_display = null;
     menu_listeners = {};
+    logger = null;
 
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
     ];
 
-    constructor(openChatGPT) {
+    shortcutMenu = [
+    //{ id: 'ItemD', label: 'LabelD' },
+    ];
+
+    constructor(openChatGPT, do_debug = false) {
         this.menu_context_compose = getMenuContextCompose();
         this.menu_context_display = getMenuContextDisplay();
         this.openChatGPT = openChatGPT;
         this.allPrompts = [];
         this.listener = this.listener.bind(this);
+        this.logger = new taLogger('mzta_Menus', do_debug);
     }
 
 
     async initialize() {
         this.allPrompts = [];
         this.rootMenu = [];
+        this.shortcutMenu = [];
         this.menu_listeners = {};
         this.allPrompts = await getPrompts(true);   
         this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
@@ -55,7 +63,7 @@ export class mzta_Menus {
 
     async reload(){
         await browser.menus.removeAll().catch(error => {
-                console.error("[ThunderAI]  ERROR removing the menus: ", error);
+                console.error("[ThunderAI] ERROR removing the menus: ", error);
             });
         this.removeClickListener();
         this.loadMenus();
@@ -140,10 +148,24 @@ export class mzta_Menus {
         }
     }
 
+    loadShortcutMenu() {
+        this.shortcutMenu = [];
+        this.allPrompts.forEach((prompt) => {
+            this.addShortcutMenu(prompt);
+        });
+    }
+
+    addShortcutMenu(prompt) {
+        let curr_menu_entry = {id: prompt.id, label: i18nConditionalGet(prompt.name), type: prompt.type};
+        this.shortcutMenu.push(curr_menu_entry);
+    }
+
     async loadMenus() {
         await this.initialize();
         await this.addMenu(this.rootMenu);
         this.addClickListener();
+        this.loadShortcutMenu();
+        this.logger.log("Menus loaded");
     }
 
     listener(info, tab) {
@@ -164,6 +186,8 @@ export class mzta_Menus {
     addMenu = async (menu, root = null) => {
         for (let item of menu) {
           let {id, is_default, name, menu, act} = item;
+
+          this.logger.log("addMenu: " + id);
 
           await new Promise(resolve =>
             browser.menus.create({
@@ -216,6 +240,25 @@ export class mzta_Menus {
             return "*";
         }else{
             return "";
+        }
+    }
+
+
+    async executeMenuAction(id) {
+        // Retrieve the action callback from the menu listeners using the provided ID
+        const action = this.menu_listeners[id];
+        
+        if (action) {
+            try {
+                // Execute the action callback
+                await action();
+            } catch (error) {
+                // Log any errors that occur during execution
+                console.error(`Error executing action for menu item ${id}:`, error);
+            }
+        } else {
+            // Warn if no action is found for the provided ID
+            console.warn(`No action found for menu item ID: ${id}`);
         }
     }
 
