@@ -22,6 +22,10 @@
       <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Improved handling of streaming responses even in case of broken chunks [<a href="https://github.com/micz/ThunderAI/issues/147">#147</a>].</li>
       <li>Fixed a race condition that occurred when opening the chat window under certain circumstances. Thanks to <a href="https://github.com/jobisoft" target="_blank">@jobisoft</a> for helping refine the code, and to <a href="https://github.com/Mikilio" target="_blank">@Mikilio</a> and <a href="https://github.com/mattcaron" target="_blank">@mattcaron</a> for the extensive testing [<a href="https://github.com/micz/ThunderAI/issues/143">#143</a>].</li>
     </ul>
+<h2>Version 2.1.5 - 23/09/2024</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Working again in Thunderbird 115. Implemented a workaround for <i>Intl.Segmenter</i> [<a href="https://github.com/micz/ThunderAI/issues/139">#139</a>].</li>
+      </ul>
 <h2>Version 2.1.4 - 11/09/2024</h2>
       <ul>
         <li><i>[ChatGPT API][Ollama API]</i> Fixed the colors of the light theme in the chat window status logger.</li>

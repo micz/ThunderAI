@@ -63,7 +63,7 @@ body:
     id: logs
     attributes:
       label: Anything in the Thunderbird console logs that might be useful?
-      description: For example, error message, or stack traces.
+      description: For example, error message, or stack traces. Be sure to have activated the debug in the add-on preferences. Open the console using the keyboard shortcut CTRL+SHIFT+J.
       render: txt
   - type: textarea
     id: additional

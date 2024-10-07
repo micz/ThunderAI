@@ -41,8 +41,9 @@
         }
 
         Intl.Segmenter = Segmenter;
-        console.log('Intl.Segmenter polyfill correctly loaded.');
-    } else {
-        console.log('Intl.Segmenter is already supported.');
+        // console.log('Intl.Segmenter polyfill correctly loaded.');
     }
+    // else {
+    //     console.log('Intl.Segmenter is already supported.');
+    // }
 })();
