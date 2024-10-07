@@ -25,6 +25,7 @@ let taLog = console;
 document.addEventListener('DOMContentLoaded', async () => {
     let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false});
     taLog = new taLogger("mzta-popup",prefs.do_debug);
+    i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
     let tabId = reponse.lastShortcutTabId;
