@@ -72,7 +72,7 @@ Are you using this addon in your Thunderbird?
 <br>
 
 ### Miscellaneous
-- <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP frontend
+- <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGTP web frontend
 - <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 
