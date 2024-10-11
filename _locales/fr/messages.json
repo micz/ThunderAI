@@ -578,5 +578,13 @@
   "Optional": {
     "message": "Optionnel",
     "description": ""
+  },
+  "OpenChatGPTTab": {
+    "message": "Ouvrir l'onglet ChatGPT",
+    "description": ""
+  },
+  "OpenChatGPTTab_Info": {
+    "message": "En cas de problèmes de connexion dans la fenêtre ThunderAI, ouvrez ChatGPT dans un nouvel onglet à l'aide du bouton à droite, connectez-vous, puis fermez l'onglet et continuez à utiliser ThunderAI.",
+    "description": ""
   }
 }

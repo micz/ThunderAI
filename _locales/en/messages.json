@@ -582,5 +582,13 @@
   "Optional": {
     "message": "Optional",
     "description": ""
+  },
+  "OpenChatGPTTab": {
+    "message": "Open ChatGPT Tab",
+    "description": ""
+  },
+  "OpenChatGPTTab_Info": {
+    "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
+    "description": ""
   }
 }

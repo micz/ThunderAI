@@ -578,5 +578,13 @@
   "Optional": {
     "message": "Optional",
     "description": ""
+  },
+  "OpenChatGPTTab": {
+    "message": "ChatGPT-Tab öffnen",
+    "description": ""
+  },
+  "OpenChatGPTTab_Info": {
+    "message": "Bei Anmeldeproblemen im ThunderAI-Fenster öffnen Sie ChatGPT in einem neuen Tab über die Schaltfläche rechts, melden Sie sich an, schließen Sie dann den Tab und fahren Sie fort, ThunderAI zu verwenden.",
+    "description": ""
   }
 }
