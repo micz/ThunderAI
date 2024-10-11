@@ -5,6 +5,11 @@
 
 
 
+<h2>Version 2.2.1 - 11/10/2024</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Added a workaround to login in ChatGPT. See the new button in the options page.</li>
+        <li>Brazilian Portuguese (pt-br) translation updated, thanks to Bruno Pereira de Souza.</li>
+      </ul>
 <h2>Version 2.2.0 - 07/10/2024</h2>
     <ul>
       <li><i>[ChatGPT Web]</i> Removed the option to force the ChatGPT4 model over ChatGPT3.5, since it was useless now.</li>
