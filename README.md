@@ -25,6 +25,8 @@ Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
 > From version 2.1.0 is possible to use a local Ollama server!
 >
 > Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
+> 
+> [More info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/)
 
 <br>
 
