@@ -381,4 +381,9 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
       icon_img_openai_comp_api_key.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
   });
 
+  const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
+  btnChatGPTWeb_Tab.addEventListener('click', () => {
+    browser.tabs.create({ url: 'https://chatgpt.com/' });
+  });
+
 }, { once: true });
