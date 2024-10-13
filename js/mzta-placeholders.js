@@ -112,7 +112,7 @@ export async function setCustomPlaceholders(placeholders) {
 
 export const placeholdersUtils = {
 
-    extractPlacehodlers(text) {
+    extractPlaceholders(text) {
         // Regular expression to match patterns like {%...%}
         const regex = /{%\s*(.*?)\s*%}/g;
         let matches = [];
