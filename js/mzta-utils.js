@@ -63,6 +63,26 @@ function extractEmail(text) {
   return match ? match[0] : '';
 }
 
+export async function getMailSubject(tab){
+  // console.log(">>>>>>>>>> getMailSubject tab: " + JSON.stringify(tab));
+  if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
+    return "";
+  }
+  switch(tab.type){
+    case "mail":
+      let messages_list = await browser.mailTabs.getSelectedMessages(tab.id);
+      return messages_list.messages[0].subject;
+    case "messageDisplay":
+      let message = await messenger.messageDisplay.getDisplayedMessage(tab.id);
+      return message.subject;
+    case "messageCompose":
+      let msg_details = await browser.compose.getComposeDetails(tab.id)
+      return msg_details.subject;
+    default:
+      return "";
+  }
+}
+
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body + " ";
