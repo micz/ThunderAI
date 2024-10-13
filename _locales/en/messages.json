@@ -590,5 +590,21 @@
   "OpenChatGPTTab_Info": {
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
     "description": ""
+  },
+  "placeholder_mail_body": {
+    "message": "Mail body",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Mail subject",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Selected text",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Additional text",
+    "description": ""
   }
 }
