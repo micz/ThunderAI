@@ -132,7 +132,7 @@ export const placeholdersUtils = {
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
-          return replacements[p1] ? "\"" + replacements[p1] + "\"" : match; // Replace if found, otherwise keep the original
+          return replacements[p1] || match; // Replace if found, otherwise keep the original
         });
     },
 
