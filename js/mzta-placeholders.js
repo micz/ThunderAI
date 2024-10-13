@@ -55,9 +55,6 @@ export async function getPlaceholders(onlyEnabled = false){
     }else{  // order only if we are not filtering, the filtering is for the automplete and we are ordering there after i18n
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
-    for(let i=1; i<=output.length; i++){
-        output[i-1].idnum = i;
-    }
     // console.log('>>>>>>>>>>>> getPlaceholders output: ' + JSON.stringify(output));
     return output;
 }
@@ -112,15 +109,20 @@ export async function setCustomPlaceholders(placeholders) {
 
 export const placeholdersUtils = {
 
-    extractPlaceholders(text) {
+    async extractPlaceholders(text) {
         // Regular expression to match patterns like {%...%}
         const regex = /{%\s*(.*?)\s*%}/g;
         let matches = [];
         let match;
+
+        let activePHs = await getPlaceholders(true);
       
         // Use exec to find all matches
         while ((match = regex.exec(text)) !== null) {
-          matches.push(match[1]); // Push only the string inside {%...%}
+          const foundPH = activePHs.find(ph => ph.id === match[1].trim());
+          if (foundPH) {
+            matches.push(foundPH);
+          }
         }
       
         return matches;
@@ -130,7 +132,7 @@ export const placeholdersUtils = {
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
-          return replacements[p1] || match; // Replace if found, otherwise keep the original
+          return replacements[p1] ? "\"" + replacements[p1] + "\"" : match; // Replace if found, otherwise keep the original
         });
     },
 
