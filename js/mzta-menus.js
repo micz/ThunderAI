@@ -21,7 +21,7 @@
 import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject } from './mzta-utils.js'
 import { taLogger } from './mzta-logger.js';
-import { placeholdersUtils, getPlaceholders } from './mzta-placeholders.js';
+import { placeholdersUtils } from './mzta-placeholders.js';
  
 export class mzta_Menus {
 
