@@ -108,3 +108,30 @@ export async function setDefaultPlaceholdersProperties(placeholders) {
 export async function setCustomPlaceholders(placeholders) {
     await browser.storage.local.set({_custom_placeholder: placeholders});
 }
+
+
+export const placeholdersUtils = {
+
+    extractPlacehodlers(text) {
+        // Regular expression to match patterns like {%...%}
+        const regex = /{%\s*(.*?)\s*%}/g;
+        let matches = [];
+        let match;
+      
+        // Use exec to find all matches
+        while ((match = regex.exec(text)) !== null) {
+          matches.push(match[1]); // Push only the string inside {%...%}
+        }
+      
+        return matches;
+    },
+
+    replacePlaceholders(text, replacements) {
+        // Regular expression to match patterns like {%...%}
+        return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
+          // p1 contains the key inside {% %}
+          return replacements[p1] || match; // Replace if found, otherwise keep the original
+        });
+    },
+
+}
