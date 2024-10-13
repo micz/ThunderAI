@@ -134,4 +134,20 @@ export const placeholdersUtils = {
         });
     },
 
+    hasPlaceholder(text, placeholder = "") {
+        let regex;
+      
+        // If a specific placeholder is provided, we search for it
+        if (placeholder !== "") {
+          // Dynamically build the regex for the specific placeholder
+          regex = new RegExp(`{%\s*${placeholder}\s*%}`);
+        } else {
+          // Otherwise, we search for any placeholder in the format {% ... %}
+          regex = /{%\s*(.*?)\s*%}/;
+        }
+      
+        // Check if the specific or any placeholder is present in the text
+        return regex.test(text);
+      },
+
 }
