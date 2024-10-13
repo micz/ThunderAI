@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 2.3.0 - ??/??/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Added a workaround to login in ChatGPT. See the new button in the options page.</li>
