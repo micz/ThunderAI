@@ -606,5 +606,17 @@
   "placeholder_additional_text": {
     "message": "Additional text",
     "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Junk score",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Recipients",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Author",
+    "description": ""
   }
 }
