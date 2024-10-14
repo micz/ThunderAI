@@ -247,10 +247,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, '', true);
     openai.fetchModels().then((data) => {
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       taLog.log("ChatGPT models: " + JSON.stringify(data));
@@ -288,10 +294,16 @@ select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
         return;
       }
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('ollama_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       if(data.response.models.length == 0){
