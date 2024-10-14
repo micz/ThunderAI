@@ -682,10 +682,11 @@ function textareaAutocomplete(textarea, suggestions) {
         const lastWord = match[0];
         const tr = textarea.parentNode.parentNode.parentNode;
         let type = tr.querySelector('.type_output').value
-        console.log(">>>>>>>>> type: " + type);
+        // console.log(">>>>>>>>> type: " + type);
+        // console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
+        // console.log(">>>>>>>>> lastWord: " + lastWord);
         const matches = suggestions.filter(s => s.command.startsWith(lastWord) && (String(s.type) == String(type) || String(s.type) == '0' )).map(s => s.command);
-        // const matches = suggestions.filter(s => s.startsWith(lastWord));
-        console.log(">>>>>>>>> matches: " + JSON.stringify(matches));
+        // console.log(">>>>>>>>> matches: " + JSON.stringify(matches));
         showSuggestions(matches, autocompleteList);
       } else {
         hideSuggestions(autocompleteList);
