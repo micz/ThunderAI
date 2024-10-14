@@ -118,7 +118,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
     
-    textareas.forEach(textarea => textareaAutocomplete(textarea, autocompleteSuggestions));
+    textareas.forEach(textarea => textareaAutocomplete(textarea, autocompleteSuggestions, textarea.closest('.type_selector')?.value));
+
+    // document.addEventListener('click', (e) => {
+    //     // Check if the click was outside the textarea or suggestion list
+    //     const isClickInsideTextarea = e.target.closest('.editor');
+    //     const isClickInsideAutocompleteList = e.target.closest('.autocomplete-list');
+      
+    //     if (!isClickInsideTextarea && !isClickInsideAutocompleteList) {
+    //       textareas.forEach(textarea => {
+    //         const container = textarea.closest('.autocomplete-container');
+    //         const autocompleteList = container.querySelector('.autocomplete-list');
+    //         hideSuggestions(autocompleteList);
+    //       });
+    //     }
+    // });
 
     i18n.updateDocument();
 
@@ -285,7 +299,7 @@ function showItemRowEditor(tr) {
     tr.querySelector('.name_show').style.display = 'none';
     const text_output = tr.querySelector('.text_output');
     text_output.style.display = 'inline';
-    textareaAutocomplete(text_output, autocompleteSuggestions)
+    textareaAutocomplete(text_output, autocompleteSuggestions, tr.closest('.type_selector').value)
     tr.querySelector('.text_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
@@ -411,7 +425,7 @@ function loadPromptsList(values){
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
-                <td class="w08"><span class="type_show">` + type_output + `</span>
+                <td class="w08"><span class="type_show" class="type_selector">` + type_output + `</span>
                 <select class="type_output hiddendata">
                 <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
                 <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
@@ -654,7 +668,7 @@ if(await isThunderbird128OrGreater()){
     });    
 }
 
-function textareaAutocomplete(textarea, suggestions) {
+function textareaAutocomplete(textarea, suggestions, type) { console.log(">>>>>>>>> textareaAutocomplete type: " + type);
     const container = textarea.closest('.autocomplete-container');
     const autocompleteList = container.querySelector('.autocomplete-list');
     let activeIndex = -1;
@@ -666,7 +680,7 @@ function textareaAutocomplete(textarea, suggestions) {
 
       if (match) {
         const lastWord = match[0];
-        const matches = suggestions.filter(s => s.startsWith(lastWord));
+        const matches = suggestions.filter(s => s.startsWith(lastWord) && s.type === type);
         showSuggestions(matches, autocompleteList);
       } else {
         hideSuggestions(autocompleteList);
@@ -744,4 +758,17 @@ function textareaAutocomplete(textarea, suggestions) {
         textarea.setSelectionRange(newCursorPosition, newCursorPosition);
       }
     }
+
+    document.addEventListener('click', (e) => {
+        // Check if the click was outside the textarea or suggestion list
+        const isClickInsideTextarea = e.target.closest('.editor');
+        const isClickInsideAutocompleteList = e.target.closest('.autocomplete-list');
+      
+        if (!isClickInsideTextarea && !isClickInsideAutocompleteList) {
+            const container = textarea.closest('.autocomplete-container');
+            const autocompleteList = container.querySelector('.autocomplete-list');
+            hideSuggestions(autocompleteList);
+        }
+    });
+
 }
