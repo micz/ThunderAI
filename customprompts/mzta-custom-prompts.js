@@ -349,6 +349,13 @@ function handleCancelClick(e) {
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
+    tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
+    tr.querySelector('.text_output').value = tr.querySelector('.text_show').innerText;
+    tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
+    // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
+    tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
+    // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     hideItemRowEditor(tr);
 }
 
