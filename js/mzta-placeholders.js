@@ -16,29 +16,70 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*  ================= PROMPTS PROPERTIES ========================================
+
+    ================ BASE PROPERTIES
+
+    Types (type attribute):
+    0: always show (when composing a part of the text must be selected if need_selected = 1)
+    1: show when reading an email
+    2: show when composing a mail (a part of the text must be selected if need_selected = 1)
+
+    ================ USER PROPERTIES
+    Enabled (enabled attribute):
+    0: Disabled
+    1: Enabled
+
+*/
+
 const defaultPlaceholders = [
     {
         id: 'mail_body',
         name: "__MSG_placeholder_mail_body__",
         text: "",
+        type: 0,
         is_default: "1",
     },
     {
         id: 'mail_subject',
         name: "__MSG_placeholder_mail_subject__",
         text: "",
+        type: 0,
         is_default: "1",
     },
     {
         id: 'selected_text',
         name: "__MSG_placeholder_selected_text__",
         text: "",
+        type: 0,
         is_default: "1",
     },
     {
-        id: 'additional_text',
+        id: 'additional_text',  //TODO
         name: "__MSG_placeholder_additional_text__",
         text: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'junk_score',  //TODO
+        name: "__MSG_placeholder_junk_score__",
+        text: "",
+        type: 1,
+        is_default: "1",
+    },
+    {
+        id: 'recipients',  //TODO
+        name: "__MSG_placeholder_recipients__",
+        text: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'author',  //TODO
+        name: "__MSG_placeholder_author__",
+        text: "",
+        type: 0,
         is_default: "1",
     },
 ];
