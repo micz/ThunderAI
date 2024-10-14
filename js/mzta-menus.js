@@ -78,7 +78,8 @@ export class mzta_Menus {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
-                text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })
+                text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
+                html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
             };
         };
     
@@ -129,6 +130,9 @@ export class mzta_Menus {
                     switch(currPH.id){
                         case 'mail_body':
                             finalSubs['mail_body'] = body_text;
+                            break;
+                        case 'html_body': console.log(">>>>>>>>>> html_body: " + msg_text.html);
+                            finalSubs['html_body'] = msg_text.html;
                             break;
                         case 'mail_subject':
                             finalSubs['mail_subject'] = mail_subject;

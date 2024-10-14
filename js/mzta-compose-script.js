@@ -55,6 +55,9 @@ switch (message.command) {
   case "getTextOnly":
       return Promise.resolve(window.document.body.innerText);
 
+  case "getFullHtml":
+      return Promise.resolve(window.document.body.innerHTML);
+
   case 'promptTooLong':
     alert(browser.i18n.getMessage('msg_prompt_too_long'));
     return Promise.resolve(true);
