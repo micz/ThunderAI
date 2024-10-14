@@ -7,6 +7,7 @@
 
 <h2>Version 2.3.0 - ??/??/2024</h2>
       <ul>
+        <li>On the custom prompts page, when editing a prompt, pressing the cancel button will revert any modified values in the form to their saved state.</li>
         <li>...</li>
       </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
