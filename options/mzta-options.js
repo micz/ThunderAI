@@ -333,10 +333,16 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
     let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true);
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       taLog.log("OpenAIComp models: " + JSON.stringify(data));
