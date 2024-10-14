@@ -40,7 +40,7 @@ export class OpenAIComp {
     };
     if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
-    const response = await fetch(this.host + "/v1/models", {
+    const response = await fetch(this.host + "/models", {
         method: "GET",
         headers: curr_headers,
     });
@@ -70,7 +70,7 @@ export class OpenAIComp {
     if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
     try {
-      const response = await fetch(this.host + "/v1/chat/completions", {
+      const response = await fetch(this.host + "/chat/completions", {
           method: "POST",
           headers: curr_headers,
           body: JSON.stringify({ 
