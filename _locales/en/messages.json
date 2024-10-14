@@ -595,6 +595,10 @@
     "message": "Mail body",
     "description": ""
   },
+  "placeholder_html_body": {
+    "message": "HTML mail body",
+    "description": ""
+  },
   "placeholder_mail_subject": {
     "message": "Mail subject",
     "description": ""
