@@ -5,7 +5,7 @@
 
 
 
-<h2>Version 2.2.2 - ??/??/2024</h2>
+<h2>Version 2.2.2 - 15/10/2024</h2>
       <ul>
         <li>APIs error handling improved.</li>
         <li><i>[OpenAI Comp API]</i> Added an option to remove the <i>v1</i> segment in the API calls path [<a href="https://github.com/micz/ThunderAI/issues/161">#161</a>].</li>
