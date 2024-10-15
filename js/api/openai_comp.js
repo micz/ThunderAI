@@ -66,23 +66,32 @@ export class OpenAIComp {
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
-    const curr_headers = {
-      "Content-Type": "application/json",
-    };
-    if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+    try{
+      const curr_headers = {
+        "Content-Type": "application/json",
+      };
+      if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
-    try {
-      const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
-          method: "POST",
-          headers: curr_headers,
-          body: JSON.stringify({ 
-              model: this.model, 
-              messages: messages,
-              stream: this.stream,
-              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
-          }),
-      });
-      return response;
+      try {
+        const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
+            method: "POST",
+            headers: curr_headers,
+            body: JSON.stringify({ 
+                model: this.model, 
+                messages: messages,
+                stream: this.stream,
+                ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+            }),
+        });
+        return response;
+      }catch (error) {
+          console.error("[ThunderAI] OpenAI API Comp request failed: " + error);
+          let output = {};
+          output.is_exception = true;
+          output.ok = false;
+          output.error = "OpenAI API Comp request failed: " + error;
+          return output;
+      }
     }catch (error) {
         console.error("[ThunderAI] OpenAI API Comp request failed: " + error);
         let output = {};

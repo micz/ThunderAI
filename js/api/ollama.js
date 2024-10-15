@@ -29,31 +29,40 @@ export class Ollama {
     }
 
     fetchModels = async () => {
-      const response = await fetch(this.host + "/api/tags", {
-          method: "GET",
-          headers: {
-              "Content-Type": "application/json"
-          },
-      });
+      try{
+        const response = await fetch(this.host + "/api/tags", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+        });
 
-      if (!response.ok) {
-          const errorDetail = await response.text();
-          let err_msg = "[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-          console.error(err_msg);
-          let output = {};
-          output.ok = false;
-          output.error = errorDetail;
-          return output;
+        if (!response.ok) {
+            const errorDetail = await response.text();
+            let err_msg = "[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+            console.error(err_msg);
+            let output = {};
+            output.ok = false;
+            output.error = errorDetail;
+            return output;
+        }
+
+        let output = {};
+        output.ok = true;
+        let output_response = await response.json();
+        output.response = output_response;
+
+        //console.log(">>>>>>>>>> output_response: " + JSON.stringify(output_response));
+
+        return output;
+      }catch (error) {
+        console.error("[ThunderAI] Ollama API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Ollama API request failed: " + error;
+        return output;
       }
-  
-      let output = {};
-      output.ok = true;
-      let output_response = await response.json();
-      output.response = output_response;
-
-      //console.log(">>>>>>>>>> output_response: " + JSON.stringify(output_response));
-  
-      return output;
     }
 
     
