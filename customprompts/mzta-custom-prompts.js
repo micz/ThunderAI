@@ -701,6 +701,9 @@ function textareaAutocomplete(textarea, suggestions) {
     });
 
     textarea.addEventListener('keydown', (e) => {
+      if (autocompleteList.classList.contains('hidden')) {
+        return;
+      }
       const items = autocompleteList.querySelectorAll('li');
       if (items.length > 0) {
         if (e.key === 'ArrowDown') {
@@ -713,6 +716,7 @@ function textareaAutocomplete(textarea, suggestions) {
           updateActiveSuggestion(items, activeIndex);
         } else if (e.key === 'Enter') {
           e.preventDefault();
+          if(activeIndex === -1) activeIndex = 0;
           if (activeIndex >= 0 && activeIndex < items.length) {
             insertAutocomplete(items[activeIndex].textContent, textarea);
             hideSuggestions(autocompleteList);
