@@ -188,7 +188,7 @@ export const placeholdersUtils = {
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
           // Replace if found, otherwise keep the original or substitute with default value
-          return replacements[p1] || use_dafault_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match;
+          return replacements[p1] || (use_dafault_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match);
         });
     },
 
