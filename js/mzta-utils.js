@@ -107,6 +107,11 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
+export function sanitizeHtml(input) {
+  // Keep only <br> tags and remove all other HTML tags
+  return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
+}
+
 export function i18nConditionalGet(str) {
   // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
   // using the browser.i18n API
