@@ -74,7 +74,7 @@ export class mzta_Menus {
 
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
     
-        const getHighlight = async (tabs) => {
+        const getMailData = async (tabs) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
@@ -85,7 +85,7 @@ export class mzta_Menus {
     
         curr_menu_entry.act = async () => {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const msg_text = await getHighlight(tabs);
+            const msg_text = await getMailData(tabs);
     
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
@@ -140,7 +140,7 @@ export class mzta_Menus {
                         case 'selected_text':
                             finalSubs['selected_text'] = selection_text;
                             break;
-                        default:    // TODO Manage custom placeholders
+                        default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;
                     }
                 }
