@@ -596,7 +596,11 @@
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1_info": {
-      "message": "Se selezionato, il segmento \"v1\" nel percorso delle chiamate API verrà mantenuto, ad esempio \"http://localhost:1234/v1/chat/completions\".",
-      "description": ""
-}
+    "message": "Se selezionato, il segmento \"v1\" nel percorso delle chiamate API verrà mantenuto, ad esempio \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Sembra che almeno uno dei tuoi account stia utilizzando il componente aggiuntivo Gufo per Exchange. Esiste un problema noto tra Thunderbird e Gufo, che è attualmente in fase di risoluzione. Al momento, puoi utilizzare ThunderAI durante la composizione delle email, ma non durante la loro lettura.",
+    "description": ""
+  }
 }

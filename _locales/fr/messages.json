@@ -596,7 +596,11 @@
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1_info": {
-      "message": "Si coché, le segment \"v1\" dans le chemin des appels API sera conservé, comme \"http://localhost:1234/v1/chat/completions\".",
-      "description": ""
+    "message": "Si coché, le segment \"v1\" dans le chemin des appels API sera conservé, comme \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Il semble qu'au moins un de vos comptes utilise le module complémentaire Chouette pour Exchange. Il existe un problème connu entre Thunderbird et Chouette, qui est en cours de résolution. Pour le moment, vous pouvez utiliser ThunderAI lors de la rédaction d'e-mails, mais pas lors de leur lecture.",
+    "description": ""
   }
 }

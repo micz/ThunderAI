@@ -205,6 +205,14 @@ function warn_OpenAIComp_HostEmpty() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
+
+  // show Owl warning
+  const accountList = await messenger.accounts.list(false);
+  if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
+    taLog.log('OWL detected, displaying the warning.');
+    document.getElementById('owl_warning').style.display = 'table-row';
+  }
+
   i18n.updateDocument();
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);

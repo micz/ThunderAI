@@ -600,7 +600,11 @@
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1_info": {
-      "message": "Se marcado, o segmento \"v1\" no caminho das chamadas de API será mantido, como em \"http://localhost:1234/v1/chat/completions\".",
-      "description": ""
+    "message": "Se marcado, o segmento \"v1\" no caminho das chamadas de API será mantido, como em \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los.",
+    "description": ""
   }
 }

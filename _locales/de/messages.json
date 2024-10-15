@@ -596,7 +596,11 @@
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1_info": {
-      "message": "Wenn aktiviert, wird das \"v1\"-Segment im Pfad der API-Aufrufe beibehalten, z.B. \"http://localhost:1234/v1/chat/completions\".",
-      "description": ""
+    "message": "Wenn aktiviert, wird das \"v1\"-Segment im Pfad der API-Aufrufe beibehalten, z.B. \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen.",
+    "description": ""
   }
 }
