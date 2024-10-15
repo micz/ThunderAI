@@ -539,6 +539,10 @@
     "message": "Richiesta all'API compatibile con OpenAI fallita",
     "description": ""
   },
+  "chatgpt_api_request_failed": {
+    "message": "Richiesta all'API compatibile con OpenAI ChatGPT fallita",
+    "description": ""
+  },
   "prefs_OpenAIComp_ChatName": {
     "message": "Nome della chat",
     "description": ""
@@ -586,5 +590,13 @@
   "OpenChatGPTTab_Info": {
     "message": "In caso di problemi di accesso nella finestra di ThunderAI, apri ChatGPT in un nuovo tab utilizzando il pulsante a destra, accedi, quindi chiudi la scheda e continua a usare ThunderAI.",
     "description": ""
-  }
+  },
+  "prefs_OptionText_openai_comp_use_v1": {
+    "message": "Mantieni la compatibilità con \"v1\"",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1_info": {
+      "message": "Se selezionato, il segmento \"v1\" nel percorso delle chiamate API verrà mantenuto, ad esempio \"http://localhost:1234/v1/chat/completions\".",
+      "description": ""
+}
 }

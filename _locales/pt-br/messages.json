@@ -503,6 +503,10 @@
     "message": "A solicitação da API do Ollama falhou",
     "description": ""
   },
+  "chatgpt_api_request_failed": {
+    "message": "A solicitação da API do OpenAI ChatGPT falhou",
+    "description": ""
+  },
   "WaitingServerReponse": {
     "message": "Aguardando a resposta do servidor",
     "description": ""
@@ -590,5 +594,13 @@
   "OpenChatGPTTab_Info": {
     "message": "Em caso de problemas de login na janela do ThunderAI, abra o ChatGPT em uma nova aba usando o botão à direita, faça o login, depois feche a aba e continue usando o ThunderAI.",
     "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1": {
+    "message": "Manter a compatibilidade com \"v1\"",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1_info": {
+      "message": "Se marcado, o segmento \"v1\" no caminho das chamadas de API será mantido, como em \"http://localhost:1234/v1/chat/completions\".",
+      "description": ""
   }
 }
