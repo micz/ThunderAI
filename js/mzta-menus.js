@@ -156,7 +156,8 @@ export class mzta_Menus {
                     }
                 }
                 // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
-                fullPrompt = placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang;
+                let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
+                fullPrompt = placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang;
             }
             
             switch(curr_prompt.id){

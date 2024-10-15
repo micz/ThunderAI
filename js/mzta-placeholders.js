@@ -36,63 +36,63 @@ const defaultPlaceholders = [
     {
         id: 'mail_body',
         name: "__MSG_placeholder_mail_body__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'html_body',
         name: "__MSG_placeholder_html_body__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'mail_subject',
         name: "__MSG_placeholder_mail_subject__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'selected_text',
         name: "__MSG_placeholder_selected_text__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'additional_text',  //TODO
         name: "__MSG_placeholder_additional_text__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'junk_score',
         name: "__MSG_placeholder_junk_score__",
-        text: "",
+        default_value: "0",
         type: 1,
         is_default: "1",
     },
     {
         id: 'recipients',
         name: "__MSG_placeholder_recipients__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'cc_list',
         name: "__MSG_placeholder_cc_list__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
     {
         id: 'author',
         name: "__MSG_placeholder_author__",
-        text: "",
+        default_value: "",
         type: 0,
         is_default: "1",
     },
@@ -183,11 +183,12 @@ export const placeholdersUtils = {
         return matches;
     },
 
-    replacePlaceholders(text, replacements) {
+    replacePlaceholders(text, replacements, use_dafault_value = false) {
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
-          return replacements[p1] || match; // Replace if found, otherwise keep the original
+          // Replace if found, otherwise keep the original or substitute with default value
+          return replacements[p1] || use_dafault_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match;
         });
     },
 

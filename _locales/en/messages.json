@@ -626,5 +626,13 @@
   "placeholder_author": {
     "message": "Author",
     "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Placeholders: Use default value",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
+    "description": ""
   }
 }
