@@ -17,7 +17,7 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
-import { isThunderbird128OrGreater, getCustomPromptsUsedSpace } from "../js/mzta-utils.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../js/mzta-utils.js";
 import { taLogger } from "../js/mzta-logger.js";
 import { getPlaceholders } from "../js/mzta-placeholders.js";
 
@@ -351,7 +351,7 @@ function handleCancelClick(e) {
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
-    tr.querySelector('.text_output').value = tr.querySelector('.text_show').innerText;
+    tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
     tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
@@ -431,7 +431,7 @@ function loadPromptsList(values){
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
-                <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
+                <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
                 <td class="w08"><span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
                 <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
