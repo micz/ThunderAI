@@ -62,7 +62,7 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
-        id: 'additional_text',  //TODO
+        id: 'additional_text',
         name: "__MSG_placeholder_additional_text__",
         default_value: "",
         type: 0,

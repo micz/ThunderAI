@@ -20,10 +20,13 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+import { placeholdersUtils } from '../js/mzta-placeholders.js';
+
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
 const llm = urlParams.get('llm');
 const call_id = urlParams.get('call_id');
+const ph_def_val = urlParams.get('ph_def_val');
 
 // Data received from the user
 let promptData = null;
@@ -93,6 +96,7 @@ switch (llm) {
     }
 }
 
+//let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages
 worker.onmessage = function(event) {
@@ -126,7 +130,15 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if(message.do_custom_text=="1") {
                 let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
                 if(userInput !== null) {
-                    message.prompt += " " + userInput;
+                    if(!placeholdersUtils.hasPlaceholder(message.prompt, 'additional_text')){
+                        // no additional_text placeholder, do as usual
+                        message.prompt += " " + userInput;
+                    }else{
+                        // we have the additional_text placeholder, do the magic!
+                        let finalSubs = {};
+                        finalSubs["additional_text"] = userInput;
+                        message.prompt = placeholdersUtils.replacePlaceholders(message.prompt, finalSubs, ph_def_val==='1')
+                    }
                 }
             }
             promptData = message;
