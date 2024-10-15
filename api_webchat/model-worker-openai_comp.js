@@ -26,6 +26,7 @@ import { taLogger } from '../js/mzta-logger.js';
 let openai_comp_host = null;
 let openai_comp_model = '';
 let openai_comp_api_key = '';
+let openai_comp_use_v1 = true;
 let openai_comp = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -40,7 +41,8 @@ self.onmessage = async function(event) {
         openai_comp_host = event.data.openai_comp_host;
         openai_comp_model = event.data.openai_comp_model;
         openai_comp_api_key = event.data.openai_comp_api_key;
-        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true);
+        openai_comp_use_v1 = event.data.openai_comp_use_v1;
+        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true, openai_comp_use_v1);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_comp', do_debug);

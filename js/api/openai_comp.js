@@ -24,13 +24,15 @@ export class OpenAIComp {
   host = '';
   model = '';
   apiKey = '';
+  use_v1 = true;
   stream = false;
 
-  constructor(host, model, apiKey = '', stream = false) {
+  constructor(host, model, apiKey = '', stream = false, use_v1 = true) {
     this.host = host.trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
     this.apiKey = apiKey;
+    this.use_v1 = use_v1;
   }
 
 
@@ -40,7 +42,7 @@ export class OpenAIComp {
     };
     if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
-    const response = await fetch(this.host + "/v1/models", {
+    const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
         method: "GET",
         headers: curr_headers,
     });
@@ -70,7 +72,7 @@ export class OpenAIComp {
     if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
     try {
-      const response = await fetch(this.host + "/v1/chat/completions", {
+      const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
           method: "POST",
           headers: curr_headers,
           body: JSON.stringify({ 
