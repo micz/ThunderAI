@@ -7,7 +7,7 @@
 
 <h2>Version 2.2.2 - ??/??/2024</h2>
       <ul>
-        <li>All APIs error messages handling improved.</li>
+        <li>All APIs error handling improved.</li>
         <li>...</li>
       </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
