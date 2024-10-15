@@ -57,13 +57,17 @@ self.onmessage = async function(event) {
                 if(response.is_exception === true){
                     error_message = response.error;
                 }else{
-                    const errorJSON = await response.json();
-                    errorDetail = JSON.stringify(errorJSON);
-                    error_message = errorJSON.error;
-                    taLog.log("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                    try{
+                        const errorJSON = await response.json();
+                        errorDetail = JSON.stringify(errorJSON);
+                        error_message = errorJSON.error.message;
+                    }catch(e){
+                        error_message = response.statusText;
+                    }
+                    taLog.log("error_message: " + JSON.stringify(error_message));
                 }
-                postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + error_message });
-                throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+                postMessage({ type: 'error', payload: i18nStrings["ollama_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
+                throw new Error("[ThunderAI] Ollama API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
             }
 
             const reader = response.body.getReader();

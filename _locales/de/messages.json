@@ -503,6 +503,10 @@
     "message": "Anfrage an die Ollama API fehlgeschlagen.",
     "description": ""
   },
+  "chatgpt_api_request_failed": {
+    "message": "Anfrage an die OpenAI ChatGPT API fehlgeschlagen",
+    "description": ""
+  },
   "WaitingServerReponse": {
     "message": "Warten auf die Serverantwort.",
     "description": ""
@@ -585,6 +589,18 @@
   },
   "OpenChatGPTTab_Info": {
     "message": "Bei Anmeldeproblemen im ThunderAI-Fenster öffnen Sie ChatGPT in einem neuen Tab über die Schaltfläche rechts, melden Sie sich an, schließen Sie dann den Tab und fahren Sie fort, ThunderAI zu verwenden.",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1": {
+    "message": "\"v1\"-Kompatibilität beibehalten",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1_info": {
+    "message": "Wenn aktiviert, wird das \"v1\"-Segment im Pfad der API-Aufrufe beibehalten, z.B. \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen.",
     "description": ""
   }
 }
