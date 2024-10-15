@@ -69,21 +69,28 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
-        id: 'junk_score',  //TODO
+        id: 'junk_score',
         name: "__MSG_placeholder_junk_score__",
         text: "",
         type: 1,
         is_default: "1",
     },
     {
-        id: 'recipients',  //TODO
+        id: 'recipients',
         name: "__MSG_placeholder_recipients__",
         text: "",
         type: 0,
         is_default: "1",
     },
     {
-        id: 'author',  //TODO
+        id: 'cc_list',
+        name: "__MSG_placeholder_cc_list__",
+        text: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'author',
         name: "__MSG_placeholder_author__",
         text: "",
         type: 0,

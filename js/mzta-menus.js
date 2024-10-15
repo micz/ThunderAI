@@ -113,32 +113,43 @@ export class mzta_Menus {
                 }
             }
 
-            // let mail_subject = await getMailSubject(tabs[0]);
-            // console.log(">>>>>>>>>>>>>>> mail_subject: " + mail_subject);
-    
             let fullPrompt = '';
             if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
                 // no placeholders, do as usual
                 fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
             }else{
-                let mail_subject = await getMailSubject(tabs[0]);
                 // we have at least a placeholder, do the magic!
                 let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
                 // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
                 let finalSubs = {};
+                let curr_messages = await browser.mailTabs.getSelectedMessages();
+                let curr_message = curr_messages.messages[0];
                 for(let currPH of currPHs){
                     switch(currPH.id){
                         case 'mail_body':
                             finalSubs['mail_body'] = body_text;
                             break;
-                        case 'html_body': console.log(">>>>>>>>>> html_body: " + msg_text.html);
+                        case 'html_body':
                             finalSubs['html_body'] = msg_text.html;
                             break;
                         case 'mail_subject':
+                            let mail_subject = await getMailSubject(tabs[0]);
                             finalSubs['mail_subject'] = mail_subject;
                             break;
                         case 'selected_text':
                             finalSubs['selected_text'] = selection_text;
+                            break;
+                        case 'author':
+                            finalSubs['author'] = curr_message.author;
+                            break;
+                        case 'recipients':
+                            finalSubs['recipients'] = curr_message.recipients.join(", ");
+                            break;
+                        case 'cc_list':
+                            finalSubs['cc_list'] = curr_message.ccList.join(", ");
+                            break;
+                        case 'junk_score':
+                            finalSubs['junk_score'] = curr_message.junkScore;
                             break;
                         default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;

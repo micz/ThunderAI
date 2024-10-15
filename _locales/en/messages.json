@@ -619,6 +619,10 @@
     "message": "Recipients",
     "description": ""
   },
+  "placeholder_cc_list": {
+    "message": "CC list",
+    "description": ""
+  },
   "placeholder_author": {
     "message": "Author",
     "description": ""
