@@ -281,6 +281,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
                 let mztaDoCustomText=`+ do_custom_text +`;
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+                let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                 `;
 
                 taLog.log("Waiting 1 sec");

@@ -256,7 +256,21 @@ function showCustomTextField(){
 }
 
 async function doProceed(message, customText = ''){
-    let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
+    let final_prompt = message.prompt;
+// console.log(">>>>>>>>>>>> doProceed customText: " + customText);
+// console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
+// console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
+    //check if there is che additional_text placeholder
+    if(final_prompt.includes('{%additional_text%}')){
+        // console.log(">>>>>>>>>>>> found ph customText: " + customText);
+        final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
+    }else{
+        if(customText != ''){
+            final_prompt += ' '+customText;
+        }
+    }
+
+    let send_result = await chatgpt_sendMsg(final_prompt,'click');
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found

@@ -183,12 +183,15 @@ export const placeholdersUtils = {
         return matches;
     },
 
-    replacePlaceholders(text, replacements, use_dafault_value = false) {
+    replacePlaceholders(text, replacements, use_default_value = false, skip_additional_text = false) {
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
           // p1 contains the key inside {% %}
+          if (skip_additional_text && (p1 === 'additional_text')) {
+            return match;
+          }
           // Replace if found, otherwise keep the original or substitute with default value
-          return replacements[p1] || (use_dafault_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match);
+          return replacements[p1] || (use_default_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match);
         });
     },
 
