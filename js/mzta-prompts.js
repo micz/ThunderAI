@@ -65,7 +65,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
-        text: "Reply to the following email.",
+        text: "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
         type: "1",
         action: "1",
         need_selected: "0",
