@@ -59,12 +59,68 @@ switch (message.command) {
       return Promise.resolve(window.document.body.innerHTML);
 
   case 'promptTooLong':
-    alert(browser.i18n.getMessage('msg_prompt_too_long'));
+    const dialog1 = window.document.createElement('dialog');
+    dialog1.classList.add('mzta_dialog');
+    const overlay1 = window.document.createElement('div');
+    overlay1.classList.add('mzta_dialog_overlay');
+
+    const content1 = window.document.createElement('div');
+    content1.classList.add('mzta_dialog_content');
+
+    const closeButton1 = window.document.createElement('div');
+    closeButton1.classList.add('mzta_dialog_close');
+    closeButton1.id = 'mzta_dialog_close';
+    closeButton1.textContent = 'x';
+
+    const message1 = window.document.createElement('div');
+    message1.textContent = browser.i18n.getMessage('msg_prompt_too_long');
+
+    content1.appendChild(closeButton1);
+    content1.appendChild(message1);
+    dialog1.appendChild(overlay1);
+    dialog1.appendChild(content1);
+    window.document.body.appendChild(dialog1);
+    dialog1.showModal();
+    const closeDialog1 = window.document.getElementById('mzta_dialog_close');
+    closeDialog1.onclick = () => {
+      dialog1.close();
+    };
+    // alert(browser.i18n.getMessage('msg_prompt_too_long'));
     return Promise.resolve(true);
     break;
 
   case 'sendAlert':
-    alert(message.message);
+    console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
+    if(message.curr_tab_type == 'mail'){  // workaround for Thunderbird bug not showing the alert
+      const dialog2 = window.document.createElement('dialog');
+      dialog2.classList.add('mzta_dialog');
+      const overlay2 = window.document.createElement('div');
+      overlay2.classList.add('mzta_dialog_overlay');
+
+      const content2 = window.document.createElement('div');
+      content2.classList.add('mzta_dialog_content');
+
+      const closeButton2 = window.document.createElement('div');
+      closeButton2.classList.add('mzta_dialog_close');
+      closeButton2.id = 'mzta_dialog_close';
+      closeButton2.textContent = 'x';
+
+      const message2 = window.document.createElement('div');
+      message2.textContent = message.message;
+
+      content2.appendChild(closeButton2);
+      content2.appendChild(message2);
+      dialog2.appendChild(overlay2);
+      dialog2.appendChild(content2);
+      window.document.body.appendChild(dialog2);
+      dialog2.showModal();
+      const closeDialog2 = window.document.getElementById('mzta_dialog_close');
+      closeDialog2.onclick = () => {
+        dialog2.close();
+      };
+    }else{
+      alert(message.message);
+    }
     return Promise.resolve(true);
     break;
 
