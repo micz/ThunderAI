@@ -591,11 +591,11 @@
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
     "description": ""
   },
-  "placeholder_mail_body": {
+  "placeholder_mail_text_body": {
     "message": "Mail body",
     "description": ""
   },
-  "placeholder_html_body": {
+  "placeholder_mail_html_body": {
     "message": "HTML mail body",
     "description": ""
   },

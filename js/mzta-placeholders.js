@@ -34,15 +34,15 @@
 
 const defaultPlaceholders = [
     {
-        id: 'mail_body',
-        name: "__MSG_placeholder_mail_body__",
+        id: 'mail_text_body',
+        name: "__MSG_placeholder_mail_text_body__",
         default_value: "",
         type: 0,
         is_default: "1",
     },
     {
-        id: 'html_body',
-        name: "__MSG_placeholder_html_body__",
+        id: 'mail_html_body',
+        name: "__MSG_placeholder_mail_html_body__",
         default_value: "",
         type: 0,
         is_default: "1",

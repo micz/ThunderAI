@@ -126,11 +126,11 @@ export class mzta_Menus {
                 let curr_message = curr_messages.messages[0];
                 for(let currPH of currPHs){
                     switch(currPH.id){
-                        case 'mail_body':
-                            finalSubs['mail_body'] = body_text;
+                        case 'mail_text_body':
+                            finalSubs['mail_text_body'] = body_text;
                             break;
-                        case 'html_body':
-                            finalSubs['html_body'] = msg_text.html;
+                        case 'mail_html_body':
+                            finalSubs['mail_html_body'] = msg_text.html;
                             break;
                         case 'mail_subject':
                             let mail_subject = await getMailSubject(tabs[0]);
