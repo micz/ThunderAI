@@ -385,6 +385,11 @@ function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
+    if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
+        let textarea = e.target.closest('tr').querySelector('.text_output');
+        checkPromptsConfigForPlaceholders(textarea);
+    }
+    
 }
 
 // Enable save button on input change
@@ -449,11 +454,11 @@ function loadPromptsList(values){
                   </select>` +
                   `<span class="action hiddendata"></span>
                     <br>
-                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
+                    <span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span>
                     <br>
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__
+                    <span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span>
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
@@ -685,6 +690,8 @@ function textareaAutocomplete(textarea, suggestions) {
       const text = textarea.value.substring(0, cursorPosition);
       const match = text.match(/{%[^\s]*$/);
 
+      checkPromptsConfigForPlaceholders(textarea);
+
       if (match) {
         const lastWord = match[0];
         const tr = textarea.parentNode.parentNode.parentNode;
@@ -788,4 +795,26 @@ function textareaAutocomplete(textarea, suggestions) {
         }
     });
 
+}
+
+function checkPromptsConfigForPlaceholders(textarea){
+    // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
+    if(String(textarea.value).indexOf('{%additional_text%}') != -1){
+        let tr_ancestor = textarea.closest('tr');
+        let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
+        if(!need_custom_text_element.checked){
+            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
+        }else{
+            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
+        }
+      }
+      if(String(textarea.value).indexOf('{%selected_text%}') != -1){
+        let tr_ancestor = textarea.closest('tr');
+        let selected_text_element = tr_ancestor.querySelector('.need_selected') || tr_ancestor.querySelector('.need_selected_new');
+        if(!selected_text_element.checked){
+            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
+        }else{
+            selected_text_element.closest('.need_selected_span').style.border = '';
+        }
+      }
 }

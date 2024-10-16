@@ -199,8 +199,10 @@ table .sort.desc {
 .hidden {
     display: none;
 }
-  
 
+.need_custom_text_span, .need_selected_span{
+    padding-right: 2px;
+}
 
 @media (prefers-color-scheme: dark) {
     body {
