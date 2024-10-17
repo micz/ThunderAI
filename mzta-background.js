@@ -247,7 +247,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.log("[ThunderAI] Prompt length: " + promptText.length);
     if(promptText.length > 30000 ){
         // Prompt too long for ChatGPT
-        browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
+        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('msg_prompt_too_long') });
         return;
     }
 

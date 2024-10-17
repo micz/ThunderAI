@@ -24,11 +24,11 @@ switch (message.command) {
   case "replaceSelectedText":
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
-      return false;
+      return Promise.resolve(false);
     }
     const sel = window.getSelection();
     if (!sel || sel.type !== "Range" || !sel.rangeCount) {
-      return false;
+      return Promise.resolve(false);
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
@@ -58,66 +58,117 @@ switch (message.command) {
   case "getFullHtml":
       return Promise.resolve(window.document.body.innerHTML);
 
-  case 'promptTooLong':
-    const dialog1 = window.document.createElement('dialog');
-    dialog1.classList.add('mzta_dialog');
-    const overlay1 = window.document.createElement('div');
-    overlay1.classList.add('mzta_dialog_overlay');
-
-    const content1 = window.document.createElement('div');
-    content1.classList.add('mzta_dialog_content');
-
-    const closeButton1 = window.document.createElement('div');
-    closeButton1.classList.add('mzta_dialog_close');
-    closeButton1.id = 'mzta_dialog_close';
-    closeButton1.textContent = 'x';
-
-    const message1 = window.document.createElement('div');
-    message1.textContent = browser.i18n.getMessage('msg_prompt_too_long');
-
-    content1.appendChild(closeButton1);
-    content1.appendChild(message1);
-    dialog1.appendChild(overlay1);
-    dialog1.appendChild(content1);
-    window.document.body.appendChild(dialog1);
-    dialog1.showModal();
-    const closeDialog1 = window.document.getElementById('mzta_dialog_close');
-    closeDialog1.onclick = () => {
-      dialog1.close();
-    };
-    // alert(browser.i18n.getMessage('msg_prompt_too_long'));
-    return Promise.resolve(true);
-    break;
-
   case 'sendAlert':
     console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
     if(message.curr_tab_type == 'mail'){  // workaround for Thunderbird bug not showing the alert
-      const dialog2 = window.document.createElement('dialog');
-      dialog2.classList.add('mzta_dialog');
-      const overlay2 = window.document.createElement('div');
-      overlay2.classList.add('mzta_dialog_overlay');
+// Create dialog elements
+const dialog_sendAlert = window.document.createElement('dialog');
+dialog_sendAlert.classList.add('mzta_dialog');
 
-      const content2 = window.document.createElement('div');
-      content2.classList.add('mzta_dialog_content');
+const content_sendAlert = window.document.createElement('div');
+content_sendAlert.classList.add('mzta_dialog_content');
 
-      const closeButton2 = window.document.createElement('div');
-      closeButton2.classList.add('mzta_dialog_close');
-      closeButton2.id = 'mzta_dialog_close';
-      closeButton2.textContent = 'x';
+// Create close button
+const closeButton_sendAlert = window.document.createElement('button');
+closeButton_sendAlert.classList.add('mzta_dialog_close');
+closeButton_sendAlert.id = 'mzta_dialog_close';
+closeButton_sendAlert.textContent = 'Close';
 
-      const message2 = window.document.createElement('div');
-      message2.textContent = message.message;
+// Create message element
+const message_sendAlert = window.document.createElement('div');
+message_sendAlert.classList.add('mzta_dialog_message');
+message_sendAlert.textContent = message.message;
 
-      content2.appendChild(closeButton2);
-      content2.appendChild(message2);
-      dialog2.appendChild(overlay2);
-      dialog2.appendChild(content2);
-      window.document.body.appendChild(dialog2);
-      dialog2.showModal();
-      const closeDialog2 = window.document.getElementById('mzta_dialog_close');
-      closeDialog2.onclick = () => {
-        dialog2.close();
-      };
+// Append elements to the dialog
+content_sendAlert.appendChild(message_sendAlert);
+content_sendAlert.appendChild(closeButton_sendAlert);
+dialog_sendAlert.appendChild(content_sendAlert);
+window.document.body.appendChild(dialog_sendAlert);
+
+// Show the dialog
+dialog_sendAlert.showModal();
+
+// Close dialog on button click and remove elements from the DOM
+closeButton_sendAlert.onclick = () => {
+  dialog_sendAlert.close();
+  dialog_sendAlert.addEventListener('close', () => {
+    dialog_sendAlert.remove();
+    style.remove();
+  });
+};
+
+// CSS styles for Thunderbird with support for light and dark themes
+const style = document.createElement('style');
+style.textContent = `
+  .mzta_dialog {
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    width: 300px;
+    max-width: 90%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: var(--dialog-bg-color, #fff);
+    color: var(--dialog-text-color, #000);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+  }
+
+  .mzta_dialog_content {
+    position: relative;
+    padding: 20px;
+  }
+
+  .mzta_dialog_close {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: #007bff;
+    border: none;
+    color: #ffffff;
+    font-size: 14px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .mzta_dialog_close:hover {
+    background: #0056b3;
+  }
+
+  .mzta_dialog_message {
+    margin-bottom: 40px;
+    font-size: 14px;
+  }
+
+  /* Theme support */
+  :root {
+    --dialog-bg-color: #ffffff;
+    --dialog-text-color: #000000;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --dialog-bg-color: #2e2e2e;
+      --dialog-text-color: #ffffff;
+    }
+  }
+
+  /* Darker overlay for the page background */
+  .mzta_dialog_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+  }
+`;
+document.head.appendChild(style);
+
     }else{
       alert(message.message);
     }
@@ -126,7 +177,7 @@ switch (message.command) {
 
   default:
     // do nothing
-    return false;
+    return Promise.resolve(false);
     break;
 }    
 });
