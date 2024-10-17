@@ -91,7 +91,7 @@ export class mzta_Menus {
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
                 //alert(browser.i18n.getMessage('prompt_selection_needed'));
-                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", message : browser.i18n.getMessage('prompt_selection_needed') });
+                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
                 return;
             }
     
