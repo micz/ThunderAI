@@ -59,115 +59,115 @@ switch (message.command) {
       return Promise.resolve(window.document.body.innerHTML);
 
   case 'sendAlert':
-    console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
+    //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
     if(message.curr_tab_type == 'mail'){  // workaround for Thunderbird bug not showing the alert
-// Create dialog elements
-const dialog_sendAlert = window.document.createElement('dialog');
-dialog_sendAlert.classList.add('mzta_dialog');
+      // Create dialog elements
+      const dialog_sendAlert = window.document.createElement('dialog');
+      dialog_sendAlert.classList.add('mzta_dialog');
 
-const content_sendAlert = window.document.createElement('div');
-content_sendAlert.classList.add('mzta_dialog_content');
+      const content_sendAlert = window.document.createElement('div');
+      content_sendAlert.classList.add('mzta_dialog_content');
 
-// Create close button
-const closeButton_sendAlert = window.document.createElement('button');
-closeButton_sendAlert.classList.add('mzta_dialog_close');
-closeButton_sendAlert.id = 'mzta_dialog_close';
-closeButton_sendAlert.textContent = 'Close';
+      // Create close button
+      const closeButton_sendAlert = window.document.createElement('button');
+      closeButton_sendAlert.classList.add('mzta_dialog_close');
+      closeButton_sendAlert.id = 'mzta_dialog_close';
+      closeButton_sendAlert.textContent = 'Close';
 
-// Create message element
-const message_sendAlert = window.document.createElement('div');
-message_sendAlert.classList.add('mzta_dialog_message');
-message_sendAlert.textContent = message.message;
+      // Create message element
+      const message_sendAlert = window.document.createElement('div');
+      message_sendAlert.classList.add('mzta_dialog_message');
+      message_sendAlert.textContent = message.message;
 
-// Append elements to the dialog
-content_sendAlert.appendChild(message_sendAlert);
-content_sendAlert.appendChild(closeButton_sendAlert);
-dialog_sendAlert.appendChild(content_sendAlert);
-window.document.body.appendChild(dialog_sendAlert);
+      // Append elements to the dialog
+      content_sendAlert.appendChild(message_sendAlert);
+      content_sendAlert.appendChild(closeButton_sendAlert);
+      dialog_sendAlert.appendChild(content_sendAlert);
+      window.document.body.appendChild(dialog_sendAlert);
 
-// Show the dialog
-dialog_sendAlert.showModal();
+      // Show the dialog
+      dialog_sendAlert.showModal();
 
-// Close dialog on button click and remove elements from the DOM
-closeButton_sendAlert.onclick = () => {
-  dialog_sendAlert.close();
-  dialog_sendAlert.addEventListener('close', () => {
-    dialog_sendAlert.remove();
-    style.remove();
-  });
-};
+      // Close dialog on button click and remove elements from the DOM
+      closeButton_sendAlert.onclick = () => {
+        dialog_sendAlert.close();
+        dialog_sendAlert.addEventListener('close', () => {
+          dialog_sendAlert.remove();
+          style.remove();
+        });
+      };
 
-// CSS styles for Thunderbird with support for light and dark themes
-const style = document.createElement('style');
-style.textContent = `
-  .mzta_dialog {
-    border: none;
-    border-radius: 8px;
-    padding: 0;
-    width: 300px;
-    max-width: 90%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background-color: var(--dialog-bg-color, #fff);
-    color: var(--dialog-text-color, #000);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1001;
-  }
+      // CSS styles for Thunderbird with support for light and dark themes
+      const style = document.createElement('style');
+      style.textContent = `
+        .mzta_dialog {
+          border: none;
+          border-radius: 8px;
+          padding: 0;
+          width: 300px;
+          max-width: 90%;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          background-color: var(--dialog-bg-color, #fff);
+          color: var(--dialog-text-color, #000);
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1001;
+        }
 
-  .mzta_dialog_content {
-    position: relative;
-    padding: 20px;
-  }
+        .mzta_dialog_content {
+          position: relative;
+          padding: 20px;
+        }
 
-  .mzta_dialog_close {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: #007bff;
-    border: none;
-    color: #ffffff;
-    font-size: 14px;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-  }
+        .mzta_dialog_close {
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          background: #007bff;
+          border: none;
+          color: #ffffff;
+          font-size: 14px;
+          padding: 8px 12px;
+          cursor: pointer;
+          border-radius: 4px;
+        }
 
-  .mzta_dialog_close:hover {
-    background: #0056b3;
-  }
+        .mzta_dialog_close:hover {
+          background: #0056b3;
+        }
 
-  .mzta_dialog_message {
-    margin-bottom: 40px;
-    font-size: 14px;
-  }
+        .mzta_dialog_message {
+          margin-bottom: 40px;
+          font-size: 14px;
+        }
 
-  /* Theme support */
-  :root {
-    --dialog-bg-color: #ffffff;
-    --dialog-text-color: #000000;
-  }
+        /* Theme support */
+        :root {
+          --dialog-bg-color: #ffffff;
+          --dialog-text-color: #000000;
+        }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --dialog-bg-color: #2e2e2e;
-      --dialog-text-color: #ffffff;
-    }
-  }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --dialog-bg-color: #2e2e2e;
+            --dialog-text-color: #ffffff;
+          }
+        }
 
-  /* Darker overlay for the page background */
-  .mzta_dialog_overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-  }
-`;
-document.head.appendChild(style);
+        /* Darker overlay for the page background */
+        .mzta_dialog_overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 1000;
+        }
+      `;
+      document.head.appendChild(style);
 
     }else{
       alert(message.message);
