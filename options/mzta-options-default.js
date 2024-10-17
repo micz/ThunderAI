@@ -33,4 +33,5 @@ export const prefs_default = {
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
+    max_prompt_length: 30000,   // max string length for prompt
 }
