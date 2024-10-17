@@ -55,6 +55,7 @@ body:
         - ChatGPT Web Interface
         - OpenAI ChatGPT API
         - Ollama API
+        - OpenAI Compatible API
   - type: markdown
     attributes:
       value: |
