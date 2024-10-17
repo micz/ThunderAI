@@ -260,7 +260,7 @@
     "description": ""
   },
   "msg_prompt_too_long": {
-    "message": "Der eingegebene Text ist zu lang. Sie müssen ihn verkürzen, um ChatGPT zu verwenden.",
+    "message": "Der von Ihnen bereitgestellte Text ist zu lang. Sie müssen ihn kürzen.",
     "description": ""
   },
   "prefs_OptionText_release_notes": {
