@@ -10,7 +10,8 @@
         <li>On the custom prompts page, when editing a prompt, pressing the cancel button will revert any modified values in the form to their saved state.</li>
         <li>Implemented placeholders to add additional data to prompts [<a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">More info</a>] [<a href="https://github.com/micz/ThunderAI/issues/146">#146</a>, <a href="https://github.com/micz/ThunderAI/issues/153">#153</a>].</li>
         <li>Text improved for "Reply to this" prompt.</li>
-        <li>Added an option to set the maximux number of characters in the prompt. [<a href="https://github.com/micz/ThunderAI/issues/165">#165</a>].</li>
+        <li>Added an option to set the maximux number of characters in the prompt [<a href="https://github.com/micz/ThunderAI/issues/165">#165</a>].</li>
+        <li>Added a workaround to show an alert message when needed [<a href="https://github.com/micz/ThunderAI/issues/166">#166</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
