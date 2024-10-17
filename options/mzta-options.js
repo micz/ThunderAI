@@ -177,7 +177,7 @@ function warn_Ollama_HostEmpty() {
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
     }else{
-      modelOllama.style.border = 'none';
+      modelOllama.style.border = '';
     }
   }
 }
