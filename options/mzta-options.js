@@ -208,6 +208,8 @@ function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
   maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
+  let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
+  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
