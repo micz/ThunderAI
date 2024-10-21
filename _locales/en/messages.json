@@ -395,12 +395,12 @@
     "message": "Connection Type",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_Web": {
-    "message": "ChatGTP Web Interface",
+  "prefs_Connection_type_ChatGPT_Web": {
+    "message": "ChatGPT Web Interface",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_API": {
-    "message": "ChatGTP OpenAI API",
+  "prefs_Connection_type_ChatGPT_API": {
+    "message": "ChatGPT OpenAI API",
     "description": ""
   },
   "prefs_ChatGPT_API_Key": {
@@ -435,7 +435,7 @@
     "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
     "description": ""
   },
-  "chagtp_api_send_button": {
+  "chagpt_api_send_button": {
     "message": "Using model",
     "description": ""
   },
