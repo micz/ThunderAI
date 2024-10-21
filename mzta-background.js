@@ -244,7 +244,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
-    taLog.log("[ThunderAI] Prompt length: " + promptText.length);
+    taLog.log("Prompt length: " + promptText.length);
     if(promptText.length > prefs.max_prompt_length){
         // Prompt too long for ChatGPT
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -259,9 +259,20 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         // We are using the ChatGPT web interface
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
+        let call_opt = '';
+
+        if(prefs.chatgpt_web_tempchat){
+            call_opt += '&temporary-chat=true';
+        }
+
+        if(prefs.chatgpt_web_model != ''){
+            call_opt += '&model=' + encodeURIComponent(prefs.chatgpt_web_model).toLowerCase();
+        }
+
+        taLog.log("[chatgpt_web] call_opt: " + call_opt);
 
         let win_options = {
-            url: "https://chatgpt.com?call_id=" + rand_call_id,
+            url: "https://chatgpt.com?call_id=" + rand_call_id + call_opt,
             type: "popup",
         }
         

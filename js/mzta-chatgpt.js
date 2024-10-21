@@ -80,7 +80,7 @@ async function chatgpt_isIdle() {
 }}, 100);});}
 
 function chatgpt_getRegenerateButton() {
-    for (const mainSVG of document.querySelectorAll('main svg')) {
+    for (const mainSVG of document.querySelectorAll('main svg.icon-md')) {
         if (mainSVG.querySelector('path[d^="M3.06957"]')) // regen icon found
             return mainSVG.parentNode.parentNode;
     }
