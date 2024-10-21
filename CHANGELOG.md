@@ -12,6 +12,8 @@
         <li>Text improved for the "Reply to this" prompt.</li>
         <li>Added an option to set the maximux number of characters in the prompt [<a href="https://github.com/micz/ThunderAI/issues/165">#165</a>].</li>
         <li>Added a workaround to show an alert message when needed [<a href="https://github.com/micz/ThunderAI/issues/166">#166</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added an option to set the model to use [<a href="https://github.com/micz/ThunderAI/issues/171">#171</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added an option to use the temporary chat [<a href="https://github.com/micz/ThunderAI/issues/169">#169</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
