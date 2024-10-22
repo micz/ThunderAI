@@ -112,6 +112,24 @@ export function sanitizeHtml(input) {
   return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
 }
 
+export function getGPTWebModelString(model) {
+  model = model.toLowerCase().trim();
+  switch (model) {
+    case 'GTP-4o':
+      return '4o';
+    case 'o1-preview':
+      return 'o1-preview';
+    case 'o1-mini':
+      return 'o1-mini';
+    case 'gpt-4':
+      return '4';
+    case 'gpt-4o-mini':
+      return '4o mini';
+    default:
+      return '4o';
+  }
+}
+
 export function i18nConditionalGet(str) {
   // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
   // using the browser.i18n API
