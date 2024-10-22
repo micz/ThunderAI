@@ -236,7 +236,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "You have set the option to use ChatGPT-4, but it seems that it is not loading correctly. Have you chosen the model 4 or 4o at the top?",
+    "message": "You have set the option to use a specific model, but it seems that it is not loading correctly. Please check the value and try again. For now, you can press the blue button to continue.",
     "description": ""
   },
   "chatgpt_win_custom_text": {
@@ -657,6 +657,14 @@
   },
   "prefs_OptionText_chatgpt_web_tempchat_info": {
     "message": "If checked, the temporary chat will be used in the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Use the current model",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Sending prompt...",
     "description": ""
   }
 }
