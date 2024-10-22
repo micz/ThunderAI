@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -285,7 +285,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         const listener = (message, sender, sendResponse) => {
             async function handleChatGptWeb(createdTab) {
-                taLog.log("[ThunderAI] ChatGPT web interface script started...");
+                taLog.log("ChatGPT web interface script started...");
+
+                let _gpt_model = getGPTWebModelString(prefs.chatgpt_web_model);
         
                 let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                 let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -294,6 +296,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaDoCustomText=`+ do_custom_text +`;
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
                 let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
+                let mztaGPTModel="`+ _gpt_model +`";
                 `;
 
                 taLog.log("Waiting 1 sec");
