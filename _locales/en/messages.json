@@ -666,5 +666,9 @@
   "SendingPrompt": {
     "message": "Sending prompt...",
     "description": ""
+  },
+  "AllowedValues": {
+    "message": "Allowed values",
+    "description": ""
   }
 }
