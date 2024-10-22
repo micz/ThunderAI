@@ -670,5 +670,9 @@
   "AllowedValues": {
     "message": "Allowed values",
     "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "You can now use additional data placeholders!",
+    "description": ""
   }
 }
