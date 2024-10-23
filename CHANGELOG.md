@@ -5,7 +5,7 @@
 
 
 
-<h2>Version 2.3.0 - ??/??/2024</h2>
+<h2>Version 2.3.0 - 23/10/2024</h2>
       <ul>
         <li>The action button in the compose window has been moved to the formatting toolbar [<a href="https://github.com/micz/ThunderAI/issues/173">#173</a>].</li>
         <li>On the custom prompts page, when editing a prompt, pressing the cancel button will revert any modified values in the form to their saved state.</li>
