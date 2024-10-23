@@ -77,7 +77,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply_advanced',
         name: "__MSG_prompt_reply_advanced__",
-        text: "Reply to the following email {%selected_text%}, considering this is the full thread of emails {%mail_html_body%}. Reply with only the needed text and with no extra comments or other text.",
+        text: "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
         type: "1",
         action: "1",
         need_selected: "1",
