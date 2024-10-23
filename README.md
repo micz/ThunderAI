@@ -9,7 +9,7 @@ ThunderAI is a tool for anyone looking to improve their email quality, both in c
 You can also define, export and import your own **custom prompts**!
 [Find out how!](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
 
-In any custom prompts you can use additional **data placeholders**!
+In any custom prompt you can use additional **data placeholders**!
 [Find out how!](https://micz.it/thunderbird-addon-thunderai/data-placeholders/)
 
 
