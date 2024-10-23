@@ -681,6 +681,8 @@
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
     "message": "Agora você pode usar marcadores de posição adicionais!",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1": {
     "message": "Manter a compatibilidade com \"v1\"",
     "description": ""

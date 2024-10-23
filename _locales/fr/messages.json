@@ -681,6 +681,8 @@
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
     "message": "Vous pouvez maintenant utiliser des espaces réservés de données supplémentaires !",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1": {
     "message": "Conserver la compatibilité \"v1\"",
     "description": ""
