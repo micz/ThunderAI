@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Reply to this",
+    "message": "Reply to this email",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Reply to this thread",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -236,7 +240,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "You have set the option to use ChatGPT-4, but it seems that it is not loading correctly. Have you chosen the model 4 or 4o at the top?",
+    "message": "You have set the option to use a specific model, but it seems that it is not loading correctly. Please check the value and try again. For now, you can press the blue button to continue.",
     "description": ""
   },
   "chatgpt_win_custom_text": {
@@ -260,7 +264,7 @@
     "description": ""
   },
   "msg_prompt_too_long": {
-    "message": "The text you provided is too long. You need to reduce it to use ChatGPT.",
+    "message": "The text you provided is too long. You need to reduce it.",
     "description": ""
   },
   "prefs_OptionText_release_notes": {
@@ -388,19 +392,19 @@
     "description": ""
   },
   "customprompts_form_label_define_response_lang": {
-    "message": "Define the reponse languange in the prompt",
+    "message": "Define the reponse language in the prompt",
     "description": ""
   },
   "prefs_Connection_type": {
     "message": "Connection Type",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_Web": {
-    "message": "ChatGTP Web Interface",
+  "prefs_Connection_type_ChatGPT_Web": {
+    "message": "ChatGPT Web Interface",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_API": {
-    "message": "ChatGTP OpenAI API",
+  "prefs_Connection_type_ChatGPT_API": {
+    "message": "ChatGPT OpenAI API",
     "description": ""
   },
   "prefs_ChatGPT_API_Key": {
@@ -435,7 +439,7 @@
     "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
     "description": ""
   },
-  "chagtp_api_send_button": {
+  "chagpt_api_send_button": {
     "message": "Using model",
     "description": ""
   },
@@ -595,6 +599,88 @@
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
     "description": ""
   },
+  "placeholder_mail_text_body": {
+    "message": "Mail body",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "HTML mail body",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Mail subject",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Selected text",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Additional text",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Junk score",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Recipients",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "CC list",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Author",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Placeholders: use default value",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length" : {
+    "message": "Max prompt length",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info" : {
+    "message": "This is the maximum number of characters that can be used in a prompt. Otherwise, an error message will be displayed. The value is not editable for the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "ChatGPT Web model",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "This is the model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "ChatGPT Web temporary chat",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "If checked, the temporary chat will be used in the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Use the current model",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Sending prompt...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Allowed values",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "You can now use additional data placeholders!",
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": ""

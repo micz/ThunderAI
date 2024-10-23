@@ -10,8 +10,8 @@
         <h1 class="page_title">__MSG_customPrompts_managePrompts__</h1>
         <p>__MSG_customPrompts_managePrompts_info_default__<br>
             __MSG_customPrompts_managePrompts_info_default_2__<br>
-            __MSG_customPrompts_managePrompts_info_default_3__
-            <br><a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/">__MSG_customPrompts_managePrompts_help__</a></p>
+            __MSG_customPrompts_managePrompts_info_default_3__ <a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/">__MSG_customPrompts_managePrompts_help__</a>
+        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a></p>
     </div>
     <div id="import_export">
         <button id="btnExportAll">__MSG_customPrompts_ExportAll__</button><br>
@@ -34,23 +34,26 @@
             <td rowspan="2" class="w25">
                 <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
                 <br>
-                <textarea id="txtTextNew" name="text" class="input_new text_output" tabindex="3"></textarea>
+                <div class="autocomplete-container">
+                    <textarea id="txtTextNew" name="text" class="input_new text_output editor" tabindex="3"></textarea>
+                    <ul class="autocomplete-list hidden"></ul>
+                </div>
             </td>
             <td class="w19">
                 <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
                 <br>
-                <select id="selectTypeNew" name="type" tabindex="4">
+                <select id="selectTypeNew" name="type" tabindex="4" class="type_output">
                     <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
                     <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
                     <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
                 </select>
             </td>
             <td rowspan="2" class="w19">
-                <input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" value="1" tabindex="6"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label>
+                <span class="need_selected_span"><input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" class="need_selected_new" value="1" tabindex="6"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label></span>
                 <br>
                 <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1" tabindex="7"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
                 <br>
-                <input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" value="1" tabindex="8"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label>
+                <span class="need_custom_text_span"><input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" class="need_custom_text_new" value="1" tabindex="8"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label></span>
                 <br>
                 <input type="checkbox" id="checkboxDefineResponseLangNew" name="define_response_lang" value="1" tabindex="8"> <label for="checkboxDefineResponseLangNew">__MSG_customPrompts_form_label_define_response_lang__</label>
             </td>

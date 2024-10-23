@@ -5,6 +5,20 @@
 
 
 
+<h2>Version 2.3.0 - ??/??/2024</h2>
+      <ul>
+        <li>The action button in the compose window has been moved to the formatting toolbar [<a href="https://github.com/micz/ThunderAI/issues/173">#173</a>].</li>
+        <li>On the custom prompts page, when editing a prompt, pressing the cancel button will revert any modified values in the form to their saved state.</li>
+        <li>Implemented placeholders to add additional data to prompts [<a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">More info</a>] [<a href="https://github.com/micz/ThunderAI/issues/146">#146</a>, <a href="https://github.com/micz/ThunderAI/issues/153">#153</a>].</li>
+        <li>Text improved for the "Reply to this" prompt.</li>
+        <li>Added an option to set the maximum number of characters in the prompt [<a href="https://github.com/micz/ThunderAI/issues/165">#165</a>].</li>
+        <li>Added a workaround to show an alert message when needed [<a href="https://github.com/micz/ThunderAI/issues/166">#166</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added an option to set the model to use [<a href="https://github.com/micz/ThunderAI/issues/171">#171</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added an option to use the temporary chat [<a href="https://github.com/micz/ThunderAI/issues/169">#169</a>].</li>
+        <li>A few typos fixed [<a href="https://github.com/micz/ThunderAI/issues/170">#170</a>].</li>
+        <li>Added a loading indicator in the menu when sending a prompt.</li>
+        <li>Added a new default prompt that uses the placeholders and allows replying to an email thread. It requires selecting the text of the first email to identify which is the one to reply to and the others in the thread [<a href="https://github.com/micz/ThunderAI/issues/150">#150</a>].</li>
+     </ul>
 <h2>Version 2.2.2 - 15/10/2024</h2>
       <ul>
         <li>APIs error handling improved.</li>

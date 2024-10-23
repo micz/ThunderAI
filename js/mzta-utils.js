@@ -63,6 +63,26 @@ function extractEmail(text) {
   return match ? match[0] : '';
 }
 
+export async function getMailSubject(tab){
+  // console.log(">>>>>>>>>> getMailSubject tab: " + JSON.stringify(tab));
+  if(!["mail", "messageCompose","messageDisplay"].includes(tab.type)){
+    return "";
+  }
+  switch(tab.type){
+    case "mail":
+      let messages_list = await browser.mailTabs.getSelectedMessages(tab.id);
+      return messages_list.messages[0].subject;
+    case "messageDisplay":
+      let message = await messenger.messageDisplay.getDisplayedMessage(tab.id);
+      return message.subject;
+    case "messageCompose":
+      let msg_details = await browser.compose.getComposeDetails(tab.id)
+      return msg_details.subject;
+    default:
+      return "";
+  }
+}
+
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body + " ";
@@ -85,6 +105,29 @@ export async function replaceBody(tabId, replyHtml) {
   let fullBody = insertHtml(replyHtml, originalHtmlBody);
   //console.log('fullBody: ' + fullBody);
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
+}
+
+export function sanitizeHtml(input) {
+  // Keep only <br> tags and remove all other HTML tags
+  return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
+}
+
+export function getGPTWebModelString(model) {
+  model = model.toLowerCase().trim();
+  switch (model) {
+    case 'GTP-4o':
+      return '4o';
+    case 'o1-preview':
+      return 'o1-preview';
+    case 'o1-mini':
+      return 'o1-mini';
+    case 'gpt-4':
+      return '4';
+    case 'gpt-4o-mini':
+      return '4o mini';
+    default:
+      return '4o';
+  }
 }
 
 export function i18nConditionalGet(str) {

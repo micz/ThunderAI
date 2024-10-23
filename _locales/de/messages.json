@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Darauf antworten",
+    "message": "Antworten Sie auf diese E-Mail",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Antworten Sie auf diesen Thread",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -236,7 +240,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "Sie haben die Option zur Verwendung von ChatGPT-4 eingestellt, aber es scheint, dass es nicht korrekt geladen wird. Haben Sie oben das Modell 4 oder 4o gewählt?",
+    "message": "Du hast die Option gewählt, ein bestimmtes Modell zu verwenden, aber es scheint, dass es nicht korrekt geladen wird. Bitte überprüfe den Wert und versuche es erneut. Du kannst jetzt den blauen Knopf drücken, um fortzufahren.",
     "description": ""
   },
   "chatgpt_win_custom_text": {
@@ -260,7 +264,7 @@
     "description": ""
   },
   "msg_prompt_too_long": {
-    "message": "Der eingegebene Text ist zu lang. Sie müssen ihn verkürzen, um ChatGPT zu verwenden.",
+    "message": "Der von Ihnen bereitgestellte Text ist zu lang. Sie müssen ihn kürzen.",
     "description": ""
   },
   "prefs_OptionText_release_notes": {
@@ -395,12 +399,12 @@
     "message": "Verbindungstyp",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_Web": {
-    "message": "ChatGTP Weboberfläche",
+  "prefs_Connection_type_ChatGPT_Web": {
+    "message": "ChatGPT Weboberfläche",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_API": {
-    "message": "ChatGTP OpenAI API",
+  "prefs_Connection_type_ChatGPT_API": {
+    "message": "ChatGPT OpenAI API",
     "description": ""
   },
   "prefs_ChatGPT_API_Key": {
@@ -435,7 +439,7 @@
     "message": "Sie haben kein Modell für das ChatGPT-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
     "description": ""
   },
-  "chagtp_api_send_button": {
+  "chagpt_api_send_button": {
     "message": "Modell wird verwendet",
     "description": ""
   },
@@ -579,6 +583,10 @@
     "message": "Auf 0 setzen, wenn Sie die Fenstergröße nicht angeben möchten.",
     "description": ""
   },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "OpenAI Comp API-Schlüssel",
+    "description": ""
+  },
   "Optional": {
     "message": "Optional",
     "description": ""
@@ -591,6 +599,88 @@
     "message": "Bei Anmeldeproblemen im ThunderAI-Fenster öffnen Sie ChatGPT in einem neuen Tab über die Schaltfläche rechts, melden Sie sich an, schließen Sie dann den Tab und fahren Sie fort, ThunderAI zu verwenden.",
     "description": ""
   },
+  "placeholder_mail_text_body": {
+    "message": "E-Mail-Inhalt",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "HTML-E-Mail-Inhalt",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "E-Mail-Betreff",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Ausgewählter Text",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Zusätzlicher Text",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Spam-Score",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Empfänger",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "CC-Liste",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Autor",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Platzhalter: standardwert verwenden",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "Wenn aktiviert, werden die Platzhalter mit den Standardwerten ausgefüllt, wenn kein Wert angegeben wird. Andernfalls bleiben die Platzhalter erhalten.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length": {
+    "message": "Maximale Eingabelänge",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info": {
+    "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "ChatGPT Web-Modell",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "ChatGPT Web temporärer Chat",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "Wenn aktiviert, wird der temporäre Chat in der ChatGPT-Webschnittstelle verwendet.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Aktuelles Modell verwenden",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Sende Eingabe...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Erlaubte Werte",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "Sie können jetzt zusätzliche Datenplatzhalter verwenden!",
   "prefs_OptionText_openai_comp_use_v1": {
     "message": "\"v1\"-Kompatibilität beibehalten",
     "description": ""

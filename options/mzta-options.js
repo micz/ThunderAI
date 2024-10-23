@@ -93,6 +93,7 @@ async function restoreOptions() {
 }
 
 function showConnectionOptions() {
+  disable_MaxPromptLength();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -176,7 +177,7 @@ function warn_Ollama_HostEmpty() {
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
     }else{
-      modelOllama.style.border = 'none';
+      modelOllama.style.border = '';
     }
   }
 }
@@ -201,6 +202,14 @@ function warn_OpenAIComp_HostEmpty() {
       modelOpenAIComp.style.border = '';
     }
   }
+}
+
+function disable_MaxPromptLength(){
+  let maxPromptLength = document.getElementById('max_prompt_length');
+  let conntype_select = document.getElementById("connection_type");
+  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
+  let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
+  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -384,6 +393,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_ChatGPT_APIKeyEmpty();
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
+  disable_MaxPromptLength();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');

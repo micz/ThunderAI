@@ -169,8 +169,8 @@ class MessageInput extends HTMLElement {
 
     setModel(model){
         this.model = model;
-        this._sendButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
-        this._stopButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
+        this._sendButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
+        this._stopButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
     }
 
     handleMessageSent() {
@@ -186,7 +186,7 @@ class MessageInput extends HTMLElement {
         this._sendButton.style.display = 'block';
         this._stopButton.setAttribute('disabled', 'disabled');
         this._stopButton.style.display = 'none';
-        this._stopButton.title = browser.i18n.getMessage("chagtp_api_send_button") + ": " + this.model;
+        this._stopButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
         this.hideStatusMessage();
         this.setStatusMessage('');
     }

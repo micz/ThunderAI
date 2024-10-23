@@ -22,6 +22,8 @@ export const prefs_default = {
     chatgpt_win_width: 700,
     default_chatgpt_lang: '',
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api'
+    chatgpt_web_model: '',
+    chatgpt_web_tempchat: false,
     chatgpt_api_key: '',
     chatgpt_model: '',
     ollama_host: '',
@@ -33,4 +35,6 @@ export const prefs_default = {
     openai_comp_chat_name: 'OpenAI Comp',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
+    placeholders_use_default_value: false,
+    max_prompt_length: 30000,   // max string length for prompt
 }

@@ -85,6 +85,17 @@
         </td>
       </tr>
       <tr>
+        <td><label>
+          <span>__MSG_prefs_OptionText_placeholders_use_default_value__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="placeholders_use_default_value" name="placeholders_use_default_value" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_placeholders_use_default_value_info__</span>
+          </label>
+        </td>
+      </tr>
+      <tr>
         <td>
           <label>
             <span>__MSG_prefs_Connection_type__</span>
@@ -93,8 +104,8 @@
         <td>
           <label>
             <select id="connection_type" name="connection_type" class="option-input">
-              <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGTP_Web__</option>
-              <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGTP_API__</option>
+              <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGPT_Web__</option>
+              <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGPT_API__</option>
               <option value="ollama_api">__MSG_prefs_Connection_type_Ollama_API__</option>
               <option value="openai_comp_api">__MSG_prefs_Connection_type_OpenAI_Comp_API__</option>
             </select>
@@ -102,6 +113,29 @@
         </td>
       </tr>
       <tr>
+      <tr class="conntype_chatgpt_web">
+        <td><label>
+          <span>__MSG_prefs_OptionText_chatgpt_web_model__</span>
+          <br><table><tr><td><i style="font-size:smaller;"><nobr>__MSG_AllowedValues__:</nobr></i></td><td><i style="font-size:smaller;"> &nbsp; <nobr>gpt-4o</nobr> &nbsp; <nobr>gpt-4o-mini</nobr> &nbsp; <nobr>gpt-4</nobr> &nbsp; <nobr>o1-mini</nobr> &nbsp; <nobr>o1-preview</nobr></i></td></tr></table>
+        </label></td>
+        <td>
+          <label>
+            <input type="text" id="chatgpt_web_model" name="chatgpt_web_model" class="option-input" />
+            <br>__MSG_prefs_OptionText_chatgpt_web_model_info__
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_chatgpt_web">
+        <td><label>
+          <span>__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__</span>
+          </label>
+        </td>
+      </tr>
       <tr class="conntype_chatgpt_web">
         <td><label>
           <span>__MSG_OpenChatGPTTab_Info__</span>
@@ -223,6 +257,15 @@
           </label>
         </td>
       </tr>
+      <tr id="max_prompt_length_tr">
+        <td><span>__MSG_prefs_OptionText_max_prompt_length__</span></td>
+        <td>
+          <label>
+            <input type="number" id="max_prompt_length" name="max_prompt_length" class="option-input" />
+            <br>__MSG_prefs_OptionText_max_prompt_length_Info__
+          </label>
+        </td>
+      </tr>
       <tr>
         <td style="width:20em"><label>
           <span>__MSG_Debug__</span>
@@ -237,6 +280,7 @@
     </table>
     <div id="btn_custom_prompts">
         <button id="btnManagePrompts">__MSG_prefs_OptionText_btnManagePrompts__</button>
+        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a>
     </div>
     <div id="miczDescription">
       <h1>__MSG_prefsInfoTitle__</h1>

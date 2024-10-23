@@ -228,6 +228,8 @@ document.body.insertBefore(banner, document.body.firstChild);
 
 function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
+ document.getElementById('mzta_search_input').style.display = 'none';
+ document.getElementById('mzta_sending_prompt').style.display = 'block';
  browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
 }
 

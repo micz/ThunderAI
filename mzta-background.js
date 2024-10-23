@@ -20,8 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { taStore } from './js/mzta-store.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -245,10 +244,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
-    taLog.log("[ThunderAI] Prompt length: " + promptText.length);
-    if(promptText.length > 30000 ){
+    taLog.log("Prompt length: " + promptText.length);
+    if(promptText.length > prefs.max_prompt_length){
         // Prompt too long for ChatGPT
-        browser.tabs.sendMessage(curr_tabId, { command: "promptTooLong" });
+        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('msg_prompt_too_long') });
         return;
     }
 
@@ -259,9 +259,20 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         // We are using the ChatGPT web interface
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
+        let call_opt = '';
+
+        if(prefs.chatgpt_web_tempchat){
+            call_opt += '&temporary-chat=true';
+        }
+
+        if(prefs.chatgpt_web_model != ''){
+            call_opt += '&model=' + encodeURIComponent(prefs.chatgpt_web_model).toLowerCase();
+        }
+
+        taLog.log("[chatgpt_web] call_opt: " + call_opt);
 
         let win_options = {
-            url: "https://chatgpt.com?call_id=" + rand_call_id,
+            url: "https://chatgpt.com?call_id=" + rand_call_id + call_opt,
             type: "popup",
         }
         
@@ -274,7 +285,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         const listener = (message, sender, sendResponse) => {
             async function handleChatGptWeb(createdTab) {
-                taLog.log("[ThunderAI] ChatGPT web interface script started...");
+                taLog.log("ChatGPT web interface script started...");
+
+                let _gpt_model = getGPTWebModelString(prefs.chatgpt_web_model);
         
                 let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                 let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -282,6 +295,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaForceCompletionTitle="`+ browser.i18n.getMessage("chatgpt_force_completion_title") +`";
                 let mztaDoCustomText=`+ do_custom_text +`;
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
+                let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
+                let mztaGPTModel="`+ _gpt_model +`";
                 `;
 
                 taLog.log("Waiting 1 sec");
@@ -343,7 +358,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         browser.runtime.onMessage.addListener(listener2);
 
         let win_options2 = {
-            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2),
+            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id2+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')),
             type: "popup",
         }
 
@@ -400,7 +415,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             browser.runtime.onMessage.addListener(listener3);
 
             let win_options3 = {
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3),
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id3+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')),
                 type: "popup",
             }
 
@@ -451,7 +466,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 browser.runtime.onMessage.addListener(listener4);
 
                 let win_options4 = {
-                    url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4),
+                    url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id4+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')),
                     type: "popup",
                 }
 

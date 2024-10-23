@@ -17,8 +17,9 @@
  */
 
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
-import { isThunderbird128OrGreater, getCustomPromptsUsedSpace } from "../js/mzta-utils.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../js/mzta-utils.js";
 import { taLogger } from "../js/mzta-logger.js";
+import { getPlaceholders } from "../js/mzta-placeholders.js";
 
 var promptsList = null;
 var somethingChanged = false;
@@ -27,6 +28,7 @@ var positionMax_display = 0;
 var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
+let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -110,6 +112,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
     }
+
+    const textareas = document.querySelectorAll('.editor');
+    autocompleteSuggestions = (await getPlaceholders(true)).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+
+    // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
+    
+    textareas.forEach(textarea => textareaAutocomplete(textarea, autocompleteSuggestions));
+
+    // document.addEventListener('click', (e) => {
+    //     // Check if the click was outside the textarea or suggestion list
+    //     const isClickInsideTextarea = e.target.closest('.editor');
+    //     const isClickInsideAutocompleteList = e.target.closest('.autocomplete-list');
+      
+    //     if (!isClickInsideTextarea && !isClickInsideAutocompleteList) {
+    //       textareas.forEach(textarea => {
+    //         const container = textarea.closest('.autocomplete-container');
+    //         const autocompleteList = container.querySelector('.autocomplete-list');
+    //         hideSuggestions(autocompleteList);
+    //       });
+    //     }
+    // });
 
     i18n.updateDocument();
 
@@ -274,7 +297,9 @@ function showItemRowEditor(tr) {
     tr.querySelector('.id_show').style.display = 'none';
     tr.querySelector('.name_output').style.display = 'inline';
     tr.querySelector('.name_show').style.display = 'none';
-    tr.querySelector('.text_output').style.display = 'inline';
+    const text_output = tr.querySelector('.text_output');
+    text_output.style.display = 'inline';
+    textareaAutocomplete(text_output, autocompleteSuggestions)
     tr.querySelector('.text_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
@@ -324,6 +349,13 @@ function handleCancelClick(e) {
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
+    tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
+    tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
+    tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
+    // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
+    tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
+    // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     hideItemRowEditor(tr);
 }
 
@@ -353,6 +385,11 @@ function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
+    if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
+        let textarea = e.target.closest('tr').querySelector('.text_output');
+        checkPromptsConfigForPlaceholders(textarea);
+    }
+    
 }
 
 // Enable save button on input change
@@ -399,7 +436,7 @@ function loadPromptsList(values){
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
-                <td class="w40"><span class="text text_show"></span><textarea class="hiddendata text_output">` + values.text + `</textarea></td>
+                <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
                 <td class="w08"><span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
                 <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
@@ -417,11 +454,11 @@ function loadPromptsList(values){
                   </select>` +
                   `<span class="action hiddendata"></span>
                     <br>
-                    <input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__
+                    <span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span>
                     <br>
                     <input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__
                     <br>
-                    <input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__
+                    <span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span>
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
@@ -641,4 +678,143 @@ if(await isThunderbird128OrGreater()){
             event.preventDefault();
         }
     });    
+}
+
+function textareaAutocomplete(textarea, suggestions) {
+    const container = textarea.closest('.autocomplete-container');
+    const autocompleteList = container.querySelector('.autocomplete-list');
+    let activeIndex = -1;
+
+    textarea.addEventListener('input', () => {
+      const cursorPosition = textarea.selectionStart;
+      const text = textarea.value.substring(0, cursorPosition);
+      const match = text.match(/{%[^\s]*$/);
+
+      checkPromptsConfigForPlaceholders(textarea);
+
+      if (match) {
+        const lastWord = match[0];
+        const tr = textarea.parentNode.parentNode.parentNode;
+        let type = tr.querySelector('.type_output').value
+        // console.log(">>>>>>>>> type: " + type);
+        // console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
+        // console.log(">>>>>>>>> lastWord: " + lastWord);
+        const matches = suggestions.filter(s => s.command.startsWith(lastWord) && (String(s.type) == String(type) || String(s.type) == '0' )).map(s => s.command);
+        // console.log(">>>>>>>>> matches: " + JSON.stringify(matches));
+        showSuggestions(matches, autocompleteList);
+      } else {
+        hideSuggestions(autocompleteList);
+      }
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (autocompleteList.classList.contains('hidden')) {
+        return;
+      }
+      const items = autocompleteList.querySelectorAll('li');
+      if (items.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % items.length;
+          updateActiveSuggestion(items, activeIndex);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + items.length) % items.length;
+          updateActiveSuggestion(items, activeIndex);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if(activeIndex === -1) activeIndex = 0;
+          if (activeIndex >= 0 && activeIndex < items.length) {
+            insertAutocomplete(items[activeIndex].textContent, textarea);
+            hideSuggestions(autocompleteList);
+          }
+        } else if (e.key === 'Escape') {
+          hideSuggestions(autocompleteList);
+        }
+      }
+    });
+
+    function showSuggestions(matches, autocompleteList) {
+      autocompleteList.innerHTML = '';
+      activeIndex = -1;
+      if (matches.length === 0) {
+        hideSuggestions(autocompleteList);
+        return;
+      }
+      matches.forEach(match => {
+        const li = document.createElement('li');
+        li.textContent = match;
+        li.addEventListener('click', () => {
+          insertAutocomplete(match, textarea);
+          hideSuggestions(autocompleteList);
+        });
+        autocompleteList.appendChild(li);
+      });
+      autocompleteList.classList.remove('hidden');
+    }
+
+    function hideSuggestions(autocompleteList) {
+      autocompleteList.classList.add('hidden');
+      activeIndex = -1;
+    }
+
+    function updateActiveSuggestion(items, activeIndex) {
+      items.forEach((item, index) => {
+        item.classList.remove('active');
+        if (index === activeIndex) {
+          item.classList.add('active');
+          item.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    }
+
+    function insertAutocomplete(suggestion, textarea) {
+      const cursorPosition = textarea.selectionStart;
+      const textBefore = textarea.value.substring(0, cursorPosition);
+      const textAfter = textarea.value.substring(cursorPosition);
+      const match = textBefore.match(/{%[^\s]*$/);
+      if (match) {
+        const lastWord = match[0];
+        const completion = suggestion.substring(lastWord.length);
+        const newText = textBefore + completion + textAfter;
+        textarea.value = newText;
+        const newCursorPosition = cursorPosition + completion.length;
+        textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+        // Check if the click was outside the textarea or suggestion list
+        const isClickInsideTextarea = e.target.closest('.editor');
+        const isClickInsideAutocompleteList = e.target.closest('.autocomplete-list');
+      
+        if (!isClickInsideTextarea && !isClickInsideAutocompleteList) {
+            const container = textarea.closest('.autocomplete-container');
+            const autocompleteList = container.querySelector('.autocomplete-list');
+            hideSuggestions(autocompleteList);
+        }
+    });
+
+}
+
+function checkPromptsConfigForPlaceholders(textarea){
+    // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
+    if(String(textarea.value).indexOf('{%additional_text%}') != -1){
+        let tr_ancestor = textarea.closest('tr');
+        let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
+        if(!need_custom_text_element.checked){
+            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
+        }else{
+            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
+        }
+      }
+      if(String(textarea.value).indexOf('{%selected_text%}') != -1){
+        let tr_ancestor = textarea.closest('tr');
+        let selected_text_element = tr_ancestor.querySelector('.need_selected') || tr_ancestor.querySelector('.need_selected_new');
+        if(!selected_text_element.checked){
+            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
+        }else{
+            selected_text_element.closest('.need_selected_span').style.border = '';
+        }
+      }
 }

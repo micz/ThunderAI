@@ -80,7 +80,7 @@ async function chatgpt_isIdle() {
 }}, 100);});}
 
 function chatgpt_getRegenerateButton() {
-    for (const mainSVG of document.querySelectorAll('main svg')) {
+    for (const mainSVG of document.querySelectorAll('main svg.icon-md')) {
         if (mainSVG.querySelector('path[d^="M3.06957"]')) // regen icon found
             return mainSVG.parentNode.parentNode;
     }
@@ -105,6 +105,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += ".btn_disabled:hover {background-color:#6a829b !important;color:white !important;}";
     style.textContent += "#mzta-loading{height:50px;display:inline-block;}";
     style.textContent += "#mzta-model_warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-height:100%px;min-width:30%;max-width:50%;padding:3px;border-radius:5px;text-align:center;background-color:#FFBABA;border:1px solid;font-size:13px;color:#D8000C;display:none;}#mzta-model_warn a{color:blue;text-decoration: underline;}";
+    style.textContent += "#mzta-btn_model {background-color: #007bff;border: none;color: white;padding: 2px 4px;text-align: center;text-decoration: none;display: none;font-size: 13px;margin-left: 4px;transition-duration: 0.4s;cursor: pointer;border-radius: 2px;}";
     style.textContent += "#mzta-status-page{position:fixed;bottom:0;left:0;padding-left:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.textContent += "#mzta-force-completion{cursor:pointer;position:fixed;bottom:0;right:0;padding-right:5px;font-size:13px;font-style:italic;text-decoration:underline;color:#919191;}";
     style.textContent += "#mzta-status-page:hover, #mzta-force-completion:hover{color:#007bff;}";
@@ -128,6 +129,15 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     modelWarnDiv.textContent = browser.i18n.getMessage("chatgpt_win_model_warning");
     fixedDiv.appendChild(modelWarnDiv);
 
+    // GPT Model Button
+    var btn_model = document.createElement('button');
+    btn_model.id="mzta-btn_model";
+    btn_model.textContent = browser.i18n.getMessage("chatgpt_btn_model");
+    btn_model.onclick = async function() {
+        force_go = true;
+    };
+    modelWarnDiv.appendChild(btn_model);
+    
     //prompt name
     var prompt_name_div = document.createElement('div');
     prompt_name_div.id = 'mzta-prompt-name';
@@ -234,6 +244,41 @@ function customTextBtnClick(args) {
     args.customDiv.style.display = 'none';
 }
 
+function checkGPTModel(model) { //TODO
+    if(model == '') return;
+  return new Promise((resolve, reject) => {
+    // Set up an interval that shows the warning after 2 seconds
+    const intervalId2 = setTimeout(() => {
+        document.getElementById('mzta-model_warn').style.display = 'inline-block';
+        document.getElementById('mzta-btn_model').style.display = 'inline';
+    }, 2000);
+    // Set up an interval that checks the value every 100 milliseconds
+    const intervalId = setInterval(() => {
+      // Get the '.text-token-text-secondary' element
+     // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
+     const elements = document.querySelectorAll('[id*=radix] span')
+
+     for(element of elements){
+      // Check if the element exists and its content is '4' or '4o'
+      if ((element && element.textContent === model)||(force_go)) {
+        console.log("[ThunderAI] The GPT Model is now " + model);
+        clearInterval(intervalId);
+        clearTimeout(intervalId2);
+        document.getElementById('mzta-model_warn').style.display = 'none';
+        document.getElementById('mzta-btn_model').style.display = 'none';
+        resolve(model);
+        break;
+      } else if (!element) {
+        console.error("[ThunderAI] Model string element not found! [" + model + "]");
+        clearInterval(intervalId);
+        reject("Model string element not found: " + model);
+      }
+     }
+    }, 200);
+  });
+}
+
+
 function operation_done(){
     let curr_msg = document.getElementById('mzta-curr_msg');
     curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");
@@ -256,7 +301,25 @@ function showCustomTextField(){
 }
 
 async function doProceed(message, customText = ''){
-    let send_result = await chatgpt_sendMsg(message.prompt+' '+customText,'click');
+    let _gpt_model = mztaGPTModel;
+    if(_gpt_model != ''){
+        await checkGPTModel(_gpt_model);
+    }
+    let final_prompt = message.prompt;
+// console.log(">>>>>>>>>>>> doProceed customText: " + customText);
+// console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
+// console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
+    //check if there is che additional_text placeholder
+    if(final_prompt.includes('{%additional_text%}')){
+        // console.log(">>>>>>>>>>>> found ph customText: " + customText);
+        final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
+    }else{
+        if(customText != ''){
+            final_prompt += ' '+customText;
+        }
+    }
+
+    let send_result = await chatgpt_sendMsg(final_prompt,'click');
     //console.log(">>>>>>>>>>> send_result: " + send_result);
     switch(send_result){
         case -1:        // send button not found

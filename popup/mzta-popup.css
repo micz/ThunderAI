@@ -45,6 +45,10 @@ body {
     padding: 0;
     overflow-x: hidden;
   }
+
+  #mzta_sending_prompt{
+      display: none;
+  }
   
   .mzta_autocomplete-item {
       padding: 4px;

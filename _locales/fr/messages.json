@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Répondre à ceci",
+    "message": "Répondez à cet e-mail",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Répondez à ce fil de discussion",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -236,7 +240,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "Vous avez choisi l'option d'utiliser ChatGPT-4, mais il semble qu'il ne se charge pas correctement. Avez-vous choisi le modèle 4 ou 4o en haut ?",
+    "message": "Vous avez choisi d'utiliser un modèle spécifique, mais il semble qu'il ne se charge pas correctement. Veuillez vérifier la valeur et réessayer. Pour l'instant, vous pouvez appuyer sur le bouton bleu pour continuer.",
     "description": ""
   },
   "chatgpt_win_custom_text": {
@@ -260,7 +264,7 @@
     "description": ""
   },
   "msg_prompt_too_long": {
-    "message": "Le texte que vous avez fourni est trop long. Vous devez le réduire pour utiliser ChatGPT.",
+    "message": "Le texte que vous avez fourni est trop long. Vous devez le raccourcir.",
     "description": ""
   },
   "prefs_OptionText_release_notes": {
@@ -395,12 +399,12 @@
     "message": "Type de connexion",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_Web": {
-    "message": "Interface Web ChatGTP",
+  "prefs_Connection_type_ChatGPT_Web": {
+    "message": "Interface Web ChatGPT",
     "description": ""
   },
-  "prefs_Connection_type_ChatGTP_API": {
-    "message": "API OpenAI ChatGTP",
+  "prefs_Connection_type_ChatGPT_API": {
+    "message": "API OpenAI ChatGPT",
     "description": ""
   },
   "prefs_ChatGPT_API_Key": {
@@ -435,7 +439,7 @@
     "message": "Vous n'avez pas choisi de modèle pour l'API ChatGPT. Veuillez en choisir un sur la page des options.",
     "description": ""
   },
-  "chagtp_api_send_button": {
+  "chagpt_api_send_button": {
     "message": "Utilisation du modèle",
     "description": ""
   },
@@ -579,6 +583,10 @@
     "message": "Réglez sur 0 si vous ne souhaitez pas spécifier la taille de la fenêtre.",
     "description": ""
   },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "Clé API OpenAI Comp",
+    "description": ""
+  },
   "Optional": {
     "message": "Optionnel",
     "description": ""
@@ -591,6 +599,88 @@
     "message": "En cas de problèmes de connexion dans la fenêtre ThunderAI, ouvrez ChatGPT dans un nouvel onglet à l'aide du bouton à droite, connectez-vous, puis fermez l'onglet et continuez à utiliser ThunderAI.",
     "description": ""
   },
+  "placeholder_mail_text_body": {
+    "message": "Corps du mail",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "Corps du mail HTML",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Objet du mail",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Texte sélectionné",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Texte supplémentaire",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Score de spam",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Destinataires",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "Liste CC",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Auteur",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Espaces réservés : utiliser la valeur par défaut",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "Si coché, les espaces réservés seront remplis avec les valeurs par défaut si aucune valeur n'est fournie. Sinon, les espaces réservés resteront en place.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length": {
+    "message": "Longueur maximale de l'invite",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info": {
+    "message": "C'est le nombre maximum de caractères qui peuvent être utilisés dans une invite. Sinon, un message d'erreur sera affiché. La valeur n'est pas modifiable pour l'interface Web de ChatGPT.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "Modèle Web ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "C'est le modèle qui sera appliqué pour l'interface Web de ChatGPT. Si aucun n'est spécifié ou si un modèle incorrect est fourni, le modèle par défaut sera défini par ChatGPT sur la page Web.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "Chat temporaire Web ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "Si coché, le chat temporaire sera utilisé dans l'interface Web de ChatGPT.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Utiliser le modèle actuel",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Envoi de l'invite...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Valeurs autorisées",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "Vous pouvez maintenant utiliser des espaces réservés de données supplémentaires !",
   "prefs_OptionText_openai_comp_use_v1": {
     "message": "Conserver la compatibilité \"v1\"",
     "description": ""
