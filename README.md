@@ -7,7 +7,13 @@ It enables users to analyse, write, correct, and optimize their emails, facilita
 ThunderAI is a tool for anyone looking to improve their email quality, both in content and grammar, making the writing process quicker and more intuitive. 
 
 You can also define, export and import your own **custom prompts**!
-Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)!
+[Find out how!](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
+
+In any custom prompts you can use additional **data placeholders**!
+[Find out how!](https://micz.it/thunderbird-addon-thunderai/data-placeholders/)
+
+
+<br>
 
 
 > [!TIP]
@@ -34,6 +40,7 @@ Find out how [here](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
 > **Using an OpenAI Compatible API**
 >
 > From version 2.2.0 is possible to use a local OpenAI Compatible API server, like LM Studio!
+> There is also an option to remove the "v1" segment from the API url, if needed.
 
 
 <br>
