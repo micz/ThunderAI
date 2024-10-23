@@ -75,6 +75,18 @@ const defaultPrompts = [
         is_default: "1",
     },
     {
+        id: 'prompt_reply_advanced',
+        name: "__MSG_prompt_reply_advanced__",
+        text: "Reply to the following email {%selected_text%}, considering this is the full thread of emails {%mail_html_body%}. Reply with only the needed text and with no extra comments or other text.",
+        type: "1",
+        action: "1",
+        need_selected: "1",
+        need_signature: "1",
+        need_custom_text: "0",
+        define_response_lang: "1",
+        is_default: "1",
+    },
+    {
         id: 'prompt_rewrite_polite',
         name: "__MSG_prompt_rewrite_polite__",
         text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
