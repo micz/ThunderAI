@@ -7,6 +7,7 @@
 
 <h2>Version 2.3.0 - ??/??/2024</h2>
       <ul>
+        <li>The action button in the compose window has been moved to the formatting toolbar [<a href="https://github.com/micz/ThunderAI/issues/173">#173</a>].</li>
         <li>On the custom prompts page, when editing a prompt, pressing the cancel button will revert any modified values in the form to their saved state.</li>
         <li>Implemented placeholders to add additional data to prompts [<a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">More info</a>] [<a href="https://github.com/micz/ThunderAI/issues/146">#146</a>, <a href="https://github.com/micz/ThunderAI/issues/153">#153</a>].</li>
         <li>Text improved for the "Reply to this" prompt.</li>
