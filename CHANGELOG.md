@@ -16,7 +16,7 @@
         <li><i>[ChatGPT Web]</i> Added an option to use the temporary chat [<a href="https://github.com/micz/ThunderAI/issues/169">#169</a>].</li>
         <li>A few typos fixed [<a href="https://github.com/micz/ThunderAI/issues/170">#170</a>].</li>
         <li>Added a loading indicator in the menu when sending a prompt.</li>
-        <li>...</li>
+        <li>Added a new default prompt that uses the placeholders and allows replying to an email thread. It requires selecting the text of the first email to identify which is the one to reply to and the others in the thread [<a href="https://github.com/micz/ThunderAI/issues/150">#150</a>].</li>
       </ul>
 <h2>Version 2.2.1 - 11/10/2024</h2>
       <ul>
