@@ -33,30 +33,39 @@ export class OpenAI {
 
 
   fetchModels = async () => {
-    const response = await fetch("https://api.openai.com/v1/models", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer "+ this.apiKey
-        },
-    });
+    try{
+      const response = await fetch("https://api.openai.com/v1/models", {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer "+ this.apiKey
+          },
+      });
 
-    if (!response.ok) {
-        const errorDetail = await response.text();
-        let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
-        console.error(err_msg);
-        let output = {};
-        output.ok = false;
-        output.error = errorDetail;
-        return output;
+      if (!response.ok) {
+          const errorDetail = await response.text();
+          let err_msg = "[ThunderAI] OpenAI API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+          console.error(err_msg);
+          let output = {};
+          output.ok = false;
+          output.error = errorDetail;
+          return output;
+      }
+
+      let output = {};
+      output.ok = true;
+      let output_response = await response.json();
+      output.response = output_response.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
+
+      return output;
+    }catch (error) {
+      console.error("[ThunderAI] OpenAI API request failed: " + error);
+      let output = {};
+      output.is_exception = true;
+      output.ok = false;
+      output.error = "OpenAI API request failed: " + error;
+      return output;
     }
-
-    let output = {};
-    output.ok = true;
-    let output_response = await response.json();
-    output.response = output_response.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
-
-    return output;
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {

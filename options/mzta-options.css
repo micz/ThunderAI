@@ -146,6 +146,26 @@ input.option-input[type="text"]{
     font-style: italic;
 }
 
+#owl_warning{
+    display: none;
+}
+
+#owl_warning div{
+    color: white;
+    font-style: italic;
+    background-color: red;
+    border-radius: 4px;
+    padding: 3px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#owl_warning div a{
+    background-color: white;
+    padding:0px 3px;
+    border-radius: 4px;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);

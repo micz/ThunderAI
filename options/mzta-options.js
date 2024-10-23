@@ -214,6 +214,14 @@ function disable_MaxPromptLength(){
 
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
+
+  // show Owl warning
+  const accountList = await messenger.accounts.list(false);
+  if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
+    taLog.log('OWL detected, displaying the warning.');
+    document.getElementById('owl_warning').style.display = 'table-row';
+  }
+
   i18n.updateDocument();
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
@@ -256,10 +264,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, '', true);
     openai.fetchModels().then((data) => {
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       taLog.log("ChatGPT models: " + JSON.stringify(data));
@@ -297,10 +311,16 @@ select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
         return;
       }
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('ollama_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       if(data.response.models.length == 0){
@@ -339,13 +359,19 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
 
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
-    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true);
+    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true, document.getElementById("openai_comp_use_v1").checked);
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
-        let errorDetail = JSON.parse(data.error);
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
         document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
-        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail.error.message);
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       taLog.log("OpenAIComp models: " + JSON.stringify(data));

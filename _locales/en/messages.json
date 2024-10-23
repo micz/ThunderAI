@@ -507,6 +507,10 @@
     "message": "Ollama API request failed",
     "description": ""
   },
+  "chatgpt_api_request_failed": {
+    "message": "OpenAI ChatGPT API request failed",
+    "description": ""
+  },
   "WaitingServerReponse": {
     "message": "Waiting for the server response",
     "description": ""
@@ -677,6 +681,16 @@
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
     "message": "You can now use additional data placeholders!",
+  "prefs_OptionText_openai_comp_use_v1" : {
+    "message": "Keep the \"v1\" compatibility",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1_info": {
+    "message": "If checked, the \"v1\" segment in the path of API calls will be kept, like \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
     "description": ""
   }
 }

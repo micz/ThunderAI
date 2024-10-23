@@ -26,6 +26,7 @@ import { taLogger } from '../js/mzta-logger.js';
 let openai_comp_host = null;
 let openai_comp_model = '';
 let openai_comp_api_key = '';
+let openai_comp_use_v1 = true;
 let openai_comp = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -40,7 +41,8 @@ self.onmessage = async function(event) {
         openai_comp_host = event.data.openai_comp_host;
         openai_comp_model = event.data.openai_comp_model;
         openai_comp_api_key = event.data.openai_comp_api_key;
-        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true);
+        openai_comp_use_v1 = event.data.openai_comp_use_v1;
+        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true, openai_comp_use_v1);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_comp', do_debug);
@@ -56,13 +58,17 @@ self.onmessage = async function(event) {
             if(response.is_exception === true){
                 error_message = response.error;
             }else{
-                const errorJSON = await response.json();
-                errorDetail = JSON.stringify(errorJSON);
-                error_message = errorJSON.error.message;
-                taLog.log("errorJSON.error.message: " + JSON.stringify(errorJSON.error.message));
+                try{
+                    const errorJSON = await response.json();
+                    errorDetail = JSON.stringify(errorJSON);
+                    error_message = errorJSON.error.message;
+                }catch(e){
+                    error_message = response.statusText;
+                }
+                taLog.log("error_message: " + JSON.stringify(error_message));
             }
-            postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + error_message });
-            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail);
+            postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
+            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
         const reader = response.body.getReader();
