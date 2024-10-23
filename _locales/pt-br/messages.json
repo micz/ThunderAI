@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Responda a isso",
+    "message": "Responda a este e-mail",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Responda a este tópico",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -589,6 +593,90 @@
   },
   "OpenChatGPTTab_Info": {
     "message": "Em caso de problemas de login na janela do ThunderAI, abra o ChatGPT em uma nova aba usando o botão à direita, faça o login, depois feche a aba e continue usando o ThunderAI.",
+    "description": ""
+  },
+  "placeholder_mail_text_body": {
+    "message": "Corpo do e-mail",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "Corpo do e-mail HTML",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Assunto do e-mail",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Texto selecionado",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Texto adicional",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Pontuação de spam",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Destinatários",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "Lista CC",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Autor",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Marcadores de posição: usar valor padrão",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "Se marcado, os marcadores de posição serão preenchidos com os valores padrão quando nenhum valor for fornecido. Caso contrário, os marcadores de posição serão mantidos no lugar.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length": {
+    "message": "Comprimento máximo do prompt",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info": {
+    "message": "Este é o número máximo de caracteres que podem ser usados em um prompt. Caso contrário, uma mensagem de erro será exibida. O valor não é editável para a Interface Web do ChatGPT.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "Modelo Web do ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "Este é o modelo que será aplicado para a Interface Web do ChatGPT. Se nenhum for especificado ou um incorreto for fornecido, o modelo padrão será definido pelo ChatGPT na página web.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "Chat temporário Web do ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "Se marcado, o chat temporário será utilizado na Interface Web do ChatGPT.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Usar o modelo atual",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Enviando prompt...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Valores permitidos",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "Agora você pode usar marcadores de posição adicionais!",
     "description": ""
   }
 }

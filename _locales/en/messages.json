@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Reply to this",
+    "message": "Reply to this email",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Reply to this thread",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -628,7 +632,7 @@
     "description": ""
   },
   "prefs_OptionText_placeholders_use_default_value": {
-    "message": "Placeholders: Use default value",
+    "message": "Placeholders: use default value",
     "description": ""
   },
   "prefs_OptionText_placeholders_use_default_value_info": {

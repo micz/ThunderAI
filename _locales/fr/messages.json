@@ -12,7 +12,11 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Répondre à ceci",
+    "message": "Répondez à cet e-mail",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Répondez à ce fil de discussion",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -575,6 +579,10 @@
     "message": "Réglez sur 0 si vous ne souhaitez pas spécifier la taille de la fenêtre.",
     "description": ""
   },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "Clé API OpenAI Comp",
+    "description": ""
+  },
   "Optional": {
     "message": "Optionnel",
     "description": ""
@@ -585,6 +593,90 @@
   },
   "OpenChatGPTTab_Info": {
     "message": "En cas de problèmes de connexion dans la fenêtre ThunderAI, ouvrez ChatGPT dans un nouvel onglet à l'aide du bouton à droite, connectez-vous, puis fermez l'onglet et continuez à utiliser ThunderAI.",
+    "description": ""
+  },
+  "placeholder_mail_text_body": {
+    "message": "Corps du mail",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "Corps du mail HTML",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Objet du mail",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Texte sélectionné",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Texte supplémentaire",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Score de spam",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Destinataires",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "Liste CC",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Auteur",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Espaces réservés : utiliser la valeur par défaut",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "Si coché, les espaces réservés seront remplis avec les valeurs par défaut si aucune valeur n'est fournie. Sinon, les espaces réservés resteront en place.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length": {
+    "message": "Longueur maximale de l'invite",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info": {
+    "message": "C'est le nombre maximum de caractères qui peuvent être utilisés dans une invite. Sinon, un message d'erreur sera affiché. La valeur n'est pas modifiable pour l'interface Web de ChatGPT.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "Modèle Web ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "C'est le modèle qui sera appliqué pour l'interface Web de ChatGPT. Si aucun n'est spécifié ou si un modèle incorrect est fourni, le modèle par défaut sera défini par ChatGPT sur la page Web.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "Chat temporaire Web ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "Si coché, le chat temporaire sera utilisé dans l'interface Web de ChatGPT.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Utiliser le modèle actuel",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Envoi de l'invite...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Valeurs autorisées",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "Vous pouvez maintenant utiliser des espaces réservés de données supplémentaires !",
     "description": ""
   }
 }
