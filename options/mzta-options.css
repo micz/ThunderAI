@@ -166,6 +166,10 @@ input.option-input[type="text"]{
     border-radius: 4px;
 }
 
+.conntype_chatgpt_web_option{
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);

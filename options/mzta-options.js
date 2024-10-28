@@ -226,6 +226,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
+  document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
+    element.addEventListener("click", () => {
+      document.getElementById("chatgpt_web_model").value = element.textContent;
+    });
+  });
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
