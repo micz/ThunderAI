@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 2.3.2 - ??/??/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.3.1 - 24/10/2024</h2>
       <ul>
         <li>Reverted the position of the action button in the compose window [<a href="https://github.com/micz/ThunderAI/issues/175">#175</a>].</li>
