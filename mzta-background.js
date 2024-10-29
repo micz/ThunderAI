@@ -288,6 +288,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 taLog.log("ChatGPT web interface script started...");
 
                 let _gpt_model = getGPTWebModelString(prefs.chatgpt_web_model);
+
+                taLog.log("prefs.chatgpt_web_model: " + prefs.chatgpt_web_model);
+                taLog.log("_gpt_model: " + _gpt_model);
         
                 let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                 let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -297,6 +300,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
                 let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                 let mztaGPTModel="`+ _gpt_model +`";
+                let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                 `;
 
                 taLog.log("Waiting 1 sec");

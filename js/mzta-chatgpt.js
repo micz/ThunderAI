@@ -246,6 +246,7 @@ function customTextBtnClick(args) {
 
 function checkGPTModel(model) { //TODO
     if(model == '') return;
+    doLog("checkGPTModel model: " + model);
   return new Promise((resolve, reject) => {
     // Set up an interval that shows the warning after 2 seconds
     const intervalId2 = setTimeout(() => {
@@ -260,8 +261,9 @@ function checkGPTModel(model) { //TODO
 
      for(element of elements){
       // Check if the element exists and its content is '4' or '4o'
+      doLog("checkGPTModel model found in DOM: " + element.textContent);
       if ((element && element.textContent === model)||(force_go)) {
-        console.log("[ThunderAI] The GPT Model is now " + model);
+        doLog("The GPT Model is now " + model);
         clearInterval(intervalId);
         clearTimeout(intervalId2);
         document.getElementById('mzta-model_warn').style.display = 'none';
@@ -269,7 +271,7 @@ function checkGPTModel(model) { //TODO
         resolve(model);
         break;
       } else if (!element) {
-        console.error("[ThunderAI] Model string element not found! [" + model + "]");
+        console.error("[ThunderAI | ChatGPT Web] Model string element not found! [" + model + "]");
         clearInterval(intervalId);
         reject("Model string element not found: " + model);
       }
@@ -302,6 +304,7 @@ function showCustomTextField(){
 
 async function doProceed(message, customText = ''){
     let _gpt_model = mztaGPTModel;
+    doLog("doProceed _gpt_model: " + JSON.stringify(_gpt_model));
     if(_gpt_model != ''){
         await checkGPTModel(_gpt_model);
     }
@@ -521,6 +524,12 @@ function selectContentOnClick(event) {
 
         // Add the new range to the selection
         selection.addRange(range);
+    }
+}
+
+function doLog(msg){
+    if(mztaDoDebug == 1){
+        console.log("[ThunderAI | ChatGPT Web] " + msg);
     }
 }
 
