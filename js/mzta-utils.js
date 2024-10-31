@@ -126,7 +126,7 @@ export function getGPTWebModelString(model) {
     case 'gpt-4o-mini':
       return '4o mini';
     default:
-      return '4o';
+      return '';
   }
 }
 

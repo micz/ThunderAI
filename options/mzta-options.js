@@ -228,7 +228,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
     element.addEventListener("click", () => {
-      document.getElementById("chatgpt_web_model").value = element.textContent;
+      let el = document.getElementById("chatgpt_web_model");
+      el.value = element.textContent;
+      el.dispatchEvent(new Event('change'), { bubbles: true });
     });
   });
   
