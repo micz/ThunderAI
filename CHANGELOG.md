@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 2.3.3 - ??/??/2024</h2>
+      <ul>
+        <li>...</ul>
+      </ul>
 <h2>Version 2.3.2 - 31/10/2024</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Clicking on one of the allowed model values in the options page, sets the corresponding field value.</li>
