@@ -170,7 +170,7 @@ export class mzta_Menus {
                     fullPrompt = curr_prompt.text + chatgpt_lang2 + ". \"" + body_text + "\" ";
                     break;
                 case 'prompt_reply':
-                    fullPrompt += "Do not add the subject line to the response."
+                    fullPrompt += browser.i18n.getMessage("prompt_reply_additional_text");
                     break;
                 default:
                     break;

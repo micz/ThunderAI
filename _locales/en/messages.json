@@ -698,5 +698,17 @@
   "prefs_OptionText_chatgpt_web_model_tooltip": {
     "message": "Click on a value to set it.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Do not add the subject line to the response.",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
   }
 }

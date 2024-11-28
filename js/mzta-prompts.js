@@ -65,7 +65,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
-        text: "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_full_text",
         type: "1",
         action: "1",
         need_selected: "0",
@@ -77,7 +77,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply_advanced',
         name: "__MSG_prompt_reply_advanced__",
-        text: "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_advanced_full_text",
         type: "1",
         action: "1",
         need_selected: "1",
@@ -223,6 +223,7 @@ async function getDefaultPrompts_withProps() {
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.enabled = 1;
@@ -232,6 +233,7 @@ async function getDefaultPrompts_withProps() {
     } else {    // we have saved default prompts properties
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
