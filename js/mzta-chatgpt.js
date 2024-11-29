@@ -100,7 +100,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     // Create <style> element for the CSS
     var style = document.createElement('style');
     style.textContent = ".mzta-header-fixed {position: fixed;bottom: 0;left: 0;height:100px;width: 100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
-    style.textContent += "body {padding-bottom: 100px;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px;}";
+    style.textContent += "body {padding-bottom: 100px !important;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px !important;} [data-testid='screen-thread']{padding-bottom: 100px !important;} [slot='content']{padding-bottom: 100px !important;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.textContent += ".mzta-btn:hover {background-color:#0056b3;color:white;}";
     style.textContent += ".btn_disabled {background-color: #6a829b !important;color: white !important;cursor: not-allowed;}";
