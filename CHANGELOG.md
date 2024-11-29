@@ -5,9 +5,9 @@
 
 
 
-<h2>Version 2.3.3 - ??/??/2024</h2>
+<h2>Version 2.3.3 - 29/11/2024</h2>
       <ul>
-        <li>...</ul>
+        <li><i>[ChatGPT Web]</i> Correctly sending the prompt even if the audio button is present on the web interface [<a href="https://github.com/micz/ThunderAI/issues/188">#188</a>].</li>
       </ul>
 <h2>Version 2.3.2 - 31/10/2024</h2>
       <ul>
