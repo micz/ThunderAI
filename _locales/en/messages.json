@@ -707,6 +707,14 @@
     "message": "Do not add the subject line to the response.",
     "description": ""
   },
+  "reply_same_lang": {
+    "message": "Reply in the same language.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Sign the message as",
+    "description": ""
+  },
   "prompt_reply_advanced_full_text": {
     "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
     "description": ""

@@ -694,5 +694,21 @@
   "prefs_OptionText_owl_warning": {
     "message": "Sembra che almeno uno dei tuoi account stia utilizzando il componente aggiuntivo Gufo per Exchange. Esiste un problema noto tra Thunderbird e Gufo, che è attualmente in fase di risoluzione. Al momento, puoi utilizzare ThunderAI durante la composizione delle email, ma non durante la loro lettura.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Rispondi alla seguente email. Rispondi solo con il testo necessario e senza commenti o altro testo aggiuntivo.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Rispondi nella stessa lingua.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Firma il messaggio come",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Non aggiungere la linea dell'oggetto alla risposta.",
+    "description": ""
   }
 }

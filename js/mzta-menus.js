@@ -107,7 +107,7 @@ export class mzta_Menus {
                 chatgpt_lang = prefs.default_chatgpt_lang;
                 //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
                 if(chatgpt_lang === ''){
-                    chatgpt_lang = 'Reply in the same language.';
+                    chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
                 }else{
                     chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
                 }
@@ -189,7 +189,7 @@ export class mzta_Menus {
         if(prefs.default_sign_name===''){
             return '';
         }else{
-            return "Sign the message as " + prefs.default_sign_name + ".";
+            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
         }
     }
 
