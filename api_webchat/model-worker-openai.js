@@ -27,6 +27,7 @@ let chatgpt_api_key = null;
 let chatgpt_model = '';
 let openai = null;
 let stopStreaming = false;
+let i18nStrings = null;
 let do_debug = false;
 let taLog = null;
 
@@ -39,6 +40,7 @@ self.onmessage = async function(event) {
         chatgpt_model = event.data.chatgpt_model;
         openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
         do_debug = event.data.do_debug;
+        i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
