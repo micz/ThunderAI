@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 2.4.0 - ??/??/2024</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 2.3.4 - 06/12/2024</h2>
       <ul>
         <li><i>[ChatGPT API]</i> Correctly showwing an error message received from the ChatGPT API [<a href="https://github.com/micz/ThunderAI/issues/191">#191</a>].</li>
