@@ -89,7 +89,7 @@ const defaultPrompts = [
     {
         id: 'prompt_rewrite_polite',
         name: "__MSG_prompt_rewrite_polite__",
-        text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -101,7 +101,7 @@ const defaultPrompts = [
     {
         id: 'prompt_rewrite_formal',
         name: "__MSG_prompt_rewrite_formal__",
-        text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_formal_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -113,7 +113,7 @@ const defaultPrompts = [
     {
         id: 'prompt_classify',
         name: "__MSG_prompt_classify__",
-        text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
+        text: "prompt_classify_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -125,7 +125,7 @@ const defaultPrompts = [
     {
         id: 'prompt_summarize_this',
         name: "__MSG_prompt_summarize_this__",
-        text: "Summarize the following email into a bullet point list.",
+        text: "prompt_summarize_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -137,7 +137,7 @@ const defaultPrompts = [
     {
         id: 'prompt_translate_this',
         name: "__MSG_prompt_translate_this__",
-        text: "Translate the following email in ",
+        text: "prompt_translate_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -149,7 +149,7 @@ const defaultPrompts = [
     {
         id: 'prompt_this',
         name: "__MSG_prompt_this__",
-        text: "Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_this_full_text",
         type: "2",
         action: "2",
         need_selected: "1",

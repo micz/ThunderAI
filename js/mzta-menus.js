@@ -167,7 +167,7 @@ export class mzta_Menus {
                     if(chatgpt_lang2 === ''){
                         chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
                     }
-                    fullPrompt = curr_prompt.text + chatgpt_lang2 + ". \"" + body_text + "\" ";
+                    fullPrompt = curr_prompt.text + " " + chatgpt_lang2 + ". \"" + body_text + "\" ";
                     break;
                 case 'prompt_reply':
                     fullPrompt += browser.i18n.getMessage("prompt_reply_additional_text");
