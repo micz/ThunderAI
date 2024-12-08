@@ -694,5 +694,49 @@
   "prefs_OptionText_owl_warning": {
     "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Responda ao e-mail a seguir. Responda apenas com o texto necessário e sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Não adicione a linha de assunto à resposta.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Responda no mesmo idioma.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Assine a mensagem como",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Responda ao seguinte e-mail \"{%selected_text%}\", considerando que este é o thread completo de e-mails \"{%mail_html_body%}\". Responda apenas com o texto necessário e sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classifique o texto a seguir em termos de Educação, Calor, Formalidade, Assertividade e Ofensividade, atribuindo uma porcentagem para cada categoria. Responda apenas com as categorias e as pontuações, sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Resuma o e-mail a seguir em uma lista de tópicos.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Traduza o e-mail a seguir para",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Responda apenas com o texto necessário e sem comentários adicionais ou outros textos.",
+    "description": ""
   }
 }

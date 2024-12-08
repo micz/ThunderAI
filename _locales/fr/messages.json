@@ -694,5 +694,49 @@
   "prefs_OptionText_owl_warning": {
     "message": "Il semble qu'au moins un de vos comptes utilise le module complémentaire Chouette pour Exchange. Il existe un problème connu entre Thunderbird et Chouette, qui est en cours de résolution. Pour le moment, vous pouvez utiliser ThunderAI lors de la rédaction d'e-mails, mais pas lors de leur lecture.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Répondez à l'email suivant. Répondez uniquement avec le texte nécessaire et sans commentaires ou autres textes supplémentaires.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Ne pas ajouter la ligne d'objet à la réponse.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Répondez dans la même langue.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Signez le message en tant que",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Répondez à l'email suivant \"{%selected_text%}\", en tenant compte du fait qu'il s'agit de l'intégralité du fil de discussion \"{%mail_html_body%}\". Répondez uniquement avec le texte nécessaire et sans commentaires ou autres textes supplémentaires.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Réécrivez le texte suivant pour qu'il soit plus poli. Répondez uniquement avec le texte réécrit et sans commentaires ou autres textes supplémentaires.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Réécrivez le texte suivant pour qu'il soit plus formel. Répondez uniquement avec le texte réécrit et sans commentaires ou autres textes supplémentaires.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classifiez le texte suivant en termes de Politesse, Chaleur, Formalité, Assertivité, Offensivité en donnant un pourcentage pour chaque catégorie. Répondez uniquement avec les catégories et les scores, sans commentaires ou autres textes supplémentaires.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Résumé l'email suivant sous forme de liste à puces.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Traduisez l'email suivant en",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Répondez uniquement avec le texte nécessaire et sans commentaires ou autres textes supplémentaires.",
+    "description": ""
   }
 }
