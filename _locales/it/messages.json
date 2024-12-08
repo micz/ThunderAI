@@ -710,5 +710,33 @@
   "prompt_reply_additional_text": {
     "message": "Non aggiungere la linea dell'oggetto alla risposta.",
     "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+      "message": "Rispondi alla seguente email \"{%selected_text%}\", considerando che si tratta dell'intero thread di email \"{%mail_html_body%}\". Rispondi con solo il testo necessario e senza commenti extra o altro testo.",
+      "description": ""
+  },
+  "prompt_rewrite_full_text": {
+      "message": "Riscrivi il seguente testo in modo più cortese. Rispondi con solo il testo riscritto e senza commenti extra o altro testo.",
+      "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+      "message": "Riscrivi il seguente testo in modo più formale. Rispondi con solo il testo riscritto e senza commenti extra o altro testo.",
+      "description": ""
+  },
+  "prompt_classify_full_text": {
+      "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, assegnando una percentuale a ciascuna categoria. Rispondi con solo le categorie e i punteggi, senza commenti extra o altro testo.",
+      "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+      "message": "Riassumi la seguente email in un elenco puntato.",
+      "description": ""
+  },
+  "prompt_translate_this_full_text": {
+      "message": "Traduci la seguente email in",
+      "description": ""
+  },
+  "prompt_this_full_text": {
+      "message": "Rispondi con solo il testo necessario e senza commenti extra o altro testo.",
+      "description": ""
   }
 }
