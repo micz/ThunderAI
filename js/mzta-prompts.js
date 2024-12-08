@@ -65,7 +65,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
-        text: "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_full_text",
         type: "1",
         action: "1",
         need_selected: "0",
@@ -77,7 +77,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply_advanced',
         name: "__MSG_prompt_reply_advanced__",
-        text: "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_advanced_full_text",
         type: "1",
         action: "1",
         need_selected: "1",
@@ -89,7 +89,7 @@ const defaultPrompts = [
     {
         id: 'prompt_rewrite_polite',
         name: "__MSG_prompt_rewrite_polite__",
-        text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -101,7 +101,7 @@ const defaultPrompts = [
     {
         id: 'prompt_rewrite_formal',
         name: "__MSG_prompt_rewrite_formal__",
-        text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_formal_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -113,7 +113,7 @@ const defaultPrompts = [
     {
         id: 'prompt_classify',
         name: "__MSG_prompt_classify__",
-        text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
+        text: "prompt_classify_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -125,7 +125,7 @@ const defaultPrompts = [
     {
         id: 'prompt_summarize_this',
         name: "__MSG_prompt_summarize_this__",
-        text: "Summarize the following email into a bullet point list.",
+        text: "prompt_summarize_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -137,7 +137,7 @@ const defaultPrompts = [
     {
         id: 'prompt_translate_this',
         name: "__MSG_prompt_translate_this__",
-        text: "Translate the following email in ",
+        text: "prompt_translate_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -149,7 +149,7 @@ const defaultPrompts = [
     {
         id: 'prompt_this',
         name: "__MSG_prompt_this__",
-        text: "Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_this_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -223,6 +223,7 @@ async function getDefaultPrompts_withProps() {
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.enabled = 1;
@@ -232,6 +233,7 @@ async function getDefaultPrompts_withProps() {
     } else {    // we have saved default prompts properties
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;

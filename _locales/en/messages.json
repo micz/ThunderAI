@@ -698,5 +698,49 @@
   "prefs_OptionText_chatgpt_web_model_tooltip": {
     "message": "Click on a value to set it.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Do not add the subject line to the response.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Reply in the same language.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Sign the message as",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Summarize the following email into a bullet point list.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Translate the following email in",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
   }
 }

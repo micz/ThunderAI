@@ -694,5 +694,49 @@
   "prefs_OptionText_owl_warning": {
     "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen.",
     "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Fügen Sie die Betreffzeile nicht in die Antwort ein.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Antworten Sie in derselben Sprache.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Unterschreiben Sie die Nachricht als",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Antworten Sie auf die folgende E-Mail \"{%selected_text%}\", wobei dies der vollständige E-Mail-Thread ist \"{%mail_html_body%}\". Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Klassifizieren Sie den folgenden Text in Bezug auf Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit den Kategorien und den Werten, ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Fassen Sie die folgende E-Mail in einer Liste mit Stichpunkten zusammen.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Übersetzen Sie die folgende E-Mail ins",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text.",
+    "description": ""
   }
 }
