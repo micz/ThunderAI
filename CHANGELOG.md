@@ -7,6 +7,7 @@
 
 <h2>Version 2.4.0 - ??/??/2024</h2>
       <ul>
+        <li>Default prompts text has been translated [<a href="https://github.com/micz/ThunderAI/issues/185">#185</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 2.3.4 - 06/12/2024</h2>
