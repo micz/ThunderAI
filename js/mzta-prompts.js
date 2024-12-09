@@ -73,6 +73,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_reply_advanced',
@@ -85,6 +86,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_polite',
@@ -97,6 +99,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_formal',
@@ -109,6 +112,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_classify',
@@ -121,6 +125,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_summarize_this',
@@ -133,6 +138,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_translate_this',
@@ -145,6 +151,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_this',
@@ -157,7 +164,21 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
     },
+    {
+        id: 'prompt_add_tags',
+        name: "__MSG_prompt_add_tags__",
+        text: "prompt_add_tags_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        is_default: "1",
+        is_special: "1",
+    }
 ];
 
 
@@ -167,6 +188,7 @@ export async function getPrompts(onlyEnabled = false){
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     let output = _defaultPrompts.concat(customPrompts);
+    output = output.filter(obj => obj.is_special != 1);     // we do not want special prompts
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n

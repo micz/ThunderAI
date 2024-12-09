@@ -750,5 +750,13 @@
   "prefs_OptionText_add_tags_Info": {
     "message": "If checked, a menu item will be added to the dynamic menu to add tags to emails.",
     "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Add tags to emails",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analyze the following email text and generate a comma-separated list of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details.",
+    "description": ""
   }
 }
