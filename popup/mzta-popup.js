@@ -16,7 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { taStore } from "../js/mzta-store.js";
 import { taLogger } from "../js/mzta-logger.js";
 
 let menuSendImmediately = false;
