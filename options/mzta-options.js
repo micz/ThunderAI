@@ -94,6 +94,7 @@ async function restoreOptions() {
 
 function showConnectionOptions() {
   disable_MaxPromptLength();
+  disable_AddTags();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -210,6 +211,14 @@ function disable_MaxPromptLength(){
   maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
+}
+
+function disable_AddTags(){
+  let add_tags = document.getElementById('add_tags');
+  let conntype_select = document.getElementById("connection_type");
+  add_tags.disabled = (conntype_select.value === "chatgpt_web");
+  let add_tags_tr = document.getElementById('add_tags_tr');
+  add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -401,6 +410,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
   disable_MaxPromptLength();
+  disable_AddTags();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');

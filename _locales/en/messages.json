@@ -742,5 +742,13 @@
   "prompt_this_full_text": {
     "message": "Reply with only the needed text and with no extra comments or other text.",
     "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Add tags to emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "If checked, a menu item will be added to the dynamic menu to add tags to emails.",
+    "description": ""
   }
 }
