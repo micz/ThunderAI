@@ -20,9 +20,11 @@ import { taLogger } from "../js/mzta-logger.js";
 
 let menuSendImmediately = false;
 let taLog = console;
+let connection_type = 'chatgpt_web';
+let add_tags = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false});
+    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: false, connection_type: 'chatgpt_web'});
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -35,6 +37,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
+    connection_type = prefs.connection_type;
+    add_tags = prefs.add_tags;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 }, { once: true });
@@ -87,6 +91,8 @@ async function searchPrompt(allPrompts, tabId, tabType){
        _spacer_div.style.display = 'none';
        return;
    }
+
+   //TODO if add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
 
    // Prepend numbers to the first 10 items
    Array.from(filteredData).slice(0, 10).forEach((item, index) => {
