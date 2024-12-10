@@ -55,7 +55,7 @@ export class mzta_Menus {
         this.rootMenu = [];
         this.shortcutMenu = [];
         this.menu_listeners = {};
-        this.allPrompts = await getPrompts(true);   
+        this.allPrompts = await getPrompts(true,true);   
         this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
@@ -179,7 +179,19 @@ export class mzta_Menus {
             // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+            if(curr_prompt.is_special == '1'){
+                switch(curr_prompt.id){
+                    case 'prompt_add_tags':
+                        const tabs_debug = await browser.tabs.query({ active: true, currentWindow: true });
+                        console.log("[ThunderAI] Add tags for this message: " + tabs_debug[0].url);
+                        break;
+                    default:
+                        console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
+                        break;
+                }
+            }else{
+                this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+            }
         };
         this.rootMenu.push(curr_menu_entry);
     };
