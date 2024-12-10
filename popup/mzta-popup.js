@@ -159,8 +159,6 @@ async function searchPrompt(allPrompts, tabId, tabType){
  // Add a keydown event listener to handle arrow navigation and selection
  input.addEventListener('keydown', async function (e) {
 
-   let prompt_add_tags = document.getElementById('prompt_add_tags-item');
- 
    const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
    if ((autocompleteList.style.display === 'none' || items.length === 0)
          && (e.key !== 'Enter')
