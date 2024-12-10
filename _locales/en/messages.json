@@ -752,7 +752,7 @@
     "description": ""
   },
   "prompt_add_tags": {
-    "message": "Add tags to emails",
+    "message": "Add tags to this email",
     "description": ""
   },
   "prompt_add_tags_full_text": {
