@@ -182,8 +182,9 @@ export class mzta_Menus {
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
-                        const tabs_debug = await browser.tabs.query({ active: true, currentWindow: true });
-                        console.log("[ThunderAI] Add tags for this message: " + tabs_debug[0].url);
+                        let mail_tags = 'test'; // TODO get the tags from the API
+                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
+                        return {ok:'1'};
                         break;
                     default:
                         console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
@@ -308,7 +309,7 @@ export class mzta_Menus {
         if (action) {
             try {
                 // Execute the action callback
-                await action();
+                return await action();
             } catch (error) {
                 // Log any errors that occur during execution
                 console.error(`Error executing action for menu item ${id}:`, error);
@@ -317,6 +318,7 @@ export class mzta_Menus {
             // Warn if no action is found for the provided ID
             console.warn(`No action found for menu item ID: ${id}`);
         }
+        return false;
     }
 
 }
