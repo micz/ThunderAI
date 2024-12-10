@@ -384,7 +384,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id3 = '_ollama_' + generateCallID();
 
-            const listener3 = async (message, sender, sendResponse) => {
+            const listener3 = (message, sender, sendResponse) => {
 
                 function handleOllamaApi(createdTab3) {
                     taLog.log("Ollama API window ready.");
@@ -440,7 +440,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let rand_call_id4 = '_openai_comp_api_' + generateCallID();
 
       
-                const listener4 = async (message, sender, sendResponse) => {
+                const listener4 = (message, sender, sendResponse) => {
 
                     function handleOpenAICompApi(createdTab) {
                         let mailMessageId4 = -1;
