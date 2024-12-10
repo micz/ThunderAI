@@ -175,6 +175,11 @@ switch (message.command) {
     return Promise.resolve(true);
     break;
 
+  case "getTags":
+    console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
+    return Promise.resolve(true);
+    break;
+
   default:
     // do nothing
     return Promise.resolve(false);
