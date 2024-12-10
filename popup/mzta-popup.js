@@ -246,11 +246,15 @@ document.body.insertBefore(banner, document.body.firstChild);
 }
 
 
-function sendPrompt(prompt_id, tabId){
+async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
  document.getElementById('mzta_search_input').style.display = 'none';
  document.getElementById('mzta_sending_prompt').style.display = 'block';
- browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ let response = await browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
+ if(response.ok == '1'){
+  window.close();
+ }
 }
 
 function filterPromptsForTab(prompts_data, filtering){
