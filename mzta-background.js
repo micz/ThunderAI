@@ -216,8 +216,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
-                menus.executeMenuAction(message.promptId);
-                return Promise.resolve(true);
+                return menus.executeMenuAction(message.promptId);
                 break;
             case 'popup_menu_ready':
                 async function _popup_menu_ready() {
