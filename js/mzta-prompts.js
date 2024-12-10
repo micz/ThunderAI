@@ -182,13 +182,15 @@ const defaultPrompts = [
 ];
 
 
-export async function getPrompts(onlyEnabled = false){
+export async function getPrompts(onlyEnabled = false, includeSpecial = false){
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     let output = _defaultPrompts.concat(customPrompts);
-    output = output.filter(obj => obj.is_special != 1);     // we do not want special prompts
+    if(!includeSpecial){
+        output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
+    }
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
