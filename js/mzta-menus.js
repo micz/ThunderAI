@@ -192,6 +192,7 @@ export class mzta_Menus {
                 }
             }else{  // Classic prompts for the API webchat
                 this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+                return {ok:'1'};
             }
         };
         this.rootMenu.push(curr_menu_entry);
