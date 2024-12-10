@@ -92,11 +92,15 @@ async function searchPrompt(allPrompts, tabId, tabType){
        return;
    }
 
-   //TODO if add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
 
    // Prepend numbers to the first 10 items
-   Array.from(filteredData).slice(0, 10).forEach((item, index) => {
-     const number = (index < 9) ? (index + 1).toString() : '0';
+   // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
+   let max_num_el = 10
+   if(checkDoAddTags()){
+     max_num_el = 9;
+   }
+   Array.from(filteredData).slice(0, max_num_el).forEach((item, index) => {
+     let number = (index < 9) ? (index + 1).toString() : '0';
      // Check if the number is already prepended to avoid duplication
      if (!item.numberPrepended) {
          item.label = `${number}. ${item.label}`;
@@ -105,6 +109,13 @@ async function searchPrompt(allPrompts, tabId, tabType){
    });
 
   //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
+
+  // add the prompt_add_tags if add_tags is true and connection_type is not 'chatgpt_web'
+   if(checkDoAddTags()){
+     let number = '0';
+     let item = {label: `${number}. ${browser.i18n.getMessage('prompt_add_tags')}`, id: 'prompt_add_tags', numberPrepended: 'true'};
+     filteredData.unshift(item);
+   }
 
    // Create a div for each filtered result
    filteredData.forEach(item => {
@@ -146,7 +157,9 @@ async function searchPrompt(allPrompts, tabId, tabType){
  });
 
  // Add a keydown event listener to handle arrow navigation and selection
- input.addEventListener('keydown', function (e) {
+ input.addEventListener('keydown', async function (e) {
+
+   let prompt_add_tags = document.getElementById('prompt_add_tags-item');
  
    const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
    if ((autocompleteList.style.display === 'none' || items.length === 0)
@@ -159,7 +172,11 @@ async function searchPrompt(allPrompts, tabId, tabType){
    // Handle number key presses (1-9,0) to select the corresponding item directly
    if (['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) {
      // Map '1' to index 0, '2' to 1, ..., '9' to 8, '0' to 9
-     const numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
+     let numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
+     if(checkDoAddTags()){
+      numIndex = parseInt(e.key, 10);
+     }
+
      if (items[numIndex]) {
          e.preventDefault(); // Prevent any default behavior
          // Dispatch a select_prompt event to simulate a click/select action
@@ -257,4 +274,8 @@ function filterPromptsForTab(prompts_data, filtering){
 
  // Filter the array based on the allowed types
  return prompts_data.filter(prompt => allowedTypes.includes(prompt.type));
+}
+
+function checkDoAddTags(){
+  return add_tags && (connection_type !== "chatgpt_web");
 }
