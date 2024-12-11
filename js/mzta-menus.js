@@ -22,6 +22,7 @@ import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject } from './mzta-utils.js'
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
+import { mzta_specialCommand_AddTags } from './special_commands/mzta-add-tags.js';
  
 export class mzta_Menus {
 
@@ -182,7 +183,15 @@ export class mzta_Menus {
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
-                        let mail_tags = 'test'; // TODO get the tags from the API
+                        let mail_tags = '';
+                        let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,"chatgpt_api",true);
+                        await cmd_addTags.initWorker();
+                        try{
+                            mail_tags = await cmd_addTags.sendPrompt();
+                            // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
+                        }catch(err){
+                            console.error("[ThunderAI] Error getting tags: ", err);
+                        }
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
                         return {ok:'1'};
                         break;
