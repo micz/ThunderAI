@@ -177,6 +177,131 @@ switch (message.command) {
 
   case "getTags":
     console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
+    // Create and append the styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .mzta_dialog {
+        border: none;
+        border-radius: 8px;
+        padding: 0;
+        width: 300px;
+        max-width: 90%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        background-color: var(--dialog-bg-color, #fff);
+        color: var(--dialog-text-color, #000);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+      }
+
+      .mzta_dialog_content {
+        position: relative;
+        padding: 20px;
+      }
+
+      .mzta_dialog_close {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: #007bff;
+        border: none;
+        color: #ffffff;
+        font-size: 14px;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .mzta_dialog_close:hover {
+        background: #0056b3;
+      }
+
+      .mzta_dialog_message {
+        margin-bottom: 40px;
+        font-size: 14px;
+      }
+
+      .mzta_dialog_overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+      }
+    `;
+    document.head.appendChild(style);
+
+    function createDialog(inputString, onSubmit) {
+      // Create the overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'mzta_dialog_overlay';
+      document.body.appendChild(overlay);
+
+      // Create the dialog
+      const dialog = document.createElement('div');
+      dialog.className = 'mzta_dialog';
+
+      // Create the content
+      const content = document.createElement('div');
+      content.className = 'mzta_dialog_content';
+
+      // Parse the input string into labels
+      const words = inputString.split(',').map(word => word.trim());
+
+      // Create the form
+      const form = document.createElement('form');
+
+      words.forEach(word => {
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true; // Checked by default
+        checkbox.value = word;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${word}`));
+        form.appendChild(label);
+      });
+
+      // Add the submit button
+      const submitButton = document.createElement('button');
+      submitButton.type = 'button';
+      submitButton.textContent = 'Submit';
+      submitButton.style.marginRight = '10px';
+      submitButton.addEventListener('click', () => {
+        const selected = Array.from(form.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+        onSubmit(selected);
+        closeDialog();
+      });
+      form.appendChild(submitButton);
+
+      // Add the close button
+      const closeButton = document.createElement('button');
+      closeButton.type = 'button';
+      closeButton.textContent = 'Close';
+      closeButton.className = 'mzta_dialog_close';
+      closeButton.addEventListener('click', closeDialog);
+      form.appendChild(closeButton);
+
+      content.appendChild(form);
+      dialog.appendChild(content);
+      document.body.appendChild(dialog);
+
+      function closeDialog() {
+        document.body.removeChild(dialog);
+        document.body.removeChild(overlay);
+      }
+    }
+
+    // Example usage
+    createDialog(message.tags, (selected) => {
+      console.log('Selected:', selected);
+    });
+
     return Promise.resolve(true);
     break;
 
