@@ -28,8 +28,8 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_debug = await browser.storage.sync.get({do_debug: false});
-let taLog = new taLogger("mzta-background",prefs_debug.do_debug);
+let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: false, connection_type: 'chatgpt_web'});
+let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -211,8 +211,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'reload_menus':
                 async function _reload_menus() {
-                    let prefs = await browser.storage.sync.get({add_tags: false, connection_type: 'chatgpt_web'});
-                    menus.reload(prefs.add_tags && (prefs.connection_type !== "chatgpt_web"));
+                    menus.reload(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
                     taLog.log("Reloading menus");
                     return true;
                 }
@@ -501,5 +500,5 @@ function checkScreenDimensions(prefs){
 }
 
 // Menus handling
-const menus = new mzta_Menus(openChatGPT, prefs_debug.do_debug);
-menus.loadMenus();
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+menus.loadMenus(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
