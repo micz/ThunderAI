@@ -210,9 +210,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _reloadBody(message.tabId);
                 break;
             case 'reload_menus':
-                menus.reload();
-                taLog.log("Reloading menus");
-                return Promise.resolve(true);
+                async function _reload_menus() {
+                    let prefs = await browser.storage.sync.get({add_tags: false, connection_type: 'chatgpt_web'});
+                    menus.reload(prefs.add_tags && (prefs.connection_type !== "chatgpt_web"));
+                    taLog.log("Reloading menus");
+                    return true;
+                }
+                return _reload_menus();
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);

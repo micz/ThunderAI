@@ -51,24 +51,24 @@ export class mzta_Menus {
     }
 
 
-    async initialize() {
+    async initialize(also_special = false) {
         this.allPrompts = [];
         this.rootMenu = [];
         this.shortcutMenu = [];
         this.menu_listeners = {};
-        this.allPrompts = await getPrompts(true,true);   
+        this.allPrompts = await getPrompts(true,also_special);   
         this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
     }
 
-    async reload(){
+    async reload(also_special = false) {
         await browser.menus.removeAll().catch(error => {
                 console.error("[ThunderAI] ERROR removing the menus: ", error);
             });
         this.removeClickListener();
-        this.loadMenus();
+        this.loadMenus(also_special);
     }
 
     addAction = (curr_prompt) => {
@@ -228,8 +228,8 @@ export class mzta_Menus {
         this.shortcutMenu.push(curr_menu_entry);
     }
 
-    async loadMenus() {
-        await this.initialize();
+    async loadMenus(also_special = false) {
+        await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
