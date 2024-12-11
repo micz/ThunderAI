@@ -184,6 +184,7 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
                         let mail_tags = '';
+                        this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,"chatgpt_api",true);
                         await cmd_addTags.initWorker();
                         try{
@@ -192,6 +193,7 @@ export class mzta_Menus {
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
                         }
+                        this.logger.log("mail_tags: " + mail_tags);
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
                         return {ok:'1'};
                         break;
