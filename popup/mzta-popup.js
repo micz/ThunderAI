@@ -81,7 +81,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
    */
 
    // Filter data based on the query
-   const filteredData = allPrompts.filter(item => 
+   let filteredData = allPrompts.filter(item => 
      item.label.toLowerCase().includes(query)
    );
    taLog.log("filteredData: " + JSON.stringify(filteredData));
@@ -96,10 +96,15 @@ async function searchPrompt(allPrompts, tabId, tabType){
    // Prepend numbers to the first 10 items
    // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
    let max_num_el = 10
+   let first_num_el = 0;
    if(checkDoAddTags()){
      max_num_el = 9;
+     first_num_el = 1;
+     filteredData = ensurePromptAddTagsFirst(filteredData);
+     filteredData[0].numberPrepended = 'true';
+     filteredData[0].label = '0. ' + filteredData[0].label;
    }
-   Array.from(filteredData).slice(0, max_num_el).forEach((item, index) => {
+   Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
      let number = (index < 9) ? (index + 1).toString() : '0';
      // Check if the number is already prepended to avoid duplication
      if (!item.numberPrepended) {
@@ -111,11 +116,11 @@ async function searchPrompt(allPrompts, tabId, tabType){
   //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
   // add the prompt_add_tags if add_tags is true and connection_type is not 'chatgpt_web'
-   if(checkDoAddTags()){
-     let number = '0';
-     let item = {label: `${number}. ${browser.i18n.getMessage('prompt_add_tags')}`, id: 'prompt_add_tags', numberPrepended: 'true'};
-     filteredData.unshift(item);
-   }
+  //  if(checkDoAddTags()){
+  //    let number = '0';
+  //    let item = {label: `${number}. ${browser.i18n.getMessage('prompt_add_tags')}`, id: 'prompt_add_tags', numberPrepended: 'true'};
+  //    filteredData.unshift(item);
+  //  }
 
    // Create a div for each filtered result
    filteredData.forEach(item => {
@@ -280,4 +285,19 @@ function filterPromptsForTab(prompts_data, filtering){
 
 function checkDoAddTags(){
   return add_tags && (connection_type !== "chatgpt_web");
+}
+
+function ensurePromptAddTagsFirst(arr) {
+  // Find the index of the object with id "prompt_add_tags"
+  const index = arr.findIndex(item => item.id === "prompt_add_tags");
+
+  // If found and not already the first element
+  if (index !== -1 && index !== 0) {
+    // Remove it from its current position
+    const [promptAddTags] = arr.splice(index, 1);
+    // Add it to the beginning of the array
+    arr.unshift(promptAddTags);
+  }
+
+  return arr;
 }
