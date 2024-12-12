@@ -22,6 +22,7 @@ let menuSendImmediately = false;
 let taLog = console;
 let connection_type = 'chatgpt_web';
 let add_tags = false;
+let tabType;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: false, connection_type: 'chatgpt_web'});
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
     let tabId = reponse.lastShortcutTabId;
-    let tabType = reponse.lastShortcutTabType;
+    tabType = reponse.lastShortcutTabType;
     let filtering = reponse.lastShortcutFiltering;
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
@@ -284,7 +285,7 @@ function filterPromptsForTab(prompts_data, filtering){
 }
 
 function checkDoAddTags(){
-  return add_tags && (connection_type !== "chatgpt_web");
+  return add_tags && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose');
 }
 
 function ensurePromptAddTagsFirst(arr) {
