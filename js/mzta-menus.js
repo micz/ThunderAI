@@ -124,8 +124,22 @@ export class mzta_Menus {
                 let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
                 // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
                 let finalSubs = {};
-                let curr_messages = await browser.mailTabs.getSelectedMessages();
-                let curr_message = curr_messages.messages[0];
+                let curr_messages = null;
+                let curr_message = null;
+                switch(tabs[0].type){
+                    case 'mail':
+                        curr_messages = await browser.mailTabs.getSelectedMessages();
+                        curr_message = curr_messages.messages[0];
+                        break;
+                    case 'messageDisplay':
+                        curr_messages = await messenger.messageDisplay.getDisplayedMessage(tabs[0].id);
+                        curr_message = curr_messages;
+                        break;
+                    case 'messageCompose':
+                        curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
+                        curr_message = curr_messages;
+                        break;
+                }
                 for(let currPH of currPHs){
                     switch(currPH.id){
                         case 'mail_text_body':
