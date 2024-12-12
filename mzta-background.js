@@ -499,6 +499,22 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
+// Register the listener for storage changes
+browser.storage.onChanged.addListener((changes, areaName) => {
+    // Check if the change happened in the 'sync' storage area
+    if (areaName === 'sync') {
+        // Check if 'add_tags' has changed
+        if (changes.add_tags) {
+            menus.reload(changes.add_tags.newValue && (prefs_init.connection_type !== "chatgpt_web"));
+        }
+
+        // Check if 'connection_type' has changed
+        if (changes.connection_type) {
+            menus.reload(prefs_init.add_tags && (changes.connection_type.newValue !== "chatgpt_web"));
+        }
+    }
+});
+
 // Menus handling
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
