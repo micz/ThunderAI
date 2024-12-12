@@ -220,6 +220,21 @@ switch (message.command) {
         font-size: 14px;
       }
 
+      .div_btns{
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --dialog-bg-color: #2e2e2e;
+          --dialog-text-color: #ffffff;
+        }
+      }
+
+      /* Darker overlay for the page background */
       .mzta_dialog_overlay {
         position: fixed;
         top: 0;
@@ -229,24 +244,17 @@ switch (message.command) {
         background: rgba(0, 0, 0, 0.7);
         z-index: 1000;
       }
-
-      .div_btns{
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-      }
     `;
     document.head.appendChild(style);
 
     function createDialog(inputString, onSubmit) {
       // Create the overlay
-      const overlay = document.createElement('div');
-      overlay.className = 'mzta_dialog_overlay';
-      document.body.appendChild(overlay);
+      // const overlay = document.createElement('div');
+      // overlay.className = 'mzta_dialog_overlay';
+      // document.body.appendChild(overlay);
 
       // Create the dialog
-      const dialog = document.createElement('div');
+      const dialog = document.createElement('dialog');
       dialog.className = 'mzta_dialog';
 
       // Create the content
@@ -304,6 +312,8 @@ switch (message.command) {
         document.body.removeChild(dialog);
         document.body.removeChild(overlay);
       }
+
+      dialog.showModal();
     }
 
     // Example usage
