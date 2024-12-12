@@ -10,6 +10,7 @@
         <li>Default prompts text has been translated [<a href="https://github.com/micz/ThunderAI/issues/185">#185</a>].</li>
         <li>Data placeholder for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
         <li>Data placeholder for the single mail tags list added [<a href="https://github.com/micz/ThunderAI/issues/198">#198</a>].</li>
+        <li>Minor bugs fixed.</li>
         <li>...</li>
       </ul>
 <h2>Version 2.3.4 - 06/12/2024</h2>
