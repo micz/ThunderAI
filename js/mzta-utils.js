@@ -178,7 +178,7 @@ export function generateCallID(length = 10) {
 
 export async function getTagsList(){
   let messageTags = {};
-  if(isThunderbird128OrGreater()) {
+  if(await isThunderbird128OrGreater()) {
       messageTags = await browser.messages.tags.list();
   } else {
       messageTags = await browser.messages.listTags();
