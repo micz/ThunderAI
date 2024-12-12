@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, transformTagsLabels } from './mzta-utils.js'
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand_AddTags } from './special_commands/mzta-add-tags.js';
@@ -115,6 +115,7 @@ export class mzta_Menus {
             }
 
             let fullPrompt = '';
+            let full_tags_list = await getTagsList();
             if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
                 // no placeholders, do as usual
                 fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
@@ -151,6 +152,13 @@ export class mzta_Menus {
                             break;
                         case 'junk_score':
                             finalSubs['junk_score'] = curr_message.junkScore;
+                            break;
+                        case 'mail_tags':
+                            let mail_tags_array = await transformTagsLabels(curr_message.tags, full_tags_list[1]);
+                            finalSubs['mail_tags'] = mail_tags_array.join(", ");
+                            break;
+                        case 'full_tags_list':
+                            finalSubs['full_tags_list'] = full_tags_list[0];
                             break;
                         default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;

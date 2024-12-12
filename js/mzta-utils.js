@@ -176,6 +176,37 @@ export function generateCallID(length = 10) {
   return result;
 }
 
+export async function getTagsList(){
+  let messageTags = {};
+  if(isThunderbird128OrGreater()) {
+      messageTags = await browser.messages.tags.list();
+  } else {
+      messageTags = await browser.messages.listTags();
+  }
+  const output = messageTags.map(tag => tag.tag).join(', ');
+
+  const output2 = messageTags.reduce((acc, messageTag) => {
+    acc[messageTag.key] = {
+        tag: messageTag.tag,
+        color: messageTag.color,
+        key: messageTag.key,
+        ordinal: messageTag.ordinal,
+    };
+    return acc;
+  }, {});
+
+  return [output, output2]; // Return the list of tags and the list of tags objects as an array
+}
+
+export async function transformTagsLabels(labels, tags_list) {
+  console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
+  console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  let output = [];
+  for(let label of labels) {
+      output.push(tags_list[label].tag);
+  }
+  return output;
+}
 
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
