@@ -772,7 +772,11 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_maxnum_Info": {
-    "message": "The maximum number of tags proposed by the AI.",
+    "message": "The maximum number of tags proposed by the AI. Set to 0 if you don't want to limit the number of tags.",
     "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Limit the number of tags to",
+    "description": "" 
   }
 }

@@ -192,6 +192,11 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
                         let mail_tags = '';
+                        let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
+                        let add_tags_maxnum = prefs_maxt.add_tags_maxnum;
+                        if(add_tags_maxnum > 0){
+                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
+                        }
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,"chatgpt_api",true);
                         await cmd_addTags.initWorker();
