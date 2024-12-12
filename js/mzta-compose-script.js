@@ -201,10 +201,7 @@ switch (message.command) {
         padding: 20px;
       }
 
-      .mzta_dialog_close {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
+      .mzta_dialog_btn {
         background: #007bff;
         border: none;
         color: #ffffff;
@@ -214,7 +211,7 @@ switch (message.command) {
         border-radius: 4px;
       }
 
-      .mzta_dialog_close:hover {
+      .mzta_dialog_btn:hover {
         background: #0056b3;
       }
 
@@ -231,6 +228,13 @@ switch (message.command) {
         height: 100%;
         background: rgba(0, 0, 0, 0.7);
         z-index: 1000;
+      }
+
+      .div_btns{
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
       }
     `;
     document.head.appendChild(style);
@@ -267,25 +271,30 @@ switch (message.command) {
         form.appendChild(label);
       });
 
-      // Add the submit button
-      const submitButton = document.createElement('button');
-      submitButton.type = 'button';
-      submitButton.textContent = 'Submit';
-      submitButton.style.marginRight = '10px';
-      submitButton.addEventListener('click', () => {
-        const selected = Array.from(form.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
-        onSubmit(selected);
-        closeDialog();
-      });
-      form.appendChild(submitButton);
+      // Add a div for buttons
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.className = 'div_btns';
+      form.appendChild(buttonsDiv);
 
       // Add the close button
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
       closeButton.textContent = 'Close';
-      closeButton.className = 'mzta_dialog_close';
+      closeButton.className = 'mzta_dialog_btn';
       closeButton.addEventListener('click', closeDialog);
-      form.appendChild(closeButton);
+      buttonsDiv.appendChild(closeButton);
+
+      // Add the submit button
+      const submitButton = document.createElement('button');
+      submitButton.type = 'button';
+      submitButton.textContent = 'Submit';
+      submitButton.className = 'mzta_dialog_btn';
+      submitButton.addEventListener('click', () => {
+        const selected = Array.from(form.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+        onSubmit(selected);
+        closeDialog();
+      });
+      buttonsDiv.appendChild(submitButton);
 
       content.appendChild(form);
       dialog.appendChild(content);
