@@ -39,4 +39,5 @@ export const prefs_default = {
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
+    add_tags_hide_exclusions: false,
 }

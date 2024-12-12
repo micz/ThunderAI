@@ -778,5 +778,13 @@
   "prompt_add_tags_maxnum": {
     "message": "Limit the number of tags to",
     "description": "" 
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Hide excluded tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "If checked, the tags that are present in the exclusion list will be hidden in the dialog.",
+    "description": ""
   }
 }

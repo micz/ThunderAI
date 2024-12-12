@@ -220,6 +220,10 @@ switch (message.command) {
         margin-top: 20px;
       }
 
+      .tag_excluded{
+        text-decoration: line-through;
+      }
+
       @media (prefers-color-scheme: dark) {
         :root {
           --dialog-bg-color: #2e2e2e;
@@ -229,7 +233,7 @@ switch (message.command) {
     `;
     document.head.appendChild(style);
 
-    function createDialog(inputString, onSubmit) {
+    async function createDialog(inputString, onSubmit) {
       // Create the dialog
       const tags_dialog = document.createElement('dialog');
       tags_dialog.className = 'mzta_dialog';
@@ -241,19 +245,47 @@ switch (message.command) {
       // Parse the input string into labels
       const words = inputString.split(',').map(word => word.trim());
 
+      console.log(" >>>>>>>>>>>>> words: " + JSON.stringify(words));
+
+      let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false});
+      let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
+
+      console.log(" >>>>>>>>>>>>> prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
+
+      // prefs_excluded_tags.add_tags_exclusions = ['recipient','test'];
+
+      const words_final = words.map(word => {
+        const isExcluded = prefs_excluded_tags.add_tags_exclusions.some(exclusion => 
+          word.includes(exclusion)
+        );
+      
+        return {
+          tag: word,
+          excluded: isExcluded ? 1 : 0
+        };
+      });
+
+      console.log(" >>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
+
       // Create the form
       const form = document.createElement('form');
 
-      words.forEach(word => {
+      words_final.forEach(word => {
         const label = document.createElement('label');
         label.style.display = 'block';
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = true; // Checked by default
-        checkbox.value = word;
+        checkbox.value = word.tag;
         label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(` ${word}`));
-        form.appendChild(label);
+        label.appendChild(document.createTextNode(` ${word.tag}`));
+        if(!word.excluded || (word.excluded && !prefs_tags.add_tags_hide_exclusions)){
+          form.appendChild(label);
+        }
+        if(word.excluded){
+          label.className = 'tag_excluded';
+          checkbox.checked = false;
+        }
       });
 
       // Add a div for buttons
@@ -311,14 +343,14 @@ switch (message.command) {
 
       tags_dialog.style.transform = 'translate(0, 0)';
 
+      return true;
     }
 
     // Example usage
-    createDialog(message.tags, (selected) => {
+    return createDialog(message.tags, (selected) => {
       console.log('Selected:', selected);
     });
 
-    return Promise.resolve(true);
     break;
 
   default:
