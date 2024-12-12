@@ -766,5 +766,13 @@
   "placeholder_full_tags_list": {
     "message": "Existing tags",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Maximum number of tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "The maximum number of tags proposed by the AI.",
+    "description": ""
   }
 }
