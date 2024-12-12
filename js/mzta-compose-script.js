@@ -172,9 +172,11 @@ switch (message.command) {
       .mzta_dialog {
         border: none;
         border-radius: 8px;
-        padding: 0;
         width: 300px;
         max-width: 90%;
+        max-height: 90%;
+        padding: 1em;
+        overflow: hidden;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         background-color: var(--dialog-bg-color, #fff);
         color: var(--dialog-text-color, #000);
@@ -187,7 +189,9 @@ switch (message.command) {
 
       .mzta_dialog_content {
         position: relative;
-        padding: 20px;
+        padding: 0;
+        overflow-y: auto;
+        max-height: 80vh;
       }
 
       .mzta_dialog_btn {
@@ -290,6 +294,23 @@ switch (message.command) {
       }
 
       tags_dialog.showModal();
+
+      // Calcola la posizione centrata nel viewport dell'iframe
+      const iframeHeight = window.innerHeight; // Altezza visibile dell'iframe
+      const iframeWidth = window.innerWidth;   // Larghezza visibile dell'iframe
+
+      const dialogRect = tags_dialog.getBoundingClientRect();
+
+      // Assicurati che il dialog sia centrato nel viewport dell'iframe
+      const top = Math.max(0, (iframeHeight - dialogRect.height) / 2);
+      const left = Math.max(0, (iframeWidth - dialogRect.width) / 2);
+
+      tags_dialog.style.top = `${top}px`;
+      tags_dialog.style.left = `${left}px`;
+      tags_dialog.style.maxHeight = `${iframeHeight - 40}px`;
+
+      tags_dialog.style.transform = 'translate(0, 0)';
+
     }
 
     // Example usage
