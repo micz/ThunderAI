@@ -155,17 +155,6 @@ switch (message.command) {
             --dialog-text-color: #ffffff;
           }
         }
-
-        /* Darker overlay for the page background */
-        .mzta_dialog_overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.7);
-          z-index: 1000;
-        }
       `;
       document.head.appendChild(style);
 
@@ -233,29 +222,13 @@ switch (message.command) {
           --dialog-text-color: #ffffff;
         }
       }
-
-      /* Darker overlay for the page background */
-      .mzta_dialog_overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 1000;
-      }
     `;
     document.head.appendChild(style);
 
     function createDialog(inputString, onSubmit) {
-      // Create the overlay
-      // const overlay = document.createElement('div');
-      // overlay.className = 'mzta_dialog_overlay';
-      // document.body.appendChild(overlay);
-
       // Create the dialog
-      const dialog = document.createElement('dialog');
-      dialog.className = 'mzta_dialog';
+      const tags_dialog = document.createElement('dialog');
+      tags_dialog.className = 'mzta_dialog';
 
       // Create the content
       const content = document.createElement('div');
@@ -305,15 +278,18 @@ switch (message.command) {
       buttonsDiv.appendChild(submitButton);
 
       content.appendChild(form);
-      dialog.appendChild(content);
-      document.body.appendChild(dialog);
+      tags_dialog.appendChild(content);
+      document.body.appendChild(tags_dialog);
 
       function closeDialog() {
-        document.body.removeChild(dialog);
-        document.body.removeChild(overlay);
+        tags_dialog.close();
+        tags_dialog.addEventListener('close', () => {
+          tags_dialog.remove();
+          style.remove();
+        });
       }
 
-      dialog.showModal();
+      tags_dialog.showModal();
     }
 
     // Example usage
