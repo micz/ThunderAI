@@ -264,6 +264,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   });
 
+  document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../addtags/mzta-add-tags.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../addtags/mzta-add-tags.html')});
+      }
+    })
+  });
+
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", showConnectionOptions);
   conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);

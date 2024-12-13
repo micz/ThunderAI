@@ -170,6 +170,10 @@ input.option-input[type="text"]{
     cursor: pointer;
 }
 
+.btn_small{
+    font-size: 0.8em;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);
