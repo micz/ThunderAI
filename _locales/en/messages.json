@@ -786,5 +786,13 @@
   "prefs_OptionText_add_tags_hide_exclusions_Info": {
     "message": "If checked, the tags that are present in the exclusion list will be hidden in the dialog.",
     "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Manage tags info",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Manage Tags Info",
+    "description": ""
   }
 }
