@@ -802,5 +802,17 @@
   "AddTags_prompt_text_title": {
     "message": "Current prompt text",
     "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Exclusion list",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "This is a list of tags that are not allowed to be added to emails.",
+    "description": ""
+  },
+  "save": {
+    "message": "Save",
+    "description": ""
   }
 }

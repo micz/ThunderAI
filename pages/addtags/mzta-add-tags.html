@@ -7,7 +7,22 @@
     <link rel="icon" href="../../images/icon-16px.png">
 </head>
 <body>
-    TEST
+    <div>
+        <h1 class="page_title">__MSG_AddTags_PageTitle__</h1>
+        <p>__MSG_AddTags_info_default__</p>
+    </div>
+    <div id="addtags_prompt_container">
+        __MSG_AddTags_prompt_text_title__
+        <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a></span>
+        <br><textarea id="addtags_prompt_text" rows="15"></textarea>
+        <div class="btn_div"><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
+    </div>
+    <div id="addtags_excl_list_container">
+        __MSG_AddTags_excl_list_title__
+        <br><span class="infoline">__MSG_AddTags_excl_list_infoline__</span>
+        <br><textarea id="addtags_excl_list" rows="15"></textarea>
+        <div class="btn_div"><button id="btn_save_excl_list" disabled>__MSG_save__</button></div>
+    </div>
     <script src="mzta-add-tags.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
 </body>
