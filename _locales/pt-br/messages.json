@@ -680,7 +680,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Agora você pode usar marcadores de posição adicionais!",
+    "message": "Você pode usar marcadores de posição adicionais para dados.",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {

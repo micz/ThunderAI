@@ -680,7 +680,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "You can now use additional data placeholders!",
+    "message": "You can use additional data placeholders.",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1" : {
@@ -793,6 +793,14 @@
   },
   "AddTags_PageTitle": {
     "message": "Manage Tags Settings",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "In this page you can modify the default prompt used to add tags to emails and manage the exclusion list.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Current prompt text",
     "description": ""
   }
 }
