@@ -16,10 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../js/mzta-prompts.js";
-import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../js/mzta-utils.js";
-import { taLogger } from "../js/mzta-logger.js";
-import { getPlaceholders } from "../js/mzta-placeholders.js";
+import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../../js/mzta-utils.js";
+import { taLogger } from "../../js/mzta-logger.js";
+import { getPlaceholders } from "../../js/mzta-placeholders.js";
 
 var promptsList = null;
 var somethingChanged = false;
