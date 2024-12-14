@@ -814,5 +814,9 @@
   "save": {
     "message": "Save",
     "description": ""
+  },
+  "addtags_info_limit_num": {
+    "message": "This statement will be added at the end of the prompt:",
+    "description": ""
   }
 }

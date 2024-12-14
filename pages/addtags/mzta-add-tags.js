@@ -23,8 +23,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
     addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
-
     document.getElementById('addtags_prompt_text').value = addtags_prompt.text;
+
+    let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
+    if(prefs_maxt.add_tags_maxnum > 0){
+        let el_tag_limit = document.getElementById('addtags_info_limit_num');
+        el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_limit_num") + " \"" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_maxt.add_tags_maxnum +"\".";
+        el_tag_limit.style.display = 'block';
+    }
 
     i18n.updateDocument();
 });

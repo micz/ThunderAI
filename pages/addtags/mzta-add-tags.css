@@ -37,3 +37,7 @@
     width: 100%;
     text-align: right;
 }
+
+#addtags_info_limit_num{
+    display: none;
+}
