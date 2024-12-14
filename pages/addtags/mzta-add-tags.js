@@ -16,7 +16,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    let specialPrompts = await getSpecialPrompts();
+    let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+    addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
+
+    document.getElementById('addtags_prompt_text').value = addtags_prompt.text;
+
     i18n.updateDocument();
 });
