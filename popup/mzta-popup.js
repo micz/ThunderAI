@@ -129,6 +129,9 @@ async function searchPrompt(allPrompts, tabId, tabType){
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
+       if(item.id === 'prompt_add_tags'){
+         itemDiv.className += ' prompt_add_tags';
+       }
 
        // Add a mousedown event to select the item
        itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click
