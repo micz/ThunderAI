@@ -166,6 +166,9 @@ const defaultPrompts = [
         is_default: "1",
         is_special: "0",
     },
+];
+
+const specialPrompts = [
     {
         id: 'prompt_add_tags',
         name: "__MSG_prompt_add_tags__",
@@ -178,7 +181,7 @@ const defaultPrompts = [
         define_response_lang: "0",
         is_default: "1",
         is_special: "1",
-    }
+    },
 ];
 
 
@@ -187,7 +190,8 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = false){
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
-    let output = _defaultPrompts.concat(customPrompts);
+    const specialPrompts = await getSpecialPrompts();
+    let output = _defaultPrompts.concat(customPrompts).concat(specialPrompts);
     if(!includeSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }
@@ -294,7 +298,19 @@ export async function setDefaultPromptsProperties(prompts) {
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
-
 export async function setCustomPrompts(prompts) {
     await browser.storage.local.set({_custom_prompt: prompts});
+}
+
+export async function getSpecialPrompts(){
+    let prefs = await browser.storage.local.get({_special_prompts: null});
+    if(prefs._special_prompts === null){
+        return specialPrompts;
+    } else {
+        return prefs._special_prompts;
+    }
+}
+
+export async function setSpecialPrompts(prompts) {
+    await browser.storage.local.set({_special_prompts: prompts});
 }
