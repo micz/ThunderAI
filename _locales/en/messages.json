@@ -788,11 +788,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManageTagsInfo": {
-    "message": "Manage tags info",
+    "message": "Manage tags settings",
     "description": ""
   },
   "AddTags_PageTitle": {
-    "message": "Manage Tags Info",
+    "message": "Manage Tags Settings",
     "description": ""
   }
 }
