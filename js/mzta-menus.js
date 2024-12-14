@@ -212,14 +212,17 @@ export class mzta_Menus {
                             fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
                         }
                         this.logger.log("fullPrompt: " + fullPrompt);
-                        let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,"chatgpt_api",true);
-                        await cmd_addTags.initWorker();
-                        try{
-                            mail_tags = await cmd_addTags.sendPrompt();
-                            // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
-                        }catch(err){
-                            console.error("[ThunderAI] Error getting tags: ", err);
-                        }
+                        // TODO: use the current API, abrto if using chatgpt web
+                        // COMMENTED TO DO TESTS
+                        // let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,"chatgpt_api",true);
+                        // await cmd_addTags.initWorker();
+                        // try{
+                        //     mail_tags = await cmd_addTags.sendPrompt();
+                        //     // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
+                        // }catch(err){
+                        //     console.error("[ThunderAI] Error getting tags: ", err);
+                        // }
+                        mail_tags = "recipients, test, home, work, car, light";
                         this.logger.log("mail_tags: " + mail_tags);
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
                         return {ok:'1'};
