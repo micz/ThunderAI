@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export function textareaAutocomplete(textarea, suggestions) {
+export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
     const container = textarea.closest('.autocomplete-container');
     const autocompleteList = container.querySelector('.autocomplete-list');
     let activeIndex = -1;
@@ -28,8 +28,11 @@ export function textareaAutocomplete(textarea, suggestions) {
 
       if (match) {
         const lastWord = match[0];
-        const tr = textarea.parentNode.parentNode.parentNode;
-        let type = tr.querySelector('.type_output').value
+        let type = type_value;
+        if(type_value === -1) {
+            const tr = textarea.parentNode.parentNode.parentNode;
+            type = tr.querySelector('.type_output').value
+        }
         // console.log(">>>>>>>>> type: " + type);
         // console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
         // console.log(">>>>>>>>> lastWord: " + lastWord);
