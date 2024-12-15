@@ -784,7 +784,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_hide_exclusions_Info": {
-    "message": "If checked, the tags that are present in the exclusion list will be hidden in the dialog.",
+    "message": "If checked, the tags that are present in the exclusion list will be hidden in the confirm dialog.",
     "description": ""
   },
   "prefs_OptionText_btnManageTagsInfo": {
