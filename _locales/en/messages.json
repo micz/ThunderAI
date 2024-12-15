@@ -834,5 +834,13 @@
   "addtags_exclude_tag": {
     "message": "Exclude tag",
     "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "No tags received from the AI.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "No valid tags found, after filtering with the exclusion list.",
+    "description": ""
   }
 }

@@ -167,7 +167,7 @@ switch (message.command) {
   case "getTags":
     console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
-    // These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
+    // ===== These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
     async function addTags_getExclusionList() {
       let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
       console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
@@ -177,7 +177,7 @@ switch (message.command) {
     function addTags_setExclusionList(add_tags_exclusions) {
       browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
     }
-    // ================================================================================
+    // ===================================================================================
 
     // Create and append the styles
     const style = document.createElement('style');
@@ -235,6 +235,10 @@ switch (message.command) {
         font-size: 14px;
       }
 
+      .mzta_dialog_message2{
+        margin: 20px auto;
+      }
+
       .div_btns{
         width: 90%;
         display: flex;
@@ -286,31 +290,46 @@ switch (message.command) {
       const content = document.createElement('div');
       content.className = 'mzta_dialog_content';
 
+      inputString = ''; //TEST
+      let no_submit = false;
+
       // Parse the input string into labels
-      const words = inputString.split(',').map(word => word.trim());
+      const words = inputString.split(',').map(word => word.trim()).filter(word => word !== '');
 
       console.log(">>>>>>>>>>>>> words: " + JSON.stringify(words));
+
+      if(words.length == 0){
+        const message = document.createElement('div');
+        message.className = 'mzta_dialog_message2';
+        message.textContent = browser.i18n.getMessage("addtags_no_tags_received");
+        content.appendChild(message);
+        no_submit = true;
+      }
 
       let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false});
       let add_tags_exclusions_list = await addTags_getExclusionList();
 
       console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
-      const words_final = words.map(word => {
-        const isExcluded = add_tags_exclusions_list.some(exclusion => 
-          word.includes(exclusion)
-        );
-      
-        return {
-          tag: word,
-          excluded: isExcluded ? 1 : 0
-        };
-      });
+      const words_final = words
+        .filter(word => word !== '')
+        .map(word => {
+          const isExcluded = add_tags_exclusions_list.some(exclusion => 
+            word.includes(exclusion)
+          );
+
+          return {
+            tag: word,
+            excluded: isExcluded ? 1 : 0
+          };
+        });
 
       console.log(">>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
 
       // Create the form
       const form = document.createElement('form');
+
+      let tags_shown = 0;
 
       words_final.forEach(word => {
         const label = document.createElement('label');
@@ -346,6 +365,7 @@ switch (message.command) {
         label.appendChild(img);
         label.appendChild(document.createTextNode(` ${word.tag}`));
         if(!word.excluded || (word.excluded && !prefs_tags.add_tags_hide_exclusions)){
+          tags_shown++;
           form.appendChild(label);
         }
         if(word.excluded){
@@ -353,6 +373,14 @@ switch (message.command) {
           checkbox.checked = false;
         }
       });
+
+      if((!no_submit) && (tags_shown == 0)){
+        const message = document.createElement('div');
+        message.className = 'mzta_dialog_message2';
+        message.textContent = browser.i18n.getMessage("addtags_no_valid_tags");
+        content.appendChild(message);
+        no_submit = true;
+      }
 
       // Add a div for buttons
       const buttonsDiv = document.createElement('div');
@@ -367,18 +395,20 @@ switch (message.command) {
       closeButton.addEventListener('click', closeDialog);
       buttonsDiv.appendChild(closeButton);
 
-      // Add the submit button
-      const submitButton = document.createElement('button');
-      submitButton.type = 'button';
-      submitButton.id = 'mzta_dialog_submit';
-      submitButton.textContent = 'Submit';
-      submitButton.className = 'mzta_dialog_btn';
-      submitButton.addEventListener('click', () => {
-        const selected = Array.from(form.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
-        onSubmit(selected);
-        closeDialog();
-      });
-      buttonsDiv.appendChild(submitButton);
+      if(!no_submit){
+        // Add the submit button
+        const submitButton = document.createElement('button');
+        submitButton.type = 'button';
+        submitButton.id = 'mzta_dialog_submit';
+        submitButton.textContent = 'Submit';
+        submitButton.className = 'mzta_dialog_btn';
+        submitButton.addEventListener('click', () => {
+          const selected = Array.from(form.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+          onSubmit(selected);
+          closeDialog();
+        });
+        buttonsDiv.appendChild(submitButton);
+      }
 
       content.appendChild(form);
       tags_dialog.appendChild(content);
