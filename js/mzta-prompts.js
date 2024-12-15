@@ -191,7 +191,7 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = false){
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
-    let output = _defaultPrompts.concat(customPrompts).concat(specialPrompts);
+    let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
     if(!includeSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }
