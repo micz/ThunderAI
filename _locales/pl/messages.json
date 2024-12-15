@@ -680,7 +680,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Możesz teraz używać dodatkowych symboli zastępczych danych!",
+    "message": "Możesz użyć dodatkowych symboli zastępczych danych.",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
