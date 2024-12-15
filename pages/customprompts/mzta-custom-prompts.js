@@ -118,7 +118,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
     
-    textareas.forEach(textarea => textareaAutocomplete(textarea, autocompleteSuggestions));
+    textareas.forEach(textarea => {
+        textareaAutocomplete(textarea, autocompleteSuggestions);
+textareas.forEach(textarea => {
+    textarea.addEventListener('input', (e) => {
+        checkPromptsConfigForPlaceholders(e.target);
+    });
+    textareaAutocomplete(textarea, autocompleteSuggestions);
+});
+
+    });
 
     // document.addEventListener('click', (e) => {
     //     // Check if the click was outside the textarea or suggestion list
@@ -689,8 +698,6 @@ function textareaAutocomplete(textarea, suggestions) {
       const cursorPosition = textarea.selectionStart;
       const text = textarea.value.substring(0, cursorPosition);
       const match = text.match(/{%[^\s]*$/);
-
-      checkPromptsConfigForPlaceholders(textarea);
 
       if (match) {
         const lastWord = match[0];
