@@ -425,13 +425,11 @@ switch (message.command) {
 
       tags_dialog.showModal();
 
-      // Calcola la posizione centrata nel viewport dell'iframe
-      const iframeHeight = window.innerHeight; // Altezza visibile dell'iframe
-      const iframeWidth = window.innerWidth;   // Larghezza visibile dell'iframe
+      const iframeHeight = window.innerHeight;
+      const iframeWidth = window.innerWidth;
 
       const dialogRect = tags_dialog.getBoundingClientRect();
 
-      // Assicurati che il dialog sia centrato nel viewport dell'iframe
       const top = Math.max(0, (iframeHeight - dialogRect.height) / 2);
       const left = Math.max(0, (iframeWidth - dialogRect.width) / 2);
 
