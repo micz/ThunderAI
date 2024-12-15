@@ -121,13 +121,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
-textareas.forEach(textarea => {
-    textarea.addEventListener('input', (e) => {
-        checkPromptsConfigForPlaceholders(e.target);
-    });
-    textareaAutocomplete(textarea, autocompleteSuggestions);
-});
-
+        textareas.forEach(textarea => {
+            textarea.addEventListener('input', (e) => {
+                checkPromptsConfigForPlaceholders(e.target);
+            });
+        textareaAutocomplete(textarea, autocompleteSuggestions);
+        });
     });
 
     // document.addEventListener('click', (e) => {
