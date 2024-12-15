@@ -55,12 +55,12 @@
                 break;
             case "ollama_api": {
                 let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
-                worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, do_debug: this.do_debug, i18nStrings: ''});
+                this.worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
-                worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
+                this.worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
         }
