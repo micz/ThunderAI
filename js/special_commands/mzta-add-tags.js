@@ -60,6 +60,7 @@
             }
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
+                console.log(">>>>>>>>>>>> [ThunderAI] prefs_api: " + JSON.stringify(prefs_api));
                 this.worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
@@ -73,6 +74,8 @@
                 const { type, payload } = event.data;
                 // console.log(`>>>>>>>>>>>> [Worker Message Received] type: ${type}`, payload);
                 switch (type) {
+                    case 'messageSent':
+                        break;
                     case 'newToken':
                         this.full_message += payload.token;
                         break;
@@ -82,7 +85,7 @@
                         break;
                     case 'error':
                         console.error('[ThunderAI] Error from API worker:', payload);
-                        reject(payload); // Reject the promise in case of error
+                        reject(new Error(`[ThunderAI] Error from API worker: ${payload}`)); // Use a single error object
                         break;
                     default:
                         console.error('[ThunderAI] Unknown event type from API worker:', type);
