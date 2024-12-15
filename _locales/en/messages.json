@@ -830,5 +830,9 @@
   "addtags_dialog_title": {
     "message": "Add tags to the email",
     "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Exclude tag",
+    "description": ""
   }
 }

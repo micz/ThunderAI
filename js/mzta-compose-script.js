@@ -166,6 +166,19 @@ switch (message.command) {
 
   case "getTags":
     console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
+
+    // These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
+    async function addTags_getExclusionList() {
+      let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
+      console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
+      return prefs_excluded_tags.add_tags_exclusions;
+    }
+
+    function addTags_setExclusionList(add_tags_exclusions) {
+      browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
+    }
+    // ================================================================================
+
     // Create and append the styles
     const style = document.createElement('style');
     style.textContent = `
@@ -240,6 +253,16 @@ switch (message.command) {
         text-align: center;
       }
 
+      img.exclude-tag-icon{
+        width: 16px;
+        height: 16px;
+        margin-right: 2px;
+        margin-left: 2px;
+        position: relative;
+        top: 3px;
+        cursor: pointer;
+      }
+
       @media (prefers-color-scheme: dark) {
         :root {
           --dialog-bg-color: #2e2e2e;
@@ -266,17 +289,15 @@ switch (message.command) {
       // Parse the input string into labels
       const words = inputString.split(',').map(word => word.trim());
 
-      console.log(" >>>>>>>>>>>>> words: " + JSON.stringify(words));
+      console.log(">>>>>>>>>>>>> words: " + JSON.stringify(words));
 
       let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false});
-      let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
+      let add_tags_exclusions_list = await addTags_getExclusionList();
 
-      console.log(" >>>>>>>>>>>>> prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
-
-      // prefs_excluded_tags.add_tags_exclusions = ['recipient','test'];
+      console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
       const words_final = words.map(word => {
-        const isExcluded = prefs_excluded_tags.add_tags_exclusions.some(exclusion => 
+        const isExcluded = add_tags_exclusions_list.some(exclusion => 
           word.includes(exclusion)
         );
       
@@ -286,7 +307,7 @@ switch (message.command) {
         };
       });
 
-      console.log(" >>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
+      console.log(">>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
 
       // Create the form
       const form = document.createElement('form');
@@ -298,7 +319,31 @@ switch (message.command) {
         checkbox.type = 'checkbox';
         checkbox.checked = true; // Checked by default
         checkbox.value = word.tag;
+        // Add an image to the checkbox label
+        const img = document.createElement('img');
+        img.src = browser.runtime.getURL("/images/exclude-tag.svg");
+        img.alt = browser.i18n.getMessage("addtags_exclude_tag");
+        img.title = browser.i18n.getMessage("addtags_exclude_tag");
+        img.className = 'exclude-tag-icon';
+        img.addEventListener('click', () => {
+          if (!label.classList.contains('tag_excluded')) {
+            label.classList.add('tag_excluded');
+            if (!add_tags_exclusions_list.includes(word.tag)) {
+              add_tags_exclusions_list.push(word.tag);
+              addTags_setExclusionList(add_tags_exclusions_list);
+            }
+          } else {
+            label.classList.remove('tag_excluded');
+            const idx = add_tags_exclusions_list.indexOf(word.tag);
+            if (idx > -1) {
+              add_tags_exclusions_list.splice(idx, 1);
+              addTags_setExclusionList(add_tags_exclusions_list);
+            }
+          }
+        });
+
         label.appendChild(checkbox);
+        label.appendChild(img);
         label.appendChild(document.createTextNode(` ${word.tag}`));
         if(!word.excluded || (word.excluded && !prefs_tags.add_tags_hide_exclusions)){
           form.appendChild(label);
@@ -316,6 +361,7 @@ switch (message.command) {
       // Add the close button
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
+      closeButton.id = 'mzta_dialog_close';
       closeButton.textContent = 'Close';
       closeButton.className = 'mzta_dialog_btn mzta_dialog_btn_margin';
       closeButton.addEventListener('click', closeDialog);
@@ -324,6 +370,7 @@ switch (message.command) {
       // Add the submit button
       const submitButton = document.createElement('button');
       submitButton.type = 'button';
+      submitButton.id = 'mzta_dialog_submit';
       submitButton.textContent = 'Submit';
       submitButton.className = 'mzta_dialog_btn';
       submitButton.addEventListener('click', () => {
@@ -378,5 +425,5 @@ switch (message.command) {
     // do nothing
     return Promise.resolve(false);
     break;
-}    
+}
 });
