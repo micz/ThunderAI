@@ -806,22 +806,27 @@ function textareaAutocomplete(textarea, suggestions) {
 
 function checkPromptsConfigForPlaceholders(textarea){
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
+    let tr_ancestor = textarea.closest('tr');
+    let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
     if(String(textarea.value).indexOf('{%additional_text%}') != -1){
-        let tr_ancestor = textarea.closest('tr');
-        let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
         if(!need_custom_text_element.checked){
             need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
         }else{
             need_custom_text_element.closest('.need_custom_text_span').style.border = '';
         }
+      }else{
+        need_custom_text_element.closest('.need_custom_text_span').style.border = '';
       }
+
+      let tr_ancestor2 = textarea.closest('tr');
+      let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
       if(String(textarea.value).indexOf('{%selected_text%}') != -1){
-        let tr_ancestor = textarea.closest('tr');
-        let selected_text_element = tr_ancestor.querySelector('.need_selected') || tr_ancestor.querySelector('.need_selected_new');
         if(!selected_text_element.checked){
             selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
         }else{
             selected_text_element.closest('.need_selected_span').style.border = '';
         }
+      }else{
+        selected_text_element.closest('.need_selected_span').style.border = '';
       }
 }
