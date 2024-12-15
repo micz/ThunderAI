@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     addtags_textarea.addEventListener('input', (event) => {
         addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
         addtags_save_btn.disabled = (event.target.value === addtags_prompt.text);
+        if(addtags_save_btn.disabled){
+            document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('addtags_prompt_unsaved').classList.remove('hidden');
+        }
     });
 
     addtags_reset_btn.addEventListener('click', () => {
