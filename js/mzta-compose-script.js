@@ -170,12 +170,14 @@ switch (message.command) {
     const style = document.createElement('style');
     style.textContent = `
       .mzta_dialog {
+        display: flex;
+        flex-direction: column;
         border: none;
         border-radius: 8px;
         width: 300px;
         max-width: 90%;
         max-height: 90%;
-        padding: 1em;
+        padding: 0.5em;
         overflow: hidden;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         background-color: var(--dialog-bg-color, #fff);
@@ -192,6 +194,8 @@ switch (message.command) {
         padding: 0;
         overflow-y: auto;
         max-height: 80vh;
+        flex: 1;
+        margin-bottom: 20px;
       }
 
       .mzta_dialog_btn {
@@ -199,9 +203,14 @@ switch (message.command) {
         border: none;
         color: #ffffff;
         font-size: 14px;
-        padding: 8px 12px;
+        padding: 4px 6px;
         cursor: pointer;
         border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .mzta_dialog_btn_margin{
+        margin-right: 5px;
       }
 
       .mzta_dialog_btn:hover {
@@ -214,14 +223,21 @@ switch (message.command) {
       }
 
       .div_btns{
-        width: 100%;
+        width: 90%;
         display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
+        justify-content: center;
+        position: fixed;
+        bottom: 4px;
       }
 
       .tag_excluded{
         text-decoration: line-through;
+      }
+
+      h2.addtags{
+        margin:0;
+        font-size: 1.2em;
+        text-align: center;
       }
 
       @media (prefers-color-scheme: dark) {
@@ -237,6 +253,11 @@ switch (message.command) {
       // Create the dialog
       const tags_dialog = document.createElement('dialog');
       tags_dialog.className = 'mzta_dialog';
+
+      const title = document.createElement('h2');
+      title.className = 'addtags';
+      title.textContent = browser.i18n.getMessage("addtags_dialog_title");
+      tags_dialog.appendChild(title);
 
       // Create the content
       const content = document.createElement('div');
@@ -291,13 +312,12 @@ switch (message.command) {
       // Add a div for buttons
       const buttonsDiv = document.createElement('div');
       buttonsDiv.className = 'div_btns';
-      form.appendChild(buttonsDiv);
-
+  
       // Add the close button
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
       closeButton.textContent = 'Close';
-      closeButton.className = 'mzta_dialog_btn';
+      closeButton.className = 'mzta_dialog_btn mzta_dialog_btn_margin';
       closeButton.addEventListener('click', closeDialog);
       buttonsDiv.appendChild(closeButton);
 
@@ -315,6 +335,7 @@ switch (message.command) {
 
       content.appendChild(form);
       tags_dialog.appendChild(content);
+      tags_dialog.appendChild(buttonsDiv);
       document.body.appendChild(tags_dialog);
 
       function closeDialog() {
