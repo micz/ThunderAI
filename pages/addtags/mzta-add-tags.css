@@ -23,7 +23,8 @@
 
 .btn_div{
     width: 100%;
-    text-align: right;
+    display: flex;
+    justify-content: space-between;
 }
 
 #addtags_info_limit_num{

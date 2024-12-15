@@ -818,5 +818,9 @@
   "addtags_info_limit_num": {
     "message": "This statement will be added at the end of the prompt:",
     "description": ""
+  },
+  "reset_default": {
+    "message": "Reset to default",
+    "description": ""
   }
 }

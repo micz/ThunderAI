@@ -24,9 +24,21 @@ let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    let addtags_textarea = document.getElementById('addtags_prompt_text');
+    let addtags_reset_btn = document.getElementById('btn_reset_prompt');
+
+    addtags_textarea.addEventListener('input', (event) => {
+        addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
+    });
+
+    addtags_reset_btn.addEventListener('click', () => {
+        addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
+        addtags_reset_btn.disabled = true;
+    });
+
+
     let specialPrompts = await getSpecialPrompts();
     let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
-    let addtags_textarea = document.getElementById('addtags_prompt_text');
     addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
     addtags_textarea.value = addtags_prompt.text;
 
