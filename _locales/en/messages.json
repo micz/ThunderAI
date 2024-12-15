@@ -748,7 +748,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_Info": {
-    "message": "If checked, a menu item will be added to the dynamic menu to add tags to emails.",
+    "message": "If checked, a menu item will be added to the menu to add tags to emails.",
     "description": ""
   },
   "prompt_add_tags": {
