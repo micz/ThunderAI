@@ -14,7 +14,11 @@
     <div id="addtags_prompt_container">
         __MSG_AddTags_prompt_text_title__
         <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a></span>
-        <br><textarea id="addtags_prompt_text" rows="15"></textarea>
+        <br>
+        <div class="autocomplete-container">
+            <textarea id="addtags_prompt_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
+        </div>
         <div id="addtags_info_limit_num"></div>
         <div class="btn_div"><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
     </div>

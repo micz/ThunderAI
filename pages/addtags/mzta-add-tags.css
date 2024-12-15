@@ -1,15 +1,3 @@
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-}
-
 #addtags_prompt_container{
     width: 90%;
     margin: 20px auto;
@@ -40,4 +28,68 @@
 
 #addtags_info_limit_num{
     display: none;
+}
+
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: small;
+}
+
+.autocomplete-list li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.autocomplete-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.autocomplete-list li.active {
+    background-color: #ddd;
+}
+
+.hidden {
+    display: none;
+}
+
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1C1B22;
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+    a:active { color: #66B1FF; }
+
+    .autocomplete-list {
+        background-color: #2E2F36;
+        border: 1px solid #2E2F36;
+    }
+    
+    .autocomplete-list li:hover {
+        background-color: #4c4e58;
+    }
+    
+    .autocomplete-list li.active {
+        background-color: #4c4e58;
+    }
 }

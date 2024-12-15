@@ -17,13 +17,18 @@
  */
 
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
+import { getPlaceholders } from "../../js/mzta-placeholders.js";
+import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+
+let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
     let specialPrompts = await getSpecialPrompts();
     let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+    let addtags_textarea = document.getElementById('addtags_prompt_text');
     addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
-    document.getElementById('addtags_prompt_text').value = addtags_prompt.text;
+    addtags_textarea.value = addtags_prompt.text;
 
     let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
     if(prefs_maxt.add_tags_maxnum > 0){
@@ -31,6 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_limit_num") + " \"" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_maxt.add_tags_maxnum +"\".";
         el_tag_limit.style.display = 'block';
     }
+
+    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'selected_text' || p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     i18n.updateDocument();
 });
