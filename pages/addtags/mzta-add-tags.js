@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
         setSpecialPrompts(specialPrompts);
         addtags_save_btn.disabled = true;
+        browser.runtime.sendMessage({command: "reload_menus"});
     });
 
     if(addtags_prompt.text === 'prompt_add_tags_full_text'){
