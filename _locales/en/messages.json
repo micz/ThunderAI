@@ -822,5 +822,9 @@
   "reset_default": {
     "message": "Reset to default",
     "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Add a word per line, or separated by a comma.",
+    "description": ""
   }
 }

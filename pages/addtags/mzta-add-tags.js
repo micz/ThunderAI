@@ -19,10 +19,13 @@
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
 
 let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    i18n.updateDocument();
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
@@ -69,5 +72,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'selected_text' || p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
-    i18n.updateDocument();
+    let excl_list_textarea = document.getElementById('addtags_excl_list');
+    let excl_list_save_btn = document.getElementById('btn_save_excl_list');
+
+    let excl_list_value = await addTags_getExclusionList();
+    let excl_list_string = excl_list_value.join('\n');
+
+    excl_list_textarea.value = excl_list_string;
+
+    excl_list_textarea.addEventListener('input', (event) => {
+        excl_list_save_btn.disabled = (event.target.value === excl_list_string);
+        if(excl_list_save_btn.disabled){
+            document.getElementById('excl_list_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('excl_list_unsaved').classList.remove('hidden');
+        }
+    });
+
+    excl_list_save_btn.addEventListener('click', () => {
+        let excl_array_new = excl_list_textarea.value.split(/[\n,]+/);
+        excl_array_new = Array.from(new Set(excl_array_new.map(item => item.trim().toLowerCase()))).sort();
+        addTags_setExclusionList(excl_array_new);
+        excl_list_save_btn.disabled = true;
+        excl_list_textarea.value = excl_array_new.join('\n');
+    });
+
 });
