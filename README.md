@@ -74,6 +74,7 @@ Are you using this addon in your Thunderbird?
 - French (fr): Generated automatically
 - German (de): Generated automatically
 - Italian (it): [Mic](https://github.com/micz/)
+- Polski (pl): [neexpl](https://github.com/neexpl)
 - Português Brasileiro (pt-br): Bruno Pereira de Souza
 
 
