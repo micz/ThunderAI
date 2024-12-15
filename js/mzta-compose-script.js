@@ -61,46 +61,12 @@ switch (message.command) {
   case 'sendAlert':
     //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
     if(message.curr_tab_type == 'mail'){  // workaround for Thunderbird bug not showing the alert
-      // Create dialog elements
-      const dialog_sendAlert = window.document.createElement('dialog');
-      dialog_sendAlert.classList.add('mzta_dialog');
-
-      const content_sendAlert = window.document.createElement('div');
-      content_sendAlert.classList.add('mzta_dialog_content');
-
-      // Create close button
-      const closeButton_sendAlert = window.document.createElement('button');
-      closeButton_sendAlert.classList.add('mzta_dialog_close');
-      closeButton_sendAlert.id = 'mzta_dialog_close';
-      closeButton_sendAlert.textContent = 'Close';
-
-      // Create message element
-      const message_sendAlert = window.document.createElement('div');
-      message_sendAlert.classList.add('mzta_dialog_message');
-      message_sendAlert.textContent = message.message;
-
-      // Append elements to the dialog
-      content_sendAlert.appendChild(message_sendAlert);
-      content_sendAlert.appendChild(closeButton_sendAlert);
-      dialog_sendAlert.appendChild(content_sendAlert);
-      window.document.body.appendChild(dialog_sendAlert);
-
-      // Show the dialog
-      dialog_sendAlert.showModal();
-
-      // Close dialog on button click and remove elements from the DOM
-      closeButton_sendAlert.onclick = () => {
-        dialog_sendAlert.close();
-        dialog_sendAlert.addEventListener('close', () => {
-          dialog_sendAlert.remove();
-          style.remove();
-        });
-      };
-
       // CSS styles for Thunderbird with support for light and dark themes
       const style = document.createElement('style');
       style.textContent = `
         .mzta_dialog {
+          display: flex;
+          flex-direction: column;
           border: none;
           border-radius: 8px;
           padding: 0;
@@ -118,18 +84,23 @@ switch (message.command) {
 
         .mzta_dialog_content {
           position: relative;
-          padding: 20px;
+          padding: 10px;
+          overflow-y: auto;
+          overflow-x: clip;
+          max-height: 80vh;
+          flex: 1;
+          margin-bottom: 34px;
         }
 
         .mzta_dialog_close {
           position: absolute;
-          bottom: 10px;
-          right: 10px;
+          bottom: 2px;
+          right: 2px;
           background: #007bff;
           border: none;
           color: #ffffff;
           font-size: 14px;
-          padding: 8px 12px;
+          padding: 4px 6px;
           cursor: pointer;
           border-radius: 4px;
         }
@@ -143,7 +114,20 @@ switch (message.command) {
           font-size: 14px;
         }
 
-        /* Theme support */
+        h2.addtags{
+          margin:0;
+          font-size: 1.2em;
+          text-align: center;
+        }
+
+        .div_btns{
+          width: 90%;
+          display: flex;
+          justify-content: center;
+          position: fixed;
+          bottom: 4px;
+        }
+
         :root {
           --dialog-bg-color: #ffffff;
           --dialog-text-color: #000000;
@@ -157,6 +141,66 @@ switch (message.command) {
         }
       `;
       document.head.appendChild(style);
+
+      // Create dialog elements
+      const dialog_sendAlert = window.document.createElement('dialog');
+      dialog_sendAlert.classList.add('mzta_dialog');
+
+      const title = document.createElement('h2');
+      title.className = 'addtags';
+      title.textContent = browser.i18n.getMessage("thunderai_error_title");
+      dialog_sendAlert.appendChild(title);
+
+      const content_sendAlert = window.document.createElement('div');
+      content_sendAlert.classList.add('mzta_dialog_content');
+
+      // Add a div for buttons
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.className = 'div_btns';
+
+      // Create close button
+      const closeButton_sendAlert = window.document.createElement('button');
+      closeButton_sendAlert.classList.add('mzta_dialog_close');
+      closeButton_sendAlert.id = 'mzta_dialog_close';
+      closeButton_sendAlert.textContent = 'Close';
+      buttonsDiv.appendChild(closeButton_sendAlert);
+
+      // Create message element
+      const message_sendAlert = window.document.createElement('div');
+      message_sendAlert.classList.add('mzta_dialog_message');
+      message_sendAlert.textContent = message.message;
+
+      // Append elements to the dialog
+      content_sendAlert.appendChild(message_sendAlert);
+      dialog_sendAlert.appendChild(content_sendAlert);
+      dialog_sendAlert.appendChild(buttonsDiv);
+      window.document.body.appendChild(dialog_sendAlert);
+
+      // Show the dialog
+      dialog_sendAlert.showModal();
+
+      // Close dialog on button click and remove elements from the DOM
+      closeButton_sendAlert.onclick = () => {
+        dialog_sendAlert.close();
+        dialog_sendAlert.addEventListener('close', () => {
+          dialog_sendAlert.remove();
+          style.remove();
+        });
+      };
+
+      const iframeHeight = window.innerHeight;
+      const iframeWidth = window.innerWidth;
+
+      const dialogRect = dialog_sendAlert.getBoundingClientRect();
+
+      const top = Math.max(0, (iframeHeight - dialogRect.height) / 2);
+      const left = Math.max(0, (iframeWidth - dialogRect.width) / 2);
+
+      dialog_sendAlert.style.top = `${top}px`;
+      dialog_sendAlert.style.left = `${left}px`;
+      dialog_sendAlert.style.maxHeight = `${iframeHeight - 40}px`;
+
+      dialog_sendAlert.style.transform = 'translate(0, 0)';
 
     }else{
       alert(message.message);
@@ -290,7 +334,6 @@ switch (message.command) {
       const content = document.createElement('div');
       content.className = 'mzta_dialog_content';
 
-      inputString = ''; //TEST
       let no_submit = false;
 
       // Parse the input string into labels

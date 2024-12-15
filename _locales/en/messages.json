@@ -842,5 +842,9 @@
   "addtags_no_valid_tags": {
     "message": "No valid tags found, after filtering with the exclusion list.",
     "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "ThunderAI Error",
+    "description": ""
   }
 }
