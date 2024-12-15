@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
         setSpecialPrompts(specialPrompts);
         addtags_save_btn.disabled = true;
+        document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
         browser.runtime.sendMessage({command: "reload_menus"});
     });
 
@@ -62,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
     }
     addtags_textarea.value = addtags_prompt.text;
+    addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
 
     let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
     if(prefs_maxt.add_tags_maxnum > 0){
@@ -96,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
         excl_list_textarea.value = excl_array_new.join('\n');
+        document.getElementById('excl_list_unsaved').classList.add('hidden');
     });
 
 });
