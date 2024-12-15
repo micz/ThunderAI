@@ -6,11 +6,9 @@ It enables users to analyse, write, correct, and optimize their emails, facilita
 
 ThunderAI is a tool for anyone looking to improve their email quality, both in content and grammar, making the writing process quicker and more intuitive. 
 
-You can also define, export and import your own **custom prompts**!
-[Find out how!](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)
+You can also define, export and import your own **[custom prompts](https://micz.it/thunderbird-addon-thunderai/custom-prompts/)**!
 
-In any custom prompt you can use additional **data placeholders**!
-[Find out how!](https://micz.it/thunderbird-addon-thunderai/data-placeholders/)
+In any custom prompt you can use additional **[data placeholders](https://micz.it/thunderbird-addon-thunderai/data-placeholders/)**!
 
 
 <br>
@@ -19,16 +17,16 @@ In any custom prompt you can use additional **data placeholders**!
 > [!TIP]
 > **Using ChatGPT**
 > 
-> There is no need for an API key and is possibile to use this extension even with a free account, using the web interface!
+> There is no need for an API key and is possibile to use this extension even with a free account, using the **ChatGPT web interface**!
 > 
-> Starting from version 2.0.0, if you want to connect with the OpenAI API integration, now you can use an API Key!
+> If you want to connect with the OpenAI API integration, instead, you can use an **API Key**!
 
 <br>
 
 > [!TIP]
 > **Using Ollama**
 >
-> From version 2.1.0 is possible to use a local Ollama server!
+> It's also possible to use a local Ollama server!
 >
 > Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
 > 
@@ -39,7 +37,8 @@ In any custom prompt you can use additional **data placeholders**!
 > [!TIP]
 > **Using an OpenAI Compatible API**
 >
-> From version 2.2.0 is possible to use a local OpenAI Compatible API server, like LM Studio!
+> You can also use a local OpenAI Compatible API server, like LM Studio!
+> 
 > There is also an option to remove the "v1" segment from the API url, if needed.
 
 
@@ -78,13 +77,6 @@ Are you using this addon in your Thunderbird?
 - Português Brasileiro (pt-br): Bruno Pereira de Souza
 
 
-<br>
-
-### Miscellaneous
-- <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
-- <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
-- <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
-
 
 <br>
 
@@ -93,3 +85,12 @@ Are you using this addon in your Thunderbird?
 - <a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
+
+
+<br>
+
+
+### Miscellaneous
+- <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
+- <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
+- <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
