@@ -312,5 +312,6 @@ export async function getSpecialPrompts(){
 }
 
 export async function setSpecialPrompts(prompts) {
+    // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
     await browser.storage.local.set({_special_prompts: prompts});
 }

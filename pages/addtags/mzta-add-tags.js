@@ -25,21 +25,33 @@ let autocompleteSuggestions = [];
 document.addEventListener('DOMContentLoaded', async () => {
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
+    let addtags_save_btn = document.getElementById('btn_save_prompt');
     let addtags_reset_btn = document.getElementById('btn_reset_prompt');
+
+    let specialPrompts = await getSpecialPrompts();
+    let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
     addtags_textarea.addEventListener('input', (event) => {
         addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
+        addtags_save_btn.disabled = (event.target.value === addtags_prompt.text);
     });
 
     addtags_reset_btn.addEventListener('click', () => {
         addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
         addtags_reset_btn.disabled = true;
+        let event = new Event('input', { bubbles: true, cancelable: true });
+        addtags_textarea.dispatchEvent(event);
     });
 
+    addtags_save_btn.addEventListener('click', () => {
+        specialPrompts.find(prompt => prompt.id === 'prompt_add_tags').text = addtags_textarea.value;
+        setSpecialPrompts(specialPrompts);
+        addtags_save_btn.disabled = true;
+    });
 
-    let specialPrompts = await getSpecialPrompts();
-    let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
-    addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
+    if(addtags_prompt.text === 'prompt_add_tags_full_text'){
+        addtags_prompt.text = browser.i18n.getMessage(addtags_prompt.text);
+    }
     addtags_textarea.value = addtags_prompt.text;
 
     let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
