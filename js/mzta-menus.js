@@ -230,6 +230,7 @@ export class mzta_Menus {
                         //     return {ok:'0'};
                         // }
                         this.logger.log("mail_tags: " + mail_tags);
+                        console.log(">>>>>>>>>>>> full_tags_list: " + JSON.stringify(full_tags_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
                         return {ok:'1'};
                         break;
