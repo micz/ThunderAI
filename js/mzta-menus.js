@@ -218,17 +218,17 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
-                        // mail_tags = "recipients, test, home, work, car, light";
-                        let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
-                        await cmd_addTags.initWorker();
-                        try{
-                            mail_tags = await cmd_addTags.sendPrompt();
-                            // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
-                        }catch(err){
-                            console.error("[ThunderAI] Error getting tags: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
-                            return {ok:'0'};
-                        }
+                        mail_tags = "recipients, test, home, work, car, light";
+                        // let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
+                        // await cmd_addTags.initWorker();
+                        // try{
+                        //     mail_tags = await cmd_addTags.sendPrompt();
+                        //     // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
+                        // }catch(err){
+                        //     console.error("[ThunderAI] Error getting tags: ", err);
+                        //     browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
+                        //     return {ok:'0'};
+                        // }
                         this.logger.log("mail_tags: " + mail_tags);
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
                         return {ok:'1'};
