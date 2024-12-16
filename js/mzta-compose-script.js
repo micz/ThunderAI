@@ -111,7 +111,6 @@ switch (message.command) {
 
         .mzta_dialog_message {
           margin-bottom: 40px;
-          font-size: 14px;
         }
 
         h2.addtags{
@@ -148,7 +147,11 @@ switch (message.command) {
 
       const title = document.createElement('h2');
       title.className = 'addtags';
-      title.textContent = browser.i18n.getMessage("thunderai_error_title");
+      if(message.is_error){
+        title.textContent = browser.i18n.getMessage("thunderai_error_title");
+      }else{
+        title.textContent = browser.i18n.getMessage("thunderai_warning_title");
+      }
       dialog_sendAlert.appendChild(title);
 
       const content_sendAlert = window.document.createElement('div');

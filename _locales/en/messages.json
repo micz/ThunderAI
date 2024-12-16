@@ -846,5 +846,9 @@
   "thunderai_error_title": {
     "message": "ThunderAI Error",
     "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "ThunderAI Warning",
+    "description": ""
   }
 }
