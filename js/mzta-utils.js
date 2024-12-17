@@ -198,6 +198,36 @@ export async function getTagsList(){
   return [output, output2]; // Return the list of tags and the list of tags objects as an array
 }
 
+export async function createTag(tag) {
+  try {
+    if(await isThunderbird128OrGreater()) {
+      return browser.messages.tags.create('ta-'+tag, tag, generateHexColorForTag());
+    }else{
+      return browser.messages.createTag('ta-'+tag, tag, generateHexColorForTag());
+    }
+  } catch (error) {
+    console.error('[ThunderAI] Error creating tag:', error);
+  }
+}
+
+export async function assignTagToMessage(messageId, tag) {
+  try {
+    return browser.messages.update(messageId, {tags: ["ta-"+tag]});
+  } catch (error) {
+    console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
+  }
+}
+
+function generateHexColorForTag() {
+  const red = Math.floor(Math.random() * 256);
+  const green = Math.floor(Math.random() * 256);
+  const blue = Math.floor(Math.random() * 256);
+
+  const hexColor = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
+
+  return hexColor;
+}
+
 export async function transformTagsLabels(labels, tags_list) {
   console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
   console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
