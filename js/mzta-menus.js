@@ -74,6 +74,7 @@ export class mzta_Menus {
     addAction = (curr_prompt) => {
 
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
+        let curr_message = null;
     
         const getMailBody = async (tabs) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -125,7 +126,6 @@ export class mzta_Menus {
                 // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
                 let finalSubs = {};
                 let curr_messages = null;
-                let curr_message = null;
                 switch(tabs[0].type){
                     case 'mail':
                         curr_messages = await browser.mailTabs.getSelectedMessages();
@@ -231,7 +231,7 @@ export class mzta_Menus {
                         // }
                         this.logger.log("mail_tags: " + mail_tags);
                         console.log(">>>>>>>>>>>> full_tags_list: " + JSON.stringify(full_tags_list));
-                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags });
+                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags, messageId: curr_message.id});
                         return {ok:'1'};
                         break;
                     default:
