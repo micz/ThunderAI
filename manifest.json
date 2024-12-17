@@ -33,6 +33,7 @@
         "downloads",
         "messagesTagsList",
         "messagesTags",
+        "messagesUpdate",
         "https://*.chatgpt.com/*"
     ],
     "background": {
