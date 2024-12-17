@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagToMessage } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -231,6 +231,24 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //return true;
                 }
                 return _popup_menu_ready();
+                break;
+            case 'assign_tags':
+                async function _assign_tags() {
+                    let all_tags_list = await getTagsList();
+                    all_tags_list = all_tags_list[1];
+                    console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+                    taLog.log("assign_tags data: " + JSON.stringify(message));
+                    message.tags.forEach(async (tag) => {
+                        console.log(">>>>>>>>>>>>>>> tag: " + tag);
+                        if (!all_tags_list.hasOwnProperty("ta-"+tag)) {
+                            taLog.log("Creating tag: " + tag);
+                            await createTag(tag);
+                        }
+                        await assignTagToMessage(message.messageId, tag);
+                        taLog.log("Assigned tag: " + tag);
+                    });
+                }
+                return _assign_tags();
                 break;
             default:
                 break;
