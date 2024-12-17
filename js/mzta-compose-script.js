@@ -488,9 +488,9 @@ switch (message.command) {
       return true;
     }
 
-    // Example usage
     return createDialog(message.tags, (selected) => {
-      console.log('Selected:', selected);
+      console.log('>>>>>>>>>>>> Selected tags:', selected);
+      browser.runtime.sendMessage({ command: "assign_tags", tags: selected, messageId: message.messageId });
     });
 
     break;
