@@ -215,15 +215,8 @@ function disable_MaxPromptLength(){
 
 function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
-  let add_tags_maxnum = document.getElementById('add_tags_maxnum');
-  let conntype_select = document.getElementById("connection_type");
-  add_tags.disabled = (conntype_select.value === "chatgpt_web");
-  add_tags_maxnum.disabled = (conntype_select.value === "chatgpt_web");
 
-  // Seleziona tutti gli elementi con la classe 'add_tags_tr'
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
-
-  // Applica lo stile a tutti gli elementi con la classe
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
   });

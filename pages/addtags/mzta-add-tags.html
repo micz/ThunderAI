@@ -11,6 +11,27 @@
         <h1 class="page_title">__MSG_AddTags_PageTitle__</h1>
         <p>__MSG_AddTags_info_default__</p>
     </div>
+    <div class="addtags_table_title">__MSG_AddTags_prompt_text_title__</div>
+    <table id="miczPrefs">
+          <tr class="add_tags_tr">
+            <td><span>__MSG_prefs_OptionText_add_tags_maxnum__</span></td>
+            <td>
+              <label>
+                <input type="number" id="add_tags_maxnum" name="add_tags_maxnum" class="option-input" />
+                <br>__MSG_prefs_OptionText_add_tags_maxnum_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr">
+            <td><span>__MSG_prefs_OptionText_add_tags_hide_exclusions__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_hide_exclusions" name="add_tags_hide_exclusions" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_hide_exclusions_Info__
+              </label>
+            </td>
+          </tr>
+    </table>
     <div id="addtags_prompt_container">
         __MSG_AddTags_prompt_text_title__<span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
         <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a></span>

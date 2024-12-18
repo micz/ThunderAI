@@ -16,16 +16,25 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from '../../options/mzta-options-default.js';
+import { taLogger } from '../../js/mzta-logger.js';
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
 
+
 let autocompleteSuggestions = [];
+let taLog = new taLogger("mzta-addtags-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
+    await restoreOptions();
+
+    document.querySelectorAll(".option-input").forEach(element => {
+        element.addEventListener("change", saveOptions);
+      });
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
@@ -102,3 +111,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
 });
+
+
+
+// Methods to manage options, derived from: /options/mzta-options.js
+
+function saveOptions(e) {
+  e.preventDefault();
+  let options = {};
+  let element = e.target;
+
+    switch (element.type) {
+      case 'checkbox':
+        options[element.id] = element.checked;
+        break;
+      case 'number':
+        options[element.id] = element.valueAsNumber;
+        break;
+        case 'text':
+        case 'password':
+        options[element.id] = element.value.trim();
+        break;
+      default:
+        if (element.tagName === 'SELECT') {
+          options[element.id] = element.value;
+        }else{
+          console.error("[ThunderAI] Unhandled input type:", element.type);
+        }
+    }
+
+  browser.storage.sync.set(options);
+}
+
+async function restoreOptions() {
+  function setCurrentChoice(result) {
+    document.querySelectorAll(".option-input").forEach(element => {
+      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      switch (element.type) {
+        case 'checkbox':
+          element.checked = result[element.id] || false;
+          break;
+        case 'number':
+          let default_number_value = 0;
+          if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
+          if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
+          element.value = result[element.id] ?? default_number_value;
+          break;
+        case 'text':
+        case 'password':
+          let default_text_value = '';
+          if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
+          element.value = result[element.id] || default_text_value;
+          break;
+        default:
+        if (element.tagName === 'SELECT') {
+          let default_select_value = '';
+          if(element.id == 'reply_type') default_select_value = 'reply_all';
+          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
+          element.value = result[element.id] || default_select_value;
+          if (element.value === '') {
+            element.selectedIndex = -1;
+          }
+        }else{
+          console.error("[ThunderAI] Unhandled input type:", element.type);
+        }
+      }
+    });
+  }
+
+  let getting = await browser.storage.sync.get(prefs_default);
+  setCurrentChoice(getting);
+}
