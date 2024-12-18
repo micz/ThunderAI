@@ -8,6 +8,9 @@
     <div id="miczRelNotes"><a href="mzta-release-notes.html">__MSG_prefs_OptionText_release_notes__</a></div>
     <div id="miczStatusPage" class="conntype_chatgpt_web"><a href="https://micz.it/thunderbird-addon-thunderai/status/">__MSG_prefs_status_page__</a></div>
     <table id="miczPrefs">
+      <tr id="mzta_top_msg">
+        <td colspan="2"><div>__MSG_prefs_SurveyLinkText__<br><a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__</a></div></td>
+      </tr>
       <tr id="owl_warning">
         <td colspan="2"><div>__MSG_prefs_OptionText_owl_warning__ <a href="https://micz.it/thunderbird-addon-thunderai/owl/">__MSG_customPrompts_managePrompts_help__</a></div></td>
       </tr>
@@ -263,6 +266,16 @@
           <label>
             <input type="number" id="max_prompt_length" name="max_prompt_length" class="option-input" />
             <br>__MSG_prefs_OptionText_max_prompt_length_Info__
+          </label>
+        </td>
+      </tr>
+      <tr class="add_tags_tr">
+        <td><span>__MSG_prefs_OptionText_add_tags__</span>
+        <br><button id="btnManageTagsInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTagsInfo__</button></td>
+        <td>
+          <label>
+            <input type="checkbox" id="add_tags" name="add_tags" class="option-input" />
+            __MSG_prefs_OptionText_add_tags_Info__
           </label>
         </td>
       </tr>

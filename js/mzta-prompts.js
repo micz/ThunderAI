@@ -73,6 +73,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_reply_advanced',
@@ -85,6 +86,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_polite',
@@ -97,6 +99,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_formal',
@@ -109,6 +112,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_classify',
@@ -121,6 +125,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_summarize_this',
@@ -133,6 +138,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_translate_this',
@@ -145,6 +151,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_this',
@@ -157,16 +164,37 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
+    },
+];
+
+const specialPrompts = [
+    {
+        id: 'prompt_add_tags',
+        name: "__MSG_prompt_add_tags__",
+        text: "prompt_add_tags_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        is_default: "1",
+        is_special: "1",
     },
 ];
 
 
-export async function getPrompts(onlyEnabled = false){
+export async function getPrompts(onlyEnabled = false, includeSpecial = false){
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
-    let output = _defaultPrompts.concat(customPrompts);
+    const specialPrompts = await getSpecialPrompts();
+    let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
+    if(!includeSpecial){
+        output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
+    }
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
@@ -270,7 +298,20 @@ export async function setDefaultPromptsProperties(prompts) {
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
-
 export async function setCustomPrompts(prompts) {
     await browser.storage.local.set({_custom_prompt: prompts});
+}
+
+export async function getSpecialPrompts(){
+    let prefs = await browser.storage.local.get({_special_prompts: null});
+    if(prefs._special_prompts === null){
+        return specialPrompts;
+    } else {
+        return prefs._special_prompts;
+    }
+}
+
+export async function setSpecialPrompts(prompts) {
+    // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
+    await browser.storage.local.set({_special_prompts: prompts});
 }

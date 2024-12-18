@@ -94,6 +94,7 @@ async function restoreOptions() {
 
 function showConnectionOptions() {
   disable_MaxPromptLength();
+  disable_AddTags();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -212,6 +213,14 @@ function disable_MaxPromptLength(){
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
 }
 
+function disable_AddTags(){
+  let add_tags = document.getElementById('add_tags');
+  let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
+  add_tags_tr_elements.forEach(add_tags_tr => {
+    add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
@@ -233,16 +242,36 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.dispatchEvent(new Event('change'), { bubbles: true });
     });
   });
+
+  let addtags_el = document.getElementById('add_tags');
+  let addtags_info_btn = document.getElementById('btnManageTagsInfo');
+  addtags_el.addEventListener('click', (event) => {
+    addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')}).then((tabs) => {
+    browser.tabs.query({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')}).then((tabs) => {
       if (tabs.length > 0) {
         // if the tab is already there, focus it
         browser.tabs.update(tabs[0].id, {active: true});
       } else {
         // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../customprompts/mzta-custom-prompts.html')});
+        browser.tabs.create({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')});
+      }
+    })
+  });
+
+  document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')});
       }
     })
   });
@@ -401,6 +430,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
   disable_MaxPromptLength();
+  disable_AddTags();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');

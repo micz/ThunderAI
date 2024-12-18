@@ -680,7 +680,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Vous pouvez maintenant utiliser des espaces réservés de données supplémentaires !",
+    "message": "Vous pouvez utiliser des espaces réservés supplémentaires pour les données.",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {

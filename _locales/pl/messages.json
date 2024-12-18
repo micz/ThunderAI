@@ -1,0 +1,702 @@
+{
+  "extensionDescription": {
+    "message": "Używaj ChatGPT lub Ollama do ulepszania swoich e-maili!",
+    "description": "Description of the extension."
+  },
+  "menu_title": {
+    "message": "AI",
+    "description": ""
+  },
+  "prompt_lang": {
+    "message": "Odpowiedz w ",
+    "description": ""
+  },
+  "prompt_reply": {
+    "message": "Odpowiedz na ten e-mail",
+    "description": ""
+  },
+  "prompt_reply_advanced": {
+    "message": "Odpowiedz na ten wątek",
+    "description": ""
+  },
+  "prompt_rewrite_polite": {
+    "message": "Przepisz uprzejmie",
+    "description": ""
+  },
+  "prompt_rewrite_formal": {
+    "message": "Przepisz formalnie",
+    "description": ""
+  },
+  "prompt_classify": {
+    "message": "Klasyfikuj",
+    "description": ""
+  },
+  "prompt_summarize_this": {
+    "message": "Podsumuj to",
+    "description": ""
+  },
+  "prompt_translate_this": {
+    "message": "Przetłumacz to",
+    "description": ""
+  },
+  "prompt_this": {
+    "message": "Zapytaj o to",
+    "description": ""
+  },
+  "prompt_selection_needed": {
+    "message": "Aby kontynuować, musisz zaznaczyć tekst!",
+    "description": ""
+  },
+  "customPrompts_managePrompts": {
+    "message": "Zarządzaj poleceniami",
+    "description": ""
+  },
+  "customPrompts_managePrompts_help": {
+    "message": "Więcej informacji",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default": {
+    "message": "Domyślne polecenia nie są edytowalne. Możesz je wyłączyć, skopiować tekst polecenia i wkleić go do nowego, aby stworzyć zmodyfikowaną wersję.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_2": {
+    "message": "Możesz importować i eksportować polecenia. Istniejące polecenia o tym samym ID zostaną nadpisane. Polecenia z nowymi ID zostaną dodane.",
+    "description": ""
+  },
+  "customPrompts_managePrompts_info_default_3": {
+    "message": "Jeśli wszystko jest poprawne, po imporcie kliknij przycisk 'Zapisz wszystko'.",
+    "description": ""
+  },
+  "customPrompts_start_saving": {
+    "message": "Zapisywanie poleceń...",
+    "description": ""
+  },
+  "customPrompts_reindexing_list": {
+    "message": "Ponowne indeksowanie listy...",
+    "description": ""
+  },
+  "customPrompts_filtering_prompts": {
+    "message": "Filtrowanie polece��...",
+    "description": ""
+  },
+  "customPrompts_saving_default_prompts": {
+    "message": "Zapisywanie domyślnych poleceń...",
+    "description": ""
+  },
+  "customPrompts_saving_custom_prompts": {
+    "message": "Zapisywanie własnych poleceń...",
+    "description": ""
+  },
+  "customPrompts_reloading_menus": {
+    "message": "Odświeżanie menu...",
+    "description": ""
+  },
+  "customPrompts_saved": {
+    "message": "Polecenia zapisane!",
+    "description": ""
+  },
+  "customPrompts_form_label_ID": {
+    "message": "ID",
+    "description": ""
+  },
+  "customPrompts_form_label_ID_rules": {
+    "message": "Musi być unikalne, pisane małymi literami i bez spacji",
+    "description": ""
+  },
+  "customPrompts_form_label_Name": {
+    "message": "Nazwa",
+    "description": ""
+  },
+  "customPrompts_form_label_Text": {
+    "message": "Tekst polecenia",
+    "description": ""
+  },
+  "customPrompts_form_label_Action": {
+    "message": "Akcja",
+    "description": ""
+  },
+  "customPrompts_form_label_need_selected": {
+    "message": "Wymagane zaznaczenie tekstu",
+    "description": ""
+  },
+  "customPrompts_form_label_need_signature": {
+    "message": "Zawsze dodawaj podpis",
+    "description": ""
+  },
+  "customPrompts_form_label_need_custom_text": {
+    "message": "Poproś o dodatkowy tekst",
+    "description": ""
+  },
+  "customPrompts_form_label_enabled": {
+    "message": "Włączone",
+    "description": ""
+  },
+  "customPrompts_form_required_fields": {
+    "message": "Pola wymagane",
+    "description": ""
+  },
+  "customPrompts_btnEdit": {
+    "message": "Edytuj",
+    "description": ""
+  },
+  "customPrompts_btnCancel": {
+    "message": "Anuluj",
+    "description": ""
+  },
+  "customPrompts_btnOK": {
+    "message": "OK",
+    "description": ""
+  },
+  "customPrompts_btnDelete": {
+    "message": "Usuń",
+    "description": ""
+  },
+  "customPrompts_btnDelete_confirmText": {
+    "message": "Czy na pewno chcesz usunąć ten element?",
+    "description": ""
+  },
+  "customPrompts_unsaved_changes": {
+    "message": "Istnieją niezapisane zmiany!",
+    "description": ""
+  },
+  "customPrompts_btnSaveAll": {
+    "message": "Zapisz wszystko",
+    "description": ""
+  },
+  "customPrompts_save_button": {
+    "message": "Zapisz",
+    "description": ""
+  },
+  "customPrompts_btnNew": {
+    "message": "Dodaj nowe",
+    "description": ""
+  },
+  "customPrompts_btnAddNewCommit": {
+    "message": "Dodaj polecenie",
+    "description": ""
+  },
+  "customPrompts_add_to_menu": {
+    "message": "Dodaj do menu",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_always": {
+    "message": "Zawsze",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_reading": {
+    "message": "Podczas czytania e-maila",
+    "description": ""
+  },
+  "customPrompts_add_to_menu_composing": {
+    "message": "Podczas pisania e-maila",
+    "description": ""
+  },
+  "customPrompts_close_button": {
+    "message": "Przycisk zamknięcia",
+    "description": ""
+  },
+  "customPrompts_do_reply": {
+    "message": "Odpowiedz",
+    "description": ""
+  },
+  "customPrompts_substitute_text": {
+    "message": "Zastąp tekst",
+    "description": ""
+  },
+  "chatgpt_win_working": {
+    "message": "Praca w toku...",
+    "description": ""
+  },
+  "chatgpt_win_job_completed": {
+    "message": "Zakończono!",
+    "description": ""
+  },
+  "chatgpt_win_job_completed_select": {
+    "message": "Wybierz tekst, którego chcesz użyć i kliknij przycisk.",
+    "description": ""
+  },
+  "chatgpt_win_get_answer": {
+    "message": "Użyj wybranej odpowiedzi",
+    "description": ""
+  },
+  "chatgpt_win_close": {
+    "message": "Zamknij",
+    "description": ""
+  },
+  "chatgpt_textarea_not_found_error": {
+    "message": "Wygląda na to, że strona ChatGPT ładuje się zbyt długo. Jeśli ładowanie zakończy się, kliknij przycisk po prawej stronie. Jeśli problem będzie się powtarzał, sprawdź status usługi.",
+    "description": ""
+  },
+  "chatgpt_btn_retry": {
+    "message": "Spróbuj ponownie",
+    "description": ""
+  },
+  "chatgpt_sendbutton_not_found_error": {
+    "message": "Kliknij przycisk wysyłania, aby przesłać zapytanie.",
+    "description": ""
+  },
+  "chatgpt_user_not_logged_in": {
+    "message": "Nie jesteś zalogowany do ChatGPT. Zaloguj się swoimi danymi, zamknij okno ChatGPT, a następnie powtórz próbę. Po autoryzacji pozostaniesz zalogowany.",
+    "description": ""
+  },
+  "chatgpt_win_model_warning": {
+    "message": "Ustawiłeś opcję używania określonego modelu, ale wygląda na to, że nie ładuje się on poprawnie. Sprawdź wartość i spróbuj ponownie. Na razie możesz nacisnąć niebieski przycisk, aby kontynuować.",
+    "description": ""
+  },
+  "chatgpt_win_custom_text": {
+    "message": "Wstaw tutaj dodatkowy tekst dla zapytania.",
+    "description": ""
+  },
+  "chatgpt_win_send": {
+    "message": "Wyślij",
+    "description": ""
+  },
+  "chatgpt_use_gpt35": {
+    "message": "Użyj GPT3.5",
+    "description": ""
+  },
+  "chatgpt_force_completion": {
+    "message": "wymuś zakończenie",
+    "description": ""
+  },
+  "chatgpt_force_completion_title": {
+    "message": "Kliknij tutaj, aby wyświetlić przycisk 'Użyj ostatniej odpowiedzi', jeśli ChatGPT zakończył pracę, ale przycisk się nie pojawił.",
+    "description": ""
+  },
+  "msg_prompt_too_long": {
+    "message": "Podany tekst jest zbyt długi. Musisz go skrócić.",
+    "description": ""
+  },
+  "prefs_OptionText_release_notes": {
+    "message": "Informacje o wydaniu",
+    "description": ""
+  },
+  "prefs_status_page": {
+    "message": "status usługi",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_text": {
+    "message": "Wymiary okna ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_height": {
+    "message": "Wysokość",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_width": {
+    "message": "Szerokość",
+    "description": ""
+  },
+  "prefs_OptionText_default_sign_name": {
+    "message": "Domyślna nazwa podpisu",
+    "description": ""
+  },
+  "prefs_OptionText_default_chatgpt_lang": {
+    "message": "Domyślny język odpowiedzi",
+    "description": ""
+  },
+  "prefs_OptionText_reply_all": {
+    "message": "Odpowiedz wszystkim",
+    "description": ""
+  },
+  "prefs_OptionText_reply_sender": {
+    "message": "Odpowiedz nadawcy",
+    "description": ""
+  },
+  "prefs_OptionText_reply_type": {
+    "message": "Typ odpowiedzi",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts": {
+    "message": "Zarządzaj poleceniami",
+    "description": ""
+  },
+  "prefsInfoTitle": {
+    "message": "Ważne informacje",
+    "description": ""
+  },
+  "prefsInfoDesc_1": {
+    "message": "Może się zdarzyć, że interfejs ChatGPT zmieni się w sposób, który zakłóci działanie dodatku. Sprawdź stronę \"Status usługi\" połączoną na dole tej strony. Pamiętaj też, że przy pierwszym użyciu ThunderAI musisz zalogować się do ChatGPT.",
+    "description": ""
+  },
+  "prefsInfoDesc_2": {
+    "message": "Aby korzystać z API ChatGPT, potrzebujesz klucza API OpenAI ChatGPT i musisz wybrać model.",
+    "description": ""
+  },
+  "prefsInfoDesc_3": {
+    "message": "Aby korzystać z integracji z Ollama, musisz skonfigurować lokalny serwer Ollama. Po uruchomieniu serwera wprowadź jego adres w odpowiednim polu w aplikacji. Aby zapewnić prawidłową komunikację między ThunderAI a serwerem Ollama pamiętaj o ustawieniu OLLAMA_ORIGINS=moz-extension://*.",
+    "description": ""
+  },
+  "prefsInfoDesc_4": {
+    "message": "Aby korzystać z tej integracji, musisz skonfigurować lokalny serwer kompatybilny z API OpenAI, jak LM Studio. Po uruchomieniu serwera wprowadź jego adres w odpowiednim polu w aplikacji. Aby zapewnić prawidłową komunikację między ThunderAI a serwerem lokalnym pamiętaj o prawidłowym ustawieniu CORS.",
+    "description": ""
+  },
+  "prefsInfoDesc_5": {
+    "message": "Pamiętaj, że możesz otworzyć menu ThunderAI używając skrótu klawiszowego CTRL+ALT+A.",
+    "description": ""
+  },
+  "prefsInfoDesc_6": {
+    "message": "Możesz zmienić skrót klikając ikonę koła zębatego w prawym górnym rogu tej strony i wybierając \"Zarządzaj skrótami rozszerzenia\".",
+    "description": ""
+  },
+  "prefsDonation_1": {
+    "message": "Czy podoba Ci się ten dodatek?",
+    "description": ""
+  },
+  "prefsDonation_2": {
+    "message": "Rozważ wsparcie poprzez darowiznę!",
+    "description": ""
+  },
+  "backToOptionsText": {
+    "message": "Opcje",
+    "description": ""
+  },
+  "TranslateText": {
+    "message": "Czy chcesz pomóc w tłumaczeniu tego dodatku?",
+    "description": ""
+  },
+  "TranslateLink": {
+    "message": "Dowiedz się jak!",
+    "description": ""
+  },
+  "customPrompts_ExportAll": {
+    "message": "Eksportuj wszystkie polecenia",
+    "description": ""
+  },
+  "customPrompts_Import": {
+    "message": "Importuj nowe polecenia",
+    "description": ""
+  },
+  "importPrompts_confirmText": {
+    "message": "Zamierzasz zaimportować nowe polecenia.",
+    "description": ""
+  },
+  "customPrompts_start_import": {
+    "message": "Rozpoczynanie importu własnych poleceń...",
+    "description": ""
+  },
+  "customPrompts_import_completed": {
+    "message": "Import własnych poleceń zakończony! Musisz kliknąć przycisk 'Zapisz wszystko', aby zapisać zmiany.",
+    "description": ""
+  },
+  "importPrompts_invalidFile": {
+    "message": "Plik, który próbujesz zaimportować, nie jest prawidłowym plikiem poleceń.",
+    "description": ""
+  },
+  "importPrompts_invalidPrompts": {
+    "message": "Plik, który próbujesz zaimportować, nie zawiera żadnych prawidłowych poleceń.",
+    "description": ""
+  },
+  "currently_used_prompt": {
+    "message": "Aktualnie używana nazwa polecenia",
+    "description": ""
+  },
+  "customprompts_form_label_define_response_lang": {
+    "message": "Określ język odpowiedzi w poleceniu",
+    "description": ""
+  },
+  "prefs_Connection_type": {
+    "message": "Typ połączenia",
+    "description": ""
+  },
+  "prefs_Connection_type_ChatGPT_Web": {
+    "message": "Interfejs webowy ChatGPT",
+    "description": ""
+  },
+  "prefs_Connection_type_ChatGPT_API": {
+    "message": "API ChatGPT OpenAI",
+    "description": ""
+  },
+  "prefs_ChatGPT_API_Key": {
+    "message": "Klucz API ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models": {
+    "message": "Modele ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models_Fetch": {
+    "message": "Zaktualizuj listę modeli ChatGPT",
+    "description": ""
+  },
+  "ChatGPT_Models_Error_fetching": {
+    "message": "Błąd podczas pobierania modeli ChatGPT",
+    "description": ""
+  },
+  "Loading": {
+    "message": "Ładowanie...",
+    "description": ""
+  },
+  "error": {
+    "message": "Błąd ThunderAI!",
+    "description": ""
+  },
+  "chatgpt_empty_apikey": {
+    "message": "Nie dodałeś klucza API dla ChatGPT API. Proszę wprowadź go na stronie opcji.",
+    "description": ""
+  },
+  "chatgpt_empty_model": {
+    "message": "Nie wybrałeś modelu dla ChatGPT API. Proszę wybierz jeden na stronie opcji.",
+    "description": ""
+  },
+  "chagpt_api_send_button": {
+    "message": "Używając modelu",
+    "description": ""
+  },
+  "chagpt_api_connecting": {
+    "message": "Próba połączenia z OpenAI ChatGPT przy użyciu podanego klucza API",
+    "description": ""
+  },
+  "Debug": {
+    "message": "Debugowanie",
+    "description": ""
+  },
+  "prefs_OptionText_do_debug_info": {
+    "message": "Aktywuj system debugowania",
+    "description": ""
+  },
+  "prefs_Connection_type_Ollama_API": {
+    "message": "API Ollama (Lokalny LLM)",
+    "description": ""
+  },
+  "prefs_Connection_type_OpenAI_Comp_API": {
+    "message": "API kompatybilne z OpenAI",
+    "description": ""
+  },
+  "prefs_API_Host": {
+    "message": "Adres hosta",
+    "description": ""
+  },
+  "Ollama_Models": {
+    "message": "Modele Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Fetch": {
+    "message": "Zaktualizuj listę modeli Ollama",
+    "description": ""
+  },
+  "Ollama_Models_Error_fetching": {
+    "message": "Błąd podczas pobierania modeli Ollama",
+    "description": ""
+  },
+  "API_Models_Error_NoModels": {
+    "message": "Nie znaleziono modeli",
+    "description": ""
+  },
+  "ollama_empty_host": {
+    "message": "Nie dodałeś adresu hosta dla API Ollama. Proszę wprowadź go na stronie opcji.",
+    "description": ""
+  },
+  "ollama_empty_model": {
+    "message": "Nie wybrałeś modelu dla API Ollama. Proszę wybierz jeden na stronie opcji.",
+    "description": ""
+  },
+  "ollama_api_connecting": {
+    "message": "Próba połączenia z lokalnym serwerem Ollama używając hosta",
+    "description": ""
+  },
+  "andModel": {
+    "message": "i modelu",
+    "description": ""
+  },
+  "error_connection_interrupted": {
+    "message": "Połączenie z serwerem zostało nieoczekiwanie przerwane",
+    "description": ""
+  },
+  "ollama_api_request_failed": {
+    "message": "Zapytanie do API Ollama nie powiodło się",
+    "description": ""
+  },
+  "chatgpt_api_request_failed": {
+    "message": "Zapytanie do API OpenAI ChatGPT nie powiodło się",
+    "description": ""
+  },
+  "WaitingServerReponse": {
+    "message": "Oczekiwanie na odpowiedź serwera",
+    "description": ""
+  },
+  "prefs_API_Host_Info": {
+    "message": "Taki jak",
+    "description": ""
+  },
+  "OpenAIComp_Models": {
+    "message": "Modele API kompatybilne z OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Fetch": {
+    "message": "Zaktualizuj listę modeli API kompatybilnych z OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_Models_Error_fetching": {
+    "message": "Błąd podczas pobierania modeli API kompatybilnych z OpenAI",
+    "description": ""
+  },
+  "OpenAIComp_empty_host": {
+    "message": "Nie dodałeś adresu hosta dla API kompatybilnego z OpenAI. Proszę wprowadź go na stronie opcji.",
+    "description": ""
+  },
+  "OpenAIComp_empty_model": {
+    "message": "Nie wybrałeś modelu dla API kompatybilnego z OpenAI. Proszę wybierz jeden na stronie opcji.",
+    "description": ""
+  },
+  "OpenAIComp_api_connecting": {
+    "message": "Próba połączenia z lokalnym serwerem API kompatybilnym z OpenAI używając hosta",
+    "description": ""
+  },
+  "OpenAIComp_api_request_failed": {
+    "message": "Zapytanie do API kompatybilnego z OpenAI nie powiodło się",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName": {
+    "message": "Nazwa czatu",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ChatName_Info": {
+    "message": "To jest nazwa, która będzie używana w czacie AI.",
+    "description": ""
+  },
+  "StorageSpace": {
+    "message": "Całkowita zajęta przestrzeń dyskowa",
+    "description": ""
+  },
+  "SearchPrompt": {
+    "message": "Szukaj poleceń",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter": {
+    "message": "Menu: natychmiastowe wysyłanie polecenia",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_force_enter_info": {
+    "message": "Jeśli zaznaczone, użycie skrótu klawiszowego CTRL+ALT+A automatycznie wyśle zaznaczone polecenie z menu. W przeciwnym razie nazwa polecenia zostanie wyświetlona użytkownikowi, wymagając kolejnego naciśnięcia klawisza Enter, aby je wysłać.",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet": {
+    "message": "Menu: sortuj alfabetycznie",
+    "description": ""
+  },
+  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+    "message": "Jeśli zaznaczone, polecenia w menu będą uporządkowane alfabetycznie.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_dims_info": {
+    "message": "Ustaw na 0, jeśli nie chcesz określać rozmiaru okna.",
+    "description": ""
+  },
+  "prefs_OpenAIComp_API_Key": {
+    "message": "Klucz API kompatybilny z OpenAI",
+    "description": ""
+  },
+  "Optional": {
+    "message": "Opcjonalne",
+    "description": ""
+  },
+  "OpenChatGPTTab": {
+    "message": "Otwórz kartę ChatGPT",
+    "description": ""
+  },
+  "OpenChatGPTTab_Info": {
+    "message": "W przypadku problemów z logowaniem w oknie ThunderAI, otwórz ChatGPT w nowej karcie używając przycisku po prawej stronie, zaloguj się, następnie zamknij kartę i kontynuuj korzystanie z ThunderAI.",
+    "description": ""
+  },
+  "placeholder_mail_text_body": {
+    "message": "Treść wiadomości",
+    "description": ""
+  },
+  "placeholder_mail_html_body": {
+    "message": "Treść wiadomości HTML",
+    "description": ""
+  },
+  "placeholder_mail_subject": {
+    "message": "Temat wiadomości",
+    "description": ""
+  },
+  "placeholder_selected_text": {
+    "message": "Zaznaczony tekst",
+    "description": ""
+  },
+  "placeholder_additional_text": {
+    "message": "Dodatkowy tekst",
+    "description": ""
+  },
+  "placeholder_junk_score": {
+    "message": "Wynik spam",
+    "description": ""
+  },
+  "placeholder_recipients": {
+    "message": "Odbiorcy",
+    "description": ""
+  },
+  "placeholder_cc_list": {
+    "message": "Lista DW",
+    "description": ""
+  },
+  "placeholder_author": {
+    "message": "Autor",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value": {
+    "message": "Symbole zastępcze: użyj wartości domyślnej",
+    "description": ""
+  },
+  "prefs_OptionText_placeholders_use_default_value_info": {
+    "message": "Jeśli zaznaczone, symbole zastępcze zostaną wypełnione wartościami domyślnymi, gdy nie podano wartości. W przeciwnym razie symbole zastępcze pozostaną na miejscu.",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length": {
+    "message": "Maksymalna długość polecenia",
+    "description": ""
+  },
+  "prefs_OptionText_max_prompt_length_Info": {
+    "message": "To jest maksymalna liczba znaków, która może być użyta w poleceniu. W przeciwnym razie zostanie wyświetlony komunikat o błędzie. Wartość nie jest edytowalna dla interfejsu webowego ChatGPT.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model": {
+    "message": "Model interfejsu webowego ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_info": {
+    "message": "To jest model, który będzie wymuszony dla interfejsu webowego ChatGPT. Jeśli nie zostanie określony lub podano nieprawidłowy, domyślny model zostanie ustawiony przez ChatGPT na stronie.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat": {
+    "message": "Tymczasowy czat w interfejsie webowym ChatGPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_tempchat_info": {
+    "message": "Jeśli zaznaczone, w interfejsie webowym ChatGPT będzie używany tymczasowy czat.",
+    "description": ""
+  },
+  "chatgpt_btn_model": {
+    "message": "Użyj bieżącego modelu",
+    "description": ""
+  },
+  "SendingPrompt": {
+    "message": "Wysyłanie polecenia...",
+    "description": ""
+  },
+  "AllowedValues": {
+    "message": "Dozwolone wartości",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline": {
+    "message": "Możesz użyć dodatkowych symboli zastępczych danych.",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1": {
+    "message": "Zachowaj kompatybilność z \"v1\"",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_use_v1_info": {
+    "message": "Jeśli zaznaczone, segment \"v1\" w ścieżce wywołań API zostanie zachowany, np. \"http://localhost:1234/v1/chat/completions\".",
+    "description": ""
+  },
+  "prefs_OptionText_owl_warning": {
+    "message": "Wygląda na to, że przynajmniej jedno z Twoich kont używa dodatku Owl for Exchange. Istnieje znany problem między Thunderbirdem a Owl, który jest obecnie rozwiązywany. Na ten moment możesz używać ThunderAI podczas pisania e-maili, ale nie podczas ich czytania.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_tooltip": {
+    "message": "Kliknij na wartość, aby ją ustawić.",
+    "description": ""
+  }
+}

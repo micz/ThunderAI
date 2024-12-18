@@ -680,7 +680,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Ora puoi utilizzare segnaposti per i dati aggiuntivi!",
+    "message": "Puoi utilizzare segnaposti per i dati aggiuntivi.",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {

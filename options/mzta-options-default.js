@@ -37,4 +37,8 @@ export const prefs_default = {
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
     max_prompt_length: 30000,   // max string length for prompt
+    add_tags: false,
+    add_tags_maxnum: 3,
+    add_tags_hide_exclusions: false,
+    add_tags_first_uppercase: true,
 }
