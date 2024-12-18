@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -241,7 +241,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let new_tags = [];
                     for (const tag of message.tags) {
                         console.log(">>>>>>>>>>>>>>> tag: " + tag);
-                        if (!all_tags_list.hasOwnProperty("ta-" + tag.toLowerCase())) {
+                        if (!checkIfTagExists(tag, all_tags_list)) {
                             taLog.log("Creating tag: " + tag);
                             await createTag(tag);
                         }

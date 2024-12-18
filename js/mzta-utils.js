@@ -203,17 +203,21 @@ export async function createTag(tag) {
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create('ta-'+tag.toLowerCase(), tag, generateHexColorForTag());
+      return browser.messages.tags.create('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
     }else{
-      return browser.messages.createTag('ta-'+tag.toLowerCase(), tag, generateHexColorForTag());
+      return browser.messages.createTag('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
     }
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
   }
 }
 
+export function checkIfTagExists(tag, tags_list) {
+  return tags_list.hasOwnProperty("$ta-" + sanitizeString(tag)); 
+}
+
 export async function assignTagsToMessage(messageId, tags) {
-  tags = tags.map(tag => `ta-${tag.toLowerCase()}`);
+  tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
   let msg_prop = await browser.messages.get(messageId);
   tags = tags.concat(msg_prop.tags || []);
   try {
@@ -221,6 +225,22 @@ export async function assignTagsToMessage(messageId, tags) {
   } catch (error) {
     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
   }
+}
+
+function sanitizeString(input) {
+  input = input.toLowerCase();
+  // Define the regex to match valid characters
+  const regex = /^[^ ()/{%*<>"]+$/;
+  // Filter out invalid characters from the string
+  let sanitized = '';
+  for (const char of input) {
+    // Check if the character is valid according to the regex
+    if (regex.test(char)) {
+      sanitized += char;
+    }
+  }
+
+  return sanitized;
 }
 
 function generateHexColorForTag() {
