@@ -215,7 +215,6 @@ function disable_MaxPromptLength(){
 
 function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
-
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
@@ -243,6 +242,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.dispatchEvent(new Event('change'), { bubbles: true });
     });
   });
+
+  let addtags_el = document.getElementById('add_tags');
+  let addtags_info_btn = document.getElementById('btnManageTagsInfo');
+  addtags_el.addEventListener('click', (event) => {
+    addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
