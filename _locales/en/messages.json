@@ -683,6 +683,10 @@
     "message": "You can use additional data placeholders.",
     "description": ""
   },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "You can change the prompt as you wish, but the response received from the AI must be a comma-separated list of tags!",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": ""
