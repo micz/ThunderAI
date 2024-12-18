@@ -5,7 +5,7 @@
 
 
 
-<h2>Version 2.4.0 - ??/??/2024</h2>
+<h2>Version 3.0.0 - ??/??/2024</h2>
       <ul>
         <li>Default prompts text has been translated [<a href="https://github.com/micz/ThunderAI/issues/185">#185</a>].</li>
         <li>Data placeholder for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
