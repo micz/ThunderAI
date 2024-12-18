@@ -866,5 +866,13 @@
   "AddTags_prompt_prefs_title": {
     "message": "Add Tags Options",
     "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Share your feedback and help us improve ThunderAI!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Click here, it take only one minute!",
+    "description": ""
   }
 }

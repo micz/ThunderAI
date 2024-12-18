@@ -166,6 +166,23 @@ input.option-input[type="text"]{
     border-radius: 4px;
 }
 
+#mzta_top_msg div{
+    color: white;
+    font-style: italic;
+    background-color: rgb(3, 0, 180);
+    border-radius: 4px;
+    padding: 3px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+#mzta_top_msg div a{
+    background-color: white;
+    padding:0px 3px;
+    border-radius: 4px;
+}
+
 .conntype_chatgpt_web_option{
     cursor: pointer;
 }
