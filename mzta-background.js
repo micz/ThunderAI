@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagToMessage } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -238,15 +238,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     all_tags_list = all_tags_list[1];
                     console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
                     taLog.log("assign_tags data: " + JSON.stringify(message));
-                    message.tags.forEach(async (tag) => {
+                    let new_tags = [];
+                    for (const tag of message.tags) {
                         console.log(">>>>>>>>>>>>>>> tag: " + tag);
-                        if (!all_tags_list.hasOwnProperty("ta-"+tag)) {
+                        if (!all_tags_list.hasOwnProperty("ta-" + tag.toLowerCase())) {
                             taLog.log("Creating tag: " + tag);
                             await createTag(tag);
                         }
-                        await assignTagToMessage(message.messageId, tag);
-                        taLog.log("Assigned tag: " + tag);
-                    });
+                        new_tags.push(tag);
+                    }
+                    await assignTagsToMessage(message.messageId, new_tags);
+                    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
                 }
                 return _assign_tags();
                 break;

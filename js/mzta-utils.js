@@ -212,9 +212,12 @@ export async function createTag(tag) {
   }
 }
 
-export async function assignTagToMessage(messageId, tag) {
+export async function assignTagsToMessage(messageId, tags) {
+  tags = tags.map(tag => `ta-${tag.toLowerCase()}`);
+  let msg_prop = await browser.messages.get(messageId);
+  tags = tags.concat(msg_prop.tags || []);
   try {
-    return browser.messages.update(messageId, {tags: ["ta-"+tag.toLowerCase()]});
+    return browser.messages.update(messageId, {tags: tags});
   } catch (error) {
     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
   }
