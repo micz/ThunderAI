@@ -199,11 +199,13 @@ export async function getTagsList(){
 }
 
 export async function createTag(tag) {
+  let prefs_tag = await browser.storage.sync.get({add_tags_first_uppercase: true});
+  if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create('ta-'+tag, tag, generateHexColorForTag());
+      return browser.messages.tags.create('ta-'+tag.toLowerCase(), tag, generateHexColorForTag());
     }else{
-      return browser.messages.createTag('ta-'+tag, tag, generateHexColorForTag());
+      return browser.messages.createTag('ta-'+tag.toLowerCase(), tag, generateHexColorForTag());
     }
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
@@ -212,7 +214,7 @@ export async function createTag(tag) {
 
 export async function assignTagToMessage(messageId, tag) {
   try {
-    return browser.messages.update(messageId, {tags: ["ta-"+tag]});
+    return browser.messages.update(messageId, {tags: ["ta-"+tag.toLowerCase()]});
   } catch (error) {
     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
   }

@@ -218,7 +218,7 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
-                        mail_tags = "recipients, test, home, work, car, light";
+                        mail_tags = "recipients, test, home, work, CAR, light";
                         // let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
                         // await cmd_addTags.initWorker();
                         // try{

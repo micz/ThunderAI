@@ -850,5 +850,17 @@
   "thunderai_warning_title": {
     "message": "ThunderAI Warning",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "First letter uppercase",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "If checked, the tags label will be set to lowercase letters with only the first letter uppercase.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Add Tags Options",
+    "description": ""
   }
 }
