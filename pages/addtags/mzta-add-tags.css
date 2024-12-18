@@ -44,6 +44,10 @@ table#miczPrefs {
     margin: auto;
 }
 
+.section_title{
+    font-weight: bold;
+}
+
 table#miczPrefs td{
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;

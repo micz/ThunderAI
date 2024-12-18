@@ -74,12 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     addtags_textarea.value = addtags_prompt.text;
     addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
 
-    let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
-    if(prefs_maxt.add_tags_maxnum > 0){
-        let el_tag_limit = document.getElementById('addtags_info_limit_num');
-        el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_limit_num") + " \"" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_maxt.add_tags_maxnum +"\".";
-        el_tag_limit.style.display = 'block';
-    }
+    document.getElementById('add_tags_maxnum').addEventListener('change', updateMaxTagsNumDesc);
+
+    updateMaxTagsNumDesc();
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'selected_text' || p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
@@ -112,6 +109,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 });
 
+
+async function updateMaxTagsNumDesc(){
+    let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
+    let el_tag_limit = document.getElementById('addtags_info_limit_num');
+    if(prefs_maxt.add_tags_maxnum > 0){
+        el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_limit_num") + " \"" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_maxt.add_tags_maxnum +"\".";
+        el_tag_limit.style.display = 'block';
+    }else{
+        el_tag_limit.style.display = 'none';
+    }
+}
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
