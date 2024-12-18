@@ -361,7 +361,7 @@ switch (message.command) {
         .filter(word => word !== '')
         .map(word => {
           const isExcluded = add_tags_exclusions_list.some(exclusion => 
-            word.includes(exclusion)
+            word.toLowerCase().includes(exclusion.toLowerCase())
           );
 
           return {
