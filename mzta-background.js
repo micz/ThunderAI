@@ -28,7 +28,7 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: false, connection_type: 'chatgpt_web'});
+let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, connection_type: 'chatgpt_web'});
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 
 browser.composeScripts.register({
@@ -524,6 +524,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     // Check if the change happened in the 'sync' storage area
     if (areaName === 'sync') {
         // Check if 'add_tags' has changed
+        //console.log(">>>>>>>>>>>>> changes: " + JSON.stringify(changes));
         if (changes.add_tags) {
             menus.reload(changes.add_tags.newValue && (prefs_init.connection_type !== "chatgpt_web"));
         }
