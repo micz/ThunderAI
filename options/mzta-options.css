@@ -222,4 +222,8 @@ input.option-input[type="text"]{
         filter: invert(1);
     }
 
+    #mzta_top_msg div{
+        background-color: rgb(2, 0, 100);
+    }
+
 }
