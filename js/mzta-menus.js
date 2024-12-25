@@ -117,6 +117,23 @@ export class mzta_Menus {
 
             let fullPrompt = '';
             let full_tags_list = await getTagsList();
+
+            let curr_messages = null;
+            switch(tabs[0].type){
+                case 'mail':
+                    curr_messages = await browser.mailTabs.getSelectedMessages();
+                    curr_message = curr_messages.messages[0];
+                    break;
+                case 'messageDisplay':
+                    curr_messages = await messenger.messageDisplay.getDisplayedMessage(tabs[0].id);
+                    curr_message = curr_messages;
+                    break;
+                case 'messageCompose':
+                    curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
+                    curr_message = curr_messages;
+                    break;
+            }
+
             if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
                 // no placeholders, do as usual
                 fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
@@ -125,21 +142,6 @@ export class mzta_Menus {
                 let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
                 // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
                 let finalSubs = {};
-                let curr_messages = null;
-                switch(tabs[0].type){
-                    case 'mail':
-                        curr_messages = await browser.mailTabs.getSelectedMessages();
-                        curr_message = curr_messages.messages[0];
-                        break;
-                    case 'messageDisplay':
-                        curr_messages = await messenger.messageDisplay.getDisplayedMessage(tabs[0].id);
-                        curr_message = curr_messages;
-                        break;
-                    case 'messageCompose':
-                        curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
-                        curr_message = curr_messages;
-                        break;
-                }
                 for(let currPH of currPHs){
                     switch(currPH.id){
                         case 'mail_text_body':
