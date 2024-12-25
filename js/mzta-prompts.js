@@ -305,7 +305,11 @@ export async function setCustomPrompts(prompts) {
 export async function getSpecialPrompts(){
     let prefs = await browser.storage.local.get({_special_prompts: null});
     if(prefs._special_prompts === null){
-        return specialPrompts;
+        let def_specPrompts = [...specialPrompts];
+        def_specPrompts.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
+        })
+        return def_specPrompts;
     } else {
         return prefs._special_prompts;
     }
