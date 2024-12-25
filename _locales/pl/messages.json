@@ -683,6 +683,10 @@
     "message": "Możesz użyć dodatkowych symboli zastępczych danych.",
     "description": ""
   },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "Możesz zmienić polecenie według własnego uznania, ale odpowiedź otrzymana od AI musi być listą tagów oddzielonych przecinkami!",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1": {
     "message": "Zachowaj kompatybilność z \"v1\"",
     "description": ""
@@ -697,6 +701,186 @@
   },
   "prefs_OptionText_chatgpt_web_model_tooltip": {
     "message": "Kliknij na wartość, aby ją ustawić.",
+    "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Odpowiedz na poniższy e-mail. Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Nie dodawaj tematu do odpowiedzi.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Odpowiedz w tym samym języku.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Podpisz wiadomość jako",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Odpowiedz na poniższy e-mail \"{%selected_text%}\", biorąc pod uwagę, że jest to pełny wątek e-maili \"{%mail_html_body%}\". Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Przepisz poniższy tekst, aby był bardziej uprzejmy. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Przepisz poniższy tekst, aby był bardziej formalny. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Sklasyfikuj poniższy tekst pod względem uprzejmości, serdeczności, formalności, stanowczości, obraźliwości, podając procent dla każdej kategorii. Odpowiedz wyłącznie kategorią i wynikiem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Podsumuj poniższy e-mail w formie listy punktowanej.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Przetłumacz poniższy e-mail na",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Dodaj tagi do e-maili",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "Jeśli zaznaczone, element zostanie uwzględniony w menu w celu zastosowania tagów do e-maili.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Dodaj tagi do tego e-maila",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj listę tagów oddzielonych przecinkami, które podsumowują jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich opisów jako tagów. Upewnij się, że tagi są zwięzłe i odpowiednie do treści e-maila. Tekst e-maila: {%mail_text_body%} Weź pod uwagę następujące szczegóły w kontekście: - Nadawca: {%author%} - Odbiorcy: {%recipients%} - Lista DW: {%cc_list%} - Temat e-maila: {%mail_subject%} Oprzyj swoje tagi na treści i kontekście e-maila, ignorując zbędne informacje lub nieistotne szczegóły.",
+    "description": ""
+  },
+  "placeholder_mail_tags": {
+    "message": "Tagi e-maila",
+    "description": ""
+  },
+  "placeholder_full_tags_list": {
+    "message": "Istniejące tagi",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Maksymalna liczba tagów",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "Maksymalna liczba tagów proponowanych przez AI. Ustaw na 0, jeśli nie chcesz ograniczać liczby tagów.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Ogranicz liczbę tagów do",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Ukryj wykluczone tagi",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "Jeśli zaznaczone, tagi znajdujące się na liście wykluczeń zostaną ukryte w oknie potwierdzenia.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Zarządzaj ustawieniami tagów",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Zarządzaj Ustawieniami Tagów",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do dodawania tagów do e-maili i zarządzać listą wykluczeń.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Aktualny tekst polecenia",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Lista wykluczeń",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "Jest to lista tagów, które nie mogą być dodane do e-maili.",
+    "description": ""
+  },
+  "save": {
+    "message": "Zapisz",
+    "description": ""
+  },
+  "addtags_info_limit_num": {
+    "message": "To stwierdzenie zostanie dodane na końcu polecenia:",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Przywróć domyślne",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Dodaj jedno słowo na linię lub oddzielone przecinkiem.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Dodaj tagi do e-maila",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Wyklucz tag",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "Nie otrzymano tagów od AI.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "Nie znaleziono poprawnych tagów po przefiltrowaniu z listą wykluczeń.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "Błąd ThunderAI",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "Ostrzeżenie ThunderAI",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "Pierwsza litera wielka",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "Jeśli zaznaczone, etykieta tagów będzie ustawiona na małe litery z wyjątkiem pierwszej wielkiej litery.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Opcje dodawania tagów",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Podziel się swoją opinią i pomóż nam ulepszyć ThunderAI!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Kliknij tutaj, to zajmuje tylko minutę!",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Ręcznie wprowadź model",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Wprowadź tutaj nazwę modelu, którego chcesz użyć.",
     "description": ""
   }
 }
