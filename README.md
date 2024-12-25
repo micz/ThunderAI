@@ -6,7 +6,7 @@ ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT or Ollama
 
 > [!IMPORTANT]
 > Are you using ThunderAI with an API integration?
-> Try the new [3.0](https://github.com/micz/ThunderAI/releases/tag/v3.0.0pre1) prerelease with the new **automatic tagging** feature!
+> Try the new [3.0](https://github.com/micz/ThunderAI/releases/tag/v3.0.0pre2) prerelease with the new **automatic tagging** feature!
 
 <br>
 
