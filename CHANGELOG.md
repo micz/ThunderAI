@@ -12,6 +12,7 @@
         <li>Data placeholder for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
         <li>Data placeholder for the single mail tags list added [<a href="https://github.com/micz/ThunderAI/issues/198">#198</a>].</li>
         <li>User <a href="https://forms.gle/1qK2wcbuhaRzhwyt9">survey link</a> added [<a href="https://github.com/micz/ThunderAI/issues/202">#202</a>].</li>
+        <li><i>[OpenAI Comp API]</i> Added a button in the options page to manually insert the model [<a href="https://github.com/micz/ThunderAI/issues/205">#205</a>].</li>
         <li>Polish (pl) translation added, thanks to <a href="https://github.com/neexpl">neexpl</a>.</li>
         <li>The Custom Prompts tab has now an icon.</li>
         <li>The red border in the Custom Prompts configuration page that highlights a needed prompt configuration that is not selected is now removed when the corresponding placeholder is removed [<a href="https://github.com/micz/ThunderAI/issues/201">#201</a>].</li>
