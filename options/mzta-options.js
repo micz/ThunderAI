@@ -276,6 +276,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   });
 
+  document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
+    let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
+    if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
+      let select_openai_comp_model = document.getElementById('openai_comp_model');
+      let option = document.createElement('option');
+      option.value = modelName;
+      option.text = modelName;
+      select_openai_comp_model.appendChild(option);
+      select_openai_comp_model.value = modelName;
+      select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));    
+    }
+  });
+
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", showConnectionOptions);
   conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
