@@ -680,7 +680,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Você pode usar marcadores de posição adicionais para dados.",
+    "message": "Você pode usar espaços reservados para dados adicionais.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "Você pode alterar o prompt como quiser, mas a resposta recebida da IA deve ser uma lista de tags separadas por vírgulas!",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -693,6 +697,10 @@
   },
   "prefs_OptionText_owl_warning": {
     "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_tooltip": {
+    "message": "Clique em um valor para defini-lo.",
     "description": ""
   },
   "prompt_reply_full_text": {
@@ -737,6 +745,142 @@
   },
   "prompt_this_full_text": {
     "message": "Responda apenas com o texto necessário e sem comentários adicionais ou outros textos.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Adicione tags aos e-mails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "Se marcado, um item será incluído no menu para aplicar tags aos e-mails.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Adicione tags a este e-mail",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analise o seguinte texto do e-mail e gere uma lista de tags separadas por vírgulas que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e relevantes para o conteúdo do e-mail. Texto do e-mail: {%mail_text_body%} Considere os seguintes detalhes como contexto: - Remetente: {%author%} - Destinatários: {%recipients%} - Lista CC: {%cc_list%} - Assunto do e-mail: {%mail_subject%} Baseie suas tags no texto e contexto do e-mail, ignorando informações desnecessárias ou triviais.",
+    "description": ""
+  },
+  "placeholder_mail_tags": {
+    "message": "Tags do e-mail",
+    "description": ""
+  },
+  "placeholder_full_tags_list": {
+    "message": "Tags existentes",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Número máximo de tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "O número máximo de tags proposto pela IA. Defina como 0 se você não quiser limitar o número de tags.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Limite o número de tags para",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Ocultar tags excluídas",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "Se marcado, as tags que estão na lista de exclusão serão ocultadas na caixa de diálogo de confirmação.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Gerenciar configurações de tags",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Configurações de tags",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "Nesta página, você pode modificar o prompt padrão usado para adicionar tags aos e-mails e gerenciar a lista de exclusão.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Texto do prompt atual",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Lista de exclusão",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "Esta é uma lista de tags que não podem ser adicionadas aos e-mails.",
+    "description": ""
+  },
+  "save": {
+    "message": "Salvar",
+    "description": ""
+  },
+  "addtags_info_limit_num": {
+    "message": "Esta declaração será adicionada ao final do prompt:",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Redefinir para o padrão",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Adicione uma palavra por linha ou separada por vírgula.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Adicione tags ao e-mail",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Excluir tag",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "Nenhuma tag recebida da IA.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "Nenhuma tag válida encontrada após filtrar com a lista de exclusão.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "Erro do ThunderAI",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "Aviso do ThunderAI",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "Primeira letra em maiúscula",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "Se marcado, o rótulo das tags será definido em letras minúsculas, com apenas a primeira letra em maiúscula.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Opções de adição de tags",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Compartilhe seu feedback e ajude-nos a melhorar o ThunderAI!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Clique aqui, leva apenas um minuto!",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Insira manualmente o modelo",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Insira aqui o nome do modelo que você deseja usar.",
     "description": ""
   }
 }
