@@ -39,7 +39,7 @@ In any custom prompt you can use additional **[data placeholders](https://micz.i
 >
 > You can also use a local OpenAI Compatible API server, like LM Studio!
 > 
-> There is also an option to remove the "v1" segment from the API url, if needed.
+> There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint (like Gemini).
 
 
 <br>
