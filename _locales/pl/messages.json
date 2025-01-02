@@ -760,7 +760,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj listę tagów oddzielonych przecinkami, które podsumowują jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich opisów jako tagów. Upewnij się, że tagi są zwięzłe i odpowiednie do treści e-maila. Tekst e-maila: {%mail_text_body%} Weź pod uwagę następujące szczegóły w kontekście: - Nadawca: {%author%} - Odbiorcy: {%recipients%} - Lista DW: {%cc_list%} - Temat e-maila: {%mail_subject%} Oprzyj swoje tagi na treści i kontekście e-maila, ignorując zbędne informacje lub nieistotne szczegóły.",
+    "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj listę tagów oddzielonych przecinkami, które podsumowują jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich opisów jako tagów. Upewnij się, że tagi są zwięzłe i odpowiednie do treści e-maila. Tekst e-maila: {%mail_text_body%} Weź pod uwagę następujące szczegóły w kontekście: - Nadawca: {%author%} - Odbiorcy: {%recipients%} - Lista DW: {%cc_list%} - Temat e-maila: {%mail_subject%} Oprzyj swoje tagi na treści i kontekście e-maila, ignorując zbędne informacje lub nieistotne szczegóły. Wynik powinien być jedynie listą tagów oddzielonych przecinkami, bez żadnych dodatkowych komentarzy ani tekstu.",
     "description": ""
   },
   "placeholder_mail_tags": {

@@ -760,7 +760,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details.",
+    "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein.",
     "description": ""
   },
   "placeholder_mail_tags": {

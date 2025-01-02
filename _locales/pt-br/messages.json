@@ -760,7 +760,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analise o seguinte texto do e-mail e gere uma lista de tags separadas por vírgulas que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e relevantes para o conteúdo do e-mail. Texto do e-mail: {%mail_text_body%} Considere os seguintes detalhes como contexto: - Remetente: {%author%} - Destinatários: {%recipients%} - Lista CC: {%cc_list%} - Assunto do e-mail: {%mail_subject%} Baseie suas tags no texto e contexto do e-mail, ignorando informações desnecessárias ou triviais.",
+    "message": "Analise o seguinte texto do e-mail e gere uma lista de tags separadas por vírgulas que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e relevantes para o conteúdo do e-mail. Texto do e-mail: {%mail_text_body%} Considere os seguintes detalhes como contexto: - Remetente: {%author%} - Destinatários: {%recipients%} - Lista CC: {%cc_list%} - Assunto do e-mail: {%mail_subject%} Baseie suas tags no texto e contexto do e-mail, ignorando informações desnecessárias ou triviais. A saída deve ser apenas uma lista de tags separadas por vírgulas, sem nenhum comentário ou texto adicional.",
     "description": ""
   },
   "placeholder_mail_tags": {

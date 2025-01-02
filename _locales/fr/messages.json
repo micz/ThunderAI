@@ -760,7 +760,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel. Texte du courriel : {%mail_text_body%} Considérez les détails suivants pour le contexte : - Expéditeur : {%author%} - Destinataires : {%recipients%} - Liste CC : {%cc_list%} - Sujet du courriel : {%mail_subject%} Veuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales.",
+    "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel. Texte du courriel : {%mail_text_body%} Considérez les détails suivants pour le contexte : - Expéditeur : {%author%} - Destinataires : {%recipients%} - Liste CC : {%cc_list%} - Sujet du courriel : {%mail_subject%} Veuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales. La sortie doit être uniquement une liste de tags séparés par des virgules, sans aucun commentaire ou texte supplémentaire.",
     "description": ""
   },
   "placeholder_mail_tags": {
