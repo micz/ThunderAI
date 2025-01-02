@@ -74,9 +74,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     addtags_textarea.value = addtags_prompt.text;
     addtags_reset_btn.disabled = (addtags_textarea.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
 
-    document.getElementById('add_tags_maxnum').addEventListener('change', updateMaxTagsNumDesc);
+    document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
 
-    updateMaxTagsNumDesc();
+    updateAdditionalPromptStatements();
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'selected_text' || p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
@@ -110,11 +111,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-async function updateMaxTagsNumDesc(){
-    let prefs_maxt = await browser.storage.sync.get({add_tags_maxnum: 3});
-    let el_tag_limit = document.getElementById('addtags_info_limit_num');
-    if(prefs_maxt.add_tags_maxnum > 0){
-        el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_limit_num") + " \"" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_maxt.add_tags_maxnum +"\".";
+async function updateAdditionalPromptStatements(){
+    let prefs_ = await browser.storage.sync.get({add_tags_maxnum: 3, add_tags_force_lang: true, default_chatgpt_lang: ''});
+    let el_tag_limit = document.getElementById('addtags_info_additional_statements');
+    if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')){
+        el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
+        if(prefs_.add_tags_maxnum > 0){
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +"."
+        }
+        if(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== ''){
+          if(prefs_.add_tags_maxnum > 0){
+            el_tag_limit.textContent += " "
+          }
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + "."
+        }
+        el_tag_limit.textContent += "\".";
         el_tag_limit.style.display = 'block';
     }else{
         el_tag_limit.style.display = 'none';

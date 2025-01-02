@@ -819,7 +819,7 @@
     "message": "Save",
     "description": ""
   },
-  "addtags_info_limit_num": {
+  "addtags_info_additional_statements": {
     "message": "This statement will be added at the end of the prompt:",
     "description": ""
   },
@@ -881,6 +881,18 @@
   },
   "OpenAIComp_force_model_ask": {
     "message": "Insert here the model name you want to use.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Force language",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+    "message": "If checked, the tags language will be forced to match the language defined on the add-on options page, if specified.",
+    "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+    "message": "The tags must be written in ",
     "description": ""
   }
 }

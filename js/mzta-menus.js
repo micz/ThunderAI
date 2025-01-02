@@ -182,7 +182,7 @@ export class mzta_Menus {
                 }
                 // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
                 let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-                fullPrompt = placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang;
+                fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang).trim();
             }
             
             switch(curr_prompt.id){
@@ -208,7 +208,7 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
                         let mail_tags = '';
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: ''});
+                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             return {ok:'0'};
@@ -216,6 +216,9 @@ export class mzta_Menus {
                         let add_tags_maxnum = prefs_at.add_tags_maxnum;
                         if(add_tags_maxnum > 0){
                             fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
+                        }
+                        if(prefs_at.add_tags_force_lang && prefs_at.default_chatgpt_lang !== ''){
+                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_at.default_chatgpt_lang + ".";
                         }
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web

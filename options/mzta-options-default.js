@@ -41,4 +41,5 @@ export const prefs_default = {
     add_tags_maxnum: 3,
     add_tags_hide_exclusions: false,
     add_tags_first_uppercase: true,
+    add_tags_force_lang: true,
 }
