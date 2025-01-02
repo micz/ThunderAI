@@ -169,9 +169,9 @@ export class mzta_Menus {
                         case 'junk_score':
                             finalSubs['junk_score'] = curr_message.junkScore;
                             break;
-                        case 'mail_tags':
-                            let mail_tags_array = await transformTagsLabels(curr_message.tags, full_tags_list[1]);
-                            finalSubs['mail_tags'] = mail_tags_array.join(", ");
+                        case 'tags_current_email':
+                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, full_tags_list[1]);
+                            finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
                             break;
                         case 'full_tags_list':
                             finalSubs['full_tags_list'] = full_tags_list[0];
@@ -207,7 +207,7 @@ export class mzta_Menus {
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': // Add tags to the email
-                        let mail_tags = '';
+                        let tags_current_email = '';
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
@@ -223,20 +223,20 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
-                        // mail_tags = "recipients, TEST, home, work, CAR, light";
+                        // tags_current_email = "recipients, TEST, home, work, CAR, light";
                         let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
                         await cmd_addTags.initWorker();
                         try{
-                            mail_tags = await cmd_addTags.sendPrompt();
-                            // console.log(">>>>>>>>>>> mail_tags: " + mail_tags);
+                            tags_current_email = await cmd_addTags.sendPrompt();
+                            // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
                             return {ok:'0'};
                         }
-                        this.logger.log("mail_tags: " + mail_tags);
+                        this.logger.log("tags_current_email: " + tags_current_email);
                         console.log(">>>>>>>>>>>> full_tags_list: " + JSON.stringify(full_tags_list));
-                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: mail_tags, messageId: curr_message.id});
+                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         return {ok:'1'};
                         break;
                     default:

@@ -763,7 +763,7 @@
     "message": "Analizza il seguente testo email e genera una lista di tag separati da virgole che ne riassumano il contenuto. Usa temi, argomenti principali e descrittori pertinenti come tag. Assicurati che i tag siano concisi e rilevanti per il contenuto dell'email. Testo email: {%mail_text_body%} Considera i seguenti dettagli come contesto: - Mittente: {%author%} - Destinatari: {%recipients%} - Lista CC: {%cc_list%} - Oggetto dell'email: {%mail_subject%} Basa i tuoi tag sul testo e sul contesto dell'email, ignorando informazioni superflue o dettagli banali. L'output dovrebbe essere solo un elenco di tag separati da virgole, senza alcun commento o testo aggiuntivo.",
     "description": ""
   },
-  "placeholder_mail_tags": {
+  "placeholder_tags_current_email": {
     "message": "Tag delle email",
     "description": ""
   },
