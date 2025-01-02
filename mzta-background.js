@@ -211,7 +211,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'reload_menus':
                 async function _reload_menus() {
-                    menus.reload(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
+                    let prefs_reload = await browser.storage.sync.get({add_tags: true, connection_type: 'chatgpt_web'});
+                    menus.reload(prefs_reload.add_tags && (prefs_reload.connection_type !== "chatgpt_web"));
                     taLog.log("Reloading menus");
                     return true;
                 }
