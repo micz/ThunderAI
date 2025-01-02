@@ -819,7 +819,7 @@
     "message": "Zapisz",
     "description": ""
   },
-  "addtags_info_limit_num": {
+  "addtags_info_additional_statements": {
     "message": "To stwierdzenie zostanie dodane na końcu polecenia:",
     "description": ""
   },
@@ -882,5 +882,17 @@
   "OpenAIComp_force_model_ask": {
     "message": "Wprowadź tutaj nazwę modelu, którego chcesz użyć.",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Wymuś język",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+      "message": "Jeśli zaznaczone, język tagów zostanie wymuszony na zgodny z językiem określonym na stronie opcji ThunderAI, jeśli został zdefiniowany.",
+      "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+      "message": "Tagi muszą być napisane w",
+      "description": ""
   }
 }

@@ -819,7 +819,7 @@
     "message": "Enregistrer",
     "description": ""
   },
-  "addtags_info_limit_num": {
+  "addtags_info_additional_statements": {
     "message": "Cette déclaration sera ajoutée à la fin de l'invite :",
     "description": ""
   },
@@ -882,5 +882,17 @@
   "OpenAIComp_force_model_ask": {
     "message": "Insérez ici le nom du modèle que vous souhaitez utiliser.",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Forcer la langue",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+      "message": "Si cette option est cochée, la langue des tags sera forcée pour correspondre à celle définie dans les options du ThunderAI, si spécifiée.",
+      "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+      "message": "Les tags doivent être écrits en",
+      "description": ""
   }
 }

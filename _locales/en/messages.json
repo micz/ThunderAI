@@ -888,11 +888,11 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
-    "message": "If checked, the tags language will be forced to match the language defined on the add-on options page, if specified.",
+    "message": "If checked, the tags language will be forced to match the language defined on the ThunderAI options page, if specified.",
     "description": ""
   },
   "prompt_add_tags_force_lang": {
-    "message": "The tags must be written in ",
+    "message": "The tags must be written in",
     "description": ""
   }
 }
