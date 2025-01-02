@@ -102,8 +102,10 @@ async function searchPrompt(allPrompts, tabId, tabType){
      max_num_el = 9;
      first_num_el = 1;
      filteredData = ensurePromptAddTagsFirst(filteredData);
-     filteredData[0].numberPrepended = 'true';
-     filteredData[0].label = '0. ' + filteredData[0].label;
+     if (!filteredData[0].numberPrepended) {
+      filteredData[0].numberPrepended = 'true';
+      filteredData[0].label = '0. ' + filteredData[0].label;
+     }
    }
    Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
      let number = (index < 9) ? (index + 1).toString() : '0';
