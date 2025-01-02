@@ -116,7 +116,7 @@ export class mzta_Menus {
             }
 
             let fullPrompt = '';
-            let full_tags_list = await getTagsList();
+            let tags_full_list = await getTagsList();
 
             let curr_messages = null;
             switch(tabs[0].type){
@@ -170,11 +170,11 @@ export class mzta_Menus {
                             finalSubs['junk_score'] = curr_message.junkScore;
                             break;
                         case 'tags_current_email':
-                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, full_tags_list[1]);
+                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
                             finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
                             break;
-                        case 'full_tags_list':
-                            finalSubs['full_tags_list'] = full_tags_list[0];
+                        case 'tags_full_list':
+                            finalSubs['tags_full_list'] = tags_full_list[0];
                             break;
                         default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;
@@ -235,7 +235,7 @@ export class mzta_Menus {
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email: " + tags_current_email);
-                        console.log(">>>>>>>>>>>> full_tags_list: " + JSON.stringify(full_tags_list));
+                        console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         return {ok:'1'};
                         break;

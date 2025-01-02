@@ -104,8 +104,8 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
-        id: 'full_tags_list',
-        name: "__MSG_placeholder_full_tags_list__",
+        id: 'tags_full_list',
+        name: "__MSG_placeholder_tags_full_list__",
         default_value: "",
         type: 0,
         is_default: "1",
