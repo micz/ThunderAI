@@ -894,5 +894,25 @@
   "prompt_add_tags_force_lang": {
     "message": "The tags must be written in",
     "description": ""
+  },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "Google Gemini API",
+    "description": ""
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "API Key",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Google Gemini API Models",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Update Google Gemini Models list",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Error trying to fetch Google Gemini models",
+    "description": ""
   }
 }
