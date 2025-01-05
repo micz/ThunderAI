@@ -7,7 +7,7 @@
 
 <h2>Version 3.0.0 - 05/01/2025</h2>
       <ul>
-        <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Added a special prompt to apply tag to emails [<a href="https://github.com/micz/ThunderAI/issues/183">#183</a>].</li>
+        <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Added a special prompt to apply tags to emails [<a href="https://github.com/micz/ThunderAI/issues/183">#183</a>].</li>
         <li>Default prompts text has been translated [<a href="https://github.com/micz/ThunderAI/issues/185">#185</a>].</li>
         <li>Data placeholder <i>{%tags_full_list%}</i> for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
         <li>Data placeholder <i>{%tags_current_email%}</i> for the single mail tags list added [<a href="https://github.com/micz/ThunderAI/issues/198">#198</a>].</li>
