@@ -176,6 +176,92 @@ export function generateCallID(length = 10) {
   return result;
 }
 
+export async function getTagsList(){
+  let messageTags = {};
+  if(await isThunderbird128OrGreater()) {
+      messageTags = await browser.messages.tags.list();
+  } else {
+      messageTags = await browser.messages.listTags();
+  }
+  const output = messageTags.map(tag => tag.tag).join(', ');
+
+  const output2 = messageTags.reduce((acc, messageTag) => {
+    acc[messageTag.key] = {
+        tag: messageTag.tag,
+        color: messageTag.color,
+        key: messageTag.key,
+        ordinal: messageTag.ordinal,
+    };
+    return acc;
+  }, {});
+
+  return [output, output2]; // Return the list of tags and the list of tags objects as an array
+}
+
+export async function createTag(tag) {
+  let prefs_tag = await browser.storage.sync.get({add_tags_first_uppercase: true});
+  if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
+  try {
+    if(await isThunderbird128OrGreater()) {
+      return browser.messages.tags.create('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+    }else{
+      return browser.messages.createTag('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+    }
+  } catch (error) {
+    console.error('[ThunderAI] Error creating tag:', error);
+  }
+}
+
+export function checkIfTagExists(tag, tags_list) {
+  return tags_list.hasOwnProperty("$ta-" + sanitizeString(tag)); 
+}
+
+export async function assignTagsToMessage(messageId, tags) {
+  tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
+  let msg_prop = await browser.messages.get(messageId);
+  tags = tags.concat(msg_prop.tags || []);
+  try {
+    return browser.messages.update(messageId, {tags: tags});
+  } catch (error) {
+    console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
+  }
+}
+
+function sanitizeString(input) {
+  input = input.toLowerCase();
+  // Define the regex to match valid characters
+  const regex = /^[^ ()/{%*<>"]+$/;
+  // Filter out invalid characters from the string
+  let sanitized = '';
+  for (const char of input) {
+    // Check if the character is valid according to the regex
+    if (regex.test(char)) {
+      sanitized += char;
+    }
+  }
+
+  return sanitized;
+}
+
+function generateHexColorForTag() {
+  const red = Math.floor(Math.random() * 256);
+  const green = Math.floor(Math.random() * 256);
+  const blue = Math.floor(Math.random() * 256);
+
+  const hexColor = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
+
+  return hexColor;
+}
+
+export async function transformTagsLabels(labels, tags_list) {
+  console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
+  console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  let output = [];
+  for(let label of labels) {
+      output.push(tags_list[label].tag);
+  }
+  return output;
+}
 
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js

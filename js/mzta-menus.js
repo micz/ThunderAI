@@ -19,9 +19,10 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, transformTagsLabels } from './mzta-utils.js'
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
+import { mzta_specialCommand_AddTags } from './special_commands/mzta-add-tags.js';
  
 export class mzta_Menus {
 
@@ -50,29 +51,30 @@ export class mzta_Menus {
     }
 
 
-    async initialize() {
+    async initialize(also_special = false) {
         this.allPrompts = [];
         this.rootMenu = [];
         this.shortcutMenu = [];
         this.menu_listeners = {};
-        this.allPrompts = await getPrompts(true);   
+        this.allPrompts = await getPrompts(true,also_special);   
         this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
     }
 
-    async reload(){
+    async reload(also_special = false) {
         await browser.menus.removeAll().catch(error => {
                 console.error("[ThunderAI] ERROR removing the menus: ", error);
             });
         this.removeClickListener();
-        this.loadMenus();
+        this.loadMenus(also_special);
     }
 
     addAction = (curr_prompt) => {
 
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
+        let curr_message = null;
     
         const getMailBody = async (tabs) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -92,7 +94,7 @@ export class mzta_Menus {
                 //A selection is needed, but nothing is selected!
                 //alert(browser.i18n.getMessage('prompt_selection_needed'));
                 browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message : browser.i18n.getMessage('prompt_selection_needed') });
-                return;
+                return {ok:'0'};
             }
     
             let body_text = '';
@@ -107,13 +109,31 @@ export class mzta_Menus {
                 chatgpt_lang = prefs.default_chatgpt_lang;
                 //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
                 if(chatgpt_lang === ''){
-                    chatgpt_lang = 'Reply in the same language.';
+                    chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
                 }else{
                     chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
                 }
             }
 
             let fullPrompt = '';
+            let tags_full_list = await getTagsList();
+
+            let curr_messages = null;
+            switch(tabs[0].type){
+                case 'mail':
+                    curr_messages = await browser.mailTabs.getSelectedMessages();
+                    curr_message = curr_messages.messages[0];
+                    break;
+                case 'messageDisplay':
+                    curr_messages = await messenger.messageDisplay.getDisplayedMessage(tabs[0].id);
+                    curr_message = curr_messages;
+                    break;
+                case 'messageCompose':
+                    curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
+                    curr_message = curr_messages;
+                    break;
+            }
+
             if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
                 // no placeholders, do as usual
                 fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
@@ -122,8 +142,6 @@ export class mzta_Menus {
                 let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
                 // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
                 let finalSubs = {};
-                let curr_messages = await browser.mailTabs.getSelectedMessages();
-                let curr_message = curr_messages.messages[0];
                 for(let currPH of currPHs){
                     switch(currPH.id){
                         case 'mail_text_body':
@@ -151,13 +169,20 @@ export class mzta_Menus {
                         case 'junk_score':
                             finalSubs['junk_score'] = curr_message.junkScore;
                             break;
+                        case 'tags_current_email':
+                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
+                            finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
+                            break;
+                        case 'tags_full_list':
+                            finalSubs['tags_full_list'] = tags_full_list[0];
+                            break;
                         default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;
                     }
                 }
                 // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
                 let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-                fullPrompt = placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang;
+                fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang).trim();
             }
             
             switch(curr_prompt.id){
@@ -167,10 +192,10 @@ export class mzta_Menus {
                     if(chatgpt_lang2 === ''){
                         chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
                     }
-                    fullPrompt = curr_prompt.text + chatgpt_lang2 + ". \"" + body_text + "\" ";
+                    fullPrompt = curr_prompt.text + " " + chatgpt_lang2 + ". \"" + body_text + "\" ";
                     break;
                 case 'prompt_reply':
-                    fullPrompt += "Do not add the subject line to the response."
+                    fullPrompt += browser.i18n.getMessage("prompt_reply_additional_text");
                     break;
                 default:
                     break;
@@ -179,7 +204,49 @@ export class mzta_Menus {
             // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
-            this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+            if(curr_prompt.is_special == '1'){  // Special prompts
+                switch(curr_prompt.id){
+                    case 'prompt_add_tags': // Add tags to the email
+                        let tags_current_email = '';
+                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
+                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
+                            console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
+                            return {ok:'0'};
+                        }
+                        let add_tags_maxnum = prefs_at.add_tags_maxnum;
+                        if(add_tags_maxnum > 0){
+                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
+                        }
+                        if(prefs_at.add_tags_force_lang && prefs_at.default_chatgpt_lang !== ''){
+                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_at.default_chatgpt_lang + ".";
+                        }
+                        this.logger.log("fullPrompt: " + fullPrompt);
+                        // TODO: use the current API, abort if using chatgpt web
+                        // COMMENTED TO DO TESTS
+                        // tags_current_email = "recipients, TEST, home, work, CAR, light";
+                        let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
+                        await cmd_addTags.initWorker();
+                        try{
+                            tags_current_email = await cmd_addTags.sendPrompt();
+                            // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
+                        }catch(err){
+                            console.error("[ThunderAI] Error getting tags: ", err);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
+                            return {ok:'0'};
+                        }
+                        this.logger.log("tags_current_email: " + tags_current_email);
+                        console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
+                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
+                        return {ok:'1'};
+                        break;
+                    default:
+                        console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
+                        break;
+                }
+            }else{  // Classic prompts for the API webchat
+                this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+                return {ok:'1'};
+            }
         };
         this.rootMenu.push(curr_menu_entry);
     };
@@ -189,7 +256,7 @@ export class mzta_Menus {
         if(prefs.default_sign_name===''){
             return '';
         }else{
-            return "Sign the message as " + prefs.default_sign_name + ".";
+            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
         }
     }
 
@@ -205,8 +272,8 @@ export class mzta_Menus {
         this.shortcutMenu.push(curr_menu_entry);
     }
 
-    async loadMenus() {
-        await this.initialize();
+    async loadMenus(also_special = false) {
+        await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
@@ -296,7 +363,7 @@ export class mzta_Menus {
         if (action) {
             try {
                 // Execute the action callback
-                await action();
+                return await action();
             } catch (error) {
                 // Log any errors that occur during execution
                 console.error(`Error executing action for menu item ${id}:`, error);
@@ -305,6 +372,7 @@ export class mzta_Menus {
             // Warn if no action is found for the provided ID
             console.warn(`No action found for menu item ID: ${id}`);
         }
+        return false;
     }
 
 }

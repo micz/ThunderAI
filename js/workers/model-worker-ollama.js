@@ -20,8 +20,8 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Ollama } from '../js/api/ollama.js';
-import { taLogger } from '../js/mzta-logger.js';
+import { Ollama } from '../api/ollama.js';
+import { taLogger } from '../mzta-logger.js';
 
 let ollama_host = null;
 let ollama_model = '';

@@ -680,7 +680,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Vous pouvez maintenant utiliser des espaces réservés de données supplémentaires !",
+    "message": "Vous pouvez utiliser des espaces réservés pour des données supplémentaires.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "Vous pouvez modifier l'invite comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -694,5 +698,201 @@
   "prefs_OptionText_owl_warning": {
     "message": "Il semble qu'au moins un de vos comptes utilise le module complémentaire Chouette pour Exchange. Il existe un problème connu entre Thunderbird et Chouette, qui est en cours de résolution. Pour le moment, vous pouvez utiliser ThunderAI lors de la rédaction d'e-mails, mais pas lors de leur lecture.",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_tooltip": {
+    "message": "Cliquez sur une valeur pour la définir.",
+    "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Répondez au courriel suivant. Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "N'ajoutez pas la ligne d'objet à la réponse.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Répondez dans la même langue.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Signez le message comme",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Répondez au courriel suivant \"{%selected_text%}\", en tenant compte qu'il s'agit de l'intégralité du fil de courriels \"{%mail_html_body%}\". Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Réécrivez le texte suivant pour le rendre plus poli. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Réécrivez le texte suivant pour le rendre plus formel. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classifiez le texte suivant en termes de politesse, chaleur, formalité, assertivité, caractère offensant en donnant un pourcentage pour chaque catégorie. Répondez uniquement avec la catégorie et le score, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Résumez le courriel suivant sous forme de liste à puces.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Traduisez le courriel suivant en",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Ajoutez des tags aux courriels",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "Si coché, un élément sera inclus dans le menu pour appliquer des tags aux courriels.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Ajoutez des tags à ce courriel",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel. Texte du courriel : {%mail_text_body%} Considérez les détails suivants pour le contexte : - Expéditeur : {%author%} - Destinataires : {%recipients%} - Liste CC : {%cc_list%} - Sujet du courriel : {%mail_subject%} Veuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales. La sortie doit être uniquement une liste de tags séparés par des virgules, sans aucun commentaire ou texte supplémentaire.",
+    "description": ""
+  },
+  "placeholder_tags_current_email": {
+    "message": "Tags de courriels",
+    "description": ""
+  },
+  "placeholder_tags_full_list": {
+    "message": "Tags existants",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Nombre maximum de tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "Le nombre maximum de tags proposés par l'IA. Réglez à 0 si vous ne voulez pas limiter le nombre de tags.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Limitez le nombre de tags à",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Masquer les tags exclus",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "Si coché, les tags présents dans la liste d'exclusion seront masqués dans la boîte de dialogue de confirmation.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Gérez les paramètres des tags",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Gérez les paramètres des tags",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "Sur cette page, vous pouvez modifier l'invite par défaut utilisée pour ajouter des tags aux courriels et gérer la liste d'exclusion.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Texte de l'invite actuelle",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Liste d'exclusion",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "Ceci est une liste de tags qui ne sont pas autorisés à être ajoutés aux courriels.",
+    "description": ""
+  },
+  "save": {
+    "message": "Enregistrer",
+    "description": ""
+  },
+  "addtags_info_additional_statements": {
+    "message": "Cette déclaration sera ajoutée à la fin de l'invite :",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Réinitialiser aux valeurs par défaut",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Ajoutez un mot par ligne ou séparé par une virgule.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Ajoutez des tags au courriel",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Exclure un tag",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "Aucun tag reçu de l'IA.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "Aucun tag valide trouvé après filtrage avec la liste d'exclusion.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "Erreur ThunderAI",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "Avertissement ThunderAI",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "Première lettre en majuscule",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "Si coché, l'étiquette des tags sera définie en minuscules avec seulement la première lettre en majuscule.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Options d’ajout de tags",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Partagez vos commentaires et aidez-nous à améliorer ThunderAI !",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Cliquez ici, cela ne prend qu'une minute !",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Insérez manuellement le modèle",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Insérez ici le nom du modèle que vous souhaitez utiliser.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Forcer la langue",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+      "message": "Si cette option est cochée, la langue des tags sera forcée pour correspondre à celle définie dans les options du ThunderAI, si spécifiée.",
+      "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+      "message": "Les tags doivent être écrits en",
+      "description": ""
   }
 }

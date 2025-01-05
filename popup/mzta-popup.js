@@ -16,26 +16,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { taStore } from "../js/mzta-store.js";
 import { taLogger } from "../js/mzta-logger.js";
 
 let menuSendImmediately = false;
 let taLog = console;
+let connection_type = 'chatgpt_web';
+let add_tags = false;
+let tabType;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false});
+    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: false, connection_type: 'chatgpt_web'});
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
     let tabId = reponse.lastShortcutTabId;
-    let tabType = reponse.lastShortcutTabType;
+    tabType = reponse.lastShortcutTabType;
     let filtering = reponse.lastShortcutFiltering;
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
+    connection_type = prefs.connection_type;
+    add_tags = prefs.add_tags;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 }, { once: true });
@@ -78,7 +82,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
    */
 
    // Filter data based on the query
-   const filteredData = allPrompts.filter(item => 
+   let filteredData = allPrompts.filter(item => 
      item.label.toLowerCase().includes(query)
    );
    taLog.log("filteredData: " + JSON.stringify(filteredData));
@@ -89,9 +93,22 @@ async function searchPrompt(allPrompts, tabId, tabType){
        return;
    }
 
+
    // Prepend numbers to the first 10 items
-   Array.from(filteredData).slice(0, 10).forEach((item, index) => {
-     const number = (index < 9) ? (index + 1).toString() : '0';
+   // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
+   let max_num_el = 10
+   let first_num_el = 0;
+   if(checkDoAddTags()){
+     max_num_el = 9;
+     first_num_el = 1;
+     filteredData = ensurePromptAddTagsFirst(filteredData);
+     if (!filteredData[0].numberPrepended) {
+      filteredData[0].numberPrepended = 'true';
+      filteredData[0].label = '0. ' + filteredData[0].label;
+     }
+   }
+   Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
+     let number = (index < 9) ? (index + 1).toString() : '0';
      // Check if the number is already prepended to avoid duplication
      if (!item.numberPrepended) {
          item.label = `${number}. ${item.label}`;
@@ -101,12 +118,22 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
   //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
+  // add the prompt_add_tags if add_tags is true and connection_type is not 'chatgpt_web'
+  //  if(checkDoAddTags()){
+  //    let number = '0';
+  //    let item = {label: `${number}. ${browser.i18n.getMessage('prompt_add_tags')}`, id: 'prompt_add_tags', numberPrepended: 'true'};
+  //    filteredData.unshift(item);
+  //  }
+
    // Create a div for each filtered result
    filteredData.forEach(item => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
+       if(item.id === 'prompt_add_tags'){
+         itemDiv.className += ' prompt_add_tags';
+       }
 
        // Add a mousedown event to select the item
        itemDiv.addEventListener('mousedown', function(e) { // Use mousedown instead of click
@@ -141,8 +168,8 @@ async function searchPrompt(allPrompts, tabId, tabType){
  });
 
  // Add a keydown event listener to handle arrow navigation and selection
- input.addEventListener('keydown', function (e) {
- 
+ input.addEventListener('keydown', async function (e) {
+
    const items = autocompleteList.getElementsByClassName('mzta_autocomplete-item');
    if ((autocompleteList.style.display === 'none' || items.length === 0)
          && (e.key !== 'Enter')
@@ -154,7 +181,11 @@ async function searchPrompt(allPrompts, tabId, tabType){
    // Handle number key presses (1-9,0) to select the corresponding item directly
    if (['1','2','3','4','5','6','7','8','9','0'].includes(e.key)) {
      // Map '1' to index 0, '2' to 1, ..., '9' to 8, '0' to 9
-     const numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
+     let numIndex = (e.key === '0') ? 9 : parseInt(e.key, 10) - 1;
+     if(checkDoAddTags()){
+      numIndex = parseInt(e.key, 10);
+     }
+
      if (items[numIndex]) {
          e.preventDefault(); // Prevent any default behavior
          // Dispatch a select_prompt event to simulate a click/select action
@@ -226,11 +257,15 @@ document.body.insertBefore(banner, document.body.firstChild);
 }
 
 
-function sendPrompt(prompt_id, tabId){
+async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
  document.getElementById('mzta_search_input').style.display = 'none';
  document.getElementById('mzta_sending_prompt').style.display = 'block';
- browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ let response = await browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
+ console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
+ if(response.ok == '1'){
+  window.close();
+ }
 }
 
 function filterPromptsForTab(prompts_data, filtering){
@@ -252,4 +287,23 @@ function filterPromptsForTab(prompts_data, filtering){
 
  // Filter the array based on the allowed types
  return prompts_data.filter(prompt => allowedTypes.includes(prompt.type));
+}
+
+function checkDoAddTags(){
+  return add_tags && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose');
+}
+
+function ensurePromptAddTagsFirst(arr) {
+  // Find the index of the object with id "prompt_add_tags"
+  const index = arr.findIndex(item => item.id === "prompt_add_tags");
+
+  // If found and not already the first element
+  if (index !== -1 && index !== 0) {
+    // Remove it from its current position
+    const [promptAddTags] = arr.splice(index, 1);
+    // Add it to the beginning of the array
+    arr.unshift(promptAddTags);
+  }
+
+  return arr;
 }

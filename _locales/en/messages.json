@@ -680,7 +680,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "You can now use additional data placeholders!",
+    "message": "You can use additional data placeholders.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "You can change the prompt as you wish, but the response received from the AI must be a comma-separated list of tags!",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1" : {
@@ -697,6 +701,198 @@
   },
   "prefs_OptionText_chatgpt_web_model_tooltip": {
     "message": "Click on a value to set it.",
+    "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Do not add the subject line to the response.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Reply in the same language.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Sign the message as",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Summarize the following email into a bullet point list.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Translate the following email in",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Add tags to emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "If checked, an item will be included in the menu to apply tags to emails.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Add tags to this email",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analyze the following email text and generate a comma-separated list of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details. The output should be only a list of comma separated tags without any additional comment or text.",
+    "description": ""
+  },
+  "placeholder_tags_current_email": {
+    "message": "Mail tags",
+    "description": ""
+  },
+  "placeholder_tags_full_list": {
+    "message": "Existing tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Maximum number of tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "The maximum number of tags proposed by the AI. Set to 0 if you don't want to limit the number of tags.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Limit the number of tags to",
+    "description": "" 
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Hide excluded tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "If checked, the tags that are present in the exclusion list will be hidden in the confirm dialog.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Manage tags settings",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Manage Tags Settings",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "In this page you can modify the default prompt used to add tags to emails and manage the exclusion list.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Exclusion list",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "This is a list of tags that are not allowed to be added to emails.",
+    "description": ""
+  },
+  "save": {
+    "message": "Save",
+    "description": ""
+  },
+  "addtags_info_additional_statements": {
+    "message": "This statement will be added at the end of the prompt:",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Reset to default",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Add a word per line, or separated by a comma.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Add tags to the email",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Exclude tag",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "No tags received from the AI.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "No valid tags found, after filtering with the exclusion list.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "ThunderAI Error",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "ThunderAI Warning",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "First letter uppercase",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "If checked, the tags label will be set to lowercase letters with only the first letter uppercase.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Add Tags Options",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Share your feedback and help us improve ThunderAI!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Click here, it only takes a minute!",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Manually insert model",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Insert here the model name you want to use.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Force language",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+    "message": "If checked, the tags language will be forced to match the language defined on the ThunderAI options page, if specified.",
+    "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+    "message": "The tags must be written in",
     "description": ""
   }
 }

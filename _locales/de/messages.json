@@ -680,7 +680,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Sie können jetzt zusätzliche Datenplatzhalter verwenden!",
+    "message": "Sie können zusätzliche Datenplatzhalter verwenden.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "Sie können den Prompt nach Wunsch ändern, aber die Antwort der KI muss eine durch Kommas getrennte Liste von Tags sein!",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -694,5 +698,201 @@
   "prefs_OptionText_owl_warning": {
     "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen.",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_tooltip": {
+    "message": "Klicken Sie auf einen Wert, um ihn festzulegen.",
+    "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Fügen Sie die Betreffzeile nicht zur Antwort hinzu.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Antworten Sie in derselben Sprache.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Unterzeichnen Sie die Nachricht als",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Antworten Sie auf die folgende E-Mail \"{%selected_text%}\", unter Berücksichtigung, dass dies der vollständige E-Mail-Thread ist \"{%mail_html_body%}\". Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Klassifizieren Sie den folgenden Text nach Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit der Kategorie und der Punktzahl ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Fassen Sie die folgende E-Mail in einer Liste mit Aufzählungspunkten zusammen.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Übersetzen Sie die folgende E-Mail in",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Tags zu E-Mails hinzufügen",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "If checked, an item will be included in the menu to apply tags to emails.\nWenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Tags zu dieser E-Mail hinzufügen",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein.",
+    "description": ""
+  },
+  "placeholder_tags_current_email": {
+    "message": "E-Mail-Tags",
+    "description": ""
+  },
+  "placeholder_tags_full_list": {
+    "message": "Vorhandene Tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Maximale Anzahl von Tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "Die maximale Anzahl von Tags, die von der KI vorgeschlagen werden. Setzen Sie auf 0, wenn Sie die Anzahl der Tags nicht begrenzen möchten.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Die Anzahl der Tags begrenzen auf",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Ausgeschlossene Tags ausblenden",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "Wenn aktiviert, werden die Tags, die in der Ausschlussliste enthalten sind, im Bestätigungsdialog ausgeblendet.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Tag-Einstellungen verwalten",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Tag-Einstellungen verwalten",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "Auf dieser Seite können Sie den Standard-Prompt zum Hinzufügen von Tags zu E-Mails bearbeiten und die Ausschlussliste verwalten.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Aktueller Prompt-Text",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Ausschlussliste",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "Dies ist eine Liste von Tags, die nicht zu E-Mails hinzugefügt werden dürfen.",
+    "description": ""
+  },
+  "save": {
+    "message": "Speichern",
+    "description": ""
+  },
+  "addtags_info_additional_statements": {
+    "message": "Diese Aussage wird am Ende des Prompts hinzugefügt:",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Auf Standard zurücksetzen",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Fügen Sie ein Wort pro Zeile oder durch ein Komma getrennt hinzu.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Tags zur E-Mail hinzufügen",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Tag ausschließen",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "Keine Tags von der KI erhalten.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "Nach der Filterung mit der Ausschlussliste wurden keine gültigen Tags gefunden.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "ThunderAI-Fehler",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "ThunderAI-Warnung",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "Erster Buchstabe groß",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "Wenn aktiviert, wird die Tags-Beschriftung in Kleinbuchstaben mit nur dem ersten Buchstaben in Großbuchstaben gesetzt.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Optionen zum Hinzufügen von Tags",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Teilen Sie Ihr Feedback und helfen Sie uns, ThunderAI zu verbessern!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Klicken Sie hier, es dauert nur eine Minute!",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Modell manuell einfügen",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Fügen Sie hier den Namen des Modells ein, das Sie verwenden möchten.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Sprache erzwingen",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+      "message": "Wenn aktiviert, wird die Sprache der Tags auf die in den ThunderAI Optionen definierte Sprache festgelegt, falls angegeben.",
+      "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+      "message": "Die Tags müssen in geschrieben werden",
+      "description": ""
   }
 }

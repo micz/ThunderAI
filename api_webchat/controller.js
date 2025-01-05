@@ -45,13 +45,13 @@ let worker = null;
 
 switch (llm) {
     case "chatgpt_api":
-        worker = new Worker('model-worker-openai.js', { type: 'module' });
+        worker = new Worker('../js/workers/model-worker-openai.js', { type: 'module' });
         break;
     case "ollama_api":
-        worker = new Worker('model-worker-ollama.js', { type: 'module' });
+        worker = new Worker('../js/workers/model-worker-ollama.js', { type: 'module' });
         break;
     case "openai_comp_api":
-        worker = new Worker('model-worker-openai_comp.js', { type: 'module' });
+        worker = new Worker('../js/workers/model-worker-openai_comp.js', { type: 'module' });
         break;
 }
 

@@ -65,7 +65,7 @@ const defaultPrompts = [
     {
         id: 'prompt_reply',
         name: "__MSG_prompt_reply__",
-        text: "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_full_text",
         type: "1",
         action: "1",
         need_selected: "0",
@@ -73,11 +73,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_reply_advanced',
         name: "__MSG_prompt_reply_advanced__",
-        text: "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_reply_advanced_full_text",
         type: "1",
         action: "1",
         need_selected: "1",
@@ -85,11 +86,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_polite',
         name: "__MSG_prompt_rewrite_polite__",
-        text: "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -97,11 +99,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_rewrite_formal',
         name: "__MSG_prompt_rewrite_formal__",
-        text: "Rewrite the following text to be more formal. Reply with only the re-written text and with no extra comments or other text.",
+        text: "prompt_rewrite_formal_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -109,11 +112,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_classify',
         name: "__MSG_prompt_classify__",
-        text: "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
+        text: "prompt_classify_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -121,11 +125,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_summarize_this',
         name: "__MSG_prompt_summarize_this__",
-        text: "Summarize the following email into a bullet point list.",
+        text: "prompt_summarize_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -133,11 +138,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_translate_this',
         name: "__MSG_prompt_translate_this__",
-        text: "Translate the following email in ",
+        text: "prompt_translate_this_full_text",
         type: "0",
         action: "0",
         need_selected: "0",
@@ -145,11 +151,12 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
     },
     {
         id: 'prompt_this',
         name: "__MSG_prompt_this__",
-        text: "Reply with only the needed text and with no extra comments or other text.",
+        text: "prompt_this_full_text",
         type: "2",
         action: "2",
         need_selected: "1",
@@ -157,16 +164,37 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         is_default: "1",
+        is_special: "0",
+    },
+];
+
+const specialPrompts = [
+    {
+        id: 'prompt_add_tags',
+        name: "__MSG_prompt_add_tags__",
+        text: "prompt_add_tags_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        is_default: "1",
+        is_special: "1",
     },
 ];
 
 
-export async function getPrompts(onlyEnabled = false){
+export async function getPrompts(onlyEnabled = false, includeSpecial = false){
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
-    let output = _defaultPrompts.concat(customPrompts);
+    const specialPrompts = await getSpecialPrompts();
+    let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
+    if(!includeSpecial){
+        output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
+    }
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
@@ -223,6 +251,7 @@ async function getDefaultPrompts_withProps() {
     if(prefs._default_prompts_properties === null){     // no default prompts properties saved
         let pos = 1;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.enabled = 1;
@@ -232,6 +261,7 @@ async function getDefaultPrompts_withProps() {
     } else {    // we have saved default prompts properties
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
@@ -268,7 +298,24 @@ export async function setDefaultPromptsProperties(prompts) {
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
 }
 
-
 export async function setCustomPrompts(prompts) {
     await browser.storage.local.set({_custom_prompt: prompts});
+}
+
+export async function getSpecialPrompts(){
+    let prefs = await browser.storage.local.get({_special_prompts: null});
+    if(prefs._special_prompts === null){
+        let def_specPrompts = [...specialPrompts];
+        def_specPrompts.forEach((prompt) => {
+            prompt.text = browser.i18n.getMessage(prompt.text);
+        })
+        return def_specPrompts;
+    } else {
+        return prefs._special_prompts;
+    }
+}
+
+export async function setSpecialPrompts(prompts) {
+    // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
+    await browser.storage.local.set({_special_prompts: prompts});
 }

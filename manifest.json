@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "2.3.4",
+    "version": "3.0.0pre3",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
@@ -31,6 +31,9 @@
         "activeTab",
         "accountsRead",
         "downloads",
+        "messagesTagsList",
+        "messagesTags",
+        "messagesUpdate",
         "https://*.chatgpt.com/*"
     ],
     "background": {

@@ -507,6 +507,10 @@
     "message": "La richiesta all'API Ollama è fallita",
     "description": ""
   },
+  "chatgpt_api_request_failed": {
+    "message": "Richiesta all'API compatibile con OpenAI ChatGPT fallita",
+    "description": ""
+  },
   "WaitingServerReponse": {
     "message": "In attesa della risposta del server",
     "description": ""
@@ -541,10 +545,6 @@
   },
   "OpenAIComp_api_request_failed": {
     "message": "Richiesta all'API compatibile con OpenAI fallita",
-    "description": ""
-  },
-  "chatgpt_api_request_failed": {
-    "message": "Richiesta all'API compatibile con OpenAI ChatGPT fallita",
     "description": ""
   },
   "prefs_OpenAIComp_ChatName": {
@@ -680,7 +680,11 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Ora puoi utilizzare segnaposti per i dati aggiuntivi!",
+    "message": "Puoi utilizzare segnaposto per dati aggiuntivi.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline2": {
+    "message": "Puoi modificare il prompt come preferisci, ma la risposta ricevuta dall'IA deve essere una lista di tag separati da virgole!",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -694,5 +698,201 @@
   "prefs_OptionText_owl_warning": {
     "message": "Sembra che almeno uno dei tuoi account stia utilizzando il componente aggiuntivo Gufo per Exchange. Esiste un problema noto tra Thunderbird e Gufo, che è attualmente in fase di risoluzione. Al momento, puoi utilizzare ThunderAI durante la composizione delle email, ma non durante la loro lettura.",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_model_tooltip": {
+    "message": "Fai clic su un valore per impostarlo.",
+    "description": ""
+  },
+  "prompt_reply_full_text": {
+    "message": "Rispondi alla seguente email. Rispondi solo con il testo necessario, senza commenti o altro testo aggiuntivo.",
+    "description": ""
+  },
+  "prompt_reply_additional_text": {
+    "message": "Non aggiungere la riga dell'oggetto alla risposta.",
+    "description": ""
+  },
+  "reply_same_lang": {
+    "message": "Rispondi nella stessa lingua.",
+    "description": ""
+  },
+  "sign_msg_as": {
+    "message": "Firma il messaggio come",
+    "description": ""
+  },
+  "prompt_reply_advanced_full_text": {
+    "message": "Rispondi alla seguente email \"{%selected_text%}\", considerando che questo è l'intero thread di email \"{%mail_html_body%}\". Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo.",
+    "description": ""
+  },
+  "prompt_rewrite_full_text": {
+    "message": "Riformula il seguente testo per renderlo più cortese. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo.",
+    "description": ""
+  },
+  "prompt_rewrite_formal_full_text": {
+    "message": "Riformula il seguente testo per renderlo più formale. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo.",
+    "description": ""
+  },
+  "prompt_classify_full_text": {
+    "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, indicando una percentuale per ciascuna categoria. Rispondi solo con la categoria e il punteggio, senza commenti aggiuntivi o altro testo.",
+    "description": ""
+  },
+  "prompt_summarize_this_full_text": {
+    "message": "Riepiloga la seguente email in una lista con punti elenco.",
+    "description": ""
+  },
+  "prompt_translate_this_full_text": {
+    "message": "Traduci la seguente email in",
+    "description": ""
+  },
+  "prompt_this_full_text": {
+    "message": "Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags": {
+    "message": "Aggiungi tag alle email",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_Info": {
+    "message": "Se selezionato, verrà incluso nel menu un elemento per applicare i tag alle email.",
+    "description": ""
+  },
+  "prompt_add_tags": {
+    "message": "Aggiungi tag a questa email",
+    "description": ""
+  },
+  "prompt_add_tags_full_text": {
+    "message": "Analizza il seguente testo email e genera una lista di tag separati da virgole che ne riassumano il contenuto. Usa temi, argomenti principali e descrittori pertinenti come tag. Assicurati che i tag siano concisi e rilevanti per il contenuto dell'email. Testo email: {%mail_text_body%} Considera i seguenti dettagli come contesto: - Mittente: {%author%} - Destinatari: {%recipients%} - Lista CC: {%cc_list%} - Oggetto dell'email: {%mail_subject%} Basa i tuoi tag sul testo e sul contesto dell'email, ignorando informazioni superflue o dettagli banali. L'output dovrebbe essere solo un elenco di tag separati da virgole, senza alcun commento o testo aggiuntivo.",
+    "description": ""
+  },
+  "placeholder_tags_current_email": {
+    "message": "Tag delle email",
+    "description": ""
+  },
+  "placeholder_tags_full_list": {
+    "message": "Tag esistenti",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum": {
+    "message": "Numero massimo di tag",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_maxnum_Info": {
+    "message": "Il numero massimo di tag proposti dall'IA. Imposta a 0 se non vuoi limitare il numero di tag.",
+    "description": ""
+  },
+  "prompt_add_tags_maxnum": {
+    "message": "Limita il numero di tag a",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions": {
+    "message": "Nascondi i tag esclusi",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_hide_exclusions_Info": {
+    "message": "Se selezionato, i tag presenti nella lista di esclusione saranno nascosti nella finestra di conferma.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTagsInfo": {
+    "message": "Gestisci le impostazioni dei tag",
+    "description": ""
+  },
+  "AddTags_PageTitle": {
+    "message": "Impostazioni dei Tag",
+    "description": ""
+  },
+  "AddTags_info_default": {
+    "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per aggiungere tag alle email e gestire la lista di esclusione.",
+    "description": ""
+  },
+  "AddTags_prompt_text_title": {
+    "message": "Testo del prompt attuale",
+    "description": ""
+  },
+  "AddTags_excl_list_title": {
+    "message": "Lista di esclusione",
+    "description": ""
+  },
+  "AddTags_excl_list_infoline": {
+    "message": "Questa è una lista di tag che non possono essere aggiunti alle email.",
+    "description": ""
+  },
+  "save": {
+    "message": "Salva",
+    "description": ""
+  },
+  "addtags_info_additional_statements": {
+    "message": "Questa frase verrà aggiunta alla fine del prompt:",
+    "description": ""
+  },
+  "reset_default": {
+    "message": "Ripristina impostazioni predefinite",
+    "description": ""
+  },
+  "addtags_excl_list_infoline2": {
+    "message": "Aggiungi una parola per riga o separata da una virgola.",
+    "description": ""
+  },
+  "addtags_dialog_title": {
+    "message": "Aggiungi tag all'email",
+    "description": ""
+  },
+  "addtags_exclude_tag": {
+    "message": "Escludi il tag",
+    "description": ""
+  },
+  "addtags_no_tags_received": {
+    "message": "Nessun tag ricevuto dall'IA.",
+    "description": ""
+  },
+  "addtags_no_valid_tags": {
+    "message": "Nessun tag valido trovato dopo aver applicato il filtro della lista di esclusione.",
+    "description": ""
+  },
+  "thunderai_error_title": {
+    "message": "Errore ThunderAI",
+    "description": ""
+  },
+  "thunderai_warning_title": {
+    "message": "Avviso ThunderAI",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase": {
+    "message": "Prima lettera maiuscola",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_first_uppercase_Info": {
+    "message": "Se selezionato, l'etichetta dei tag sarà impostata in lettere minuscole con solo la prima lettera maiuscola.",
+    "description": ""
+  },
+  "AddTags_prompt_prefs_title": {
+    "message": "Opzioni per aggiungere tag",
+    "description": ""
+  },
+  "prefs_SurveyLinkText": {
+    "message": "Condividi il tuo feedback e aiutaci a migliorare ThunderAI!",
+    "description": ""
+  },
+  "prefs_SurveyLinkText2": {
+    "message": "Clicca qui, ci vuole solo un minuto!",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ForceModel": {
+    "message": "Inserisci manualmente il modello",
+    "description": ""
+  },
+  "OpenAIComp_force_model_ask": {
+    "message": "Inserisci qui il nome del modello che vuoi utilizzare.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang": {
+    "message": "Forza lingua",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_force_lang_Info": {
+      "message": "Se selezionato, la lingua dei tag sarà forzata a corrispondere a quella definita nella pagina delle opzioni di ThunderAI, se specificata.",
+      "description": ""
+  },
+  "prompt_add_tags_force_lang": {
+      "message": "I tag devono essere scritti in",
+      "description": ""
   }
 }

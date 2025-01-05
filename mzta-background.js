@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -28,8 +28,8 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_debug = await browser.storage.sync.get({do_debug: false});
-let taLog = new taLogger("mzta-background",prefs_debug.do_debug);
+let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, connection_type: 'chatgpt_web'});
+let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -210,14 +210,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _reloadBody(message.tabId);
                 break;
             case 'reload_menus':
-                menus.reload();
-                taLog.log("Reloading menus");
-                return Promise.resolve(true);
+                async function _reload_menus() {
+                    let prefs_reload = await browser.storage.sync.get({add_tags: true, connection_type: 'chatgpt_web'});
+                    menus.reload(prefs_reload.add_tags && (prefs_reload.connection_type !== "chatgpt_web"));
+                    taLog.log("Reloading menus");
+                    return true;
+                }
+                return _reload_menus();
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
-                menus.executeMenuAction(message.promptId);
-                return Promise.resolve(true);
+                return menus.executeMenuAction(message.promptId);
                 break;
             case 'popup_menu_ready':
                 async function _popup_menu_ready() {
@@ -229,6 +232,26 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //return true;
                 }
                 return _popup_menu_ready();
+                break;
+            case 'assign_tags':
+                async function _assign_tags() {
+                    let all_tags_list = await getTagsList();
+                    all_tags_list = all_tags_list[1];
+                    console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+                    taLog.log("assign_tags data: " + JSON.stringify(message));
+                    let new_tags = [];
+                    for (const tag of message.tags) {
+                        console.log(">>>>>>>>>>>>>>> tag: " + tag);
+                        if (!checkIfTagExists(tag, all_tags_list)) {
+                            taLog.log("Creating tag: " + tag);
+                            await createTag(tag);
+                        }
+                        new_tags.push(tag);
+                    }
+                    await assignTagsToMessage(message.messageId, new_tags);
+                    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
+                }
+                return _assign_tags();
                 break;
             default:
                 break;
@@ -384,7 +407,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
             let rand_call_id3 = '_ollama_' + generateCallID();
 
-            const listener3 = async (message, sender, sendResponse) => {
+            const listener3 = (message, sender, sendResponse) => {
 
                 function handleOllamaApi(createdTab3) {
                     taLog.log("Ollama API window ready.");
@@ -440,7 +463,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let rand_call_id4 = '_openai_comp_api_' + generateCallID();
 
       
-                const listener4 = async (message, sender, sendResponse) => {
+                const listener4 = (message, sender, sendResponse) => {
 
                     function handleOpenAICompApi(createdTab) {
                         let mailMessageId4 = -1;
@@ -497,6 +520,23 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
+// Register the listener for storage changes
+browser.storage.onChanged.addListener((changes, areaName) => {
+    // Check if the change happened in the 'sync' storage area
+    if (areaName === 'sync') {
+        // Check if 'add_tags' has changed
+        //console.log(">>>>>>>>>>>>> changes: " + JSON.stringify(changes));
+        if (changes.add_tags) {
+            menus.reload(changes.add_tags.newValue && (prefs_init.connection_type !== "chatgpt_web"));
+        }
+
+        // Check if 'connection_type' has changed
+        if (changes.connection_type) {
+            menus.reload(prefs_init.add_tags && (changes.connection_type.newValue !== "chatgpt_web"));
+        }
+    }
+});
+
 // Menus handling
-const menus = new mzta_Menus(openChatGPT, prefs_debug.do_debug);
-menus.loadMenus();
+const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
+menus.loadMenus(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
