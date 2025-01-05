@@ -507,6 +507,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 await browser.windows.create(win_options4);
         
                 break;  // openai_comp_api
+                default:
+                    taLog.error("Unknown API connection type: " + prefs.connection_type);
+                break;
     }
 }
 
