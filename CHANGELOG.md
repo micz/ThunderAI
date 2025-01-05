@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 3.1.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.0.0 - 05/01/2025</h2>
       <ul>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Added a special prompt to apply tags to emails [<a href="https://github.com/micz/ThunderAI/issues/183">#183</a>].</li>
