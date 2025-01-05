@@ -2,15 +2,7 @@
 
 ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT or Ollama to enhance email management.
 
-<br>
-
-> [!IMPORTANT]
-> Are you using ThunderAI with an API integration?
-> Try the new [3.0](https://github.com/micz/ThunderAI/releases/tag/v3.0.0pre3) prerelease with the new **automatic tagging** feature!
-
-<br>
-
-It enables users to analyse, write, correct, and optimize their emails, facilitating more effective and professional communication.
+It enables users to analyse, write, correct, assign tags and optimize their emails, facilitating more effective and professional communication.
 
 ThunderAI is a tool for anyone looking to improve their email quality, both in content and grammar, making the writing process quicker and more intuitive. 
 
