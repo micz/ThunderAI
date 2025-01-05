@@ -20,12 +20,12 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAI } from '../api/openai.js';
+import { GoogleGemini } from '../api/google_gemini.js';
 import { taLogger } from '../mzta-logger.js';
 
-let chatgpt_api_key = null;
-let chatgpt_model = '';
-let openai = null;
+let google_gemini_api_key = null;
+let google_gemini_model = '';
+let google_gemini = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
@@ -36,16 +36,16 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        chatgpt_api_key = event.data.chatgpt_api_key;
-        chatgpt_model = event.data.chatgpt_model;
-        openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
+        google_gemini_api_key = event.data.google_gemini_api_key;
+        google_gemini_model = event.data.google_gemini_model;
+        google_gemini = new GoogleGemini(google_gemini_api_key, google_gemini_model, true);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
-        taLog = new taLogger('model-worker-openai', do_debug);
+        taLog = new taLogger('model-worker-google_gemini', do_debug);
     } else if (event.data.type === 'chatMessage') {
-        conversationHistory.push({ role: 'user', content: event.data.message });
+        conversationHistory.push({ role: 'user', parts: [{"text": event.data.message}] });
 
-    const response = await openai.fetchResponse(conversationHistory); //4096);
+    const response = await google_gemini.fetchResponse(conversationHistory);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
@@ -63,8 +63,8 @@ self.onmessage = async function(event) {
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
             }
-            postMessage({ type: 'error', payload: i18nStrings["chatgpt_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] OpenAI ChatGPT API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: i18nStrings["google_gemini_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
+            throw new Error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
         const reader = response.body.getReader();
@@ -75,19 +75,19 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
                 break;
             }
             const { done, value } = await reader.read();
             if (done) {
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
                 break;
             }
-            // lots of low-level OpenAI response parsing stuff
+            // lots of low-level Google Gemini response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
             taLog.log("buffer " + buffer);
@@ -108,13 +108,14 @@ self.onmessage = async function(event) {
             }
     
             for (const parsedLine of parsedLines) {
-                const { choices } = parsedLine;
-                const { delta } = choices[0];
-                const { content } = delta;
+                const { candidates } = parsedLine;
+                const { content } = candidates[0];
+                const { parts } = content;
+                const { text } = parts[0];
                 // Update the UI with the new content
-                if (content) {
-                    assistantResponseAccumulator += content;
-                    postMessage({ type: 'newToken', payload: { token: content } });
+                if (text) {
+                    assistantResponseAccumulator += text;
+                    postMessage({ type: 'newToken', payload: { token: text } });
                 }
             }
         }

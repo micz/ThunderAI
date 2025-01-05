@@ -914,5 +914,21 @@
   "GoogleGemini_Models_Error_fetching": {
     "message": "Error trying to fetch Google Gemini models",
     "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "Google Gemini API request failed",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Attempting to connect to Google Gemini using the API key provided",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "You've not added an API Key for the Google Gemini API. Please insert one in the options page.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "You've not choosen a model for the Google Gemini API. Please choose one in the options page.",
+    "description": ""
   }
 }

@@ -67,9 +67,39 @@ export class GoogleGemini {
     }
   }
   
-//TODO
-  fetchResponse = async (messages, maxTokens = 0) => {
-    
+  fetchResponse = async (messages, system_instruction = '') => {
+    try {
+
+      let google_gemini_body = {
+        contents:messages
+      };
+
+      if(system_instruction !== '') {
+        google_gemini_body.system_instruction = {
+          parts:{
+            text: system_instruction
+          }
+        }
+      }
+
+      console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
+
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":generateContent?key=" + this.apiKey + (this.stream ? '&alt=sse' : ''), {
+          method: "POST",
+          headers: { 
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify(google_gemini_body),
+      });
+      return response;
+    }catch (error) {
+        console.error("[ThunderAI] Google Gemini API request failed: " + error);
+        let output = {};
+        output.is_exception = true;
+        output.ok = false;
+        output.error = "Google Gemini API request failed: " + error;
+        return output;
+    }
   }
 
 }
