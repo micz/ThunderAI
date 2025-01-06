@@ -262,7 +262,7 @@ async function sendPrompt(prompt_id, tabId){
  document.getElementById('mzta_search_input').style.display = 'none';
  document.getElementById('mzta_sending_prompt').style.display = 'block';
  let response = await browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
- console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
+//  console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
  if(response.ok == '1'){
   window.close();
  }
