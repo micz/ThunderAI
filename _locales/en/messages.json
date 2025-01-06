@@ -930,5 +930,13 @@
   "google_gemini_empty_model": {
     "message": "You've not choosen a model for the Google Gemini API. Please choose one in the options page.",
     "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "System Instruction",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "When you set a system instruction, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
+    "description": ""
   }
 }

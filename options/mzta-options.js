@@ -45,7 +45,9 @@ function saveOptions(e) {
       default:
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
-        }else{
+        } else if (element.tagName === 'TEXTAREA') {
+          options[element.id] = element.value.trim();
+        } else {
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
     }
@@ -82,6 +84,8 @@ async function restoreOptions() {
           if (element.value === '') {
             element.selectedIndex = -1;
           }
+        } else if (element.tagName === 'TEXTAREA') {
+          element.value = result[element.id];
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }

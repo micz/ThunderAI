@@ -35,6 +35,7 @@ export const prefs_default = {
     openai_comp_chat_name: 'OpenAI Comp',
     google_gemini_api_key: '',
     google_gemini_model: '',
+    google_gemini_system_instruction: '',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
