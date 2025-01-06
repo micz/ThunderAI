@@ -97,7 +97,7 @@ self.onmessage = async function(event) {
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                    .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                    .filter((line) => line !== "" ) // Remove empty lines
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
                         taLog.log("line: " + JSON.stringify(line));
