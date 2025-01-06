@@ -78,13 +78,13 @@ switch (llm) {
         break;
     }
     case "google_gemini_api": {
-        let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: '', do_debug: false});
+        let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: '', google_gemini_system_instruction: '', do_debug: false});
         let i18nStrings = {};
         i18nStrings["google_gemini_api_request_failed"] = browser.i18n.getMessage('google_gemini_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.google_gemini_model);
         messagesArea.setLLMName("Google Gemini");
-        worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(browser.i18n.getMessage("google_gemini_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.google_gemini_model + "\"...", "info");
         browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;

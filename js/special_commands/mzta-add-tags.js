@@ -58,8 +58,8 @@
                 break;
             }
             case "google_gemini_api": {
-                let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: ''});
-                this.worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, do_debug: this.do_debug, i18nStrings: ''});
+                let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: '', google_gemini_system_instruction: ''});
+                this.worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
             case "ollama_api": {

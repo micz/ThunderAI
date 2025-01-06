@@ -38,14 +38,14 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         google_gemini_api_key = event.data.google_gemini_api_key;
         google_gemini_model = event.data.google_gemini_model;
-        google_gemini = new GoogleGemini(google_gemini_api_key, google_gemini_model, true);
+        google_gemini = new GoogleGemini(google_gemini_api_key, google_gemini_model, event.data.google_gemini_system_instruction, true);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-google_gemini', do_debug);
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', parts: [{"text": event.data.message}] });
 
-    const response = await google_gemini.fetchResponse(conversationHistory);
+        const response = await google_gemini.fetchResponse(conversationHistory);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {

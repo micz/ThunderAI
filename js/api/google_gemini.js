@@ -22,11 +22,13 @@ export class GoogleGemini {
 
   apiKey = '';
   model = '';
+  system_instruction = '';
   stream = false;
 
-  constructor(apiKey, model, stream) {
+  constructor(apiKey, model, system_instruction, stream) {
     this.apiKey = apiKey;
     this.model = model;
+    this.system_instruction = system_instruction;
     this.stream = stream;
   }
 
@@ -67,17 +69,19 @@ export class GoogleGemini {
     }
   }
   
-  fetchResponse = async (messages, system_instruction = '') => {
+  fetchResponse = async (messages) => {
     try {
 
       let google_gemini_body = {
         contents:messages
       };
 
-      if(system_instruction !== '') {
+      console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
+
+      if(this.system_instruction !== '') {
         google_gemini_body.system_instruction = {
           parts:{
-            text: system_instruction
+            text: this.system_instruction
           }
         }
       }
