@@ -118,7 +118,7 @@ tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
     font-style: italic;
 }
 
-#google_gemini_system_instruction{
+textarea.option-textarea{
     width: -moz-available;
     height: 10em;
 }
