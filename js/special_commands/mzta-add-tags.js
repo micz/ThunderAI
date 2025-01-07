@@ -53,8 +53,8 @@
     async initWorker() {
         switch (this.llm) {
             case "chatgpt_api": {
-                let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-                this.worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, do_debug: this.do_debug, i18nStrings: ''});
+                let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages: ''});
+                this.worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
             case "google_gemini_api": {
