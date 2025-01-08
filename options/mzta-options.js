@@ -406,9 +406,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       taLog.log("GoogleGemini models: " + JSON.stringify(data));
       data.response.forEach(model => {
-        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.id)) {
+        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
           const option = document.createElement('option');
-          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);;
+          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
           option.text = model.displayName;
           select_google_gemini_model.appendChild(option);
         }
