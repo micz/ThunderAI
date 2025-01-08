@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     updateAdditionalPromptStatements();
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'selected_text' || p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     let excl_list_textarea = document.getElementById('addtags_excl_list');
