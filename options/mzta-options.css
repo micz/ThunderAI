@@ -104,9 +104,23 @@ tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
     background-color: rgb(213, 169, 238);
 }
 
+tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
+    background-color: rgb(233, 238, 169);
+}
+
 #chatgpt_model_fetch_loading{
     display: none;
     font-style: italic;
+}
+
+#google_gemini_model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
+textarea.option-textarea{
+    width: -moz-available;
+    height: 10em;
 }
 
 .api_key-container {
@@ -216,6 +230,10 @@ input.option-input[type="text"]{
 
     tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
         background-color: rgb(89, 20, 129);
+    }
+
+    tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
+        background-color: rgb(72, 77, 3);
     }
 
     .api_key-container .toggle-icon img {

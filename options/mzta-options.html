@@ -109,6 +109,7 @@
             <select id="connection_type" name="connection_type" class="option-input">
               <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGPT_Web__</option>
               <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGPT_API__</option>
+              <option value="google_gemini_api">__MSG_prefs_Connection_type_Google_Gemini_API__</option>
               <option value="ollama_api">__MSG_prefs_Connection_type_Ollama_API__</option>
               <option value="openai_comp_api">__MSG_prefs_Connection_type_OpenAI_Comp_API__</option>
             </select>
@@ -171,6 +172,59 @@
           <label>
             <select id="chatgpt_model" name="chatgpt_model" class="option-input">
             </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_chatgpt_api">
+        <td>
+          <label>
+            <span>__MSG_ChatGPT_Developer_Messages__</span>
+          </label>
+        </td>
+        <td>
+          <label>
+            <textarea id="chatgpt_developer_messages" name="chatgpt_developer_messages" class="option-input option-textarea"></textarea>
+            <br>__MSG_ChatGPT_Developer_Messages_Info__
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_google_gemini_api">
+        <td><label>
+          <span>__MSG_prefs_GoogleGemini_API_Key__</span>
+        </label></td>
+        <td>
+          <div class="api_key-container">
+            <label>
+              <input type="password" id="google_gemini_api_key" name="google_gemini_api_key" class="option-input"/>
+            </label>
+            <span class="toggle-icon" id="toggle_google_gemini_api_key"><img src="../images/pwd-show.png" id="pwd-icon_google_gemini_api_key"></span>
+          </div>
+        </td>
+      </tr>
+      <tr class="conntype_google_gemini_api">
+        <td>
+          <label>
+            <span>__MSG_GoogleGemini_Models__</span>
+          </label>
+        </td>
+        <td>
+          <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
+          <label>
+            <select id="google_gemini_model" name="google_gemini_model" class="option-input">
+            </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_google_gemini_api">
+        <td>
+          <label>
+            <span>__MSG_GoogleGemini_SystemInstruction__</span>
+          </label>
+        </td>
+        <td>
+          <label>
+            <textarea id="google_gemini_system_instruction" name="google_gemini_system_instruction" class="option-input option-textarea"></textarea>
+            <br>__MSG_GoogleGemini_SystemInstruction_Info__
           </label>
         </td>
       </tr>

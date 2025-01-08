@@ -38,6 +38,9 @@
             case "chatgpt_api":
                 this.worker = new Worker(new URL('../workers/model-worker-openai.js', import.meta.url), { type: 'module' });
                 break;
+            case "google_gemini_api":
+                this.worker = new Worker(new URL('../workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
+                break;
             case "ollama_api":
                 this.worker = new Worker(new URL('../workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
                 break;
@@ -49,10 +52,16 @@
 
     async initWorker() {
         switch (this.llm) {
-            case "chatgpt_api":
-                let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: ''});
-                this.worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, do_debug: this.do_debug, i18nStrings: ''});
+            case "chatgpt_api": {
+                let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages: ''});
+                this.worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, do_debug: this.do_debug, i18nStrings: ''});
                 break;
+            }
+            case "google_gemini_api": {
+                let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: '', google_gemini_system_instruction: ''});
+                this.worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: this.do_debug, i18nStrings: ''});
+                break;
+            }
             case "ollama_api": {
                 let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: ''});
                 this.worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, do_debug: this.do_debug, i18nStrings: ''});

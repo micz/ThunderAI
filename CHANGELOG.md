@@ -7,6 +7,7 @@
 
 <h2>Version 3.1.0 - ??/??/2025</h2>
       <ul>
+        <li>Added Google Gemini API support [<a href="https://github.com/micz/ThunderAI/issues/204">#204</a>, <a href="https://github.com/micz/ThunderAI/issues/217">#2174</a>].</li>
         <li>Added an info text about using the new <i>{%tags_full_list%}</i> placeholder in the "Add Tags Prompt" page [<a href="https://github.com/micz/ThunderAI/issues/215">#215</a>].</li>
         <li>...</li>
       </ul>

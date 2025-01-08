@@ -895,6 +895,56 @@
     "message": "The tags must be written in",
     "description": ""
   },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "Google Gemini API",
+    "description": ""
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "API Key",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Google Gemini API Models",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Update Google Gemini Models list",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Error trying to fetch Google Gemini models",
+    "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "Google Gemini API request failed",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Attempting to connect to Google Gemini using the API key provided",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "You've not added an API Key for the Google Gemini API. Please insert one in the options page.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "You've not choosen a model for the Google Gemini API. Please choose one in the options page.",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "System Instruction",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "When you set a system instruction, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages": {
+    "message": "Developer Messages",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages_Info": {
+    "message": "When you set the developer messages, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
   "prefs_OptionText_btnManagePrompts_infoline3": {
     "message": "You can use the {%tags_full_list%} data placeholder in the prompt to list the available tags. With an appropriate prompt, you could then force the tags to be chosen only from the list of those already existing.",
     "description": ""

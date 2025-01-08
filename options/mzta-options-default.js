@@ -21,11 +21,12 @@ export const prefs_default = {
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
     default_chatgpt_lang: '',
-    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api'
+    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
     chatgpt_api_key: '',
     chatgpt_model: '',
+    chatgpt_developer_messages: '',
     ollama_host: '',
     ollama_model: '',
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
@@ -33,6 +34,9 @@ export const prefs_default = {
     openai_comp_api_key: '',
     openai_comp_use_v1: true,
     openai_comp_chat_name: 'OpenAI Comp',
+    google_gemini_api_key: '',
+    google_gemini_model: '',
+    google_gemini_system_instruction: '',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
