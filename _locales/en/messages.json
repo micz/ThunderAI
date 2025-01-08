@@ -945,6 +945,8 @@
   },
   "ChatGPT_Developer_Messages_Info": {
     "message": "When you set the developer messages, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the prompt that will be sent.",
+  "prefs_OptionText_btnManagePrompts_infoline3": {
+    "message": "You can use the {%tags_full_list%} data placeholder in the prompt to list the available tags. With an appropriate prompt, you could then force the tags to be chosen only from the list of those already existing.",
     "description": ""
   }
 }
