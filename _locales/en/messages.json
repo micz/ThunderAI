@@ -950,5 +950,9 @@
   "prefs_OptionText_btnManagePrompts_infoline3": {
     "message": "You can use the {%tags_full_list%} data placeholder in the prompt to list the available tags. With an appropriate prompt, you could then force the tags to be chosen only from the list of those already existing.",
     "description": ""
+  },
+  "placeholder_mail_typed_text": {
+    "message": "Typed text before the quoted mail body",
+    "description": ""
   }
 }
