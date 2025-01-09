@@ -82,6 +82,7 @@ export class mzta_Menus {
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
                 text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
                 html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
+                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText" })
             };
         };
     
@@ -99,8 +100,10 @@ export class mzta_Menus {
     
             let body_text = '';
             let selection_text = '';
+            let only_typed_text = '';
             selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
             let chatgpt_lang = '';
@@ -149,6 +152,9 @@ export class mzta_Menus {
                             break;
                         case 'mail_html_body':
                             finalSubs['mail_html_body'] = msg_text.html;
+                            break;
+                        case 'mail_typed_text':
+                            finalSubs['mail_typed_text'] = only_typed_text;
                             break;
                         case 'mail_subject':
                             let mail_subject = await getMailSubject(tabs[0]);

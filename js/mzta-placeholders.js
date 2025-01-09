@@ -48,6 +48,13 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'mail_typed_text',
+        name: "__MSG_placeholder_mail_typed_text__",
+        default_value: "",
+        type: 2,
+        is_default: "1",
+    },
+    {
         id: 'mail_subject',
         name: "__MSG_placeholder_mail_subject__",
         default_value: "",
