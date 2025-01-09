@@ -8,6 +8,7 @@
 <h2>Version 3.1.0 - ??/??/2025</h2>
       <ul>
         <li>Added Google Gemini API support [<a href="https://github.com/micz/ThunderAI/issues/204">#204</a>, <a href="https://github.com/micz/ThunderAI/issues/217">#2174</a>].</li>
+        <li>Added <i>{%mail_typed_text%}</i> data placeholder to get the text inserted before the quoted mail body when replying [<a href="https://github.com/micz/ThunderAI/issues/196">#196</a>].</li>
         <li>Added an info text about using the new <i>{%tags_full_list%}</i> placeholder in the "Add Tags Prompt" page [<a href="https://github.com/micz/ThunderAI/issues/215">#215</a>].</li>
         <li>...</li>
       </ul>
@@ -15,8 +16,8 @@
       <ul>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API]</i> Added a special prompt to apply tags to emails [<a href="https://github.com/micz/ThunderAI/issues/183">#183</a>].</li>
         <li>Default prompts text has been translated [<a href="https://github.com/micz/ThunderAI/issues/185">#185</a>].</li>
-        <li>Data placeholder <i>{%tags_full_list%}</i> for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
-        <li>Data placeholder <i>{%tags_current_email%}</i> for the single mail tags list added [<a href="https://github.com/micz/ThunderAI/issues/198">#198</a>].</li>
+        <li>Added <i>{%tags_full_list%}</i> data placeholder for the full available tags list added [<a href="https://github.com/micz/ThunderAI/issues/197">#197</a>].</li>
+        <li>Added <i>{%tags_current_email%}</i> data placeholder for the single mail tags list added [<a href="https://github.com/micz/ThunderAI/issues/198">#198</a>].</li>
         <li>User <a href="https://forms.gle/1qK2wcbuhaRzhwyt9">survey link</a> added [<a href="https://github.com/micz/ThunderAI/issues/202">#202</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added a button in the options page to manually insert the model [<a href="https://github.com/micz/ThunderAI/issues/205">#205</a>].</li>
         <li>Polish (pl) translation added, thanks to <a href="https://github.com/neexpl">neexpl</a>.</li>

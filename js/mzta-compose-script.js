@@ -39,7 +39,7 @@ switch (message.command) {
     return Promise.resolve(true);
     break;
 
-  case "getText":
+  case "getText": {
     let t = '';
     const children = window.document.body.childNodes;
     for (const node of children) {
@@ -51,12 +51,28 @@ switch (message.command) {
       t += node.textContent;
     }
     return Promise.resolve(t);
+  }
 
   case "getTextOnly":
       return Promise.resolve(window.document.body.innerText);
 
   case "getFullHtml":
       return Promise.resolve(window.document.body.innerHTML);
+
+  case "getOnlyTypedText": {
+    // TODO: add support for moz-cite-prefix
+    let t = '';
+    const children = window.document.body.childNodes;
+    for (const node of children) {
+      if (node instanceof Element) {
+        if (node.classList.contains('moz-cite-prefix')) {
+          break;
+        }
+      }
+      t += node.textContent;
+    }
+    return Promise.resolve(t);
+  }
 
   case 'sendAlert':
     //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
