@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         browser.tabs.update(tabs[0].id, {active: true});
       } else {
         // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../get-calendar-event/addtags/mzta-get-calendar-event.html')});
+        browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
       }
     })
   });
