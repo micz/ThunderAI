@@ -182,6 +182,19 @@ const specialPrompts = [
         is_default: "1",
         is_special: "1",
     },
+    {
+        id: 'prompt_get_calitem',
+        name: "__MSG_prompt_get_calitem__",
+        text: "prompt_get_calitem_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "1",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        is_default: "1",
+        is_special: "1",
+    },
 ];
 
 
