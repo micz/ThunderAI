@@ -183,9 +183,9 @@ const specialPrompts = [
         is_special: "1",
     },
     {
-        id: 'prompt_get_calitem',
-        name: "__MSG_prompt_get_calitem__",
-        text: "prompt_get_calitem_full_text",
+        id: 'prompt_get_calendar_event',
+        name: "__MSG_prompt_get_calendar_event__",
+        text: "prompt_get_calendar_event_full_text",
         type: "1",
         action: "0",
         need_selected: "1",
