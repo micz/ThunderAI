@@ -252,6 +252,8 @@ function disable_MaxPromptLength(){
 
 function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
+  let conntype_select = document.getElementById("connection_type");
+  add_tags.disabled = (conntype_select.value === "chatgpt_web");
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
@@ -332,6 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  conntype_select.addEventListener("change", disable_AddTags);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
