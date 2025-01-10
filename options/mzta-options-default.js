@@ -46,4 +46,5 @@ export const prefs_default = {
     add_tags_hide_exclusions: false,
     add_tags_first_uppercase: true,
     add_tags_force_lang: true,
+    get_calendar_event: true,
 }

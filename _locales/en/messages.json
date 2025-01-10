@@ -955,12 +955,24 @@
     "message": "Typed text before the quoted mail body",
     "description": ""
   },
-  "prompt_get_calitem": {
+  "prompt_get_calendar_event": {
     "message": "Add a new calendar event",
     "description": ""
   },
-  "prompt_get_calitem_full_text": {
+  "prompt_get_calendar_event_full_text": {
     "message": "Extract all relevant details required to generate an iCalendar (iCal) file from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Location (if available)\n- Description or Additional Notes (if available)\n- Organizer's Name and Contact Details (if available)\n- Recurrence Rules (if mentioned)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating an iCal file. Highlight any missing or ambiguous details that might require clarification. Here's the text:\"{%selected_text%}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Add a new calendar event from selected text",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Manage calendar event settings",
     "description": ""
   }
 }
