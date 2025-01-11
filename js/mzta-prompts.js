@@ -324,7 +324,21 @@ export async function getSpecialPrompts(){
         })
         return def_specPrompts;
     } else {
-        return prefs._special_prompts;
+        let updatedPrompts = [...prefs._special_prompts];
+
+        specialPrompts.forEach((defaultPrompt) => {
+            if (!updatedPrompts.some((prompt) => prompt.id === defaultPrompt.id)) {
+                let newPrompt = { ...defaultPrompt };
+                newPrompt.text = browser.i18n.getMessage(newPrompt.text);
+                updatedPrompts.push(newPrompt);
+            }
+        });
+
+        if (updatedPrompts.length !== prefs._special_prompts.length) {
+            await browser.storage.local.set({ _special_prompts: updatedPrompts });
+        }
+
+        return updatedPrompts;
     }
 }
 
