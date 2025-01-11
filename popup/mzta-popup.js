@@ -148,7 +148,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
   //    }
   //  }
    Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
-     let number = (index < 9) ? (index + 1).toString() : '0';
+     let number = (index + first_num_el).toString();
      // Check if the number is already prepended to avoid duplication
      if (!item.numberPrepended) {
          item.label = `${number}. ${item.label}`;
