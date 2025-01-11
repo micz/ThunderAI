@@ -198,15 +198,28 @@ const specialPrompts = [
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = false){
+export async function getPrompts(onlyEnabled = false, includeSpecial = []){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
     let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
-    if(!includeSpecial){
+    if(includeSpecial.length == 0){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
+    }else{
+        // console.log(">>>>>>>>>> getPrompts includeSpecial: " + JSON.stringify(includeSpecial));
+        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1);
+        // output = output.filter(obj => {
+        //     const isIncluded = includeSpecial.includes(obj.id);
+        //     const isNotSpecial = obj.is_special != 1;
+
+        //     console.log(`>>>>>>>>>> Checking obj:`, obj);
+        //     console.log(`>>>>>>>>>> isIncluded: ${isIncluded}`);
+        //     console.log(`>>>>>>>>>> isNotSpecial: ${isNotSpecial}`);
+
+        //     return isIncluded || isNotSpecial;
+        //   });
     }
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);

@@ -51,7 +51,7 @@ export class mzta_Menus {
     }
 
 
-    async initialize(also_special = false) {
+    async initialize(also_special = []) {    // also_special is an array of active special prompts ids
         this.allPrompts = [];
         this.rootMenu = [];
         this.shortcutMenu = [];
@@ -63,7 +63,7 @@ export class mzta_Menus {
         });
     }
 
-    async reload(also_special = false) {
+    async reload(also_special = []) {
         await browser.menus.removeAll().catch(error => {
                 console.error("[ThunderAI] ERROR removing the menus: ", error);
             });
@@ -212,7 +212,7 @@ export class mzta_Menus {
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
-                    case 'prompt_add_tags': // Add tags to the email
+                    case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = '';
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
@@ -241,10 +241,21 @@ export class mzta_Menus {
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email: " + tags_current_email);
-                        console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
+                        // console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         return {ok:'1'};
-                        break;
+                        break;  // Add tags to the email - END
+                    }
+                    case 'get_calendar_event': {  // Get a calendar event info
+                        let prefs_at = await browser.storage.sync.get({connection_type: ''});
+                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
+                            console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
+                            return {ok:'0'};
+                        }
+                        //TODO
+                        return {ok:'1'};
+                        break;  // Get a calendar event info - END
+                    }
                     default:
                         console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
                         break;
@@ -278,7 +289,7 @@ export class mzta_Menus {
         this.shortcutMenu.push(curr_menu_entry);
     }
 
-    async loadMenus(also_special = false) {
+    async loadMenus(also_special = []) {
         await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();

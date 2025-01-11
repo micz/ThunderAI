@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -28,8 +28,10 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, connection_type: 'chatgpt_web'});
+let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
+
+let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -211,8 +213,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'reload_menus':
                 async function _reload_menus() {
-                    let prefs_reload = await browser.storage.sync.get({add_tags: true, connection_type: 'chatgpt_web'});
-                    menus.reload(prefs_reload.add_tags && (prefs_reload.connection_type !== "chatgpt_web"));
+                    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
+                    menus.reload((prefs_reload.add_tags||prefs_reload.get_calendar_event) && (prefs_reload.connection_type !== "chatgpt_web"));
                     taLog.log("Reloading menus");
                     return true;
                 }
@@ -573,23 +575,59 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-// Register the listener for storage changes
-browser.storage.onChanged.addListener((changes, areaName) => {
-    // Check if the change happened in the 'sync' storage area
-    if (areaName === 'sync') {
-        // Check if 'add_tags' has changed
-        //console.log(">>>>>>>>>>>>> changes: " + JSON.stringify(changes));
-        if (changes.add_tags) {
-            menus.reload(changes.add_tags.newValue && (prefs_init.connection_type !== "chatgpt_web"));
-        }
-
-        // Check if 'connection_type' has changed
-        if (changes.connection_type) {
-            menus.reload(prefs_init.add_tags && (changes.connection_type.newValue !== "chatgpt_web"));
-        }
+async function doGetCalendarEvent(get_calendar_event) {
+    if(get_calendar_event) {
+        return await checkSparksPresence();
+    } else {
+        return false;
     }
-});
+}
+
+async function reload_pref_init(){
+    prefs_init = await await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+}
+
+
+// Register the listener for storage changes
+function setupStorageChangeListener() {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        // Check if the change happened in the 'sync' storage area
+        if (areaName === 'sync') {
+            // Process 'add_tags' changes
+            if (changes.add_tags) {
+                const newTags = changes.add_tags.newValue;
+                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(newTags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+
+            // Process 'get_calendar_event' changes
+            if (changes.get_calendar_event) {
+                const newCalendarEvent = changes.get_calendar_event.newValue;
+                doGetCalendarEvent(newCalendarEvent).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+
+            // Process 'connection_type' changes
+            if (changes.connection_type) {
+                const newConnectionType = changes.connection_type.newValue;
+                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType !== "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+            reload_pref_init();
+        }
+    });
+}
+
+// Call the function to set up the listener
+setupStorageChangeListener();
+
 
 // Menus handling
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
-menus.loadMenus(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
+menus.loadMenus(special_prompts_ids);
