@@ -264,6 +264,15 @@ export async function transformTagsLabels(labels, tags_list) {
 }
 
 
+export async function checkSparksPresence() {
+  try {
+    return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
+  } catch (error) {
+    console.error('[ThunderAI] Error checking Sparks presence:', error);
+  }
+}
+
+
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
 const insertHtml = function (replyHtml, fullBody_string) {
