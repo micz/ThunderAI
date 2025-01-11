@@ -990,5 +990,13 @@
   "prefs_OptionText_GetCalendarEvent_infoline2": {
     "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
     "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "To use the calendar event feature, please install the ThunderAI Sparks addon.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Download ThunderAI Sparks now!",
+    "description": ""
   }
 }

@@ -262,14 +262,17 @@ function disable_AddTags(){
   });
 }
 
-function disable_GetCalendarEvent(){
+async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
+  let no_sparks_tr = document.getElementById('no_sparks');
+  let is_spark_present = await checkSparksPresence()
   let conntype_select = document.getElementById("connection_type");
-  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web");
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !is_spark_present;
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = (get_calendar_event.disabled) ? 'none' : 'table-row';
+    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
   });
+  no_sparks_tr.style.display = is_spark_present ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
