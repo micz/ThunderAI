@@ -2,35 +2,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ThunderAI - __MSG_AddTags_PageTitle__</title>
+    <title>ThunderAI - __MSG_GetCalendarEvent_PageTitle__</title>
     <link rel="stylesheet" href="mzta-get-calendar-event.css">
     <link rel="icon" href="../../images/icon-16px.png">
 </head>
 <body>
     <div>
-        <h1 class="page_title">__MSG_AddTags_GetCalendarEvent__</h1>
+        <h1 class="page_title">__MSG_GetCalendarEvent_PageTitle__</h1>
         <p>__MSG_GetCalendarEvent_info_default__</p>
     </div>
     <i>Work in progress...</i>
     <div id="get_calendar_event_container">
-        <span class="section_title">__MSG_GetCalendarEvent_prompt_text_title__</span><span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
+        <span class="section_title">__MSG_GetCalendarEvent_prompt_text_title__</span><span id="get_calendar_event_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
         <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a>
-          <br>__MSG_prefs_OptionText_btnManagePrompts_infoline3__
-          <br><b>__MSG_prefs_OptionText_btnManagePrompts_infoline2__</b></span>
+          <br><b>__MSG_prefs_OptionText_GetCalendarEvent_infoline2__</b></span>
         <br>
         <div class="autocomplete-container">
-            <textarea id="addtags_prompt_text" rows="15"></textarea>
+            <textarea id="get_calendar_event_prompt_text" rows="15"></textarea>
             <ul class="autocomplete-list hidden"></ul>
         </div>
-        <div id="addtags_info_additional_statements"></div>
+        <div id="get_calendar_event_info_additional_statements"></div>
         <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
-    </div>
-    <div id="addtags_excl_list_container">
-        <span class="section_title">__MSG_AddTags_excl_list_title__</span><span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
-        <br><span class="infoline">__MSG_AddTags_excl_list_infoline__
-            <br>__MSG_AddTags_excl_list_infoline2__</span>
-        <br><textarea id="addtags_excl_list" rows="15"></textarea>
-        <div class="btn_div"><button id="btn_save_excl_list" disabled>__MSG_save__</button></div>
     </div>
     <script src="mzta-get-calendar-event.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
