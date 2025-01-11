@@ -263,6 +263,19 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
+export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event = false, is_chatgpt_web = false) {
+  let output = [];
+  if(is_chatgpt_web){
+    return output;
+  }
+  if(addtags){
+    output.push('add_tags');
+  }
+  if(get_calendar_event){
+    output.push('get_calendar_event');
+  }
+  return output;
+}
 
 export async function checkSparksPresence() {
   try {
