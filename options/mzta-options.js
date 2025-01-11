@@ -23,6 +23,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
+import { checkSparksPresence } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -100,6 +101,7 @@ async function restoreOptions() {
 function showConnectionOptions() {
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -260,6 +262,16 @@ function disable_AddTags(){
   });
 }
 
+function disable_GetCalendarEvent(){
+  let get_calendar_event = document.getElementById('get_calendar_event');
+  let conntype_select = document.getElementById("connection_type");
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web");
+  let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
+  get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
+    get_calendar_event_tr.style.display = (get_calendar_event.disabled) ? 'none' : 'table-row';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
@@ -355,6 +367,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
   conntype_select.addEventListener("change", disable_AddTags);
+  conntype_select.addEventListener("change", disable_GetCalendarEvent);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
@@ -547,6 +560,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_GoogleGemini_APIKeyEmpty();
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
