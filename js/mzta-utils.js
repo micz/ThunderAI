@@ -254,8 +254,8 @@ function generateHexColorForTag() {
 }
 
 export async function transformTagsLabels(labels, tags_list) {
-  console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
-  console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
+  // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
   let output = [];
   for(let label of labels) {
       output.push(tags_list[label].tag);
