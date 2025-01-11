@@ -265,17 +265,17 @@ export async function transformTagsLabels(labels, tags_list) {
 
 export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event = false, is_chatgpt_web = false) {
   let output = [];
-  console.log(">>>>>>>>>> getActiveSpecialPromptsIDs addtags: " + addtags + " get_calendar_event: " + get_calendar_event + " is_chatgpt_web: " + is_chatgpt_web);
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs addtags: " + addtags + " get_calendar_event: " + get_calendar_event + " is_chatgpt_web: " + is_chatgpt_web);
   if(is_chatgpt_web){
     return output;
   }
   if(addtags){
-    output.push('add_tags');
+    output.push('prompt_add_tags');
   }
   if(get_calendar_event){
-    output.push('get_calendar_event');
+    output.push('prompt_get_calendar_event');
   }
-  console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
 }
 
