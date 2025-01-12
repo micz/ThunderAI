@@ -960,7 +960,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate an iCalendar (iCal) file from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Location (if available)\n- Description or Additional Notes (if available)\n- Organizer's Name and Contact Details (if available)\n- Recurrence Rules (if mentioned)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating an iCal file. Highlight any missing or ambiguous details that might require clarification. Here's the text:\"{%selected_text%}\"",
+    "message": "Extract all relevant details required to generate an iCalendar (iCal) file from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating an iCal file.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"20250104T183000Z\",\n\"endDate\": \"20250104T193000Z\",\n\"summary\": \"ThunderAI Sparks\",\n\"forceAllDay\": false\n}\nHere's the text:\"{%selected_text%}\"",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event": {
