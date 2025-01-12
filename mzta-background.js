@@ -618,7 +618,7 @@ function setupStorageChangeListener() {
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
                 doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType !== "chatgpt_web"));
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
                     menus.reload(special_prompts_ids);
                 });
             }
