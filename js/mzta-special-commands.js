@@ -15,12 +15,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- // Call the API to get the tags
+ // Call the API to use a special prompt
+
 
  import { taLogger } from '../mzta-logger.js';
 
  
- export class mzta_specialCommand_AddTags {
+ export class mzta_specialCommand {
     
     prompt = "";
     worker = null;
@@ -32,7 +33,7 @@
     constructor(prompt, llm, do_debug = false) {
         this.prompt = prompt;
         this.llm = llm;
-        this.logger = new taLogger('mzta_specialCommand_AddTags', do_debug);
+        this.logger = new taLogger('mzta_specialCommand', do_debug);
         this.do_debug = do_debug;
         switch (this.llm) {
             case "chatgpt_api":
