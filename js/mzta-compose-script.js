@@ -228,12 +228,12 @@ switch (message.command) {
     break;
 
   case "getTags":
-    console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
+    // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
     // ===== These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
     async function addTags_getExclusionList() {
       let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-      console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
+      // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
       return prefs_excluded_tags.add_tags_exclusions;
     }
 
@@ -358,7 +358,7 @@ switch (message.command) {
       // Parse the input string into labels
       const words = inputString.split(',').map(word => word.trim()).filter(word => word !== '');
 
-      console.log(">>>>>>>>>>>>> words: " + JSON.stringify(words));
+      // console.log(">>>>>>>>>>>>> words: " + JSON.stringify(words));
 
       if(words.length == 0){
         const message = document.createElement('div');
@@ -371,7 +371,7 @@ switch (message.command) {
       let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false});
       let add_tags_exclusions_list = await addTags_getExclusionList();
 
-      console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
+      // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
 
       const words_final = words
         .filter(word => word !== '')
@@ -386,7 +386,7 @@ switch (message.command) {
           };
         });
 
-      console.log(">>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
+      // console.log(">>>>>>>>>>>>> words_final: " + JSON.stringify(words_final));
 
       // Create the form
       const form = document.createElement('form');
@@ -505,7 +505,7 @@ switch (message.command) {
     }
 
     return createDialog(message.tags, (selected) => {
-      console.log('>>>>>>>>>>>> Selected tags:', selected);
+      // console.log('>>>>>>>>>>>> Selected tags:', selected);
       browser.runtime.sendMessage({ command: "assign_tags", tags: selected, messageId: message.messageId });
     });
 
