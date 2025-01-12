@@ -175,6 +175,9 @@ export class mzta_Menus {
                         case 'junk_score':
                             finalSubs['junk_score'] = curr_message.junkScore;
                             break;
+                        case 'mail_datetime':
+                            finalSubs['mail_datetime'] = curr_message.date;
+                            break;
                         case 'tags_current_email':
                             let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
                             finalSubs['tags_current_email'] = tags_current_email_array.join(", ");

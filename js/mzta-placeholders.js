@@ -104,6 +104,13 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'mail_datetime',
+        name: "__MSG_placeholder_mail_datetime__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+    },
+    {
         id: 'tags_current_email',
         name: "__MSG_placeholder_tags_current_email__",
         default_value: "",
