@@ -18,7 +18,7 @@
  // Call the API to use a special prompt
 
 
- import { taLogger } from '../mzta-logger.js';
+ import { taLogger } from './mzta-logger.js';
 
  
  export class mzta_specialCommand {
