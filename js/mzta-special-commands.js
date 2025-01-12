@@ -37,16 +37,16 @@
         this.do_debug = do_debug;
         switch (this.llm) {
             case "chatgpt_api":
-                this.worker = new Worker(new URL('../workers/model-worker-openai.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-openai.js', import.meta.url), { type: 'module' });
                 break;
             case "google_gemini_api":
-                this.worker = new Worker(new URL('../workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
                 break;
             case "ollama_api":
-                this.worker = new Worker(new URL('../workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
                 break;
             case "openai_comp_api":
-                this.worker = new Worker(new URL('../workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
                 break;
         }
     }
