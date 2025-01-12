@@ -214,7 +214,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'reload_menus':
                 async function _reload_menus() {
                     let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
-                    menus.reload((prefs_reload.add_tags||prefs_reload.get_calendar_event) && (prefs_reload.connection_type !== "chatgpt_web"));
+                    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
+                        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
+                        menus.reload(special_prompts_ids);
+                    });
                     taLog.log("Reloading menus");
                     return true;
                 }
