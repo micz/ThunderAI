@@ -998,5 +998,13 @@
   "prefs_OptionText_download_now": {
     "message": "Download ThunderAI Sparks now!",
     "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "The date and time of the email",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "The current date and time",
+    "description": ""
   }
 }

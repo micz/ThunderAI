@@ -111,6 +111,13 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'current_datetime',
+        name: "__MSG_placeholder_current_datetime__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
         id: 'tags_current_email',
         name: "__MSG_placeholder_tags_current_email__",
         default_value: "",

@@ -178,6 +178,9 @@ export class mzta_Menus {
                         case 'mail_datetime':
                             finalSubs['mail_datetime'] = curr_message.date;
                             break;
+                        case 'current_datetime':
+                            finalSubs['current_datetime'] = new Date().toString();
+                            break;
                         case 'tags_current_email':
                             let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
                             finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
@@ -269,7 +272,7 @@ export class mzta_Menus {
                         await cmd_GetCalendarEvent.initWorker();
                         try{
                             calendar_event_data = await cmd_GetCalendarEvent.sendPrompt();
-                            console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
+                            // console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
                         }catch(err){
                             console.error("[ThunderAI] Error getting calendar event data: ", JSON.stringify(err));
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting calendar event data: " + JSON.stringify(err) });
