@@ -82,7 +82,13 @@ switch (message.command) {
       if (!firstNode) {
         firstNode = node;
       }
-      lastNode = node;
+      if(node.textContent.trim() != '') {
+        lastNode = node;
+      }
+    }
+
+    if(!lastNode) {
+      lastNode = firstNode;
     }
 
     //if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
