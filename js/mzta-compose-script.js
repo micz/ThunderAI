@@ -18,10 +18,11 @@
 
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
-  case "getSelectedText":
+  case "getSelectedText": {
     return Promise.resolve(window.getSelection().toString());
+  }
 
-  case "replaceSelectedText":
+  case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
       return Promise.resolve(false);
@@ -37,7 +38,7 @@ switch (message.command) {
     r.insertNode(doc.body);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     return Promise.resolve(true);
-    break;
+  }
 
   case "getText": {
     let t = '';
@@ -53,15 +54,22 @@ switch (message.command) {
     return Promise.resolve(t);
   }
 
-  case "getTextOnly":
+  case "getTextOnly": {
       return Promise.resolve(window.document.body.innerText);
+  }
 
-  case "getFullHtml":
+  case "getFullHtml": {
       return Promise.resolve(window.document.body.innerHTML);
+  }
 
   case "getOnlyTypedText": {
     let t = '';
     const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+
+    let firstNode = null;
+    let lastNode = null;
+
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-cite-prefix')) {
@@ -69,7 +77,22 @@ switch (message.command) {
         }
       }
       t += node.textContent;
+
+      // Track the first and last nodes for range
+      if (!firstNode) {
+        firstNode = node;
+      }
+      lastNode = node;
     }
+
+    if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
     return Promise.resolve(t);
   }
 
