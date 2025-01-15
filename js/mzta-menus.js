@@ -76,19 +76,19 @@ export class mzta_Menus {
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
         let curr_message = null;
     
-        const getMailBody = async (tabs) => {
+        const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
                 text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
                 html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
-                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText" })
+                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })
             };
         };
     
         curr_menu_entry.act = async () => {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const msg_text = await getMailBody(tabs);
+            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
     
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
