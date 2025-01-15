@@ -60,7 +60,6 @@ switch (message.command) {
       return Promise.resolve(window.document.body.innerHTML);
 
   case "getOnlyTypedText": {
-    // TODO: add support for moz-cite-prefix
     let t = '';
     const children = window.document.body.childNodes;
     for (const node of children) {
