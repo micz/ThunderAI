@@ -85,7 +85,8 @@ switch (message.command) {
       lastNode = node;
     }
 
-    if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
+    //if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
+      if(message.do_autoselect && firstNode && lastNode) {
       const range = document.createRange();
       range.setStartBefore(firstNode);
       range.setEndAfter(lastNode);
