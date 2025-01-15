@@ -954,5 +954,57 @@
   "placeholder_mail_typed_text": {
     "message": "Typed text before the quoted mail body",
     "description": ""
+  },
+  "prompt_get_calendar_event": {
+    "message": "Add a new calendar event",
+    "description": ""
+  },
+  "prompt_get_calendar_event_full_text": {
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false\n}\nHere's the text:\"{%selected_text%}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Add a new calendar event from selected text",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Manage calendar events settings",
+    "description": ""
+  },
+  "GetCalendarEvent_PageTitle": {
+    "message": "Manage Calendar Events Settings",
+    "description": ""
+  },
+  "GetCalendarEvent_info_default": {
+    "message": "In this page you can modify the default prompt used to get a calendar event from selected text.",
+    "description": ""
+  },
+  "GetCalendarEvent_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "To use the calendar event feature, please install the ThunderAI Sparks addon.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Download ThunderAI Sparks now!",
+    "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "The date and time of the email",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "The current date and time",
+    "description": ""
   }
 }

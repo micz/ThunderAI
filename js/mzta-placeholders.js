@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*  ================= PROMPTS PROPERTIES ========================================
+/*  ================= PLACEHOLDERS PROPERTIES ========================================
 
     ================ BASE PROPERTIES
 
@@ -99,6 +99,20 @@ const defaultPlaceholders = [
     {
         id: 'author',
         name: "__MSG_placeholder_author__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'mail_datetime',
+        name: "__MSG_placeholder_mail_datetime__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+    },
+    {
+        id: 'current_datetime',
+        name: "__MSG_placeholder_current_datetime__",
         default_value: "",
         type: 0,
         is_default: "1",

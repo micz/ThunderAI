@@ -23,6 +23,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
+import { checkSparksPresence } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -100,6 +101,7 @@ async function restoreOptions() {
 function showConnectionOptions() {
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -252,10 +254,25 @@ function disable_MaxPromptLength(){
 
 function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
+  let conntype_select = document.getElementById("connection_type");
+  add_tags.disabled = (conntype_select.value === "chatgpt_web");
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
   });
+}
+
+async function disable_GetCalendarEvent(){
+  let get_calendar_event = document.getElementById('get_calendar_event');
+  let no_sparks_tr = document.getElementById('no_sparks');
+  let is_spark_present = await checkSparksPresence()
+  let conntype_select = document.getElementById("connection_type");
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !is_spark_present;
+  let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
+  get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
+    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
+  });
+  no_sparks_tr.style.display = is_spark_present ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -286,6 +303,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
+
+  let get_calendar_event_el = document.getElementById('get_calendar_event');
+  let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
+  get_calendar_event_el.addEventListener('click', (event) => {
+    get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
@@ -313,6 +337,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   });
 
+  document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
+      }
+    })
+  });
+
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
     let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
     if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
@@ -332,6 +369,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  conntype_select.addEventListener("change", disable_AddTags);
+  conntype_select.addEventListener("change", disable_GetCalendarEvent);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
@@ -524,6 +563,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_GoogleGemini_APIKeyEmpty();
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');

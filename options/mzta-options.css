@@ -118,6 +118,12 @@ tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
     font-style: italic;
 }
 
+#no_sparks td{
+    text-align: center;
+    padding: 1em !important;
+    background: #bbf7f1;
+}
+
 textarea.option-textarea{
     width: -moz-available;
     height: 10em;
@@ -244,4 +250,7 @@ input.option-input[type="text"]{
         background-color: rgb(2, 0, 100);
     }
 
+    #no_sparks td{
+        background: #3b514f;
+    }
 }

@@ -15,12 +15,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- // Call the API to get the tags
+ // Call the API to use a special prompt
 
- import { taLogger } from '../mzta-logger.js';
+
+ import { taLogger } from './mzta-logger.js';
 
  
- export class mzta_specialCommand_AddTags {
+ export class mzta_specialCommand {
     
     prompt = "";
     worker = null;
@@ -32,20 +33,20 @@
     constructor(prompt, llm, do_debug = false) {
         this.prompt = prompt;
         this.llm = llm;
-        this.logger = new taLogger('mzta_specialCommand_AddTags', do_debug);
+        this.logger = new taLogger('mzta_specialCommand', do_debug);
         this.do_debug = do_debug;
         switch (this.llm) {
             case "chatgpt_api":
-                this.worker = new Worker(new URL('../workers/model-worker-openai.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-openai.js', import.meta.url), { type: 'module' });
                 break;
             case "google_gemini_api":
-                this.worker = new Worker(new URL('../workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
                 break;
             case "ollama_api":
-                this.worker = new Worker(new URL('../workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
                 break;
             case "openai_comp_api":
-                this.worker = new Worker(new URL('../workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
+                this.worker = new Worker(new URL('./workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
                 break;
         }
     }
@@ -69,7 +70,7 @@
             }
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
-                console.log(">>>>>>>>>>>> [ThunderAI] prefs_api: " + JSON.stringify(prefs_api));
+                // console.log(">>>>>>>>>>>> [ThunderAI] prefs_api: " + JSON.stringify(prefs_api));
                 this.worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
@@ -89,7 +90,7 @@
                         this.full_message += payload.token;
                         break;
                     case 'tokensDone':
-                        console.log(">>>>>>>>>>>> [ThunderAI] tokensDone: " + this.full_message);
+                        // console.log(">>>>>>>>>>>> [ThunderAI] tokensDone: " + this.full_message);
                         resolve(this.full_message); // Resolve the promise with the full message
                         break;
                     case 'error':

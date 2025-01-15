@@ -254,13 +254,37 @@ function generateHexColorForTag() {
 }
 
 export async function transformTagsLabels(labels, tags_list) {
-  console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
-  console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
+  // console.log(">>>>>>>>> transformTagsLabels labels: " + labels);
+  // console.log(">>>>>>>>> transformTagsLabels tags_list: " + tags_list);
   let output = [];
   for(let label of labels) {
       output.push(tags_list[label].tag);
   }
   return output;
+}
+
+export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event = false, is_chatgpt_web = false) {
+  let output = [];
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs addtags: " + addtags + " get_calendar_event: " + get_calendar_event + " is_chatgpt_web: " + is_chatgpt_web);
+  if(is_chatgpt_web){
+    return output;
+  }
+  if(addtags){
+    output.push('prompt_add_tags');
+  }
+  if(get_calendar_event){
+    output.push('prompt_get_calendar_event');
+  }
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
+  return output;
+}
+
+export async function checkSparksPresence() {
+  try {
+    return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
+  } catch (error) {
+    return false;
+  }
 }
 
 

@@ -22,7 +22,7 @@ import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, transformTagsLabels } from './mzta-utils.js'
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
-import { mzta_specialCommand_AddTags } from './special_commands/mzta-add-tags.js';
+import { mzta_specialCommand } from './mzta-special-commands.js';
  
 export class mzta_Menus {
 
@@ -51,7 +51,7 @@ export class mzta_Menus {
     }
 
 
-    async initialize(also_special = false) {
+    async initialize(also_special = []) {    // also_special is an array of active special prompts ids
         this.allPrompts = [];
         this.rootMenu = [];
         this.shortcutMenu = [];
@@ -63,7 +63,7 @@ export class mzta_Menus {
         });
     }
 
-    async reload(also_special = false) {
+    async reload(also_special = []) {
         await browser.menus.removeAll().catch(error => {
                 console.error("[ThunderAI] ERROR removing the menus: ", error);
             });
@@ -175,6 +175,12 @@ export class mzta_Menus {
                         case 'junk_score':
                             finalSubs['junk_score'] = curr_message.junkScore;
                             break;
+                        case 'mail_datetime':
+                            finalSubs['mail_datetime'] = curr_message.date;
+                            break;
+                        case 'current_datetime':
+                            finalSubs['current_datetime'] = new Date().toString();
+                            break;
                         case 'tags_current_email':
                             let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
                             finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
@@ -212,7 +218,7 @@ export class mzta_Menus {
             //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
-                    case 'prompt_add_tags': // Add tags to the email
+                    case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = '';
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
@@ -230,7 +236,7 @@ export class mzta_Menus {
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        let cmd_addTags = new mzta_specialCommand_AddTags(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
                         await cmd_addTags.initWorker();
                         try{
                             tags_current_email = await cmd_addTags.sendPrompt();
@@ -241,10 +247,42 @@ export class mzta_Menus {
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email: " + tags_current_email);
-                        console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
+                        // console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         return {ok:'1'};
-                        break;
+                        break;  // Add tags to the email - END
+                    }
+                    case 'prompt_get_calendar_event': {  // Get a calendar event info
+                        let calendar_event_data = '';
+                        let prefs_at = await browser.storage.sync.get({connection_type: ''});
+                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
+                            console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
+                            return {ok:'0'};
+                        }
+                        /* We expect to receive from the AI a JSON object like this:
+                        *  {
+                        *   "startDate": "20250104T183000Z",
+                        *   "endDate": "20250104T193000Z",
+                        *   "summary": "ThunderAI Sparks",
+                        *   "forceAllDay": false
+                        *  } 
+                        */
+                        this.logger.log("fullPrompt: " + fullPrompt);
+                        let cmd_GetCalendarEvent = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        await cmd_GetCalendarEvent.initWorker();
+                        try{
+                            calendar_event_data = await cmd_GetCalendarEvent.sendPrompt();
+                            // console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
+                        }catch(err){
+                            console.error("[ThunderAI] Error getting calendar event data: ", JSON.stringify(err));
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting calendar event data: " + JSON.stringify(err) });
+                            return {ok:'0'};
+                        }
+                        this.logger.log("calendar_event_data: " + calendar_event_data);
+                        browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data})
+                        return {ok:'1'};
+                        break;  // Get a calendar event info - END
+                    }
                     default:
                         console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
                         break;
@@ -278,7 +316,7 @@ export class mzta_Menus {
         this.shortcutMenu.push(curr_menu_entry);
     }
 
-    async loadMenus(also_special = false) {
+    async loadMenus(also_special = []) {
         await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
