@@ -242,11 +242,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _assign_tags() {
                     let all_tags_list = await getTagsList();
                     all_tags_list = all_tags_list[1];
-                    console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+                    // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
                     taLog.log("assign_tags data: " + JSON.stringify(message));
                     let new_tags = [];
                     for (const tag of message.tags) {
-                        console.log(">>>>>>>>>>>>>>> tag: " + tag);
+                        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
                         if (!checkIfTagExists(tag, all_tags_list)) {
                             taLog.log("Creating tag: " + tag);
                             await createTag(tag);
