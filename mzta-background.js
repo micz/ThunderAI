@@ -417,11 +417,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 if(mailMessage) mailMessageId5 = mailMessage.id;
 
                 // check if the config is present, or give a message error
-                if (prefs.chatgpt_api_key == '') {
+                if (prefs.google_gemini_api_key == '') {
                     browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
                     return;
                 }
-                if (prefs.chatgpt_model == '') {
+                if (prefs.google_gemini_model == '') {
                     browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
                     return;
                 }
