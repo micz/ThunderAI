@@ -275,12 +275,17 @@ export class mzta_Menus {
                             // console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
                         }catch(err){
                             console.error("[ThunderAI] Error getting calendar event data: ", JSON.stringify(err));
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting calendar event data: " + JSON.stringify(err) });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + JSON.stringify(err) });
                             return {ok:'0'};
                         }
                         this.logger.log("calendar_event_data: " + calendar_event_data);
-                        browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data})
-                        return {ok:'1'};
+                        let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data})
+                        if(result_openCalendarEventDialog == 'ok'){
+                            return {ok:'1'};
+                        } else {
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + JSON.stringify(err) });
+                            return {ok:'0'};
+                        }
                         break;  // Get a calendar event info - END
                     }
                     default:

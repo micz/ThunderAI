@@ -1006,5 +1006,13 @@
   "placeholder_current_datetime": {
     "message": "The current date and time",
     "description": ""
+  },
+  "calendar_getting_data_error": {
+    "message": "Error getting calendar event data",
+    "description": ""
+  },
+  "calendar_opening_dialog_error": {
+    "message": "Error opening the calendar event dialog",
+    "description": ""
   }
 }
