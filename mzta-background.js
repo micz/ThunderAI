@@ -242,11 +242,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _assign_tags() {
                     let all_tags_list = await getTagsList();
                     all_tags_list = all_tags_list[1];
-                    console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+                    // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
                     taLog.log("assign_tags data: " + JSON.stringify(message));
                     let new_tags = [];
                     for (const tag of message.tags) {
-                        console.log(">>>>>>>>>>>>>>> tag: " + tag);
+                        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
                         if (!checkIfTagExists(tag, all_tags_list)) {
                             taLog.log("Creating tag: " + tag);
                             await createTag(tag);
@@ -417,11 +417,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 if(mailMessage) mailMessageId5 = mailMessage.id;
 
                 // check if the config is present, or give a message error
-                if (prefs.chatgpt_api_key == '') {
+                if (prefs.google_gemini_api_key == '') {
                     browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
                     return;
                 }
-                if (prefs.chatgpt_model == '') {
+                if (prefs.google_gemini_model == '') {
                     browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
                     return;
                 }
@@ -444,7 +444,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             type: "popup",
         }
 
-        taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+        taLog.log("[google_gemini_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
 
         if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
             win_options5.width = prefs.chatgpt_win_width,
