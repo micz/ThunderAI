@@ -283,7 +283,7 @@ export class mzta_Menus {
                         if(result_openCalendarEventDialog == 'ok'){
                             return {ok:'1'};
                         } else {
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
                             return {ok:'0'};
                         }
                         break;  // Get a calendar event info - END
