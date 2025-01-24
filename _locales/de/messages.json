@@ -888,11 +888,131 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
-      "message": "Wenn aktiviert, wird die Sprache der Tags auf die in den ThunderAI Optionen definierte Sprache festgelegt, falls angegeben.",
-      "description": ""
+    "message": "Wenn aktiviert, wird die Sprache der Tags auf die in den ThunderAI Optionen definierte Sprache festgelegt, falls angegeben.",
+    "description": ""
   },
   "prompt_add_tags_force_lang": {
-      "message": "Die Tags müssen in geschrieben werden",
-      "description": ""
+    "message": "Die Tags müssen in geschrieben werden",
+    "description": ""
+  },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "Google Gemini API",
+    "description": ""
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "API-Schlüssel",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Google Gemini API-Modelle",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Google Gemini-Modelle-Liste aktualisieren",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Fehler beim Abrufen der Google Gemini-Modelle",
+    "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "Google Gemini API-Anfrage fehlgeschlagen",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Versuch, eine Verbindung zu Google Gemini mit dem bereitgestellten API-Schlüssel herzustellen",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "Sie haben keinen API-Schlüssel für die Google Gemini API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "Sie haben kein Modell für die Google Gemini API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "Systemanweisung",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "Wenn Sie eine Systemanweisung festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten.",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages": {
+    "message": "Entwicklernachrichten",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages_Info": {
+    "message": "Wenn Sie die Entwicklernachrichten festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline3": {
+    "message": "Sie können den Platzhalter {%tags_full_list%} im Prompt verwenden, um die verfügbaren Tags aufzulisten. Mit einem geeigneten Prompt könnten Sie dann erzwingen, dass die Tags nur aus der Liste der bereits vorhandenen ausgewählt werden.",
+    "description": ""
+  },
+  "placeholder_mail_typed_text": {
+    "message": "Eingegebener Text vor dem zitierten E-Mail-Text",
+    "description": ""
+  },
+  "prompt_get_calendar_event": {
+    "message": "Ein neues Kalenderevent hinzufügen",
+    "description": ""
+  },
+  "prompt_get_calendar_event_full_text": {
+    "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können. Falls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden. Falls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde. Falls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n  \"startDate\": \"YYYYMMDDTHHMMSS\",\n  \"endDate\": \"YYYYMMDDTHHMMSS\",\n  \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n  \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "Wenn aktiviert, wird ein Element im Menü hinzugefügt, um Kalenderevent-Informationen aus ausgewähltem Text zu erhalten.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Kalendereinstellungen verwalten",
+    "description": ""
+  },
+  "GetCalendarEvent_PageTitle": {
+    "message": "Kalendereinstellungen verwalten",
+    "description": ""
+  },
+  "GetCalendarEvent_info_default": {
+    "message": "Auf dieser Seite können Sie den Standard-Prompt ändern, der verwendet wird, um ein Kalenderevent aus ausgewähltem Text zu erhalten.",
+    "description": ""
+  },
+  "GetCalendarEvent_prompt_text_title": {
+    "message": "Aktueller Prompt-Text",
+    "description": ""
+  },
+  "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "Um die Kalenderevent-Funktion zu nutzen, installieren Sie bitte das ThunderAI Sparks-Addon.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Laden Sie jetzt ThunderAI Sparks herunter!",
+    "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "Datum und Uhrzeit der E-Mail",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "Das aktuelle Datum und die aktuelle Uhrzeit",
+    "description": ""
+  },
+  "calendar_getting_data_error": {
+    "message": "Fehler beim Abrufen der Kalenderevent-Daten",
+    "description": ""
+  },
+  "calendar_opening_dialog_error": {
+    "message": "Fehler beim Öffnen des Kalenderevent-Dialogs",
+    "description": ""
   }
 }
