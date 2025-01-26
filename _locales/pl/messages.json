@@ -888,11 +888,131 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
-      "message": "Jeśli zaznaczone, język tagów zostanie wymuszony na zgodny z językiem określonym na stronie opcji ThunderAI, jeśli został zdefiniowany.",
-      "description": ""
+    "message": "Jeśli zaznaczone, język tagów zostanie wymuszony na zgodny z językiem określonym na stronie opcji ThunderAI, jeśli został zdefiniowany.",
+    "description": ""
   },
   "prompt_add_tags_force_lang": {
-      "message": "Tagi muszą być napisane w",
-      "description": ""
+    "message": "Tagi muszą być napisane w",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Zaktualizuj listę modeli Google Gemini",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Błąd podczas próby pobrania modeli Google Gemini",
+    "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "Połączenie do interfejsu API Google Gemini nie powiodło się",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Próba połączenia z Google Gemini przy użyciu dostarczonego klucza API",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "Nie dodałeś klucza API dla API Google Gemini. Wstaw go na stronie opcji.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "Nie wybrałeś modelu interfejsu API Google Gemini. Wybierz jedną na stronie opcji.",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "Instrukcja systemowa",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "Ustawiając instrukcję systemową, dajesz modelowi dodatkowy kontekst umożliwiający zrozumienie zadania, zapewnianie bardziej dostosowanych odpowiedzi i przestrzeganie określonych wytycznych dotyczących zapytania, które zostanie wysłane.",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages": {
+    "message": "Wiadomości programistów",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages_Info": {
+    "message": "Konfigurując komunikaty dla programistów, dajesz modelowi dodatkowy kontekst umożliwiający zrozumienie zadania, zapewnianie bardziej dostosowanych odpowiedzi i przestrzeganie określonych wytycznych dotyczących zapytania, które zostanie wysłane.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline3": {
+    "message": "Aby wyświetlić listę dostępnych tagów, możesz użyć obiektu danych {%tags_full_list%} w zapytaniu. Za pomocą odpowiedniego zapytania można następnie wymusić wybranie tagów tylko z listy już istniejących.",
+    "description": ""
+  },
+  "placeholder_mail_typed_text": {
+    "message": "Wpisano tekst przed cytowaną treścią wiadomości",
+    "description": ""
+  },
+  "prompt_get_calendar_event": {
+    "message": "Dodaj nowe wydarzenie w kalendarzu",
+    "description": ""
+  },
+  "prompt_get_calendar_event_full_text": {
+    "message": "Wyodrębnij wszystkie istotne szczegóły wymagane do wygenerowania wydarzenia w kalendarzu z poniższego tekstu.\nWyodrębnione informacje powinny obejmować:\n- Tytuł wydarzenia\n- Datę i godzinę rozpoczęcia (w tym strefę czasową, jeśli została określona)\n- Datę i godzinę zakończenia (w tym strefę czasową, jeśli została określona)\n- Cały dzień (jeśli jest podany) Upewnij się, że dane są sformatowane w sposób jasny i spójny, tak aby można go bezpośrednio wykorzystać do utworzenia wydarzenia w kalendarzu. Jeśli istnieją odniesienia do czasu względnego, pamiętaj, że data i godzina wysłania wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz ponownie datę i godzinę rozpoczęcia, stosując jako podstawę „{%current_datetime%}”. Jeśli czas trwania nie jest określony, ustaw go na jedną godzinę. Jeśli nie możesz uzyskać co najmniej jednej z wymaganych informacji, w odpowiedzi wpisz pusty ciąg znaków. Wygeneruj odpowiedź tylko w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, którego należy użyć:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Tutaj podsumowanie wydarzenia w kalendarzu\",\n\"forceAllDay\": false\n}\nOto tekst:\"{%selected_text %}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Dodaj nowe wydarzenie w kalendarzu z zaznaczonego tekstu",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "Jeśli zaznaczone, pozycja zostanie uwzględniona w menu, aby uzyskać informacje o wydarzeniu w kalendarzu z zaznaczonego tekstu.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Zarządzaj ustawieniami wydarzeń w kalendarzu",
+    "description": ""
+  },
+  "GetCalendarEvent_PageTitle": {
+    "message": "Zarządzaj ustawieniami wydarzeń w kalendarzu",
+    "description": ""
+  },
+  "GetCalendarEvent_info_default": {
+    "message": "Na tej stronie możesz zmodyfikować domyślny monit używany do pobierania wydarzenia w kalendarzu z zaznaczonego tekstu.",
+    "description": ""
+  },
+  "GetCalendarEvent_prompt_text_title": {
+    "message": "Bieżący tekst zapytania",
+    "description": ""
+  },
+  "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "message": "Możesz zmienić monit według własnego uznania, ale odpowiedź otrzymana od AI musi być w formacie JSON, jak określono w domyślnym zapytaniu!",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "Aby korzystać z funkcji wydarzeń w kalendarzu, zainstaluj dodatek ThunderAI Sparks.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Pobierz teraz ThunderAI Sparks!",
+    "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "Data i godzina wysłania wiadomości e-mail",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "Bieżąca data i godzina",
+    "description": ""
+  },
+  "calendar_getting_data_error": {
+    "message": "Błąd podczas pobierania wydarzeń w kalendarzu",
+    "description": ""
+  },
+  "calendar_opening_dialog_error": {
+    "message": "Błąd podczas otwierania okna wydarzenia w kalendarzu",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Modele Google Gemini",
+    "description": "Lista modeli interfejsu API Google Gemini"
+  },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "Interfejs API Google Gemini",
+    "description": "Typ połączenia: Google Gemini API"
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "Klucz API Google Gemini",
+    "description": "Klucz API dla interfejsu API Google Gemini"
   }
 }
