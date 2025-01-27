@@ -5,7 +5,7 @@
 
 
 
-<h2>Version 3.1.0 - ??/??/2025</h2>
+<h2>Version 3.1.0 - 27/01/2025</h2>
       <ul>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API][Gemini API]</i> Added a special prompt to get calendar events data from emails [<a href="https://github.com/micz/ThunderAI/issues/182">#182</a>]. To use this feature, you must install also the <a href="https://addons.thunderbird.net/it/thunderbird/addon/thunderai-sparks/">Sparks</a> add-on.</li>
         <li>Added Google Gemini API support [<a href="https://github.com/micz/ThunderAI/issues/204">#204</a>, <a href="https://github.com/micz/ThunderAI/issues/217">#217</a>].</li>
@@ -14,7 +14,6 @@
         <li>Added the <i>{%mail_datetime%}</i> placeholder to get the date and time of the email [<a href="https://github.com/micz/ThunderAI/issues/223">#223</a>].</li>
         <li>Added the <i>{%current_datetime%}</i> data placeholder to get the current date and time [<a href="https://github.com/micz/ThunderAI/issues/224">#224</a>].</li>
         <li>Added an info text about using the new <i>{%tags_full_list%}</i> placeholder in the "Add Tags Prompt" page [<a href="https://github.com/micz/ThunderAI/issues/215">#215</a>].</li>
-        <li>...</li>
       </ul>
 <h2>Version 3.0.0 - 05/01/2025</h2>
       <ul>
