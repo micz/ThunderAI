@@ -78,7 +78,7 @@ Are you using this addon in your Thunderbird?
 
 ### Translations
 - English (en-US): [Mic](https://github.com/micz/)
-- French (fr): Generated automatically
+- French (fr): Generated automatically, [Noam](https://github.com/noam-sc)
 - German (de): Generated automatically
 - Italian (it): [Mic](https://github.com/micz/)
 - Polski (pl): [neexpl](https://github.com/neexpl)
