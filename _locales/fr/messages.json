@@ -340,7 +340,7 @@
     "description": ""
   },
   "prefsDonation_1": {
-    "message": "Aimez-vous cet addon ?",
+    "message": "Aimez-vous cette extension ?",
     "description": ""
   },
   "prefsDonation_2": {
@@ -352,7 +352,7 @@
     "description": ""
   },
   "TranslateText": {
-    "message": "Voulez-vous aider à traduire cet addon ?",
+    "message": "Voulez-vous aider à traduire cette extension ?",
     "description": ""
   },
   "TranslateLink": {
@@ -364,27 +364,27 @@
     "description": ""
   },
   "customPrompts_Import": {
-    "message": "Importer de nouvelles prompts",
+    "message": "Importer de nouveaux prompts",
     "description": ""
   },
   "importPrompts_confirmText": {
-    "message": "Vous êtes sur le point d'importer de nouvelles prompts.",
+    "message": "Vous êtes sur le point d'importer de nouveaux prompts.",
     "description": ""
   },
   "customPrompts_start_import": {
-    "message": "Début de l'importation des prompts personnalisées...",
+    "message": "Début de l'importation des prompts personnalisés...",
     "description": ""
   },
   "customPrompts_import_completed": {
-    "message": "Importation des prompts personnalisées terminée ! Vous devez cliquer sur le bouton 'Enregistrer tout' pour enregistrer vos modifications.",
+    "message": "Importation des prompts personnalisés terminée ! Vous devez cliquer sur le bouton 'Enregistrer tout' pour enregistrer vos modifications.",
     "description": ""
   },
   "importPrompts_invalidFile": {
-    "message": "Le fichier que vous essayez d'importer n'est pas un fichier de prompts personnalisées valide.",
+    "message": "Le fichier que vous essayez d'importer n'est pas un fichier de prompts personnalisés valide.",
     "description": ""
   },
   "importPrompts_invalidPrompts": {
-    "message": "Le fichier que vous essayez d'importer ne contient aucune prompt valide.",
+    "message": "Le fichier que vous essayez d'importer ne contient aucun prompt valide.",
     "description": ""
   },
   "currently_used_prompt": {
@@ -560,11 +560,11 @@
     "description": ""
   },
   "SearchPrompt": {
-    "message": "Rechercher des invites",
+    "message": "Rechercher des prompts",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter": {
-    "message": "Menu : Envoi immédiat de l'invite",
+    "message": "Menu : Envoi immédiat du prompt",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
@@ -576,7 +576,7 @@
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-    "message": "Si cette option est cochée, les invites dans le menu seront triées par ordre alphabétique.",
+    "message": "Si cette option est cochée, les prompts dans le menu seront triés par ordre alphabétique.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_win_dims_info": {
@@ -644,7 +644,7 @@
     "description": ""
   },
   "prefs_OptionText_max_prompt_length": {
-    "message": "Longueur maximale de l'invite",
+    "message": "Longueur maximale du prompt",
     "description": ""
   },
   "prefs_OptionText_max_prompt_length_Info": {
@@ -684,7 +684,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline2": {
-    "message": "Vous pouvez modifier l'invite comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !",
+    "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -804,7 +804,7 @@
     "description": ""
   },
   "AddTags_prompt_text_title": {
-    "message": "Texte de l'invite actuelle",
+    "message": "Texte du prompt actuel",
     "description": ""
   },
   "AddTags_excl_list_title": {
@@ -820,7 +820,7 @@
     "description": ""
   },
   "addtags_info_additional_statements": {
-    "message": "Cette déclaration sera ajoutée à la fin de l'invite :",
+    "message": "Cette phrase sera ajoutée à la fin du prompt :",
     "description": ""
   },
   "reset_default": {
@@ -984,11 +984,11 @@
     "description": ""
   },
   "GetCalendarEvent_prompt_text_title": {
-    "message": "Texte de l'invite actuelle",
+    "message": "Texte du prompt actuel",
     "description": ""
   },
   "prefs_OptionText_GetCalendarEvent_infoline2": {
-    "message": "Vous pouvez modifier l'invite comme vous le souhaitez, mais la réponse reçue de l'IA doit être au format JSON tel que spécifié dans l'invite par défaut !",
+    "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse reçue de l'IA doit être au format JSON tel que spécifié dans l'invite par défaut !",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
