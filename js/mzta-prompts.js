@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,18 +182,44 @@ const specialPrompts = [
         is_default: "1",
         is_special: "1",
     },
+    {
+        id: 'prompt_get_calendar_event',
+        name: "__MSG_prompt_get_calendar_event__",
+        text: "prompt_get_calendar_event_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "1",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        is_default: "1",
+        is_special: "1",
+    },
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = false){
+export async function getPrompts(onlyEnabled = false, includeSpecial = []){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
     let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
-    if(!includeSpecial){
+    if(includeSpecial.length == 0){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
+    }else{
+        // console.log(">>>>>>>>>> getPrompts includeSpecial: " + JSON.stringify(includeSpecial));
+        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1);
+        // output = output.filter(obj => {
+        //     const isIncluded = includeSpecial.includes(obj.id);
+        //     const isNotSpecial = obj.is_special != 1;
+
+        //     console.log(`>>>>>>>>>> Checking obj:`, obj);
+        //     console.log(`>>>>>>>>>> isIncluded: ${isIncluded}`);
+        //     console.log(`>>>>>>>>>> isNotSpecial: ${isNotSpecial}`);
+
+        //     return isIncluded || isNotSpecial;
+        //   });
     }
     if(onlyEnabled){
         output = output.filter(obj => obj.enabled != 0);
@@ -311,7 +337,21 @@ export async function getSpecialPrompts(){
         })
         return def_specPrompts;
     } else {
-        return prefs._special_prompts;
+        let updatedPrompts = [...prefs._special_prompts];
+
+        specialPrompts.forEach((defaultPrompt) => {
+            if (!updatedPrompts.some((prompt) => prompt.id === defaultPrompt.id)) {
+                let newPrompt = { ...defaultPrompt };
+                newPrompt.text = browser.i18n.getMessage(newPrompt.text);
+                updatedPrompts.push(newPrompt);
+            }
+        });
+
+        if (updatedPrompts.length !== prefs._special_prompts.length) {
+            await browser.storage.local.set({ _special_prompts: updatedPrompts });
+        }
+
+        return updatedPrompts;
     }
 }
 

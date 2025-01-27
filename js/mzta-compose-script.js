@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@
 
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
-  case "getSelectedText":
+  case "getSelectedText": {
     return Promise.resolve(window.getSelection().toString());
+  }
 
-  case "replaceSelectedText":
+  case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
     if (selectedText === '') {
       return Promise.resolve(false);
@@ -37,9 +38,9 @@ switch (message.command) {
     r.insertNode(doc.body);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     return Promise.resolve(true);
-    break;
+  }
 
-  case "getText":
+  case "getText": {
     let t = '';
     const children = window.document.body.childNodes;
     for (const node of children) {
@@ -51,12 +52,56 @@ switch (message.command) {
       t += node.textContent;
     }
     return Promise.resolve(t);
+  }
 
-  case "getTextOnly":
+  case "getTextOnly": {
       return Promise.resolve(window.document.body.innerText);
+  }
 
-  case "getFullHtml":
+  case "getFullHtml": {
       return Promise.resolve(window.document.body.innerHTML);
+  }
+
+  case "getOnlyTypedText": {
+    let t = '';
+    const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+
+    let firstNode = null;
+    let lastNode = null;
+
+    for (const node of children) {
+      if (node instanceof Element) {
+        if (node.classList.contains('moz-cite-prefix')) {
+          break;
+        }
+      }
+      t += node.textContent;
+
+      // Track the first and last nodes for range
+      if (!firstNode) {
+        firstNode = node;
+      }
+      if(node.textContent.trim() != '') {
+        lastNode = node;
+      }
+    }
+
+    if(!lastNode) {
+      lastNode = firstNode;
+    }
+
+    //if(message.do_autoselect && selection.isCollapsed && firstNode && lastNode) {
+      if(message.do_autoselect && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    return Promise.resolve(t);
+  }
 
   case 'sendAlert':
     //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
@@ -212,12 +257,12 @@ switch (message.command) {
     break;
 
   case "getTags":
-    console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
+    // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
     // ===== These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
     async function addTags_getExclusionList() {
       let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-      console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
+      // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
       return prefs_excluded_tags.add_tags_exclusions;
     }
 

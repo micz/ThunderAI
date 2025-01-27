@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@ export class OpenAI {
 
   apiKey = '';
   model = '';
+  developer_messages = '';
   stream = false;
 
-  constructor(apiKey, model, stream) {
+  constructor(apiKey, model, developer_messages, stream) {
     this.apiKey = apiKey;
     this.model = model;
+    this.developer_messages = developer_messages;
     this.stream = stream;
   }
 
@@ -69,6 +71,13 @@ export class OpenAI {
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
+
+    if(this.developer_messages !== ''){
+       messages.push({role: "developer", content: [{"type": "text", "text": this.developer_messages}]});
+    }
+
+    // console.log(">>>>>>>>>>> OpenAI API request: " + JSON.stringify(messages));
+
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",

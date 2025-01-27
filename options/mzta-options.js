@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ import { taLogger } from '../js/mzta-logger.js';
 import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
+import { GoogleGemini } from '../js/api/google_gemini.js';
+import { checkSparksPresence } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -44,7 +46,9 @@ function saveOptions(e) {
       default:
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
-        }else{
+        } else if (element.tagName === 'TEXTAREA') {
+          options[element.id] = element.value.trim();
+        } else {
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
     }
@@ -55,7 +59,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" || element.id=="google_gemini_api_key" ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -81,6 +85,8 @@ async function restoreOptions() {
           if (element.value === '') {
             element.selectedIndex = -1;
           }
+        } else if (element.tagName === 'TEXTAREA') {
+          element.value = result[element.id];
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
@@ -95,16 +101,19 @@ async function restoreOptions() {
 function showConnectionOptions() {
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
   let openai_comp_api_display = 'none';
+  let google_gemini_api_display = 'none';
   let conntype_select = document.getElementById("connection_type");
   let parent = conntype_select.parentElement.parentElement.parentElement;
   parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
   parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
   parent.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
   parent.classList.toggle("conntype_openai_comp_api", (conntype_select.value === "openai_comp_api"));
+  parent.classList.toggle("conntype_google_gemini_api", (conntype_select.value === "google_gemini_api"));
   if (conntype_select.value === "chatgpt_web") {
     chatgpt_web_display = 'table-row';
   }else{
@@ -125,6 +134,11 @@ function showConnectionOptions() {
   }else{
     openai_comp_api_display = 'none';
   }
+  if (conntype_select.value === "google_gemini_api") {
+    google_gemini_api_display = 'table-row';
+  }else{
+    google_gemini_api_display = 'none';
+  }
   document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
   });
@@ -136,6 +150,9 @@ function showConnectionOptions() {
   });
   document.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
     element.style.display = openai_comp_api_display;
+  });
+  document.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
+    element.style.display = google_gemini_api_display;
   });
 }
 
@@ -157,6 +174,28 @@ function warn_ChatGPT_APIKeyEmpty() {
       modelChatGPT.style.border = '2px solid red';
     }else{
       modelChatGPT.style.border = '';
+    }
+  }
+}
+
+function warn_GoogleGemini_APIKeyEmpty() {
+  let apiKeyInput = document.getElementById('google_gemini_api_key');
+  let btnFetchGoogleGeminiModels = document.getElementById('btnUpdateGoogleGeminiModels');
+  let modelGoogleGemini = document.getElementById('google_gemini_model');
+  if(apiKeyInput.value === ''){
+    apiKeyInput.style.border = '2px solid red';
+    btnFetchGoogleGeminiModels.disabled = true;
+    modelGoogleGemini.disabled = true;
+    modelGoogleGemini.selectedIndex = -1;
+    modelGoogleGemini.style.border = '';
+  }else{
+    apiKeyInput.style.border = '';
+    btnFetchGoogleGeminiModels.disabled = false;
+    modelGoogleGemini.disabled = false;
+    if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
+      modelGoogleGemini.style.border = '2px solid red';
+    }else{
+      modelGoogleGemini.style.border = '';
     }
   }
 }
@@ -215,10 +254,25 @@ function disable_MaxPromptLength(){
 
 function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
+  let conntype_select = document.getElementById("connection_type");
+  add_tags.disabled = (conntype_select.value === "chatgpt_web");
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
   });
+}
+
+async function disable_GetCalendarEvent(){
+  let get_calendar_event = document.getElementById('get_calendar_event');
+  let no_sparks_tr = document.getElementById('no_sparks');
+  let is_spark_present = await checkSparksPresence()
+  let conntype_select = document.getElementById("connection_type");
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !is_spark_present;
+  let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
+  get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
+    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
+  });
+  no_sparks_tr.style.display = is_spark_present ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -249,6 +303,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
+
+  let get_calendar_event_el = document.getElementById('get_calendar_event');
+  let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
+  get_calendar_event_el.addEventListener('click', (event) => {
+    get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
@@ -276,6 +337,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   });
 
+  document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
+      }
+    })
+  });
+
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
     let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
     if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
@@ -294,11 +368,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
+  conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  conntype_select.addEventListener("change", disable_AddTags);
+  conntype_select.addEventListener("change", disable_GetCalendarEvent);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
+  document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
 
-  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: ''});
+  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: ''});
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = document.getElementById('chatgpt_model');
@@ -338,6 +416,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     warn_ChatGPT_APIKeyEmpty();
+  });
+
+  // Google Gemini API ChatGPT model fetching
+  let select_google_gemini_model = document.getElementById('google_gemini_model');
+  const google_gemini_option = document.createElement('option');
+  google_gemini_option.value = prefs.google_gemini_model;
+  google_gemini_option.text = prefs.google_gemini_model;
+  select_google_gemini_model.appendChild(google_gemini_option);
+  select_google_gemini_model.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+
+  document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
+    document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
+    let google_gemini = new GoogleGemini(document.getElementById("google_gemini_api_key").value, '', true);
+    google_gemini.fetchModels().then((data) => {
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      taLog.log("GoogleGemini models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
+          const option = document.createElement('option');
+          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
+          option.text = model.displayName;
+          select_google_gemini_model.appendChild(option);
+        }
+      });
+      document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+    });
+    
+    warn_GoogleGemini_APIKeyEmpty();
   });
 
 // Ollama API Model fetching
@@ -442,8 +560,10 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_ChatGPT_APIKeyEmpty();
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
+  warn_GoogleGemini_APIKeyEmpty();
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_GetCalendarEvent();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
@@ -454,6 +574,17 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
       passwordField_chatgpt_api_key.setAttribute('type', type);
 
       icon_img_chatgpt_api_key.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
+  });
+
+  const passwordField_google_gemini_api_key = document.getElementById('google_gemini_api_key');
+  const toggleIcon_google_gemini_api_key = document.getElementById('toggle_google_gemini_api_key');
+  const icon_img_google_gemini_api_key = document.getElementById('pwd-icon_google_gemini_api_key');
+
+  toggleIcon_google_gemini_api_key.addEventListener('click', () => {
+      const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_google_gemini_api_key.setAttribute('type', type);
+
+      icon_img_google_gemini_api_key.src = type === 'password' ? "../images/pwd-show.png" : "../images/pwd-hide.png";
   });
 
   const passwordField_openai_comp_api_key = document.getElementById('openai_comp_api_key');

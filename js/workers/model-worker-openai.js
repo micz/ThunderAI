@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         chatgpt_api_key = event.data.chatgpt_api_key;
         chatgpt_model = event.data.chatgpt_model;
-        openai = new OpenAI(chatgpt_api_key, chatgpt_model, true);
+        openai = new OpenAI(chatgpt_api_key, chatgpt_model, event.data.chatgpt_developer_messages, true);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai', do_debug);

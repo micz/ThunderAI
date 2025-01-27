@@ -340,7 +340,7 @@
     "description": ""
   },
   "prefsDonation_1": {
-    "message": "Aimez-vous cet addon ?",
+    "message": "Aimez-vous cette extension ?",
     "description": ""
   },
   "prefsDonation_2": {
@@ -352,7 +352,7 @@
     "description": ""
   },
   "TranslateText": {
-    "message": "Voulez-vous aider à traduire cet addon ?",
+    "message": "Voulez-vous aider à traduire cette extension ?",
     "description": ""
   },
   "TranslateLink": {
@@ -364,27 +364,27 @@
     "description": ""
   },
   "customPrompts_Import": {
-    "message": "Importer de nouvelles prompts",
+    "message": "Importer de nouveaux prompts",
     "description": ""
   },
   "importPrompts_confirmText": {
-    "message": "Vous êtes sur le point d'importer de nouvelles prompts.",
+    "message": "Vous êtes sur le point d'importer de nouveaux prompts.",
     "description": ""
   },
   "customPrompts_start_import": {
-    "message": "Début de l'importation des prompts personnalisées...",
+    "message": "Début de l'importation des prompts personnalisés...",
     "description": ""
   },
   "customPrompts_import_completed": {
-    "message": "Importation des prompts personnalisées terminée ! Vous devez cliquer sur le bouton 'Enregistrer tout' pour enregistrer vos modifications.",
+    "message": "Importation des prompts personnalisés terminée ! Vous devez cliquer sur le bouton 'Enregistrer tout' pour enregistrer vos modifications.",
     "description": ""
   },
   "importPrompts_invalidFile": {
-    "message": "Le fichier que vous essayez d'importer n'est pas un fichier de prompts personnalisées valide.",
+    "message": "Le fichier que vous essayez d'importer n'est pas un fichier de prompts personnalisés valide.",
     "description": ""
   },
   "importPrompts_invalidPrompts": {
-    "message": "Le fichier que vous essayez d'importer ne contient aucune prompt valide.",
+    "message": "Le fichier que vous essayez d'importer ne contient aucun prompt valide.",
     "description": ""
   },
   "currently_used_prompt": {
@@ -560,11 +560,11 @@
     "description": ""
   },
   "SearchPrompt": {
-    "message": "Rechercher des invites",
+    "message": "Rechercher des prompts",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter": {
-    "message": "Menu : Envoi immédiat de l'invite",
+    "message": "Menu : Envoi immédiat du prompt",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
@@ -576,7 +576,7 @@
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-    "message": "Si cette option est cochée, les invites dans le menu seront triées par ordre alphabétique.",
+    "message": "Si cette option est cochée, les prompts dans le menu seront triés par ordre alphabétique.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_win_dims_info": {
@@ -644,7 +644,7 @@
     "description": ""
   },
   "prefs_OptionText_max_prompt_length": {
-    "message": "Longueur maximale de l'invite",
+    "message": "Longueur maximale du prompt",
     "description": ""
   },
   "prefs_OptionText_max_prompt_length_Info": {
@@ -684,7 +684,7 @@
     "description": ""
   },
   "prefs_OptionText_btnManagePrompts_infoline2": {
-    "message": "Vous pouvez modifier l'invite comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !",
+    "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !",
     "description": ""
   },
   "prefs_OptionText_openai_comp_use_v1": {
@@ -804,7 +804,7 @@
     "description": ""
   },
   "AddTags_prompt_text_title": {
-    "message": "Texte de l'invite actuelle",
+    "message": "Texte du prompt actuel",
     "description": ""
   },
   "AddTags_excl_list_title": {
@@ -820,7 +820,7 @@
     "description": ""
   },
   "addtags_info_additional_statements": {
-    "message": "Cette déclaration sera ajoutée à la fin de l'invite :",
+    "message": "Cette phrase sera ajoutée à la fin du prompt :",
     "description": ""
   },
   "reset_default": {
@@ -888,11 +888,131 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
-      "message": "Si cette option est cochée, la langue des tags sera forcée pour correspondre à celle définie dans les options du ThunderAI, si spécifiée.",
-      "description": ""
+    "message": "Si cette option est cochée, la langue des tags sera forcée pour correspondre à celle définie dans les options du ThunderAI, si spécifiée.",
+    "description": ""
   },
   "prompt_add_tags_force_lang": {
-      "message": "Les tags doivent être écrits en",
-      "description": ""
+    "message": "Les tags doivent être écrits en",
+    "description": ""
+  },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "API Google Gemini",
+    "description": ""
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "Clé API",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Modèles d'API Google Gemini",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Mettre à jour la liste des modèles Google Gemini",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Erreur lors de la tentative de récupération des modèles Google Gemini",
+    "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "La requête API Google Gemini a échoué",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Tentative de connexion à Google Gemini en utilisant la clé API fournie",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "Vous n'avez pas ajouté de clé API pour l'API Google Gemini. Veuillez en insérer une dans la page des options.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "Vous n'avez pas choisi de modèle pour l'API Google Gemini. Veuillez en choisir un dans la page des options.",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "Instruction système",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "Lorsque vous définissez une instruction système, vous fournissez au modèle un contexte supplémentaire pour comprendre la tâche, fournir des réponses plus personnalisées et respecter des directives spécifiques pour l'invite qui sera envoyée.",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages": {
+    "message": "Messages des développeurs",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages_Info": {
+    "message": "Lorsque vous définissez les messages des développeurs, vous fournissez au modèle un contexte supplémentaire pour comprendre la tâche, fournir des réponses plus personnalisées et respecter des directives spécifiques pour l'invite qui sera envoyée.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline3": {
+    "message": "Vous pouvez utiliser le placeholder de données {%tags_full_list%} dans l'invite pour lister les balises disponibles. Avec une invite appropriée, vous pourriez ensuite forcer le choix des balises uniquement parmi celles déjà existantes.",
+    "description": ""
+  },
+  "placeholder_mail_typed_text": {
+    "message": "Texte saisi avant le corps du mail cité",
+    "description": ""
+  },
+  "prompt_get_calendar_event": {
+    "message": "Ajouter un nouvel événement au calendrier",
+    "description": ""
+  },
+  "prompt_get_calendar_event_full_text": {
+    "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée) Assurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\".\nCalculez la date et l'heure de début sur cette base.\nSi la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON.\nN'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\": false\n}\nVoici le texte : \"{%selected_text%}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Ajouter un nouvel événement au calendrier à partir du texte sélectionné",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "Si coché, un élément sera inclus dans le menu pour obtenir des informations sur un événement de calendrier à partir du texte sélectionné.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Gérer les paramètres des événements du calendrier",
+    "description": ""
+  },
+  "GetCalendarEvent_PageTitle": {
+    "message": "Gérer les paramètres des événements du calendrier",
+    "description": ""
+  },
+  "GetCalendarEvent_info_default": {
+    "message": "Sur cette page, vous pouvez modifier l'invite par défaut utilisée pour obtenir un événement de calendrier à partir du texte sélectionné.",
+    "description": ""
+  },
+  "GetCalendarEvent_prompt_text_title": {
+    "message": "Texte du prompt actuel",
+    "description": ""
+  },
+  "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse reçue de l'IA doit être au format JSON tel que spécifié dans l'invite par défaut !",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "Pour utiliser la fonctionnalité d'événements de calendrier, veuillez installer l'addon ThunderAI Sparks.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Téléchargez ThunderAI Sparks maintenant !",
+    "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "La date et l'heure de l'email",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "La date et l'heure actuelles",
+    "description": ""
+  },
+  "calendar_getting_data_error": {
+    "message": "Erreur lors de l'obtention des données de l'événement du calendrier",
+    "description": ""
+  },
+  "calendar_opening_dialog_error": {
+    "message": "Erreur lors de l'ouverture de la boîte de dialogue de l'événement du calendrier",
+    "description": ""
   }
 }

@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,15 +17,18 @@
  */
 
 import { taLogger } from "../js/mzta-logger.js";
+import { checkSparksPresence } from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
 let connection_type = 'chatgpt_web';
 let add_tags = false;
+let get_calendar_event = false;
 let tabType;
+let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: false, connection_type: 'chatgpt_web'});
+    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -40,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     menuSendImmediately = prefs.dynamic_menu_force_enter;
     connection_type = prefs.connection_type;
     add_tags = prefs.add_tags;
+    get_calendar_event = prefs.get_calendar_event;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 }, { once: true });
@@ -95,20 +99,56 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
 
    // Prepend numbers to the first 10 items
-   // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags
+   // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags and 1 for prompt_get_calendar_event (0, if no prompt_add_tags is disabled)
    let max_num_el = 10
    let first_num_el = 0;
-   if(checkDoAddTags()){
-     max_num_el = 9;
-     first_num_el = 1;
-     filteredData = ensurePromptAddTagsFirst(filteredData);
-     if (!filteredData[0].numberPrepended) {
-      filteredData[0].numberPrepended = 'true';
-      filteredData[0].label = '0. ' + filteredData[0].label;
+
+   let do_add_tags = checkDoAddTags();
+   let do_get_calendar_event = checkDoCalendarEvent();
+
+  //  console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
+  //  console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
+  //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
+
+   if(do_add_tags){
+     num_special_menu_items++;
+   }
+   if(do_get_calendar_event){
+     num_special_menu_items++;
+   }
+  //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
+   if(num_special_menu_items > 0){
+     max_num_el -= num_special_menu_items;
+     first_num_el = num_special_menu_items;
+    //  console.log(">>>>>>>>>>>>> max_num_el: " + max_num_el);
+    //  console.log(">>>>>>>>>>>>> first_num_el: " + first_num_el);
+     if(do_add_tags){
+      filteredData = ensurePromptAddTagsFirst(filteredData);
+      if (!filteredData[0].numberPrepended) {
+        filteredData[0].numberPrepended = 'true';
+        filteredData[0].label = '0. ' + filteredData[0].label;
+       }
+     }
+     if(do_get_calendar_event){
+      filteredData = ensurePromptGetCalendarEventFirst(filteredData, do_add_tags);
+      let gce_curr_pos = do_add_tags ? 1 : 0;
+      if (!filteredData[gce_curr_pos].numberPrepended) {
+        filteredData[gce_curr_pos].numberPrepended = 'true';
+        filteredData[gce_curr_pos].label = gce_curr_pos + '. ' + filteredData[gce_curr_pos].label;
+       }
      }
    }
+  //  if(checkDoAddTags()){
+  //    max_num_el = 9;
+  //    first_num_el = 1;
+  //    filteredData = ensurePromptAddTagsFirst(filteredData);
+  //    if (!filteredData[0].numberPrepended) {
+  //     filteredData[0].numberPrepended = 'true';
+  //     filteredData[0].label = '0. ' + filteredData[0].label;
+  //    }
+  //  }
    Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
-     let number = (index < 9) ? (index + 1).toString() : '0';
+     let number = (index + first_num_el).toString();
      // Check if the number is already prepended to avoid duplication
      if (!item.numberPrepended) {
          item.label = `${number}. ${item.label}`;
@@ -118,21 +158,14 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
   //  console.log(">>>>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
-  // add the prompt_add_tags if add_tags is true and connection_type is not 'chatgpt_web'
-  //  if(checkDoAddTags()){
-  //    let number = '0';
-  //    let item = {label: `${number}. ${browser.i18n.getMessage('prompt_add_tags')}`, id: 'prompt_add_tags', numberPrepended: 'true'};
-  //    filteredData.unshift(item);
-  //  }
-
    // Create a div for each filtered result
    filteredData.forEach(item => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
-       if(item.id === 'prompt_add_tags'){
-         itemDiv.className += ' prompt_add_tags';
+       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')){
+         itemDiv.className += ' special_prompt';
        }
 
        // Add a mousedown event to select the item
@@ -262,7 +295,7 @@ async function sendPrompt(prompt_id, tabId){
  document.getElementById('mzta_search_input').style.display = 'none';
  document.getElementById('mzta_sending_prompt').style.display = 'block';
  let response = await browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
- console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
+//  console.log(">>>>>>>>>>>>>>>>> response: " + JSON.stringify(response));
  if(response.ok == '1'){
   window.close();
  }
@@ -293,6 +326,10 @@ function checkDoAddTags(){
   return add_tags && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose');
 }
 
+function checkDoCalendarEvent(){
+  return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && checkSparksPresence();
+}
+
 function ensurePromptAddTagsFirst(arr) {
   // Find the index of the object with id "prompt_add_tags"
   const index = arr.findIndex(item => item.id === "prompt_add_tags");
@@ -303,6 +340,23 @@ function ensurePromptAddTagsFirst(arr) {
     const [promptAddTags] = arr.splice(index, 1);
     // Add it to the beginning of the array
     arr.unshift(promptAddTags);
+  }
+
+  return arr;
+}
+
+function ensurePromptGetCalendarEventFirst(arr, do_add_tags) {
+  // Find the index of the object with id "prompt_get_calendar_event"
+  const index = arr.findIndex(item => item.id === "prompt_get_calendar_event");
+
+  // If found and needs repositioning
+  if (index !== -1 && (do_add_tags ? index !== 1 : index !== 0)) {
+    // Remove it from its current position
+    const [promptAddTags] = arr.splice(index, 1);
+
+    // Add it to the specified position
+    const targetPosition = do_add_tags ? 1 : 0;
+    arr.splice(targetPosition, 0, promptAddTags);
   }
 
   return arr;

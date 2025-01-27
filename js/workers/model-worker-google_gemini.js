@@ -20,14 +20,12 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { OpenAIComp } from '../api/openai_comp.js';
+import { GoogleGemini } from '../api/google_gemini.js';
 import { taLogger } from '../mzta-logger.js';
 
-let openai_comp_host = null;
-let openai_comp_model = '';
-let openai_comp_api_key = '';
-let openai_comp_use_v1 = true;
-let openai_comp = null;
+let google_gemini_api_key = null;
+let google_gemini_model = '';
+let google_gemini = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
@@ -38,18 +36,16 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openai_comp_host = event.data.openai_comp_host;
-        openai_comp_model = event.data.openai_comp_model;
-        openai_comp_api_key = event.data.openai_comp_api_key;
-        openai_comp_use_v1 = event.data.openai_comp_use_v1;
-        openai_comp = new OpenAIComp(openai_comp_host, openai_comp_model, openai_comp_api_key, true, openai_comp_use_v1);
+        google_gemini_api_key = event.data.google_gemini_api_key;
+        google_gemini_model = event.data.google_gemini_model;
+        google_gemini = new GoogleGemini(google_gemini_api_key, google_gemini_model, event.data.google_gemini_system_instruction, true);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
-        taLog = new taLogger('model-worker-openai_comp', do_debug);
+        taLog = new taLogger('model-worker-google_gemini', do_debug);
     } else if (event.data.type === 'chatMessage') {
-        conversationHistory.push({ role: 'user', content: event.data.message });
+        conversationHistory.push({ role: 'user', parts: [{"text": event.data.message}] });
 
-    const response = await openai_comp.fetchResponse(conversationHistory); //4096);
+        const response = await google_gemini.fetchResponse(conversationHistory);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
@@ -67,8 +63,8 @@ self.onmessage = async function(event) {
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
             }
-            postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: i18nStrings["google_gemini_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
+            throw new Error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
         const reader = response.body.getReader();
@@ -79,29 +75,29 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
                 break;
             }
             const { done, value } = await reader.read();
             if (done) {
-                conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
+                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
                 break;
             }
-            // lots of low-level OpenAI response parsing stuff
+            // lots of low-level Google Gemini response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer: " + buffer);
+            taLog.log("buffer " + buffer);
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                    .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
+                    .filter((line) => line !== "" ) // Remove empty lines
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
                         taLog.log("line: " + JSON.stringify(line));
@@ -112,13 +108,14 @@ self.onmessage = async function(event) {
             }
     
             for (const parsedLine of parsedLines) {
-                const { choices } = parsedLine;
-                const { delta } = choices[0];
-                const { content } = delta;
+                const { candidates } = parsedLine;
+                const { content } = candidates[0];
+                const { parts } = content;
+                const { text } = parts[0];
                 // Update the UI with the new content
-                if (content) {
-                    assistantResponseAccumulator += content;
-                    postMessage({ type: 'newToken', payload: { token: content } });
+                if (text) {
+                    assistantResponseAccumulator += text;
+                    postMessage({ type: 'newToken', payload: { token: text } });
                 }
             }
         }

@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*  ================= PROMPTS PROPERTIES ========================================
+/*  ================= PLACEHOLDERS PROPERTIES ========================================
 
     ================ BASE PROPERTIES
 
@@ -45,6 +45,13 @@ const defaultPlaceholders = [
         name: "__MSG_placeholder_mail_html_body__",
         default_value: "",
         type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'mail_typed_text',
+        name: "__MSG_placeholder_mail_typed_text__",
+        default_value: "",
+        type: 2,
         is_default: "1",
     },
     {
@@ -92,6 +99,20 @@ const defaultPlaceholders = [
     {
         id: 'author',
         name: "__MSG_placeholder_author__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'mail_datetime',
+        name: "__MSG_placeholder_mail_datetime__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+    },
+    {
+        id: 'current_datetime',
+        name: "__MSG_placeholder_current_datetime__",
         default_value: "",
         type: 0,
         is_default: "1",

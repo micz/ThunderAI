@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence } from './js/mzta-utils.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -28,8 +28,10 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, connection_type: 'chatgpt_web'});
+let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
+
+let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -211,8 +213,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'reload_menus':
                 async function _reload_menus() {
-                    let prefs_reload = await browser.storage.sync.get({add_tags: true, connection_type: 'chatgpt_web'});
-                    menus.reload(prefs_reload.add_tags && (prefs_reload.connection_type !== "chatgpt_web"));
+                    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
+                    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
+                        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
+                        menus.reload(special_prompts_ids);
+                    });
                     taLog.log("Reloading menus");
                     return true;
                 }
@@ -237,11 +242,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _assign_tags() {
                     let all_tags_list = await getTagsList();
                     all_tags_list = all_tags_list[1];
-                    console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+                    // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
                     taLog.log("assign_tags data: " + JSON.stringify(message));
                     let new_tags = [];
                     for (const tag of message.tags) {
-                        console.log(">>>>>>>>>>>>>>> tag: " + tag);
+                        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
                         if (!checkIfTagExists(tag, all_tags_list)) {
                             taLog.log("Creating tag: " + tag);
                             await createTag(tag);
@@ -400,6 +405,56 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         break;  // chatgpt_api - END
 
+        case 'google_gemini_api':
+         // We are using the Google Gemini API
+
+        let rand_call_id5 = '_google_gemini_' + generateCallID();
+
+        const listener5 = (message, sender, sendResponse) => {
+
+            function handleChatGptApi(createdTab) {
+                let mailMessageId5 = -1;
+                if(mailMessage) mailMessageId5 = mailMessage.id;
+
+                // check if the config is present, or give a message error
+                if (prefs.google_gemini_api_key == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_apikey')});
+                    return;
+                }
+                if (prefs.google_gemini_model == '') {
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_error", error: browser.i18n.getMessage('google_gemini_empty_model')});
+                    return;
+                }
+                //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text});
+                taLog.log('[Google Gemini] Connection succeded!');
+                browser.runtime.onMessage.removeListener(listener5);
+            }
+
+            if (message.command === "google_gemini_api_ready_"+rand_call_id5) {
+                return handleChatGptApi(sender.tab);
+            }
+            return false;
+        }
+
+        browser.runtime.onMessage.addListener(listener5);
+
+        let win_options5 = {
+            url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')),
+            type: "popup",
+        }
+
+        taLog.log("[google_gemini_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+
+        if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+            win_options5.width = prefs.chatgpt_win_width,
+            win_options5.height = prefs.chatgpt_win_height
+        }
+
+        await browser.windows.create(win_options5);
+
+        break;  // google_gemini_api - END
+
         case 'ollama_api':
              // We are using the Ollama API
 
@@ -506,7 +561,10 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         
                 await browser.windows.create(win_options4);
         
-                break;  // openai_comp_api
+                break;  // openai_comp_api - END
+                default:
+                    taLog.error("Unknown API connection type: " + prefs.connection_type);
+                break;
     }
 }
 
@@ -520,23 +578,59 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-// Register the listener for storage changes
-browser.storage.onChanged.addListener((changes, areaName) => {
-    // Check if the change happened in the 'sync' storage area
-    if (areaName === 'sync') {
-        // Check if 'add_tags' has changed
-        //console.log(">>>>>>>>>>>>> changes: " + JSON.stringify(changes));
-        if (changes.add_tags) {
-            menus.reload(changes.add_tags.newValue && (prefs_init.connection_type !== "chatgpt_web"));
-        }
-
-        // Check if 'connection_type' has changed
-        if (changes.connection_type) {
-            menus.reload(prefs_init.add_tags && (changes.connection_type.newValue !== "chatgpt_web"));
-        }
+async function doGetCalendarEvent(get_calendar_event) {
+    if(get_calendar_event) {
+        return await checkSparksPresence();
+    } else {
+        return false;
     }
-});
+}
+
+async function reload_pref_init(){
+    prefs_init = await await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+}
+
+
+// Register the listener for storage changes
+function setupStorageChangeListener() {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        // Check if the change happened in the 'sync' storage area
+        if (areaName === 'sync') {
+            // Process 'add_tags' changes
+            if (changes.add_tags) {
+                const newTags = changes.add_tags.newValue;
+                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(newTags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+
+            // Process 'get_calendar_event' changes
+            if (changes.get_calendar_event) {
+                const newCalendarEvent = changes.get_calendar_event.newValue;
+                doGetCalendarEvent(newCalendarEvent).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+
+            // Process 'connection_type' changes
+            if (changes.connection_type) {
+                const newConnectionType = changes.connection_type.newValue;
+                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
+                    menus.reload(special_prompts_ids);
+                });
+            }
+            reload_pref_init();
+        }
+    });
+}
+
+// Call the function to set up the listener
+setupStorageChangeListener();
+
 
 // Menus handling
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
-menus.loadMenus(prefs_init.add_tags && (prefs_init.connection_type !== "chatgpt_web"));
+menus.loadMenus(special_prompts_ids);
