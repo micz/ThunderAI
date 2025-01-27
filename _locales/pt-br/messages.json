@@ -888,11 +888,131 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang_Info": {
-      "message": "Se marcado, o idioma das tags será forçado a corresponder ao idioma definido na página de opções do ThunderAI, se especificado.",
-      "description": ""
+    "message": "Se marcado, o idioma das tags será forçado a corresponder ao idioma definido na página de opções do ThunderAI, se especificado.",
+    "description": ""
   },
   "prompt_add_tags_force_lang": {
-      "message": "As tags devem ser escritas em",
-      "description": ""
+    "message": "As tags devem ser escritas em",
+    "description": ""
+  },
+  "prefs_Connection_type_Google_Gemini_API": {
+    "message": "API Google Gemini",
+    "description": ""
+  },
+  "prefs_GoogleGemini_API_Key": {
+    "message": "Chave API",
+    "description": ""
+  },
+  "GoogleGemini_Models": {
+    "message": "Modelos da API Google Gemini",
+    "description": ""
+  },
+  "GoogleGemini_Models_Fetch": {
+    "message": "Atualizar a lista de modelos Google Gemini",
+    "description": ""
+  },
+  "GoogleGemini_Models_Error_fetching": {
+    "message": "Erro ao tentar buscar os modelos Google Gemini",
+    "description": ""
+  },
+  "google_gemini_api_request_failed": {
+    "message": "A solicitação para a API Google Gemini falhou",
+    "description": ""
+  },
+  "google_gemini_api_connecting": {
+    "message": "Tentando conectar ao Google Gemini usando a chave API fornecida",
+    "description": ""
+  },
+  "google_gemini_empty_apikey": {
+    "message": "Você não adicionou uma chave API para a API Google Gemini. Por favor, insira uma na página de opções.",
+    "description": ""
+  },
+  "google_gemini_empty_model": {
+    "message": "Você não escolheu um modelo para a API Google Gemini. Por favor, escolha um na página de opções.",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction": {
+    "message": "Instrução do sistema",
+    "description": ""
+  },
+  "GoogleGemini_SystemInstruction_Info": {
+    "message": "Ao configurar uma instrução do sistema, você fornece ao modelo um contexto adicional para entender a tarefa, oferecer respostas mais personalizadas e aderir a diretrizes específicas para o prompt que será enviado.",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages": {
+    "message": "Mensagens do desenvolvedor",
+    "description": ""
+  },
+  "ChatGPT_Developer_Messages_Info": {
+    "message": "Ao configurar as mensagens do desenvolvedor, você fornece ao modelo um contexto adicional para entender a tarefa, oferecer respostas mais personalizadas e aderir a diretrizes específicas para o prompt que será enviado.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManagePrompts_infoline3": {
+    "message": "Você pode usar o espaço reservado de dados {%tags_full_list%} no prompt para listar as tags disponíveis. Com um prompt apropriado, você pode forçar que as tags sejam escolhidas apenas da lista das que já existem.",
+    "description": ""
+  },
+  "placeholder_mail_typed_text": {
+    "message": "Texto digitado antes do corpo do e-mail citado",
+    "description": ""
+  },
+  "prompt_get_calendar_event": {
+    "message": "Adicionar um novo evento ao calendário",
+    "description": ""
+  },
+  "prompt_get_calendar_event_full_text": {
+    "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir.\nAs informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\".\nCalcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n}\nAqui está o texto: \"{%selected_text%}\"",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event": {
+    "message": "Adicionar um novo evento ao calendário a partir do texto selecionado",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Info": {
+    "message": "Se marcado, um item será incluído no menu para obter informações de um evento de calendário a partir do texto selecionado.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCalendarEventInfo": {
+    "message": "Gerenciar configurações de eventos do calendário",
+    "description": ""
+  },
+  "GetCalendarEvent_PageTitle": {
+    "message": "Gerenciar configurações de eventos do calendário",
+    "description": ""
+  },
+  "GetCalendarEvent_info_default": {
+    "message": "Nesta página, você pode modificar o prompt padrão usado para obter um evento de calendário a partir do texto selecionado.",
+    "description": ""
+  },
+  "GetCalendarEvent_prompt_text_title": {
+    "message": "Texto do prompt atual",
+    "description": ""
+  },
+  "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "message": "Você pode alterar o prompt como desejar, mas a resposta recebida da IA deve estar no formato JSON conforme especificado no prompt padrão!",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+    "message": "Para usar o recurso de eventos de calendário, instale o addon ThunderAI Sparks.",
+    "description": ""
+  },
+  "prefs_OptionText_download_now": {
+    "message": "Baixe o ThunderAI Sparks agora!",
+    "description": ""
+  },
+  "placeholder_mail_datetime": {
+    "message": "A data e a hora do e-mail",
+    "description": ""
+  },
+  "placeholder_current_datetime": {
+    "message": "A data e a hora atuais",
+    "description": ""
+  },
+  "calendar_getting_data_error": {
+    "message": "Erro ao obter dados do evento de calendário",
+    "description": ""
+  },
+  "calendar_opening_dialog_error": {
+    "message": "Erro ao abrir a caixa de diálogo do evento de calendário",
+    "description": ""
   }
 }
