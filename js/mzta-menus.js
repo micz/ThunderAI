@@ -247,7 +247,7 @@ export class mzta_Menus {
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email: " + tags_current_email);
-                        // console.log(">>>>>>>>>>>> tags_full_list: " + JSON.stringify(tags_full_list));
+                        this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         return {ok:'1'};
                         break;  // Add tags to the email - END

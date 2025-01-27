@@ -70,7 +70,6 @@
             }
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
-                // console.log(">>>>>>>>>>>> [ThunderAI] prefs_api: " + JSON.stringify(prefs_api));
                 this.worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
@@ -90,7 +89,7 @@
                         this.full_message += payload.token;
                         break;
                     case 'tokensDone':
-                        // console.log(">>>>>>>>>>>> [ThunderAI] tokensDone: " + this.full_message);
+                        this.logger.log("tokensDone: " + this.full_message);
                         resolve(this.full_message); // Resolve the promise with the full message
                         break;
                     case 'error':
