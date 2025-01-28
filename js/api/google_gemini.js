@@ -55,7 +55,7 @@ export class GoogleGemini {
       let output = {};
       output.ok = true;
       let output_response = await response.json();
-      console.log("[ThunderAI] Google Gemini API response: " + JSON.stringify(output_response));
+      //console.log("[ThunderAI] Google Gemini API response: " + JSON.stringify(output_response));
       output.response = output_response.models;
 
       return output;
@@ -76,7 +76,7 @@ export class GoogleGemini {
         contents:messages
       };
 
-      console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
+      // console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
 
       if(this.system_instruction !== '') {
         google_gemini_body.system_instruction = {
@@ -86,7 +86,7 @@ export class GoogleGemini {
         }
       }
 
-      console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
+      // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",
