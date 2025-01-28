@@ -996,7 +996,7 @@
     "description": ""
   },
   "calendar_getting_data_error": {
-    "message": "Błąd podczas pobierania wydarzeń w kalendarzu",
+    "message": "Błąd podczas pobierania wydarzeń z kalendarza",
     "description": ""
   },
   "calendar_opening_dialog_error": {
