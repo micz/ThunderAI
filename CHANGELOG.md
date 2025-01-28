@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 3.1.1 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.1.0 - 27/01/2025</h2>
       <ul>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API][Gemini API]</i> Added a special prompt to get calendar events data from emails [<a href="https://github.com/micz/ThunderAI/issues/182">#182</a>]. To use this feature, you must install also the <a href="https://addons.thunderbird.net/it/thunderbird/addon/thunderai-sparks/">Sparks</a> add-on.</li>
