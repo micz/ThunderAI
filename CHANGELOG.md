@@ -7,6 +7,7 @@
 
 <h2>Version 3.1.1 - ??/??/2025</h2>
       <ul>
+        <li>Polish (pl) translation improved, thanks to <a href="https://github.com/neexpl">neexpl</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.1.0 - 27/01/2025</h2>
