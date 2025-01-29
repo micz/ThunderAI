@@ -331,17 +331,18 @@ export async function setCustomPrompts(prompts) {
 export async function getSpecialPrompts(){
     let prefs = await browser.storage.local.get({_special_prompts: null});
     if(prefs._special_prompts === null){
-        let def_specPrompts = [...specialPrompts];
+        let def_specPrompts = structuredClone(specialPrompts);
         def_specPrompts.forEach((prompt) => {
+            // console.log(">>>>>>>>>>>>> getSpecialPrompts prompt: " + JSON.stringify(prompt));
             prompt.text = browser.i18n.getMessage(prompt.text);
         })
         return def_specPrompts;
     } else {
-        let updatedPrompts = [...prefs._special_prompts];
+        let updatedPrompts = structuredClone(prefs._special_prompts);
 
         specialPrompts.forEach((defaultPrompt) => {
             if (!updatedPrompts.some((prompt) => prompt.id === defaultPrompt.id)) {
-                let newPrompt = { ...defaultPrompt };
+                let newPrompt = structuredClone(defaultPrompt);
                 newPrompt.text = browser.i18n.getMessage(newPrompt.text);
                 updatedPrompts.push(newPrompt);
             }
