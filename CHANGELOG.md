@@ -8,6 +8,7 @@
 <h2>Version 3.1.2 - ??/??/2025</h2>
       <ul>
         <li>Forcing ThunderAI menu reload when installing Sparks [<a href="https://github.com/micz/ThunderAI/issues/240">#240</a>].</li>
+        <li>Fixed a bug in translating special prompts.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.1.1 - 29/01/2025</h2>
