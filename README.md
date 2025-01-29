@@ -1,6 +1,6 @@
 # ![ThunderAI icon](images/icon-32px.png "ThunderAI") ThunderAI
 
-ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT | Google Gemini | Ollama to enhance email management.
+ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT, Google Gemini or Ollama to enhance email management.
 
 It enables users to analyse, write, correct, assign tags, create calendar events and optimize their emails, facilitating more effective and professional communication.
 
