@@ -596,7 +596,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
 }
 
 
