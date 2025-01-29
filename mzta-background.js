@@ -124,6 +124,16 @@ function preparePopupMenu(tab) {
     return output;
 }
 
+async function _reload_menus() {
+    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
+    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
+        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
+        menus.reload(special_prompts_ids);
+    });
+    taLog.log("Reloading menus");
+    return true;
+}
+
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Check what type of message we have received and invoke the appropriate
     // handler function.
@@ -212,15 +222,6 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _reloadBody(message.tabId);
                 break;
             case 'reload_menus':
-                async function _reload_menus() {
-                    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
-                    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
-                        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
-                        menus.reload(special_prompts_ids);
-                    });
-                    taLog.log("Reloading menus");
-                    return true;
-                }
                 return _reload_menus();
                 break;
             case 'shortcut_do_prompt':
@@ -266,6 +267,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
 });
 
+// Listen for messages from ThunderAI-Sparks
+browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+    switch (message.action) {
+        case 'reload_menus':
+            return _reload_menus();
+            break;
+    }
+});
 
 async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0) {
     let prefs = await browser.storage.sync.get(prefs_default);
