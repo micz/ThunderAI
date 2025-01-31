@@ -289,7 +289,7 @@ export class mzta_Menus {
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening calendar event dialog: ", JSON.stringify(err));
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + "Sparks not installed!" });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
                             return {ok:'0'};
                         }
                         break;  // Get a calendar event info - END

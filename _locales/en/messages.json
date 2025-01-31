@@ -1014,5 +1014,9 @@
   "calendar_opening_dialog_error": {
     "message": "Error opening the calendar event dialog",
     "description": ""
+  },
+  "sparks_not_installed": {
+    "message": "ThunderAI Sparks not installed!",
+    "description": ""
   }
 }
