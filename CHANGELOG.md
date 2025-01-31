@@ -5,6 +5,10 @@
 
 
 
+<h2>Version 3.2.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.1.2 - 29/01/2025</h2>
       <ul>
         <li>Forcing ThunderAI menu reload when installing Sparks [<a href="https://github.com/micz/ThunderAI/issues/240">#240</a>].</li>
