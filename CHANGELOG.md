@@ -5,6 +5,11 @@
 
 
 
+<h2>Version 3.1.3 - 02/02/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Correctly hiding the "Download Sparks" message when using [<a href="https://github.com/micz/ThunderAI/issues/245">#245</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added support to autochoose the new <i>o1</i>, <i>o3-mini</i> and <i>o3-mini-high</i> models [<a href="https://github.com/micz/ThunderAI/issues/244">#244</a>].</li>
+      </ul>
 <h2>Version 3.1.2 - 29/01/2025</h2>
       <ul>
         <li>Forcing ThunderAI menu reload when installing Sparks [<a href="https://github.com/micz/ThunderAI/issues/240">#240</a>].</li>
