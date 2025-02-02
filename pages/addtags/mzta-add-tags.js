@@ -53,6 +53,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    let add_tags_auto_el = document.getElementById('add_tags_auto');
+    let add_tags_auto_force_existing_tr = document.getElementById('add_tags_auto_force_existing_tr');
+    add_tags_auto_el.addEventListener('click', (event) => {
+      add_tags_auto_force_existing_tr.style.display = event.target.checked ? 'table-row' : 'none';
+      if(!event.target.checked){
+        document.getElementById('add_tags_auto_force_existing').checked = false;
+      }
+    });
+    add_tags_auto_force_existing_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
+
     addtags_reset_btn.addEventListener('click', () => {
         addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
         addtags_reset_btn.disabled = true;
