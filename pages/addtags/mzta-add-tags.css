@@ -27,7 +27,7 @@
     justify-content: space-between;
 }
 
-#addtags_info_additional_statements, #add_tags_auto_force_existing_tr{
+#addtags_info_additional_statements, #add_tags_auto_force_existing_tr, #add_tags_auto_only_inbox_tr{
     display: none;
 }
 

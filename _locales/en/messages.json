@@ -1034,5 +1034,13 @@
   "prefs_OptionText_add_tags_auto_force_existing_Info": {
     "message": "If checked, the AI will add only existing tags to newly received emails, and won't create new tags.",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_only_inbox": {
+    "message": "Only add tags to inbox emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+    "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
+    "description": ""
   }
 }
