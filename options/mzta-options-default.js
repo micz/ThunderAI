@@ -21,6 +21,7 @@ export const prefs_default = {
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
     default_chatgpt_lang: '',
+    default_sign_name: '',
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
