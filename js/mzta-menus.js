@@ -142,64 +142,7 @@ export class mzta_Menus {
                 fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
             }else{
                 // we have at least a placeholder, do the magic!
-                let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
-                // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
-                let finalSubs = {};
-                for(let currPH of currPHs){
-                    switch(currPH.id){
-                        case 'mail_text_body':
-                            finalSubs['mail_text_body'] = body_text;
-                            break;
-                        case 'mail_html_body':
-                            finalSubs['mail_html_body'] = msg_text.html;
-                            break;
-                        case 'mail_typed_text':
-                            finalSubs['mail_typed_text'] = only_typed_text;
-                            break;
-                        case 'mail_subject':
-                            let mail_subject = await getMailSubject(tabs[0]);
-                            finalSubs['mail_subject'] = mail_subject;
-                            break;
-                        case 'selected_text':
-                            finalSubs['selected_text'] = selection_text;
-                            break;
-                        case 'author':
-                            finalSubs['author'] = curr_message.author;
-                            break;
-                        case 'recipients':
-                            finalSubs['recipients'] = curr_message.recipients.join(", ");
-                            break;
-                        case 'cc_list':
-                            finalSubs['cc_list'] = curr_message.ccList.join(", ");
-                            break;
-                        case 'junk_score':
-                            finalSubs['junk_score'] = curr_message.junkScore;
-                            break;
-                        case 'mail_datetime':
-                            finalSubs['mail_datetime'] = curr_message.date;
-                            break;
-                        case 'current_datetime':
-                            finalSubs['current_datetime'] = new Date().toString();
-                            break;
-                        case 'tags_current_email':
-                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
-                            finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
-                            break;
-                        case 'tags_full_list':
-                            finalSubs['tags_full_list'] = tags_full_list[0];
-                            break;
-                        case 'thunderai_def_sign':
-                            let prefs_def_sign = await browser.storage.sync.get({default_sign_name: ''});
-                            finalSubs['thunderai_def_sign'] = prefs_def_sign.default_sign_name;
-                            break;
-                        case 'thunderai_def_lang':
-                            let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
-                            finalSubs['thunderai_def_lang'] = prefs_def_lang.default_chatgpt_lang;
-                            break;
-                        default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
-                            break;
-                    }
-                }
+                let finalSubs = placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, await getMailSubject(tabs[0]), body_text, msg_text, only_typed_text, selection_text, tags_full_list);
                 // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
                 let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
                 fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang).trim();
