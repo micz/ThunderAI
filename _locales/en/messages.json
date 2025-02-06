@@ -1042,5 +1042,13 @@
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
     "description": ""
+  },
+  "placeholder_thunderai_def_sign": {
+    "message": "Default signature as defined in ThunderAI options.",
+    "description": ""
+  },
+  "thunderai_def_lang": {
+    "message": "Default language as defined in ThunderAI options.",
+    "description": ""
   }
 }

@@ -188,6 +188,14 @@ export class mzta_Menus {
                         case 'tags_full_list':
                             finalSubs['tags_full_list'] = tags_full_list[0];
                             break;
+                        case 'thunderai_def_sign':
+                            let prefs_def_sign = await browser.storage.sync.get({default_sign_name: ''});
+                            finalSubs['thunderai_def_sign'] = prefs_def_sign.default_sign_name;
+                            break;
+                        case 'thunderai_def_lang':
+                            let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
+                            finalSubs['thunderai_def_lang'] = prefs_def_lang.default_chatgpt_lang;
+                            break;
                         default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                             break;
                     }

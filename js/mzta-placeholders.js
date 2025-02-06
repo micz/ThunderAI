@@ -131,6 +131,20 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
     },
+    {
+        id: 'thunderai_def_sign',
+        name: "__MSG_placeholder_thunderai_def_sign__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'thunderai_def_lang',
+        name: "__MSG_placeholder_thunderai_def_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
 ];
 
 
