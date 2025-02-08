@@ -19,7 +19,8 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, transformTagsLabels } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList } from './mzta-utils.js'
+import { taCoreUtils } from './mzta-utils-core.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
@@ -137,16 +138,7 @@ export class mzta_Menus {
                     break;
             }
 
-            if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
-                // no placeholders, do as usual
-                fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
-            }else{
-                // we have at least a placeholder, do the magic!
-                let finalSubs = placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, await getMailSubject(tabs[0]), body_text, msg_text, only_typed_text, selection_text, tags_full_list);
-                // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
-                let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-                fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang).trim();
-            }
+            fullPrompt = await taCoreUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
@@ -176,13 +168,7 @@ export class mzta_Menus {
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             return {ok:'0'};
                         }
-                        let add_tags_maxnum = prefs_at.add_tags_maxnum;
-                        if(add_tags_maxnum > 0){
-                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
-                        }
-                        if(prefs_at.add_tags_force_lang && prefs_at.default_chatgpt_lang !== ''){
-                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_at.default_chatgpt_lang + ".";
-                        }
+                        fullPrompt = taCoreUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
@@ -256,15 +242,6 @@ export class mzta_Menus {
         };
         this.rootMenu.push(curr_menu_entry);
     };
-
-    async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({default_sign_name: ''});
-        if(prefs.default_sign_name===''){
-            return '';
-        }else{
-            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
-        }
-    }
 
     loadShortcutMenu() {
         this.shortcutMenu = [];
