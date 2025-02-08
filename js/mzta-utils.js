@@ -403,3 +403,17 @@ export async function migrateDefaultPromptsPropStorage(){
   await browser.storage.sync.remove("_default_prompts_properties");
   // console.log("migrateDefaultPromptsPropStorage: migrated default prompts properties from storage.sync to storage.local");
 }
+
+export async function* getMessages(list) {
+  let page = await list;
+  for (let message of page.messages) {
+    yield message;
+  }
+
+  while (page.id) {
+    page = await messenger.messages.continueList(page.id);
+    for (let message of page.messages) {
+      yield message;
+    }
+  }
+}
