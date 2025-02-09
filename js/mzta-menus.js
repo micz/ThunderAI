@@ -20,7 +20,7 @@
 
 import { getPrompts } from './mzta-prompts.js';
 import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList } from './mzta-utils.js'
-import { taCoreUtils } from './mzta-utils-core.js';
+import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
@@ -138,7 +138,7 @@ export class mzta_Menus {
                     break;
             }
 
-            fullPrompt = await taCoreUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
+            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
@@ -168,7 +168,7 @@ export class mzta_Menus {
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             return {ok:'0'};
                         }
-                        fullPrompt = taCoreUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS

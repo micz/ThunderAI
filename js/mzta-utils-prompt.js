@@ -18,7 +18,7 @@
 
 import { placeholdersUtils } from './mzta-placeholders.js';
 
-export const taCoreUtils = {
+export const taPromptUtils = {
 
     async getDefaultSignature(){
         let prefs = await browser.storage.sync.get({default_sign_name: ''});
@@ -34,13 +34,13 @@ export const taCoreUtils = {
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
             // no placeholders, do as usual
-            fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await taCoreUtils.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
+            fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
         }else{
             // we have at least a placeholder, do the magic!
             let finalSubs = placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, selection_text, tags_full_list);
             // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
             let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-            fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await taCoreUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
+            fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
         }
 
         return fullPrompt;
