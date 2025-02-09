@@ -689,9 +689,8 @@ const newEmailListener = (folder, messagesList) => {
             let curr_fullMessage = null;
 
             // if some auto feature is active prepare some data
-            // this will be used when will be implemented the spam filter (https://github.com/micz/ThunderAI/issues/231)
-            // or the auto translator https://github.com/micz/ThunderAI/issues/247
-            if(prefs_init.add_tags_auto){
+            // this will be used when will be implemented also the auto translator https://github.com/micz/ThunderAI/issues/247
+            if(prefs_init.add_tags_auto || prefs_init.spamfilter){
                 curr_fullMessage = await browser.messages.getFull(message.id);
             }
 
@@ -718,6 +717,13 @@ const newEmailListener = (folder, messagesList) => {
                 taLog.log("tags_current_email: " + tags_current_email);
                 let _data = {messageId: message.id, tags: tags_current_email.split(/,\s*/)};
                 _assign_tags(_data, !prefs_aat.add_tags_auto_force_existing);
+            }
+
+
+            // Spam filter
+            if(prefs_init.spamfilter){
+                let specialFullPrompt_spamfilter = '';
+                
             }
         }
     }
