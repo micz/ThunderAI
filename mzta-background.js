@@ -20,7 +20,9 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody } from './js/mzta-utils.js';
+import { taPromptUtils } from './js/mzta-utils-prompt.js';
+import { mzta_specialCommand } from './js/mzta-special-commands.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -28,7 +30,9 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
-let prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+let prefs_init = {};
+await reload_pref_init();
+
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
@@ -132,6 +136,24 @@ async function _reload_menus() {
     });
     taLog.log("Reloading menus");
     return true;
+}
+
+async function _assign_tags(_data, create_new_tags = true) {
+    let all_tags_list = await getTagsList();
+    all_tags_list = all_tags_list[1];
+    // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
+    taLog.log("assign_tags data: " + JSON.stringify(_data));
+    let new_tags = [];
+    for (const tag of _data.tags) {
+        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
+        if (create_new_tags && !checkIfTagExists(tag, all_tags_list)) {
+            taLog.log("Creating tag: " + tag);
+            await createTag(tag);
+        }
+        new_tags.push(tag);
+    }
+    await assignTagsToMessage(_data.messageId, new_tags);
+    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -240,24 +262,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _popup_menu_ready();
                 break;
             case 'assign_tags':
-                async function _assign_tags() {
-                    let all_tags_list = await getTagsList();
-                    all_tags_list = all_tags_list[1];
-                    // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
-                    taLog.log("assign_tags data: " + JSON.stringify(message));
-                    let new_tags = [];
-                    for (const tag of message.tags) {
-                        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
-                        if (!checkIfTagExists(tag, all_tags_list)) {
-                            taLog.log("Creating tag: " + tag);
-                            await createTag(tag);
-                        }
-                        new_tags.push(tag);
-                    }
-                    await assignTagsToMessage(message.messageId, new_tags);
-                    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
-                }
-                return _assign_tags();
+                return _assign_tags(message);
                 break;
             default:
                 break;
@@ -596,7 +601,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true});
 }
 
 
@@ -639,7 +644,85 @@ function setupStorageChangeListener() {
 // Call the function to set up the listener
 setupStorageChangeListener();
 
-
 // Menus handling
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(special_prompts_ids);
+
+
+// Listening for new received emails
+const newEmailListener = (folder, messagesList) => {
+    taLog.log("New mail received");
+    taLog.log(`Folder: ${folder.name}`);
+
+    async function _newEmailListener(){
+        let messages = getMessages(messagesList);
+
+        for await (let message of messages) {
+            let fullMessage = await browser.messages.getFull(message.id);
+
+            taLog.log(`From: ${fullMessage.headers.from}`);
+            taLog.log(`Subject: ${fullMessage.headers.subject}`);
+            taLog.log(`Name: ${fullMessage.name}`);
+            taLog.log(`Body: ${fullMessage.body}`);
+            taLog.log(`contentType: [${fullMessage.contentType}]`);
+            taLog.log(`fullMessage.parts.length: ${fullMessage.parts.length}`);
+
+            if (fullMessage.parts.length > 0) {
+                for (let part of fullMessage.parts) {
+                    taLog.log(`From: ${part.headers.from}`);
+                    taLog.log(`Subject: ${part.headers.subject}`);
+                    taLog.log(`Name: ${part.name}`);
+                    taLog.log(`Body: ${part.body}`);
+                    taLog.log(`contentType: [${part.contentType}]`);
+                    taLog.log('contentType JSON: '+JSON.stringify(part.contentType));
+                    if (part.contentType.trim().toLowerCase() === "text/plain") {
+                        taLog.log("Body (text/plain):" + part.body);
+                        // return part.body;
+                    }
+                    if (part.contentType.trim().toLowerCase() === "text/html") {
+                        taLog.log("Body (text/html):" + part.body);
+                        // return part.body;
+                    }
+                }
+            }
+
+            let specialFullPrompt = '';
+            let curr_fullMessage = null;
+
+            // if some auto feature is active prepare some data
+            // this will be used when will be implemented the spam filter (https://github.com/micz/ThunderAI/issues/231)
+            // or the auto translator https://github.com/micz/ThunderAI/issues/247
+            if(prefs_init.add_tags_auto){
+                curr_fullMessage = await browser.messages.getFull(message.id);
+            }
+
+            // Auto add_tags
+            if(prefs_init.add_tags_auto){
+                let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
+                let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+                let msg_text = await getMailBody(curr_fullMessage);
+                let body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+                let tags_full_list = await getTagsList();
+                specialFullPrompt = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, /*selection_text*/ '', body_text, curr_fullMessage.headers.subject, msg_text, /*only_typed_text*/ '', tags_full_list);
+                let prefs_aat = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', add_tags_auto_force_existing: false});
+                specialFullPrompt = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
+                taLog.log("Special prompt: " + specialFullPrompt);
+                let cmd_addTags = new mzta_specialCommand(specialFullPrompt,prefs_aat.connection_type,prefs_init.do_debug);
+                await cmd_addTags.initWorker();
+                let tags_current_email = '';
+                try{
+                    tags_current_email = (await cmd_addTags.sendPrompt()).trim();
+                }catch(err){
+                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                }
+                taLog.log("tags_current_email: " + tags_current_email);
+                let _data = {messageId: message.id, tags: tags_current_email.split(/,\s*/)};
+                _assign_tags(_data, !prefs_aat.add_tags_auto_force_existing);
+            }
+        }
+    }
+
+    return _newEmailListener();
+}
+
+browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
