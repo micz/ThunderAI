@@ -686,7 +686,6 @@ const newEmailListener = (folder, messagesList) => {
                 }
             }
 
-            let specialFullPrompt = '';
             let curr_fullMessage = null;
 
             // if some auto feature is active prepare some data
@@ -698,16 +697,17 @@ const newEmailListener = (folder, messagesList) => {
 
             // Auto add_tags
             if(prefs_init.add_tags_auto){
+                let specialFullPrompt_add_tags = '';
                 let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
                 let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt_add_tags);
                 let msg_text = await getMailBody(curr_fullMessage);
                 let body_text = msg_text.text.replace(/\s+/g, ' ').trim();
                 let tags_full_list = await getTagsList();
-                specialFullPrompt = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, /*selection_text*/ '', body_text, curr_fullMessage.headers.subject, msg_text, /*only_typed_text*/ '', tags_full_list);
+                specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, /*selection_text*/ '', body_text, curr_fullMessage.headers.subject, msg_text, /*only_typed_text*/ '', tags_full_list);
                 let prefs_aat = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', add_tags_auto_force_existing: false});
-                specialFullPrompt = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
-                taLog.log("Special prompt: " + specialFullPrompt);
-                let cmd_addTags = new mzta_specialCommand(specialFullPrompt,prefs_aat.connection_type,prefs_init.do_debug);
+                specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
+                taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+                let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags,prefs_aat.connection_type,prefs_init.do_debug);
                 await cmd_addTags.initWorker();
                 let tags_current_email = '';
                 try{
