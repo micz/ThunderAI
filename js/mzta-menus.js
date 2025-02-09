@@ -107,7 +107,7 @@ export class mzta_Menus {
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
-            let chatgpt_lang = getDefaultLang(curr_prompt);
+            let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt);
             
             let fullPrompt = '';
             let tags_full_list = await getTagsList();
