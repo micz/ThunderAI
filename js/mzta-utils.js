@@ -83,6 +83,29 @@ export async function getMailSubject(tab){
   }
 }
 
+export async function getMailBody(fullMessage){
+  let text = '';
+  let html = '';
+
+  if (fullMessage.contentType.trim().toLowerCase() === "text/plain") {
+    text = fullMessage.body;
+  }
+  if (fullMessage.contentType.trim().toLowerCase() === "text/html") {
+    html = fullMessage.body;
+  }
+
+  for (let part of fullMessage.parts) {
+    if (part.contentType.trim().toLowerCase() === "text/plain") {
+      text = part.body;
+    }
+    if (part.contentType.trim().toLowerCase() === "text/html") {
+      html = part.body;
+    }
+  }
+  
+  return {text, html};
+}
+
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body + " ";
