@@ -153,7 +153,7 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = '';
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
+                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             return {ok:'0'};
@@ -163,7 +163,7 @@ export class mzta_Menus {
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
                         await cmd_addTags.initWorker();
                         try{
                             tags_current_email = await cmd_addTags.sendPrompt();
