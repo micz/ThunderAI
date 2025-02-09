@@ -1018,5 +1018,37 @@
   "sparks_not_installed": {
     "message": "ThunderAI Sparks not installed!",
     "description": ""
+  },
+  "prefs_OptionText_add_tags_auto": {
+    "message": "Add tags automatically",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_Info": {
+    "message": "If checked, the AI will automatically add tags to newly received emails.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_force_existing": {
+    "message": "Force existing tags when autotagging",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_force_existing_Info": {
+    "message": "If checked, the AI will add only existing tags to newly received emails, and won't create new tags.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_only_inbox": {
+    "message": "Only add tags to inbox emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+    "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
+    "description": ""
+  },
+  "placeholder_thunderai_def_sign": {
+    "message": "Default signature as defined in ThunderAI options.",
+    "description": ""
+  },
+  "thunderai_def_lang": {
+    "message": "Default language as defined in ThunderAI options.",
+    "description": ""
   }
 }

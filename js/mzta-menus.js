@@ -19,7 +19,8 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, transformTagsLabels } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList } from './mzta-utils.js'
+import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
@@ -106,18 +107,8 @@ export class mzta_Menus {
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
-            let chatgpt_lang = '';
-            if(String(curr_prompt.define_response_lang) == "1"){
-                let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
-                chatgpt_lang = prefs.default_chatgpt_lang;
-                //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
-                if(chatgpt_lang === ''){
-                    chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
-                }else{
-                    chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
-                }
-            }
-
+            let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt);
+            
             let fullPrompt = '';
             let tags_full_list = await getTagsList();
 
@@ -137,65 +128,7 @@ export class mzta_Menus {
                     break;
             }
 
-            if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
-                // no placeholders, do as usual
-                fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
-            }else{
-                // we have at least a placeholder, do the magic!
-                let currPHs = await placeholdersUtils.extractPlaceholders(curr_prompt.text);
-                // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
-                let finalSubs = {};
-                for(let currPH of currPHs){
-                    switch(currPH.id){
-                        case 'mail_text_body':
-                            finalSubs['mail_text_body'] = body_text;
-                            break;
-                        case 'mail_html_body':
-                            finalSubs['mail_html_body'] = msg_text.html;
-                            break;
-                        case 'mail_typed_text':
-                            finalSubs['mail_typed_text'] = only_typed_text;
-                            break;
-                        case 'mail_subject':
-                            let mail_subject = await getMailSubject(tabs[0]);
-                            finalSubs['mail_subject'] = mail_subject;
-                            break;
-                        case 'selected_text':
-                            finalSubs['selected_text'] = selection_text;
-                            break;
-                        case 'author':
-                            finalSubs['author'] = curr_message.author;
-                            break;
-                        case 'recipients':
-                            finalSubs['recipients'] = curr_message.recipients.join(", ");
-                            break;
-                        case 'cc_list':
-                            finalSubs['cc_list'] = curr_message.ccList.join(", ");
-                            break;
-                        case 'junk_score':
-                            finalSubs['junk_score'] = curr_message.junkScore;
-                            break;
-                        case 'mail_datetime':
-                            finalSubs['mail_datetime'] = curr_message.date;
-                            break;
-                        case 'current_datetime':
-                            finalSubs['current_datetime'] = new Date().toString();
-                            break;
-                        case 'tags_current_email':
-                            let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
-                            finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
-                            break;
-                        case 'tags_full_list':
-                            finalSubs['tags_full_list'] = tags_full_list[0];
-                            break;
-                        default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
-                            break;
-                    }
-                }
-                // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
-                let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-                fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await this.getDefaultSignature():"") + " " + chatgpt_lang).trim();
-            }
+            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
@@ -220,26 +153,20 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = '';
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: ''});
+                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             return {ok:'0'};
                         }
-                        let add_tags_maxnum = prefs_at.add_tags_maxnum;
-                        if(add_tags_maxnum > 0){
-                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
-                        }
-                        if(prefs_at.add_tags_force_lang && prefs_at.default_chatgpt_lang !== ''){
-                            fullPrompt += " " + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_at.default_chatgpt_lang + ".";
-                        }
+                        fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
                         await cmd_addTags.initWorker();
                         try{
-                            tags_current_email = await cmd_addTags.sendPrompt();
+                            tags_current_email = (await cmd_addTags.sendPrompt()).trim();
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
@@ -305,15 +232,6 @@ export class mzta_Menus {
         };
         this.rootMenu.push(curr_menu_entry);
     };
-
-    async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({default_sign_name: ''});
-        if(prefs.default_sign_name===''){
-            return '';
-        }else{
-            return browser.i18n.getMessage("sign_msg_as") + " " + prefs.default_sign_name + ".";
-        }
-    }
 
     loadShortcutMenu() {
         this.shortcutMenu = [];
