@@ -166,7 +166,7 @@ export class mzta_Menus {
                         let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
                         await cmd_addTags.initWorker();
                         try{
-                            tags_current_email = await cmd_addTags.sendPrompt();
+                            tags_current_email = (await cmd_addTags.sendPrompt()).trim();
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
