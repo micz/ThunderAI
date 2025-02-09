@@ -51,4 +51,5 @@ export const prefs_default = {
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
     get_calendar_event: true,
+    spamfilter: false,
 }
