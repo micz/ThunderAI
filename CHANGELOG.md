@@ -9,6 +9,7 @@
       <ul>
         <li>Added the <i>{%thunderai_def_sign%}</i> placeholder to get the default signature as defined in the options [<a href="https://github.com/micz/ThunderAI/issues/248">#248</a>].</li>
         <li>Added the <i>{%thunderai_def_lang%}</i> placeholder to get the default language as defined in the options [<a href="https://github.com/micz/ThunderAI/issues/248">#248</a>].</li>
+        <li>Various minor improvements.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.1.2 - 29/01/2025</h2>
