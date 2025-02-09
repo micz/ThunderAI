@@ -107,18 +107,8 @@ export class mzta_Menus {
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
-            let chatgpt_lang = '';
-            if(String(curr_prompt.define_response_lang) == "1"){
-                let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
-                chatgpt_lang = prefs.default_chatgpt_lang;
-                //console.log(" >>>>>>>>>>>> chatgpt_lang: " + chatgpt_lang);
-                if(chatgpt_lang === ''){
-                    chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
-                }else{
-                    chatgpt_lang = browser.i18n.getMessage("prompt_lang") + " " + chatgpt_lang + ".";
-                }
-            }
-
+            let chatgpt_lang = getDefaultLang(curr_prompt);
+            
             let fullPrompt = '';
             let tags_full_list = await getTagsList();
 
