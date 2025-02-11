@@ -1060,7 +1060,31 @@
     "description": ""
   },
   "prefs_OptionText_btnManageSpamFilterInfo": {
-    "message": "Manage Spam Filter settings",
+    "message": "Manage spam filter settings",
     "description": ""
+  },
+  "SpamFilter_PageTitle": {
+    "message": "Manage Spam Filter Settings",
+    "description": ""
+  },
+  "SpamFilter_info_default": {
+    "message": "In this page you can modify the default prompt used to detect spam emails.",
+    "description": ""
+  },
+  "SpamFilter_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_infoline": {
+    "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
+    "description": ""
+  },
+  "prompt_spamfilter" : {
+    "message" : "Detect spam emails",
+    "description" : ""
+  },
+  "prompt_spamfilter_full_text" : {
+    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explaination of no more than 10 words.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"spamValue\": <integer from 0 to 100>,\n\"explanation\": \"Brief explanation of your reasoning\",\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
+    "description" : ""
   }
 }
