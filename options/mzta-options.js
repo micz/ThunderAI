@@ -304,6 +304,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
 
+  let spamfilter_el = document.getElementById('spamfilter');
+  let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
+  spamfilter_el.addEventListener('click', (event) => {
+    spamfilter_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  spamfilter_info_btn.disabled = spamfilter_el.checked ? '' : 'disabled';
+
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
@@ -333,6 +340,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         // if the tab is not there, create it
         browser.tabs.create({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')});
+      }
+    })
+  });
+
+  document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')});
       }
     })
   });

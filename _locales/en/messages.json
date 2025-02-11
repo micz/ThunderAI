@@ -1050,5 +1050,17 @@
   "thunderai_def_lang": {
     "message": "Default language as defined in ThunderAI options.",
     "description": ""
+  },
+  "prefs_OptionText_spamfilter": {
+    "message": "Spam Filter",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_Info": {
+    "message": "If checked, ThunderAI will automatically move spam emails to the spam folder.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageSpamFilterInfo": {
+    "message": "Manage Spam Filter settings",
+    "description": ""
   }
 }
