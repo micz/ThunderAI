@@ -302,6 +302,23 @@ export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event =
   return output;
 }
 
+export function extractJsonObject(inputString) {
+  try {
+    const jsonMatch = inputString.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const jsonObject = JSON.parse(jsonMatch[0]);
+      // console.log(">>>>>>>>>> Extracted JSON object:", jsonObject);
+      return jsonObject;
+    } else {
+      console.error("[ThunderAI-Sparks] No JSON object found in the input string.");
+      return null;
+    }
+  } catch (error) {
+    console.error("[ThunderAI-Sparks] Error extracting JSON object:", error);
+    return null;
+  }
+}
+
 export async function checkSparksPresence() {
   try {
     return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
