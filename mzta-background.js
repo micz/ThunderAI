@@ -20,9 +20,10 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
+import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
@@ -601,7 +602,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true});
+    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false});
 }
 
 
@@ -687,21 +688,23 @@ const newEmailListener = (folder, messagesList) => {
             }
 
             let curr_fullMessage = null;
+            let msg_text = null;
+            let body_text = '';
 
             // if some auto feature is active prepare some data
             // this will be used when will be implemented also the auto translator https://github.com/micz/ThunderAI/issues/247
             if(prefs_init.add_tags_auto || prefs_init.spamfilter){
                 curr_fullMessage = await browser.messages.getFull(message.id);
+                msg_text = await getMailBody(curr_fullMessage);
+                body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             }
 
             // Auto add_tags
             if(prefs_init.add_tags_auto){
                 let specialFullPrompt_add_tags = '';
                 let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
-                let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-                let msg_text = await getMailBody(curr_fullMessage);
-                let body_text = msg_text.text.replace(/\s+/g, ' ').trim();
                 let tags_full_list = await getTagsList();
+                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
                 specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, /*selection_text*/ '', body_text, curr_fullMessage.headers.subject, msg_text, /*only_typed_text*/ '', tags_full_list);
                 let prefs_aat = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', add_tags_auto_force_existing: false});
                 specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
@@ -722,8 +725,38 @@ const newEmailListener = (folder, messagesList) => {
 
             // Spam filter
             if(prefs_init.spamfilter){
-                let specialFullPrompt_spamfilter = '';
-                
+                let curr_prompt_spamfilter = await getSpamFilterPrompt();
+                //console.log(">>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
+                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
+                let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, /*selection_text*/ '', body_text, curr_fullMessage.headers.subject, msg_text, /*only_typed_text*/ '', '');
+                taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
+                let cmd_spamfilter = new mzta_specialCommand(specialFullPrompt_spamfilter,prefs_init.connection_type,prefs_init.do_debug);
+                await cmd_spamfilter.initWorker();
+                /* We expect to receive from the AI a JSON object like this:
+                 * {
+                 *   "spamValue": <integer from 0 to 100>,
+                 *   "explanation": "Brief explanation of your reasoning",
+                 * }
+                */
+                let spamfilter_result = '';
+                taLog.log("Sending the prompt...");
+                try{
+                    spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
+                }catch(err){
+                    console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
+                }
+                taLog.log("spamfilter_result: " + spamfilter_result);
+                let jsonObj = {};
+                taLog.log("Decoding the AI response...");
+                try{
+                    jsonObj = extractJsonObject(spamfilter_result);
+                }catch(e){
+                    console.error("[ThunderAI | SpamFilter ] Error extracting JSON from AI response: ", e);
+                }
+                taLog.log("SpamFilter jsonObj: ", JSON.stringify(jsonObj));
+                //TODO save log
+
+                //TODO move email if it's spam
             }
         }
     }
