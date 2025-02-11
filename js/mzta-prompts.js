@@ -373,3 +373,7 @@ export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
     await browser.storage.local.set({_special_prompts: prompts});
 }
+
+export async function getSpamFilterPrompt(){
+    return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
+}
