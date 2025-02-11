@@ -751,7 +751,7 @@ const newEmailListener = (folder, messagesList) => {
                 try{
                     jsonObj = extractJsonObject(spamfilter_result);
                 }catch(e){
-                    console.error("[ThunderAI | SpamFilter ] Error extracting JSON from AI response: ", e);
+                    console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
                 }
                 taLog.log("SpamFilter jsonObj: ", JSON.stringify(jsonObj));
                 //TODO save log
