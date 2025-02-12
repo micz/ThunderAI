@@ -18,6 +18,38 @@
     justify-content: space-between;
 }
 
+table#miczPrefs {
+    padding: 10px;
+    border-spacing: 0px;
+    width: 90%;
+    margin: 0px auto 40px auto;
+    border: 1px solid #ccc;
+}
+
+.spamfilter_table_title{
+    width: 90%;
+    margin: auto;
+}
+
+.section_title{
+    font-weight: bold;
+}
+
+table#miczPrefs td{
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    vertical-align: top;
+    padding: 2px;
+}
+
+table#miczPrefs tr:first-child td {
+    border-top: none;
+}
+  
+table#miczPrefs  tr:last-child td {
+    border-bottom: none;
+}
+
 .autocomplete-container {
     position: relative;
 }
