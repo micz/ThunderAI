@@ -1052,7 +1052,7 @@
     "description": ""
   },
   "prefs_OptionText_spamfilter": {
-    "message": "Spam Filter",
+    "message": "Automatic Spam Filter",
     "description": ""
   },
   "prefs_OptionText_spamfilter_Info": {

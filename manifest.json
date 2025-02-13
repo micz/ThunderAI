@@ -36,6 +36,9 @@
         "messagesUpdate",
         "https://*.chatgpt.com/*"
     ],
+    "optional_permissions": [
+        "messagesMove"
+    ],
     "background": {
         "page": "mzta-background.html"
     },
