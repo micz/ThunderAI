@@ -764,7 +764,7 @@ const newEmailListener = (folder, messagesList) => {
                     messenger.messages.update(message.id, { junk: true });
                     //get the spam folder
                     let spamFolder = await messenger.folders.query({accountId: message.folder.accountId, specialUse: ['junk']})
-                    console.log(">>>>>>>>>>>> spamFolder: " + JSON.stringify(spamFolder));
+                    //console.log(">>>>>>>>>>>> spamFolder: " + JSON.stringify(spamFolder));
                     //move the message
                     messenger.messages.move([message.id], spamFolder[0].id);
                 }
