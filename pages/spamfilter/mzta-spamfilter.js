@@ -21,9 +21,11 @@ import { taLogger } from '../../js/mzta-logger.js';
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { taSpamReport } from '../../js/mzta-spamreport.js';
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-spamfilter-page",true);
+taSpamReport.logger = taLog;
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -78,27 +80,65 @@ document.addEventListener('DOMContentLoaded', async () => {
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
+    loadSpamReport()
 });
 
 function check_spamfilter_threshold(event) {
-  let spam_threshold_too_low = document.getElementById("spam_threshold_too_low");
+  let spamfilter_threshold_too_low = document.getElementById("spamfilter_threshold_too_low");
   if(event.target.value < 50){
-    spam_threshold_too_low.style.display = "inline";
+    spamfilter_threshold_too_low.style.display = "inline";
     if(event.target.value == 0){
-      spam_threshold_too_low.textContent = browser.i18n.getMessage('spam_threshold_zero');
-      spam_threshold_too_low.style.fontSize = "1.5em";
+      spamfilter_threshold_too_low.textContent = browser.i18n.getMessage('spamfilter_threshold_zero');
+      spamfilter_threshold_too_low.style.fontSize = "1.5em";
     }else{
-      spam_threshold_too_low.textContent = browser.i18n.getMessage('spam_threshold_too_low');
-      spam_threshold_too_low.style.fontSize = "1.1em";
+      spamfilter_threshold_too_low.textContent = browser.i18n.getMessage('spamfilter_threshold_too_low');
+      spamfilter_threshold_too_low.style.fontSize = "1.1em";
     }
   }else{
-    spam_threshold_too_low.style.display = "none";
+    spamfilter_threshold_too_low.style.display = "none";
   }
+}
+
+async function loadSpamReport(){
+    let report_data = await taSpamReport.getAllReportData();
+    console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
+    //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
+    if(report_data == undefined){
+      document.getElementById("report_data").innerText = browser.i18n.getMessage("spamfilter_no_reports");
+    }else{
+      populateTable(report_data);
+    }
+}
+
+ // Function to populate the table
+ function populateTable(data) {
+  const tableBody = document.getElementById("report_data_body");
+  tableBody.innerHTML = ""; // Clear table before inserting new data
+
+  Object.keys(data).forEach(email => {
+      const report = data[email];
+
+      // Create a new row
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+          <td>${report.headerMessageId}</td>
+          <td>${new Date(report.message_date).toLocaleString()}</td>
+          <td>${report.from.join(", ")}</td>
+          <td>${report.subject.join(", ")}</td>
+          <td>${report.spamValue}</td>
+          <td>${report.moved?browser.i18n.getMessage("spamfilter_moved"):browser.i18n.getMessage("spamfilter_not_moved")} (${report.SpamThreshold})</td>
+          <td>${report.explanation}</td>
+          <td>${new Date(report.report_date).toLocaleString()}</td>
+      `;
+
+      // Append the row to the table
+      tableBody.appendChild(row);
+  });
 }
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
 function saveOptions(e) {
   e.preventDefault();
   let options = {};

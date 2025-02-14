@@ -24,6 +24,7 @@ import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditio
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
+import { taSpamReport } from './js/mzta-spamreport.js';
 
 //browser.permissions.remove({ permissions: ["messagesMove"] }).then(console.log);
 
@@ -660,34 +661,35 @@ const newEmailListener = (folder, messagesList) => {
     async function _newEmailListener(){
         let messages = getMessages(messagesList);
 
+        taSpamReport.logger = taLog;
+
         for await (let message of messages) {
-            let fullMessage = await browser.messages.getFull(message.id);
+            // let fullMessage = await browser.messages.getFull(message.id);
+            // taLog.log(`From: ${fullMessage.headers.from}`);
+            // taLog.log(`Subject: ${fullMessage.headers.subject}`);
+            // taLog.log(`Name: ${fullMessage.name}`);
+            // taLog.log(`Body: ${fullMessage.body}`);
+            // taLog.log(`contentType: [${fullMessage.contentType}]`);
+            // taLog.log(`fullMessage.parts.length: ${fullMessage.parts.length}`);
 
-            taLog.log(`From: ${fullMessage.headers.from}`);
-            taLog.log(`Subject: ${fullMessage.headers.subject}`);
-            taLog.log(`Name: ${fullMessage.name}`);
-            taLog.log(`Body: ${fullMessage.body}`);
-            taLog.log(`contentType: [${fullMessage.contentType}]`);
-            taLog.log(`fullMessage.parts.length: ${fullMessage.parts.length}`);
-
-            if (fullMessage.parts.length > 0) {
-                for (let part of fullMessage.parts) {
-                    taLog.log(`From: ${part.headers.from}`);
-                    taLog.log(`Subject: ${part.headers.subject}`);
-                    taLog.log(`Name: ${part.name}`);
-                    taLog.log(`Body: ${part.body}`);
-                    taLog.log(`contentType: [${part.contentType}]`);
-                    taLog.log('contentType JSON: '+JSON.stringify(part.contentType));
-                    if (part.contentType.trim().toLowerCase() === "text/plain") {
-                        taLog.log("Body (text/plain):" + part.body);
-                        // return part.body;
-                    }
-                    if (part.contentType.trim().toLowerCase() === "text/html") {
-                        taLog.log("Body (text/html):" + part.body);
-                        // return part.body;
-                    }
-                }
-            }
+            // if (fullMessage.parts.length > 0) {
+            //     for (let part of fullMessage.parts) {
+            //         taLog.log(`From: ${part.headers.from}`);
+            //         taLog.log(`Subject: ${part.headers.subject}`);
+            //         taLog.log(`Name: ${part.name}`);
+            //         taLog.log(`Body: ${part.body}`);
+            //         taLog.log(`contentType: [${part.contentType}]`);
+            //         taLog.log('contentType JSON: '+JSON.stringify(part.contentType));
+            //         if (part.contentType.trim().toLowerCase() === "text/plain") {
+            //             taLog.log("Body (text/plain):" + part.body);
+            //             // return part.body;
+            //         }
+            //         if (part.contentType.trim().toLowerCase() === "text/html") {
+            //             taLog.log("Body (text/html):" + part.body);
+            //             // return part.body;
+            //         }
+            //     }
+            // }
 
             let curr_fullMessage = null;
             let msg_text = null;
@@ -756,10 +758,22 @@ const newEmailListener = (folder, messagesList) => {
                     console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
                 }
                 taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
-                //TODO save log
+                
+                let report_data = {};
+                report_data.report_date = new Date();
+                report_data.headerMessageId = message.headerMessageId;
+                report_data.spamValue = jsonObj.spamValue;
+                report_data.explanation = jsonObj.explanation;
+                report_data.subject = curr_fullMessage.headers.subject;
+                report_data.from = curr_fullMessage.headers.from;
+                report_data.message_date = new Date(message.date);
+                report_data.moved = false;
+                report_data.SpamThreshold = prefs_init.spamfilter_threshold;
+                //console.log(">>>>>>>>>>>> report_data.SpamThreshold: " + JSON.stringify(report_data.SpamThreshold));
 
                 //TODO move email if it's spam
                 if(jsonObj.spamValue >= prefs_init.spamfilter_threshold){
+                    taLog.log("Marking as spam ["+message.headerMessageId+"]");
                     // mark as spam
                     messenger.messages.update(message.id, { junk: true });
                     //get the spam folder
@@ -767,8 +781,17 @@ const newEmailListener = (folder, messagesList) => {
                     //console.log(">>>>>>>>>>>> spamFolder: " + JSON.stringify(spamFolder));
                     //move the message
                     messenger.messages.move([message.id], spamFolder[0].id);
+                    report_data.moved = true;
+                    taLog.log("Marked as spam ["+message.headerMessageId+"]");
                 }
+
+                // Save the operation log
+                taSpamReport.saveReportData(report_data,message.headerMessageId);
             }
+        }
+
+        if(prefs_init.spamfilter){
+            taSpamReport.truncReportData();
         }
     }
 

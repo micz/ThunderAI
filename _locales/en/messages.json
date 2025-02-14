@@ -1099,12 +1099,56 @@
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
     "description": ""
   },
-  "spam_threshold_too_low": {
+  "spamfilter_threshold_too_low": {
     "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
     "description": ""
   },
-  "spam_threshold_zero": {
+  "spamfilter_threshold_zero": {
     "message": "The spam threshold is zero! You will mark all mails as spam!",
+    "description": ""
+  },
+  "spamfilter_no_reports": {
+    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports for the current session only.",
+    "description": ""
+  },
+  "SpamReport_Title": {
+    "message": "Spam Filter Reports",
+    "description": ""
+  },
+  "Date": {
+    "message": "Date",
+    "description": ""
+  },
+  "From": {
+    "message": "From",
+    "description": ""
+  },
+  "Subject": {
+    "message": "Subject",
+    "description": ""
+  },
+  "Spam_Value": {
+    "message": "Spam Value",
+    "description": ""
+  },
+  "Moved_to_Spam": {
+    "message": "Moved to Spam",
+    "description": ""
+  },
+  "Explanation": {
+    "message": "Explanation",
+    "description": ""
+  },
+  "Report_Date": {
+    "message": "Report Date",
+    "description": ""
+  },
+  "spamfilter_moved": {
+    "message": "Yes",
+    "description": ""
+  },
+  "spamfilter_not_moved": {
+    "message": "No",
     "description": ""
   }
 }

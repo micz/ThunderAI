@@ -91,7 +91,7 @@ table#miczPrefs  tr:last-child td {
     color: red;
 }
 
-#spam_threshold_too_low{
+#spamfilter_threshold_too_low{
     display: none;
     color:red;
     font-weight: bold;
@@ -99,6 +99,19 @@ table#miczPrefs  tr:last-child td {
     margin-left: 10px;
 }
 
+table#report_data {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+table#report_data th, table#report_data td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+table#report_data th {
+    background-color: #f4f4f4;
+}
 
 @media (prefers-color-scheme: dark) {
     body {
@@ -123,5 +136,19 @@ table#miczPrefs  tr:last-child td {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    table#report_data th, 
+    table#report_data td {
+        border-color: #444;
+        color: #ddd;
+    }
+
+    table#report_data th {
+        background-color: #333;
+    }
+
+    table#report_data td {
+        background-color: #222;
     }
 }
