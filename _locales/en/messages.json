@@ -1098,5 +1098,13 @@
   "prefs_OptionText_spamfilter_threshold_Info": {
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
     "description": ""
+  },
+  "spam_threshold_too_low": {
+    "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
+    "description": ""
+  },
+  "spam_threshold_zero": {
+    "message": "The spam threshold is zero! You will mark all mails as spam!",
+    "description": ""
   }
 }

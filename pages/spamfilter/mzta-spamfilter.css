@@ -91,6 +91,14 @@ table#miczPrefs  tr:last-child td {
     color: red;
 }
 
+#spam_threshold_too_low{
+    display: none;
+    color:red;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-left: 10px;
+}
+
 
 @media (prefers-color-scheme: dark) {
     body {

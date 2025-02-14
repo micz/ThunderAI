@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener("change", saveOptions);
       });
 
+    document.getElementById("spamfilter_threshold").addEventListener("input", check_spamfilter_threshold);
+    check_spamfilter_threshold({target: document.getElementById("spamfilter_threshold")});
+
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
     let spamfilter_save_btn = document.getElementById('btn_save_prompt');
     let spamfilter_reset_btn = document.getElementById('btn_reset_prompt');
@@ -77,6 +80,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 });
 
+function check_spamfilter_threshold(event) {
+  let spam_threshold_too_low = document.getElementById("spam_threshold_too_low");
+  if(event.target.value < 50){
+    spam_threshold_too_low.style.display = "inline";
+    if(event.target.value == 0){
+      spam_threshold_too_low.textContent = browser.i18n.getMessage('spam_threshold_zero');
+      spam_threshold_too_low.style.fontSize = "1.5em";
+    }else{
+      spam_threshold_too_low.textContent = browser.i18n.getMessage('spam_threshold_too_low');
+      spam_threshold_too_low.style.fontSize = "1.1em";
+    }
+  }else{
+    spam_threshold_too_low.style.display = "none";
+  }
+}
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
