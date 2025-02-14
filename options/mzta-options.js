@@ -300,6 +300,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   let addtags_el = document.getElementById('add_tags');
   let addtags_info_btn = document.getElementById('btnManageTagsInfo');
   addtags_el.addEventListener('click', (event) => {
+    async function _addtags_el_change() {
+      if (event.target.checked) {
+        const granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
+        if (!granted) {
+          event.target.checked = false;
+          addtags_info_btn.disabled = 'disabled';
+        }
+      }
+    }
+    _addtags_el_change();
     addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';

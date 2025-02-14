@@ -26,7 +26,7 @@ import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 
-//browser.permissions.remove({ permissions: ["messagesMove"] }).then(console.log);
+browser.permissions.remove({ permissions: ["messagesMove", "messagesTagsList", "messagesTags", "messagesUpdate"]}).then(console.log);
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
