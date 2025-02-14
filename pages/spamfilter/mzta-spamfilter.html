@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ThunderAI - __MSG_SpamFilter_PageTitle__</title>
+    <link rel="stylesheet" href="mzta-spamfilter.css">
+    <link rel="icon" href="../../images/icon-16px.png">
+</head>
+<body>
+    <div>
+        <h1 class="page_title">__MSG_SpamFilter_PageTitle__</h1>
+        <p>__MSG_SpamFilter_info_default__</p>
+    </div>
+    <div class="spamfilter_table_title section_title">__MSG_SpamFilter_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="spamfilter_tr">
+            <td><span>__MSG_prefs_OptionText_spamfilter_threshold__</span></td>
+            <td>
+              <label>
+                <input type="number" id="spamfilter_threshold" name="spamfilter_threshold" min="0" max="100" class="option-input" /><span id="spamfilter_threshold_too_low">__MSG_spamfilter_threshold_too_low__</span>
+                <br>__MSG_prefs_OptionText_spamfilter_threshold_Info__
+              </label>
+            </td>
+          </tr>
+    </table>
+    <div id="spamfilter_container">
+        <span class="section_title">__MSG_GetCalendarEvent_prompt_text_title__</span><span id="spamfilter_event_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
+        <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a>
+          <br><b>__MSG_prefs_OptionText_GetCalendarEvent_infoline2__</b></span>
+        <br>
+        <div class="autocomplete-container">
+            <textarea id="spamfilter_prompt_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
+        </div>
+        <div id="spamfilter_info_additional_statements"></div>
+        <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
+    </div>
+    <h2>__MSG_SpamReport_Title__</h2>
+    <table id="report_data">
+        <thead>
+            <tr>
+              <th>Message_ID</th>
+              <th>__MSG_Date__</th>
+              <th>__MSG_From__</th>
+              <th>__MSG_Subject__</th>
+              <th>__MSG_Spam_Value__</th>
+              <th>__MSG_Moved_to_Spam__</th>
+              <th>__MSG_Explanation__</th>
+              <th>__MSG_Report_Date__</th>
+            </tr>
+        </thead>
+        <tbody id="report_data_body">
+            <!-- Rows will be inserted dynamically -->
+        </tbody>
+    </table>
+    <script src="mzta-spamfilter.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

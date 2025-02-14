@@ -318,6 +318,8 @@ export const placeholdersUtils = {
                     break;
             }
         }
+
+        return finalSubs;
     }
 
 }
