@@ -25,6 +25,8 @@ import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 
+//browser.permissions.remove({ permissions: ["messagesMove"] }).then(console.log);
+
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
 
@@ -602,7 +604,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false});
+    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false, spamfilter_threshold: 70, dynamic_menu_force_enter: false});
 }
 
 
@@ -753,10 +755,19 @@ const newEmailListener = (folder, messagesList) => {
                 }catch(e){
                     console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
                 }
-                taLog.log("SpamFilter jsonObj: ", JSON.stringify(jsonObj));
+                taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
                 //TODO save log
 
                 //TODO move email if it's spam
+                if(jsonObj.spamValue >= prefs_init.spamfilter_threshold){
+                    // mark as spam
+                    messenger.messages.update(message.id, { junk: true });
+                    //get the spam folder
+                    let spamFolder = await messenger.folders.query({accountId: message.folder.accountId, specialUse: ['junk']})
+                    console.log(">>>>>>>>>>>> spamFolder: " + JSON.stringify(spamFolder));
+                    //move the message
+                    messenger.messages.move([message.id], spamFolder[0].id);
+                }
             }
         }
     }
