@@ -9,6 +9,7 @@
       <ul>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API][Gemini API]</i> Added an option to automatically tag incoming emails [<a href="https://github.com/micz/ThunderAI/issues/237">#237</a>].</li>
         <li><i>[ChatGPT API][Ollama API][OpenAI Comp API][Gemini API]</i> Added an configurable antispam filter for incoming emails [<a href="https://github.com/micz/ThunderAI/issues/231">#231</a>].</li>
+        <li>Tags related permissions are now optional and asked for only when the user activates the tags feature [<a href="https://github.com/micz/ThunderAI/issues/259">#259</a>].</li>
         <li>Added the <i>{%thunderai_def_sign%}</i> placeholder to get the default signature as defined in the options [<a href="https://github.com/micz/ThunderAI/issues/248">#248</a>].</li>
         <li>Added the <i>{%thunderai_def_lang%}</i> placeholder to get the default language as defined in the options [<a href="https://github.com/micz/ThunderAI/issues/248">#248</a>].</li>
         <li>Various minor improvements.</li>
