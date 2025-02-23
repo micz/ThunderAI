@@ -761,5 +761,8 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Errore durante l'apertura della finestra di dialogo dell'evento del calendario"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks non installato!"
     }
 }
