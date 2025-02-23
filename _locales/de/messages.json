@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Verwende ChatGPT oder Ollama, um deine E-Mails zu verbessern!",
+        "message": "Verwenden Sie ChatGPT, Google Gemini oder Ollama, um Ihre E-Mails zu verbessern!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -163,7 +163,7 @@
         "message": "Text auswählen und auf die Schaltfläche klicken."
     },
     "chatgpt_win_get_answer": {
-        "message": "Verwenden Sie die ausgewählte Antwort."
+        "message": "Verwenden Sie die ausgewählte Antwort"
     },
     "chatgpt_win_close": {
         "message": "Schließen"
@@ -295,7 +295,7 @@
         "message": "Derzeit verwendeter Prompt-Name"
     },
     "customprompts_form_label_define_response_lang": {
-        "message": "Definieren Sie die Antwortsprache im Prompt."
+        "message": "Definieren Sie die Antwortsprache im Prompt"
     },
     "prefs_Connection_type": {
         "message": "Verbindungstyp"
@@ -376,16 +376,16 @@
         "message": "und Modell"
     },
     "error_connection_interrupted": {
-        "message": "Die Verbindung zum Server wurde unerwartet unterbrochen."
+        "message": "Die Verbindung zum Server wurde unerwartet unterbrochen"
     },
     "ollama_api_request_failed": {
-        "message": "Anfrage an die Ollama API fehlgeschlagen."
+        "message": "Anfrage an die Ollama API fehlgeschlagen"
     },
     "chatgpt_api_request_failed": {
         "message": "Anfrage an die OpenAI ChatGPT API fehlgeschlagen"
     },
     "WaitingServerReponse": {
-        "message": "Warten auf die Serverantwort."
+        "message": "Warten auf die Serverantwort"
     },
     "prefs_API_Host_Info": {
         "message": "Etwas wie"
@@ -394,10 +394,10 @@
         "message": "OpenAI-kompatible API-Modelle"
     },
     "OpenAIComp_Models_Fetch": {
-        "message": "Aktualisiere die Liste der OpenAI-kompatiblen API-Modelle."
+        "message": "Aktualisiere die Liste der OpenAI-kompatiblen API-Modelle"
     },
     "OpenAIComp_Models_Error_fetching": {
-        "message": "Fehler beim Abrufen der OpenAI-kompatiblen API-Modelle."
+        "message": "Fehler beim Abrufen der OpenAI-kompatiblen API-Modelle"
     },
     "OpenAIComp_empty_host": {
         "message": "Sie haben keine Host-Adresse für die OpenAI-kompatible API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein."
@@ -406,7 +406,7 @@
         "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
     "OpenAIComp_api_connecting": {
-        "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen."
+        "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen"
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen"
@@ -565,13 +565,13 @@
         "message": "Tags zu E-Mails hinzufügen"
     },
     "prefs_OptionText_add_tags_Info": {
-        "message": "If checked, an item will be included in the menu to apply tags to emails.\nWenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden."
+        "message": "Wenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden."
     },
     "prompt_add_tags": {
         "message": "Tags zu dieser E-Mail hinzufügen"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein."
+        "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind.\nE-Mail-Text: {%mail_text_body%}\nBerücksichtigen Sie die folgenden Details als Kontext:\n- Absender: {%author%}\n- Empfänger: {%recipients%}\n- CC-Liste: {%cc_list%}\n- E-Mail-Betreff: {%mail_subject%}\nBitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein."
     },
     "placeholder_tags_current_email": {
         "message": "E-Mail-Tags"
@@ -721,7 +721,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können. Falls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden. Falls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde. Falls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n  \"startDate\": \"YYYYMMDDTHHMMSS\",\n  \"endDate\": \"YYYYMMDDTHHMMSS\",\n  \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n  \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -761,5 +761,107 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Fehler beim Öffnen des Kalenderevent-Dialogs"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Tags automatisch hinzufügen"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Wenn ausgewählt, wird die KI automatisch Tags zu neu empfangenen E-Mails hinzufügen."
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Tags nur zu E-Mails im Posteingang hinzufügen"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Wenn ausgewählt, wird die KI nur Tags zu E-Mails hinzufügen, die im Posteingangsordner empfangen wurden."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Standardsignatur wie in den ThunderAI-Optionen definiert."
+    },
+    "thunderai_def_lang": {
+        "message": "Standardsprache wie in den ThunderAI-Optionen definiert."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Automatischer Spam-Filter"
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Spam-Filter-Einstellungen verwalten"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Spam-Filter-Einstellungen verwalten"
+    },
+    "SpamFilter_info_default": {
+        "message": "Auf dieser Seite können Sie die Standardaufforderung zur Erkennung von Spam-E-Mails anpassen."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Aktueller Aufforderungstext"
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "Sie können die Aufforderung nach Belieben ändern, aber die Antwort der KI muss im JSON-Format erfolgen, wie in der Standardaufforderung angegeben!"
+    },
+    "prompt_spamfilter": {
+        "message": "Spam-E-Mails erkennen"
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Spam-Filter-Optionen"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Spam-Schwellenwert"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Wenn der von der KI zurückgegebene Wert über diesem Schwellenwert liegt, wird die E-Mail in den Spam-Ordner verschoben."
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Der Spam-Schwellenwert ist null! Sie werden alle E-Mails als Spam markieren!"
+    },
+    "SpamReport_Title": {
+        "message": "Spam-Filter-Berichte"
+    },
+    "Date": {
+        "message": "Datum"
+    },
+    "From": {
+        "message": "Von"
+    },
+    "Subject": {
+        "message": "Betreff"
+    },
+    "Spam_Value": {
+        "message": "Spam-Wert"
+    },
+    "Moved_to_Spam": {
+        "message": "In Spam verschoben"
+    },
+    "Explanation": {
+        "message": "Erklärung"
+    },
+    "Report_Date": {
+        "message": "Berichtsdatum"
+    },
+    "spamfilter_moved": {
+        "message": "Ja"
+    },
+    "spamfilter_not_moved": {
+        "message": "Nein"
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Der Spam-Schwellenwert ist zu niedrig! Sie werden wahrscheinlich zu viele E-Mails als Spam markieren!"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks nicht installiert!"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Wenn ausgewählt, wird die KI nur vorhandene Tags zu neu empfangenen E-Mails hinzufügen und keine neuen Tags erstellen."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Vorhandene Tags beim automatischen Taggen erzwingen"
+    },
+    "spamfilter_no_reports": {
+        "message": "Es wurden noch keine Nachrichten auf Spam überprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte nur für die aktuelle Sitzung."
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Wenn ausgewählt, wird ThunderAI Spam-E-Mails automatisch in den Spam-Ordner verschieben."
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"spamValue\": <Ganzzahl von 0 bis 100>,\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
     }
 }
