@@ -88,7 +88,6 @@ Are you using this addon in your Thunderbird?
 - Português Brasileiro (pt-br): Bruno Pereira de Souza
 
 
-
 <br>
 
 ### Graphics
@@ -104,4 +103,5 @@ Are you using this addon in your Thunderbird?
 ### Miscellaneous
 - <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
+- <a href="https://hosted.weblate.org/widgets/thunderai/">Hosted Weblate</a> to manage the localizations
 - <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
