@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Koristite ChatGPT ili Ollama kako bi poboljšali vašu e-poštu!",
+    "message": "Koristite ChatGPT ili Ollama kako bi poboljšali vaše e-poruke!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -12,7 +12,7 @@
     "description": ""
   },
   "prompt_reply": {
-    "message": "Odgovori na ovu poruku e-pošte",
+    "message": "Odgovori na ovu e-poruku",
     "description": ""
   },
   "prompt_reply_advanced": {
@@ -64,7 +64,7 @@
     "description": ""
   },
   "customPrompts_managePrompts_info_default_3": {
-    "message": "Ako je sve ispravno, nakon uvoza kliknite na gumb 'Spremi sve'.",
+    "message": "Ako je sve ispravno, nakon uvoza pritisnite gumb 'Spremi sve'.",
     "description": ""
   },
   "customPrompts_start_saving": {
@@ -184,15 +184,15 @@
     "description": ""
   },
   "customPrompts_add_to_menu_reading": {
-    "message": "Čitanje poruke e-pošte",
+    "message": "Čitanje e-poruke",
     "description": ""
   },
   "customPrompts_add_to_menu_composing": {
-    "message": "Sastavljanje poruke e-pošte",
+    "message": "Sastavljanje e-poruke",
     "description": ""
   },
   "customPrompts_close_button": {
-    "message": "Gumb za zatvaranje",
+    "message": "gumb Zatvori",
     "description": ""
   },
   "customPrompts_do_reply": {
@@ -212,11 +212,11 @@
     "description": ""
   },
   "chatgpt_win_job_completed_select": {
-    "message": "Odaberi tekst koji želiš koristiti i klikni gumb.",
+    "message": "Odaberite tekst koji želite koristiti i pritisnite gumb.",
     "description": ""
   },
   "chatgpt_win_get_answer": {
-    "message": "Koristi odabrani odgovor",
+    "message": "Koristite odabrani odgovor",
     "description": ""
   },
   "chatgpt_win_close": {
@@ -224,7 +224,7 @@
     "description": ""
   },
   "chatgpt_textarea_not_found_error": {
-    "message": "Čini se da se stranica ChatGPT predugo učitava. Ako završi s učitavanjem, kliknite gumb s desne strane. Ako se problem nastavi, provjerite status usluge.",
+    "message": "Čini se da se stranica ChatGPT predugo učitava. Ako završi s učitavanjem, pritisnite gumb s desne strane. Ako se problem nastavi, provjerite status usluge.",
     "description": ""
   },
   "chatgpt_btn_retry": {
@@ -256,11 +256,11 @@
     "description": ""
   },
   "chatgpt_force_completion": {
-    "message": "prisilno dovršenje",
+    "message": "prisilno dovrši",
     "description": ""
   },
   "chatgpt_force_completion_title": {
-    "message": "Kliknite ovdje za prikaz gumba 'Koristi zadnji odgovor' ako je ChatGPT završio svoj posao, ali se gumb nije pojavio.",
+    "message": "Pritisnite ovdje za prikaz gumba 'Koristi zadnji odgovor' ako je ChatGPT završio svoj posao, ali se gumb nije pojavio.",
     "description": ""
   },
   "msg_prompt_too_long": {
@@ -336,7 +336,7 @@
     "description": ""
   },
   "prefsInfoDesc_6": {
-    "message": "Prečac možete promijeniti klikom na ikonu zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\".",
+    "message": "Prečac možete promijeniti pritiskom ikone zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\".",
     "description": ""
   },
   "prefsDonation_1": {
@@ -376,7 +376,7 @@
     "description": ""
   },
   "customPrompts_import_completed": {
-    "message": "Uvoz prilagođenih upita dovršen! Morate kliknuti na gumb 'Spremi sve' da biste spremili svoje promjene.",
+    "message": "Uvoz prilagođenih upita dovršen! Morate pritisnuti gumb 'Spremi sve' da biste spremili svoje promjene.",
     "description": ""
   },
   "importPrompts_invalidFile": {
@@ -552,19 +552,19 @@
     "description": ""
   },
   "prefs_OpenAIComp_ChatName_Info": {
-    "message": "Ovo je ime koje će se koristiti u AI čavrljanju.",
+    "message": "Ovo je ime koje će se koristiti u čavrljanju s AI.",
     "description": ""
   },
   "StorageSpace": {
-    "message": "Ukupan prostor za pohranu zauzet",
+    "message": "Ukupan zauzeto prostora za pohranu",
     "description": ""
   },
   "SearchPrompt": {
-    "message": "Upiti za pretraživanje",
+    "message": "Pretraži upite",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter": {
-    "message": "Izbornik: trenutno brzo slanje",
+    "message": "Izbornik: neposredno slanje upita",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
@@ -600,15 +600,15 @@
     "description": ""
   },
   "placeholder_mail_text_body": {
-    "message": "Tijelo poruke e-pošte",
+    "message": "Tijelo e-poruke",
     "description": ""
   },
   "placeholder_mail_html_body": {
-    "message": "HTML tijelo poruke e-pošte",
+    "message": "HTML tijelo e-poruke",
     "description": ""
   },
   "placeholder_mail_subject": {
-    "message": "Naslov poruke e-pošte",
+    "message": "Naslov e-poruke",
     "description": ""
   },
   "placeholder_selected_text": {
@@ -620,7 +620,7 @@
     "description": ""
   },
   "placeholder_junk_score": {
-    "message": "Pogodak smeća",
+    "message": "Rezultat smeća",
     "description": ""
   },
   "placeholder_recipients": {
@@ -696,15 +696,15 @@
     "description": ""
   },
   "prefs_OptionText_owl_warning": {
-    "message": "Čini se da barem jedan od vaših računa koristi dodatak Owl for Exchange. Postoji poznati problem između Thunderbirda i Owl, koji se trenutno rješava. Trenutačno možete koristiti ThunderAI dok sastavljate poruke e-pošte, ali ne i dok ih čitate.",
+    "message": "Čini se da barem jedan od vaših računa koristi dodatak Owl for Exchange. Postoji poznati problem između Thunderbirda i Owl, koji se trenutno rješava. Trenutačno možete koristiti ThunderAI dok sastavljate e-poruke, ali ne i dok ih čitate.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model_tooltip": {
-    "message": "Kliknite na vrijednost da biste je postavili.",
+    "message": "Pritisnite vrijednost da biste je postavili.",
     "description": ""
   },
   "prompt_reply_full_text": {
-    "message": "Odgovori na sljedeću poruku e-pošte. Odgovorit samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta.",
+    "message": "Odgovori na sljedeću e-poruku. Odgovorit samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta.",
     "description": ""
   },
   "prompt_reply_additional_text": {
@@ -716,11 +716,11 @@
     "description": ""
   },
   "sign_msg_as": {
-    "message": "Potpiši poruku kao",
+    "message": "Potpiši e-poruku kao",
     "description": ""
   },
   "prompt_reply_advanced_full_text": {
-    "message": "Odgovori na sljedeću poruku e-pošte \"{%selected_text%}\", s obzirom da je ovo cijela nit e-pošte \"{%mail_html_body%}\". Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta.",
+    "message": "Odgovori na sljedeću e-poruku \"{%selected_text%}\", s obzirom da je ovo cijela nit e-poruka \"{%mail_html_body%}\". Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta.",
     "description": ""
   },
   "prompt_rewrite_full_text": {
@@ -732,15 +732,15 @@
     "description": ""
   },
   "prompt_classify_full_text": {
-    "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijenite bez dodatnih komentara ili drugog teksta.",
+    "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta.",
     "description": ""
   },
   "prompt_summarize_this_full_text": {
-    "message": "Sažmi sljedeću poruku e-pošte u popis s točkama.",
+    "message": "Sažmi sljedeću e-poruku u popis s točkama.",
     "description": ""
   },
   "prompt_translate_this_full_text": {
-    "message": "Prevedi sljedeću poruku e-pošte na",
+    "message": "Prevedi sljedeću e-poruku na",
     "description": ""
   },
   "prompt_this_full_text": {
@@ -748,19 +748,19 @@
     "description": ""
   },
   "prefs_OptionText_add_tags": {
-    "message": "Dodaj oznake porukama e-pošte",
+    "message": "Dodaj oznake e-porukama",
     "description": ""
   },
   "prefs_OptionText_add_tags_Info": {
-    "message": "Ako je označeno, stavka će biti uključena u izbornik za primjenu oznaka na poruku e-pošte.",
+    "message": "Ako je označeno, stavka će biti uključena u izbornik za primjenu oznaka na e-poruke.",
     "description": ""
   },
   "prompt_add_tags": {
-    "message": "Dodaj oznake ovoj poruci e-pošte",
+    "message": "Dodaj oznake ovoj e-poruci",
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analiziraj sljedeći tekst poruke e-pošte i generirajte popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj poruke e-pošte. Tekst poruke e-pošte: {%mail_text_body%} Uzmite u obzir sljedeće pojedinosti za kontekst: - Pošiljatelj: {%author%} - Primatelji: {%recipients%} - CC popis: {%cc_list%} - Naslov poruke e-pošte: {%mail_subject%} Temelji svoje oznake na tekstu i kontekstu poruke e-pošte, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta.",
+    "message": "Analiziraj sljedeći tekst e-poruke i generiraj popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj e-poruke. Tekst e-poruke: {%mail_text_body%} Uzmi u obzir sljedeće pojedinosti za kontekst: - Šalje: {%author%} - Primatelji: {%recipients%} - CC popis: {%cc_list%} - Naslov: {%mail_subject%} Temelji svoje oznake na tekstu i kontekstu e-poruke, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta.",
     "description": ""
   },
   "placeholder_tags_current_email": {
@@ -800,7 +800,7 @@
     "description": ""
   },
   "AddTags_info_default": {
-    "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za dodavanje oznaka u poruke e-pošte i upravljanje popisom izuzetaka.",
+    "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za dodavanje oznaka u e-poruke i upravljanje popisom izuzetaka.",
     "description": ""
   },
   "AddTags_prompt_text_title": {
@@ -812,7 +812,7 @@
     "description": ""
   },
   "AddTags_excl_list_infoline": {
-    "message": "Ovo je popis oznaka koje nije dopušteno dodavati porukama e-pošte.",
+    "message": "Ovo je popis oznaka koje nije dopušteno dodavati e-porukama.",
     "description": ""
   },
   "save": {
@@ -840,7 +840,7 @@
     "description": ""
   },
   "addtags_no_tags_received": {
-    "message": "Od AI nisu primljene oznake.",
+    "message": "Nisu primljene oznake od AI.",
     "description": ""
   },
   "addtags_no_valid_tags": {
@@ -872,15 +872,15 @@
     "description": ""
   },
   "prefs_SurveyLinkText2": {
-    "message": "Kliknite ovdje, traje samo minutu!",
+    "message": "Pritisnite ovdje, traje samo minutu!",
     "description": ""
   },
   "prefs_OpenAIComp_ForceModel": {
-    "message": "Ručno unesi model",
+    "message": "Ručno umetni model",
     "description": ""
   },
   "OpenAIComp_force_model_ask": {
-    "message": "Ovdje unesite naziv modela koji želite koristiti",
+    "message": "Ovdje umetni naziv modela koji želiš koristiti",
     "description": ""
   },
   "prefs_OptionText_add_tags_force_lang": {
@@ -932,11 +932,11 @@
     "description": ""
   },
   "GoogleGemini_SystemInstruction": {
-    "message": "Uputa sustava",
+    "message": "Uputa za sustav",
     "description": ""
   },
   "GoogleGemini_SystemInstruction_Info": {
-    "message": "Kada postavite uputu sustava, dajete modelu dodatni kontekst za razumijevanje zadatka, dajete prilagođenije odgovore i pridržavate se specifičnih smjernica u vezi s upitom koji će biti poslan.",
+    "message": "Kada postavite uputu za sustav, dajete modelu dodatni kontekst za razumijevanje zadatka, dajete prilagođenije odgovore i pridržavate se specifičnih smjernica u vezi s upitom koji će biti poslan.",
     "description": ""
   },
   "ChatGPT_Developer_Messages": {
@@ -952,7 +952,7 @@
     "description": ""
   },
   "placeholder_mail_typed_text": {
-    "message": "Upisani tekst prije citiranog tijela poruke e-pošte",
+    "message": "Upisani tekst prije citiranog tijela e-poruke",
     "description": ""
   },
   "prompt_get_calendar_event": {
@@ -960,7 +960,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati: - Naslov događaja - Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno) - Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno) - Cijeli dan (ako je navedeno) Osiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja. Ako postoje relativne vremenske napomene, smatraj da su datum i vrijeme poruke e-pošte \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu. Ako trajanje nije navedeno, postavi ga na jedan sat. Ako ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti: { \"startDate\": \"YYYYMMDDTHHMMSS\", \"endDate\": \"YYYYMMDDTHHMMSS\", \"summary\": \"Sažetak kalendarskih događaja ovdje\", \"forceAllDay\": false } Ovo je tekst:\"{%selected_text%}\"",
+    "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati: - Naslov događaja - Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno) - Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno) - Cijeli dan (ako je navedeno) Osiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja. Ako postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu. Ako trajanje nije navedeno, postavi ga na jedan sat. Ako ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti: { \"startDate\": \"YYYYMMDDTHHMMSS\", \"endDate\": \"YYYYMMDDTHHMMSS\", \"summary\": \"Sažetak kalendarskih događaja ovdje\", \"forceAllDay\": false } Ovo je tekst:\"{%selected_text%}\"",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event": {
@@ -1000,7 +1000,7 @@
     "description": ""
   },
   "placeholder_mail_datetime": {
-    "message": "Datum i vrijeme poruke e-pošte",
+    "message": "Datum i vrijeme e-poruke",
     "description": ""
   },
   "placeholder_current_datetime": {
@@ -1024,7 +1024,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_Info": {
-    "message": "Ako je označeno, AI će automatski dodati oznake novoprimljenim porukama e-pošte.",
+    "message": "Ako je označeno, AI će automatski dodati oznake novoprimljenim e-porukama.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing": {
@@ -1032,15 +1032,15 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing_Info": {
-    "message": "Ako je označeno, AI će novoprimljenim porukama e-pošte dodati samo postojeće oznake i neće stvarati nove oznake.",
+    "message": "Ako je označeno, AI će novoprimljenim e-porukama dodati samo postojeće oznake i neće stvarati nove oznake.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
-    "message": "Dodajte oznake samo porukama u Primljenoj pošti",
+    "message": "Dodajte oznake samo e-porukama u Primljenoj pošti",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {
-    "message": "Ako je označeno, AI će dodati oznake samo porukama e-pošte u mapu Primljena pošta",
+    "message": "Ako je označeno, AI će dodati oznake samo e-porukama u mapu Primljena pošta",
     "description": ""
   },
   "placeholder_thunderai_def_sign": {
@@ -1084,7 +1084,7 @@
     "description": ""
   },
   "prompt_spamfilter_full_text": {
-    "message": "Analiziraj sljedeću poruku e-pošte i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja. Navedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti: { \"spamValue\": <cijeli broj od 0 do 100>, \"explanation\": \"Kratko objašnjenje vašeg obrazloženja\", } Ovdje su informacije o e-poruci: Šalje: \"{%author%}\" Naslov: \"{%mail_subject%}\" Html tijelo: \"{%mail_html_body%}\"",
+    "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja. Navedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti: { \"spamValue\": <cijeli broj od 0 do 100>, \"explanation\": \"Kratko objašnjenje vašeg obrazloženja\", } Ovdje su informacije o e-poruci: Šalje: \"{%author%}\" Naslov: \"{%mail_subject%}\" Html tijelo: \"{%mail_html_body%}\"",
     "description": ""
   },
   "SpamFilter_prompt_prefs_title": {
@@ -1096,15 +1096,15 @@
     "description": ""
   },
   "prefs_OptionText_spamfilter_threshold_Info": {
-    "message": "Ako je vrijednost koju vraća AI iznad ovog praga, poruka e-pošte će biti premještena u mapu neželjene pošte.",
+    "message": "Ako je vrijednost koju vraća AI iznad ovog praga, e-poruka će biti premještena u mapu Neželjena pošta.",
     "description": ""
   },
   "spamfilter_threshold_too_low": {
-    "message": "Prag neželjene pošte je prenizak! Vjerojatno ćete označiti previše poruka kao neželjenu poštu!",
+    "message": "Prag neželjene pošte je prenizak! Vjerojatno ćete označiti previše e-poruka kao neželjenu poštu!",
     "description": ""
   },
   "spamfilter_threshold_zero": {
-    "message": "Prag neželjene pošte je nula! Označit ćete sve mailove kao neželjenu poštu!",
+    "message": "Prag neželjene pošte je nula! Označit ćete sve e-poruke kao neželjenu poštu!",
     "description": ""
   },
   "spamfilter_no_reports": {
