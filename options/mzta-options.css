@@ -88,6 +88,10 @@ div#miczTranslate{
     margin-bottom: 1em;
 }
 
+.small_info{
+    font-size:smaller;
+}
+
 tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
     background-color: rgb(185, 220, 252);
 }

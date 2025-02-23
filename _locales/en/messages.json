@@ -695,6 +695,10 @@
     "message": "If checked, the \"v1\" segment in the path of API calls will be kept, like \"http://localhost:1234/v1/chat/completions\".",
     "description": ""
   },
+  "prefs_OptionText_openai_comp_info_remote": {
+    "message": "Here you can insert also a remote server address.",
+    "description": ""
+  },
   "prefs_OptionText_owl_warning": {
     "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
     "description": ""
