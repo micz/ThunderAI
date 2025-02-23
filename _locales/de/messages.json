@@ -1,1018 +1,765 @@
 {
-  "extensionDescription": {
-    "message": "Verwende ChatGPT oder Ollama, um deine E-Mails zu verbessern!",
-    "description": "Description of the extension."
-  },
-  "menu_title": {
-    "message": "KI",
-    "description": ""
-  },
-  "prompt_lang": {
-    "message": "Antwort in ",
-    "description": ""
-  },
-  "prompt_reply": {
-    "message": "Antworten Sie auf diese E-Mail",
-    "description": ""
-  },
-  "prompt_reply_advanced": {
-    "message": "Antworten Sie auf diesen Thread",
-    "description": ""
-  },
-  "prompt_rewrite_polite": {
-    "message": "Höflich umschreiben",
-    "description": ""
-  },
-  "prompt_rewrite_formal": {
-    "message": "Formal umschreiben",
-    "description": ""
-  },
-  "prompt_classify": {
-    "message": "Klassifizieren",
-    "description": ""
-  },
-  "prompt_summarize_this": {
-    "message": "Zusammenfassen",
-    "description": ""
-  },
-  "prompt_translate_this": {
-    "message": "Übersetzen",
-    "description": ""
-  },
-  "prompt_this": {
-    "message": "Auffordern",
-    "description": ""
-  },
-  "prompt_selection_needed": {
-    "message": "Um fortzufahren, müssen Sie einen Text auswählen!",
-    "description": ""
-  },
-  "customPrompts_managePrompts": {
-    "message": "Eingabeaufforderungen verwalten",
-    "description": ""
-  },
-  "customPrompts_managePrompts_help": {
-    "message": "Informationen",
-    "description": ""
-  },
-  "customPrompts_managePrompts_info_default": {
-    "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen.",
-    "description": ""
-  },
-  "customPrompts_managePrompts_info_default_2": {
-    "message": "Sie können die Prompts importieren und exportieren. Bestehende Prompts mit derselben ID werden überschrieben. Prompts mit neuen IDs werden hinzugefügt.",
-    "description": ""
-  },
-  "customPrompts_managePrompts_info_default_3": {
-    "message": "Wenn alles korrekt ist, klicken Sie nach dem Import auf die Schaltfläche 'Alle speichern'.",
-    "description": ""
-  },
-  "customPrompts_start_saving": {
-    "message": "Eingabeaufforderungen werden gespeichert...",
-    "description": ""
-  },
-  "customPrompts_reindexing_list": {
-    "message": "Liste wird neu indiziert...",
-    "description": ""
-  },
-  "customPrompts_filtering_prompts": {
-    "message": "Eingabeaufforderungen werden gefiltert...",
-    "description": ""
-  },
-  "customPrompts_saving_default_prompts": {
-    "message": "Standard-Eingabeaufforderungen werden gespeichert...",
-    "description": ""
-  },
-  "customPrompts_saving_custom_prompts": {
-    "message": "Benutzerdefinierte Eingabeaufforderungen werden gespeichert...",
-    "description": ""
-  },
-  "customPrompts_reloading_menus": {
-    "message": "Menüs werden neu geladen...",
-    "description": ""
-  },
-  "customPrompts_saved": {
-    "message": "Eingabeaufforderungen gespeichert!",
-    "description": ""
-  },
-  "customPrompts_form_label_ID": {
-    "message": "ID",
-    "description": ""
-  },
-  "customPrompts_form_label_ID_rules": {
-    "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein",
-    "description": ""
-  },
-  "customPrompts_form_label_Name": {
-    "message": "Name",
-    "description": ""
-  },
-  "customPrompts_form_label_Text": {
-    "message": "Eingabeaufforderungstext",
-    "description": ""
-  },
-  "customPrompts_form_label_Action": {
-    "message": "Aktion",
-    "description": ""
-  },
-  "customPrompts_form_label_need_selected": {
-    "message": "Textauswahl erforderlich",
-    "description": ""
-  },
-  "customPrompts_form_label_need_signature": {
-    "message": "Immer die Signatur hinzufügen",
-    "description": ""
-  },
-  "customPrompts_form_label_need_custom_text": {
-    "message": "Nach zusätzlichem Text fragen",
-    "description": ""
-  },
-  "customPrompts_form_label_enabled": {
-    "message": "Aktiviert",
-    "description": ""
-  },
-  "customPrompts_form_required_fields": {
-    "message": "Erforderliche Felder",
-    "description": ""
-  },
-  "customPrompts_btnEdit": {
-    "message": "Bearbeiten",
-    "description": ""
-  },
-  "customPrompts_btnCancel": {
-    "message": "Abbrechen",
-    "description": ""
-  },
-  "customPrompts_btnOK": {
-    "message": "OK",
-    "description": ""
-  },
-  "customPrompts_btnDelete": {
-    "message": "Löschen",
-    "description": ""
-  },
-  "customPrompts_btnDelete_confirmText": {
-    "message": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
-    "description": ""
-  },
-  "customPrompts_unsaved_changes": {
-    "message": "Es gibt ungespeicherte Änderungen!",
-    "description": ""
-  },
-  "customPrompts_btnSaveAll": {
-    "message": "Alle speichern",
-    "description": ""
-  },
-  "customPrompts_save_button": {
-    "message": "Speichern",
-    "description": ""
-  },
-  "customPrompts_btnNew": {
-    "message": "Neu hinzufügen",
-    "description": ""
-  },
-  "customPrompts_btnAddNewCommit": {
-    "message": "Eingabeaufforderung hinzufügen",
-    "description": ""
-  },
-  "customPrompts_add_to_menu": {
-    "message": "Zum Menü hinzufügen",
-    "description": ""
-  },
-  "customPrompts_add_to_menu_always": {
-    "message": "Immer",
-    "description": ""
-  },
-  "customPrompts_add_to_menu_reading": {
-    "message": "E-Mail lesen",
-    "description": ""
-  },
-  "customPrompts_add_to_menu_composing": {
-    "message": "E-Mail verfassen",
-    "description": ""
-  },
-  "customPrompts_close_button": {
-    "message": "Schließen",
-    "description": ""
-  },
-  "customPrompts_do_reply": {
-    "message": "Antworten",
-    "description": ""
-  },
-  "customPrompts_substitute_text": {
-    "message": "Text ersetzen",
-    "description": ""
-  },
-  "chatgpt_win_working": {
-    "message": "Arbeit in Arbeit...",
-    "description": ""
-  },
-  "chatgpt_win_job_completed": {
-    "message": "Abgeschlossen!",
-    "description": ""
-  },
-  "chatgpt_win_job_completed_select": {
-    "message": "Text auswählen und auf die Schaltfläche klicken.",
-    "description": ""
-  },
-  "chatgpt_win_get_answer": {
-    "message": "Verwenden Sie die ausgewählte Antwort.",
-    "description": ""
-  },
-  "chatgpt_win_close": {
-    "message": "Schließen",
-    "description": ""
-  },
-  "chatgpt_textarea_not_found_error": {
-    "message": "Es scheint, dass die ChatGPT-Seite zu lange zum Laden braucht. Wenn sie fertig geladen ist, klicken Sie auf den Button rechts. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den Dienststatus.",
-    "description": ""
-  },
-  "chatgpt_btn_retry": {
-    "message": "Wiederholen",
-    "description": ""
-  },
-  "chatgpt_sendbutton_not_found_error": {
-    "message": "Klicken Sie auf die Schaltfläche „Senden“, um die Eingabeaufforderung zu übermitteln.",
-    "description": ""
-  },
-  "chatgpt_user_not_logged_in": {
-    "message": "Sie sind nicht bei ChatGPT angemeldet. Bitte melden Sie sich mit Ihren Anmeldeinformationen an, schließen Sie das ChatGPT-Fenster und wiederholen Sie dann die Aktion, die Sie versucht haben. Danach bleiben Sie angemeldet.",
-    "description": ""
-  },
-  "chatgpt_win_model_warning": {
-    "message": "Du hast die Option gewählt, ein bestimmtes Modell zu verwenden, aber es scheint, dass es nicht korrekt geladen wird. Bitte überprüfe den Wert und versuche es erneut. Du kannst jetzt den blauen Knopf drücken, um fortzufahren.",
-    "description": ""
-  },
-  "chatgpt_win_custom_text": {
-    "message": "Fügen Sie hier den zusätzlichen Text für die Eingabeaufforderung ein.",
-    "description": ""
-  },
-  "chatgpt_win_send": {
-    "message": "Senden",
-    "description": ""
-  },
-  "chatgpt_use_gpt35": {
-    "message": "Verwenden Sie GPT3.5",
-    "description": ""
-  },
-  "chatgpt_force_completion": {
-    "message": "Abschluss erzwingen",
-    "description": ""
-  },
-  "chatgpt_force_completion_title": {
-    "message": "Klicken Sie hier, um die Schaltfläche „Letzte Antwort verwenden“ anzuzeigen, wenn ChatGPT seine Arbeit abgeschlossen hat, die Schaltfläche jedoch nicht erschienen ist.",
-    "description": ""
-  },
-  "msg_prompt_too_long": {
-    "message": "Der von Ihnen bereitgestellte Text ist zu lang. Sie müssen ihn kürzen.",
-    "description": ""
-  },
-  "prefs_OptionText_release_notes": {
-    "message": "Versionshinweise",
-    "description": ""
-  },
-  "prefs_status_page": {
-    "message": "Dienststatus",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_win_text": {
-    "message": "ChatGPT-Fensterabmessungen",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_win_height": {
-    "message": "Höhe",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_win_width": {
-    "message": "Breite",
-    "description": ""
-  },
-  "prefs_OptionText_default_sign_name": {
-    "message": "Standard-Signaturname",
-    "description": ""
-  },
-  "prefs_OptionText_default_chatgpt_lang": {
-    "message": "Standardsprache für die Antworten",
-    "description": ""
-  },
-  "prefs_OptionText_reply_all": {
-    "message": "Allen antworten",
-    "description": ""
-  },
-  "prefs_OptionText_reply_sender": {
-    "message": "Absender antworten",
-    "description": ""
-  },
-  "prefs_OptionText_reply_type": {
-    "message": "Antworttyp",
-    "description": ""
-  },
-  "prefs_OptionText_btnManagePrompts": {
-    "message": "Verwalten Sie Ihre Eingabeaufforderungen",
-    "description": ""
-  },
-  "prefsInfoTitle": {
-    "message": "Wichtige Informationen",
-    "description": ""
-  },
-  "prefsInfoDesc_1": {
-    "message": "Es könnte passieren, dass sich die Weboberfläche von ChatGPT ändert und dadurch die Funktionsweise des Add-ons beeinträchtigt wird. Überprüfen Sie die Seite \"Service Status\", die unten auf dieser Seite verlinkt ist. Denken Sie auch daran, dass Sie sich beim ersten Mal, wenn Sie ThunderAI verwenden, bei ChatGPT anmelden müssen.",
-    "description": ""
-  },
-  "prefsInfoDesc_2": {
-    "message": "Um die ChatGPT-API zu verwenden, benötigen Sie einen OpenAI ChatGPT-API-Schlüssel und müssen ein Modell auswählen.",
-    "description": ""
-  },
-  "prefsInfoDesc_3": {
-    "message": "Um die Integration mit Ollama zu nutzen, müssen Sie einen lokalen Ollama-Server einrichten. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld in der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen der ThunderAI und dem Ollama-Server sicherzustellen, denken Sie daran, OLLAMA_ORIGINS=moz-extension://* festzulegen.",
-    "description": ""
-  },
-  "prefsInfoDesc_4": {
-    "message": "Um diese Integration zu nutzen, müssen Sie einen lokalen Server einrichten, der mit der OpenAI-API kompatibel ist, wie z.B. LM Studio. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld innerhalb der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen ThunderAI und dem lokalen Server sicherzustellen, denken Sie daran, die CORS-Einstellungen korrekt zu konfigurieren.",
-    "description": ""
-  },
-  "prefsInfoDesc_5": {
-    "message": "Denken Sie daran, dass Sie das ThunderAI-Menü mit der Tastenkombination STRG+ALT+A öffnen können.",
-    "description": ""
-  },
-  "prefsInfoDesc_6": {
-    "message": "Sie können die Tastenkombination ändern, indem Sie auf das Zahnradsymbol oben rechts auf dieser Seite klicken und \"Erweiterungskürzel verwalten\" auswählen.",
-    "description": ""
-  },
-  "prefsDonation_1": {
-    "message": "Gefällt Ihnen dieses Addon?",
-    "description": ""
-  },
-  "prefsDonation_2": {
-    "message": "Überlegen Sie, eine Spende zu machen!",
-    "description": ""
-  },
-  "backToOptionsText": {
-    "message": "Optionen",
-    "description": ""
-  },
-  "TranslateText": {
-    "message": "Möchtest du helfen, dieses Add-on zu übersetzen?",
-    "description": ""
-  },
-  "TranslateLink": {
-    "message": "Finde es heraus!",
-    "description": ""
-  },
-  "customPrompts_ExportAll": {
-    "message": "Alle Prompts exportieren",
-    "description": ""
-  },
-  "customPrompts_Import": {
-    "message": "Neue Prompts importieren",
-    "description": ""
-  },
-  "importPrompts_confirmText": {
-    "message": "Sie sind dabei, neue Prompts zu importieren.",
-    "description": ""
-  },
-  "customPrompts_start_import": {
-    "message": "Import von benutzerdefinierten Prompts startet...",
-    "description": ""
-  },
-  "customPrompts_import_completed": {
-    "message": "Import von benutzerdefinierten Prompts abgeschlossen! Sie müssen auf die Schaltfläche 'Alle speichern' klicken, um Ihre Änderungen zu speichern.",
-    "description": ""
-  },
-  "importPrompts_invalidFile": {
-    "message": "Die Datei, die Sie importieren möchten, ist keine gültige Datei für benutzerdefinierte Prompts.",
-    "description": ""
-  },
-  "importPrompts_invalidPrompts": {
-    "message": "Die Datei, die Sie importieren möchten, enthält keine gültigen Prompts.",
-    "description": ""
-  },
-  "currently_used_prompt": {
-    "message": "Derzeit verwendeter Prompt-Name",
-    "description": ""
-  },
-  "customprompts_form_label_define_response_lang": {
-    "message": "Definieren Sie die Antwortsprache im Prompt.",
-    "description": ""
-  },
-  "prefs_Connection_type": {
-    "message": "Verbindungstyp",
-    "description": ""
-  },
-  "prefs_Connection_type_ChatGPT_Web": {
-    "message": "ChatGPT Weboberfläche",
-    "description": ""
-  },
-  "prefs_Connection_type_ChatGPT_API": {
-    "message": "ChatGPT OpenAI API",
-    "description": ""
-  },
-  "prefs_ChatGPT_API_Key": {
-    "message": "ChatGPT API-Schlüssel",
-    "description": ""
-  },
-  "ChatGPT_Models": {
-    "message": "ChatGPT-Modelle",
-    "description": ""
-  },
-  "ChatGPT_Models_Fetch": {
-    "message": "Liste der ChatGPT-Modelle aktualisieren",
-    "description": ""
-  },
-  "ChatGPT_Models_Error_fetching": {
-    "message": "Fehler beim Abrufen der ChatGPT-Modelle",
-    "description": ""
-  },
-  "Loading": {
-    "message": "Laden...",
-    "description": ""
-  },
-  "error": {
-    "message": "ThunderAI-Fehler!",
-    "description": ""
-  },
-  "chatgpt_empty_apikey": {
-    "message": "Sie haben keinen API-Schlüssel für das ChatGPT-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein.",
-    "description": ""
-  },
-  "chatgpt_empty_model": {
-    "message": "Sie haben kein Modell für das ChatGPT-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
-    "description": ""
-  },
-  "chagpt_api_send_button": {
-    "message": "Modell wird verwendet",
-    "description": ""
-  },
-  "chagpt_api_connecting": {
-    "message": "Versuch, eine Verbindung zu OpenAI ChatGPT mit dem bereitgestellten API-Schlüssel herzustellen",
-    "description": ""
-  },
-  "Debug": {
-    "message": "Debuggen",
-    "description": ""
-  },
-  "prefs_OptionText_do_debug_info": {
-    "message": "Aktiviere das Debug-System",
-    "description": ""
-  },
-  "prefs_Connection_type_Ollama_API": {
-    "message": "Ollama API (Lokales LLM)",
-    "description": ""
-  },
-  "prefs_Connection_type_OpenAI_Comp_API": {
-    "message": "OpenAI-kompatible API",
-    "description": ""
-  },
-  "prefs_API_Host": {
-    "message": "Host-Adresse",
-    "description": ""
-  },
-  "Ollama_Models": {
-    "message": "Ollama-Modelle",
-    "description": ""
-  },
-  "Ollama_Models_Fetch": {
-    "message": "Liste der Ollama-Modelle aktualisieren",
-    "description": ""
-  },
-  "Ollama_Models_Error_fetching": {
-    "message": "Fehler beim Abrufen der Ollama-Modelle",
-    "description": ""
-  },
-  "API_Models_Error_NoModels": {
-    "message": "Keine Modelle gefunden",
-    "description": ""
-  },
-  "ollama_empty_host": {
-    "message": "Sie haben keine Host-Adresse für die Ollama API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein.",
-    "description": ""
-  },
-  "ollama_empty_model": {
-    "message": "Sie haben kein Modell für die Ollama API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
-    "description": ""
-  },
-  "ollama_api_connecting": {
-    "message": "Versuch, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen",
-    "description": ""
-  },
-  "andModel": {
-    "message": "und Modell",
-    "description": ""
-  },
-  "error_connection_interrupted": {
-    "message": "Die Verbindung zum Server wurde unerwartet unterbrochen.",
-    "description": ""
-  },
-  "ollama_api_request_failed": {
-    "message": "Anfrage an die Ollama API fehlgeschlagen.",
-    "description": ""
-  },
-  "chatgpt_api_request_failed": {
-    "message": "Anfrage an die OpenAI ChatGPT API fehlgeschlagen",
-    "description": ""
-  },
-  "WaitingServerReponse": {
-    "message": "Warten auf die Serverantwort.",
-    "description": ""
-  },
-  "prefs_API_Host_Info": {
-    "message": "Etwas wie",
-    "description": ""
-  },
-  "OpenAIComp_Models": {
-    "message": "OpenAI-kompatible API-Modelle",
-    "description": ""
-  },
-  "OpenAIComp_Models_Fetch": {
-    "message": "Aktualisiere die Liste der OpenAI-kompatiblen API-Modelle.",
-    "description": ""
-  },
-  "OpenAIComp_Models_Error_fetching": {
-    "message": "Fehler beim Abrufen der OpenAI-kompatiblen API-Modelle.",
-    "description": ""
-  },
-  "OpenAIComp_empty_host": {
-    "message": "Sie haben keine Host-Adresse für die OpenAI-kompatible API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein.",
-    "description": ""
-  },
-  "OpenAIComp_empty_model": {
-    "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
-    "description": ""
-  },
-  "OpenAIComp_api_connecting": {
-    "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen.",
-    "description": ""
-  },
-  "OpenAIComp_api_request_failed": {
-    "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen",
-    "description": ""
-  },
-  "prefs_OpenAIComp_ChatName": {
-    "message": "Chat-Name",
-    "description": ""
-  },
-  "prefs_OpenAIComp_ChatName_Info": {
-    "message": "Dies ist der Name, der im AI-Chat verwendet wird.",
-    "description": ""
-  },
-  "StorageSpace": {
-    "message": "Gesamtspeicherplatz belegt",
-    "description": ""
-  },
-  "SearchPrompt": {
-    "message": "Suchanfragen",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_force_enter": {
-    "message": "Menü: Sofortige Aufforderung senden",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_force_enter_info": {
-    "message": "Wenn diese Option aktiviert ist, wird die Tastenkombination STRG+ALT+A den hervorgehobenen Prompt aus dem Menü automatisch senden. Andernfalls wird der Prompt-Name dem Benutzer angezeigt, und es ist ein weiterer Druck auf die Eingabetaste erforderlich, um ihn zu senden.",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_order_alphabet": {
-    "message": "Menü: Alphabetisch sortieren",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-    "message": "Wenn diese Option aktiviert ist, werden die Prompts im Menü alphabetisch sortiert.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_win_dims_info": {
-    "message": "Auf 0 setzen, wenn Sie die Fenstergröße nicht angeben möchten.",
-    "description": ""
-  },
-  "prefs_OpenAIComp_API_Key": {
-    "message": "OpenAI Comp API-Schlüssel",
-    "description": ""
-  },
-  "Optional": {
-    "message": "Optional",
-    "description": ""
-  },
-  "OpenChatGPTTab": {
-    "message": "ChatGPT-Tab öffnen",
-    "description": ""
-  },
-  "OpenChatGPTTab_Info": {
-    "message": "Bei Anmeldeproblemen im ThunderAI-Fenster öffnen Sie ChatGPT in einem neuen Tab über die Schaltfläche rechts, melden Sie sich an, schließen Sie dann den Tab und fahren Sie fort, ThunderAI zu verwenden.",
-    "description": ""
-  },
-  "placeholder_mail_text_body": {
-    "message": "E-Mail-Inhalt",
-    "description": ""
-  },
-  "placeholder_mail_html_body": {
-    "message": "HTML-E-Mail-Inhalt",
-    "description": ""
-  },
-  "placeholder_mail_subject": {
-    "message": "E-Mail-Betreff",
-    "description": ""
-  },
-  "placeholder_selected_text": {
-    "message": "Ausgewählter Text",
-    "description": ""
-  },
-  "placeholder_additional_text": {
-    "message": "Zusätzlicher Text",
-    "description": ""
-  },
-  "placeholder_junk_score": {
-    "message": "Spam-Score",
-    "description": ""
-  },
-  "placeholder_recipients": {
-    "message": "Empfänger",
-    "description": ""
-  },
-  "placeholder_cc_list": {
-    "message": "CC-Liste",
-    "description": ""
-  },
-  "placeholder_author": {
-    "message": "Autor",
-    "description": ""
-  },
-  "prefs_OptionText_placeholders_use_default_value": {
-    "message": "Platzhalter: standardwert verwenden",
-    "description": ""
-  },
-  "prefs_OptionText_placeholders_use_default_value_info": {
-    "message": "Wenn aktiviert, werden die Platzhalter mit den Standardwerten ausgefüllt, wenn kein Wert angegeben wird. Andernfalls bleiben die Platzhalter erhalten.",
-    "description": ""
-  },
-  "prefs_OptionText_max_prompt_length": {
-    "message": "Maximale Eingabelänge",
-    "description": ""
-  },
-  "prefs_OptionText_max_prompt_length_Info": {
-    "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_model": {
-    "message": "ChatGPT Web-Modell",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_model_info": {
-    "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_tempchat": {
-    "message": "ChatGPT Web temporärer Chat",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_tempchat_info": {
-    "message": "Wenn aktiviert, wird der temporäre Chat in der ChatGPT-Webschnittstelle verwendet.",
-    "description": ""
-  },
-  "chatgpt_btn_model": {
-    "message": "Aktuelles Modell verwenden",
-    "description": ""
-  },
-  "SendingPrompt": {
-    "message": "Sende Eingabe...",
-    "description": ""
-  },
-  "AllowedValues": {
-    "message": "Erlaubte Werte",
-    "description": ""
-  },
-  "prefs_OptionText_btnManagePrompts_infoline": {
-    "message": "Sie können zusätzliche Datenplatzhalter verwenden.",
-    "description": ""
-  },
-  "prefs_OptionText_btnManagePrompts_infoline2": {
-    "message": "Sie können den Prompt nach Wunsch ändern, aber die Antwort der KI muss eine durch Kommas getrennte Liste von Tags sein!",
-    "description": ""
-  },
-  "prefs_OptionText_openai_comp_use_v1": {
-    "message": "\"v1\"-Kompatibilität beibehalten",
-    "description": ""
-  },
-  "prefs_OptionText_openai_comp_use_v1_info": {
-    "message": "Wenn aktiviert, wird das \"v1\"-Segment im Pfad der API-Aufrufe beibehalten, z.B. \"http://localhost:1234/v1/chat/completions\".",
-    "description": ""
-  },
-  "prefs_OptionText_owl_warning": {
-    "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_model_tooltip": {
-    "message": "Klicken Sie auf einen Wert, um ihn festzulegen.",
-    "description": ""
-  },
-  "prompt_reply_full_text": {
-    "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prompt_reply_additional_text": {
-    "message": "Fügen Sie die Betreffzeile nicht zur Antwort hinzu.",
-    "description": ""
-  },
-  "reply_same_lang": {
-    "message": "Antworten Sie in derselben Sprache.",
-    "description": ""
-  },
-  "sign_msg_as": {
-    "message": "Unterzeichnen Sie die Nachricht als",
-    "description": ""
-  },
-  "prompt_reply_advanced_full_text": {
-    "message": "Antworten Sie auf die folgende E-Mail \"{%selected_text%}\", unter Berücksichtigung, dass dies der vollständige E-Mail-Thread ist \"{%mail_html_body%}\". Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prompt_rewrite_full_text": {
-    "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prompt_rewrite_formal_full_text": {
-    "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prompt_classify_full_text": {
-    "message": "Klassifizieren Sie den folgenden Text nach Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit der Kategorie und der Punktzahl ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prompt_summarize_this_full_text": {
-    "message": "Fassen Sie die folgende E-Mail in einer Liste mit Aufzählungspunkten zusammen.",
-    "description": ""
-  },
-  "prompt_translate_this_full_text": {
-    "message": "Übersetzen Sie die folgende E-Mail in",
-    "description": ""
-  },
-  "prompt_this_full_text": {
-    "message": "Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte.",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags": {
-    "message": "Tags zu E-Mails hinzufügen",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_Info": {
-    "message": "If checked, an item will be included in the menu to apply tags to emails.\nWenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden.",
-    "description": ""
-  },
-  "prompt_add_tags": {
-    "message": "Tags zu dieser E-Mail hinzufügen",
-    "description": ""
-  },
-  "prompt_add_tags_full_text": {
-    "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein.",
-    "description": ""
-  },
-  "placeholder_tags_current_email": {
-    "message": "E-Mail-Tags",
-    "description": ""
-  },
-  "placeholder_tags_full_list": {
-    "message": "Vorhandene Tags",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_maxnum": {
-    "message": "Maximale Anzahl von Tags",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_maxnum_Info": {
-    "message": "Die maximale Anzahl von Tags, die von der KI vorgeschlagen werden. Setzen Sie auf 0, wenn Sie die Anzahl der Tags nicht begrenzen möchten.",
-    "description": ""
-  },
-  "prompt_add_tags_maxnum": {
-    "message": "Die Anzahl der Tags begrenzen auf",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_hide_exclusions": {
-    "message": "Ausgeschlossene Tags ausblenden",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_hide_exclusions_Info": {
-    "message": "Wenn aktiviert, werden die Tags, die in der Ausschlussliste enthalten sind, im Bestätigungsdialog ausgeblendet.",
-    "description": ""
-  },
-  "prefs_OptionText_btnManageTagsInfo": {
-    "message": "Tag-Einstellungen verwalten",
-    "description": ""
-  },
-  "AddTags_PageTitle": {
-    "message": "Tag-Einstellungen verwalten",
-    "description": ""
-  },
-  "AddTags_info_default": {
-    "message": "Auf dieser Seite können Sie den Standard-Prompt zum Hinzufügen von Tags zu E-Mails bearbeiten und die Ausschlussliste verwalten.",
-    "description": ""
-  },
-  "AddTags_prompt_text_title": {
-    "message": "Aktueller Prompt-Text",
-    "description": ""
-  },
-  "AddTags_excl_list_title": {
-    "message": "Ausschlussliste",
-    "description": ""
-  },
-  "AddTags_excl_list_infoline": {
-    "message": "Dies ist eine Liste von Tags, die nicht zu E-Mails hinzugefügt werden dürfen.",
-    "description": ""
-  },
-  "save": {
-    "message": "Speichern",
-    "description": ""
-  },
-  "addtags_info_additional_statements": {
-    "message": "Diese Aussage wird am Ende des Prompts hinzugefügt:",
-    "description": ""
-  },
-  "reset_default": {
-    "message": "Auf Standard zurücksetzen",
-    "description": ""
-  },
-  "addtags_excl_list_infoline2": {
-    "message": "Fügen Sie ein Wort pro Zeile oder durch ein Komma getrennt hinzu.",
-    "description": ""
-  },
-  "addtags_dialog_title": {
-    "message": "Tags zur E-Mail hinzufügen",
-    "description": ""
-  },
-  "addtags_exclude_tag": {
-    "message": "Tag ausschließen",
-    "description": ""
-  },
-  "addtags_no_tags_received": {
-    "message": "Keine Tags von der KI erhalten.",
-    "description": ""
-  },
-  "addtags_no_valid_tags": {
-    "message": "Nach der Filterung mit der Ausschlussliste wurden keine gültigen Tags gefunden.",
-    "description": ""
-  },
-  "thunderai_error_title": {
-    "message": "ThunderAI-Fehler",
-    "description": ""
-  },
-  "thunderai_warning_title": {
-    "message": "ThunderAI-Warnung",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_first_uppercase": {
-    "message": "Erster Buchstabe groß",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_first_uppercase_Info": {
-    "message": "Wenn aktiviert, wird die Tags-Beschriftung in Kleinbuchstaben mit nur dem ersten Buchstaben in Großbuchstaben gesetzt.",
-    "description": ""
-  },
-  "AddTags_prompt_prefs_title": {
-    "message": "Optionen zum Hinzufügen von Tags",
-    "description": ""
-  },
-  "prefs_SurveyLinkText": {
-    "message": "Teilen Sie Ihr Feedback und helfen Sie uns, ThunderAI zu verbessern!",
-    "description": ""
-  },
-  "prefs_SurveyLinkText2": {
-    "message": "Klicken Sie hier, es dauert nur eine Minute!",
-    "description": ""
-  },
-  "prefs_OpenAIComp_ForceModel": {
-    "message": "Modell manuell einfügen",
-    "description": ""
-  },
-  "OpenAIComp_force_model_ask": {
-    "message": "Fügen Sie hier den Namen des Modells ein, das Sie verwenden möchten.",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_force_lang": {
-    "message": "Sprache erzwingen",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_force_lang_Info": {
-    "message": "Wenn aktiviert, wird die Sprache der Tags auf die in den ThunderAI Optionen definierte Sprache festgelegt, falls angegeben.",
-    "description": ""
-  },
-  "prompt_add_tags_force_lang": {
-    "message": "Die Tags müssen in geschrieben werden",
-    "description": ""
-  },
-  "prefs_Connection_type_Google_Gemini_API": {
-    "message": "Google Gemini API",
-    "description": ""
-  },
-  "prefs_GoogleGemini_API_Key": {
-    "message": "API-Schlüssel",
-    "description": ""
-  },
-  "GoogleGemini_Models": {
-    "message": "Google Gemini API-Modelle",
-    "description": ""
-  },
-  "GoogleGemini_Models_Fetch": {
-    "message": "Google Gemini-Modelle-Liste aktualisieren",
-    "description": ""
-  },
-  "GoogleGemini_Models_Error_fetching": {
-    "message": "Fehler beim Abrufen der Google Gemini-Modelle",
-    "description": ""
-  },
-  "google_gemini_api_request_failed": {
-    "message": "Google Gemini API-Anfrage fehlgeschlagen",
-    "description": ""
-  },
-  "google_gemini_api_connecting": {
-    "message": "Versuch, eine Verbindung zu Google Gemini mit dem bereitgestellten API-Schlüssel herzustellen",
-    "description": ""
-  },
-  "google_gemini_empty_apikey": {
-    "message": "Sie haben keinen API-Schlüssel für die Google Gemini API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein.",
-    "description": ""
-  },
-  "google_gemini_empty_model": {
-    "message": "Sie haben kein Modell für die Google Gemini API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus.",
-    "description": ""
-  },
-  "GoogleGemini_SystemInstruction": {
-    "message": "Systemanweisung",
-    "description": ""
-  },
-  "GoogleGemini_SystemInstruction_Info": {
-    "message": "Wenn Sie eine Systemanweisung festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten.",
-    "description": ""
-  },
-  "ChatGPT_Developer_Messages": {
-    "message": "Entwicklernachrichten",
-    "description": ""
-  },
-  "ChatGPT_Developer_Messages_Info": {
-    "message": "Wenn Sie die Entwicklernachrichten festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten.",
-    "description": ""
-  },
-  "prefs_OptionText_btnManagePrompts_infoline3": {
-    "message": "Sie können den Platzhalter {%tags_full_list%} im Prompt verwenden, um die verfügbaren Tags aufzulisten. Mit einem geeigneten Prompt könnten Sie dann erzwingen, dass die Tags nur aus der Liste der bereits vorhandenen ausgewählt werden.",
-    "description": ""
-  },
-  "placeholder_mail_typed_text": {
-    "message": "Eingegebener Text vor dem zitierten E-Mail-Text",
-    "description": ""
-  },
-  "prompt_get_calendar_event": {
-    "message": "Ein neues Kalenderevent hinzufügen",
-    "description": ""
-  },
-  "prompt_get_calendar_event_full_text": {
-    "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können. Falls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden. Falls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde. Falls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n  \"startDate\": \"YYYYMMDDTHHMMSS\",\n  \"endDate\": \"YYYYMMDDTHHMMSS\",\n  \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n  \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\"",
-    "description": ""
-  },
-  "prefs_OptionText_get_calendar_event": {
-    "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen",
-    "description": ""
-  },
-  "prefs_OptionText_get_calendar_event_Info": {
-    "message": "Wenn aktiviert, wird ein Element im Menü hinzugefügt, um Kalenderevent-Informationen aus ausgewähltem Text zu erhalten.",
-    "description": ""
-  },
-  "prefs_OptionText_btnManageCalendarEventInfo": {
-    "message": "Kalendereinstellungen verwalten",
-    "description": ""
-  },
-  "GetCalendarEvent_PageTitle": {
-    "message": "Kalendereinstellungen verwalten",
-    "description": ""
-  },
-  "GetCalendarEvent_info_default": {
-    "message": "Auf dieser Seite können Sie den Standard-Prompt ändern, der verwendet wird, um ein Kalenderevent aus ausgewähltem Text zu erhalten.",
-    "description": ""
-  },
-  "GetCalendarEvent_prompt_text_title": {
-    "message": "Aktueller Prompt-Text",
-    "description": ""
-  },
-  "prefs_OptionText_GetCalendarEvent_infoline2": {
-    "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!",
-    "description": ""
-  },
-  "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-    "message": "Um die Kalenderevent-Funktion zu nutzen, installieren Sie bitte das ThunderAI Sparks-Addon.",
-    "description": ""
-  },
-  "prefs_OptionText_download_now": {
-    "message": "Laden Sie jetzt ThunderAI Sparks herunter!",
-    "description": ""
-  },
-  "placeholder_mail_datetime": {
-    "message": "Datum und Uhrzeit der E-Mail",
-    "description": ""
-  },
-  "placeholder_current_datetime": {
-    "message": "Das aktuelle Datum und die aktuelle Uhrzeit",
-    "description": ""
-  },
-  "calendar_getting_data_error": {
-    "message": "Fehler beim Abrufen der Kalenderevent-Daten",
-    "description": ""
-  },
-  "calendar_opening_dialog_error": {
-    "message": "Fehler beim Öffnen des Kalenderevent-Dialogs",
-    "description": ""
-  }
+    "extensionDescription": {
+        "message": "Verwende ChatGPT oder Ollama, um deine E-Mails zu verbessern!",
+        "description": "Description of the extension."
+    },
+    "menu_title": {
+        "message": "KI"
+    },
+    "prompt_lang": {
+        "message": "Antwort in "
+    },
+    "prompt_reply": {
+        "message": "Antworten Sie auf diese E-Mail"
+    },
+    "prompt_reply_advanced": {
+        "message": "Antworten Sie auf diesen Thread"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Höflich umschreiben"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Formal umschreiben"
+    },
+    "prompt_classify": {
+        "message": "Klassifizieren"
+    },
+    "prompt_summarize_this": {
+        "message": "Zusammenfassen"
+    },
+    "prompt_translate_this": {
+        "message": "Übersetzen"
+    },
+    "prompt_this": {
+        "message": "Auffordern"
+    },
+    "prompt_selection_needed": {
+        "message": "Um fortzufahren, müssen Sie einen Text auswählen!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Eingabeaufforderungen verwalten"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Informationen"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Die Standard-Eingabeaufforderungen sind nicht bearbeitbar. Sie können sie deaktivieren, dann den Text der Eingabeaufforderung kopieren und in eine neue einfügen, um eine modifizierte Version zu erstellen."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Sie können die Prompts importieren und exportieren. Bestehende Prompts mit derselben ID werden überschrieben. Prompts mit neuen IDs werden hinzugefügt."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Wenn alles korrekt ist, klicken Sie nach dem Import auf die Schaltfläche 'Alle speichern'."
+    },
+    "customPrompts_start_saving": {
+        "message": "Eingabeaufforderungen werden gespeichert..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Liste wird neu indiziert..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Eingabeaufforderungen werden gefiltert..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Standard-Eingabeaufforderungen werden gespeichert..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Benutzerdefinierte Eingabeaufforderungen werden gespeichert..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Menüs werden neu geladen..."
+    },
+    "customPrompts_saved": {
+        "message": "Eingabeaufforderungen gespeichert!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Muss eindeutig, kleingeschrieben und ohne Leerzeichen sein"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Name"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Eingabeaufforderungstext"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Aktion"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Textauswahl erforderlich"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Immer die Signatur hinzufügen"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Nach zusätzlichem Text fragen"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Aktiviert"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Erforderliche Felder"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Bearbeiten"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Abbrechen"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Löschen"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Sind Sie sicher, dass Sie dieses Element löschen möchten?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Es gibt ungespeicherte Änderungen!"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Alle speichern"
+    },
+    "customPrompts_save_button": {
+        "message": "Speichern"
+    },
+    "customPrompts_btnNew": {
+        "message": "Neu hinzufügen"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Eingabeaufforderung hinzufügen"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Zum Menü hinzufügen"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Immer"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "E-Mail lesen"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "E-Mail verfassen"
+    },
+    "customPrompts_close_button": {
+        "message": "Schließen"
+    },
+    "customPrompts_do_reply": {
+        "message": "Antworten"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Text ersetzen"
+    },
+    "chatgpt_win_working": {
+        "message": "Arbeit in Arbeit..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Abgeschlossen!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Text auswählen und auf die Schaltfläche klicken."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Verwenden Sie die ausgewählte Antwort."
+    },
+    "chatgpt_win_close": {
+        "message": "Schließen"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Es scheint, dass die ChatGPT-Seite zu lange zum Laden braucht. Wenn sie fertig geladen ist, klicken Sie auf den Button rechts. Wenn das Problem weiterhin besteht, überprüfen Sie bitte den Dienststatus."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Wiederholen"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Klicken Sie auf die Schaltfläche „Senden“, um die Eingabeaufforderung zu übermitteln."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Sie sind nicht bei ChatGPT angemeldet. Bitte melden Sie sich mit Ihren Anmeldeinformationen an, schließen Sie das ChatGPT-Fenster und wiederholen Sie dann die Aktion, die Sie versucht haben. Danach bleiben Sie angemeldet."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Du hast die Option gewählt, ein bestimmtes Modell zu verwenden, aber es scheint, dass es nicht korrekt geladen wird. Bitte überprüfe den Wert und versuche es erneut. Du kannst jetzt den blauen Knopf drücken, um fortzufahren."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Fügen Sie hier den zusätzlichen Text für die Eingabeaufforderung ein."
+    },
+    "chatgpt_win_send": {
+        "message": "Senden"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "Verwenden Sie GPT3.5"
+    },
+    "chatgpt_force_completion": {
+        "message": "Abschluss erzwingen"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Klicken Sie hier, um die Schaltfläche „Letzte Antwort verwenden“ anzuzeigen, wenn ChatGPT seine Arbeit abgeschlossen hat, die Schaltfläche jedoch nicht erschienen ist."
+    },
+    "msg_prompt_too_long": {
+        "message": "Der von Ihnen bereitgestellte Text ist zu lang. Sie müssen ihn kürzen."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Versionshinweise"
+    },
+    "prefs_status_page": {
+        "message": "Dienststatus"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "ChatGPT-Fensterabmessungen"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Höhe"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Breite"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Standard-Signaturname"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Standardsprache für die Antworten"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Allen antworten"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Absender antworten"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Antworttyp"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Verwalten Sie Ihre Eingabeaufforderungen"
+    },
+    "prefsInfoTitle": {
+        "message": "Wichtige Informationen"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Es könnte passieren, dass sich die Weboberfläche von ChatGPT ändert und dadurch die Funktionsweise des Add-ons beeinträchtigt wird. Überprüfen Sie die Seite \"Service Status\", die unten auf dieser Seite verlinkt ist. Denken Sie auch daran, dass Sie sich beim ersten Mal, wenn Sie ThunderAI verwenden, bei ChatGPT anmelden müssen."
+    },
+    "prefsInfoDesc_2": {
+        "message": "Um die ChatGPT-API zu verwenden, benötigen Sie einen OpenAI ChatGPT-API-Schlüssel und müssen ein Modell auswählen."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Um die Integration mit Ollama zu nutzen, müssen Sie einen lokalen Ollama-Server einrichten. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld in der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen der ThunderAI und dem Ollama-Server sicherzustellen, denken Sie daran, OLLAMA_ORIGINS=moz-extension://* festzulegen."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Um diese Integration zu nutzen, müssen Sie einen lokalen Server einrichten, der mit der OpenAI-API kompatibel ist, wie z.B. LM Studio. Sobald der Server läuft, geben Sie dessen Adresse in das dafür vorgesehene Feld innerhalb der Anwendung ein. Um eine ordnungsgemäße Kommunikation zwischen ThunderAI und dem lokalen Server sicherzustellen, denken Sie daran, die CORS-Einstellungen korrekt zu konfigurieren."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Denken Sie daran, dass Sie das ThunderAI-Menü mit der Tastenkombination STRG+ALT+A öffnen können."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Sie können die Tastenkombination ändern, indem Sie auf das Zahnradsymbol oben rechts auf dieser Seite klicken und \"Erweiterungskürzel verwalten\" auswählen."
+    },
+    "prefsDonation_1": {
+        "message": "Gefällt Ihnen dieses Addon?"
+    },
+    "prefsDonation_2": {
+        "message": "Überlegen Sie, eine Spende zu machen!"
+    },
+    "backToOptionsText": {
+        "message": "Optionen"
+    },
+    "TranslateText": {
+        "message": "Möchtest du helfen, dieses Add-on zu übersetzen?"
+    },
+    "TranslateLink": {
+        "message": "Finde es heraus!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Alle Prompts exportieren"
+    },
+    "customPrompts_Import": {
+        "message": "Neue Prompts importieren"
+    },
+    "importPrompts_confirmText": {
+        "message": "Sie sind dabei, neue Prompts zu importieren."
+    },
+    "customPrompts_start_import": {
+        "message": "Import von benutzerdefinierten Prompts startet..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Import von benutzerdefinierten Prompts abgeschlossen! Sie müssen auf die Schaltfläche 'Alle speichern' klicken, um Ihre Änderungen zu speichern."
+    },
+    "importPrompts_invalidFile": {
+        "message": "Die Datei, die Sie importieren möchten, ist keine gültige Datei für benutzerdefinierte Prompts."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Die Datei, die Sie importieren möchten, enthält keine gültigen Prompts."
+    },
+    "currently_used_prompt": {
+        "message": "Derzeit verwendeter Prompt-Name"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Definieren Sie die Antwortsprache im Prompt."
+    },
+    "prefs_Connection_type": {
+        "message": "Verbindungstyp"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT Weboberfläche"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API-Schlüssel"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT-Modelle"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Liste der ChatGPT-Modelle aktualisieren"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Fehler beim Abrufen der ChatGPT-Modelle"
+    },
+    "Loading": {
+        "message": "Laden..."
+    },
+    "error": {
+        "message": "ThunderAI-Fehler!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Sie haben keinen API-Schlüssel für das ChatGPT-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+    },
+    "chatgpt_empty_model": {
+        "message": "Sie haben kein Modell für das ChatGPT-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "chagpt_api_send_button": {
+        "message": "Modell wird verwendet"
+    },
+    "chagpt_api_connecting": {
+        "message": "Versuch, eine Verbindung zu OpenAI ChatGPT mit dem bereitgestellten API-Schlüssel herzustellen"
+    },
+    "Debug": {
+        "message": "Debuggen"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Aktiviere das Debug-System"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Lokales LLM)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI-kompatible API"
+    },
+    "prefs_API_Host": {
+        "message": "Host-Adresse"
+    },
+    "Ollama_Models": {
+        "message": "Ollama-Modelle"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Liste der Ollama-Modelle aktualisieren"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Fehler beim Abrufen der Ollama-Modelle"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Keine Modelle gefunden"
+    },
+    "ollama_empty_host": {
+        "message": "Sie haben keine Host-Adresse für die Ollama API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein."
+    },
+    "ollama_empty_model": {
+        "message": "Sie haben kein Modell für die Ollama API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "ollama_api_connecting": {
+        "message": "Versuch, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen"
+    },
+    "andModel": {
+        "message": "und Modell"
+    },
+    "error_connection_interrupted": {
+        "message": "Die Verbindung zum Server wurde unerwartet unterbrochen."
+    },
+    "ollama_api_request_failed": {
+        "message": "Anfrage an die Ollama API fehlgeschlagen."
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Anfrage an die OpenAI ChatGPT API fehlgeschlagen"
+    },
+    "WaitingServerReponse": {
+        "message": "Warten auf die Serverantwort."
+    },
+    "prefs_API_Host_Info": {
+        "message": "Etwas wie"
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI-kompatible API-Modelle"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Aktualisiere die Liste der OpenAI-kompatiblen API-Modelle."
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Fehler beim Abrufen der OpenAI-kompatiblen API-Modelle."
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Sie haben keine Host-Adresse für die OpenAI-kompatible API hinzugefügt. Bitte fügen Sie eine auf der Optionsseite ein."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Chat-Name"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Dies ist der Name, der im AI-Chat verwendet wird."
+    },
+    "StorageSpace": {
+        "message": "Gesamtspeicherplatz belegt"
+    },
+    "SearchPrompt": {
+        "message": "Suchanfragen"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Menü: Sofortige Aufforderung senden"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Wenn diese Option aktiviert ist, wird die Tastenkombination STRG+ALT+A den hervorgehobenen Prompt aus dem Menü automatisch senden. Andernfalls wird der Prompt-Name dem Benutzer angezeigt, und es ist ein weiterer Druck auf die Eingabetaste erforderlich, um ihn zu senden."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Menü: Alphabetisch sortieren"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Wenn diese Option aktiviert ist, werden die Prompts im Menü alphabetisch sortiert."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Auf 0 setzen, wenn Sie die Fenstergröße nicht angeben möchten."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI Comp API-Schlüssel"
+    },
+    "Optional": {
+        "message": "Optional"
+    },
+    "OpenChatGPTTab": {
+        "message": "ChatGPT-Tab öffnen"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "Bei Anmeldeproblemen im ThunderAI-Fenster öffnen Sie ChatGPT in einem neuen Tab über die Schaltfläche rechts, melden Sie sich an, schließen Sie dann den Tab und fahren Sie fort, ThunderAI zu verwenden."
+    },
+    "placeholder_mail_text_body": {
+        "message": "E-Mail-Inhalt"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML-E-Mail-Inhalt"
+    },
+    "placeholder_mail_subject": {
+        "message": "E-Mail-Betreff"
+    },
+    "placeholder_selected_text": {
+        "message": "Ausgewählter Text"
+    },
+    "placeholder_additional_text": {
+        "message": "Zusätzlicher Text"
+    },
+    "placeholder_junk_score": {
+        "message": "Spam-Score"
+    },
+    "placeholder_recipients": {
+        "message": "Empfänger"
+    },
+    "placeholder_cc_list": {
+        "message": "CC-Liste"
+    },
+    "placeholder_author": {
+        "message": "Autor"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Platzhalter: standardwert verwenden"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Wenn aktiviert, werden die Platzhalter mit den Standardwerten ausgefüllt, wenn kein Wert angegeben wird. Andernfalls bleiben die Platzhalter erhalten."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Maximale Eingabelänge"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT Web-Modell"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web temporärer Chat"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Wenn aktiviert, wird der temporäre Chat in der ChatGPT-Webschnittstelle verwendet."
+    },
+    "chatgpt_btn_model": {
+        "message": "Aktuelles Modell verwenden"
+    },
+    "SendingPrompt": {
+        "message": "Sende Eingabe..."
+    },
+    "AllowedValues": {
+        "message": "Erlaubte Werte"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Sie können zusätzliche Datenplatzhalter verwenden."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline2": {
+        "message": "Sie können den Prompt nach Wunsch ändern, aber die Antwort der KI muss eine durch Kommas getrennte Liste von Tags sein!"
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "\"v1\"-Kompatibilität beibehalten"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Wenn aktiviert, wird das \"v1\"-Segment im Pfad der API-Aufrufe beibehalten, z.B. \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Klicken Sie auf einen Wert, um ihn festzulegen."
+    },
+    "prompt_reply_full_text": {
+        "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Fügen Sie die Betreffzeile nicht zur Antwort hinzu."
+    },
+    "reply_same_lang": {
+        "message": "Antworten Sie in derselben Sprache."
+    },
+    "sign_msg_as": {
+        "message": "Unterzeichnen Sie die Nachricht als"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Antworten Sie auf die folgende E-Mail \"{%selected_text%}\", unter Berücksichtigung, dass dies der vollständige E-Mail-Thread ist \"{%mail_html_body%}\". Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prompt_classify_full_text": {
+        "message": "Klassifizieren Sie den folgenden Text nach Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit der Kategorie und der Punktzahl ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "Fassen Sie die folgende E-Mail in einer Liste mit Aufzählungspunkten zusammen."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Übersetzen Sie die folgende E-Mail in"
+    },
+    "prompt_this_full_text": {
+        "message": "Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Tags zu E-Mails hinzufügen"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "If checked, an item will be included in the menu to apply tags to emails.\nWenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden."
+    },
+    "prompt_add_tags": {
+        "message": "Tags zu dieser E-Mail hinzufügen"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind. E-Mail-Text: {%mail_text_body%} Berücksichtigen Sie die folgenden Details als Kontext: - Absender: {%author%} - Empfänger: {%recipients%} - CC-Liste: {%cc_list%} - E-Mail-Betreff: {%mail_subject%} Bitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein."
+    },
+    "placeholder_tags_current_email": {
+        "message": "E-Mail-Tags"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Vorhandene Tags"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Maximale Anzahl von Tags"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Die maximale Anzahl von Tags, die von der KI vorgeschlagen werden. Setzen Sie auf 0, wenn Sie die Anzahl der Tags nicht begrenzen möchten."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Die Anzahl der Tags begrenzen auf"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Ausgeschlossene Tags ausblenden"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Wenn aktiviert, werden die Tags, die in der Ausschlussliste enthalten sind, im Bestätigungsdialog ausgeblendet."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Tag-Einstellungen verwalten"
+    },
+    "AddTags_PageTitle": {
+        "message": "Tag-Einstellungen verwalten"
+    },
+    "AddTags_info_default": {
+        "message": "Auf dieser Seite können Sie den Standard-Prompt zum Hinzufügen von Tags zu E-Mails bearbeiten und die Ausschlussliste verwalten."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Aktueller Prompt-Text"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Ausschlussliste"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Dies ist eine Liste von Tags, die nicht zu E-Mails hinzugefügt werden dürfen."
+    },
+    "save": {
+        "message": "Speichern"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Diese Aussage wird am Ende des Prompts hinzugefügt:"
+    },
+    "reset_default": {
+        "message": "Auf Standard zurücksetzen"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Fügen Sie ein Wort pro Zeile oder durch ein Komma getrennt hinzu."
+    },
+    "addtags_dialog_title": {
+        "message": "Tags zur E-Mail hinzufügen"
+    },
+    "addtags_exclude_tag": {
+        "message": "Tag ausschließen"
+    },
+    "addtags_no_tags_received": {
+        "message": "Keine Tags von der KI erhalten."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Nach der Filterung mit der Ausschlussliste wurden keine gültigen Tags gefunden."
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI-Fehler"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI-Warnung"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Erster Buchstabe groß"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Wenn aktiviert, wird die Tags-Beschriftung in Kleinbuchstaben mit nur dem ersten Buchstaben in Großbuchstaben gesetzt."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Optionen zum Hinzufügen von Tags"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Teilen Sie Ihr Feedback und helfen Sie uns, ThunderAI zu verbessern!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Klicken Sie hier, es dauert nur eine Minute!"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Modell manuell einfügen"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Fügen Sie hier den Namen des Modells ein, das Sie verwenden möchten."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Sprache erzwingen"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Wenn aktiviert, wird die Sprache der Tags auf die in den ThunderAI Optionen definierte Sprache festgelegt, falls angegeben."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Die Tags müssen in geschrieben werden"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API-Schlüssel"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini API-Modelle"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Google Gemini-Modelle-Liste aktualisieren"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Fehler beim Abrufen der Google Gemini-Modelle"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Google Gemini API-Anfrage fehlgeschlagen"
+    },
+    "google_gemini_api_connecting": {
+        "message": "Versuch, eine Verbindung zu Google Gemini mit dem bereitgestellten API-Schlüssel herzustellen"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Sie haben keinen API-Schlüssel für die Google Gemini API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+    },
+    "google_gemini_empty_model": {
+        "message": "Sie haben kein Modell für die Google Gemini API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Systemanweisung"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Wenn Sie eine Systemanweisung festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Entwicklernachrichten"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Wenn Sie die Entwicklernachrichten festlegen, geben Sie dem Modell zusätzlichen Kontext, um die Aufgabe zu verstehen, individuellere Antworten zu liefern und spezifische Richtlinien für den zu sendenden Prompt einzuhalten."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Sie können den Platzhalter {%tags_full_list%} im Prompt verwenden, um die verfügbaren Tags aufzulisten. Mit einem geeigneten Prompt könnten Sie dann erzwingen, dass die Tags nur aus der Liste der bereits vorhandenen ausgewählt werden."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Eingegebener Text vor dem zitierten E-Mail-Text"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Ein neues Kalenderevent hinzufügen"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können. Falls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden. Falls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde. Falls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n  \"startDate\": \"YYYYMMDDTHHMMSS\",\n  \"endDate\": \"YYYYMMDDTHHMMSS\",\n  \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n  \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Wenn aktiviert, wird ein Element im Menü hinzugefügt, um Kalenderevent-Informationen aus ausgewähltem Text zu erhalten."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Kalendereinstellungen verwalten"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Kalendereinstellungen verwalten"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Auf dieser Seite können Sie den Standard-Prompt ändern, der verwendet wird, um ein Kalenderevent aus ausgewähltem Text zu erhalten."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Aktueller Prompt-Text"
+    },
+    "prefs_OptionText_GetCalendarEvent_infoline2": {
+        "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Um die Kalenderevent-Funktion zu nutzen, installieren Sie bitte das ThunderAI Sparks-Addon."
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Laden Sie jetzt ThunderAI Sparks herunter!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Datum und Uhrzeit der E-Mail"
+    },
+    "placeholder_current_datetime": {
+        "message": "Das aktuelle Datum und die aktuelle Uhrzeit"
+    },
+    "calendar_getting_data_error": {
+        "message": "Fehler beim Abrufen der Kalenderevent-Daten"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Fehler beim Öffnen des Kalenderevent-Dialogs"
+    }
 }
