@@ -250,7 +250,7 @@
         "message": "Za korištenje ove integracije morate postaviti lokalni poslužitelj kompatibilan s OpenAI API-jem, poput LM Studio. Nakon što je poslužitelj pokrenut, unesite njegovu adresu u predviđeno polje unutar aplikacije. Kako biste osigurali ispravnu komunikaciju između ThunderAI i lokalnog poslužitelja, ne zaboravite pravilno postaviti CORS postavke."
     },
     "prefsInfoDesc_5": {
-        "message": "Ne zaboravite da možete otvoriti izbornik ThunderAI pomoću tipkovničke prečice CTRL+ALT+A"
+        "message": "Ne zaboravite da možete otvoriti izbornik ThunderAI pomoću tipkovničke prečice CTRL+ALT+A."
     },
     "prefsInfoDesc_6": {
         "message": "Prečac možete promijeniti pritiskom ikone zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\"."
@@ -487,7 +487,7 @@
         "message": "Maksimalna duljina upita"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati ​​za ChatGPT web sučelje."
+        "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati za ChatGPT web sučelje."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT web model"
@@ -571,7 +571,7 @@
         "message": "Dodaj oznake ovoj e-poruci"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analiziraj sljedeći tekst e-poruke i generiraj popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj e-poruke. Tekst e-poruke: {%mail_text_body%} Uzmi u obzir sljedeće pojedinosti za kontekst: - Šalje: {%author%} - Primatelji: {%recipients%} - CC popis: {%cc_list%} - Naslov: {%mail_subject%} Temelji svoje oznake na tekstu i kontekstu e-poruke, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta."
+        "message": "Analiziraj sljedeći tekst e-poruke i generiraj popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj e-poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji svoje oznake na tekstu i kontekstu e-poruke, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta."
     },
     "placeholder_tags_current_email": {
         "message": "Oznake e-pošte"
@@ -598,7 +598,7 @@
         "message": "Upravljaj postavkama oznaka"
     },
     "AddTags_PageTitle": {
-        "message": "Upravljaj postavkama oznaka\n\n"
+        "message": "Upravljaj postavkama oznaka"
     },
     "AddTags_info_default": {
         "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za dodavanje oznaka u e-poruke i upravljanje popisom izuzetaka."
@@ -634,7 +634,7 @@
         "message": "Nisu primljene oznake od AI."
     },
     "addtags_no_valid_tags": {
-        "message": "Nisu pronađene važeće oznake nakon filtriranja s popisom izuzetaka"
+        "message": "Nisu pronađene važeće oznake nakon filtriranja s popisom izuzetaka."
     },
     "thunderai_error_title": {
         "message": "ThunderAI greška"
@@ -661,7 +661,7 @@
         "message": "Ručno umetni model"
     },
     "OpenAIComp_force_model_ask": {
-        "message": "Ovdje umetni naziv modela koji želiš koristiti"
+        "message": "Ovdje umetni naziv modela koji želiš koristiti."
     },
     "prefs_OptionText_add_tags_force_lang": {
         "message": "Nametni jezik"
@@ -721,7 +721,7 @@
         "message": "Dodaj novi kalendarski događaj"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati: - Naslov događaja - Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno) - Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno) - Cijeli dan (ako je navedeno) Osiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja. Ako postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu. Ako trajanje nije navedeno, postavi ga na jedan sat. Ako ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti: { \"startDate\": \"YYYYMMDDTHHMMSS\", \"endDate\": \"YYYYMMDDTHHMMSS\", \"summary\": \"Sažetak kalendarskih događaja ovdje\", \"forceAllDay\": false } Ovo je tekst:\"{%selected_text%}\""
+        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n}\nOvo je tekst:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Dodaj novi kalendarski događaj iz odabranog teksta"
@@ -781,7 +781,7 @@
         "message": "Dodajte oznake samo e-porukama u Primljenoj pošti"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
-        "message": "Ako je označeno, AI će dodati oznake samo e-porukama u mapu Primljena pošta"
+        "message": "Ako je označeno, AI će dodati oznake samo e-porukama u mapu Primljena pošta."
     },
     "placeholder_thunderai_def_sign": {
         "message": "Zadani potpis kako je određeno u mogućnostima ThunderAI."
@@ -814,7 +814,7 @@
         "message": "Prepoznaj neželjenu poštu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja. Navedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi. Generiraj odgovor samo u JSON formatu. Nemoj uključivati ​​nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti: { \"spamValue\": <cijeli broj od 0 do 100>, \"explanation\": \"Kratko objašnjenje vašeg obrazloženja\", } Ovdje su informacije o e-poruci: Šalje: \"{%author%}\" Naslov: \"{%mail_subject%}\" Html tijelo: \"{%mail_html_body%}\""
+        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Mogućnosti filtera neželjene pošte"
@@ -863,5 +863,8 @@
     },
     "spamfilter_not_moved": {
         "message": "Ne"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Ovdje možete unijeti i adresu udaljenog poslužitelja."
     }
 }
