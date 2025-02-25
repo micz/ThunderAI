@@ -7,7 +7,7 @@
         "message": "IA"
     },
     "prompt_lang": {
-        "message": "Rispondi in "
+        "message": "Rispondi in"
     },
     "prompt_reply": {
         "message": "Rispondi a questa email"
@@ -76,7 +76,7 @@
         "message": "ID"
     },
     "customPrompts_form_label_ID_rules": {
-        "message": "Deve essere univoco, minuscolo e senza spazi."
+        "message": "Deve essere univoco, minuscolo e senza spazi"
     },
     "customPrompts_form_label_Name": {
         "message": "Nome"
@@ -295,7 +295,7 @@
         "message": "Nome del prompt attualmente utilizzato"
     },
     "customprompts_form_label_define_response_lang": {
-        "message": "Definisci la lingua di risposta nel prompt."
+        "message": "Definisci la lingua di risposta nel prompt"
     },
     "prefs_Connection_type": {
         "message": "Tipo di connessione"
@@ -571,7 +571,7 @@
         "message": "Aggiungi tag a questa email"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analizza il seguente testo email e genera una lista di tag separati da virgole che ne riassumano il contenuto. Usa temi, argomenti principali e descrittori pertinenti come tag. Assicurati che i tag siano concisi e rilevanti per il contenuto dell'email. Testo email: {%mail_text_body%} Considera i seguenti dettagli come contesto: - Mittente: {%author%} - Destinatari: {%recipients%} - Lista CC: {%cc_list%} - Oggetto dell'email: {%mail_subject%} Basa i tuoi tag sul testo e sul contesto dell'email, ignorando informazioni superflue o dettagli banali. L'output dovrebbe essere solo un elenco di tag separati da virgole, senza alcun commento o testo aggiuntivo."
+        "message": "Analizza il seguente testo email e genera una lista di tag separati da virgole che ne riassumano il contenuto. Usa temi, argomenti principali e descrittori pertinenti come tag. Assicurati che i tag siano concisi e rilevanti per il contenuto dell'email.\nTesto email: {%mail_text_body%}\nConsidera i seguenti dettagli come contesto:\n- Mittente: {%author%}\n- Destinatari: {%recipients%}\n- Lista CC: {%cc_list%}\n- Oggetto dell'email: {%mail_subject%}\nBasa i tuoi tag sul testo e sul contesto dell'email, ignorando informazioni superflue o dettagli banali. L'output dovrebbe essere solo un elenco di tag separati da virgole, senza alcun commento o testo aggiuntivo."
     },
     "placeholder_tags_current_email": {
         "message": "Tag delle email"
@@ -721,7 +721,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo.\nLe informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON.\nEcco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n}\nEcco il testo: \"{%selected_text%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n}\nEcco il testo: \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -764,5 +764,107 @@
     },
     "sparks_not_installed": {
         "message": "ThunderAI Sparks non installato!"
+    },
+    "Subject": {
+        "message": "Oggetto"
+    },
+    "Report_Date": {
+        "message": "Data del Report"
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Opzioni del filtro antispam"
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Filtro Antispam Automatico"
+    },
+    "Spam_Value": {
+        "message": "Valore di spam"
+    },
+    "Explanation": {
+        "message": "Spiegazione"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Aggiungi tag automaticamente"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Forza i tag esistenti durante l'autotagging"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Aggiungi tag solo alle email nella posta in arrivo"
+    },
+    "prompt_spamfilter": {
+        "message": "Rileva le email di spam"
+    },
+    "Moved_to_Spam": {
+        "message": "Spostato nello spam"
+    },
+    "spamfilter_not_moved": {
+        "message": "No"
+    },
+    "From": {
+        "message": "Da"
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Gestisci le impostazioni del filtro antispam"
+    },
+    "spamfilter_moved": {
+        "message": "Sì"
+    },
+    "SpamReport_Title": {
+        "message": "Report del filtro antispam"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Qui puoi inserire anche l'indirizzo di un server remoto."
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Se selezionato, l'IA aggiungerà automaticamente i tag alle email appena ricevute."
+    },
+    "Date": {
+        "message": "Data"
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Testo del prompt attuale"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Se il valore restituito dall'IA è superiore a questa soglia, l'email verrà spostata nella cartella dello spam."
+    },
+    "SpamFilter_info_default": {
+        "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per rilevare le email di spam."
+    },
+    "thunderai_def_lang": {
+        "message": "Lingua predefinita come impostata nelle opzioni di ThunderAI."
+    },
+    "spamfilter_no_reports": {
+        "message": "Nessun messaggio è stato ancora controllato per lo spam. Qui troverai un elenco degli ultimi 100 report di spam solo per la sessione corrente."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Firma predefinita come impostata nelle opzioni di ThunderAI."
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Se selezionato, l'IA aggiungerà i tag solo alle email ricevute nella cartella della posta in arrivo."
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Gestisci le impostazioni del filtro antispam"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Se selezionato, ThunderAI sposterà automaticamente le email di spam nella cartella dello spam."
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "Puoi modificare il prompt come desideri, ma la risposta ricevuta dall'IA deve essere in formato JSON come specificato nel prompt predefinito!"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Valore soglia per lo spam"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"spamValue\": <intero da 0 a 100>,\n\"explanation\": \"Breve spiegazione del tuo ragionamento\",\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Se selezionato, l'IA aggiungerà solo i tag esistenti alle email appena ricevute e non creerà nuovi tag."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "La soglia di spam è troppo bassa! Probabilmente considererai troppe email come spam!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "La soglia di spam è zero! Considererai tutte le email come spam!"
     }
 }
