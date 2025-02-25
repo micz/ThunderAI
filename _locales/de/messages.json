@@ -7,7 +7,7 @@
         "message": "KI"
     },
     "prompt_lang": {
-        "message": "Antwort in "
+        "message": "Antwort in"
     },
     "prompt_reply": {
         "message": "Antworten Sie auf diese E-Mail"
@@ -863,5 +863,8 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"spamValue\": <Ganzzahl von 0 bis 100>,\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
     }
 }
