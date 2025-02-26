@@ -1,13 +1,13 @@
 {
     "extensionDescription": {
-        "message": "Utilise ChatGPT ou Ollama pour améliorer tes e-mails !",
+        "message": "Utilise ChatGPT, Goolge Gemini ou Ollama pour améliorer tes e-mails !",
         "description": "Description of the extension."
     },
     "menu_title": {
         "message": "IA"
     },
     "prompt_lang": {
-        "message": "Répondre en "
+        "message": "Répondre en"
     },
     "prompt_reply": {
         "message": "Répondez à cet e-mail"
@@ -295,7 +295,7 @@
         "message": "Nom du prompt actuellement utilisé"
     },
     "customprompts_form_label_define_response_lang": {
-        "message": "Définir la langue de réponse dans le prompt."
+        "message": "Définir la langue de réponse dans le prompt"
     },
     "prefs_Connection_type": {
         "message": "Type de connexion"
@@ -571,7 +571,7 @@
         "message": "Ajoutez des tags à ce courriel"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel. Texte du courriel : {%mail_text_body%} Considérez les détails suivants pour le contexte : - Expéditeur : {%author%} - Destinataires : {%recipients%} - Liste CC : {%cc_list%} - Sujet du courriel : {%mail_subject%} Veuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales. La sortie doit être uniquement une liste de tags séparés par des virgules, sans aucun commentaire ou texte supplémentaire."
+        "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel.\nTexte du courriel : {%mail_text_body%}\nConsidérez les détails suivants pour le contexte :\n- Expéditeur : {%author%}\n- Destinataires : {%recipients%}\n- Liste CC : {%cc_list%}\n- Sujet du courriel : {%mail_subject%}\nVeuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales. La sortie doit être uniquement une liste de tags séparés par des virgules, sans aucun commentaire ou texte supplémentaire."
     },
     "placeholder_tags_current_email": {
         "message": "Tags de courriels"
@@ -721,7 +721,7 @@
         "message": "Ajouter un nouvel événement au calendrier"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée) Assurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\".\nCalculez la date et l'heure de début sur cette base.\nSi la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON.\nN'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\": false\n}\nVoici le texte : \"{%selected_text%}\""
+        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée)\nAssurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\". Calculez la date et l'heure de début sur cette base. Si la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\" : \"YYYYMMDDTHHMMSS\",\n\"endDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\" : false\n}\nVoici le texte : \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ajouter un nouvel événement au calendrier à partir du texte sélectionné"
@@ -761,5 +761,110 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Erreur lors de l'ouverture de la boîte de dialogue de l'événement du calendrier"
+    },
+    "Subject": {
+        "message": "Objet"
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Options du filtre anti-spam"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Si la valeur retournée par l'IA est supérieure à ce seuil, l'e-mail sera déplacé dans le dossier spam."
+    },
+    "Explanation": {
+        "message": "Explication"
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Filtre anti-spam automatique"
+    },
+    "Spam_Value": {
+        "message": "Valeur de spam"
+    },
+    "prompt_spamfilter": {
+        "message": "Détecter les e-mails indésirables"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Ajouter des tags automatiquement"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Ajouter des tags uniquement aux e-mails de la boîte de réception"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Seuil de spam"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Si coché, l'IA ajoutera des tags uniquement aux e-mails reçus dans le dossier de la boîte de réception."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Signature par défaut telle que définie dans les options de ThunderAI."
+    },
+    "Moved_to_Spam": {
+        "message": "Déplacé dans le spam"
+    },
+    "spamfilter_not_moved": {
+        "message": "Non"
+    },
+    "spamfilter_no_reports": {
+        "message": "Aucun message n'a encore été analysé pour le spam. Vous trouverez ici la liste des 100 derniers rapports de spam pour la session en cours uniquement."
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Gérer les paramètres du filtre anti-spam"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks non installé !"
+    },
+    "SpamFilter_info_default": {
+        "message": "Sur cette page, vous pouvez modifier l'invite par défaut utilisée pour détecter les e-mails indésirables."
+    },
+    "From": {
+        "message": "De"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Le seuil de spam est à zéro ! Vous marquerez tous les e-mails comme spam !"
+    },
+    "SpamReport_Title": {
+        "message": "Rapports du filtre anti-spam"
+    },
+    "spamfilter_moved": {
+        "message": "Oui"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Si coché, l'IA ajoutera automatiquement des tags aux e-mails nouvellement reçus."
+    },
+    "Date": {
+        "message": "Date"
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Texte du prompt actuelle"
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse de l'IA doit être au format JSON, comme spécifié dans le prompt par défaut !"
+    },
+    "thunderai_def_lang": {
+        "message": "Langue par défaut telle que définie dans les options de ThunderAI."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Gérer les paramètres du filtre anti-spam"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Ici, vous pouvez également insérer l'adresse d'un serveur distant."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Forcer les tags existants lors de l'ajout automatique"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Si coché, l'IA ajoutera uniquement les tags existants aux e-mails nouvellement reçus et ne créera pas de nouveaux tags."
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Si coché, ThunderAI déplacera automatiquement les e-mails indésirables dans le dossier spam."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Le seuil de spam est trop bas ! Vous marquerez probablement trop d'e-mails comme spam !"
+    },
+    "Report_Date": {
+        "message": "Date du rapport"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"spamValue\" : <entier de 0 à 100>,\n\"explanation\" : \"Brève explication de votre raisonnement\",\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
     }
 }
