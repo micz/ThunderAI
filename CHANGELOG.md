@@ -5,7 +5,7 @@
 
 
 
-<h2>Version 3.2.0 - ??/??/2025</h2>
+<h2>Version 3.2.0 - 27/02/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Added an option to automatically tag incoming emails [<a href="https://github.com/micz/ThunderAI/issues/237">#237</a>].</li>
         <li><i>[All APIs]</i> Added an configurable antispam filter for incoming emails [<a href="https://github.com/micz/ThunderAI/issues/231">#231</a>].</li>
@@ -14,9 +14,8 @@
         <li>Added the <i>{%thunderai_def_lang%}</i> placeholder to get the default language as defined in the options [<a href="https://github.com/micz/ThunderAI/issues/248">#248</a>].</li>
         <li>Croatian (hr) translation added, thanks to Petar Jedvaj.</li>
         <li>German (de) translation errors fixed.</li>
-        <li>Various minor improvements.</li>
         <li>Translations improved thanks to Hosted Weblate. <a href="https://micz.it/thunderbird-addon-thunderai/translate/">Help translating ThunderAI!</a>.</li>
-        <li>...</li>
+        <li>Various minor improvements.</li>
       </ul>
 <h2>Version 3.1.2 - 29/01/2025</h2>
       <ul>
