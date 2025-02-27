@@ -83,6 +83,29 @@ export async function getMailSubject(tab){
   }
 }
 
+export async function getMailBody(fullMessage){
+  let text = '';
+  let html = '';
+
+  if (fullMessage.contentType.trim().toLowerCase() === "text/plain") {
+    text = fullMessage.body;
+  }
+  if (fullMessage.contentType.trim().toLowerCase() === "text/html") {
+    html = fullMessage.body;
+  }
+
+  for (let part of fullMessage.parts) {
+    if (part.contentType.trim().toLowerCase() === "text/plain") {
+      text = part.body;
+    }
+    if (part.contentType.trim().toLowerCase() === "text/html") {
+      html = part.body;
+    }
+  }
+  
+  return {text, html};
+}
+
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   let originalHtmlBody = composeDetails.body + " ";
@@ -282,6 +305,23 @@ export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event =
   return output;
 }
 
+export function extractJsonObject(inputString) {
+  try {
+    const jsonMatch = inputString.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const jsonObject = JSON.parse(jsonMatch[0]);
+      // console.log(">>>>>>>>>> Extracted JSON object:", jsonObject);
+      return jsonObject;
+    } else {
+      console.error("[ThunderAI] No JSON object found in the input string.");
+      return null;
+    }
+  } catch (error) {
+    console.error("[ThunderAI] Error extracting JSON object:", error);
+    return null;
+  }
+}
+
 export async function checkSparksPresence() {
   try {
     return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
@@ -405,4 +445,18 @@ export async function migrateDefaultPromptsPropStorage(){
   await browser.storage.local.set({_default_prompts_properties: default_prompts_properties_sync._default_prompts_properties});
   await browser.storage.sync.remove("_default_prompts_properties");
   // console.log("migrateDefaultPromptsPropStorage: migrated default prompts properties from storage.sync to storage.local");
+}
+
+export async function* getMessages(list) {
+  let page = await list;
+  for (let message of page.messages) {
+    yield message;
+  }
+
+  while (page.id) {
+    page = await messenger.messages.continueList(page.id);
+    for (let message of page.messages) {
+      yield message;
+    }
+  }
 }

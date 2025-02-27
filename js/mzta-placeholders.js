@@ -131,6 +131,20 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
     },
+    {
+        id: 'thunderai_def_sign',
+        name: "__MSG_placeholder_thunderai_def_sign__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'thunderai_def_lang',
+        name: "__MSG_placeholder_thunderai_def_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
 ];
 
 
@@ -245,5 +259,67 @@ export const placeholdersUtils = {
         // Check if the specific or any placeholder is present in the text
         return regex.test(text);
       },
+
+    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, selection_text, tags_full_list) {
+        let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
+        // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
+        let finalSubs = {};
+        for(let currPH of currPHs){
+            switch(currPH.id){
+                case 'mail_text_body':
+                    finalSubs['mail_text_body'] = body_text;
+                    break;
+                case 'mail_html_body':
+                    finalSubs['mail_html_body'] = msg_text.html;
+                    break;
+                case 'mail_typed_text':
+                    finalSubs['mail_typed_text'] = only_typed_text;
+                    break;
+                case 'mail_subject':
+                    finalSubs['mail_subject'] = mail_subject;
+                    break;
+                case 'selected_text':
+                    finalSubs['selected_text'] = selection_text;
+                    break;
+                case 'author':
+                    finalSubs['author'] = curr_message.author;
+                    break;
+                case 'recipients':
+                    finalSubs['recipients'] = curr_message.recipients.join(", ");
+                    break;
+                case 'cc_list':
+                    finalSubs['cc_list'] = curr_message.ccList.join(", ");
+                    break;
+                case 'junk_score':
+                    finalSubs['junk_score'] = curr_message.junkScore;
+                    break;
+                case 'mail_datetime':
+                    finalSubs['mail_datetime'] = curr_message.date;
+                    break;
+                case 'current_datetime':
+                    finalSubs['current_datetime'] = new Date().toString();
+                    break;
+                case 'tags_current_email':
+                    let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
+                    finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
+                    break;
+                case 'tags_full_list':
+                    finalSubs['tags_full_list'] = tags_full_list[0];
+                    break;
+                case 'thunderai_def_sign':
+                    let prefs_def_sign = await browser.storage.sync.get({default_sign_name: ''});
+                    finalSubs['thunderai_def_sign'] = prefs_def_sign.default_sign_name;
+                    break;
+                case 'thunderai_def_lang':
+                    let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
+                    finalSubs['thunderai_def_lang'] = prefs_def_lang.default_chatgpt_lang;
+                    break;
+                default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
+                    break;
+            }
+        }
+
+        return finalSubs;
+    }
 
 }

@@ -1,9 +1,9 @@
-#addtags_prompt_container{
+#spamfilter_prompt_container{
     width: 90%;
     margin: 20px auto;
 }
 
-#addtags_prompt_text{
+#spamfilter_prompt_text{
     width: 100%;
 }
 
@@ -12,23 +12,10 @@
     font-style: italic;
 }
 
-#addtags_excl_list_container{
-    width: 90%;
-    margin: 40px auto;
-}
-
-#addtags_excl_list{
-    width: 30em;
-}
-
 .btn_div{
     width: 100%;
     display: flex;
     justify-content: space-between;
-}
-
-#addtags_info_additional_statements, #add_tags_auto_force_existing_tr, #add_tags_auto_only_inbox_tr{
-    display: none;
 }
 
 table#miczPrefs {
@@ -39,7 +26,7 @@ table#miczPrefs {
     border: 1px solid #ccc;
 }
 
-.addtags_table_title{
+.spamfilter_table_title{
     width: 90%;
     margin: auto;
 }
@@ -104,6 +91,27 @@ table#miczPrefs  tr:last-child td {
     color: red;
 }
 
+#spamfilter_threshold_too_low{
+    display: none;
+    color:red;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-left: 10px;
+}
+
+table#report_data {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+table#report_data th, table#report_data td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+table#report_data th {
+    background-color: #f4f4f4;
+}
 
 @media (prefers-color-scheme: dark) {
     body {
@@ -128,5 +136,19 @@ table#miczPrefs  tr:last-child td {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    table#report_data th, 
+    table#report_data td {
+        border-color: #444;
+        color: #ddd;
+    }
+
+    table#report_data th {
+        background-color: #333;
+    }
+
+    table#report_data td {
+        background-color: #222;
     }
 }

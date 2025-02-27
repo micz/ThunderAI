@@ -1,0 +1,870 @@
+{
+    "extensionDescription": {
+        "message": "Koristite ChatGPT, Google Gemini ili Ollama kako bi poboljšali vaše e-poruke!",
+        "description": "Description of the extension."
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "Odgovori u"
+    },
+    "prompt_reply": {
+        "message": "Odgovori na ovu e-poruku"
+    },
+    "prompt_reply_advanced": {
+        "message": "Odgovori na ovu nit"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Prepravi pristojno"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Prepravi formalno"
+    },
+    "prompt_classify": {
+        "message": "Klasificiraj"
+    },
+    "prompt_summarize_this": {
+        "message": "Sažmi ovo"
+    },
+    "prompt_translate_this": {
+        "message": "Prevedi ovo"
+    },
+    "prompt_this": {
+        "message": "Upitaj ovo"
+    },
+    "prompt_selection_needed": {
+        "message": "Za nastavak morate odabrati neki tekst!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Upravljaj upitima"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Više informacija"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Zadane upite nije moguće uređivati. Možete ih onemogućiti, a zatim kopirati tekst upita i zalijepiti ga u novi kako biste stvorili modificiranu verziju."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Možete uvoziti i izvoziti upite. Postojeći upiti s istim ID-om bit će prebrisani. Dodat će se upiti s novim ID-ovima."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Ako je sve ispravno, nakon uvoza pritisnite gumb 'Spremi sve'."
+    },
+    "customPrompts_start_saving": {
+        "message": "Spremanje upita..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Ponovno indeksiranje popisa..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtriranje upita..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Spremanje zadanih upita..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Spremanje prilagođenih upita..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Ponovno učitavanje izbornika..."
+    },
+    "customPrompts_saved": {
+        "message": "Upiti su spremljeni!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Mora biti jedinstveno, malim slovima i bez razmaka"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Ime"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Tekst upita"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Radnja"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Potreban je odabir teksta"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Uvijek dodaj potpis"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Zatraži dodatni tekst"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Omogućeno"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Obavezna polja"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Uredi"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Otkaži"
+    },
+    "customPrompts_btnOK": {
+        "message": "U redu"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Obriši"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Jeste li sigurni da želite izbrisati ovu stavku?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Ima nespremljenih promjena!"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Spremi sve"
+    },
+    "customPrompts_save_button": {
+        "message": "Spremi"
+    },
+    "customPrompts_btnNew": {
+        "message": "Dodaj novo"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Dodaj upit"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Dodaj u izbornik"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Uvijek"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Čitanje e-poruke"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Sastavljanje e-poruke"
+    },
+    "customPrompts_close_button": {
+        "message": "gumb Zatvori"
+    },
+    "customPrompts_do_reply": {
+        "message": "Odgovori"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Zamijeni tekst"
+    },
+    "chatgpt_win_working": {
+        "message": "Radovi u tijeku..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Završeno!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Odaberite tekst koji želite koristiti i pritisnite gumb."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Koristite odabrani odgovor"
+    },
+    "chatgpt_win_close": {
+        "message": "Zatvori"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Čini se da se stranica ChatGPT predugo učitava. Ako završi s učitavanjem, pritisnite gumb s desne strane. Ako se problem nastavi, provjerite status usluge."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Pokušaj ponovo"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Pritisnite gumb Pošalji kako biste poslali upit."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Niste prijavljeni na ChatGPT. Prijavite se sa svojim vjerodajnicama, zatvorite prozor ChatGPT, a zatim ponovite radnju koju ste pokušali. Nakon toga ćete ostati prijavljeni."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Postavili ste opciju korištenja određenog modela, ali čini se da se ne učitava ispravno. Provjerite vrijednost i pokušajte ponovno. Za sada možete pritisnuti plavi gumb za nastavak."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Ovdje umetnite dodatni tekst za upit."
+    },
+    "chatgpt_win_send": {
+        "message": "Pošalji"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "Koristi GPT3.5"
+    },
+    "chatgpt_force_completion": {
+        "message": "prisilno dovrši"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Pritisnite ovdje za prikaz gumba 'Koristi zadnji odgovor' ako je ChatGPT završio svoj posao, ali se gumb nije pojavio."
+    },
+    "msg_prompt_too_long": {
+        "message": "Tekst koji ste unijeli je predug. Morate ga skratiti."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Bilješke o izdanju"
+    },
+    "prefs_status_page": {
+        "message": "status usluge"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Dimenzije prozora ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Visina"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Širina"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Zadani naziv potpisa"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Zadani jezik za odgovore"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Odgovori svima"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Odgovori pošiljatelju"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Vrsta odgovora"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Upravljaj svojim upitima"
+    },
+    "prefsInfoTitle": {
+        "message": "Važne informacije"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Može se dogoditi da se ChatGPT web sučelje promijeni na način koji pokvari rad dodatka. Provjerite stranicu \"Status usluge\" povezanu na dnu ove stranice. Također, zapamtite da kada prvi put koristite ThunderAI, morate se prijaviti na ChatGPT."
+    },
+    "prefsInfoDesc_2": {
+        "message": "Za korištenje ChatGPT API-ja potreban vam je OpenAI ChatGPT API ključ i morate odabrati model."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Za korištenje integracije s Ollama, morate postaviti lokalni Ollama poslužitelj. Nakon što je poslužitelj pokrenut, unesite njegovu adresu u predviđeno polje unutar aplikacije. Kako biste osigurali ispravnu komunikaciju između ThunderAI i Ollama poslužitelja, ne zaboravite postaviti OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Za korištenje ove integracije morate postaviti lokalni poslužitelj kompatibilan s OpenAI API-jem, poput LM Studio. Nakon što je poslužitelj pokrenut, unesite njegovu adresu u predviđeno polje unutar aplikacije. Kako biste osigurali ispravnu komunikaciju između ThunderAI i lokalnog poslužitelja, ne zaboravite pravilno postaviti CORS postavke."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Ne zaboravite da možete otvoriti izbornik ThunderAI pomoću tipkovničke prečice CTRL+ALT+A."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Prečac možete promijeniti pritiskom ikone zupčanika u gornjem desnom kutu ove stranice i odabirom \"Upravljaj tipkovničkim prečacima dodatka\"."
+    },
+    "prefsDonation_1": {
+        "message": "Sviđa li vam se ovaj dodatak?"
+    },
+    "prefsDonation_2": {
+        "message": "Razmislite o davanju donacije!"
+    },
+    "backToOptionsText": {
+        "message": "Mogućnosti"
+    },
+    "TranslateText": {
+        "message": "Želite li pomoći u prijevodu ovog dodatka?"
+    },
+    "TranslateLink": {
+        "message": "Saznajte kako!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Izvezi sve upite"
+    },
+    "customPrompts_Import": {
+        "message": "Uvezi nove upite"
+    },
+    "importPrompts_confirmText": {
+        "message": "Upravo ćete uvesti nove upite."
+    },
+    "customPrompts_start_import": {
+        "message": "Pokretanje uvoza prilagođenih upita..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Uvoz prilagođenih upita dovršen! Morate pritisnuti gumb 'Spremi sve' da biste spremili svoje promjene."
+    },
+    "importPrompts_invalidFile": {
+        "message": "Datoteka koju pokušavate uvesti nije važeća datoteka prilagođenih upita."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Datoteka koju pokušavate uvesti ne sadrži valjane upite."
+    },
+    "currently_used_prompt": {
+        "message": "Trenutno korišteno ime upita"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Odredite jezik odgovora u upitu"
+    },
+    "prefs_Connection_type": {
+        "message": "Vrsta veze"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT web sučelje"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API ključ"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT modeli"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Ažuriraj popis ChatGPT modela"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Pogreška pri pokušaju dohvaćanja ChatGPT modela"
+    },
+    "Loading": {
+        "message": "Učitavanje..."
+    },
+    "error": {
+        "message": "ThunderAI greška!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Niste dodali API ključ za ChatGPT API. Unesite jedan na stranicu s opcijama."
+    },
+    "chatgpt_empty_model": {
+        "message": "Niste odabrali model za ChatGPT API. Odaberite jedan na stranici s opcijama."
+    },
+    "chagpt_api_send_button": {
+        "message": "Korištenje modela"
+    },
+    "chagpt_api_connecting": {
+        "message": "Pokušaj povezivanja na OpenAI ChatGPT pomoću dostavljenog API ključa"
+    },
+    "Debug": {
+        "message": "Otklanjanje pogrešaka"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Aktiviraj sustav za otklanjanje pogrešaka"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (lokalni LLM)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI kompatibilan API"
+    },
+    "prefs_API_Host": {
+        "message": "Adresa glavnog računala"
+    },
+    "Ollama_Models": {
+        "message": "Ollama modeli"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Ažurirajte popis Ollama modela"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Pogreška pri pokušaju dohvaćanja Ollama modela"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Nema pronađenih modela"
+    },
+    "ollama_empty_host": {
+        "message": "Niste dodali adresu glavnog računala za Ollama API. Unesite jednu na stranici s mogućnostima."
+    },
+    "ollama_empty_model": {
+        "message": "Niste odabrali model za Ollama API. Odaberite jedan na stranici s mogućnostima."
+    },
+    "ollama_api_connecting": {
+        "message": "Pokušaj povezivanja na Ollama lokalni poslužitelj pomoću glavnog računala"
+    },
+    "andModel": {
+        "message": "i model"
+    },
+    "error_connection_interrupted": {
+        "message": "Veza s poslužiteljem je neočekivano prekinuta"
+    },
+    "ollama_api_request_failed": {
+        "message": "Ollama API zahtjev nije uspio"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "OpenAI ChatGPT API zahtjev nije uspio"
+    },
+    "WaitingServerReponse": {
+        "message": "Čeka se odgovor poslužitelja"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Nešto poput"
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI kompatibilni API modeli"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Ažuriraj popis OpenAI kompatibilnih API modela"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Pogreška pri pokušaju dohvaćanja OpenAI kompatibilnih API modela"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Niste dodali adresu glavnog računala za OpenAI kompatibilan API. Unesite jedan na stranicu s mogućnostima."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Niste odabrali model za OpenAI kompatibilan API. Odaberite jedan na stranici s opcijama."
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "Pokušaj povezivanja s OpenAI kompatibilnim API lokalnim poslužiteljem pomoću glavnog računala"
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "OpenAI Comp API zahtjev nije uspio"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Naziv čavrljanja"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Ovo je ime koje će se koristiti u čavrljanju s AI."
+    },
+    "StorageSpace": {
+        "message": "Ukupan zauzeto prostora za pohranu"
+    },
+    "SearchPrompt": {
+        "message": "Pretraži upite"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Izbornik: neposredno slanje upita"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Ako je označeno, korištenje tipkovničkog prečaca CTRL+ALT+A automatski će poslati istaknuti upit iz izbornika. U protivnom će korisniku biti prikazan naziv upita, koji će zahtijevati još jedan pritisak tipke Enter za slanje."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Izbornik: redoslijed po abecedi"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Ako je označeno, upiti u izborniku bit će poredani abecednim redom."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Postavite na 0 ako ne želite odrediti veličinu prozora."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI Comp API ključ"
+    },
+    "Optional": {
+        "message": "Neobavezno"
+    },
+    "OpenChatGPTTab": {
+        "message": "Otvorite karticu ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "U slučaju problema s prijavom u prozor ThunderAI, otvorite ChatGPT u novoj kartici pomoću gumba s desne strane, prijavite se, zatim zatvorite karticu i nastavite koristiti ThunderAI."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Tijelo e-poruke"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML tijelo e-poruke"
+    },
+    "placeholder_mail_subject": {
+        "message": "Naslov e-poruke"
+    },
+    "placeholder_selected_text": {
+        "message": "Odabrani tekst"
+    },
+    "placeholder_additional_text": {
+        "message": "Dodatni tekst"
+    },
+    "placeholder_junk_score": {
+        "message": "Rezultat smeća"
+    },
+    "placeholder_recipients": {
+        "message": "Primatelji"
+    },
+    "placeholder_cc_list": {
+        "message": "CC popis"
+    },
+    "placeholder_author": {
+        "message": "Autor"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Rezervirana mjesta: koristite zadanu vrijednost"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Ako je označeno, rezervirana mjesta bit će ispunjena zadanim vrijednostima kada nije navedena vrijednost. U suprotnom će rezervirana mjesta ostati umjesto."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Maksimalna duljina upita"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati za ChatGPT web sučelje."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT web model"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Ovo je model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web privremeno čavrljanje"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Ako je označeno, privremeno čavrljanje koristit će se u web sučelju ChatGPT."
+    },
+    "chatgpt_btn_model": {
+        "message": "Koristi trenutni model"
+    },
+    "SendingPrompt": {
+        "message": "Slanje upita..."
+    },
+    "AllowedValues": {
+        "message": "Dopuštene vrijednosti"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Možete koristiti dodatna rezervirana mjesta za podatke."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline2": {
+        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti popis oznaka odvojenih zarezima!"
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Zadrži \"v1\" kompatibilnost"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Ako je označeno, segment \"v1\" na putanji API poziva će se zadržati, poput \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Čini se da barem jedan od vaših računa koristi dodatak Owl for Exchange. Postoji poznati problem između Thunderbirda i Owl, koji se trenutno rješava. Trenutačno možete koristiti ThunderAI dok sastavljate e-poruke, ali ne i dok ih čitate."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Pritisnite vrijednost da biste je postavili."
+    },
+    "prompt_reply_full_text": {
+        "message": "Odgovori na sljedeću e-poruku. Odgovorit samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Nemoj dodavati naslov u odgovor."
+    },
+    "reply_same_lang": {
+        "message": "Odgovori na istom jeziku."
+    },
+    "sign_msg_as": {
+        "message": "Potpiši e-poruku kao"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Odgovori na sljedeću e-poruku \"{%selected_text%}\", s obzirom da je ovo cijela nit e-poruka \"{%mail_html_body%}\". Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Prepravi sljedeći tekst kako biste bili pristojniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Prepravi sljedeći tekst da bude formalniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta."
+    },
+    "prompt_classify_full_text": {
+        "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta."
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "Sažmi sljedeću e-poruku u popis s točkama."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Prevedi sljedeću e-poruku na"
+    },
+    "prompt_this_full_text": {
+        "message": "Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Dodaj oznake e-porukama"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Ako je označeno, stavka će biti uključena u izbornik za primjenu oznaka na e-poruke."
+    },
+    "prompt_add_tags": {
+        "message": "Dodaj oznake ovoj e-poruci"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Analiziraj sljedeći tekst e-poruke i generiraj popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj e-poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji svoje oznake na tekstu i kontekstu e-poruke, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta."
+    },
+    "placeholder_tags_current_email": {
+        "message": "Oznake e-pošte"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Postojeće oznake"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Maksimalan broj oznaka"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Maksimalni broj oznaka koje je predložio AI. Postavite na 0 ako ne želite ograničiti broj oznaka."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Ograniči broj oznaka na"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Sakrij izuzete oznake"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Ako je označeno, oznake koje se nalaze na popisu izuzetaka bit će skrivene u dijaloškom okviru za potvrdu."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Upravljaj postavkama oznaka"
+    },
+    "AddTags_PageTitle": {
+        "message": "Upravljaj postavkama oznaka"
+    },
+    "AddTags_info_default": {
+        "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za dodavanje oznaka u e-poruke i upravljanje popisom izuzetaka."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Trenutačni tekst upita"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Popis izuzetaka"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Ovo je popis oznaka koje nije dopušteno dodavati e-porukama."
+    },
+    "save": {
+        "message": "Spremi"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Ova će izjava biti dodana na kraju upita:"
+    },
+    "reset_default": {
+        "message": "Vrati na zadano"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Dodaj riječ po retku ili odvojenu zarezom."
+    },
+    "addtags_dialog_title": {
+        "message": "Dodaj oznake e-poruci"
+    },
+    "addtags_exclude_tag": {
+        "message": "Isključi oznaku"
+    },
+    "addtags_no_tags_received": {
+        "message": "Nisu primljene oznake od AI."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Nisu pronađene važeće oznake nakon filtriranja s popisom izuzetaka."
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI greška"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI upozorenje"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Prvo slovo veliko"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Ako je označeno, etiketa oznaka bit će postavljena na mala slova sa samo prvim velikim slovom."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Mogućnosti dodavanja oznaka"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Podijelite svoje povratne informacije i pomozite nam poboljšati ThunderAI!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Pritisnite ovdje, traje samo minutu!"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Ručno umetni model"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Ovdje umetni naziv modela koji želiš koristiti."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Nametni jezik"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Ako je označeno, jezik oznaka će biti prisiljen odgovarati jeziku definiranom na stranici mogućnosti ThunderAI, ako je navedeno."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Oznake moraju biti upisane"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API ključ"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini API modeli"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Ažuriraj popis Google Gemini modela"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Pogreška pri pokušaju dohvaćanja modela Google Gemini"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Google Gemini API zahtjev nije uspio"
+    },
+    "google_gemini_api_connecting": {
+        "message": "Pokušaj povezivanja na Google Gemini pomoću dostavljenog API ključa"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Niste dodali API ključ za Google Gemini API. Unesite jedan na stranicu s mogućnostima."
+    },
+    "google_gemini_empty_model": {
+        "message": "Niste odabrali model za Google Gemini API. Odaberite jedan na stranici s mogućnostima."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Uputa za sustav"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Kada postavite uputu za sustav, dajete modelu dodatni kontekst za razumijevanje zadatka, dajete prilagođenije odgovore i pridržavate se specifičnih smjernica u vezi s upitom koji će biti poslan."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Poruke razvojnog programera"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Kada postavite poruke razvojnog programera, modelu dajete dodatni kontekst za razumijevanje zadatka, dajete prilagođenije odgovore i pridržavate se specifičnih smjernica za upit koji će biti poslan."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Možete upotrijebiti {%tags_full_list%} rezervirano mjesto podataka u upitu za popis dostupnih oznaka. Uz odgovarajući upit, tada možete prisiliti da se oznake izaberu samo s popisa onih koji već postoje."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Upisani tekst prije citiranog tijela e-poruke"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Dodaj novi kalendarski događaj"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n}\nOvo je tekst:\"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Dodaj novi kalendarski događaj iz odabranog teksta"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Ako je označeno, stavka će biti uključena u izbornik za dobivanje informacija o kalendarskom događaju iz odabranog teksta."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Upravljaj postavkama kalendarskih događaja"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Upravljaj postavkama kalendarskih događaja"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za dobivanje kalendarskih događaja iz odabranog teksta."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Trenutačni tekst upita"
+    },
+    "prefs_OptionText_GetCalendarEvent_infoline2": {
+        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Za korištenje značajke kalendarskih događaja instalirajte dodatak ThunderAI Sparks."
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Preuzmite ThunderAI Sparks sada!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Datum i vrijeme e-poruke"
+    },
+    "placeholder_current_datetime": {
+        "message": "Trenutačni datum i vrijeme"
+    },
+    "calendar_getting_data_error": {
+        "message": "Pogreška pri dohvaćanju podataka o kalendarskom događaju"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Pogreška pri otvaranju dijaloškog okvira kalendarskog događaja"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks nije instaliran!"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Dodajte oznake automatski"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Ako je označeno, AI će automatski dodati oznake novoprimljenim e-porukama."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Nametni postojeće oznake prilikom automatskog označavanja"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Ako je označeno, AI će novoprimljenim e-porukama dodati samo postojeće oznake i neće stvarati nove oznake."
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Dodajte oznake samo e-porukama u Primljenoj pošti"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Ako je označeno, AI će dodati oznake samo e-porukama u mapu Primljena pošta."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Zadani potpis kako je određeno u mogućnostima ThunderAI."
+    },
+    "thunderai_def_lang": {
+        "message": "Zadani jezik kako je određeno u mogućnostima ThunderAI."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Automatski filter neželjene pošte"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Ako je označeno, ThunderAI će automatski premjestiti neželjenu poštu u mapu Neželjena pošta."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Upravljaj postavkama filtera neželjene pošte"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Upravljaj postavkama filtera neželjene pošte"
+    },
+    "SpamFilter_info_default": {
+        "message": "Na ovoj stranici možete promijeniti zadani upit koji se koristi za otkrivanje neželjene pošte."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Trenutačni tekst upita"
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
+    },
+    "prompt_spamfilter": {
+        "message": "Prepoznaj neželjenu poštu"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Mogućnosti filtera neželjene pošte"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Prag neželjene pošte"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Ako je vrijednost koju vraća AI iznad ovog praga, e-poruka će biti premještena u mapu Neželjena pošta."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Prag neželjene pošte je prenizak! Vjerojatno ćete označiti previše e-poruka kao neželjenu poštu!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Prag neželjene pošte je nula! Označit ćete sve e-poruke kao neželjenu poštu!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Nijedna poruka još nije pregledana na neželjenu poštu. Ovdje ćete pronaći popis zadnjih 100 izvješća o neželjenoj pošti samo za trenutnu sjednicu."
+    },
+    "SpamReport_Title": {
+        "message": "Izvješća filtera neželjene pošte"
+    },
+    "Date": {
+        "message": "Datum"
+    },
+    "From": {
+        "message": "Šalje"
+    },
+    "Subject": {
+        "message": "Naslov"
+    },
+    "Spam_Value": {
+        "message": "Vrijednost neželjene pošte"
+    },
+    "Moved_to_Spam": {
+        "message": "Premješteno u Neželjenu poštu"
+    },
+    "Explanation": {
+        "message": "Obrazloženje"
+    },
+    "Report_Date": {
+        "message": "Datum izvješća"
+    },
+    "spamfilter_moved": {
+        "message": "Da"
+    },
+    "spamfilter_not_moved": {
+        "message": "Ne"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Ovdje možete unijeti i adresu udaljenog poslužitelja."
+    }
+}
