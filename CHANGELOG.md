@@ -15,6 +15,7 @@
         <li>Croatian (hr) translation added, thanks to Petar Jedvaj.</li>
         <li>German (de) translation errors fixed.</li>
         <li>Various minor improvements.</li>
+        <li>Translations improved thanks to Hosted Weblate. <a href="https://micz.it/thunderbird-addon-thunderai/translate/">Help translating ThunderAI!</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.1.2 - 29/01/2025</h2>
