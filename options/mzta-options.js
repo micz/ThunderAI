@@ -272,7 +272,7 @@ async function disable_GetCalendarEvent(){
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
   });
-  no_sparks_tr.style.display = is_spark_present ? 'none' : 'table-row';
+  no_sparks_tr.style.display = (is_spark_present || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
