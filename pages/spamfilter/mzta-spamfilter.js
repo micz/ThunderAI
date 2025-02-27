@@ -101,7 +101,7 @@ function check_spamfilter_threshold(event) {
 
 async function loadSpamReport(){
     let report_data = await taSpamReport.getAllReportData();
-    console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
+    //console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
     //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
     if(report_data == undefined){
       document.getElementById("report_data").innerText = browser.i18n.getMessage("spamfilter_no_reports");
