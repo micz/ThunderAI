@@ -1,0 +1,32 @@
+{
+    "extensionDescription": {
+        "message": "¡Usa ChatGPT, Goolge Gemini u Ollama para mejorar tus emails!"
+    },
+    "menu_title": {
+        "message": "IA"
+    },
+    "prompt_lang": {
+        "message": "Respuesta en"
+    },
+    "prompt_reply": {
+        "message": "Respuesta a este email"
+    },
+    "prompt_reply_advanced": {
+        "message": "Respuesta a este hilo"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Reescribe educado"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Reescribir formal"
+    },
+    "prompt_summarize_this": {
+        "message": "Resume esto"
+    },
+    "prompt_translate_this": {
+        "message": "Traducir esto"
+    },
+    "prompt_classify": {
+        "message": "Clasificar"
+    }
+}
