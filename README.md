@@ -10,7 +10,7 @@ You can also define, export and import your own **[custom prompts](https://micz.
 
 In any custom prompt you can use additional **[data placeholders](https://micz.it/thunderbird-addon-thunderai/data-placeholders/)**!
 
-You can activate some automatic features:
+Using an API integration, you can activate some automatic features:
 - Tagging incoming emails
 - Moving spam emails to the junk folder
 
