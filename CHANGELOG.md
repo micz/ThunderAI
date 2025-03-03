@@ -4,7 +4,12 @@
 
 
 
-
+<h2>Version 3.2.1 - ??/??/2025</h2>
+      <ul>
+        <li>Fix calling a prompt without giving tags related permissions [<a href="https://github.com/micz/ThunderAI/issues/275">#275</a>].</li>
+        <li>Minor bugs fixed.</li>
+        <li>...</li>
+      </ul>
 <h2>Version 3.2.0 - 27/02/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Added an option to automatically tag incoming emails [<a href="https://github.com/micz/ThunderAI/issues/237">#237</a>].</li>
