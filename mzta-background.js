@@ -798,4 +798,12 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
+// Disable tag options if permissions are not granted
+if (prefs_init.add_tags) {
+    if(!await browser.permissions.contains({permissions: ["messagesMove", "messagesTagsList", "messagesTags", "messagesUpdate"]})){
+        browser.storage.sync.set({add_tags: false});
+        taLog.log("Permissions not granted, disabling add_tags");
+    }
+}
+
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
