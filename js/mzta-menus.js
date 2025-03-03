@@ -107,14 +107,14 @@ export class mzta_Menus {
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
-            let chatgpt_lang = taPromptUtils.getDefaultLang(curr_prompt);
+            let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);
             
             let fullPrompt = '';
             let tags_full_list = '';
             
             // without the tags related permissions, we can't get the tags list
             if(await browser.permissions.contains({permissions: ['messagesTagsList']})){
-                await getTagsList();
+                tags_full_list = await getTagsList();
             }
 
             let curr_messages = null;
