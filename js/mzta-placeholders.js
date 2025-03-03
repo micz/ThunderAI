@@ -32,6 +32,8 @@
 
 */
 
+import { transformTagsLabels } from './mzta-utils.js';
+
 const defaultPlaceholders = [
     {
         id: 'mail_text_body',
@@ -160,6 +162,9 @@ export async function getPlaceholders(onlyEnabled = false){
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
     // console.log('>>>>>>>>>>>> getPlaceholders output: ' + JSON.stringify(output));
+    if (!await browser.permissions.contains({ permissions: ["messagesTagsList"] })) {
+        output = output.filter(obj => obj.id !== 'tags_full_list' && obj.id !== 'tags_current_email');
+    }
     return output;
 }
 
