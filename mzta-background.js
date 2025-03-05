@@ -798,20 +798,4 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
-// Disable tag option if permissions are not granted
-if (prefs_init.add_tags) {
-    if(!await browser.permissions.contains({permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"]})){
-        browser.storage.sync.set({add_tags: false});
-        taLog.log("Permissions not granted, disabling add_tags");
-    }
-}
-
-// Disable anti spam option if permissions are not granted
-if (prefs_init.spamfilter) {
-    if(!await browser.permissions.contains({permissions: ["messagesMove"]})){
-        browser.storage.sync.set({spamfilter: false});
-        taLog.log("Permissions not granted, disabling spamfilter");
-    }
-}
-
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
