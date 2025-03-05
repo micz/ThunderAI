@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addtags_el.addEventListener('click', (event) => {
     async function _addtags_el_change() {
       if (event.target.checked) {
-        const granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
+        let granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
           addtags_info_btn.disabled = 'disabled';
@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   spamfilter_el.addEventListener('click', (event) => {
     async function _spamfilter_el_change() {
       if (event.target.checked) {
-        const granted = await messenger.permissions.request({ permissions: ["messagesMove"] });
+        let granted = await messenger.permissions.request({ permissions: ["messagesMove"] });
         if (!granted) {
           event.target.checked = false;
           spamfilter_info_btn.disabled = 'disabled';

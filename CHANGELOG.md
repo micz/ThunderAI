@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.2.2 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.2.1 - 03/03/2025</h2>
       <ul>
         <li>Fix calling a prompt without giving tags related permissions [<a href="https://github.com/micz/ThunderAI/issues/275">#275</a>].</li>
