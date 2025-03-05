@@ -16,16 +16,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 import { prefs_default } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
+let _isThunderbird128OrGreater = true;
 
 function saveOptions(e) {
   e.preventDefault();
@@ -278,6 +278,8 @@ async function disable_GetCalendarEvent(){
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
+  _isThunderbird128OrGreater = await isThunderbird128OrGreater();
+
   // show Owl warning
   const accountList = await messenger.accounts.list(false);
   if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
@@ -302,7 +304,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   addtags_el.addEventListener('click', (event) => {
     async function _addtags_el_change() {
       if (event.target.checked) {
-        let granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
+        let granted = false;
+        if(_isThunderbird128OrGreater){
+          granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
+        }else{
+          granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesMove"] });
+        }
         if (!granted) {
           event.target.checked = false;
           addtags_info_btn.disabled = 'disabled';
