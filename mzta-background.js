@@ -796,4 +796,11 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
-browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+// browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+
+try {
+    browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+} catch (e) {
+    taLog.log("Using browser.messages.onNewMailReceived.addListener with one agrument for Thudnerbird 115.");
+    browser.messages.onNewMailReceived.addListener(newEmailListener);
+}
