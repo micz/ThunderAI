@@ -801,6 +801,6 @@ const newEmailListener = (folder, messagesList) => {
 try {
     browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
 } catch (e) {
-    taLog.log("Using browser.messages.onNewMailReceived.addListener with one agrument for Thudnerbird 115.");
+    taLog.log("Using browser.messages.onNewMailReceived.addListener with one agrument for Thunderbird 115.");
     browser.messages.onNewMailReceived.addListener(newEmailListener);
 }
