@@ -110,12 +110,7 @@ export class mzta_Menus {
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);
             
             let fullPrompt = '';
-            let tags_full_list = '';
-            
-            // without the tags related permissions, we can't get the tags list
-            if(await browser.permissions.contains({permissions: ['messagesTagsList']})){
-                tags_full_list = await getTagsList();
-            }
+            let tags_full_list = await getTagsList();
 
             let curr_messages = null;
             switch(tabs[0].type){
