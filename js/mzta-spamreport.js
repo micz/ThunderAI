@@ -21,23 +21,30 @@ export const taSpamReport = {
     logger: console,
     _internal_data_id: 'mzta-spam-report-data',
     _max_reports: 100,
+    lock: false,
 
     async saveReportData(data, data_id){
+        while (this.lock) {
+          await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for the lock to be released
+        }
+
+        this.lock = true;
         let obj = await browser.storage.session.get(taSpamReport._internal_data_id);
-        //console.log(">>>>>>>> saveReportData obj 1: " + JSON.stringify(obj));
+        // console.log(">>>>>>>> saveReportData obj 1: " + JSON.stringify(obj));
         if(obj == undefined){
             obj = {};
             obj[taSpamReport._internal_data_id] = {};
-            //console.log(">>>>>>>> saveReportData obj 2a: " + JSON.stringify(obj));
+            // console.log(">>>>>>>> saveReportData obj 2a: " + JSON.stringify(obj));
         }
         if(Object.keys(obj).length === 0){
             obj[taSpamReport._internal_data_id] = {};
-            //console.log(">>>>>>>> saveReportData obj 2b: " + JSON.stringify(obj));
+            // console.log(">>>>>>>> saveReportData obj 2b: " + JSON.stringify(obj));
         }
         
         obj[taSpamReport._internal_data_id][data_id] = data;
-        //console.log(">>>>>>>> saveReportData obj 3: " + JSON.stringify(obj));
+        // console.log(">>>>>>>> saveReportData obj 3: " + JSON.stringify(obj));
         await browser.storage.session.set(obj);
+        this.lock = false;
     },
 
     async loadReportData(data_id){
