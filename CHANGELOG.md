@@ -8,7 +8,7 @@
       <ul>
         <li><i>[ChatGPT Web]</i> Fixed hiding the Spam Filter options [<a href="https://github.com/micz/ThunderAI/issues/284">#284</a>].</li>
         <li>Unchecking the "Add tags" and "Spam Filter" options if the user revokes the related optional permissions [<a href="https://github.com/micz/ThunderAI/issues/286">#286</a>].</li>
-        <li>...</li>
+        <li>Minor improvements.</li>
       </ul>
 <h2>Version 3.2.2 - 05/03/2025</h2>
       <ul>
