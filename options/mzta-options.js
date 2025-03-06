@@ -258,6 +258,7 @@ function disable_AddTags(){
   let conntype_select = document.getElementById("connection_type");
   add_tags.disabled = (conntype_select.value === "chatgpt_web");
   add_tags.checked = add_tags.disabled ? false : add_tags.checked;
+  let add_tags_checked_original = add_tags.checked;
   if(!add_tags.checked){
     let add_tags_info_btn = document.getElementById('btnManageTagsInfo');
     add_tags_info_btn.disabled = 'disabled';
@@ -266,13 +267,16 @@ function disable_AddTags(){
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
   });
-  browser.storage.sync.set({add_tags: add_tags.checked});
+  if(add_tags_checked_original != add_tags.checked){
+    browser.storage.sync.set({add_tags: add_tags.checked});
+  }
 }
 
 function disable_SpamFilter(){
   let spamfilter = document.getElementById('spamfilter');
   let conntype_select = document.getElementById("connection_type");
   spamfilter.disabled = (conntype_select.value === "chatgpt_web");
+  let spamfilter_checked_original = spamfilter.checked;
   spamfilter.checked = spamfilter.disabled ? false : spamfilter.checked;
   if(!spamfilter.checked){
     let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
@@ -282,7 +286,9 @@ function disable_SpamFilter(){
   spamfilter_tr_elements.forEach(spamfilter_tr => {
     spamfilter_tr.style.display = (spamfilter.disabled) ? 'none' : 'table-row';
   });
-  browser.storage.sync.set({spamfilter: spamfilter.checked});
+  if(spamfilter_checked_original != spamfilter.checked){
+    browser.storage.sync.set({spamfilter: spamfilter.checked});
+  }
 }
 
 async function disable_GetCalendarEvent(){
