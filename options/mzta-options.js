@@ -101,6 +101,7 @@ async function restoreOptions() {
 function showConnectionOptions() {
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_SpamFilter();
   disable_GetCalendarEvent();
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
@@ -256,10 +257,32 @@ function disable_AddTags(){
   let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
   add_tags.disabled = (conntype_select.value === "chatgpt_web");
+  add_tags.checked = add_tags.disabled ? false : add_tags.checked;
+  if(!add_tags.checked){
+    let add_tags_info_btn = document.getElementById('btnManageTagsInfo');
+    add_tags_info_btn.disabled = 'disabled';
+  }
   let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
   add_tags_tr_elements.forEach(add_tags_tr => {
     add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
   });
+  browser.storage.sync.set({add_tags: add_tags.checked});
+}
+
+function disable_SpamFilter(){
+  let spamfilter = document.getElementById('spamfilter');
+  let conntype_select = document.getElementById("connection_type");
+  spamfilter.disabled = (conntype_select.value === "chatgpt_web");
+  spamfilter.checked = spamfilter.disabled ? false : spamfilter.checked;
+  if(!spamfilter.checked){
+    let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
+    spamfilter_info_btn.disabled = 'disabled';
+  }
+  let spamfilter_tr_elements = document.querySelectorAll('.spamfilter_tr');
+  spamfilter_tr_elements.forEach(spamfilter_tr => {
+    spamfilter_tr.style.display = (spamfilter.disabled) ? 'none' : 'table-row';
+  });
+  browser.storage.sync.set({spamfilter: spamfilter.checked});
 }
 
 async function disable_GetCalendarEvent(){
@@ -417,6 +440,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
   conntype_select.addEventListener("change", disable_AddTags);
+  conntype_select.addEventListener("change", disable_SpamFilter);
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
   document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
@@ -610,6 +634,7 @@ select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
   warn_GoogleGemini_APIKeyEmpty();
   disable_MaxPromptLength();
   disable_AddTags();
+  disable_SpamFilter();
   disable_GetCalendarEvent();
 
   const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
