@@ -33,6 +33,7 @@ export class mzta_Menus {
     menu_context_display = null;
     menu_listeners = {};
     logger = null;
+    lock = false;
 
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
@@ -246,10 +247,16 @@ export class mzta_Menus {
     }
 
     async loadMenus(also_special = []) {
+        while (this.lock) {
+            this.logger.log("Waiting for the lock to be released...");
+            await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for the lock to be released
+        }
+        this.lock = true;
         await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
+        this.lock = false;
         this.logger.log("Menus loaded");
     }
 
