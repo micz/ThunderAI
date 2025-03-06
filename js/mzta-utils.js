@@ -203,7 +203,7 @@ export function generateCallID(length = 10) {
 }
 
 export async function getTagsList(){
-  let messageTags = {};
+  let messageTags = [];
   if(await isThunderbird128OrGreater()) {
     // without the tags related permissions, we can't get the tags list
     if(await browser.permissions.contains({permissions: ['messagesTagsList']})){
