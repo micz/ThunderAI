@@ -342,6 +342,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!granted) {
           event.target.checked = false;
           addtags_info_btn.disabled = 'disabled';
+          browser.storage.sync.set({add_tags: false});
         }
       }
     }
@@ -359,6 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!granted) {
           event.target.checked = false;
           spamfilter_info_btn.disabled = 'disabled';
+          browser.storage.sync.set({spamfilter: false});
         }
       }
     }
