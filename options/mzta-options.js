@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(_isThunderbird128OrGreater){
           granted = await messenger.permissions.request({ permissions: ["messagesTagsList", "messagesTags", "messagesUpdate"] });
         }else{
-          granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesMove"] });
+          granted = await messenger.permissions.request({ permissions: ["messagesTags"] });
         }
         if (!granted) {
           event.target.checked = false;
