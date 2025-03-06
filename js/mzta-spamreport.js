@@ -17,82 +17,69 @@
  */
 
 export const taSpamReport = {
-
     logger: console,
-    _internal_data_id: 'mzta-spam-report-data',
+    _data_prefix: 'mzta-spam-report-',
     _max_reports: 100,
-    lock: false,
 
-    async saveReportData(data, data_id){
-        while (this.lock) {
-          await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for the lock to be released
-        }
-
-        this.lock = true;
-        let obj = await browser.storage.session.get(taSpamReport._internal_data_id);
-        // console.log(">>>>>>>> saveReportData obj 1: " + JSON.stringify(obj));
-        if(obj == undefined){
-            obj = {};
-            obj[taSpamReport._internal_data_id] = {};
-            // console.log(">>>>>>>> saveReportData obj 2a: " + JSON.stringify(obj));
-        }
-        if(Object.keys(obj).length === 0){
-            obj[taSpamReport._internal_data_id] = {};
-            // console.log(">>>>>>>> saveReportData obj 2b: " + JSON.stringify(obj));
-        }
-        
-        obj[taSpamReport._internal_data_id][data_id] = data;
-        // console.log(">>>>>>>> saveReportData obj 3: " + JSON.stringify(obj));
-        await browser.storage.session.set(obj);
-        this.lock = false;
+    async saveReportData(data, data_id) {
+        const key = this._data_prefix + data_id;
+        await browser.storage.session.set({ [key]: data });
     },
 
-    async loadReportData(data_id){
-        let output = await browser.storage.session.get(taSpamReport._internal_data_id);
-        return output[taSpamReport._internal_data_id][data_id];
+    async loadReportData(data_id) {
+        const key = this._data_prefix + data_id;
+        let output = await browser.storage.session.get(key);
+        return output[key] || null;
     },
 
-    async getAllReportData(){
-        let data = await browser.storage.session.get(taSpamReport._internal_data_id);
-        //console.log(">>>>>>>>>>> getAllReportData: " + JSON.stringify(data));
-        return data[taSpamReport._internal_data_id];
-    },
+    async getAllReportData() {
+        let allData = await browser.storage.session.get(null);
+        let reportData = {};
 
-    saveAllData(data){
-        browser.storage.session.set({[taSpamReport._internal_data_id]: data});
-    },
-
-    clearReportData(){
-        browser.storage.session.clear();
-    },
-
-    async truncReportData(){
-        let data = taSpamReport.sortReportsByDate(await taSpamReport.getAllReportData());
-        if(data == undefined) return;
-        //console.log(">>>>>>>>>> truncReportData: " + JSON.stringify(data));
-        if(Object.keys(data).length > taSpamReport._max_reports){
-            let keys = Object.keys(data);
-            for(let i = taSpamReport._max_reports; i < keys.length; i++){
-                // console.log(">>>>>>>>>> truncReportData: " + keys[i]);
-                // console.log(">>>>>>>>>> truncReportData i: " + i);
-                delete data[keys[i]];
+        for (const [key, value] of Object.entries(allData)) {
+            if (key.startsWith(this._data_prefix)) {
+                reportData[key.replace(this._data_prefix, '')] = value;
             }
         }
-        taSpamReport.saveAllData(data);
+
+        return reportData;
+    },
+
+    async clearReportData() {
+        let allData = await browser.storage.session.get(null);
+        let keysToDelete = Object.keys(allData).filter(key => key.startsWith(this._data_prefix));
+
+        for (let key of keysToDelete) {
+            await browser.storage.session.remove(key);
+        }
+    },
+
+    async truncReportData() {
+        let data = await this.getAllReportData();
+        let sortedData = this.sortReportsByDate(data);
+        let keys = Object.keys(sortedData);
+
+        if (keys.length > this._max_reports) {
+            for (let i = this._max_reports; i < keys.length; i++) {
+                await browser.storage.session.remove(this._data_prefix + keys[i]);
+            }
+        }
     },
 
     sortReportsByDate(data) {
-        if(data == undefined) return undefined;
+        if (!data) return {};
         const reportKeys = Object.keys(data);
         reportKeys.sort((a, b) => {
             const dateA = new Date(data[a].report_date);
             const dateB = new Date(data[b].report_date);
             return dateB - dateA;
         });
-        const sortedReports = {};
+
+        let sortedReports = {};
         reportKeys.forEach((key) => {
             sortedReports[key] = data[key];
         });
+
         return sortedReports;
     }
-}
+};
