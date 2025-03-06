@@ -646,6 +646,26 @@ function setupStorageChangeListener() {
 // Call the function to set up the listener
 setupStorageChangeListener();
 
+// Register the listener for removed permissions
+function setupPermissionsRemovedListener() {
+    browser.permissions.onRemoved.addListener((permissions) => {
+        // console.log(">>>>>>>>>>> Permissions onRemoved permissions: " + JSON.stringify(permissions));
+        // Process 'tags' permissions removal
+        if (["messagesTagsList", "messagesTags", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
+            // console.log(">>>>>>>>>>> Permissions onRemoved: tags");
+            browser.storage.sync.set({add_tags: false});
+        }
+        // Process 'spamfilter' permissions removal
+        if (permissions.permissions.includes("messagesMove")) {
+            // console.log(">>>>>>>>>>> Permissions onRemoved: spamfilter");
+            browser.storage.sync.set({spamfilter: false});
+        }
+    });
+}
+
+// Call the function to set up the listener
+setupPermissionsRemovedListener();
+
 // Menus handling
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(special_prompts_ids);
@@ -795,8 +815,6 @@ const newEmailListener = (folder, messagesList) => {
 
     return _newEmailListener();
 }
-
-// browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
 
 try {
     browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
