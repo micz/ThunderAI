@@ -651,7 +651,7 @@ function setupPermissionsRemovedListener() {
     browser.permissions.onRemoved.addListener((permissions) => {
         // console.log(">>>>>>>>>>> Permissions onRemoved permissions: " + JSON.stringify(permissions));
         // Process 'tags' permissions removal
-        if (["messagesTagsList", "messagesTags", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
+        if (["messagesTags", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
             // console.log(">>>>>>>>>>> Permissions onRemoved: tags");
             browser.storage.sync.set({add_tags: false});
         }

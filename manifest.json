@@ -31,10 +31,10 @@
         "activeTab",
         "accountsRead",
         "downloads",
+        "messagesTagsList",
         "https://*.chatgpt.com/*"
     ],
     "optional_permissions": [
-        "messagesTagsList",
         "messagesTags",
         "messagesUpdate",
         "messagesMove"

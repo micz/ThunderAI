@@ -206,9 +206,7 @@ export async function getTagsList(){
   let messageTags = [];
   if(await isThunderbird128OrGreater()) {
     // without the tags related permissions, we can't get the tags list
-    if(await browser.permissions.contains({permissions: ['messagesTagsList']})){
-        messageTags = await browser.messages.tags.list();
-    }
+      messageTags = await browser.messages.tags.list();
   } else {
       messageTags = await browser.messages.listTags();
   }
