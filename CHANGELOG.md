@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.2.3 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.2.2 - 05/03/2025</h2>
       <ul>
         <li>Fixed compatibility with Thunderbird 115 [<a href="https://github.com/micz/ThunderAI/issues/281">#281</a>].</li>
