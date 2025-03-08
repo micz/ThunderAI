@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.3.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.2.3 - 06/03/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fixed hiding the Spam Filter options [<a href="https://github.com/micz/ThunderAI/issues/284">#284</a>].</li>
