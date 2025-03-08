@@ -39,7 +39,7 @@ function fixMsgHeader(msgHeader) {
   return msgHeader;
 }
 
-export async function getCurrentIdentity(msgHeader) {
+export async function getCurrentIdentity(msgHeader, getFull = false) {
   let identities_array = [];
   let fallback_identity = '';
   msgHeader = fixMsgHeader(msgHeader);
@@ -49,6 +49,7 @@ export async function getCurrentIdentity(msgHeader) {
           identities_array.push({id: identity.id, email:identity.email})
           if(fallback_identity === '') {
             fallback_identity = {id: identity.id, email:identity.email}
+            console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
           }
         }
       }
@@ -56,18 +57,25 @@ export async function getCurrentIdentity(msgHeader) {
   let author = extractEmail(msgHeader.author);
   let author_identity = identities_array.find(identity => identity.email === author);
   if (author_identity) {
-    return author_identity.id;
+    // console.log(">>>>>>>>>> getCurrentIdentity author_identity: " + JSON.stringify(author_identity));
+    return getFull ? author_identity : author_identity.id;
   }
   let correspondents_array = msgHeader.bccList.concat(msgHeader.ccList, msgHeader.recipients);
   correspondents_array = correspondents_array.map(correspondent => {
     correspondent = extractEmail(correspondent);
-    return correspondent;
+    let correspondent_identity = identities_array.find(identity => identity.email === author);
+    if (correspondent_identity) {
+      // console.log(">>>>>>>>>> getCurrentIdentity correspondent_identity: " + JSON.stringify(correspondent_identity));
+      return getFull ? correspondent_identity : correspondent_identity.id;
+    }
   });
   const matching_identity = correspondents_array.map(correspondent => identities_array.find(identity => identity.email === correspondent)).find(identity => identity !== undefined);
   if(matching_identity) {
-    return matching_identity.id;
+    // console.log(">>>>>>>>>> getCurrentIdentity matching_identity: " + JSON.stringify(matching_identity));
+    return getFull ? matching_identity : matching_identity.id;
   } else {  // no identity found. using the fallback one
-    return fallback_identity.id;
+    // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
+    return getFull ? fallback_identity : fallback_identity.id;
   }
 }
 
