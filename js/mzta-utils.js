@@ -26,9 +26,23 @@ export function getLanguageDisplayName(languageCode) {
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
 }
 
+function fixMsgHeader(msgHeader) {
+  if (!msgHeader.bccList) {
+    msgHeader.bccList = [];
+  }
+  if (!msgHeader.ccList) {
+    msgHeader.ccList = [];
+  }
+  if (!msgHeader.recipients) {
+    msgHeader.recipients = [];
+  }
+  return msgHeader;
+}
+
 export async function getCurrentIdentity(msgHeader) {
   let identities_array = [];
   let fallback_identity = '';
+  msgHeader = fixMsgHeader(msgHeader);
   let accounts = await browser.accounts.list();
      for (let account of accounts) {
         for (let identity of account.identities) {
@@ -58,6 +72,7 @@ export async function getCurrentIdentity(msgHeader) {
 }
 
 function extractEmail(text) {
+  if((text=='')||(text==undefined)) return '';
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const match = text.match(emailRegex);
   return match ? match[0] : '';
