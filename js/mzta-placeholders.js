@@ -32,7 +32,7 @@
 
 */
 
-import { transformTagsLabels } from './mzta-utils.js';
+import { transformTagsLabels, getCurrentIdentity } from './mzta-utils.js';
 
 const defaultPlaceholders = [
     {
@@ -67,14 +67,14 @@ const defaultPlaceholders = [
         id: 'mail_folder_name',
         name: "__MSG_placeholder_folder_name__",
         default_value: "",
-        type: 0,
+        type: 1,
         is_default: "1",
     },
     {
         id: 'mail_folder_path',
         name: "__MSG_placeholder_folder_path__",
         default_value: "",
-        type: 0,
+        type: 1,
         is_default: "1",
     },
     {
@@ -129,6 +129,13 @@ const defaultPlaceholders = [
     {
         id: 'current_datetime',
         name: "__MSG_placeholder_current_datetime__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'account_email_address',
+        name: "__MSG_placeholder_account_email_address__",
         default_value: "",
         type: 0,
         is_default: "1",
@@ -321,6 +328,10 @@ export const placeholdersUtils = {
                     break;
                 case 'current_datetime':
                     finalSubs['current_datetime'] = new Date().toString();
+                    break;
+                case 'account_email_address':
+                    let current_identity = await getCurrentIdentity(curr_message, true);
+                    finalSubs['account_email_address'] = current_identity.email;
                     break;
                 case 'tags_current_email':
                     let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);

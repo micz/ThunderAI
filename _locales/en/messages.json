@@ -643,6 +643,10 @@
     "message": "Author",
     "description": ""
   },
+  "placeholder_account_email_address": {
+    "message": "Account email address",
+    "description": ""
+  },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
     "description": ""
