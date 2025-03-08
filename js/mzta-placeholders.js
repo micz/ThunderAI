@@ -64,6 +64,20 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'mail_folder_name',
+        name: "__MSG_placeholder_folder_name__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
+        id: 'mail_folder_path',
+        name: "__MSG_placeholder_folder_path__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
         id: 'selected_text',
         name: "__MSG_placeholder_selected_text__",
         default_value: "",
@@ -280,6 +294,12 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_subject':
                     finalSubs['mail_subject'] = mail_subject;
+                    break;
+                case 'mail_folder_name':
+                    finalSubs['mail_folder_name'] = curr_message.folder.name;
+                    break;
+                case 'mail_folder_path':
+                    finalSubs['mail_folder_path'] = curr_message.folder.path;
                     break;
                 case 'selected_text':
                     finalSubs['selected_text'] = selection_text;

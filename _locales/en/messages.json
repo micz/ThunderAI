@@ -611,6 +611,14 @@
     "message": "Mail subject",
     "description": ""
   },
+  "placeholder_folder_name": {
+    "message": "Folder name",
+    "description": ""
+  },
+  "placeholder_folder_path": {
+    "message": "Folder path",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""
