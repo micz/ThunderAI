@@ -8,6 +8,7 @@
       <ul>
         <li>Added the <i>{%mail_folder_name%}</i> placeholder to get the mail folder name [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
         <li>Added the <i>{%mail_folder_path%}</i> placeholder to get the mail folder path [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
+        <li>Added the <i>{%account_email_address%}</i> placeholder to get the current account mail address [<a href="https://github.com/micz/ThunderAI/issues/272">#272</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.2.3 - 06/03/2025</h2>
