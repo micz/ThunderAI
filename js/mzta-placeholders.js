@@ -291,62 +291,62 @@ export const placeholdersUtils = {
         for(let currPH of currPHs){
             switch(currPH.id){
                 case 'mail_text_body':
-                    finalSubs['mail_text_body'] = body_text;
+                    finalSubs['mail_text_body'] = placeholdersUtils.failSafePlaceholders(body_text);
                     break;
                 case 'mail_html_body':
-                    finalSubs['mail_html_body'] = msg_text.html;
+                    finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(msg_text?.html);
                     break;
                 case 'mail_typed_text':
-                    finalSubs['mail_typed_text'] = only_typed_text;
+                    finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
                     break;
                 case 'mail_subject':
-                    finalSubs['mail_subject'] = mail_subject;
+                    finalSubs['mail_subject'] = placeholdersUtils.failSafePlaceholders(mail_subject);
                     break;
                 case 'mail_folder_name':
-                    finalSubs['mail_folder_name'] = curr_message.folder.name;
+                    finalSubs['mail_folder_name'] = placeholdersUtils.failSafePlaceholders(curr_message.folder?.name);
                     break;
                 case 'mail_folder_path':
-                    finalSubs['mail_folder_path'] = curr_message.folder.path;
+                    finalSubs['mail_folder_path'] = placeholdersUtils.failSafePlaceholders(curr_message.folder?.path);
                     break;
                 case 'selected_text':
-                    finalSubs['selected_text'] = selection_text;
+                    finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
                     break;
                 case 'author':
-                    finalSubs['author'] = curr_message.author;
+                    finalSubs['author'] = placeholdersUtils.failSafePlaceholders(curr_message.author);
                     break;
                 case 'recipients':
-                    finalSubs['recipients'] = curr_message.recipients.join(", ");
+                    finalSubs['recipients'] = placeholdersUtils.failSafePlaceholders(curr_message.recipients?.join(", "));
                     break;
                 case 'cc_list':
-                    finalSubs['cc_list'] = curr_message.ccList.join(", ");
+                    finalSubs['cc_list'] = placeholdersUtils.failSafePlaceholders(curr_message.ccList?.join(", "));
                     break;
                 case 'junk_score':
-                    finalSubs['junk_score'] = curr_message.junkScore;
+                    finalSubs['junk_score'] = placeholdersUtils.failSafePlaceholders(curr_message.junkScore);
                     break;
                 case 'mail_datetime':
-                    finalSubs['mail_datetime'] = curr_message.date;
+                    finalSubs['mail_datetime'] = placeholdersUtils.failSafePlaceholders(curr_message.date);
                     break;
                 case 'current_datetime':
-                    finalSubs['current_datetime'] = new Date().toString();
+                    finalSubs['current_datetime'] = placeholdersUtils.failSafePlaceholders(new Date().toString());
                     break;
                 case 'account_email_address':
                     let current_identity = await getCurrentIdentity(curr_message, true);
-                    finalSubs['account_email_address'] = current_identity.email;
+                    finalSubs['account_email_address'] = placeholdersUtils.failSafePlaceholders(current_identity.email);
                     break;
                 case 'tags_current_email':
                     let tags_current_email_array = await transformTagsLabels(curr_message.tags, tags_full_list[1]);
-                    finalSubs['tags_current_email'] = tags_current_email_array.join(", ");
+                    finalSubs['tags_current_email'] = placeholdersUtils.failSafePlaceholders(tags_current_email_array.join(", "));
                     break;
                 case 'tags_full_list':
-                    finalSubs['tags_full_list'] = tags_full_list[0];
+                    finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders(tags_full_list[0]);
                     break;
                 case 'thunderai_def_sign':
                     let prefs_def_sign = await browser.storage.sync.get({default_sign_name: ''});
-                    finalSubs['thunderai_def_sign'] = prefs_def_sign.default_sign_name;
+                    finalSubs['thunderai_def_sign'] = placeholdersUtils.failSafePlaceholders(prefs_def_sign.default_sign_name);
                     break;
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
-                    finalSubs['thunderai_def_lang'] = prefs_def_lang.default_chatgpt_lang;
+                    finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
                     break;
                 default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;
@@ -354,6 +354,12 @@ export const placeholdersUtils = {
         }
 
         return finalSubs;
+    },
+
+    failSafePlaceholders(element){
+        if(element === null || element === undefined){
+            return '';
+        }
     }
 
 }
