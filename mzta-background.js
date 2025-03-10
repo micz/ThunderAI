@@ -26,6 +26,17 @@ import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 
+browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
+    console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
+    if (reason === "install" 
+       || (reason === "update" && (previousVersion.startsWith("2.") || previousVersion.startsWith("1.")))
+       || (reason === "update" && ((previousVersion.startsWith("3.") && parseInt(previousVersion.split(".")[1]) <= 2)))
+       //|| (reason === "update") // only for testing
+       ) {
+        browser.tabs.create({ url: "/pages/onboarding/onboarding.html" });
+    }
+});
+
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
 
