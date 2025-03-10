@@ -1,0 +1,143 @@
+{
+    "customPrompts_saving_custom_prompts": {
+        "message": "Ukládání vlastních dotazů…"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Přepsat formálně"
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Načítání nabídek…"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Akce"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Zrušit"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Opravdu chcete odstranit tuto položku?"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Přidat do nabídky"
+    },
+    "extensionDescription": {
+        "message": "Použijte ChatGPT, Google Gemini nebo Ollama pro vylepšení vašich e-mailů!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "Odpovědět v jazyce"
+    },
+    "prompt_reply": {
+        "message": "Odpovědět na tento e-mail"
+    },
+    "prompt_reply_advanced": {
+        "message": "Odpovědět na toto vlákno"
+    },
+    "prompt_this": {
+        "message": "Zeptat se"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Další informace"
+    },
+    "customPrompts_start_saving": {
+        "message": "Ukládání dotazů…"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Indexování seznamu…"
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtrování dotazů…"
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Ukládání výchozích dotazů…"
+    },
+    "prompt_translate_this": {
+        "message": "Přeložit"
+    },
+    "prompt_summarize_this": {
+        "message": "Shrnout"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Spravovat dotazy"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Název"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Požadovaná pole"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Potřebný výběr textu"
+    },
+    "customPrompts_saved": {
+        "message": "Dotazy uloženy!"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Povoleno"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Uložit vše"
+    },
+    "customPrompts_do_reply": {
+        "message": "Odpovědět"
+    },
+    "customPrompts_btnNew": {
+        "message": "Přidat nový"
+    },
+    "customPrompts_close_button": {
+        "message": "Tlačítko pro zavření"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Přidat dotaz"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Vždy"
+    },
+    "prompt_selection_needed": {
+        "message": "Pro pokračování vyberte nějaký text!"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Zeptat se na dodatečný text"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Text dotazu"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Čtení e-mailu"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Musí být unikátní, být malými písmeny a bez mezer"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Odstranit"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Vždy přidat podpis"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Upravit"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Psaní e-mailu"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Přepsat zdvořile"
+    },
+    "prompt_classify": {
+        "message": "Zařadit"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_save_button": {
+        "message": "Uložit"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Máte neuložené změny!"
+    }
+}
