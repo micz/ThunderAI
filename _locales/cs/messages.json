@@ -139,5 +139,50 @@
     },
     "customPrompts_unsaved_changes": {
         "message": "Máte neuložené změny!"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze je můžete zakázat, poté zkopírovat text dotazu a vložit jej do nového."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Můžete importovat a exportovat dotazy. Existující dotazy se stejným ID budou přepsány. Dotazy s novými ID budou přidány."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Pokud je všechno správně, po importu klikněte na tlačítko „Uložit vše“."
+    },
+    "customPrompts_substitute_text": {
+        "message": "Nahrazující text"
+    },
+    "chatgpt_win_working": {
+        "message": "Pracuji…"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Dokončeno!"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Použít vybranou odpověď"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Zkusit znovu"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Klikněte na tlačítko pro odeslání dotazu."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Nejste přihlášeni do ChatGPT. Přihlaste se svými údaji, zavřete okno ChatGPT a poté opakujte akci. Následně již zůstanete přihlášeni."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Nastavili jste možnost použití určitého modelu, ten se ale nejspíše nenačítá správně. Zkontrolujte prosím danou hodnotu a zkuste to znovu. Pro pokračování můžete stisknout modré tlačítko."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Sem zadejte dodatečný text pro dotaz."
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Zdá se, že stránka ChatGPT se načítá příliš dlouho. Pokud se načte, klikněte na tlačítko vpravo. Pokud problém přetrvává, zkontrolujte stav služby."
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Vyberte text, který chcete použít, a klikněte na tlačítko."
+    },
+    "chatgpt_win_close": {
+        "message": "Zavřít"
     }
 }
