@@ -1,0 +1,866 @@
+{
+    "prompt_summarize_this": {
+        "message": "总结一下这个"
+    },
+    "prompt_reply": {
+        "message": "回复此电子邮件"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_close_button": {
+        "message": "关闭按钮"
+    },
+    "prompt_reply_advanced": {
+        "message": "回复此主题"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "提示文字"
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "过滤提示词..."
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "添加提示词"
+    },
+    "customPrompts_reloading_menus": {
+        "message": "正在重新加载菜单..."
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "需要选择文本"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "操作"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "始终添加签名"
+    },
+    "customPrompts_btnNew": {
+        "message": "新增"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "完成了！"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "保存所有变动"
+    },
+    "extensionDescription": {
+        "message": "使用ChatGPT、Google Gemini 或Ollama 来增强你的邮件！"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_translate_this": {
+        "message": "翻译这个"
+    },
+    "prompt_this": {
+        "message": "提示这个"
+    },
+    "prompt_selection_needed": {
+        "message": "要继续，请先选择一些文本！"
+    },
+    "customPrompts_managePrompts": {
+        "message": "管理提示词"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "更多信息"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "默认的提示词无法直接编辑。你可以先禁用它们，然后将提示文本复制并粘贴到新提示中，从而创建修改后的版本。"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "你可以导入和导出提示。具有相同ID的现有提示将会被覆盖。具有新ID的提示会被添加。"
+    },
+    "customPrompts_btnDelete": {
+        "message": "删除"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "您确实要删除此项吗？"
+    },
+    "backToOptionsText": {
+        "message": "选项"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "如果选中，则当未提供任何值时，占位符将用默认值填充。否则，占位符将保留在原处。"
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "最大提示词长度"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "这是提示中可以使用的最大字符数。否则，将显示错误消息。该值在 ChatGPT Web 界面中不可编辑。"
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT Web 模型"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "这是将为 ChatGPT Web 界面强制使用的模型。如果未指定或提供了不正确的模型，ChatGPT 将在网页上设置默认模型。"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web 临时聊天"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "如果勾选此项，将在 ChatGPT Web 界面中使用临时聊天功能。"
+    },
+    "chatgpt_btn_model": {
+        "message": "使用当前模型"
+    },
+    "SendingPrompt": {
+        "message": "正在发送提示词..."
+    },
+    "AllowedValues": {
+        "message": "允许的值"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "您可以使用额外的数据占位符。"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline2": {
+        "message": "您可以根据需要更改提示，但从 AI 收到的响应必须是以逗号分隔的标签列表！"
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "保持“v1”兼容性"
+    },
+    "prompt_reply_full_text": {
+        "message": "请提供您希望回复的邮件内容，我将根据要求仅提供所需的回复文本，不添加任何额外评论或其他文字。"
+    },
+    "prompt_reply_additional_text": {
+        "message": "不要在回复中添加主题行。"
+    },
+    "addtags_exclude_tag": {
+        "message": "排除标签"
+    },
+    "spamfilter_no_reports": {
+        "message": "尚未筛选出垃圾邮件。此处您只能找到当前会话的最近 100 条垃圾邮件报告的列表。"
+    },
+    "SpamReport_Title": {
+        "message": "垃圾邮件过滤报告"
+    },
+    "spamfilter_not_moved": {
+        "message": "否"
+    },
+    "spamfilter_moved": {
+        "message": "是"
+    },
+    "prompt_rewrite_polite": {
+        "message": "礼貌地重写"
+    },
+    "prompt_classify": {
+        "message": "分类"
+    },
+    "prompt_rewrite_formal": {
+        "message": "正式地重写"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "必须是唯一的、小写且没有空格"
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "正在保存默认提示词..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "重新索引列表..."
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "启用"
+    },
+    "customPrompts_start_saving": {
+        "message": "正在保存提示词..."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "如果一切正确，在导入完成后点击“保存所有”按钮。"
+    },
+    "customPrompts_btnEdit": {
+        "message": "编辑"
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "正在保存自定义提示词..."
+    },
+    "customPrompts_saved": {
+        "message": "提示词已保存！"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "有未保存的更改！"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "始终"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "名称"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "要求补充文字"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "必填字段"
+    },
+    "customPrompts_btnCancel": {
+        "message": "取消"
+    },
+    "customPrompts_save_button": {
+        "message": "保存"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "添加到菜单"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "撰写电子邮件"
+    },
+    "customPrompts_do_reply": {
+        "message": "请回复"
+    },
+    "chatgpt_btn_retry": {
+        "message": "重试"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "阅读电子邮件"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "选择您想要使用的文本并单击按钮。"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "单击发送按钮提交提示词。"
+    },
+    "customPrompts_substitute_text": {
+        "message": "替换文本"
+    },
+    "chatgpt_win_working": {
+        "message": "工作正在进行中..."
+    },
+    "prompt_spamfilter": {
+        "message": "检测垃圾邮件"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "使用选定的答案"
+    },
+    "chatgpt_win_close": {
+        "message": "关闭"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "自动添加标签"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "如果选中，ThunderAI将自动将垃圾邮件移至垃圾邮件文件夹。"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks 未安装！"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "看起来 ChatGPT 页面加载时间太长。如果加载完成，请点击右边的按钮。如果问题仍然存在，请检查服务状态。"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "如果选中，AI将自动为新收到的电子邮件添加标签。"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "如果选中，AI 将仅向新收到的电子邮件添加现有标签，而不会创建新标签。"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "仅向收件箱电子邮件添加标签"
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "ThunderAI 选项中定义的默认签名。"
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "垃圾邮件过滤选项"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "垃圾阈值"
+    },
+    "Subject": {
+        "message": "主题"
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "您尚未登录ChatGPT。请使用您的凭据登录，关闭ChatGPT窗口，然后重复您尝试的操作。随后您将保持登录状态。"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "默认回复语言"
+    },
+    "customPrompts_ExportAll": {
+        "message": "导出所有提示词"
+    },
+    "ollama_empty_model": {
+        "message": "您尚未选择 Ollama API 的模型。请在选项页面中选择一个。"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "默认签名名称"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "回复全部"
+    },
+    "prefsInfoDesc_6": {
+        "message": "您可以通过单击此页面右上角的齿轮图标并选择“管理扩展快捷方式”来更改快捷方式。"
+    },
+    "chatgpt_win_model_warning": {
+        "message": "您已设置使用特定模型的选项，但似乎无法正确加载。请检查值并重试。目前，您可以按蓝色按钮继续。"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "Debug": {
+        "message": "调试"
+    },
+    "AddTags_info_default": {
+        "message": "在此页面中，您可以修改用于向电子邮件添加标签的默认提示词并管理排除列表。"
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "OpenAI 兼容 API 请求失败"
+    },
+    "StorageSpace": {
+        "message": "占用的总存储空间"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "每行添加一个词，或用逗号分隔。"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Google Gemini API 请求失败"
+    },
+    "placeholder_junk_score": {
+        "message": "垃圾评分"
+    },
+    "chatgpt_win_custom_text": {
+        "message": "在此处插入提示词的附加文本。"
+    },
+    "prefs_status_page": {
+        "message": "服务状态"
+    },
+    "chatgpt_empty_model": {
+        "message": "您尚未选择 ChatGPT API 的模型。请在选项页面中选择一个。"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI 兼容的 API"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "如果勾选此项，菜单中的提示将按字母顺序排列。"
+    },
+    "chatgpt_win_send": {
+        "message": "发送"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "回复发件人"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "如果ChatGPT已完成处理但按钮未显示，请点击此处启用“使用最后答案”按钮。"
+    },
+    "prefsInfoTitle": {
+        "message": "重要信息"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API 密钥"
+    },
+    "chagpt_api_connecting": {
+        "message": "尝试使用提供的 API 密钥连接到 OpenAI ChatGPT"
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "发行说明"
+    },
+    "prefsDonation_1": {
+        "message": "你喜欢这个插件吗？"
+    },
+    "prefsDonation_2": {
+        "message": "考虑捐款！"
+    },
+    "WaitingServerReponse": {
+        "message": "正在等待服务器响应"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "尝试获取 OpenAI 兼容 API 模型时出错"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "使用 GPT3.5"
+    },
+    "customPrompts_Import": {
+        "message": "导入新提示词"
+    },
+    "error_connection_interrupted": {
+        "message": "与服务器的连接意外中断"
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI 兼容 API 模型"
+    },
+    "OpenAIComp_empty_model": {
+        "message": "您尚未选择 OpenAI Compatible API 的模型。请在选项页面中选择一个。"
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "尝试使用主机连接到 OpenAI 兼容 API 本地服务器"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "对话名称"
+    },
+    "placeholder_folder_path": {
+        "message": "文件夹路径"
+    },
+    "placeholder_selected_text": {
+        "message": "选定的文本"
+    },
+    "placeholder_account_email_address": {
+        "message": "帐户电子邮件地址"
+    },
+    "chatgpt_force_completion": {
+        "message": "强制完成"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "高度"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "管理您的提示词"
+    },
+    "prefsInfoDesc_5": {
+        "message": "请记住，您可以使用键盘快捷键 CTRL+ALT+A 打开 ThunderAI 菜单。"
+    },
+    "importPrompts_invalidFile": {
+        "message": "您尝试导入的文件不是有效的自定义提示文件。"
+    },
+    "prefsInfoDesc_4": {
+        "message": "若要使用此集成功能，您需要搭建一台兼容OpenAI API的本地服务器（如LM Studio）。服务器启动后，请在应用程序中的指定字段填入其地址。为确保ThunderAI与本地服务器之间通信正常，请务必正确配置CORS设置。"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "ChatGPT 窗口尺寸"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "宽度"
+    },
+    "prefsInfoDesc_3": {
+        "message": "若要使用与Ollama的集成功能，您需要先搭建本地Ollama服务器。服务器运行后，在应用程序中的指定字段输入其地址。为确保ThunderAI与Ollama服务器之间通信正常，请记得设置环境变量OLLAMA_ORIGINS=moz-extension://*。"
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "您尝试导入的文件不包含任何有效提示词。"
+    },
+    "andModel": {
+        "message": "和模型"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "尝试获取 ChatGPT 模型时出错"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "菜单：按字母顺序排列"
+    },
+    "prefsInfoDesc_2": {
+        "message": "要使用 ChatGPT API，您需要一个 OpenAI ChatGPT API 密钥并且必须选择一个模型。"
+    },
+    "TranslateText": {
+        "message": "你想帮助翻译这个插件吗？"
+    },
+    "importPrompts_confirmText": {
+        "message": "您即将导入新的提示。"
+    },
+    "customPrompts_start_import": {
+        "message": "开始导入自定义提示词..."
+    },
+    "customPrompts_import_completed": {
+        "message": "自定义提示词导入完成！您需要点击“全部保存”按钮来保存您的更改。"
+    },
+    "prefs_Connection_type": {
+        "message": "连接类型"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "回复类型"
+    },
+    "msg_prompt_too_long": {
+        "message": "您提供的文本太长。您需要缩短它。"
+    },
+    "TranslateLink": {
+        "message": "了解详情！"
+    },
+    "Loading": {
+        "message": "加载中..."
+    },
+    "prefsInfoDesc_1": {
+        "message": "有时，ChatGPT的网页界面可能会发生更改，导致插件功能无法正常运行。请查看本页底部的“服务状态”页面链接以获取最新信息。此外，请记住，首次使用ThunderAI时，您需要先登录ChatGPT。"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "激活调试系统"
+    },
+    "prefs_API_Host": {
+        "message": "主机地址"
+    },
+    "placeholder_author": {
+        "message": "作者"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "尝试获取 Ollama 模型时出错"
+    },
+    "Optional": {
+        "message": "可选的"
+    },
+    "placeholder_mail_text_body": {
+        "message": "邮件正文"
+    },
+    "placeholder_additional_text": {
+        "message": "附加文本"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "更新 Ollama 模型列表"
+    },
+    "currently_used_prompt": {
+        "message": "当前使用的提示词名称"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT 模型"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "OpenAI ChatGPT API 请求失败"
+    },
+    "prefs_API_Host_Info": {
+        "message": "类似于"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "您尚未添加 OpenAI 兼容 API 的主机地址。请在选项页面中添加一个。"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "如果在 ThunderAI 窗口中遇到登录问题，请使用右侧的按钮在新标签页中打开 ChatGPT，完成登录后关闭该标签页，然后继续使用 ThunderAI。"
+    },
+    "prompt_translate_this_full_text": {
+        "message": "将以下电子邮件翻译成"
+    },
+    "prompt_add_tags": {
+        "message": "为这封电子邮件添加标签"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "AI 建议的最大标签数量。如果不想限制标签数量，请设置为 0。"
+    },
+    "prompt_rewrite_full_text": {
+        "message": "重写以下文字以使其更加礼貌。仅使用重写的文字进行回复，不要添加额外的评论或其他文字。"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "在提示词中定义响应语言"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "菜单：立即发送提示词"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "如果勾选此项，使用键盘快捷键 CTRL+ALT+A 将自动从菜单中发送高亮显示的提示。否则，会向用户显示提示名称，需要再次按下 Enter 键才能发送。"
+    },
+    "OpenChatGPTTab": {
+        "message": "打开 ChatGPT 标签"
+    },
+    "placeholder_recipients": {
+        "message": "收件人"
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "看来您的至少一个账户正在使用 Owl for Exchange 插件。Thunderbird 和 Owl 之间存在一个已知问题，目前正在解决中。在此期间，您可以在撰写邮件时使用 ThunderAI，但在阅读邮件时无法使用。"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT Web 界面"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "更新 ChatGPT 模型列表"
+    },
+    "SearchPrompt": {
+        "message": "搜索提示词"
+    },
+    "error": {
+        "message": "ThunderAI 错误！"
+    },
+    "ollama_empty_host": {
+        "message": "您尚未为 Ollama API 添加主机地址。请在选项页面中增加一个。"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "您尚未添加 ChatGPT API 的 API 密钥。请在选项页面中添加一个。"
+    },
+    "chagpt_api_send_button": {
+        "message": "使用中的模型"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini API 模型"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "您尚未添加 Google Gemini API 的 API 密钥。请在选项页面中填入一个。"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "未找到任何模型"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (本地模型)"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML 邮件正文"
+    },
+    "placeholder_cc_list": {
+        "message": "抄送列表"
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "单击一个值进行设置。"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "手动填入模型"
+    },
+    "Ollama_Models": {
+        "message": "Ollama 模型"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "在此处填入您想要使用的模型名称。"
+    },
+    "ollama_api_connecting": {
+        "message": "尝试使用主机连接到 Ollama 本地服务器"
+    },
+    "ollama_api_request_failed": {
+        "message": "Ollama API 请求失败"
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI 兼容 API 密钥"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "更新 OpenAI 兼容 API 模型列表"
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "如果不想指定窗口大小，请设置为 0。"
+    },
+    "placeholder_tags_current_email": {
+        "message": "邮件标签"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API 密钥"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "回复以下邮件“{%selected_text%}”，并思考整个邮件主题“{%mail_html_body%}”。仅回复所需文本，不添加任何额外评论或其他文字。"
+    },
+    "addtags_info_additional_statements": {
+        "message": "该声明将添加到提示词的末尾："
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "这是将在 AI 聊天中使用的名字。"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "如果选中，API 调用路径中的“v1”段将被保留，例如“http://localhost:1234/v1/chat/completions”。"
+    },
+    "placeholder_mail_subject": {
+        "message": "邮件主题"
+    },
+    "placeholder_folder_name": {
+        "message": "文件夹名称"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "占位符：使用默认值"
+    },
+    "thunderai_def_lang": {
+        "message": "ThunderAI 选项中定义的默认语言。"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "您还可以在此处插入远程服务器地址。"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI 警告"
+    },
+    "google_gemini_api_connecting": {
+        "message": "尝试使用提供的 API 密钥连接到 Google Gemini"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "单击此处，只需一分钟！"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "分析以下邮件文本，并生成一个用逗号分隔的标签列表，以概括其内容。使用主题、关键话题和相关描述词作为标签。确保标签简洁且与邮件内容相关。\n邮件文本：{%mail_text_body%}\n考虑以下细节以获取上下文：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请根据邮件文本和上下文生成标签，忽略不必要的信息或琐碎的细节。输出应仅为逗号分隔的标签列表，不包含任何额外评论或文字。"
+    },
+    "placeholder_tags_full_list": {
+        "message": "现有标签"
+    },
+    "addtags_dialog_title": {
+        "message": "为电子邮件添加标签"
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "将以下电子邮件总结为要点列表。"
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。"
+    },
+    "prompt_this_full_text": {
+        "message": "仅使用所需的文本进行回复，不需要额外的评论或其他文本。"
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "管理标签设置"
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "将标签数量限制为"
+    },
+    "AddTags_PageTitle": {
+        "message": "管理标签设置"
+    },
+    "reply_same_lang": {
+        "message": "用相同的语言回复。"
+    },
+    "prompt_classify_full_text": {
+        "message": "按照礼貌、热情、正式、自信、冒犯性对以下文本进行分类，并为每个类别给出百分比。仅回复类别并评分，不要添加额外评论或其他文本。"
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "为电子邮件添加标签"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "如果选中，菜单中将包含一项用于将标签应用于电子邮件的项目。"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "最大标签数"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "隐藏排除的标签"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "如果选中，位于排除列表中的标签将在确认对话框中隐藏。"
+    },
+    "AddTags_prompt_text_title": {
+        "message": "当前提示文字"
+    },
+    "save": {
+        "message": "保存"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "如果选中，标签语言将被强制与 ThunderAI 选项页面上定义的语言匹配（如果指定）。"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "当您设置系统指令时，您为模型提供了额外的上下文，以帮助其理解任务、提供更个性化的响应，并遵循将在提示中发送的具体准则。"
+    },
+    "prompt_get_calendar_event": {
+        "message": "添加新日历事件"
+    },
+    "AddTags_excl_list_title": {
+        "message": "排除列表"
+    },
+    "google_gemini_empty_model": {
+        "message": "您尚未选择 Google Gemini API 的模型。请在选项页面中选择一个。"
+    },
+    "From": {
+        "message": "来自"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "首字母大写"
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "系统指令"
+    },
+    "reset_default": {
+        "message": "重置为默认值"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "这是一份禁止添加到邮件中的标签列表。"
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "管理垃圾邮件过滤器设置"
+    },
+    "addtags_no_tags_received": {
+        "message": "未收到来自 AI 的标签。"
+    },
+    "addtags_no_valid_tags": {
+        "message": "使用排除列表过滤后，未找到有效标签。"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "分享您的反馈并帮助改进 ThunderAI！"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "尝试获取 Google Gemini 模型时出错"
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "开发者消息"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "立即下载ThunderAI Sparks！"
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI 错误"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "如果选中，标签标签将设置为小写字母，但只有首字母大写。"
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "添加标签选项"
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "强制语言"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "更新 Google Gemini 模型列表"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "当您设置开发者消息时，您为模型提供了额外的上下文，以帮助其理解任务、提供更个性化的响应，并遵循将在提示中发送的具体准则。"
+    },
+    "SpamFilter_info_default": {
+        "message": "在此页面中您可以修改用于检测垃圾邮件的默认提示词。"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "您可以在提示中使用 {%tags_full_list%} 数据占位符来列出可用的标签。通过适当的提示，您可以强制仅从现有标签列表中选择标签。"
+    },
+    "placeholder_mail_typed_text": {
+        "message": "在引用的邮件正文前输入文本"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "打开日历事件对话框时出错"
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "自动垃圾邮件过滤器"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "管理垃圾邮件过滤器设置"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n}\n以下是文本：“{%selected_text%}”"
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "从所选文本添加新日历事件"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "如果选中，菜单中将包含一个项目，以从选定的文本中获取日历事件信息。"
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "管理日历活动设置"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "在此页面中，您可以修改用于从选定文本获取日历事件的默认提示。"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "自动标记时强制使用现有标签"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "如果选中，AI 将仅向收件箱文件夹中收到的电子邮件添加标签。"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "管理日历活动设置"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "要使用日历事件功能，请安装 ThunderAI Sparks 插件。"
+    },
+    "placeholder_mail_datetime": {
+        "message": "电子邮件的日期和时间"
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "当前提示词"
+    },
+    "placeholder_current_datetime": {
+        "message": "当前日期和时间"
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "当前提示词文字"
+    },
+    "prefs_OptionText_GetCalendarEvent_infoline2": {
+        "message": "您可以根据需要更改提示，但从 AI 收到的响应必须采用默认提示中指定的 JSON 格式！"
+    },
+    "calendar_getting_data_error": {
+        "message": "获取日历事件数据时出错"
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "您可以根据需要更改提示词，但从 AI 收到的响应必须采用默认提示中指定的 JSON 格式！"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"spamValue\": <0 到 100 的整数>,\n\"explanation\": \"简要说明您的判断理由\",\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "如果 AI 返回的值高于此阈值，电子邮件将被移至垃圾邮件文件夹。"
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "垃圾邮件阈值太低！您可能会将太多邮件标记为垃圾邮件！"
+    },
+    "Spam_Value": {
+        "message": "垃圾指数"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "垃圾邮件阈值为零！您将把所有邮件标记为垃圾邮件！"
+    },
+    "Date": {
+        "message": "日期"
+    },
+    "Moved_to_Spam": {
+        "message": "移至垃圾邮件箱"
+    },
+    "Report_Date": {
+        "message": "报告日期"
+    }
+}
