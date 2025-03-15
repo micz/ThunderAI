@@ -652,7 +652,7 @@
         "message": "Opzioni per aggiungere tag"
     },
     "prefs_SurveyLinkText": {
-        "message": "Condividi il tuo feedback e aiutaci a migliorare ThunderAI!"
+        "message": "Condividi il tuo feedback e aiuta a migliorare ThunderAI!"
     },
     "prefs_SurveyLinkText2": {
         "message": "Clicca qui, ci vuole solo un minuto!"
@@ -866,5 +866,14 @@
     },
     "spamfilter_threshold_zero": {
         "message": "La soglia di spam è zero! Considererai tutte le email come spam!"
+    },
+    "placeholder_folder_name": {
+        "message": "Nome cartella"
+    },
+    "placeholder_folder_path": {
+        "message": "Percorso cartella"
+    },
+    "placeholder_account_email_address": {
+        "message": "Indirizzo email dell'account"
     }
 }
