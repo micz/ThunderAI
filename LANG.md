@@ -5,3 +5,5 @@ hr
 it
 pl
 pt-br
+cs
+zh_Hans
