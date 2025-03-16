@@ -19,6 +19,8 @@
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
 
+export const contextMenuID_AddTags = () => 'mzta-add-tags';
+export const contextMenuID_Spamfilter = () => 'mzta-spamfilter';
 
 export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
