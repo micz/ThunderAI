@@ -707,6 +707,22 @@ if(prefs_init.spamfilter_context_menu){
 }
 
 
+// Listen for context menu item clicks
+browser.menus.onClicked.addListener( (info, tab) => {
+    let _add_tags = false
+    let _spamfilter = false
+    if(info.menuItemId === contextMenuID_AddTags){
+        _add_tags = true;
+    }
+    if(info.menuItemId === contextMenuID_Spamfilter){
+        _spamfilter = true;
+    }
+    if(_add_tags || _spamfilter){
+        processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
+    }
+});
+
+
 // Listening for new received emails
 const newEmailListener = (folder, messagesList) => {
     taLog.log("New mail received");
