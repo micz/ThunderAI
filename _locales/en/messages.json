@@ -1171,7 +1171,7 @@
     "message": "Add tags",
     "description": ""
   },
-  "context_menu_spamfilter": {
+  "context_menu_mzta-spamfilter": {
     "message": "Analyze for spam",
     "description": ""
   },
