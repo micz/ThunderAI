@@ -25,6 +25,7 @@ import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
+import { taWorkingStatus } from './js/mzta-working-status.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -47,6 +48,7 @@ let prefs_init = {};
 await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
+taWorkingStatus.taLog = taLog;
 
 let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
 
@@ -744,6 +746,7 @@ const newEmailListener = (folder, messagesList) => {
 }
 
 async function processEmails(messages, addTagsAuto, spamFilter) {
+    taWorkingStatus.startWorking();
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
@@ -824,6 +827,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             taSpamReport.saveReportData(report_data, message.headerMessageId);
         }
     }
+    taWorkingStatus.stopWorking();
 }
 
 
