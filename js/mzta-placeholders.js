@@ -357,9 +357,11 @@ export const placeholdersUtils = {
     },
 
     failSafePlaceholders(element){
+        //console.log(">>>>>>>>>> failSafePlaceholders element: " + JSON.stringify(element));
         if(element === null || element === undefined){
             return '';
         }
+        return element;
     }
 
 }
