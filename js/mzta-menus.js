@@ -24,6 +24,7 @@ import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { mzta_specialCommand } from './mzta-special-commands.js';
+import { taWorkingStatus } from './mzta-working-status.js';
  
 export class mzta_Menus {
 
@@ -88,6 +89,7 @@ export class mzta_Menus {
         };
     
         curr_menu_entry.act = async () => {
+            taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
     
@@ -156,6 +158,7 @@ export class mzta_Menus {
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
+                            taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
@@ -171,11 +174,13 @@ export class mzta_Menus {
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: "Error getting tags: " + err });
+                            taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         this.logger.log("tags_current_email: " + tags_current_email);
                         this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
+                        taWorkingStatus.stopWorking();
                         return {ok:'1'};
                         break;  // Add tags to the email - END
                     }
@@ -184,6 +189,7 @@ export class mzta_Menus {
                         let prefs_at = await browser.storage.sync.get({connection_type: ''});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
+                            taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         /* We expect to receive from the AI a JSON object like this:
@@ -203,30 +209,37 @@ export class mzta_Menus {
                         }catch(err){
                             console.error("[ThunderAI] Error getting calendar event data: ", JSON.stringify(err));
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + JSON.stringify(err) });
+                            taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         this.logger.log("calendar_event_data: " + calendar_event_data);
                         try{
                             let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data})
                             if(result_openCalendarEventDialog == 'ok'){
+                                taWorkingStatus.stopWorking();
                                 return {ok:'1'};
                             } else {
                                 browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
+                                taWorkingStatus.stopWorking();
                                 return {ok:'0'};
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening calendar event dialog: ", JSON.stringify(err));
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
+                            taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         break;  // Get a calendar event info - END
                     }
                     default:
                         console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
+                        taWorkingStatus.stopWorking();
+                        return {ok:'0'};
                         break;
                 }
             }else{  // Classic prompts for the API webchat
                 this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+                taWorkingStatus.stopWorking();
                 return {ok:'1'};
             }
         };
