@@ -26,6 +26,7 @@ export const taWorkingStatus = {
         this.WorkingLevel++;
         this.taLog.log("[startWorking] WorkingLevel: " + this.WorkingLevel);
         browser.messageDisplayAction.setIcon({path: "/images/icon-loading.svg"});
+        browser.composeAction.setIcon({path: "/images/icon-loading.svg"});
     },
 
     stopWorking(){
@@ -34,6 +35,7 @@ export const taWorkingStatus = {
         if(this.WorkingLevel<=0){
             this.WorkingLevel = 0;
             browser.messageDisplayAction.setIcon({path: "/images/icon-32px.png"});
+            browser.composeAction.setIcon({path: "/images/icon-32px.png"});
         }
     }
 };
