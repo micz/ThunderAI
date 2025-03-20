@@ -9,7 +9,8 @@
         <li>Added the <i>{%mail_folder_name%}</i> placeholder to get the mail folder name [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
         <li>Added the <i>{%mail_folder_path%}</i> placeholder to get the mail folder path [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
         <li>Added the <i>{%account_email_address%}</i> placeholder to get the current account mail address [<a href="https://github.com/micz/ThunderAI/issues/272">#272</a>].</li>
-        <li>Added a context menu to manually add tags and run the spam filter on selected messages. [<a href="https://github.com/micz/ThunderAI/issues/262">#262</a>].</li>
+        <li><i>[All APIs]</i> Added a context menu to manually add tags and run the spam filter on selected messages. [<a href="https://github.com/micz/ThunderAI/issues/262">#262</a>].</li>
+        <li><i>[All APIs]</i> It's now possibile to define a timezone in the calendar event settings page [<a href="https://github.com/micz/ThunderAI/issues/250">#250</a>].</li>
         <li>The button icon now shows a loading indicator when ThunderAI is performing an operation [<a href="https://github.com/micz/ThunderAI/issues/295">#295</a>].</li>
         <li>Improved the handling of null or undefined placeholders [<a href="https://github.com/micz/ThunderAI/issues/288">#288</a>].</li>
         <li>Czech (cs) translation added, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a> and <a href="https://hosted.weblate.org/user/Fjuro/">Fjuro</a>.</li>
