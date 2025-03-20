@@ -1206,5 +1206,9 @@
   "prefs_OptionText_spamfilter_context_menu_Info": {
     "message": "If checked, the \"Analyze for spam\" context menu item will be shown when right-clicking on an email in the messages list.",
     "description": ""
+  },
+  "noActiveCalendar": {
+    "message": "No active calendar found!",
+    "description": ""
   }
 }
