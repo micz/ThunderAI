@@ -90,6 +90,17 @@ messagesAreaStyle.textContent = `
         color: navy;
         margin-bottom: var(--margin);
     }
+    /* diff viewer */
+    .added {
+        background-color: #d4fcdc;
+        display: inline;
+    }
+
+    .removed {
+        background-color: #fddddd;
+        display: inline;
+        text-decoration: line-through;
+    }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
 
@@ -207,27 +218,6 @@ class MessagesArea extends HTMLElement {
     }
 
     addActionButtons(promptData = null) {
-        // ============================== TESTING
-        // promptData = {
-        //     action: "1",
-        //     tabId: 1,
-        //     mailMessageId: 1
-        // }
-        // let browser = {
-        //     i18n: {
-        //         getMessage: async function(key) {
-        //             return key;
-        //         }
-        //     },
-        //     storage: {
-        //         sync: {
-        //             get: async function(key) {
-        //                 return 'apitest';
-        //             }
-        //         }
-        //     }
-        // }
-        // ============================== TESTING - END
         if(promptData == null) { return; }
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
@@ -257,6 +247,18 @@ class MessagesArea extends HTMLElement {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
         if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
+
+        // diff viewer button
+        if(promptData.prompt_info?.use_diff_viewer == "1") {
+            const diffvButton = document.createElement('button');
+            diffvButton.textContent = 'Show differences';
+            diffvButton.addEventListener('click', async () => {
+                let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
+                this.appendDiffViewer(promptData.prompt_info?.selection_text, strippedText);
+            });
+            actionButtons.appendChild(diffvButton);
+        }
+
         actionButtons.appendChild(closeButton);
         this.messages.appendChild(actionButtons);
         this.scrollToBottom();
@@ -265,6 +267,40 @@ class MessagesArea extends HTMLElement {
     addDivider() {
         const divider = document.createElement('hr');
         this.messages.appendChild(divider);
+        this.scrollToBottom();
+    }
+
+    appendDiffViewer(originalText, newText) {
+        const wordDiff = Diff.diffWords(originalText, newText);
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'bot');
+
+        // Iterate over each part of the diff to create the HTML output
+        wordDiff.forEach(part => {
+            const diffElement = document.createElement("span");
+        
+            // Apply a different class depending on whether the word is added, removed, or unchanged
+            if (part.added) {
+              diffElement.className = "added";
+              diffElement.textContent = part.value;
+            } else if (part.removed) {
+              diffElement.className = "removed";
+              diffElement.textContent = part.value;
+            } else {
+              diffElement.textContent = part.value;
+            }
+        
+            // Add the element to the container
+            messageElement.appendChild(diffElement);
+          });
+
+        const header = document.createElement('h2');
+        header.textContent = "Diff viewer";
+        this.messages.appendChild(header);
+        
+        this.messages.appendChild(messageElement);
+        this.addDivider();
         this.scrollToBottom();
     }
 

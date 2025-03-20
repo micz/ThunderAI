@@ -296,7 +296,7 @@ browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) =>
     }
 });
 
-async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0) {
+async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_custom_text = 0, prompt_info = {}) {
     let prefs = await browser.storage.sync.get(prefs_default);
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
@@ -405,7 +405,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     return;
                 }
                 //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text});
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId2, do_custom_text: do_custom_text, prompt_info: prompt_info});
                 taLog.log('[OpenAI ChatGPT] Connection succeded!');
                 browser.runtime.onMessage.removeListener(listener2);
             }
@@ -455,7 +455,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     return;
                 }
                 //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text});
+                browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
                 taLog.log('[Google Gemini] Connection succeded!');
                 browser.runtime.onMessage.removeListener(listener5);
             }
@@ -511,7 +511,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         browser.tabs.sendMessage(createdTab3.id, { command: "api_error", error: browser.i18n.getMessage('ollama_empty_model')});
                         return;
                     }
-                    browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text});
+                    browser.tabs.sendMessage(createdTab3.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId3, do_custom_text: do_custom_text, prompt_info: prompt_info});
                     taLog.log('[Ollama API] Connection succeded!');
                     browser.runtime.onMessage.removeListener(listener3);
                 }
@@ -563,7 +563,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                             return;
                         }
         
-                        browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text});
+                        browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId4, do_custom_text: do_custom_text, prompt_info: prompt_info});
                         taLog.log('[OpenAI Comp API] Connection succeded!');
                         browser.runtime.onMessage.removeListener(listener4);
                     }

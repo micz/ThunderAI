@@ -106,7 +106,9 @@ export class mzta_Menus {
             let selection_text = '';
             let only_typed_text = '';
             selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
+            curr_prompt.selection_text = selection_text;
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            curr_prompt.body_text = body_text;
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
@@ -260,7 +262,7 @@ export class mzta_Menus {
                         break;
                 }
             }else{  // Classic prompts for the API webchat
-                this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text);
+                this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text, curr_prompt);
                 taWorkingStatus.stopWorking();
                 return {ok:'1'};
             }
