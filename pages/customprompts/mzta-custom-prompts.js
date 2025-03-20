@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedSignatureNew = document.getElementById('checkboxNeedSignatureNew');
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
     var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
+    var checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
@@ -172,6 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_signature: (checkboxNeedSignatureNew.checked) ? 1 : 0,
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
+            use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
             enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
@@ -318,6 +320,7 @@ function showItemRowEditor(tr) {
     tr.querySelector('input.need_signature').disabled = false;
     tr.querySelector('input.need_custom_text').disabled = false;
     tr.querySelector('input.define_response_lang').disabled = false;
+    tr.querySelector('input.use_diff_viewer').disabled = false;
 }
 
 function hideItemRowEditor(tr) {
@@ -335,6 +338,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_signature').disabled = true;
     tr.querySelector('input.need_custom_text').disabled = true;
     tr.querySelector('input.define_response_lang').disabled = true;
+    tr.querySelector('input.use_diff_viewer').disabled = true;
 }
 
 // Confirm and log deletion action
@@ -413,7 +417,7 @@ function handleInputChange(e) {
 function loadPromptsList(values){
     // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -470,6 +474,8 @@ function loadPromptsList(values){
                     <span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span>
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
+                    <br>
+                    <input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__
                     <br>
                     <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
                     <span class="is_default hiddendata"></span>
@@ -609,6 +615,7 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('.need_signature[type="checkbox"]'),
             ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
+            ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
             ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }
