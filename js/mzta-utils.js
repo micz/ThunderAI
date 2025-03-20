@@ -51,7 +51,7 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
           identities_array.push({id: identity.id, email:identity.email})
           if(fallback_identity === '') {
             fallback_identity = {id: identity.id, email:identity.email}
-            console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
+            // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
           }
         }
       }
