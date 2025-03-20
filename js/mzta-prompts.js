@@ -339,6 +339,11 @@ async function getCustomPrompts() {
     if(prefs._custom_prompt === null){
         return [];
     } else {
+        prefs._custom_prompt.forEach(prompt => {
+            if (prompt.use_diff_viewer === undefined) {
+                prompt.use_diff_viewer = "0";
+            }
+        });
         return prefs._custom_prompt;
     }
 }
