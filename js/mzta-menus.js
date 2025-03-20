@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -186,7 +186,7 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_calendar_event': {  // Get a calendar event info
                         let calendar_event_data = '';
-                        let prefs_at = await browser.storage.sync.get({connection_type: ''});
+                        let prefs_at = await browser.storage.sync.get({connection_type: '', calendar_enforce_timezone: false, calendar_timezone: '',});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
                             taWorkingStatus.stopWorking();
@@ -212,9 +212,27 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        this.logger.log("calendar_event_data: " + calendar_event_data);
+                        let calendar_event_data_obj = {};
                         try{
-                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data})
+                            calendar_event_data_obj = extractJsonObject(calendar_event_data);
+                        }catch(err){
+                            console.error("[ThunderAI] Error extracting JSON object from calendar event data: ", JSON.stringify(err));
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + JSON.stringify(err) });
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
+                        // Timezone management
+                        calendar_event_data_obj.use_timezone = false;
+                        if(prefs_at.calendar_enforce_timezone){
+                            calendar_event_data_obj.use_timezone = true;
+                            calendar_event_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        let calendar_event_data_str = JSON.stringify(calendar_event_data_obj);
+                        // Timezone management - END
+                        this.logger.log("calendar_event_data: " + calendar_event_data);
+                        this.logger.log("calendar_event_data_obj: " + calendar_event_data_str);
+                        try{
+                            let result_openCalendarEventDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openCalendarEventDialog", calendar_event_data: calendar_event_data_str})
                             if(result_openCalendarEventDialog == 'ok'){
                                 taWorkingStatus.stopWorking();
                                 return {ok:'1'};
@@ -224,7 +242,7 @@ export class mzta_Menus {
                                 return {ok:'0'};
                             }
                         }catch(err){
-                            console.error("[ThunderAI] Error opening calendar event dialog: ", JSON.stringify(err));
+                            console.error("[ThunderAI] Error opening calendar event dialog: ", err);
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
