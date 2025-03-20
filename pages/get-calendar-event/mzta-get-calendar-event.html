@@ -11,6 +11,50 @@
         <h1 class="page_title">__MSG_GetCalendarEvent_PageTitle__</h1>
         <p>__MSG_GetCalendarEvent_info_default__</p>
     </div>
+    <div class="get_calendar_event_table_title section_title">__MSG_get_calendar_event_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="get_calendar_event_tr">
+            <td><span>__MSG_prefs_OptionText_calendar_enforce_timezone__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="calendar_enforce_timezone" name="calendar_enforce_timezone" class="option-input" /> __MSG_prefs_OptionText_calendar_enforce_timezone_Info__
+                <br><label for="timezone">__MSG_Select_your_timezone__:</label>
+                    <select id="calendar_timezone" name="calendar_timezone" class="option-input">
+                        <option value=""></option>
+                        <option value="Pacific/Midway">(UTC-11:00) Atol Midway</option>
+                        <option value="Pacific/Honolulu">(UTC-10:00) Honolulu</option>
+                        <option value="America/Anchorage">(UTC-09:00) Anchorage</option>
+                        <option value="America/Los_Angeles">(UTC-08:00) Los Angeles</option>
+                        <option value="America/Denver">(UTC-07:00) Denver</option>
+                        <option value="America/Mexico_City">(UTC-06:00) Ciudad de Mexico</option>
+                        <option value="America/New_York">(UTC-05:00) Nueva York</option>
+                        <option value="America/Caracas">(UTC-04:00) Caracas</option>
+                        <option value="America/Sao_Paulo">(UTC-03:00) Sao Paulo</option>
+                        <option value="Atlantic/South_Georgia">(UTC-02:00) South Georgia</option>
+                        <option value="Atlantic/Azores">(UTC-01:00) Azores</option>
+                        <option value="Europe/London">(UTC+00:00) London</option>
+                        <option value="Europe/Rome">(UTC+01:00) Roma</option>
+                        <option value="Africa/Johannesburg">(UTC+02:00) Johannesburg</option>
+                        <option value="Europe/Moscow">(UTC+03:00) Moscow</option>
+                        <option value="Asia/Dubai">(UTC+04:00) Dubai</option>
+                        <option value="Asia/Karachi">(UTC+05:00) Karachi</option>
+                        <option value="Asia/Dhaka">(UTC+06:00) Dhaka</option>
+                        <option value="Asia/Yangon">(UTC+06:30) Yangon</option>
+                        <option value="Asia/Bangkok">(UTC+07:00) Bangkok</option>
+                        <option value="Asia/Shanghai">(UTC+08:00) Shanghai</option>
+                        <option value="Asia/Tokyo">(UTC+09:00) Tokyo</option>
+                        <option value="Australia/Adelaide">(UTC+09:30) Adelaide</option>
+                        <option value="Australia/Sydney">(UTC+10:00) Sydney</option>
+                        <option value="Pacific/Noumea">(UTC+11:00) Noumea</option>
+                        <option value="Pacific/Fiji">(UTC+12:00) Suva</option>
+                        <option value="Pacific/Chatham">(UTC+12:45) Chatham Islands</option>
+                        <option value="Pacific/Tongatapu">(UTC+13:00) Nuku'alofa</option>
+                        <option value="Pacific/Kiritimati">(UTC+14:00) Kiritimati</option>
+                    </select>
+              </label>
+            </td>
+          </tr>
+    </table>
     <div id="get_calendar_event_container">
         <span class="section_title">__MSG_GetCalendarEvent_prompt_text_title__</span><span id="get_calendar_event_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
         <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a>

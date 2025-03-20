@@ -987,6 +987,22 @@
     "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
     "description": ""
   },
+  "get_calendar_event_prompt_prefs_title": {
+    "message": "Calendar Events Options",
+    "description": ""
+  },
+  "Select_your_timezone": {
+    "message": "Select your timezone",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_enforce_timezone": {
+    "message": "Force the specified timezone",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_enforce_timezone_Info": {
+    "message": "If checked, the specified timezone will be enforced for the calendar events.",
+    "description": ""
+  },
   "prefs_OptionText_btnManageCalendarEventInfo": {
     "message": "Manage calendar events settings",
     "description": ""
