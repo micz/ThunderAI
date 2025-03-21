@@ -238,7 +238,8 @@ export class mzta_Menus {
                                 taWorkingStatus.stopWorking();
                                 return {ok:'1'};
                             } else {
-                                if (result_openCalendarEventDialog.error.startsWith("|>>")) {
+                                let err = result_openCalendarEventDialog.error;
+                                if (err && typeof err === 'string' && err.startsWith('|>>')) {
                                     result_openCalendarEventDialog.error = browser.i18n.getMessage(result_openCalendarEventDialog.error.substring(3));
                                 }
                                 browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + result_openCalendarEventDialog.error });
