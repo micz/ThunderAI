@@ -648,7 +648,7 @@
         "message": "Text napsaný před citovaným tělem e-mailu"
     },
     "prompt_get_calendar_event": {
-        "message": "Přidat novou událost do kalendáře"
+        "message": "Přidej novou událost do kalendáře"
     },
     "prefs_OptionText_btnManagePrompts_infoline2": {
         "message": "Výzvu můžete změnit, jak chcete, ale odpověď obdržená od AI musí být seznam štítků oddělených čárkou!"
@@ -822,7 +822,7 @@
         "message": "Spravovat nastavení štítků"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Z následujícího textu extrahujte všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\nZajistěte, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezměte v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítejte datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočtěte datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastavte ji na jednu hodinu.\nPokud nejste schopni získat jednu nebo více požadovaných informací, odpovězte prázdným řetězcem.\nVygenerujte odpověď pouze ve formátu JSON. Nezahrnujte žádný další text ani vysvětlení; uveďte pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"RRRRMMDDTHHMMSS\",\n\"endDate\": \"RRRRMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false\n}\nZde je text:\"{%selected_text%}\""
+        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Přidat novou událost do kalendáře z vybraného textu"
@@ -904,5 +904,8 @@
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
+    },
+    "noActiveCalendar": {
+        "message": "Nenalezen žádný aktivní kalendář!"
     }
 }
