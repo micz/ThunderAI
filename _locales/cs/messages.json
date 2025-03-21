@@ -892,5 +892,17 @@
     },
     "prefs_OptionText_add_tags_context_menu_Info": {
         "message": "Po zaškrtnutí bude po kliknutí pravým tlačítkem na e-mail v seznamu zpráv v kontextové nabídce zobrazena položka „Přidat štítky“."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Možnosti události kalendáře"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Vynutit zvolené časové pásmo"
+    },
+    "Select_your_timezone": {
+        "message": "Vyberte své časové pásmo"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
     }
 }
