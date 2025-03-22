@@ -1214,5 +1214,9 @@
   "noActiveCalendar": {
     "message": "No active calendar found!",
     "description": ""
+  },
+  "btn_show_differences": {
+    "message": "Show differences",
+    "description": ""
   }
 }
