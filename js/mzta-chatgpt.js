@@ -20,7 +20,7 @@
 // Some original methods derived from https://github.com/KudoAI/chatgpt.js/blob/7eb8463cd61143fa9e1d5a8ec3c14d3c1b286e54/chatgpt.js
 // Using a full string to inject it in the ChatGPT page to avoid any security error
 
-//export const mzta_script = `
+export const mzta_script = `
 let force_go = false;
 let do_force_completion = false;
 let current_message = null;
@@ -116,7 +116,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-custom_textarea{color:black;padding:1px;font-size:15px;width:100%;}";
     style.textContent += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
     style.textContent += "#mzta-prompt-name{font-size:13px;font-style:italic;color:#919191;position:fixed;bottom:75px;;left:0;padding-left:5px;}";
-    style.textContent += "#mzta-diff{overflow-y:scroll;text-align:justify;padding:10px;border:2px solid white;border-radius:1em;position:fixed;top:50%;left:50%;width:80%;height:30em;transform:translate(-50%,-50%);z-index:9999;background-color: #333;color: white;}";
+    style.textContent += "#mzta-diff-overlay{position: fixed;top:0;left:0;width:100vw;height:100vh;background: rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:999;}";
+    style.textContent += "#mzta-diff{padding:10px;border:2px solid white;border-radius:1em;position:fixed;top:50%;left:50%;width:80%;height:30em;transform:translate(-50%,-50%);z-index:9999;background-color: #333;color: white;}";
+    style.textContent += "#mzta-diff_title{font-size:16px;font-weight:bold;text-align:center;padding-bottom:10px;}";
+    style.textContent += "#mzta-diff_content{overflow-y:scroll;text-align:justify;width:100%;height:22.5em;}";
     style.textContent += "#mzta-diff span.added{background-color: rgb(0, 94, 0);display:inline;} #mzta-diff span.removed{background-color: rgb(90, 0, 0);display:inline;text-decoration:line-through;}";
     style.textContent += "#mzta-btn_close_diff{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);}";
 
@@ -216,20 +219,33 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     fixedDiv.appendChild(btn_ok);
 
     if(mztaUseDiffViewer == '1'){
+        // diff overlay div
+        var diffOverlay = document.createElement('div');
+        diffOverlay.id = 'mzta-diff-overlay';
+        diffOverlay.style.display = 'none';
         // diff div
         var diffDiv = document.createElement('div');
         diffDiv.id = 'mzta-diff';
-        diffDiv.style.display = 'none';
+        // diff div title
+        var diffTitle = document.createElement('div');
+        diffTitle.id = 'mzta-diff_title';
+        diffTitle.textContent = browser.i18n.getMessage('chatgpt_win_diff_title');
+        diffDiv.appendChild(diffTitle);
+        // diff div content
+        var diffContent = document.createElement('div');
+        diffContent.id = 'mzta-diff_content';
+        diffDiv.appendChild(diffContent);
         // diff div close button
         var btn_close_diff = document.createElement('button');
         btn_close_diff.id = 'mzta-btn_close_diff';
         btn_close_diff.classList.add('mzta-btn');
         btn_close_diff.textContent = browser.i18n.getMessage('chatgpt_win_close');
         btn_close_diff.onclick = function() {
-            document.getElementById('mzta-diff').style.display = 'none';
+            document.getElementById('mzta-diff-overlay').style.display = 'none';
         };
         diffDiv.appendChild(btn_close_diff);
-        fixedDiv.appendChild(diffDiv);
+        diffOverlay.appendChild(diffDiv);
+        fixedDiv.appendChild(diffOverlay);
 
         // diff viewer button
         var btn_diff = document.createElement('button');
@@ -239,7 +255,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         btn_diff.style.display = 'none';
         btn_diff.disabled = true;
         btn_diff.onclick = async function() {
-            diffDiv.innerHTML = '';
+            diffContent.innerHTML = '';
             const response = getSelectedHtml();
             const wordDiff = Diff.diffWords(mztaOriginalText, response.replace(/<\\/?[^>]+(>|$)/g, ''));
             wordDiff.forEach(part => {
@@ -257,8 +273,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 }
             
                 // Add the element to the container
-                diffDiv.appendChild(diffElement);
-                diffDiv.style.display = 'block';
+                diffContent.appendChild(diffElement);
+                diffOverlay.style.display = 'block';
               });
         };
         fixedDiv.appendChild(btn_diff);
@@ -300,7 +316,7 @@ function customTextBtnClick(args) {
     args.customDiv.style.display = 'none';
 }
 
-function checkGPTModel(model) { //TODO
+function checkGPTModel(model) {
     if(model == '') return;
     doLog("checkGPTModel model: " + model);
   return new Promise((resolve, reject) => {
