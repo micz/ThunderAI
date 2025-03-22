@@ -657,6 +657,45 @@ function setupStorageChangeListener() {
                     const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
                     menus.reload(special_prompts_ids);
                 });
+
+                if(newConnectionType === "chatgpt_web"){
+                    removeContextMenu(contextMenuID_AddTags);
+                    removeContextMenu(contextMenuID_Spamfilter);
+                }
+            }
+
+            // context menu changes for add_tags and spamfilter
+            if (changes.add_tags_context_menu) {
+                if(changes.add_tags_context_menu.newValue){
+                    addContextMenu(contextMenuID_AddTags);
+                }else{
+                    removeContextMenu(contextMenuID_AddTags);
+                }
+            }
+            if (changes.add_tags) {
+                if(changes.add_tags.newValue){
+                    if(prefs_init.add_tags_context_menu){
+                        addContextMenu(contextMenuID_AddTags);
+                    }
+                }else{
+                    removeContextMenu(contextMenuID_AddTags);
+                }
+            }
+            if (changes.spamfilter_context_menu) {
+                if(changes.spamfilter_context_menu.newValue){
+                    addContextMenu(contextMenuID_Spamfilter);
+                }else{
+                    removeContextMenu(contextMenuID_Spamfilter);
+                }
+            }
+            if (changes.spamfilter) {
+                if(changes.spamfilter.newValue){
+                    if(prefs_init.spamfilter_context_menu){
+                        addContextMenu(contextMenuID_Spamfilter);
+                    }
+                }else{
+                    removeContextMenu(contextMenuID_Spamfilter);
+                }
             }
             reload_pref_init();
         }
@@ -706,12 +745,12 @@ function removeContextMenu(menu_id) {
 }
 
 // Add Context menu: Add tags
-if(prefs_init.add_tags_context_menu){
+if(prefs_init.add_tags && prefs_init.add_tags_context_menu){
     addContextMenu(contextMenuID_AddTags);
 }
 
 // Add Context menu: Spamfilter
-if(prefs_init.spamfilter_context_menu){
+if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu){
     addContextMenu(contextMenuID_Spamfilter);
 }
 
