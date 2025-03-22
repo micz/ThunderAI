@@ -348,6 +348,11 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
                 taLog.log("prefs.chatgpt_web_model: " + prefs.chatgpt_web_model);
                 taLog.log("_gpt_model: " + _gpt_model);
+
+                let originalText = prompt_info.selection_text;
+                if((originalText == null) || (originalText == "")) {
+                    originalText = prompt_info.body_text;
+                }
         
                 let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                 let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -358,6 +363,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
                 let mztaGPTModel="`+ _gpt_model +`";
                 let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
+                let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer?'1':'0')+`";
+                let mztaOriginalText="`+ originalText +`";
                 `;
 
                 taLog.log("Waiting 1 sec");

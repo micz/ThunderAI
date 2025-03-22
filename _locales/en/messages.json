@@ -1214,5 +1214,13 @@
   "noActiveCalendar": {
     "message": "No active calendar found!",
     "description": ""
+  },
+  "btn_show_differences": {
+    "message": "Show differences",
+    "description": ""
+  },
+  "chatgpt_win_diff_title": {
+    "message": "Differences between the original and the modified text",
+    "description": ""
   }
 }
