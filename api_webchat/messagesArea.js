@@ -45,7 +45,6 @@ messagesAreaStyle.textContent = `
         line-height: 1.3;
         padding: 5px;
         border-radius: 10px;
-
     }
     .message p{
         margin: 0;
@@ -95,11 +94,18 @@ messagesAreaStyle.textContent = `
         background-color: #d4fcdc;
         display: inline;
     }
-
     .removed {
         background-color: #fddddd;
         display: inline;
         text-decoration: line-through;
+    }
+    @media (prefers-color-scheme: dark) {
+        .added {
+            background-color:rgb(0, 94, 0);
+        }
+        .removed {
+            background-color:rgb(90, 0, 0);
+        }
     }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
