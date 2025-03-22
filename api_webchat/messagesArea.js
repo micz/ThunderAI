@@ -254,7 +254,11 @@ class MessagesArea extends HTMLElement {
             diffvButton.textContent = 'Show differences';
             diffvButton.addEventListener('click', async () => {
                 let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
-                this.appendDiffViewer(promptData.prompt_info?.selection_text, strippedText);
+                let originalText = promptData.prompt_info?.selection_text;
+                if((originalText == null) || (originalText == "")) {
+                    originalText = promptData.prompt_info?.body_text;
+                }
+                this.appendDiffViewer(originalText, strippedText);
             });
             actionButtons.appendChild(diffvButton);
         }
