@@ -1222,5 +1222,33 @@
   "chatgpt_win_diff_title": {
     "message": "Differences between the original and the modified text",
     "description": ""
+  },
+  "apiwebchat_you": {
+    "message": "You",
+    "description": ""
+  },
+  "apiwebchat_info": {
+    "message": "Information",
+    "description": ""
+  },
+  "apiwebchat_error": {
+    "message": "Error",
+    "description": ""
+  },
+  "apiwebchat_use_this_answer": {
+    "message": "Use this answer",
+    "description": ""
+  },
+  "apiwebchat_show_differences": {
+    "message": "Show differences",
+    "description": ""
+  },
+  "apiwebchat_stopping": {
+    "message": "Stopping",
+    "description": ""
+  },
+  "apiwebchat_receiving_data": {
+    "message": "Receiving data",
+    "description": ""
   }
 }

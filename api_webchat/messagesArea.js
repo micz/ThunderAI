@@ -162,13 +162,13 @@ class MessagesArea extends HTMLElement {
         this.fullTextHTML = "";
         // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
-        let source = "You";
+        let source = browser.i18n.getMessage("apiwebchat_you");
         switch (type) {
             case "user":
-                source = "You";
+                source = browser.i18n.getMessage("apiwebchat_you");;
                 break;
             case "info":
-                source = "Information";
+                source = browser.i18n.getMessage("apiwebchat_info");
                 break;
         }
         header.textContent = source;
@@ -191,7 +191,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = this.llmName + (type=='error' ? " - Error" : "");
+            header.textContent = this.llmName + (type=='error' ? " - " + browser.i18n.getMessage("apiwebchat_error") : "");
             this.messages.appendChild(header);
         }
 
@@ -228,8 +228,7 @@ class MessagesArea extends HTMLElement {
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
-        actionButton.textContent = 'Use this answer';
-        //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+        actionButton.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         actionButton.addEventListener('click', async () => {
@@ -257,7 +256,7 @@ class MessagesArea extends HTMLElement {
         // diff viewer button
         if(promptData.prompt_info?.use_diff_viewer == "1") {
             const diffvButton = document.createElement('button');
-            diffvButton.textContent = 'Show differences';
+            diffvButton.textContent = browser.i18n.getMessage("apiwebchat_show_differences");
             diffvButton.addEventListener('click', async () => {
                 let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
                 let originalText = promptData.prompt_info?.selection_text;
@@ -307,7 +306,7 @@ class MessagesArea extends HTMLElement {
           });
 
         const header = document.createElement('h2');
-        header.textContent = "Diff viewer";
+        header.textContent = browser.i18n.getMessage("chatgpt_win_diff_title");
         this.messages.appendChild(header);
         
         this.messages.appendChild(messageElement);
