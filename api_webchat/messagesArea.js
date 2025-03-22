@@ -265,6 +265,7 @@ class MessagesArea extends HTMLElement {
                     originalText = promptData.prompt_info?.body_text;
                 }
                 this.appendDiffViewer(originalText, strippedText);
+                diffvButton.disabled = true;
             });
             actionButtons.appendChild(diffvButton);
         }
