@@ -131,6 +131,10 @@
     "message": "Enabled",
     "description": ""
   },
+  "customPrompts_form_label_use_diff_viewer": {
+    "message": "Enable the diff viewer",
+    "description": ""
+  },
   "customPrompts_form_required_fields": {
     "message": "Required fields",
     "description": ""

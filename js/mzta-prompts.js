@@ -45,8 +45,12 @@
     1: Custom text needed
 
     Define response language (define_response_lang attribute):
-    0: Do not include a statement about the response language in the prompt.
-    1: Include a statement about the response language in the prompt.
+    0: Do not include a statement about the response language in the prompt
+    1: Include a statement about the response language in the prompt
+
+    Use the diff viewer (use_diff_viewer attribute):
+    0: Do not use the diff viewer
+    1: Use the diff viewer
 
     ================ USER PROPERTIES
     Enabled (enabled attribute):
@@ -72,6 +76,7 @@ const defaultPrompts = [
         need_signature: "1",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -85,6 +90,7 @@ const defaultPrompts = [
         need_signature: "1",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -98,6 +104,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "1",
         is_default: "1",
         is_special: "0",
     },
@@ -111,6 +118,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "1",
         is_default: "1",
         is_special: "0",
     },
@@ -124,6 +132,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -137,6 +146,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "1",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -150,6 +160,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "0",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -163,6 +174,7 @@ const defaultPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "0",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "0",
     },
@@ -179,6 +191,7 @@ const specialPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "0",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "1",
     },
@@ -192,6 +205,7 @@ const specialPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "0",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "1",
     },
@@ -205,6 +219,7 @@ const specialPrompts = [
         need_signature: "0",
         need_custom_text: "0",
         define_response_lang: "0",
+        use_diff_viewer: "0",
         is_default: "1",
         is_special: "1",
     },
@@ -324,6 +339,11 @@ async function getCustomPrompts() {
     if(prefs._custom_prompt === null){
         return [];
     } else {
+        prefs._custom_prompt.forEach(prompt => {
+            if (prompt.use_diff_viewer === undefined) {
+                prompt.use_diff_viewer = "0";
+            }
+        });
         return prefs._custom_prompt;
     }
 }
