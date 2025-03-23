@@ -792,7 +792,7 @@
         "message": "管理垃圾邮件过滤器设置"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n}\n以下是文本：“{%selected_text%}”"
+        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%selected_text%}”"
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "从所选文本添加新日历事件"
