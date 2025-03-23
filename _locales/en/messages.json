@@ -1239,10 +1239,6 @@
     "message": "Use this answer",
     "description": ""
   },
-  "apiwebchat_show_differences": {
-    "message": "Show differences",
-    "description": ""
-  },
   "apiwebchat_stopping": {
     "message": "Stopping",
     "description": ""

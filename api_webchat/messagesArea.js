@@ -256,7 +256,7 @@ class MessagesArea extends HTMLElement {
         // diff viewer button
         if(promptData.prompt_info?.use_diff_viewer == "1") {
             const diffvButton = document.createElement('button');
-            diffvButton.textContent = browser.i18n.getMessage("apiwebchat_show_differences");
+            diffvButton.textContent = browser.i18n.getMessage("btn_show_differences");
             diffvButton.addEventListener('click', async () => {
                 let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
                 let originalText = promptData.prompt_info?.selection_text;
