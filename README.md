@@ -92,7 +92,7 @@ Are you using this addon in your Thunderbird?
 
 ### Graphics
 - ChatGPT-4 for the help with the addon icon ;-)
-- <a href="https://loading.io">loading.io</a> for the dynamic menu loading SVG
+- <a href="https://loading.io">loading.io</a> for the loading SVGs
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
 
