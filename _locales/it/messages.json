@@ -932,5 +932,11 @@
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Abilita il visualizzatore delle differenze"
+    },
+    "apiwebchat_stopping": {
+        "message": "Interruzione in corso"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Ricezione dati"
     }
 }
