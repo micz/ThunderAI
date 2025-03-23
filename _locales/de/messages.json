@@ -652,7 +652,7 @@
         "message": "Optionen zum Hinzufügen von Tags"
     },
     "prefs_SurveyLinkText": {
-        "message": "Teilen Sie Ihr Feedback und helfen Sie uns, ThunderAI zu verbessern!"
+        "message": "Teilen Sie Ihr Feedback und helfen Sie, ThunderAI zu verbessern!"
     },
     "prefs_SurveyLinkText2": {
         "message": "Klicken Sie hier, es dauert nur eine Minute!"
@@ -866,5 +866,74 @@
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Tags hinzufügen\" angezeigt."
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Auf Spam analysieren\" angezeigt."
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Erzwinge die angegebene Zeitzone"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Tags hinzufügen"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Auf Spam analysieren"
+    },
+    "noActiveCalendar": {
+        "message": "Kein aktiver Kalender gefunden!"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Kalenderereignisoptionen"
+    },
+    "Select_your_timezone": {
+        "message": "Wähle deine Zeitzone"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalenderereignisse erzwungen."
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "\"Tags hinzufügen\" im Kontextmenü anzeigen"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "\"Auf Spam analysieren\" im Kontextmenü anzeigen"
+    },
+    "apiwebchat_you": {
+        "message": "Du"
+    },
+    "apiwebchat_info": {
+        "message": "Information"
+    },
+    "apiwebchat_error": {
+        "message": "Fehler"
+    },
+    "apiwebchat_stopping": {
+        "message": "Wird gestoppt"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Empfange Daten"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Aktiviere den Unterschiedsbetrachter"
+    },
+    "btn_show_differences": {
+        "message": "Unterschiede anzeigen"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Diese Antwort verwenden"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Unterschiede zwischen dem Originaltext und dem geänderten Text"
+    },
+    "placeholder_folder_name": {
+        "message": "Ordnername"
+    },
+    "placeholder_folder_path": {
+        "message": "Ordnerpfad"
+    },
+    "placeholder_account_email_address": {
+        "message": "E-Mail-Adresse des Kontos"
     }
 }
