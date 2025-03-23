@@ -875,5 +875,62 @@
     },
     "placeholder_account_email_address": {
         "message": "Indirizzo email dell'account"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analizza come spam"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Aggiungi etichette"
+    },
+    "noActiveCalendar": {
+        "message": "Non è stato trovato alcun calendario attivo!"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Opzioni Eventi del Calendario"
+    },
+    "btn_show_differences": {
+        "message": "Mostra le differenze"
+    },
+    "apiwebchat_show_differences": {
+        "message": "Mostra le differenze"
+    },
+    "apiwebchat_error": {
+        "message": "Errore"
+    },
+    "apiwebchat_you": {
+        "message": "Tu"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Differenze tra il testo originale e quello modificato"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Forza il fuso orario specificato"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Se selezionato, la voce \"Aggiungi etichette\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Usa questa risposta"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Se selezionato, la voce \"Analizza come spam\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Mostra la voce \"Analizza come spam\" nel menu contestuale"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Mostra la voce \"Aggiungi etichette\" nel menu contestuale"
+    },
+    "apiwebchat_info": {
+        "message": "Informazioni"
+    },
+    "Select_your_timezone": {
+        "message": "Seleziona il tuo fuso orario"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario."
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Abilita il visualizzatore delle differenze"
     }
 }
