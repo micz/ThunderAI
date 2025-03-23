@@ -80,6 +80,8 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
+- Chinese (Simplified): [jeklau](https://github.com/jeklau)
+- Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/)
 - English (en-US): [Mic](https://github.com/micz/)
 - French (fr): Generated automatically, [Noam](https://github.com/noam-sc)
 - German (de): Generated automatically
