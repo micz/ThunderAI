@@ -652,7 +652,7 @@
         "message": "Opzioni per aggiungere tag"
     },
     "prefs_SurveyLinkText": {
-        "message": "Condividi il tuo feedback e aiutaci a migliorare ThunderAI!"
+        "message": "Condividi il tuo feedback e aiuta a migliorare ThunderAI!"
     },
     "prefs_SurveyLinkText2": {
         "message": "Clicca qui, ci vuole solo un minuto!"
@@ -721,7 +721,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n}\nEcco il testo: \"{%selected_text%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -866,5 +866,77 @@
     },
     "spamfilter_threshold_zero": {
         "message": "La soglia di spam è zero! Considererai tutte le email come spam!"
+    },
+    "placeholder_folder_name": {
+        "message": "Nome cartella"
+    },
+    "placeholder_folder_path": {
+        "message": "Percorso cartella"
+    },
+    "placeholder_account_email_address": {
+        "message": "Indirizzo email dell'account"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analizza come spam"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Aggiungi etichette"
+    },
+    "noActiveCalendar": {
+        "message": "Non è stato trovato alcun calendario attivo!"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Opzioni Eventi del Calendario"
+    },
+    "btn_show_differences": {
+        "message": "Mostra le differenze"
+    },
+    "apiwebchat_show_differences": {
+        "message": "Mostra le differenze"
+    },
+    "apiwebchat_error": {
+        "message": "Errore"
+    },
+    "apiwebchat_you": {
+        "message": "Tu"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Differenze tra il testo originale e quello modificato"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Forza il fuso orario specificato"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Se selezionato, la voce \"Aggiungi etichette\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Usa questa risposta"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Se selezionato, la voce \"Analizza come spam\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Mostra la voce \"Analizza come spam\" nel menu contestuale"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Mostra la voce \"Aggiungi etichette\" nel menu contestuale"
+    },
+    "apiwebchat_info": {
+        "message": "Informazioni"
+    },
+    "Select_your_timezone": {
+        "message": "Seleziona il tuo fuso orario"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario."
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Abilita il visualizzatore delle differenze"
+    },
+    "apiwebchat_stopping": {
+        "message": "Interruzione in corso"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Ricezione dati"
     }
 }
