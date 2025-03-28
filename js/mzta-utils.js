@@ -340,10 +340,12 @@ export function extractJsonObject(inputString) {
       return jsonObject;
     } else {
       console.error("[ThunderAI] No JSON object found in the input string.");
+      throw new Error("No JSON object found in the input string.");
       return null;
     }
   } catch (error) {
     console.error("[ThunderAI] Error extracting JSON object:", error);
+    throw new Error("Error extracting JSON object: " + error.message);
     return null;
   }
 }

@@ -212,8 +212,8 @@ export class mzta_Menus {
                             calendar_event_data = await cmd_GetCalendarEvent.sendPrompt();
                             // console.log(">>>>>>>>>>> calendar_event_data: " + calendar_event_data);
                         }catch(err){
-                            console.error("[ThunderAI] Error getting calendar event data: ", JSON.stringify(err));
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + JSON.stringify(err) });
+                            console.error("[ThunderAI] Error getting calendar event data: ", err.message);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -221,8 +221,8 @@ export class mzta_Menus {
                         try{
                             calendar_event_data_obj = extractJsonObject(calendar_event_data);
                         }catch(err){
-                            console.error("[ThunderAI] Error extracting JSON object from calendar event data: ", JSON.stringify(err));
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + JSON.stringify(err) });
+                            console.error("[ThunderAI] Error extracting JSON object from calendar event data: ", err.message);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_getting_data_error") + ": " + err.message });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
