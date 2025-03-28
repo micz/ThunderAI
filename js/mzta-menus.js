@@ -204,6 +204,7 @@ export class mzta_Menus {
                         *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]"
                         *  } 
                         */
+                        fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
                         await cmd_GetCalendarEvent.initWorker();
