@@ -200,7 +200,8 @@ export class mzta_Menus {
                         *   "startDate": "20250104T183000Z",
                         *   "endDate": "20250104T193000Z",
                         *   "summary": "ThunderAI Sparks",
-                        *   "forceAllDay": false
+                        *   "forceAllDay": false,
+                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]"
                         *  } 
                         */
                         this.logger.log("fullPrompt: " + fullPrompt);
