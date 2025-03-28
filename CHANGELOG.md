@@ -9,7 +9,7 @@
         <li>Added the <i>{%mail_folder_name%}</i> placeholder to get the mail folder name [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
         <li>Added the <i>{%mail_folder_path%}</i> placeholder to get the mail folder path [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
         <li>Added the <i>{%account_email_address%}</i> placeholder to get the current account mail address [<a href="https://github.com/micz/ThunderAI/issues/272">#272</a>].</li>
-        <li><i>[ChatGPT Web][All APIs]</i> Added a diff viwer to compare the old and new text. This feature could be activated at prompt level, and it's useful for "rewrite" prompts [<a href="https://github.com/micz/ThunderAI/issues/109">#109</a>].</li>
+        <li><i>[ChatGPT Web][All APIs]</i> Added a diff viewer to compare the old and new text. This feature could be activated at prompt level, and it's useful for "rewrite" prompts [<a href="https://github.com/micz/ThunderAI/issues/109">#109</a>].</li>
         <li><i>[All APIs]</i> Added a context menu to automatically add tags and run the spam filter on selected messages. [<a href="https://github.com/micz/ThunderAI/issues/262">#262</a>].</li>
         <li><i>[All APIs]</i> It's now possibile to define a timezone in the calendar event settings page [<a href="https://github.com/micz/ThunderAI/issues/250">#250</a>].</li>
         <li><i>[All APIs]</i> It's now possibile to add the attendees in the calendar event, be sure to update the prompt in the settings [<a href="https://github.com/micz/ThunderAI/issues/258">#258</a>].</li>
@@ -17,6 +17,7 @@
         <li>Improved the handling of null or undefined placeholders [<a href="https://github.com/micz/ThunderAI/issues/288">#288</a>].</li>
         <li>Czech (cs) translation added, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a> and <a href="https://hosted.weblate.org/user/Fjuro/">Fjuro</a>.</li>
         <li>Simplified Chinese (zh_Hans) translation added, thanks to <a href="https://github.com/jeklau">jeklau</a>.</li>
+        <li>Some old strings are now translated in the API webchat [<a href="https://github.com/micz/ThunderAI/issues/298">#298</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.2.3 - 06/03/2025</h2>
