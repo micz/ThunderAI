@@ -877,7 +877,7 @@
         "message": "Si coché, l'option \"Analyser comme spam\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
     },
     "noActiveCalendar": {
-        "message": "Aucun calendrier actif trouvé !"
+        "message": "Aucun calendrier modifiable trouvé !"
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "Options des événements du calendrier"
