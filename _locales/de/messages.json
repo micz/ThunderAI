@@ -883,7 +883,7 @@
         "message": "Auf Spam analysieren"
     },
     "noActiveCalendar": {
-        "message": "Kein aktiver Kalender gefunden!"
+        "message": "Kein bearbeitbarer Kalender gefunden!"
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "Kalenderereignisoptionen"
