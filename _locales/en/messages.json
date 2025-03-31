@@ -1212,7 +1212,7 @@
     "description": ""
   },
   "noActiveCalendar": {
-    "message": "No active calendar found!",
+    "message": "No editable calendar found!",
     "description": ""
   },
   "btn_show_differences": {
