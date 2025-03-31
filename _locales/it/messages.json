@@ -883,7 +883,7 @@
         "message": "Aggiungi etichette"
     },
     "noActiveCalendar": {
-        "message": "Non è stato trovato alcun calendario attivo!"
+        "message": "Non è stato trovato alcun calendario modificabile!"
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "Opzioni Eventi del Calendario"
