@@ -862,5 +862,71 @@
     },
     "Report_Date": {
         "message": "报告日期"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "添加标签"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "显示“添加标签”上下文菜单项"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "显示“分析垃圾邮件”上下文菜单项"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "如果选中，则在邮件列表中右键单击电子邮件时，将显示“分析垃圾邮件”上下文菜单项。"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "分析垃圾邮件"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "如果选中，“添加标签”上下文菜单项将在消息列表中右键单击电子邮件时显示。"
+    },
+    "noActiveCalendar": {
+        "message": "未找到激活的日历！"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "启用差异查看器"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "日历事件选项"
+    },
+    "Select_your_timezone": {
+        "message": "选择您的时区"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "强制指定的时区"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "如果选中，将强制对日历事件使用指定的时区。"
+    },
+    "btn_show_differences": {
+        "message": "显示差异"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "原始文本与修改文本之间的差异"
+    },
+    "apiwebchat_you": {
+        "message": "您"
+    },
+    "apiwebchat_info": {
+        "message": "信息"
+    },
+    "apiwebchat_error": {
+        "message": "错误"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "使用这个回答"
+    },
+    "apiwebchat_stopping": {
+        "message": "停止中"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "正在接收数据"
+    },
+    "prompt_lang": {
+        "message": "使用此语言回复"
+    },
+    "Explanation": {
+        "message": "说明"
     }
 }
