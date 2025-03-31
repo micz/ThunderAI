@@ -99,7 +99,7 @@ function chatpgt_scrollToBottom () {
 function addCustomDiv(prompt_action,tabId,mailMessageId) {
     // Create <style> element for the CSS
     var style = document.createElement('style');
-    style.textContent = ".mzta-header-fixed {position: fixed;bottom: 0;left: 0;height:100px;width: 100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
+    style.textContent = ".mzta-header-fixed {position:fixed;bottom:0;left: 0;height:100px;width:100%;background-color: #333;color: white;text-align: center;padding: 10px 0;z-index: 1000;border-top: 3px solid white;}"
     style.textContent += "body {padding-bottom: 100px !important;} [id^='headlessui-dialog-panel-:r']{padding-bottom: 100px !important;} [data-testid='screen-thread']{padding-bottom: 100px !important;} [slot='content']{padding-bottom: 100px !important;}";
     style.textContent += ".mzta-btn {background-color: #007bff;border: none;color: white;padding: 8px 15px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 4px 2px;transition-duration: 0.4s;cursor: pointer;border-radius: 5px;}";
     style.textContent += ".mzta-btn:hover {background-color:#0056b3;color:white;}";
@@ -116,6 +116,12 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-custom_textarea{color:black;padding:1px;font-size:15px;width:100%;}";
     style.textContent += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
     style.textContent += "#mzta-prompt-name{font-size:13px;font-style:italic;color:#919191;position:fixed;bottom:75px;;left:0;padding-left:5px;}";
+    style.textContent += "#mzta-diff-overlay{position: fixed;top:0;left:0;width:100vw;height:100vh;background: rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:999;}";
+    style.textContent += "#mzta-diff{padding:10px;border:2px solid white;border-radius:1em;position:fixed;top:50%;left:50%;width:80%;height:30em;transform:translate(-50%,-50%);z-index:9999;background-color: #333;color: white;}";
+    style.textContent += "#mzta-diff_title{font-size:16px;font-weight:bold;text-align:center;padding-bottom:10px;}";
+    style.textContent += "#mzta-diff_content{overflow-y:scroll;text-align:justify;width:100%;height:22.5em;}";
+    style.textContent += "#mzta-diff span.added{background-color: rgb(0, 94, 0);display:inline;} #mzta-diff span.removed{background-color: rgb(90, 0, 0);display:inline;text-decoration:line-through;}";
+    style.textContent += "#mzta-btn_close_diff{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);}";
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
@@ -170,11 +176,13 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     curr_msg.style.display = 'block';
     fixedDiv.appendChild(curr_msg);
 
+    // loading gif
     var loading = document.createElement('img');
     loading.src = browser.runtime.getURL("/images/loading.gif");
     loading.id = "mzta-loading";
     fixedDiv.appendChild(loading);
 
+    // OK button
     var btn_ok = document.createElement('button');
     btn_ok.id="mzta-btn_ok";
     btn_ok.classList.add('mzta-btn');
@@ -209,6 +217,68 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     }
     btn_ok.style.display = 'none';
     fixedDiv.appendChild(btn_ok);
+
+    if(mztaUseDiffViewer == '1'){
+        // diff overlay div
+        var diffOverlay = document.createElement('div');
+        diffOverlay.id = 'mzta-diff-overlay';
+        diffOverlay.style.display = 'none';
+        // diff div
+        var diffDiv = document.createElement('div');
+        diffDiv.id = 'mzta-diff';
+        // diff div title
+        var diffTitle = document.createElement('div');
+        diffTitle.id = 'mzta-diff_title';
+        diffTitle.textContent = browser.i18n.getMessage('chatgpt_win_diff_title');
+        diffDiv.appendChild(diffTitle);
+        // diff div content
+        var diffContent = document.createElement('div');
+        diffContent.id = 'mzta-diff_content';
+        diffDiv.appendChild(diffContent);
+        // diff div close button
+        var btn_close_diff = document.createElement('button');
+        btn_close_diff.id = 'mzta-btn_close_diff';
+        btn_close_diff.classList.add('mzta-btn');
+        btn_close_diff.textContent = browser.i18n.getMessage('chatgpt_win_close');
+        btn_close_diff.onclick = function() {
+            document.getElementById('mzta-diff-overlay').style.display = 'none';
+        };
+        diffDiv.appendChild(btn_close_diff);
+        diffOverlay.appendChild(diffDiv);
+        fixedDiv.appendChild(diffOverlay);
+
+        // diff viewer button
+        var btn_diff = document.createElement('button');
+        btn_diff.id='mzta-btn_diff';
+        btn_diff.classList.add('mzta-btn');
+        btn_diff.textContent = browser.i18n.getMessage('btn_show_differences');
+        btn_diff.style.display = 'none';
+        btn_diff.disabled = true;
+        btn_diff.onclick = async function() {
+            diffContent.innerHTML = '';
+            const response = getSelectedHtml();
+            const wordDiff = Diff.diffWords(mztaOriginalText, response.replace(/<\\/?[^>]+(>|$)/g, ''));
+            wordDiff.forEach(part => {
+                const diffElement = document.createElement('span');
+            
+                // Apply a different class depending on whether the word is added, removed, or unchanged
+                if (part.added) {
+                  diffElement.className = 'added';
+                  diffElement.textContent = part.value;
+                } else if (part.removed) {
+                  diffElement.className = 'removed';
+                  diffElement.textContent = part.value;
+                } else {
+                  diffElement.textContent = part.value;
+                }
+            
+                // Add the element to the container
+                diffContent.appendChild(diffElement);
+                diffOverlay.style.display = 'block';
+              });
+        };
+        fixedDiv.appendChild(btn_diff);
+    }
 
     //div per custom text
     let customDiv = document.createElement('div');
@@ -246,7 +316,7 @@ function customTextBtnClick(args) {
     args.customDiv.style.display = 'none';
 }
 
-function checkGPTModel(model) { //TODO
+function checkGPTModel(model) {
     if(model == '') return;
     doLog("checkGPTModel model: " + model);
   return new Promise((resolve, reject) => {
@@ -291,6 +361,9 @@ function operation_done(){
     }
     curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
+    if(mztaUseDiffViewer == '1'){
+        document.getElementById('mzta-btn_diff').style.display = 'inline';
+    }
     document.getElementById('mzta-loading').style.display = 'none';
     document.getElementById('mzta-force-completion').style.display = 'none';
     chatpgt_scrollToBottom();
@@ -459,12 +532,21 @@ document.addEventListener("selectionchange", function() {
      // Set a timeout to delay the execution of the callback
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
+        let btn_diff = document.getElementById('mzta-btn_diff');
         if (isSomethingSelected()) {
             btn_ok.disabled = false;
             btn_ok.classList.remove('btn_disabled');
+            if(mztaUseDiffViewer == '1'){
+                btn_diff.disabled = false;
+                btn_diff.classList.remove('btn_disabled');
+            }
         } else {
             btn_ok.disabled = true;
             btn_ok.classList.add('btn_disabled');
+            if(mztaUseDiffViewer == '1'){
+                btn_diff.disabled = true;
+                btn_diff.classList.add('btn_disabled');
+            }
         }
      }, 300); // Delay in milliseconds
 });

@@ -216,7 +216,7 @@ class MessageInput extends HTMLElement {
     _handleStopClick() {
         this.worker.postMessage({ type: 'stop' });
         this._stopButton.setAttribute('disabled', 'disabled');
-        this._stopButton.title = 'Stopping...';
+        this._stopButton.title = browser.i18n.getMessage("apiwebchat_stopping") +  '...';
     }
 
     _handleNewChatMessage() {

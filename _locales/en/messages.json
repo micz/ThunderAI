@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use ChatGPT, Goolge Gemini or Ollama to enhance you emails!",
+    "message": "Use ChatGPT, Goolge Gemini or Ollama to enhance your emails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -129,6 +129,10 @@
   },
   "customPrompts_form_label_enabled": {
     "message": "Enabled",
+    "description": ""
+  },
+  "customPrompts_form_label_use_diff_viewer": {
+    "message": "Enable the diff viewer",
     "description": ""
   },
   "customPrompts_form_required_fields": {
@@ -611,6 +615,14 @@
     "message": "Mail subject",
     "description": ""
   },
+  "placeholder_folder_name": {
+    "message": "Folder name",
+    "description": ""
+  },
+  "placeholder_folder_path": {
+    "message": "Folder path",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""
@@ -633,6 +645,10 @@
   },
   "placeholder_author": {
     "message": "Author",
+    "description": ""
+  },
+  "placeholder_account_email_address": {
+    "message": "Account email address",
     "description": ""
   },
   "prefs_OptionText_placeholders_use_default_value": {
@@ -872,7 +888,7 @@
     "description": ""
   },
   "prefs_SurveyLinkText": {
-    "message": "Share your feedback and help us improve ThunderAI!",
+    "message": "Share your feedback and help improve ThunderAI!",
     "description": ""
   },
   "prefs_SurveyLinkText2": {
@@ -964,7 +980,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false\n}\nHere's the text:\"{%selected_text%}\"",
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%selected_text%}\"",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event": {
@@ -973,6 +989,22 @@
   },
   "prefs_OptionText_get_calendar_event_Info": {
     "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
+    "description": ""
+  },
+  "get_calendar_event_prompt_prefs_title": {
+    "message": "Calendar Events Options",
+    "description": ""
+  },
+  "Select_your_timezone": {
+    "message": "Select your timezone",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_enforce_timezone": {
+    "message": "Force the specified timezone",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_enforce_timezone_Info": {
+    "message": "If checked, the specified timezone will be enforced for the calendar events.",
     "description": ""
   },
   "prefs_OptionText_btnManageCalendarEventInfo": {
@@ -1153,6 +1185,66 @@
   },
   "spamfilter_not_moved": {
     "message": "No",
+    "description": ""
+  },
+  "context_menu_mzta-add-tags": {
+    "message": "Add tags",
+    "description": ""
+  },
+  "context_menu_mzta-spamfilter": {
+    "message": "Analyze for spam",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_context_menu": {
+    "message": "Show the \"Add tags\" context menu item",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_context_menu_Info": {
+    "message": "If checked, the \"Add tags\" context menu item will be shown when right-clicking on an email in the messages list.",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_context_menu": {
+    "message": "Show the \"Analyze for spam\" context menu item",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_context_menu_Info": {
+    "message": "If checked, the \"Analyze for spam\" context menu item will be shown when right-clicking on an email in the messages list.",
+    "description": ""
+  },
+  "noActiveCalendar": {
+    "message": "No editable calendar found!",
+    "description": ""
+  },
+  "btn_show_differences": {
+    "message": "Show differences",
+    "description": ""
+  },
+  "chatgpt_win_diff_title": {
+    "message": "Differences between the original and the modified text",
+    "description": ""
+  },
+  "apiwebchat_you": {
+    "message": "You",
+    "description": ""
+  },
+  "apiwebchat_info": {
+    "message": "Information",
+    "description": ""
+  },
+  "apiwebchat_error": {
+    "message": "Error",
+    "description": ""
+  },
+  "apiwebchat_use_this_answer": {
+    "message": "Use this answer",
+    "description": ""
+  },
+  "apiwebchat_stopping": {
+    "message": "Stopping",
+    "description": ""
+  },
+  "apiwebchat_receiving_data": {
+    "message": "Receiving data",
     "description": ""
   }
 }

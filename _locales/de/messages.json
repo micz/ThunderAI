@@ -652,7 +652,7 @@
         "message": "Optionen zum Hinzufügen von Tags"
     },
     "prefs_SurveyLinkText": {
-        "message": "Teilen Sie Ihr Feedback und helfen Sie uns, ThunderAI zu verbessern!"
+        "message": "Teilen Sie Ihr Feedback und helfen Sie, ThunderAI zu verbessern!"
     },
     "prefs_SurveyLinkText2": {
         "message": "Klicken Sie hier, es dauert nur eine Minute!"
@@ -721,7 +721,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n}\nHier ist der Text: \"{%selected_text%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -866,5 +866,74 @@
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Tags hinzufügen\" angezeigt."
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Auf Spam analysieren\" angezeigt."
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Erzwinge die angegebene Zeitzone"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Tags hinzufügen"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Auf Spam analysieren"
+    },
+    "noActiveCalendar": {
+        "message": "Kein bearbeitbarer Kalender gefunden!"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Kalenderereignisoptionen"
+    },
+    "Select_your_timezone": {
+        "message": "Wähle deine Zeitzone"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalenderereignisse erzwungen."
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "\"Tags hinzufügen\" im Kontextmenü anzeigen"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "\"Auf Spam analysieren\" im Kontextmenü anzeigen"
+    },
+    "apiwebchat_you": {
+        "message": "Du"
+    },
+    "apiwebchat_info": {
+        "message": "Information"
+    },
+    "apiwebchat_error": {
+        "message": "Fehler"
+    },
+    "apiwebchat_stopping": {
+        "message": "Wird gestoppt"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Empfange Daten"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Aktiviere den Unterschiedsbetrachter"
+    },
+    "btn_show_differences": {
+        "message": "Unterschiede anzeigen"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Diese Antwort verwenden"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Unterschiede zwischen dem Originaltext und dem geänderten Text"
+    },
+    "placeholder_folder_name": {
+        "message": "Ordnername"
+    },
+    "placeholder_folder_path": {
+        "message": "Ordnerpfad"
+    },
+    "placeholder_account_email_address": {
+        "message": "E-Mail-Adresse des Kontos"
     }
 }

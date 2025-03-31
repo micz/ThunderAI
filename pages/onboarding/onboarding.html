@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+   - Portions Copyright (C) Philipp Kewisch 
+   - This is a modified version of the original file of Quick Folder Move:
+   - https://github.com/kewisch/quickmove-extension/blob/v3.1.0/src/onboarding/onboarding.html -->
+<html>
+<head>
+    <title>Welcome to ThunderAI!</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="onboarding.css">
+    <link rel="icon" href="../../images/icon-16px.png">
+</head>
+<body>
+    <div class="content">
+        <div class="section header">
+          <h1><img src="../../images/icon.png" class="title-icon"/>ThunderAI</h1>
+          <p>
+            Welcome to ThunderAI!
+            <br>This add-on is designed to enhance your email management with the power of AI.
+            <br>With ThunderAI, you can streamline your inbox, generate smart replies, summarize emails, and much more—all with the help of artificial intelligence.
+            <br><br>On this page, you'll find an overview of the key features available to help you make the most of ThunderAI.
+            <br>Get ready to experience a smarter, more efficient way to handle your emails!
+            <br><br>Let's see how to make best use of this add-on!
+          </p>
+        </div>
+        <div class="section image-left">
+          <h2>Using Prompts</h2>
+          <img src="images/prompts-button.png" alt="Prompts menu button" />
+          <p>
+            On each message, there is a button that will allow you to open the prompts menu.
+            <br>Here you can choose the prompt in different ways:
+            <ul>
+              <li><b>Search box</b>: Use this to search for part of the prompt.</li>
+              <li><b>Down/Up Arrow</b>: Move through the prompts.</li>
+              <li><b>Press a number</b>: Press a number on the kayboard to choose the corresponding prompt.</li>
+              <li><b>Enter</b>: When you've picked the prompt you'd like, press enter to execute it.</li>
+            </ul>
+            In the ThunderAI options page you could find some option regarding this menu.
+            <br>The first two prompts are special ones, that are available only when using an API integration. They work directly without opening the AI Chat webpage.
+          </p>
+        </div>
+        <div class="section image-right">
+          <h2>Defining your Custom Prompts</h2>
+          <img src="images/customprompts.png" alt="Managing Custom Prompts"/>
+          <p>
+            From the options page you can open the Custom Prompts page.
+            <br>From there you can add your prompts, and also disable the default ones.
+            <br>You can find more info <a href="https://micz.it/thunderbird-addon-thunderai/custom-prompts/" target="_blank">here</a>.
+          </p>
+          <p>
+            While defining your own prompts you can also use data placeholders, that will be substituted with the corresponding information when using the prompt.
+            <br>You can find more info <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/" target="_blank">here</a>.
+          </p>
+          <p class="clear">
+            For example, you can use the placeholder <i>{%mail_subject%}</i> to refer to the subject of the email or <i>{%tags_current_email%}</i> to refer to the tags of the current email.
+          </p>
+        </div>
+        <div class="section image-left">
+          <h2>Automatic features</h2>
+          <img src="images/autospamfilter.png" alt="Auto spam filter" />
+          <p>
+            There are also two automatic features available when using an API integration, which can be activated from the options page:
+            <br><br>
+            <ul>
+              <li><b>Auto Spam Filter</b>: automatically moves the email to the spam folder if it is detected as spam.</li>
+              <li><b>Auto Tagging</b>: automatically assigns tags to the email.</li>
+            </ul>
+            <br>For each of these features, there is an options page to specify the settings and the custom prompt to be used.
+          </p>
+        </div>
+        <div class="section footer">
+          <p style="text-align:center;">
+            If you have any questions or suggestions, please open an issue on the <a href="https://github.com/micz/ThunderAI/" target="_blank">GitHub page</a>.
+          </p>
+          <p style="text-align:center;"><br>
+            Do you enjoy ThunderAI?
+          </p>
+          <p class="donatebutton">
+            <a class="button" href="https://paypal.me/miczit" target="_blank">Make a donation!</a>
+          </p>
+        </div>
+    </div>
+</body>
+</html>

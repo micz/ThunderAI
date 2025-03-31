@@ -1,0 +1,911 @@
+{
+    "customPrompts_saving_custom_prompts": {
+        "message": "Ukládání vlastních dotazů…"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Přepsat formálně"
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Načítání nabídek…"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Akce"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Zrušit"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Opravdu chcete odstranit tuto položku?"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Přidat do nabídky"
+    },
+    "extensionDescription": {
+        "message": "Použijte ChatGPT, Google Gemini nebo Ollama pro vylepšení vašich e-mailů!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "Odpovědět v jazyce"
+    },
+    "prompt_reply": {
+        "message": "Odpovědět na tento e-mail"
+    },
+    "prompt_reply_advanced": {
+        "message": "Odpovědět na toto vlákno"
+    },
+    "prompt_this": {
+        "message": "Zeptat se"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Další informace"
+    },
+    "customPrompts_start_saving": {
+        "message": "Ukládání dotazů…"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Indexování seznamu…"
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtrování dotazů…"
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Ukládání výchozích dotazů…"
+    },
+    "prompt_translate_this": {
+        "message": "Přeložit"
+    },
+    "prompt_summarize_this": {
+        "message": "Shrnout"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Spravovat dotazy"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Název"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Požadovaná pole"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Potřebný výběr textu"
+    },
+    "customPrompts_saved": {
+        "message": "Dotazy uloženy!"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Povoleno"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Uložit vše"
+    },
+    "customPrompts_do_reply": {
+        "message": "Odpovědět"
+    },
+    "customPrompts_btnNew": {
+        "message": "Přidat nový"
+    },
+    "customPrompts_close_button": {
+        "message": "Tlačítko pro zavření"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Přidat dotaz"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Vždy"
+    },
+    "prompt_selection_needed": {
+        "message": "Pro pokračování vyberte nějaký text!"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Zeptat se na dodatečný text"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Text dotazu"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Čtení e-mailu"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Musí být unikátní, být malými písmeny a bez mezer"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Odstranit"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Vždy přidat podpis"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Upravit"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Psaní e-mailu"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Přepsat zdvořile"
+    },
+    "prompt_classify": {
+        "message": "Zařadit"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_save_button": {
+        "message": "Uložit"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Máte neuložené změny!"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Výchozí dotazy nelze upravovat. Pro vytvoření upravené verze je můžete zakázat, poté zkopírovat text dotazu a vložit jej do nového."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Můžete importovat a exportovat dotazy. Existující dotazy se stejným ID budou přepsány. Dotazy s novými ID budou přidány."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Pokud je všechno správně, po importu klikněte na tlačítko „Uložit vše“."
+    },
+    "customPrompts_substitute_text": {
+        "message": "Nahrazující text"
+    },
+    "chatgpt_win_working": {
+        "message": "Pracuji…"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Dokončeno!"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Použít vybranou odpověď"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Zkusit znovu"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Klikněte na tlačítko pro odeslání dotazu."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Nejste přihlášeni do ChatGPT. Přihlaste se svými údaji, zavřete okno ChatGPT a poté opakujte akci. Následně již zůstanete přihlášeni."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Nastavili jste možnost použití určitého modelu, ten se ale nejspíše nenačítá správně. Zkontrolujte prosím danou hodnotu a zkuste to znovu. Pro pokračování můžete stisknout modré tlačítko."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Sem zadejte dodatečný text pro dotaz."
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Zdá se, že stránka ChatGPT se načítá příliš dlouho. Pokud se načte, klikněte na tlačítko vpravo. Pokud problém přetrvává, zkontrolujte stav služby."
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Vyberte text, který chcete použít, a klikněte na tlačítko."
+    },
+    "chatgpt_win_close": {
+        "message": "Zavřít"
+    },
+    "chatgpt_win_send": {
+        "message": "Odeslat"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "Použít GPT3.5"
+    },
+    "chatgpt_force_completion": {
+        "message": "vynutit doplnění"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Klikněte zde pro zobrazení tlačítka 'Použít poslední odpověď', pokud ChatGPT dokončil svou práci, ale tlačítko se nezobrazilo."
+    },
+    "msg_prompt_too_long": {
+        "message": "Poskytnutý text je příliš dlouhý. Musíte ho zkrátit."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Poznámky k vydání"
+    },
+    "prefs_status_page": {
+        "message": "stav služby"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Rozměry okna ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Výška"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Šířka"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Přednastavený podpis"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Výchozí jazyk pro odpovědi"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Odpovědět všem"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Odpovědět odesílateli"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Spravovat vaše příkazy"
+    },
+    "prefsInfoTitle": {
+        "message": "Důležité informace"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Typ odpovědi"
+    },
+    "prefsInfoDesc_2": {
+        "message": "Pro použití ChatGPT API potřebujete klíč OpenAI ChatGPT API a musíte vybrat model."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Pro použití integrace s Ollama je nutné nastavit místní server Ollama. Jakmile server běží, zadejte jeho adresu do určeného pole v aplikaci. Pro zajištění správné komunikace mezi ThunderAI a serverem Ollama nezapomeňte nastavit proměnnou OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Pamatujte, že nabídku ThunderAI můžete otevřít pomocí klávesové zkratky CTRL+ALT+A."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Zkratku můžete změnit kliknutím na ikonu ozubeného kola v pravém horním rohu této stránky a výběrem možnosti „Spravovat zkratku rozšíření“."
+    },
+    "prefsDonation_1": {
+        "message": "Líbí se vám tento doplněk?"
+    },
+    "prefsDonation_2": {
+        "message": "Zvažte dar!"
+    },
+    "backToOptionsText": {
+        "message": "Možnosti"
+    },
+    "TranslateText": {
+        "message": "Chcete pomoci s překladem tohoto doplňku?"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Exportovat všechny příkazy"
+    },
+    "customPrompts_Import": {
+        "message": "Importovat nové příkazy"
+    },
+    "importPrompts_confirmText": {
+        "message": "Chystáte se importovat nové příkazy."
+    },
+    "customPrompts_import_completed": {
+        "message": "Import vlastních příkazů dokončen! Pro uložení změn musíte kliknout na tlačítko 'Uložit vše'."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Soubor, který se snažíte importovat, neobsahuje žádné platné příkazy."
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Určete jazyk odpovědi v příkazu"
+    },
+    "prefs_Connection_type": {
+        "message": "Typ připojení"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "Webové rozhraní ChatGPT"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "Klíč ChatGPT API"
+    },
+    "Loading": {
+        "message": "Načítání..."
+    },
+    "error": {
+        "message": "Chyba ThunderAI!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Nezadali jste klíč API pro ChatGPT API. Vložte jej prosím na stránce s možnostmi."
+    },
+    "chatgpt_empty_model": {
+        "message": "Nevybrali jste model pro ChatGPT API. Vyberte jej prosím na stránce s možnostmi."
+    },
+    "chagpt_api_connecting": {
+        "message": "Pokouším se připojit k OpenAI ChatGPT pomocí poskytnutého klíče API"
+    },
+    "chagpt_api_send_button": {
+        "message": "Používám model"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Zapnout ladění"
+    },
+    "Debug": {
+        "message": "Ladění"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "API kompatibilní s OpenAI"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Lokální LLM)"
+    },
+    "Ollama_Models": {
+        "message": "Modely Ollama"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Aktualizovat seznam modelů Ollama"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Chyba při pokusu o načtení modelů Ollama"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Nebyly nalezeny žádné modely"
+    },
+    "ollama_empty_host": {
+        "message": "Nezadali jste adresu hostitele pro Ollama API. Prosím, vložte ji na stránce s nastavením."
+    },
+    "prefs_API_Host": {
+        "message": "Adresa hostitele"
+    },
+    "ollama_empty_model": {
+        "message": "Nevybrali jste model pro Ollama API. Prosím, vyberte jej na stránce s nastavením."
+    },
+    "ollama_api_connecting": {
+        "message": "Pokouším se připojit k lokálnímu serveru Ollama pomocí hostitele"
+    },
+    "andModel": {
+        "message": "a model"
+    },
+    "error_connection_interrupted": {
+        "message": "Spojení se serverem bylo neočekávaně přerušeno"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Požadavek na OpenAI ChatGPT API selhal"
+    },
+    "WaitingServerReponse": {
+        "message": "Čekám na odpověď serveru"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Něco jako"
+    },
+    "OpenAIComp_Models": {
+        "message": "odely kompatibilní s OpenAI API"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Aktualizovat seznam modelů kompatibilních s OpenAI API"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Chyba při pokusu o načtení modelů kompatibilních s OpenAI API"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Nezadali jste adresu hostitele pro API kompatibilní s OpenAI. Prosím, vložte ji na stránce s nastavením."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Nevybrali jste model pro API kompatibilní s OpenAI. Prosím, vyberte jej na stránce s nastavením."
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "Pokouším se připojit k lokálnímu serveru API kompatibilního s OpenAI pomocí hostitele"
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Požadavek na OpenAI Comp API selhal"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Jméno chatu"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Toto je jméno, které bude použito v AI chatu."
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "V případě problémů s přihlášením v okně ThunderAI otevřete ChatGPT na nové kartě pomocí tlačítka vpravo, přihlaste se, poté kartu zavřete a pokračujte v používání ThunderAI."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Tělo e-mailu"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML tělo e-mailu"
+    },
+    "placeholder_mail_subject": {
+        "message": "Předmět e-mailu"
+    },
+    "placeholder_folder_name": {
+        "message": "Název složky"
+    },
+    "placeholder_folder_path": {
+        "message": "Cesta ke složce"
+    },
+    "placeholder_selected_text": {
+        "message": "Vybraný text"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Pokud je zaškrtnuto, bude ve webovém rozhraní ChatGPT použit dočasný chat."
+    },
+    "chatgpt_btn_model": {
+        "message": "Použít aktuální model"
+    },
+    "SendingPrompt": {
+        "message": "Odesílání výzvy..."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Aktuální text výzvy"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Seznam vyloučení"
+    },
+    "addtags_no_valid_tags": {
+        "message": "Po filtrování se seznamem vyloučení nebyly nalezeny žádné platné štítky."
+    },
+    "thunderai_error_title": {
+        "message": "Chyba ThunderAI"
+    },
+    "thunderai_warning_title": {
+        "message": "Varování ThunderAI"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Chyba při pokusu o načtení modelů Google Gemini"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Požadavek Google Gemini API selhal"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "V zástupném symbolu dat {%tags_full_list%} můžete ve výzvě uvést seznam dostupných štítků. S vhodnou výzvou pak můžete vynutit, aby byly štítky vybrány pouze ze seznamu již existujících."
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Pokud je zaškrtnuto, bude do nabídky přidána položka pro získání informací o události kalendáře z vybraného textu."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Pokud je zaškrtnuto, AI bude nově přijatým e-mailům přidávat pouze existující štítky a nebude vytvářet nové."
+    },
+    "prompt_spamfilter": {
+        "message": "Detekovat spamové e-maily"
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Výchozí podpis podle nastavení ThunderAI."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Automatický filtr spamu"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Pokud je zaškrtnuto, ThunderAI automaticky přesune spamové e-maily do složky se spamem."
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Spravovat nastavení filtru spamu"
+    },
+    "SpamFilter_info_default": {
+        "message": "Na této stránce můžete upravit výchozí výzvu používanou k detekci spamových e-mailů."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Aktuální text přikazu"
+    },
+    "prefs_OptionText_spamfilter_infoline": {
+        "message": "Příkaz můžete změnit, jak chcete, ale odpověď přijatá z AI musí být ve formátu JSON, jak je uvedeno ve výchozím příkazu!"
+    },
+    "Moved_to_Spam": {
+        "message": "Přesunuto do Spamu"
+    },
+    "Subject": {
+        "message": "Předmět"
+    },
+    "From": {
+        "message": "Od"
+    },
+    "SpamReport_Title": {
+        "message": "Hlášení spamového filtru"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Práh spamu je nula! Označíte všechny e-maily jako spam!"
+    },
+    "Spam_Value": {
+        "message": "Hodnota spamu"
+    },
+    "spamfilter_not_moved": {
+        "message": "Ne"
+    },
+    "prefsInfoDesc_4": {
+        "message": "Pro použití této integrace je nutné nastavit místní server kompatibilní s OpenAI API, jako je LM Studio. Jakmile server běží, zadejte jeho adresu do určeného pole v aplikaci. Pro zajištění správné komunikace mezi ThunderAI a místním serverem nezapomeňte správně nastavit nastavení CORS."
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Přidávat štítky pouze e-mailům v doručené poště"
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Přidat štitky k e-mailům"
+    },
+    "ollama_api_request_failed": {
+        "message": "Požadavek na Ollama API selhal"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "První písmeno velké"
+    },
+    "TranslateLink": {
+        "message": "Zjistěte, jak na to!"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Může se stát, že se webové rozhraní ChatGPT změní způsobem, který naruší funkčnost doplňku. Zkontrolujte stránku „Stav služby“, která je odkazovaná ve spodní části této stránky. Také si pamatujte, že při prvním použití ThunderAI se musíte přihlásit do ChatGPT."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Spravovat nastavení filtru spamu"
+    },
+    "ChatGPT_Models": {
+        "message": "Modely ChatGPT"
+    },
+    "spamfilter_no_reports": {
+        "message": "Zatím nebyly žádné zprávy zkontrolovány na spam. Zde naleznete seznam posledních 100 hlášení spamu pouze pro aktuální relaci."
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "\"Možnosti filtru spamu\""
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Práh spamu je příliš nízký! Pravděpodobně označíte příliš mnoho e-mailů jako spam!"
+    },
+    "importPrompts_invalidFile": {
+        "message": "Soubor, který se snažíte importovat, není platný soubor vlastních příkazů."
+    },
+    "Explanation": {
+        "message": "Vysvětlení"
+    },
+    "customPrompts_start_import": {
+        "message": "Spouštím import vlastních příkazů..."
+    },
+    "currently_used_prompt": {
+        "message": "Aktuálně používaný název přikazu"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Aktualizovat seznam modelů ChatGPT"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Chyba při pokusu o načtení modelů ChatGPT"
+    },
+    "Date": {
+        "message": "Datum"
+    },
+    "spamfilter_moved": {
+        "message": "Ano"
+    },
+    "Report_Date": {
+        "message": "Datum hlášení"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Pokud je hodnota vrácená umělou inteligencí nad tímto prahem, e-mail bude přesunut do složky se spamem."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Práh spamu"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Pokud je zaškrtnuto, štítek bude nastaven na malá písmena s pouze prvním písmenem velkým."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Možnosti přidávání štítků"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Podělte se o svůj názor a pomozte vylepšit ThunderAI!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Klikněte zde, zabere to jen minutu!"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Ručně vložit model"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Zde vložte název modelu, který chcete použít."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Vynutit jazyk"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Pokud je zaškrtnuto, jazyk štítků bude vynucen tak, aby odpovídal jazyku definovanému na stránce možností ThunderAI, pokud je zadán."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Štítky musí být napsány v"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API klíč"
+    },
+    "GoogleGemini_Models": {
+        "message": "Modely Google Gemini API"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Aktualizovat seznam modelů Google Gemini"
+    },
+    "google_gemini_api_connecting": {
+        "message": "Probíhá pokus o připojení ke Google Gemini pomocí zadaného API klíče"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Nezadali jste API klíč pro Google Gemini API. Vložte jej na stránce možností."
+    },
+    "google_gemini_empty_model": {
+        "message": "Nevybrali jste model pro Google Gemini API. Vyberte jej na stránce možností."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Systémová instrukce"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Když nastavíte systémovou instrukci, poskytnete modelu další kontext pro pochopení úkolu, poskytnutí přizpůsobenějších odpovědí a dodržování specifických pokynů nad rámec odeslané výzvy."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Zprávy pro vývojáře"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Toto je seznam štítků, které není povoleno přidávat do e-mailů."
+    },
+    "save": {
+        "message": "Uložit"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Toto prohlášení bude přidáno na konec výzvy:"
+    },
+    "reset_default": {
+        "message": "Obnovit výchozí"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Přidejte slovo na řádek nebo oddělené čárkou."
+    },
+    "addtags_dialog_title": {
+        "message": "Přidat štítky do e-mailu"
+    },
+    "addtags_exclude_tag": {
+        "message": "Vyloučit štítek"
+    },
+    "addtags_no_tags_received": {
+        "message": "Z AI nebyly přijaty žádné štítky."
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Když nastavíte zprávy pro vývojáře, poskytnete modelu další kontext pro pochopení úkolu, poskytnutí přizpůsobenějších odpovědí a dodržování specifických pokynů nad rámec odeslané výzvy."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Text napsaný před citovaným tělem e-mailu"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Přidej novou událost do kalendáře"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline2": {
+        "message": "Výzvu můžete změnit, jak chcete, ale odpověď obdržená od AI musí být seznam štítků oddělených čárkou!"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Pokud je zaškrtnuto, AI bude přidávat štítky pouze e-mailům přijatým ve složce Doručená pošta."
+    },
+    "thunderai_def_lang": {
+        "message": "Výchozí jazyk podle nastavení ThunderAI."
+    },
+    "StorageSpace": {
+        "message": "Celkový obsazený úložný prostor"
+    },
+    "SearchPrompt": {
+        "message": "Hledat výzvy"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Menu: okamžité odeslání výzvy"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Pokud je zaškrtnuto, použití klávesové zkratky CTRL+ALT+A automaticky odešle zvýrazněnou výzvu z menu. Jinak se uživateli zobrazí název výzvy a pro její odeslání bude nutné znovu stisknout klávesu Enter."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Menu: seřadit abecedně"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Pokud je zaškrtnuto, výzvy v menu budou seřazeny abecedně."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Nastavte na 0, pokud nechcete specifikovat velikost okna."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI Comp API klíč"
+    },
+    "Optional": {
+        "message": "Volitelné"
+    },
+    "OpenChatGPTTab": {
+        "message": "Otevřít kartu ChatGPT"
+    },
+    "placeholder_additional_text": {
+        "message": "Dodatečný text"
+    },
+    "placeholder_junk_score": {
+        "message": "Skóre nevyžádané pošty"
+    },
+    "placeholder_recipients": {
+        "message": "Příjemci"
+    },
+    "placeholder_cc_list": {
+        "message": "Seznam kopií"
+    },
+    "placeholder_author": {
+        "message": "Autor"
+    },
+    "placeholder_account_email_address": {
+        "message": "E-mailová adresa účtu"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Zástupné symboly: použít výchozí hodnotu"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Pokud je zaškrtnuto, zástupné symboly budou vyplněny výchozími hodnotami, pokud není zadána žádná hodnota. Jinak zůstanou zástupné symboly na svém místě."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Maximální délka výzvy"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Toto je maximální počet znaků, které lze použít ve výzvě. V opačném případě se zobrazí chybová zpráva. Tato hodnota není upravitelná pro webové rozhraní ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "Webový model ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Toto je model, který bude vynucen pro webové rozhraní ChatGPT. Pokud není zadán žádný model nebo je zadán nesprávný, výchozí model bude nastaven ChatGPT na webové stránce."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "Dočasný chat ChatGPT Web"
+    },
+    "AllowedValues": {
+        "message": "Povolené hodnoty"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Můžete použít další zástupné symboly dat."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Zachovat kompatibilitu \"v1\""
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Pokud je zaškrtnuto, segment \"v1\" v cestě volání API bude zachován, například \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Zde můžete také vložit adresu vzdáleného serveru."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Zdá se, že alespoň jeden z vašich účtů používá doplněk Owl for Exchange. Mezi Thunderbirdem a Owlem je známý problém, který se v současné době řeší. V tuto chvíli můžete používat ThunderAI při psaní e-mailů, ale ne při jejich čtení."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Kliknutím na hodnotu ji nastavíte."
+    },
+    "prompt_reply_full_text": {
+        "message": "Odpovězte na následující e-mail. Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Nepřidávejte řádek předmětu do odpovědi."
+    },
+    "reply_same_lang": {
+        "message": "Odpovězte ve stejném jazyce."
+    },
+    "sign_msg_as": {
+        "message": "Podepište zprávu jako"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Odpovězte na následující e-mail \"{%selected_text%}\", s ohledem na to, že se jedná o celé vlákno e-mailů \"{%mail_html_body%}\". Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Přepište následující text, aby byl zdvořilejší. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Přepište následující text, aby byl formálnější. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_classify_full_text": {
+        "message": "Klasifikujte následující text z hlediska zdvořilosti, vřelosti, formálnosti, asertivity, urážlivosti a uveďte procento pro každou kategorii. Odpovězte pouze kategorií a skóre bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "Shrňte následující e-mail do seznamu s odrážkami."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Přeložte následující e-mail do"
+    },
+    "prompt_this_full_text": {
+        "message": "Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
+    },
+    "prompt_add_tags": {
+        "message": "Přidat štitky k tomuto e-mailu"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Pokud je zaškrtnuto, do menu bude přidána položka pro aplikaci štítků na e-maily."
+    },
+    "placeholder_tags_current_email": {
+        "message": "Štitky e-mailu"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Existující štitky"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Skrýt vyloučené štitky"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Pokud je zaškrtnuto, štitky, které jsou přítomny v seznamu vyloučení, budou skryty v potvrzovacím dialogu."
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Analyzuj následující text e-mailu a vygeneruj seznam štítků oddělených čárkou, které shrnují jeho obsah. Použij témata, klíčová témata a relevantní deskriptory jako štitky. Zajisti, aby štitky byly stručné a relevantní k obsahu e-mailu.\nText e-mailu: {%mail_text_body%}\nPro kontext zvaž následující podrobnosti:\n- Odesílatel: {%author%}\n- Příjemci: {%recipients%}\n- Seznam kopií: {%cc_list%}\n- Předmět e-mailu: {%mail_subject%}\nZalož své štitky na textu a kontextu e-mailu, ignoruj zbytečné informace nebo triviální detaily. Výstup by měl být pouze seznam štítků oddělených čárkou bez jakéhokoli dalšího komentáře nebo textu."
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Maximální počet štítků"
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Omezit počet štítků na"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Maximální počet štítků navržených AI. Nastavte na 0, pokud nechcete omezit počet štítků."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Spravovat nastavení štítků"
+    },
+    "AddTags_info_default": {
+        "message": "Na této stránce můžete upravit výchozí výzvu použitou k přidání štítků k e-mailům a spravovat seznam vyloučení."
+    },
+    "AddTags_PageTitle": {
+        "message": "Spravovat nastavení štítků"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Přidat novou událost do kalendáře z vybraného textu"
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Spravovat nastavení událostí kalendáře"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Spravovat nastavení událostí kalendáře"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Na této stránce můžete upravit výchozí výzvu použitou k získání události kalendáře z vybraného textu."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Aktuální text výzvy"
+    },
+    "prefs_OptionText_GetCalendarEvent_infoline2": {
+        "message": "Výzvu můžete změnit, jak si přejete, ale odpověď přijatá od AI musí být ve formátu JSON, jak je uvedeno ve výchozí výzvě!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Chcete-li používat funkci události kalendáře, nainstalujte si doplněk ThunderAI Sparks."
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Stáhnout ThunderAI Sparks nyní!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Datum a čas e-mailu"
+    },
+    "placeholder_current_datetime": {
+        "message": "Aktuální datum a čas"
+    },
+    "calendar_getting_data_error": {
+        "message": "Chyba při získávání dat události kalendáře"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Chyba při otevírání dialogu události kalendáře"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks není nainstalován!"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Přidávat štítky automaticky"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Pokud je zaškrtnuto, AI automaticky přidá štítky k nově přijatým e-mailům."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Vynutit existující štítky při automatickém označování"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"spamValue\": <celé číslo od 0 do 100>,\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Přidat štítky"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analýza spamu"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Zobrazit v nabídce položku „Přidat štítky“"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Zobrazit v nabídce položku „Analýza spamu“"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Po zaškrtnutí bude po kliknutí pravým tlačítkem na e-mail v seznamu zpráv v kontextové nabídce zobrazena položka „Analýza spamu“."
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Po zaškrtnutí bude po kliknutí pravým tlačítkem na e-mail v seznamu zpráv v kontextové nabídce zobrazena položka „Přidat štítky“."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Možnosti události kalendáře"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Vynutit zvolené časové pásmo"
+    },
+    "Select_your_timezone": {
+        "message": "Vyberte své časové pásmo"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
+    },
+    "noActiveCalendar": {
+        "message": "Nenalezen žádný aktivní kalendář!"
+    }
+}

@@ -191,20 +191,23 @@ input.option-input[type="text"]{
 }
 
 #mzta_top_msg div{
-    color: white;
+    color: #212529;
     font-style: italic;
-    background-color: rgb(3, 0, 180);
+    background-color: #e0e0e0;
     border-radius: 4px;
-    padding: 3px;
+    padding: 15px;
     font-weight: bold;
     margin-bottom: 5px;
     text-align: center;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
 #mzta_top_msg div a{
-    background-color: white;
-    padding:0px 3px;
-    border-radius: 4px;
+    color: #007BFF;
+}
+
+#mzta_top_msg div a:hover{
+    color: #FF6600;
 }
 
 .conntype_chatgpt_web_option{
@@ -251,7 +254,16 @@ input.option-input[type="text"]{
     }
 
     #mzta_top_msg div{
-        background-color: rgb(2, 0, 100);
+        color:#EEEEEE;
+        background-color: #313131;
+    }
+
+    #mzta_top_msg div a{
+        color: #00ADB5;
+    }
+    
+    #mzta_top_msg div a:hover{
+        color: #FF5722;
     }
 
     #no_sparks td{

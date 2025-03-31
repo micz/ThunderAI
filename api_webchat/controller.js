@@ -126,7 +126,7 @@ worker.onmessage = function(event) {
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
-            messageInput.setStatusMessage('Receiving data...');
+            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
             break;
         case 'tokensDone':
             messagesArea.handleTokensDone(promptData);

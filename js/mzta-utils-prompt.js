@@ -57,6 +57,13 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
+    finalizePrompt_get_calendar_event(fullPrompt){
+        fullPrompt = fullPrompt.replace("{%cc_list%}", "");
+        fullPrompt = fullPrompt.replace("{%recipients%}", "");
+
+        return fullPrompt;
+    },   
+
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
         if(String(curr_prompt.define_response_lang) == "1"){

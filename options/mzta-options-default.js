@@ -50,7 +50,11 @@ export const prefs_default = {
     add_tags_auto: false,
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
+    add_tags_context_menu: true,
     get_calendar_event: true,
+    calendar_enforce_timezone: false,
+    calendar_timezone: '',
     spamfilter: false,
     spamfilter_threshold: 70,
+    spamfilter_context_menu: true,
 }

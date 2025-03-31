@@ -45,7 +45,6 @@ messagesAreaStyle.textContent = `
         line-height: 1.3;
         padding: 5px;
         border-radius: 10px;
-
     }
     .message p{
         margin: 0;
@@ -89,6 +88,24 @@ messagesAreaStyle.textContent = `
         background: lightblue;
         color: navy;
         margin-bottom: var(--margin);
+    }
+    /* diff viewer */
+    .added {
+        background-color: #d4fcdc;
+        display: inline;
+    }
+    .removed {
+        background-color: #fddddd;
+        display: inline;
+        text-decoration: line-through;
+    }
+    @media (prefers-color-scheme: dark) {
+        .added {
+            background-color:rgb(0, 94, 0);
+        }
+        .removed {
+            background-color:rgb(90, 0, 0);
+        }
     }
 `;
 messagesAreaTemplate.content.appendChild(messagesAreaStyle);
@@ -145,13 +162,13 @@ class MessagesArea extends HTMLElement {
         this.fullTextHTML = "";
         // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
-        let source = "You";
+        let source = browser.i18n.getMessage("apiwebchat_you");
         switch (type) {
             case "user":
-                source = "You";
+                source = browser.i18n.getMessage("apiwebchat_you");;
                 break;
             case "info":
-                source = "Information";
+                source = browser.i18n.getMessage("apiwebchat_info");
                 break;
         }
         header.textContent = source;
@@ -174,7 +191,7 @@ class MessagesArea extends HTMLElement {
 
         if (isLastMessageFromUser) {
             const header = document.createElement('h2');
-            header.textContent = this.llmName + (type=='error' ? " - Error" : "");
+            header.textContent = this.llmName + (type=='error' ? " - " + browser.i18n.getMessage("apiwebchat_error") : "");
             this.messages.appendChild(header);
         }
 
@@ -207,33 +224,11 @@ class MessagesArea extends HTMLElement {
     }
 
     addActionButtons(promptData = null) {
-        // ============================== TESTING
-        // promptData = {
-        //     action: "1",
-        //     tabId: 1,
-        //     mailMessageId: 1
-        // }
-        // let browser = {
-        //     i18n: {
-        //         getMessage: async function(key) {
-        //             return key;
-        //         }
-        //     },
-        //     storage: {
-        //         sync: {
-        //             get: async function(key) {
-        //                 return 'apitest';
-        //             }
-        //         }
-        //     }
-        // }
-        // ============================== TESTING - END
         if(promptData == null) { return; }
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
-        actionButton.textContent = 'Use this answer';
-        //actionButton.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+        actionButton.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         actionButton.addEventListener('click', async () => {
@@ -257,6 +252,23 @@ class MessagesArea extends HTMLElement {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
         if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
+
+        // diff viewer button
+        if(promptData.prompt_info?.use_diff_viewer == "1") {
+            const diffvButton = document.createElement('button');
+            diffvButton.textContent = browser.i18n.getMessage("btn_show_differences");
+            diffvButton.addEventListener('click', async () => {
+                let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
+                let originalText = promptData.prompt_info?.selection_text;
+                if((originalText == null) || (originalText == "")) {
+                    originalText = promptData.prompt_info?.body_text;
+                }
+                this.appendDiffViewer(originalText, strippedText);
+                diffvButton.disabled = true;
+            });
+            actionButtons.appendChild(diffvButton);
+        }
+
         actionButtons.appendChild(closeButton);
         this.messages.appendChild(actionButtons);
         this.scrollToBottom();
@@ -265,6 +277,40 @@ class MessagesArea extends HTMLElement {
     addDivider() {
         const divider = document.createElement('hr');
         this.messages.appendChild(divider);
+        this.scrollToBottom();
+    }
+
+    appendDiffViewer(originalText, newText) {
+        const wordDiff = Diff.diffWords(originalText, newText);
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'bot');
+
+        // Iterate over each part of the diff to create the HTML output
+        wordDiff.forEach(part => {
+            const diffElement = document.createElement("span");
+        
+            // Apply a different class depending on whether the word is added, removed, or unchanged
+            if (part.added) {
+              diffElement.className = "added";
+              diffElement.textContent = part.value;
+            } else if (part.removed) {
+              diffElement.className = "removed";
+              diffElement.textContent = part.value;
+            } else {
+              diffElement.textContent = part.value;
+            }
+        
+            // Add the element to the container
+            messageElement.appendChild(diffElement);
+          });
+
+        const header = document.createElement('h2');
+        header.textContent = browser.i18n.getMessage("chatgpt_win_diff_title");
+        this.messages.appendChild(header);
+        
+        this.messages.appendChild(messageElement);
+        this.addDivider();
         this.scrollToBottom();
     }
 

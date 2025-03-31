@@ -652,7 +652,7 @@
         "message": "Options d’ajout de tags"
     },
     "prefs_SurveyLinkText": {
-        "message": "Partagez vos commentaires et aidez-nous à améliorer ThunderAI !"
+        "message": "Partagez vos commentaires et aidez à améliorer ThunderAI !"
     },
     "prefs_SurveyLinkText2": {
         "message": "Cliquez ici, cela ne prend qu'une minute !"
@@ -721,7 +721,7 @@
         "message": "Ajouter un nouvel événement au calendrier"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée)\nAssurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\". Calculez la date et l'heure de début sur cette base. Si la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\" : \"YYYYMMDDTHHMMSS\",\n\"endDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\" : false\n}\nVoici le texte : \"{%selected_text%}\""
+        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée)\n- Participants\nAssurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\". Calculez la date et l'heure de début sur cette base. Si la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nVoici les participants : {%author%}, {%recipients%}, {%cc_list%}. Si elle est présente, exclure mon adresse : {%account_email_address%}.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\" : \"YYYYMMDDTHHMMSS\",\n\"endDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\" : false\n\"attendees\" : [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nVoici le texte : \"{%selected_text%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ajouter un nouvel événement au calendrier à partir du texte sélectionné"
@@ -866,5 +866,74 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"spamValue\" : <entier de 0 à 100>,\n\"explanation\" : \"Brève explication de votre raisonnement\",\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Ajouter des étiquettes"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Afficher l'option \"Analyser comme spam\" dans le menu contextuel"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Si coché, l'option \"Analyser comme spam\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
+    },
+    "noActiveCalendar": {
+        "message": "Aucun calendrier modifiable trouvé !"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Options des événements du calendrier"
+    },
+    "apiwebchat_you": {
+        "message": "Vous"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Si coché, le fuseau horaire spécifié sera appliqué aux événements du calendrier."
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Forcer le fuseau horaire spécifié"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Si coché, l'option \"Ajouter des étiquettes\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Différences entre le texte original et le texte modifié"
+    },
+    "apiwebchat_stopping": {
+        "message": "Arrêt en cours"
+    },
+    "Select_your_timezone": {
+        "message": "Sélectionnez votre fuseau horaire"
+    },
+    "btn_show_differences": {
+        "message": "Afficher les différences"
+    },
+    "apiwebchat_error": {
+        "message": "Erreur"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Afficher l'option \"Ajouter des étiquettes\" dans le menu contextuel"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Utiliser cette réponse"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Réception des données"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Activer le visualiseur de différences"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analyser comme spam"
+    },
+    "apiwebchat_info": {
+        "message": "Information"
+    },
+    "placeholder_folder_name": {
+        "message": "Nom du dossier"
+    },
+    "placeholder_folder_path": {
+        "message": "Chemin du dossier"
+    },
+    "placeholder_account_email_address": {
+        "message": "Adresse e-mail du compte"
     }
 }
