@@ -6,6 +6,7 @@
 
 <h2>Version 3.3.1 - ??/??/2025</h2>
       <ul>
+        <li>Added a warning in the options page for hyprland users [<a href="https://github.com/micz/ThunderAI/issues/318">#318</a>].</li>
         <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
         <li>...</li>
       </ul>
