@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.3.1 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.3.0 - 31/03/2025</h2>
       <ul>
         <li>Added the <i>{%mail_folder_name%}</i> placeholder to get the mail folder name [<a href="https://github.com/micz/ThunderAI/issues/253">#253</a>].</li>
