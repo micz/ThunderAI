@@ -208,7 +208,7 @@
         "message": "statut du service"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Dimensions de la fenêtre ChatGPT"
+        "message": "Dimensions de la fenêtre de discussion IA"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Hauteur"
@@ -935,5 +935,8 @@
     },
     "placeholder_account_email_address": {
         "message": "Adresse e-mail du compte"
+    },
+    "hyprland_warning": {
+        "message": "Réglez la hauteur et la largeur sur 0 si vous utilisez Hyprland !"
     }
 }
