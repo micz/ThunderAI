@@ -6,6 +6,7 @@
 
 <h2>Version 3.3.1 - ??/??/2025</h2>
       <ul>
+        <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.3.0 - 31/03/2025</h2>
