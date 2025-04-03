@@ -208,7 +208,7 @@
         "message": "Dienststatus"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "ChatGPT-Fensterabmessungen"
+        "message": "Abmessungen des KI-Chatfensters"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Höhe"
@@ -935,5 +935,8 @@
     },
     "placeholder_account_email_address": {
         "message": "E-Mail-Adresse des Kontos"
+    },
+    "hyprland_warning": {
+        "message": "Setze Höhe und Breite auf 0, wenn du Hyprland benutzt!"
     }
 }
