@@ -1246,5 +1246,9 @@
   "apiwebchat_receiving_data": {
     "message": "Receiving data",
     "description": ""
+  },
+  "hyprland_warning": {
+    "message": "Set height and width to 0 if you're using hyprland!",
+    "description": ""
   }
 }
