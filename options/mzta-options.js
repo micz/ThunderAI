@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
 
-  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: ''});
+  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = document.getElementById('chatgpt_model');
@@ -681,6 +681,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab.addEventListener('click', () => {
     browser.tabs.create({ url: 'https://chatgpt.com/' });
+  });
+
+  browser.runtime.getPlatformInfo().then(info => {
+    taLog.log("OS: " + info.os);
+    if ((info.os === "linux")&&(prefs.chatgpt_win_height!=0)&&(prefs.chatgpt_win_width!=0)){
+      document.getElementById('hyprland_warning').style.display = 'table-row';
+    }
   });
 
 }, { once: true });

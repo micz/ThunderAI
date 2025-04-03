@@ -174,7 +174,11 @@ input.option-input[type="text"]{
     display: none;
 }
 
-#owl_warning div{
+#hyprland_warning{
+    display: none;
+}
+
+.warning{
     color: white;
     font-style: italic;
     background-color: red;
@@ -184,7 +188,7 @@ input.option-input[type="text"]{
     margin-bottom: 5px;
 }
 
-#owl_warning div a{
+.warning a{
     background-color: white;
     padding:0px 3px;
     border-radius: 4px;
