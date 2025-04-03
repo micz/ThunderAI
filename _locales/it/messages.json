@@ -938,5 +938,8 @@
     },
     "apiwebchat_receiving_data": {
         "message": "Ricezione dati"
+    },
+    "hyprland_warning": {
+        "message": "Imposta altezza e larghezza a 0 se stai usando Hyprland!"
     }
 }
