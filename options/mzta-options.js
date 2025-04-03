@@ -537,13 +537,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     warn_GoogleGemini_APIKeyEmpty();
   });
 
-// Ollama API Model fetching
-let select_ollama_model = document.getElementById('ollama_model');
-const ollama_option = document.createElement('option');
-ollama_option.value = prefs.ollama_model;
-ollama_option.text = prefs.ollama_model;
-select_ollama_model.appendChild(ollama_option);
-select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
+  // Ollama API Model fetching
+  let select_ollama_model = document.getElementById('ollama_model');
+  const ollama_option = document.createElement('option');
+  ollama_option.value = prefs.ollama_model;
+  ollama_option.text = prefs.ollama_model;
+  select_ollama_model.appendChild(ollama_option);
+  select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
 
   document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
     document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
@@ -595,13 +595,13 @@ select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
   });
 
 
-// OpenAI Comp API Model fetching
-let select_openai_comp_model = document.getElementById('openai_comp_model');
-const openai_comp_option = document.createElement('option');
-openai_comp_option.value = prefs.openai_comp_model;
-openai_comp_option.text = prefs.openai_comp_model;
-select_openai_comp_model.appendChild(openai_comp_option);
-select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
+  // OpenAI Comp API Model fetching
+  let select_openai_comp_model = document.getElementById('openai_comp_model');
+  const openai_comp_option = document.createElement('option');
+  openai_comp_option.value = prefs.openai_comp_model;
+  openai_comp_option.text = prefs.openai_comp_model;
+  select_openai_comp_model.appendChild(openai_comp_option);
+  select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
 
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
