@@ -360,7 +360,7 @@
         "message": "Něco jako"
     },
     "OpenAIComp_Models": {
-        "message": "odely kompatibilní s OpenAI API"
+        "message": "Modely kompatibilní s OpenAI API"
     },
     "OpenAIComp_Models_Fetch": {
         "message": "Aktualizovat seznam modelů kompatibilních s OpenAI API"
@@ -906,6 +906,33 @@
         "message": "Pokud je zaškrtnuto, bude pro události kalendáře vynuceno zvolené časové pásmo."
     },
     "noActiveCalendar": {
-        "message": "Nenalezen žádný aktivní kalendář!"
+        "message": "Nenalezen žádný upravitelný kalendář!"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Povolit náhled změn"
+    },
+    "btn_show_differences": {
+        "message": "Ukázat změny"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Rozdíly mezi původním a upraveným textem"
+    },
+    "apiwebchat_error": {
+        "message": "Chyba"
+    },
+    "apiwebchat_you": {
+        "message": "Ty"
+    },
+    "apiwebchat_info": {
+        "message": "Informace"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Použít tuto odpověď"
+    },
+    "apiwebchat_stopping": {
+        "message": "Zastavuji"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Přijímám data"
     }
 }
