@@ -1248,7 +1248,7 @@
     "description": ""
   },
   "hyprland_warning": {
-    "message": "Set height and width to 0 if you're using Hyprland!",
+    "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""
   }
 }
