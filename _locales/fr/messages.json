@@ -937,6 +937,6 @@
         "message": "Adresse e-mail du compte"
     },
     "hyprland_warning": {
-        "message": "Réglez la hauteur et la largeur sur 0 si vous utilisez Hyprland !"
+        "message": "Si vous avez des difficultés à ouvrir la fenêtre de chat IA, essayez de définir les valeurs de hauteur et de largeur à 0. Ce problème peut survenir sous Linux dans certains environnements, par exemple lors de l'utilisation de Hyprland."
     }
 }
