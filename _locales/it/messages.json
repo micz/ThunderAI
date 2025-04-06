@@ -940,6 +940,6 @@
         "message": "Ricezione dati"
     },
     "hyprland_warning": {
-        "message": "Imposta altezza e larghezza a 0 se stai usando Hyprland!"
+        "message": "Se hai problemi ad aprire la finestra della chat IA, prova a impostare i valori di altezza e larghezza a 0. Questo problema può verificarsi su Linux in determinati ambienti, ad esempio quando si utilizza Hyprland."
     }
 }
