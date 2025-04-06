@@ -6,7 +6,8 @@
 
 <h2>Version 3.3.1 - ??/??/2025</h2>
       <ul>
-        <li><i>[ChatGPT Web]</i> the additional text field is now focused [<a href="https://github.com/micz/ThunderAI/issues/323">#323</a>].</li>
+        <li><i>[ChatGPT Web]</i> The "Show diff" button is now shown only when correctly set up [<a href="https://github.com/micz/ThunderAI/issues/321">#321</a>].</li>
+        <li><i>[ChatGPT Web]</i> The additional text field is now focused [<a href="https://github.com/micz/ThunderAI/issues/323">#323</a>].</li>
         <li>Added a warning in the options page for linux users [<a href="https://github.com/micz/ThunderAI/issues/318">#318</a>].</li>
         <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
         <li>...</li>
