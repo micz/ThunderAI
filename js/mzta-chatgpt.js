@@ -375,6 +375,7 @@ function checkLoggedIn(){
 
 function showCustomTextField(){
     document.getElementById('mzta-custom_text').style.display = 'block';
+    document.getElementById('mzta-custom_textarea').focus();
 }
 
 async function doProceed(message, customText = ''){
