@@ -937,6 +937,6 @@
         "message": "E-Mail-Adresse des Kontos"
     },
     "hyprland_warning": {
-        "message": "Setze Höhe und Breite auf 0, wenn du Hyprland benutzt!"
+        "message": "Wenn du Probleme hast, das KI-Chatfenster zu öffnen, versuche die Höhe und Breite auf 0 zu setzen. Dieses Problem kann unter Linux in bestimmten Umgebungen auftreten, zum Beispiel bei der Verwendung von Hyprland."
     }
 }
