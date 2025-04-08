@@ -1252,11 +1252,11 @@
     "description": ""
   },
   "remember_CORS": {
-    "message": "Remember, you need to set up the CORS settings!",
+    "message": "Remember, you need to set up the CORS settings on the server!",
     "description": ""
   },
   "maybe_CORS_openai_comp": {
-    "message": "Using OpenAI Compatible API may require setting up CORS settings.",
+    "message": "Using OpenAI Compatible API may require setting up CORS settings on the server.",
     "description": ""
   },
   "CORS_alternative_1": {
