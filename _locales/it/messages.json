@@ -941,5 +941,20 @@
     },
     "hyprland_warning": {
         "message": "Se hai problemi ad aprire la finestra della chat IA, prova a impostare i valori di altezza e larghezza a 0. Questo problema può verificarsi su Linux in determinati ambienti, ad esempio quando si utilizza Hyprland."
+    },
+    "CORS_alternative_1": {
+        "message": "Problemi con la configurazione di CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Premi il pulsante qui sotto per concedere il permesso <all_urls> ed evitare qualsiasi problema legato a CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Concedi il permesso \"tutti gli URL\""
+    },
+    "remember_CORS": {
+        "message": "Ricorda, devi configurare le impostazioni CORS sul server!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "L'utilizzo di un'API compatibile con OpenAI potrebbe richiedere la configurazione delle impostazioni CORS sul server."
     }
 }
