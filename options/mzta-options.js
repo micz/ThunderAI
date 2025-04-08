@@ -26,6 +26,7 @@ import { checkSparksPresence, isThunderbird128OrGreater } from '../js/mzta-utils
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
+let permission_all_urls = false;
 
 function saveOptions(e) {
   e.preventDefault();
@@ -155,6 +156,10 @@ function showConnectionOptions() {
   document.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
     element.style.display = google_gemini_api_display;
   });
+  if (permission_all_urls) {
+    document.getElementById('openai_comp_api_cors_warning').style.display = 'none';
+    document.getElementById('ollama_api_cors_warning').style.display = 'none';
+  }
 }
 
 function warn_ChatGPT_APIKeyEmpty() {
@@ -307,6 +312,8 @@ async function disable_GetCalendarEvent(){
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
+  permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
+
   _isThunderbird128OrGreater = await isThunderbird128OrGreater();
 
   // show Owl warning
@@ -439,6 +446,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       select_openai_comp_model.value = modelName;
       select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));    
     }
+  });
+
+  document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
+    permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+  });
+
+  document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
+    permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
   });
 
   let conntype_select = document.getElementById("connection_type");
