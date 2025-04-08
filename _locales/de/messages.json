@@ -938,5 +938,20 @@
     },
     "hyprland_warning": {
         "message": "Wenn du Probleme hast, das KI-Chatfenster zu öffnen, versuche die Höhe und Breite auf 0 zu setzen. Dieses Problem kann unter Linux in bestimmten Umgebungen auftreten, zum Beispiel bei der Verwendung von Hyprland."
+    },
+    "CORS_alternative_1": {
+        "message": "Probleme beim Einrichten von CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Drücke den Button unten, um die Berechtigung <all_urls> zu erteilen und CORS-Probleme zu vermeiden."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Gib die Berechtigung für \"alle URLs\""
+    },
+    "remember_CORS": {
+        "message": "Denk daran, du musst die CORS-Einstellungen auf dem Server konfigurieren!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Die Verwendung einer mit OpenAI kompatiblen API kann erfordern, die CORS-Einstellungen auf dem Server zu konfigurieren."
     }
 }
