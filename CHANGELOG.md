@@ -4,9 +4,9 @@
 
 
 
-<h2>Version 3.3.2 - ??/??/2025</h2>
+<h2>Version 3.3.2 - 08/04/2025</h2>
       <ul>
-        <li>...</li>
+        <li><i>[Ollama API][OpenAI Comp API]</i> Added an info panel to the options page about CORS, along with a button to request the "All URLs" optional permission to avoid potential CORS issues. [<a href="https://github.com/micz/ThunderAI/issues/330">#330</a>, <a href="https://github.com/micz/ThunderAI/issues/331">#331</a>]. Thanks to <a href="https://github.com/jobisoft">John Bieling</a> for the hint.</li>
       </ul>
 <h2>Version 3.3.1 - 06/04/2025</h2>
       <ul>
