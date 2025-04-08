@@ -37,7 +37,8 @@
     "optional_permissions": [
         "messagesTags",
         "messagesUpdate",
-        "messagesMove"
+        "messagesMove",
+        "<all_urls>"
     ],
     "background": {
         "page": "mzta-background.html"
