@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.3.2 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.3.1 - 06/04/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> The "Show diff" button is now shown only when correctly set up [<a href="https://github.com/micz/ThunderAI/issues/321">#321</a>].</li>
