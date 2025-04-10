@@ -112,6 +112,9 @@ export async function getMailBody(fullMessage){
   let text = '';
   let html = '';
 
+  // console.log(">>>>>>>>>> fullMessage.contentType.trim().toLowerCase(): " + fullMessage.contentType.trim().toLowerCase());
+  // console.log(">>>>>>>>>> fullMessage.body: " + fullMessage.body);
+
   if (fullMessage.contentType.trim().toLowerCase() === "text/plain") {
     text = fullMessage.body;
   }
@@ -119,12 +122,24 @@ export async function getMailBody(fullMessage){
     html = fullMessage.body;
   }
 
-  for (let part of fullMessage.parts) {
-    if (part.contentType.trim().toLowerCase() === "text/plain") {
-      text = part.body;
-    }
-    if (part.contentType.trim().toLowerCase() === "text/html") {
-      html = part.body;
+  if((text == undefined || text == null || text == '') && (html == undefined || html == null || html == '')) {
+    for (let part of fullMessage.parts) {
+      if (part.contentType.trim().toLowerCase() === "text/plain") {
+        text = part.body;
+      }
+      if (part.contentType.trim().toLowerCase() === "text/html") {
+        html = part.body;
+      }
+      if((text == undefined || text == null || text == '') && (html == undefined || html == null || html == '')) {
+        for (let subpart of part.parts) {
+          if (subpart.contentType.trim().toLowerCase() === "text/plain") {
+            text = subpart.body;
+          }
+          if (subpart.contentType.trim().toLowerCase() === "text/html") {
+            html = subpart.body;
+          }
+        }
+      }
     }
   }
   
