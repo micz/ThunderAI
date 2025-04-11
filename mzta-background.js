@@ -44,6 +44,8 @@ await migrateDefaultPromptsPropStorage();
 var original_html = '';
 var modified_html = '';
 
+let _process_incoming = false;
+
 let prefs_init = {};
 await reload_pref_init();
 
@@ -624,6 +626,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 
 async function reload_pref_init(){
     prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: false, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false, spamfilter_threshold: 70, dynamic_menu_force_enter: false, add_tags_context_menu: true, spamfilter_context_menu: true});
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
 }
 
 
@@ -773,6 +776,11 @@ browser.menus.onClicked.addListener( (info, tab) => {
 
 // Listening for new received emails
 const newEmailListener = (folder, messagesList) => {
+
+    if(!_process_incoming){
+        return;
+    }
+
     taLog.log("New mail received");
     taLog.log(`Folder: ${folder.name}`);
 
