@@ -7,7 +7,7 @@
 <h2>Version 3.3.3 - ??/??/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Fix: Correctly getting the message body even in multilevel subpart messages when processing incoming messages for tag  or spam [<a href="https://github.com/micz/ThunderAI/issues/335">#335</a>].</li>
-        <li>...</li>
+        <li>Minor improvements.</li>
       </ul>
 <h2>Version 3.3.2 - 08/04/2025</h2>
       <ul>
