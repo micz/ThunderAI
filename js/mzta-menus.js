@@ -66,9 +66,9 @@ export class mzta_Menus {
     }
 
     async reload(also_special = []) {
-        await browser.menus.removeAll().catch(error => {
-                console.error("[ThunderAI] ERROR removing the menus: ", error);
-            });
+        // await browser.menus.removeAll().catch(error => {
+        //         console.error("[ThunderAI] ERROR removing the menus: ", error);
+        //     });
         this.removeClickListener();
         this.loadMenus(also_special);
     }
@@ -314,16 +314,16 @@ export class mzta_Menus {
 
           this.logger.log("addMenu: " + id);
 
-          await new Promise(resolve =>
-            browser.menus.create({
-                id: id,
-                title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
-                contexts: this.getContexts(id),
-                parentId: root
-              },
-              resolve
-            )
-          );
+        //   await new Promise(resolve =>
+        //     browser.menus.create({
+        //         id: id,
+        //         title: this.getCustomTextAttribute(id) + is_default == 1 ? (browser.i18n.getMessage(id) || name) : name,
+        //         contexts: this.getContexts(id),
+        //         parentId: root
+        //       },
+        //       resolve
+        //     )
+        //   );
       
           if (act) {
             this.menu_listeners[id] = act;
