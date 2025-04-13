@@ -68,7 +68,19 @@ body {
     background-color: #cfe9ff;
   }
   
-  
+  #ask_chatgpt_web_perm{
+    display: none;
+    max-width: 20em;
+    background-color: red;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+  }  
+
   @media (prefers-color-scheme: dark) {
 
     body{   

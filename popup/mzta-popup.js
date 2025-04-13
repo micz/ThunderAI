@@ -46,6 +46,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event = prefs.get_calendar_event;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
+
+    if(prefs.connection_type === 'chatgpt_web'){
+        let permission_chatgpt = await browser.permissions.contains({ origins: ["https://*.chatgpt.com/*"] });
+        if(permission_chatgpt === false){
+            document.getElementById("mzta_search_banner").style.display = "none";
+            document.getElementById("ask_chatgpt_web_perm").style.display = "block";
+            document.getElementById('ask_chatgpt_web_perm').addEventListener('click', async () => {
+                await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+            });
+        }
+    }
 }, { once: true });
 
 async function searchPrompt(allPrompts, tabId, tabType){
