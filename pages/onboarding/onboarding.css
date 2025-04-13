@@ -181,3 +181,39 @@ h2 {
 .section .button:active {
   box-shadow: inset 5px 2px 5px rgba(0, 0, 0, 0.3);
 }
+
+#chatgpt_web_permission {
+  display: none;
+  background-color: red;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+#chatgpt_web_permission:hover {
+  background-color: darkred;
+  transform: scale(1.05);
+}
+
+#chatgpt_web_permission_ok {
+  display: none;
+  background-color: green;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+}
+#chatgpt_web_permission_ok:hover {
+  background-color: darkgreen;
+  transform: scale(1.05);
+}

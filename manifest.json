@@ -31,13 +31,13 @@
         "activeTab",
         "accountsRead",
         "downloads",
-        "messagesTagsList",
-        "https://*.chatgpt.com/*"
+        "messagesTagsList"
     ],
     "optional_permissions": [
         "messagesTags",
         "messagesUpdate",
         "messagesMove",
+        "https://*.chatgpt.com/*",
         "<all_urls>"
     ],
     "background": {

@@ -1278,5 +1278,21 @@
   "CORS_give_allurls_perm": {
     "message": "Give \"all URLs\" permission",
     "description": ""
+  },
+  "ask_chatgptweb_permission_1": {
+    "message": "To use the ChatGPT Web Integration, you need to grant the required permission.",
+    "description": ""
+  },
+  "ask_chatgptweb_permission_2_popup": {
+    "message": "Click here to open a new tab and follow the instructions.",
+    "description": ""
+  },
+  "ask_chatgptweb_permission_2": {
+    "message": "Click here to proceed.",
+    "description": ""
+  },
+  "ask_chatgptweb_permission_ok": {
+    "message": "Permission granted. You can close this tab and return to the main window.",
+    "description": ""
   }
 }
