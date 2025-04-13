@@ -783,6 +783,14 @@
     "message": "Analyze the following email text and generate a comma-separated list of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details. The output should be only a list of comma separated tags without any additional comment or text.",
     "description": ""
   },
+  "prompt_proofread_this": {
+    "message": "Proofread this email",
+    "description": ""
+  },
+  "prompt_proofread_this_full_text": {
+    "message": "Proofread the following email and also correct any spelling or grammar mistakes. Reply with only the corrected text and with no extra comments or other text.\n\n\"{%mail_typed_text%}\"",
+    "description": ""
+  },
   "placeholder_tags_current_email": {
     "message": "Mail tags",
     "description": ""
