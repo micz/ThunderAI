@@ -7,6 +7,8 @@
 <h2>Version 3.4.0 - ??/??/2025</h2>
       <ul>
         <li>The chatgpt.com access permission is no more requested when installing the addon. It's mandatory to give this permission to use the ChatGPT Web Interface integration [<a href="https://github.com/micz/ThunderAI/issues/293">#293</a>].</li>
+        <li>Added the <i>{%mail_quoted_text%}</i> placeholder to get the quoted text when composing a new message [<a href="https://github.com/micz/ThunderAI/issues/324">#324</a>].</li>
+        <li>Fix: In the <i>{%mail_typed_text%}</i> placeholder text on different lines is now separated by a space.</li>
         <li>Added a default proofread prompt [<a href="https://github.com/micz/ThunderAI/issues/21">#21</a>].</li>
         <li>Fix: correctly showing text differences when using {%mail_typed_text%} placeholder.</li>
         <li>...</li>
