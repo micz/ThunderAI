@@ -105,11 +105,16 @@ export class mzta_Menus {
             let body_text = '';
             let selection_text = '';
             let only_typed_text = '';
+            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
+            if(selection_text === ''){
+                if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
+                    selection_text = only_typed_text;
+                }
+            }
             curr_prompt.selection_text = selection_text;
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             curr_prompt.body_text = body_text;
-            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);
