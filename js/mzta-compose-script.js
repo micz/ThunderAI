@@ -76,7 +76,7 @@ switch (message.command) {
           break;
         }
       }
-      t += node.textContent;
+      t += node.textContent + " ";
 
       // Track the first and last nodes for range
       if (!firstNode) {
