@@ -983,6 +983,10 @@
     "message": "Typed text before the quoted mail body",
     "description": ""
   },
+  "placeholder_mail_quoted_text": {
+    "message": "Quoted text in the mail body",
+    "description": ""
+  },
   "prompt_get_calendar_event": {
     "message": "Add a new calendar event",
     "description": ""

@@ -103,6 +103,51 @@ switch (message.command) {
     return Promise.resolve(t);
   }
 
+  case "getOnlyQuotedText": {
+    let t = '';
+    const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+  
+    let firstNode = null;
+    let lastNode = null;
+    let foundCitePrefix = false;
+  
+    for (const node of children) {
+      if (!foundCitePrefix) {
+        if (node instanceof Element && node.classList.contains('moz-cite-prefix')) {
+          foundCitePrefix = true;
+        } else {
+          continue;
+        }
+      }
+  
+      t += node.textContent + " ";
+  
+      if (!firstNode) {
+        firstNode = node;
+      }
+      if (node.textContent.trim() !== '') {
+        lastNode = node;
+      }
+    }
+  
+    if (!lastNode) {
+      lastNode = firstNode;
+    }
+  
+    if (message.do_autoselect && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  
+    return Promise.resolve(t);
+  }
+  
+  
+
   case 'sendAlert':
     //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));
     if(message.curr_tab_type == 'mail'){  // workaround for Thunderbird bug not showing the alert

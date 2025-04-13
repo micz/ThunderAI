@@ -84,7 +84,8 @@ export class mzta_Menus {
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
                 text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
                 html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
-                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })
+                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect }),
+                only_quoted_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" })
             };
         };
     
@@ -105,6 +106,7 @@ export class mzta_Menus {
             let body_text = '';
             let selection_text = '';
             let only_typed_text = '';
+            let only_quoted_text = '';
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
             if(selection_text === ''){
@@ -112,6 +114,7 @@ export class mzta_Menus {
                     selection_text = only_typed_text;
                 }
             }
+            only_quoted_text = msg_text.only_quoted_text.replace(/\s+/g, ' ').trim();
             curr_prompt.selection_text = selection_text;
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             curr_prompt.body_text = body_text;
@@ -138,7 +141,7 @@ export class mzta_Menus {
                     break;
             }
 
-            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
+            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
