@@ -1300,7 +1300,7 @@
     "description": ""
   },
   "ask_chatgptweb_permission_ok": {
-    "message": "Permission granted. You can close this tab and return to the main window.",
+    "message": "Permission granted. You can click here to close this tab and return to the main window.",
     "description": ""
   }
 }
