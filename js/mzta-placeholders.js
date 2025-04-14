@@ -175,6 +175,13 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
     },
+    {
+        id: 'empty',
+        name: "__MSG_placeholder_empty__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
 ];
 
 
@@ -357,6 +364,9 @@ export const placeholdersUtils = {
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'empty':
+                    finalSubs['empty'] = '';
                     break;
                 default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;

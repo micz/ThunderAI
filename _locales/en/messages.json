@@ -1099,6 +1099,10 @@
     "message": "Default language as defined in ThunderAI options.",
     "description": ""
   },
+  "empty": {
+    "message": "This placeholder doesn't add any text, but it prevents the email body from being automatically appended at the end of the prompt.",
+    "description": ""
+  },
   "prefs_OptionText_spamfilter": {
     "message": "Automatic Spam Filter",
     "description": ""
