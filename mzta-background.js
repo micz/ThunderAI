@@ -366,7 +366,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaGPTModel="`+ _gpt_model +`";
                 let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                 let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
-                let mztaOriginalText="`+ originalText +`";
+                let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
                 `;
 
                 taLog.log("Waiting 1 sec");
