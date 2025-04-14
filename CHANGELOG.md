@@ -11,6 +11,7 @@
         <li>Fix: In the <i>{%mail_typed_text%}</i> placeholder text on different lines is now separated by a space.</li>
         <li>Added a default proofread prompt [<a href="https://github.com/micz/ThunderAI/issues/21">#21</a>].</li>
         <li>Fix: correctly showing text differences when using {%mail_typed_text%} placeholder.</li>
+        <li>Added the <i>{%empty%}</i> placeholder to prevent the email body from being automatically appended at the end of the prompt [<a href="https://github.com/micz/ThunderAI/issues/345">#345</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.3.3 - 12/04/2025</h2>
