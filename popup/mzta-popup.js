@@ -121,12 +121,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
   //  console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
   //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
-   if(do_add_tags){
-     num_special_menu_items++;
-   }
-   if(do_get_calendar_event){
-     num_special_menu_items++;
-   }
+  num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
   //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
    if(num_special_menu_items > 0){
      max_num_el -= num_special_menu_items;
