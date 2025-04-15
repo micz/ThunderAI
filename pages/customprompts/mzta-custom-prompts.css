@@ -39,6 +39,10 @@ thead {
     float: right;
 }
 
+#checkboxUseDiffViewerNew_span{
+    display: none;
+}
+
 #btnSaveAll{
     float: left;
 }

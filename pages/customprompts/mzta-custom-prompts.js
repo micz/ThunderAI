@@ -69,40 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     btnNew.addEventListener('click', handleNewClick);
     
-    // Display selected value next to select input
-    // function handleSelectChange(e) {
-    //     e.preventDefault();
-    //     const spanElement = e.target.nextElementSibling;
-    //     spanElement.textContent = e.target.value;
-    // }
-    // document.querySelectorAll('select.input_mod').forEach(element => {
-    //     element.addEventListener('change', handleSelectChange);
-    // });
-    
-    // Log data ID number from item row and prepare for edit action
-    
-    // Handle "type" select changes and log new state
-    // function handleTypeSelectChange(e) {
-    //     e.preventDefault();
-    //     const spanElement = e.target.nextElementSibling;
-    //     spanElement.textContent = e.target.value;
-    // }
-    // let type_select_elements = document.querySelectorAll("select.type_output");
-    // type_select_elements.forEach(element => {
-    //     element.addEventListener('change', handleTypeSelectChange);
-    // });
-    
-    // Handle "action" select changes and log new state
-    // function handleActionSelectChange(e) {
-    //     e.preventDefault();
-    //     const spanElement = e.target.nextElementSibling;
-    //     spanElement.textContent = e.target.value;
-    // }
-    // let action_select_elements = document.querySelectorAll("select.action_output");
-    // action_select_elements.forEach(element => {
-    //     element.addEventListener('change', handleActionSelectChange);
-    // });
-
     // for the new prompt form
     let btnNew_elements = document.querySelectorAll(".input_new");
     if(btnNew_elements) {
@@ -156,6 +122,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
     var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
     var checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+    var checkboxUseDiffViewerNew_span = document.getElementById('checkboxUseDiffViewerNew_span');
+
+    selectActionNew.addEventListener('change', (e) => {
+        if (e.target.value === "2") {
+            checkboxUseDiffViewerNew_span.style.display = 'inline';
+        } else {
+            checkboxUseDiffViewerNew_span.style.display = 'none';
+        }
+    });
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
