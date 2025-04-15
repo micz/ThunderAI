@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         e.target.disabled = true;
         document.getElementById('formNew').style.display = 'block';
+        let _checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+        _checkboxUseDiffViewerNew.checked = false;
+        _checkboxUseDiffViewerNew.disabled = true;
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
@@ -122,14 +125,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
     var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
     var checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
-    var checkboxUseDiffViewerNew_span = document.getElementById('checkboxUseDiffViewerNew_span');
 
     selectActionNew.addEventListener('change', (e) => {
         if (e.target.value === "2") {
-            checkboxUseDiffViewerNew_span.style.display = 'inline';
+            checkboxUseDiffViewerNew.disabled = false;
         } else {
             checkboxUseDiffViewerNew.checked = false;
-            checkboxUseDiffViewerNew_span.style.display = 'none';
+            checkboxUseDiffViewerNew.disabled = true;
         }
     });
 
@@ -474,7 +476,7 @@ function loadPromptsList(values){
                     <br>
                     <input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__
                     <br>
-                    <input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__
+                    <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
                     <br>
                     <input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__
                     <span class="is_default hiddendata"></span>

@@ -135,6 +135,10 @@
     "message": "Enable the diff viewer",
     "description": ""
   },
+  "customPrompts_form_label_use_diff_viewer_title": {
+    "message": "The diff viewer can be selected when the action is set to \"Substitute text\".",
+    "description": ""
+  },
   "customPrompts_form_required_fields": {
     "message": "Required fields",
     "description": ""
