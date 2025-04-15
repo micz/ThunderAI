@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.target.value === "2") {
             checkboxUseDiffViewerNew_span.style.display = 'inline';
         } else {
+            checkboxUseDiffViewerNew.checked = false;
             checkboxUseDiffViewerNew_span.style.display = 'none';
         }
     });
@@ -276,6 +277,7 @@ function handleEditClick(e) {
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
+    toggleDiffviewer(e);
 }
 
 function showItemRowEditor(tr) {
@@ -289,7 +291,9 @@ function showItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
-    tr.querySelector('.action_output').style.display = 'inline';
+    const action_output = tr.querySelector('.action_output')
+    action_output.style.display = 'inline';
+    action_output.addEventListener('change', toggleDiffviewer);
     tr.querySelector('.action_show').style.display = 'none';
     tr.querySelector('input.need_selected').disabled = false;
     tr.querySelector('input.need_signature').disabled = false;
@@ -307,7 +311,9 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
-    tr.querySelector('.action_output').style.display = 'none';
+    const action_output = tr.querySelector('.action_output')
+    action_output.style.display = 'none';
+    action_output.addEventListener('change', toggleDiffviewer);
     tr.querySelector('.action_show').style.display = 'inline';
     tr.querySelector('input.need_selected').disabled = true;
     tr.querySelector('input.need_signature').disabled = true;
@@ -315,6 +321,24 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.define_response_lang').disabled = true;
     tr.querySelector('input.use_diff_viewer').disabled = true;
 }
+
+function toggleDiffviewer(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    const action = tr.querySelector('.action_output').value;
+    const checkbox = tr.querySelector('.use_diff_viewer');
+    if (action === "2") {
+        checkbox.disabled = false;
+    } else {
+        checkbox.checked = false;
+        checkbox.disabled = true;
+    }
+    //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
+    //console.log('>>>>>>>> action: ' + action);
+    //console.log('>>>>>>>> checkbox: ' + checkbox.checked);
+    //console.log('>>>>>>>> checkbox: ' + checkbox.style.display);
+}
+
 
 // Confirm and log deletion action
 function handleDeleteClick(e) {
