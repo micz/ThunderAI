@@ -145,24 +145,28 @@ worker.onmessage = function(event) {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.command) {
         case "api_send":
+            promptData = message;
             //send the received prompt to the llm api
             if(message.do_custom_text=="1") {
-                let userInput = prompt(browser.i18n.getMessage("chatgpt_win_custom_text"));
+                messageInput._showCustomTextField();
+            }else{
+                sendPrompt(message);
+            }
+            break;
+        case 'api_send_custom_text':
+            let userInput = message.custom_text;
                 if(userInput !== null) {
-                    if(!placeholdersUtils.hasPlaceholder(message.prompt, 'additional_text')){
+                    if(!placeholdersUtils.hasPlaceholder(promptData.prompt, 'additional_text')){
                         // no additional_text placeholder, do as usual
-                        message.prompt += " " + userInput;
+                        promptData.prompt += " " + userInput;
                     }else{
                         // we have the additional_text placeholder, do the magic!
                         let finalSubs = {};
                         finalSubs["additional_text"] = userInput;
-                        message.prompt = placeholdersUtils.replacePlaceholders(message.prompt, finalSubs, ph_def_val==='1')
+                        promptData.prompt = placeholdersUtils.replacePlaceholders(promptData.prompt, finalSubs, ph_def_val==='1')
                     }
+                    sendPrompt(promptData);
                 }
-            }
-            promptData = message;
-            messageInput._setMessageInputValue(message.prompt);
-            messageInput._handleNewChatMessage();
             break;
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
@@ -170,3 +174,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
     }
 });
+
+function sendPrompt(message){
+    messageInput._setMessageInputValue(message.prompt);
+    messageInput._handleNewChatMessage();
+}

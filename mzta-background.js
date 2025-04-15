@@ -281,6 +281,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'assign_tags':
                 return _assign_tags(message);
                 break;
+            case 'api_send_custom_text':
+                browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
+                break;
             default:
                 break;
         }
