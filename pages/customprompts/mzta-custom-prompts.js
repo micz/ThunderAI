@@ -333,6 +333,7 @@ function toggleDiffviewer(e) {
         checkbox.disabled = false;
     } else {
         checkbox.checked = false;
+        checkbox.setAttribute('checked_val', '0');
         checkbox.disabled = true;
     }
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
