@@ -1043,6 +1043,10 @@
     "message": "To use the calendar event feature, please install the ThunderAI Sparks addon.",
     "description": ""
   },
+  "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+    "message": "To use the calendar event feature, please install an updated version of ThunderAI Sparks addon.",
+    "description": ""
+  },
   "prefs_OptionText_download_now": {
     "message": "Download ThunderAI Sparks now!",
     "description": ""

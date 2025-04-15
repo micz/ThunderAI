@@ -618,7 +618,7 @@ function checkScreenDimensions(prefs){
 
 async function doGetCalendarEvent(get_calendar_event) {
     if(get_calendar_event) {
-        return await checkSparksPresence();
+        return (await checkSparksPresence() == 1);
     } else {
         return false;
     }

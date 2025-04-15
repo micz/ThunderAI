@@ -299,14 +299,18 @@ function disable_SpamFilter(){
 async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
   let no_sparks_tr = document.getElementById('no_sparks');
-  let is_spark_present = await checkSparksPresence()
+  let no_sparks_text = document.getElementById('no_sparks_text');
+  let wrong_sparks_text = document.getElementById('wrong_sparks_text');
+  let is_spark_present = await checkSparksPresence();
   let conntype_select = document.getElementById("connection_type");
-  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !is_spark_present;
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
   });
-  no_sparks_tr.style.display = (is_spark_present || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
+  no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
+  wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

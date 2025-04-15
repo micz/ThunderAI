@@ -16,6 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
 
@@ -367,9 +369,17 @@ export function extractJsonObject(inputString) {
 
 export async function checkSparksPresence() {
   try {
-    return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
+    let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});
+    if(sparks_current === undefined || sparks_current === null) {
+      return -1;
+    }
+    if (compareThunderbirdVersions(sparks_current, sparks_min) < 0) {
+      return 0;
+    }else{
+      return 1;
+    }
   } catch (error) {
-    return false;
+    return -1;
   }
 }
 

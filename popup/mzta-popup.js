@@ -338,7 +338,7 @@ function checkDoAddTags(){
 }
 
 function checkDoCalendarEvent(){
-  return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && checkSparksPresence();
+  return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && (checkSparksPresence() == 1);
 }
 
 function ensurePromptAddTagsFirst(arr) {
