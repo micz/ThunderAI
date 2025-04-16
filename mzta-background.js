@@ -52,7 +52,7 @@ await reload_pref_init();
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 
-let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
+let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetSparkFeature(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -147,7 +147,7 @@ function preparePopupMenu(tab) {
 
 async function _reload_menus() {
     let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type});
-    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
+    doGetSparkFeature(prefs_reload.get_calendar_event).then(calendarEvent => {
         const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
         menus.reload(special_prompts_ids);
     });
@@ -619,8 +619,8 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-async function doGetCalendarEvent(get_calendar_event) {
-    if(get_calendar_event) {
+async function doGetSparkFeature(spark_feature_active) {
+    if(spark_feature_active) {
         return (await checkSparksPresence() == 1);
     } else {
         return false;
@@ -641,7 +641,7 @@ function setupStorageChangeListener() {
             // Process 'add_tags' changes
             if (changes.add_tags) {
                 const newTags = changes.add_tags.newValue;
-                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                doGetSparkFeature(prefs_init.get_calendar_event).then(calendarEvent => {
                     const special_prompts_ids = getActiveSpecialPromptsIDs(newTags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
                     menus.reload(special_prompts_ids);
                 });
@@ -650,7 +650,7 @@ function setupStorageChangeListener() {
             // Process 'get_calendar_event' changes
             if (changes.get_calendar_event) {
                 const newCalendarEvent = changes.get_calendar_event.newValue;
-                doGetCalendarEvent(newCalendarEvent).then(calendarEvent => {
+                doGetSparkFeature(newCalendarEvent).then(calendarEvent => {
                     const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
                     menus.reload(special_prompts_ids);
                 });
@@ -659,7 +659,7 @@ function setupStorageChangeListener() {
             // Process 'connection_type' changes
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
-                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
+                doGetSparkFeature(prefs_init.get_calendar_event).then(calendarEvent => {
                     const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
                     menus.reload(special_prompts_ids);
                 });
