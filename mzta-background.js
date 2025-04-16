@@ -146,7 +146,7 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type});
     doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
         const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
         menus.reload(special_prompts_ids);
@@ -202,7 +202,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replyMessage(message) {
                     const paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
+                    let prefs = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
                     if(prefs.reply_type === 'reply_sender'){
@@ -628,7 +628,7 @@ async function doGetCalendarEvent(get_calendar_event) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: false, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false, spamfilter_threshold: 70, dynamic_menu_force_enter: false, add_tags_context_menu: true, spamfilter_context_menu: true});
+    prefs_init = await browser.storage.sync.get({do_debug: prefs_default.do_debug, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type, add_tags_auto: prefs_default.add_tags_auto, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox, spamfilter: prefs_default.spamfilter, spamfilter_threshold: prefs_default.spamfilter_threshold, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags_context_menu: prefs_default.add_tags_context_menu, spamfilter_context_menu: prefs_default.spamfilter_context_menu});
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
 }
 
@@ -821,7 +821,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
-            let prefs_aat = await browser.storage.sync.get({ add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', add_tags_auto_force_existing: false });
+            let prefs_aat = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aat.connection_type, prefs_init.do_debug);
