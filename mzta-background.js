@@ -676,6 +676,20 @@ function setupStorageChangeListener() {
                 menus.reload(special_prompts_ids);
             }
 
+            // Process 'get_task' changes
+            if (changes.get_task) {
+                const newTask = changes.get_task.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(newTask);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
+            }
+
             // Process 'connection_type' changes
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
