@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
 
-  let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
+  let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = document.getElementById('chatgpt_model');
@@ -740,8 +740,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
-  btnChatGPTWeb_Tab.addEventListener('click', () => {
-    browser.tabs.create({ url: 'https://chatgpt.com/' });
+  btnChatGPTWeb_Tab.addEventListener('click', async () => {
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: ''});
+    let model_opt = '';
+    if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
+      model_opt = '?model=' + encodeURIComponent(prefs_mod.chatgpt_web_model).toLowerCase();
+    }
+    browser.tabs.create({ url: 'https://chatgpt.com/' + model_opt });
   });
 
   browser.runtime.getPlatformInfo().then(info => {
