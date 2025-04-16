@@ -197,7 +197,6 @@ export async function getPlaceholders(onlyEnabled = false){
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
     // console.log('>>>>>>>>>>>> getPlaceholders output: ' + JSON.stringify(output));
-    let prefs = await browser.storage.local.get({ add_tags: false });
     return output;
 }
 
