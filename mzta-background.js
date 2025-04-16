@@ -52,7 +52,12 @@ await reload_pref_init();
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 
-let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetSparkFeature(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
+let special_prompts_ids = getActiveSpecialPromptsIDs({
+    addtags: prefs_init.add_tags,
+    get_calendar_event: await doGetSparkFeature(prefs_init.get_calendar_event),
+    get_task: await doGetSparkFeature(prefs_init.get_task),
+    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+  });
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -147,10 +152,15 @@ function preparePopupMenu(tab) {
 
 async function _reload_menus() {
     let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type});
-    doGetSparkFeature(prefs_reload.get_calendar_event).then(calendarEvent => {
-        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
-        menus.reload(special_prompts_ids);
-    });
+    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getTask = doGetSparkFeature(prefs_reload.get_task);
+    const special_prompts_ids = getActiveSpecialPromptsIDs({
+        addtags: prefs_reload.add_tags,
+        get_calendar_event: getCalendarEvent,
+        get_task: getTask,
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+      });
+    menus.reload(special_prompts_ids);
     taLog.log("Reloading menus");
     return true;
 }
@@ -641,28 +651,43 @@ function setupStorageChangeListener() {
             // Process 'add_tags' changes
             if (changes.add_tags) {
                 const newTags = changes.add_tags.newValue;
-                doGetSparkFeature(prefs_init.get_calendar_event).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(newTags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: newTags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
             }
 
             // Process 'get_calendar_event' changes
             if (changes.get_calendar_event) {
                 const newCalendarEvent = changes.get_calendar_event.newValue;
-                doGetSparkFeature(newCalendarEvent).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
             }
 
             // Process 'connection_type' changes
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
-                doGetSparkFeature(prefs_init.get_calendar_event).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (newConnectionType === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
 
                 if(newConnectionType === "chatgpt_web"){
                     removeContextMenu(contextMenuID_AddTags);
