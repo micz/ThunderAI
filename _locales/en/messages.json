@@ -1079,6 +1079,14 @@
     "message": "Error opening the calendar event dialog",
     "description": ""
   },
+  "task_getting_data_error": {
+    "message": "Error getting task data",
+    "description": ""
+  },
+  "task_opening_dialog_error": {
+    "message": "Error opening the task dialog",
+    "description": ""
+  },
   "sparks_not_installed": {
     "message": "ThunderAI Sparks not installed!",
     "description": ""
