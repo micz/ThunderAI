@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.3.5 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.3.4 - 14/04/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fixed a blocking error with the " character in the mail text [<a href="https://github.com/micz/ThunderAI/issues/344">#344</a>].</li>
