@@ -175,6 +175,8 @@ export function sanitizeHtml(input) {
   return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
 }
 
+// This method is used to convert the model string id used in the URL
+// to the model string used in the webpage
 export function getGPTWebModelString(model) {
   model = model.toLowerCase().trim();
   switch (model) {
@@ -183,14 +185,6 @@ export function getGPTWebModelString(model) {
       return '4o';
     case 'gpt-4o-mini':
       return '4o mini';
-    case 'gpt-4':
-      return 'gpt-4';
-    case 'o1':
-      return 'o1';
-    case 'o3-mini':
-      return 'o3-mini';
-    case 'o3-mini-high':
-      return 'o3-mini-high';
     default:
       return model;
   }
