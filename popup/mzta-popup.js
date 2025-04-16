@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
 import { checkSparksPresence } from "../js/mzta-utils.js";
 
@@ -24,11 +25,12 @@ let taLog = console;
 let connection_type = 'chatgpt_web';
 let add_tags = false;
 let get_calendar_event = false;
+let get_task = false;
 let tabType;
 let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, dynamic_menu_force_enter: false, add_tags: true, get_calendar_event: true, connection_type: 'chatgpt_web'});
+    let prefs = await browser.storage.sync.get({do_debug: prefs_default.do_debug, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -44,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     connection_type = prefs.connection_type;
     add_tags = prefs.add_tags;
     get_calendar_event = prefs.get_calendar_event;
+    get_task = prefs.get_task;
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 
@@ -116,12 +119,13 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
    let do_add_tags = checkDoAddTags();
    let do_get_calendar_event = checkDoCalendarEvent();
+   let do_get_task = checkDoTask();
 
   //  console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
   //  console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
   //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
-  num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
+  num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_task ? 1 : 0);
   //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
    if(num_special_menu_items > 0){
      max_num_el -= num_special_menu_items;
@@ -143,16 +147,16 @@ async function searchPrompt(allPrompts, tabId, tabType){
         filteredData[gce_curr_pos].label = gce_curr_pos + '. ' + filteredData[gce_curr_pos].label;
        }
      }
+      if(do_get_task){
+        filteredData = ensurePromptGetTaskFirst(filteredData, do_add_tags, do_get_calendar_event);
+        let gtask_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
+        if (!filteredData[gtask_curr_pos].numberPrepended) {
+          filteredData[gtask_curr_pos].numberPrepended = 'true';
+          filteredData[gtask_curr_pos].label = gtask_curr_pos + '. ' + filteredData[gtask_curr_pos].label;
+        }
+      }
    }
-  //  if(checkDoAddTags()){
-  //    max_num_el = 9;
-  //    first_num_el = 1;
-  //    filteredData = ensurePromptAddTagsFirst(filteredData);
-  //    if (!filteredData[0].numberPrepended) {
-  //     filteredData[0].numberPrepended = 'true';
-  //     filteredData[0].label = '0. ' + filteredData[0].label;
-  //    }
-  //  }
+
    Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
      let number = (index + first_num_el).toString();
      // Check if the number is already prepended to avoid duplication
@@ -170,7 +174,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
-       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')){
+       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_task')){
          itemDiv.className += ' special_prompt';
        }
 
@@ -336,6 +340,10 @@ function checkDoCalendarEvent(){
   return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && (checkSparksPresence() == 1);
 }
 
+function checkDoTask(){
+  return get_task && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && (checkSparksPresence() == 1);
+}
+
 function ensurePromptAddTagsFirst(arr) {
   // Find the index of the object with id "prompt_add_tags"
   const index = arr.findIndex(item => item.id === "prompt_add_tags");
@@ -363,6 +371,25 @@ function ensurePromptGetCalendarEventFirst(arr, do_add_tags) {
     // Add it to the specified position
     const targetPosition = do_add_tags ? 1 : 0;
     arr.splice(targetPosition, 0, promptAddTags);
+  }
+
+  return arr;
+}
+
+function ensurePromptGetTaskFirst(arr, do_add_tags, do_get_calendar_event) {
+  // Find the index of the object with id "prompt_get_task"
+  const index = arr.findIndex(item => item.id === "prompt_get_task");
+
+  // If found and needs repositioning
+  if (index !== -1 && ((do_get_calendar_event && do_add_tags) ? index !== 2 : (do_get_calendar_event ? index !== 1 : index !== 0))) {
+    // Remove it from its current position
+    const [promptGetTask] = arr.splice(index, 1);
+
+    // Determine the target position to insert "prompt_get_task" after calendar
+    const targetPosition = do_add_tags && do_get_calendar_event ? 2 : (do_get_calendar_event ? 1 : 0);
+    
+    // Add it to the specified position
+    arr.splice(targetPosition, 0, promptGetTask);
   }
 
   return arr;
