@@ -28,6 +28,8 @@ let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
 let permission_all_urls = false;
 
+const ChatGPTWeb_models = ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'o1', 'o3-mini', 'o3-mini-high'];
+
 function saveOptions(e) {
   e.preventDefault();
   let options = {};
@@ -309,6 +311,48 @@ async function disable_GetCalendarEvent(){
   no_sparks_tr.style.display = (is_spark_present || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
 }
 
+
+function getChatGPTWebModelsList_HTML(values, targetRowId) {
+  const rowElement = document.getElementById(targetRowId);
+  if (!rowElement) return;
+
+  // Clears any existing td elements
+  rowElement.innerHTML = '';
+
+  // First TD: label
+  const labelTd = document.createElement('td');
+  const label = document.createElement('i');
+  label.className = 'small_info';
+  const labelNobr = document.createElement('nobr');
+  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
+  label.appendChild(labelNobr);
+  labelTd.appendChild(label);
+
+  // Second TD: values
+  const valuesTd = document.createElement('td');
+  const valuesContainer = document.createElement('i');
+  valuesContainer.className = 'small_info';
+
+  values.forEach(value => {
+    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
+    const valueNobr = document.createElement('nobr');
+    valueNobr.className = 'conntype_chatgpt_web_option';
+    valueNobr.textContent = value;
+    const nbspAfter = document.createTextNode(' \u00A0 ');
+
+    valuesContainer.appendChild(nbspBefore);
+    valuesContainer.appendChild(valueNobr);
+    valuesContainer.appendChild(nbspAfter);
+  });
+
+  valuesTd.appendChild(valuesContainer);
+
+  // Adds the td elements to the row
+  rowElement.appendChild(labelTd);
+  rowElement.appendChild(valuesTd);
+}
+  
+
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
@@ -327,14 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
-  document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
-    element.addEventListener("click", () => {
-      let el = document.getElementById("chatgpt_web_model");
-      el.value = element.textContent;
-      el.dispatchEvent(new Event('change'), { bubbles: true });
-    });
-  });
-
+  
   let addtags_el = document.getElementById('add_tags');
   let addtags_info_btn = document.getElementById('btnManageTagsInfo');
   addtags_el.addEventListener('click', (event) => {
@@ -454,6 +491,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
     permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+  });
+
+  getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
+  document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
+    element.addEventListener("click", () => {
+      let el = document.getElementById("chatgpt_web_model");
+      el.value = element.textContent;
+      el.dispatchEvent(new Event('change'), { bubbles: true });
+    });
   });
 
   let conntype_select = document.getElementById("connection_type");
