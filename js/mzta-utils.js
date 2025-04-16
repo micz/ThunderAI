@@ -198,6 +198,19 @@ export function getGPTWebModelString(model) {
   }
 }
 
+export function openTab(url){
+  // check if the tab is already there
+  browser.tabs.query({url: browser.runtime.getURL(url)}).then((tabs) => {
+    if (tabs.length > 0) {
+      // if the tab is already there, focus it
+      browser.tabs.update(tabs[0].id, {active: true});
+    } else {
+      // if the tab is not there, create it
+      browser.tabs.create({url: browser.runtime.getURL(url)});
+    }
+  })
+}
+
 export function i18nConditionalGet(str) {
   // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
   // using the browser.i18n API

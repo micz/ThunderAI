@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -395,68 +395,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')});
-      }
-    })
+    openTab('../pages/customprompts/mzta-custom-prompts.html');
   });
 
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')});
-      }
-    })
+    openTab('../pages/addtags/mzta-add-tags.html');
   });
 
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')});
-      }
-    })
+    openTab('../pages/spamfilter/mzta-spamfilter.html');
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
-      }
-    })
+    openTab('../pages/get-calendar-event/mzta-get-calendar-event.html');
   });
 
   document.getElementById('btnManageTaskInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/get-task/mzta-get-task.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/get-task/mzta-get-task.html')});
-      }
-    })
+    openTab('../pages/get-task/mzta-get-task.html');
   });
 
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
