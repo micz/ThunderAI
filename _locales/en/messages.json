@@ -1012,11 +1012,23 @@
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Info": {
-    "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
+    "message": "If checked, an item will be included in the menu to get calendar event information from selected text.",
     "description": ""
   },
   "get_calendar_event_prompt_prefs_title": {
     "message": "Calendar Events Options",
+    "description": ""
+  },
+  "prefs_OptionText_get_task": {
+    "message": "Add a new task from selected text",
+    "description": ""
+  },
+  "prefs_OptionText_get_task_Info": {
+    "message": "If checked, an item will be included in the menu to get task information from selected text.",
+    "description": ""
+  },
+  "get_task_prompt_prefs_title": {
+    "message": "Tasks Options",
     "description": ""
   },
   "Select_your_timezone": {
@@ -1028,7 +1040,7 @@
     "description": ""
   },
   "prefs_OptionText_calendar_enforce_timezone_Info": {
-    "message": "If checked, the specified timezone will be enforced for the calendar events.",
+    "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
     "description": ""
   },
   "prefs_OptionText_btnManageCalendarEventInfo": {
@@ -1052,11 +1064,23 @@
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-    "message": "To use the calendar event feature, please install the ThunderAI Sparks addon.",
+    "message": "To use the calendar event and task features, please install the ThunderAI Sparks addon.",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
-    "message": "To use the calendar event feature, please install an updated version of ThunderAI Sparks addon.",
+    "message": "To use the calendar event and task features, please install an updated version of ThunderAI Sparks addon.",
+    "description": ""
+  },
+  "GetTask_PageTitle": {
+    "message": "Manage Tasks Settings",
+    "description": ""
+  },
+  "GetTask_info_default": {
+    "message": "In this page you can modify the default prompt used to get a task from selected text.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTaskInfo": {
+    "message": "Manage tasks settings",
     "description": ""
   },
   "prefs_OptionText_download_now": {

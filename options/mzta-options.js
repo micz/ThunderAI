@@ -386,6 +386,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
+
+  let get_task_el = document.getElementById('get_task');
+  let get_task_info_btn = document.getElementById('btnManageTaskInfo');
+  get_task_el.addEventListener('click', (event) => {
+    get_task_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     // check if the tab is already there
@@ -435,6 +442,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         // if the tab is not there, create it
         browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
+      }
+    })
+  });
+
+  document.getElementById('btnManageTaskInfo').addEventListener('click', () => {
+    // check if the tab is already there
+    browser.tabs.query({url: browser.runtime.getURL('../pages/get-task/mzta-get-task.html')}).then((tabs) => {
+      if (tabs.length > 0) {
+        // if the tab is already there, focus it
+        browser.tabs.update(tabs[0].id, {active: true});
+      } else {
+        // if the tab is not there, create it
+        browser.tabs.create({url: browser.runtime.getURL('../pages/get-task/mzta-get-task.html')});
       }
     })
   });
