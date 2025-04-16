@@ -7,6 +7,7 @@
 <h2>Version 3.3.5 - 17/04/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Updated the list of available models in the option page.</li>
+        <li><i>[ChatGPT Web]</i> Opening the ChatGPT webpage from the options now enforce the selected model, if any.</li>
       </ul>
 <h2>Version 3.3.4 - 14/04/2025</h2>
       <ul>
