@@ -28,7 +28,7 @@ let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
 let permission_all_urls = false;
 
-const ChatGPTWeb_models = ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'o1', 'o3-mini', 'o3-mini-high'];
+const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];
 
 function saveOptions(e) {
   e.preventDefault();
