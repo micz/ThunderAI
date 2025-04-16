@@ -4,9 +4,9 @@
 
 
 
-<h2>Version 3.3.5 - ??/??/2025</h2>
+<h2>Version 3.3.5 - 17/04/2025</h2>
       <ul>
-        <li>...</li>
+        <li><i>[ChatGPT Web]</i> Updated the list of available models in the option page.</li>
       </ul>
 <h2>Version 3.3.4 - 14/04/2025</h2>
       <ul>
