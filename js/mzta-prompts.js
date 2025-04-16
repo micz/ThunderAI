@@ -408,7 +408,7 @@ export async function getSpecialPrompts(){
                 updatedPrompts.push(newPrompt);
             }
         });
-
+        // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
         if (updatedPrompts.length !== prefs._special_prompts.length) {
             await browser.storage.local.set({ _special_prompts: updatedPrompts });
         }
