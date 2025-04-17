@@ -1,1 +1,158 @@
-{}
+{
+    "customPrompts_save_button": {
+        "message": "Konservi"
+    },
+    "prompt_lang": {
+        "message": "Respondi per"
+    },
+    "extensionDescription": {
+        "message": "Uzu ChatGPT, Google Gemini aŭ Ollama por poluri viajn retpoŝtajn mesaĝojn!"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Reverki formale"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Pliaj informoj"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Administri instrukciojn"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Nuligi"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Postulataj kampoj"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Konservi ĉion"
+    },
+    "customPrompts_btnNew": {
+        "message": "Aldoni novan"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Reprovi"
+    },
+    "customPrompts_close_button": {
+        "message": "Fermobutono"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Aldoni en menuon"
+    },
+    "From": {
+        "message": "De"
+    },
+    "spamfilter_not_moved": {
+        "message": "Ne"
+    },
+    "apiwebchat_stopping": {
+        "message": "Ĉesante"
+    },
+    "prompt_classify": {
+        "message": "Klasifiku"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Ĉiam"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Teksto de instrukcio"
+    },
+    "prompt_reply": {
+        "message": "Respondu al ĉi tiu retpoŝta mesaĝo"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Forviŝi"
+    },
+    "prompt_reply_advanced": {
+        "message": "Respondu al ĉi tiu fadeno"
+    },
+    "prompt_summarize_this": {
+        "message": "Resumu ĉi tion"
+    },
+    "prompt_translate_this": {
+        "message": "Traduku ĉi tion"
+    },
+    "save": {
+        "message": "Konservi"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "Identigilo"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ŝaltita"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nomo"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Ago"
+    },
+    "chatgpt_win_send": {
+        "message": "Sendi"
+    },
+    "Date": {
+        "message": "Dato"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Modifi"
+    },
+    "Loading": {
+        "message": "Ŝargante…"
+    },
+    "customPrompts_btnOK": {
+        "message": "Bone"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Finite!"
+    },
+    "chatgpt_win_close": {
+        "message": "Fermi"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Alto"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Larĝo"
+    },
+    "backToOptionsText": {
+        "message": "Opcioj"
+    },
+    "Subject": {
+        "message": "Temo"
+    },
+    "Explanation": {
+        "message": "Klarigo"
+    },
+    "spamfilter_moved": {
+        "message": "Jes"
+    },
+    "apiwebchat_you": {
+        "message": "Vi"
+    },
+    "apiwebchat_info": {
+        "message": "Informoj"
+    },
+    "apiwebchat_error": {
+        "message": "Eraro"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Reverki ĝentile"
+    },
+    "customPrompts_start_saving": {
+        "message": "Konservante instrukciojn…"
+    },
+    "placeholder_recipients": {
+        "message": "Ricevantoj"
+    },
+    "placeholder_author": {
+        "message": "Aŭtoro"
+    },
+    "Ollama_Models": {
+        "message": "Modeloj de Ollama"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Ĝisdatigi liston de modeloj Ollama"
+    }
+}
