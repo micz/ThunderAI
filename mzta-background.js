@@ -808,7 +808,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
 
         if (addTagsAuto || spamFilter) {
             curr_fullMessage = await browser.messages.getFull(message.id);
-            msg_text = await getMailBody(curr_fullMessage);
+            msg_text = getMailBody(curr_fullMessage);
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
         }
 

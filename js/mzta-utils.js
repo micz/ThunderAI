@@ -108,41 +108,41 @@ export async function getMailSubject(tab){
   }
 }
 
-export async function getMailBody(fullMessage){
-  let text = '';
-  let html = '';
+function extractTextParts(fullMessage) {
+  const textParts = [];
 
-  // console.log(">>>>>>>>>> fullMessage.contentType.trim().toLowerCase(): " + fullMessage.contentType.trim().toLowerCase());
-  // console.log(">>>>>>>>>> fullMessage.body: " + fullMessage.body);
-
-  if (fullMessage.contentType.trim().toLowerCase() === "text/plain") {
-    text = fullMessage.body;
-  }
-  if (fullMessage.contentType.trim().toLowerCase() === "text/html") {
-    html = fullMessage.body;
-  }
-
-  if((text == undefined || text == null || text == '') && (html == undefined || html == null || html == '')) {
-    for (let part of fullMessage.parts) {
-      if (part.contentType.trim().toLowerCase() === "text/plain") {
-        text = part.body;
-      }
-      if (part.contentType.trim().toLowerCase() === "text/html") {
-        html = part.body;
-      }
-      if((text == undefined || text == null || text == '') && (html == undefined || html == null || html == '')) {
-        for (let subpart of part.parts) {
-          if (subpart.contentType.trim().toLowerCase() === "text/plain") {
-            text = subpart.body;
-          }
-          if (subpart.contentType.trim().toLowerCase() === "text/html") {
-            html = subpart.body;
-          }
+  function walkParts(parts) {
+    for (const part of parts) {
+      if (part.parts && part.parts.length > 0) {
+        // Recursively walk through sub-parts
+        walkParts(part.parts);
+      } else {
+        // Check if contentType starts with "text/"
+        if (part.contentType && part.contentType.startsWith("text/")) {
+          textParts.push(part);
         }
       }
     }
   }
+
+  if (fullMessage.parts && fullMessage.parts.length > 0) {
+    walkParts(fullMessage.parts);
+  }
+
+  return textParts;
+}
   
+export function getMailBody(fullMessage){
+  const textParts = extractTextParts(fullMessage);
+  let text = "";
+  let html = "";
+  for (const part of textParts) {
+    if (part.contentType === "text/plain") {
+      text += part.body;
+    } else if (part.contentType === "text/html") {
+      html += part.body;
+    }
+  }
   return {text, html};
 }
 
