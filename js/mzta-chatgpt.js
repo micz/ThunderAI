@@ -647,6 +647,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             current_message = message;
             current_tabId = message.tabId;
             current_mailMessageId = message.mailMessageId;
+            if(current_mailMessageId == -1) {    // we are using the reply from the compose window!
+                current_action = '2'; // replace text
+            }
             run();
             break;
         case "chatgpt_alive":
