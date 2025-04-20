@@ -1270,5 +1270,13 @@
   "CORS_give_allurls_perm": {
     "message": "Give \"all URLs\" permission",
     "description": ""
+  },
+  "prefs_OptionText_composing_plain_text": {
+    "message": "Composing in plain text",
+    "description": ""
+  },
+  "prefs_OptionText_composing_plain_text_Info": {
+    "message": "Check this option if you're composing the emails in plain text format.",
+    "description": ""
   }
 }
