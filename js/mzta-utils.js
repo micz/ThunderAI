@@ -175,6 +175,16 @@ export function sanitizeHtml(input) {
   return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
 }
 
+export function stripHtmlKeepLines(htmlString) {
+  // Replaces <p> tags with a newline at the beginning
+  // and removes all other HTML tags
+  return htmlString
+    .replace(/<p>/gi, '')                  // removes <p> tags
+    .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
+    .replace(/<[^>]*>/g, '')               // removes any other HTML tags
+    .trim();                               // removes leading/trailing whitespace
+}
+
 // This method is used to convert the model string id used in the URL
 // to the model string used in the webpage
 export function getGPTWebModelString(model) {

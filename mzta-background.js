@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, stripHtmlKeepLines } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -200,9 +200,12 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _replaceSelectedText(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
-                    const paragraphsHtmlString = message.text;
+                    let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs = await browser.storage.sync.get({reply_type: 'reply_all'});
+                    let prefs = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
+                    if(prefs.composing_plain_text){
+                        paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);
+                    }
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
                     if(prefs.reply_type === 'reply_sender'){
