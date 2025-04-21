@@ -22,6 +22,7 @@ import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
+import { getAccountsList } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-spamfilter-page",true);
@@ -80,7 +81,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
-    loadSpamReport()
+     //Accounts manager
+     let accounts = await getAccountsList();
+     const accountsContainer = document.getElementById('account_selector_checkboxes');
+     accounts.forEach(account => {
+         const accountLabel = document.createElement('label');
+         const accountCheckbox = document.createElement('input');
+         accountCheckbox.type = 'checkbox';
+         accountCheckbox.classList.add('accountCheckbox');
+         accountCheckbox.value = account.id;
+         accountLabel.appendChild(accountCheckbox);
+         accountLabel.appendChild(document.createTextNode(account.name));
+         accountsContainer.appendChild(accountLabel);
+         accountsContainer.appendChild(document.createElement('br'));
+     });
+ 
+     let prefs_spamfilter = await browser.storage.sync.get({ spamfilter_enabled_accounts: [] });
+     let spamfilter_enabled_accounts = prefs_spamfilter.spamfilter_enabled_accounts;
+     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
+       if (spamfilter_enabled_accounts.length === 0 || spamfilter_enabled_accounts.includes(checkbox.value)) {
+         checkbox.checked = true;
+       } else {
+         checkbox.checked = false;
+       }
+     });
+ 
+     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
+       checkbox.addEventListener('change', () => {
+       let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
+       if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
+         browser.storage.sync.set({ spamfilter_enabled_accounts: [] });
+       } else {
+         browser.storage.sync.set({ spamfilter_enabled_accounts: selectedAccounts });
+       }
+       });
+     });
+ 
+     document.getElementById('accounts_select_all').addEventListener('click', () => {
+       let checkboxes = document.querySelectorAll('.accountCheckbox');
+       checkboxes.forEach(checkbox => checkbox.checked = true);
+     });
+     
+     document.getElementById('accounts_deselect_all').addEventListener('click', () => {
+       let checkboxes = document.querySelectorAll('.accountCheckbox');
+       checkboxes.forEach(checkbox => checkbox.checked = false);
+     });
+
+    loadSpamReport();
 });
 
 function check_spamfilter_threshold(event) {

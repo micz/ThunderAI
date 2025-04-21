@@ -1362,5 +1362,9 @@
   "AccountSelector_AutoTags_infoline": {
     "message": "Each change is saved immediately.",
     "description": ""
+  },
+  "AccountSelector_Spamfilter": {
+    "message": "Choose the accounts where the spam filter is enabled",
+    "description": ""
   }
 }

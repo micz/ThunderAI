@@ -1,10 +1,23 @@
-#spamfilter_prompt_container{
+#spamfilter_container, #account_selector_container, #spamfitler_reports_container{
     width: 90%;
     margin: 20px auto;
 }
 
 #spamfilter_prompt_text{
     width: 100%;
+}
+
+#account_selector_container{
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+#account_selector_checkboxes{
+    padding: 10px;
+    border: 1px solid gray;
+    width: 24em;
+    margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 .infoline{  

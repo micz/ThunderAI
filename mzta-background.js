@@ -845,6 +845,9 @@ const newEmailListener = (folder, messagesList) => {
 
 async function processEmails(messages, addTagsAuto, spamFilter) {
     taWorkingStatus.startWorking();
+    
+    let prefs_aats = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts, spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts });
+
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
@@ -857,10 +860,9 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (addTagsAuto) {
-            let prefs_aat = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts });
-            if(prefs_aat.add_tags_enabled_accounts.length > 0){
+            if(prefs_aats.add_tags_enabled_accounts.length > 0){
                 let accountId = message.folder.accountId;
-                if(!prefs_aat.add_tags_enabled_accounts.includes(accountId)){
+                if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                     taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
                     continue;
                 }
@@ -886,6 +888,13 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (spamFilter) {
+            if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let accountId = message.folder.accountId;
+                if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
+                    taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
+                    continue;
+                }
+            }
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', '');
