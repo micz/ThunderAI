@@ -21,6 +21,10 @@
     width: 30em;
 }
 
+#account_selector_container{
+    display: none;
+}
+
 #account_selector_checkboxes{
     padding: 10px;
     border: 1px solid gray;

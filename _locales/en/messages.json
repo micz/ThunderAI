@@ -1123,6 +1123,10 @@
     "message": "If checked, the AI will automatically add tags to newly received emails.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_auto_Info2": {
+    "message": "Choose which account to activate this feature for at the bottom of this page.",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_auto_force_existing": {
     "message": "Force existing tags when autotagging",
     "description": ""
