@@ -1274,5 +1274,13 @@
   "Replace_No_Selected_Text": {
     "message": "No text selected, would you like to insert the AI's response at the beginning of the email?",
     "description": ""
+  },
+  "prefs_ollama_num_ctx": {
+    "message": "Number of context tokens",
+    "description": ""
+  },
+  "prefs_ollama_num_ctx_Info": {
+    "message": "The number of context tokens to use for the Ollama API. Set to 0 if you don't want to pass it as a parameter to the server.",
+    "description": ""
   }
 }
