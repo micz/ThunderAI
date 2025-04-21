@@ -153,6 +153,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
       let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
+      if (selectedAccounts.length === 0) {
+        checkbox.checked = true; // Prevent deselecting the last selected checkbox
+        taLog.log("At least one account must be selected.");
+        return;
+      }
       if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
         browser.storage.sync.set({ add_tags_enabled_accounts: [] });
         taLog.log("All accounts selected, saving add_tags_enabled_accounts = [].");
