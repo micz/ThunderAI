@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [] });
     let add_tags_enabled_accounts = prefs_add_tags.add_tags_enabled_accounts;
+    taLog.log("add_tags_enabled_accounts = " + JSON.stringify(add_tags_enabled_accounts) + ".");
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
       if (add_tags_enabled_accounts.length === 0 || add_tags_enabled_accounts.includes(checkbox.value)) {
         checkbox.checked = true;
@@ -154,8 +155,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
       if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
         browser.storage.sync.set({ add_tags_enabled_accounts: [] });
+        taLog.log("All accounts selected, saving add_tags_enabled_accounts = [].");
       } else {
         browser.storage.sync.set({ add_tags_enabled_accounts: selectedAccounts });
+        taLog.log("Saving add_tags_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
       }
       });
     });

@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  
      let prefs_spamfilter = await browser.storage.sync.get({ spamfilter_enabled_accounts: [] });
      let spamfilter_enabled_accounts = prefs_spamfilter.spamfilter_enabled_accounts;
+     taLog.log("spamfilter_enabled_accounts: " + JSON.stringify(spamfilter_enabled_accounts));
      document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
        if (spamfilter_enabled_accounts.length === 0 || spamfilter_enabled_accounts.includes(checkbox.value)) {
          checkbox.checked = true;
@@ -111,8 +112,10 @@ document.addEventListener('DOMContentLoaded', async () => {
        let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
        if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
          browser.storage.sync.set({ spamfilter_enabled_accounts: [] });
+         taSpamReport.logger.log("All accounts selected, saving spamfilter_enabled_accounts = [].");
        } else {
          browser.storage.sync.set({ spamfilter_enabled_accounts: selectedAccounts });
+         taSpamReport.logger.log("Saving spamfilter_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
        }
        });
      });
