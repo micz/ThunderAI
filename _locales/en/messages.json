@@ -1350,5 +1350,13 @@
   "ask_chatgptweb_permission_ok": {
     "message": "Permission granted. You can click here to close this tab and return to the main window.",
     "description": ""
+  },
+  "AccountSelector_AutoTags": {
+    "message": "Choose the accounts where auto-tagging is enabled",
+    "description": ""
+  },
+  "AccountSelector_AutoTags_infoline": {
+    "message": "Each change is saved immediately.",
+    "description": ""
   }
 }

@@ -43,6 +43,17 @@ function fixMsgHeader(msgHeader) {
   return msgHeader;
 }
 
+export async function getAccountsList() {
+  let accounts = await browser.accounts.list();
+  let accounts_array = [];
+  for (let account of accounts) {
+    let account_id = account.id;
+    let account_name = account.name;
+    accounts_array.push({id: account_id, name: account_name});
+  }
+  return accounts_array;
+}
+
 export async function getCurrentIdentity(msgHeader, getFull = false) {
   let identities_array = [];
   let fallback_identity = '';

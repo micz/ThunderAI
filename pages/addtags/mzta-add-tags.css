@@ -12,7 +12,7 @@
     font-style: italic;
 }
 
-#addtags_excl_list_container{
+#addtags_excl_list_container, #account_selector_container{
     width: 90%;
     margin: 40px auto;
 }
@@ -20,6 +20,15 @@
 #addtags_excl_list{
     width: 30em;
 }
+
+#account_selector_checkboxes{
+    padding: 10px;
+    border: 1px solid gray;
+    width: 24em;
+    margin-bottom: 10px;
+    margin-top: 10px;;
+}
+    
 
 .btn_div{
     width: 100%;

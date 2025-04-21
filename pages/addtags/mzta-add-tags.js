@@ -22,7 +22,7 @@ import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-
+import { getAccountsList } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
@@ -116,6 +116,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         excl_list_save_btn.disabled = true;
         excl_list_textarea.value = excl_array_new.join('\n');
         document.getElementById('excl_list_unsaved').classList.add('hidden');
+    });
+
+    //Accounts manager
+    let accounts = await getAccountsList();
+    const accountsContainer = document.getElementById('account_selector_checkboxes');
+    accounts.forEach(account => {
+        const accountLabel = document.createElement('label');
+        const accountCheckbox = document.createElement('input');
+        accountCheckbox.type = 'checkbox';
+        accountCheckbox.classList.add('accountCheckbox');
+        accountCheckbox.value = account.id;
+        accountLabel.appendChild(accountCheckbox);
+        accountLabel.appendChild(document.createTextNode(account.name));
+        accountsContainer.appendChild(accountLabel);
+        accountsContainer.appendChild(document.createElement('br'));
+    });
+
+    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [] });
+    let add_tags_enabled_accounts = prefs_add_tags.add_tags_enabled_accounts;
+    document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
+      if (add_tags_enabled_accounts.length === 0 || add_tags_enabled_accounts.includes(checkbox.value)) {
+        checkbox.checked = true;
+      } else {
+        checkbox.checked = false;
+      }
+    });
+
+    document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
+        browser.storage.sync.set({ add_tags_enabled_accounts: selectedAccounts });
+      });
+    });
+
+    document.getElementById('accounts_select_all').addEventListener('click', () => {
+      let checkboxes = document.querySelectorAll('.accountCheckbox');
+      checkboxes.forEach(checkbox => checkbox.checked = true);
+    });
+    
+    document.getElementById('accounts_deselect_all').addEventListener('click', () => {
+      let checkboxes = document.querySelectorAll('.accountCheckbox');
+      checkboxes.forEach(checkbox => checkbox.checked = false);
     });
 
 });
