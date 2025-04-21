@@ -25,6 +25,7 @@ import { taLogger } from '../mzta-logger.js';
 
 let ollama_host = null;
 let ollama_model = '';
+let ollama_num_ctx = 0;
 let ollama = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -39,8 +40,9 @@ self.onmessage = async function(event) {
         case 'init':
             ollama_host = event.data.ollama_host;
             ollama_model = event.data.ollama_model;
+            ollama_num_ctx = event.data.ollama_num_ctx;
             //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
-            ollama = new Ollama(ollama_host, ollama_model, true);
+            ollama = new Ollama(ollama_host, ollama_model, true, ollama_num_ctx);
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);
