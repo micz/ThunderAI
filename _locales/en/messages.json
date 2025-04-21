@@ -1111,8 +1111,8 @@
     "message": "Error opening the task dialog",
     "description": ""
   },
-  "sparks_not_installed": {
-    "message": "ThunderAI Sparks not installed!",
+  "no_valid_data_received": {
+    "message": "No valid data recevied from the AI.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto": {

@@ -260,7 +260,7 @@ export class mzta_Menus {
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening calendar event dialog: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -296,6 +296,12 @@ export class mzta_Menus {
                         let task_data_obj = {};
                         try{
                             task_data_obj = extractJsonObject(task_data);
+                            if (!task_data_obj.dueDate || isNaN(Date.parse(task_data_obj.dueDate)) || task_data_obj.dueDate == '' ) {
+                                delete task_data_obj.dueDate;
+                            }
+                            if (!task_data_obj.InitialDate || isNaN(Date.parse(task_data_obj.InitialDate)) || task_data_obj.InitialDate == '' ) {
+                                delete task_data_obj.InitialDate;
+                            }
                         }catch(err){
                             console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
                             browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
@@ -328,7 +334,7 @@ export class mzta_Menus {
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening task dialog: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
