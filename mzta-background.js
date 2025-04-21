@@ -45,6 +45,7 @@ var original_html = '';
 var modified_html = '';
 
 let _process_incoming = false;
+let _sparks_presence = false;
 
 let prefs_init = {};
 await reload_pref_init();
@@ -54,8 +55,8 @@ taWorkingStatus.taLog = taLog;
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
-    get_calendar_event: await doGetSparkFeature(prefs_init.get_calendar_event),
-    get_task: await doGetSparkFeature(prefs_init.get_task),
+    get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
+    get_task: doGetSparkFeature(prefs_init.get_task),
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
   });
 
@@ -151,7 +152,7 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
     let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
     let getTask = doGetSparkFeature(prefs_reload.get_task);
     const special_prompts_ids = getActiveSpecialPromptsIDs({
@@ -629,17 +630,18 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-async function doGetSparkFeature(spark_feature_active) {
+function doGetSparkFeature(spark_feature_active) {
     if(spark_feature_active) {
-        return (await checkSparksPresence() == 1);
+        return (_sparks_presence == 1);
     } else {
         return false;
     }
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: prefs_default.do_debug, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, connection_type: prefs_default.connection_type, add_tags_auto: prefs_default.add_tags_auto, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox, spamfilter: prefs_default.spamfilter, spamfilter_threshold: prefs_default.spamfilter_threshold, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags_context_menu: prefs_default.add_tags_context_menu, spamfilter_context_menu: prefs_default.spamfilter_context_menu});
+    prefs_init = await browser.storage.sync.get({do_debug: prefs_default.do_debug, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, add_tags_auto: prefs_default.add_tags_auto, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox, spamfilter: prefs_default.spamfilter, spamfilter_threshold: prefs_default.spamfilter_threshold, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags_context_menu: prefs_default.add_tags_context_menu, spamfilter_context_menu: prefs_default.spamfilter_context_menu});
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
+    _sparks_presence = await checkSparksPresence();
 }
 
 
