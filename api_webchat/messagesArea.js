@@ -20,8 +20,6 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { stripHtmlKeepLines } from '../js/mzta-utils.js';
-
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -120,7 +118,6 @@ class MessagesArea extends HTMLElement {
 
     fullTextHTML = "";
     llmName = "LLM";
-    plainTextMode = false;
 
     constructor() {
         super();
@@ -153,10 +150,6 @@ class MessagesArea extends HTMLElement {
 
     setLLMName(llmName) {
         this.llmName = llmName;
-    }
-
-    setPlainTextMode(plainTextMode) {
-        this.plainTextMode = plainTextMode;
     }
 
     handleTokensDone(promptData = null) {
@@ -236,10 +229,7 @@ class MessagesArea extends HTMLElement {
         actionButtons.classList.add('action-buttons');
         const actionButton = document.createElement('button');
         actionButton.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
-        let fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
-        if(this.plainTextMode) {
-            fullTextHTMLAtAssignment = stripHtmlKeepLines(fullTextHTMLAtAssignment);
-        }
+        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         actionButton.addEventListener('click', async () => {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!

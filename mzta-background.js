@@ -194,6 +194,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     original_html = await getOriginalBody(tabId);
+                    let prefs_repl = await browser.storage.sync.get({composing_plain_text: prefs_default.composing_plain_text});
+                    if(prefs_repl.composing_plain_text){
+                        text = stripHtmlKeepLines(text);
+                    }
                     await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId });
                     return true;
                 }
