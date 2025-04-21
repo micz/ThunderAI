@@ -145,8 +145,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
-        let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
+      let selectedAccounts = Array.from(document.querySelectorAll('.accountCheckbox:checked')).map(checkbox => checkbox.value);
+      if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
+        browser.storage.sync.set({ add_tags_enabled_accounts: [] });
+      } else {
         browser.storage.sync.set({ add_tags_enabled_accounts: selectedAccounts });
+      }
       });
     });
 
