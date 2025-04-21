@@ -1270,5 +1270,9 @@
   "CORS_give_allurls_perm": {
     "message": "Give \"all URLs\" permission",
     "description": ""
+  },
+  "Replace_No_Selected_Text": {
+    "message": "No text selected, would you like to insert the AI's response at the beginning of the email?",
+    "description": ""
   }
 }
