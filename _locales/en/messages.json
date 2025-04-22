@@ -1339,6 +1339,26 @@
     "message": "Give \"all URLs\" permission",
     "description": ""
   },
+  "prefs_OptionText_composing_plain_text": {
+    "message": "Composing in plain text",
+    "description": ""
+  },
+  "prefs_OptionText_composing_plain_text_Info": {
+    "message": "Check this option if you're composing the emails in plain text format.",
+    "description": ""
+  },
+  "Replace_No_Selected_Text": {
+    "message": "No text selected, would you like to insert the AI's response at the beginning of the email?",
+    "description": ""
+  },
+  "prefs_ollama_num_ctx": {
+    "message": "Number of context tokens",
+    "description": ""
+  },
+  "prefs_ollama_num_ctx_Info": {
+    "message": "The number of context tokens to use for the Ollama API. Set to 0 if you don't want to pass it as a parameter to the server.",
+    "description": ""
+  },
   "ask_chatgptweb_permission_1": {
     "message": "To use the ChatGPT Web Integration, you need to grant the required permission.",
     "description": ""
