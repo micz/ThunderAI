@@ -6,8 +6,9 @@
 
 <h2>Version 3.3.5 - 17/04/2025</h2>
       <ul>
-        <li>Using a prompt from the compose window with a "Do reply" action is changed in "Substitute Text" [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
+        <li>Using a prompt from the compose window with a "Do reply" action is changed in "Substitute Text", asking also to insert text if none is selected [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
         <li>Added an option when composing in plain text to remove the extra empty lines [<a href="https://github.com/micz/ThunderAI/issues/350">#350</a>].</li>
+        <li><i>[Ollama API]</i> It's now possibile to define the default context length (the <i>num_ctx</i> parameter) in the options page [<a href="https://github.com/micz/ThunderAI/issues/351">#351</a>].</li>
         <li><i>[ChatGPT Web]</i> Updated the list of available models in the option page.</li>
         <li><i>[ChatGPT Web]</i> Opening the ChatGPT webpage from the options now enforce the selected model, if any.</li>
         <li><i>[All APIs]</i> Fix: Really correctly getting the message body even in multilevel subpart messages when processing incoming messages for tags or spam [<a href="https://github.com/micz/ThunderAI/issues/335">#335</a>].</li>

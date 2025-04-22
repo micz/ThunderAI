@@ -31,6 +31,7 @@ export const prefs_default = {
     chatgpt_developer_messages: '',
     ollama_host: '',
     ollama_model: '',
+    ollama_num_ctx: 0,
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
     openai_comp_model: '',
     openai_comp_api_key: '',
