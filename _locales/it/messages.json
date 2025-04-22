@@ -727,7 +727,7 @@
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
     },
     "prefs_OptionText_get_calendar_event_Info": {
-        "message": "Se selezionato, sarà inclusa una voce del menu per ottenere informazioni su un evento del calendario dal testo selezionato."
+        "message": "Se selezionato, sarà inclusa una voce del menu per ottenere informazioni dell'evento del calendario dal testo selezionato."
     },
     "prefs_OptionText_btnManageCalendarEventInfo": {
         "message": "Gestisci le impostazioni degli eventi del calendario"
@@ -956,5 +956,20 @@
     },
     "maybe_CORS_openai_comp": {
         "message": "L'utilizzo di un'API compatibile con OpenAI potrebbe richiedere la configurazione delle impostazioni CORS sul server."
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Composizione in testo semplice"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Seleziona questa opzione se stai scrivendo le email in formato testo semplice."
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Numero di token del contesto"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Il numero di token del contesto da usare per l'API di Ollama. Imposta a 0 se non vuoi passarli come parametro al server."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Nessun testo selezionato, vuoi inserire la risposta dell'IA all'inizio dell'email?"
     }
 }
