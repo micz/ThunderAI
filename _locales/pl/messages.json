@@ -869,5 +869,53 @@
     },
     "spamfilter_no_reports": {
         "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie tylko dla bieżącej sesji."
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Dodaj tagi"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Widok zmian może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
+    },
+    "empty": {
+        "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu prompta."
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Jeżeli zaznaczone, określona strefa czasowa będzie wymuszana dla wydarzeń w kalendarzu."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "By używać wydarzeń w kalendarzu prosimy zainstalować zaktualizowaną wersję dodatku ThunderAI Sparks."
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Włącz widok zmian"
+    },
+    "placeholder_folder_name": {
+        "message": "Nazwa folderu"
+    },
+    "placeholder_folder_path": {
+        "message": "Ścieżka folderu"
+    },
+    "Select_your_timezone": {
+        "message": "Wybierz swoją strefę czasową"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Opcje Wydarzeń Kalendarza"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Wymuś konkretną strefę czasową"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analizuj pod kątem spamu"
+    },
+    "placeholder_account_email_address": {
+        "message": "Adres email konta"
+    },
+    "prompt_proofread_this": {
+        "message": "Skoryguj ten email"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Skoryguj poniższy email, oraz popraw wszelkie błędy ortograficzne lub gramatyczne. Niech twoja odpowiedź zawiera wyłącznie skorygowany tekst, bez żadnych komentarzy lub dodatkowego tekstu.\n\n\"{%mail_typed_text%}\""
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Zacytowany tekst w treści maila"
     }
 }

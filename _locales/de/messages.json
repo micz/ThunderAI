@@ -953,5 +953,20 @@
     },
     "maybe_CORS_openai_comp": {
         "message": "Die Verwendung einer mit OpenAI kompatiblen API kann erfordern, die CORS-Einstellungen auf dem Server zu konfigurieren."
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Die Anzahl der Kontext-Token, die für die Ollama-API verwendet werden sollen. Auf 0 setzen, wenn Sie sie nicht als Parameter an den Server übergeben möchten."
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Anzahl der Kontext-Token"
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Verfassen im Nur-Text-Format"
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Kein Text ausgewählt. Möchten Sie die Antwort der KI am Anfang der E-Mail einfügen?"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Aktivieren Sie diese Option, wenn Sie E-Mails im Nur-Text-Format verfassen."
     }
 }
