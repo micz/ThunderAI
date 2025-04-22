@@ -80,7 +80,7 @@ export class Ollama {
                 model: this.model, 
                 messages: messages,
                 stream: this.stream,
-                ...(this.num_ctx > 0 ? { num_ctx: parseInt(this.num_ctx) } : {})
+                ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {})
             }),
         });
         return response;
