@@ -999,16 +999,36 @@
     "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%selected_text%}\"",
     "description": ""
   },
+  "prompt_get_task": {
+    "message": "Add a new task",
+    "description": ""
+  },
+  "prompt_get_task_full_text": {
+    "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Initial Date and Time (including timezone, if specified)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\"",
+    "description": ""
+  },
   "prefs_OptionText_get_calendar_event": {
     "message": "Add a new calendar event from selected text",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Info": {
-    "message": "If checked, an item will be included in the menu to get a calendar event information from selected text.",
+    "message": "If checked, an item will be included in the menu to get calendar event information from selected text.",
     "description": ""
   },
   "get_calendar_event_prompt_prefs_title": {
     "message": "Calendar Events Options",
+    "description": ""
+  },
+  "prefs_OptionText_get_task": {
+    "message": "Add a new task from selected text",
+    "description": ""
+  },
+  "prefs_OptionText_get_task_Info": {
+    "message": "If checked, an item will be included in the menu to get task information from selected text.",
+    "description": ""
+  },
+  "get_task_prompt_prefs_title": {
+    "message": "Tasks Options",
     "description": ""
   },
   "Select_your_timezone": {
@@ -1020,7 +1040,7 @@
     "description": ""
   },
   "prefs_OptionText_calendar_enforce_timezone_Info": {
-    "message": "If checked, the specified timezone will be enforced for the calendar events.",
+    "message": "If checked, the specified timezone will be enforced for the calendar events and the tasks.",
     "description": ""
   },
   "prefs_OptionText_btnManageCalendarEventInfo": {
@@ -1044,11 +1064,23 @@
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-    "message": "To use the calendar event feature, please install the ThunderAI Sparks addon.",
+    "message": "To use the calendar event and task features, please install the ThunderAI Sparks addon.",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
-    "message": "To use the calendar event feature, please install an updated version of ThunderAI Sparks addon.",
+    "message": "To use the calendar event and task features, please install an updated version of ThunderAI Sparks addon.",
+    "description": ""
+  },
+  "GetTask_PageTitle": {
+    "message": "Manage Tasks Settings",
+    "description": ""
+  },
+  "GetTask_info_default": {
+    "message": "In this page you can modify the default prompt used to get a task from selected text.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTaskInfo": {
+    "message": "Manage tasks settings",
     "description": ""
   },
   "prefs_OptionText_download_now": {
@@ -1071,8 +1103,16 @@
     "message": "Error opening the calendar event dialog",
     "description": ""
   },
-  "sparks_not_installed": {
-    "message": "ThunderAI Sparks not installed!",
+  "task_getting_data_error": {
+    "message": "Error getting task data",
+    "description": ""
+  },
+  "task_opening_dialog_error": {
+    "message": "Error opening the task dialog",
+    "description": ""
+  },
+  "no_valid_data_received": {
+    "message": "No valid data recevied from the AI.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto": {

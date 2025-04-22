@@ -198,6 +198,19 @@ export function getGPTWebModelString(model) {
   }
 }
 
+export function openTab(url){
+  // check if the tab is already there
+  browser.tabs.query({url: browser.runtime.getURL(url)}).then((tabs) => {
+    if (tabs.length > 0) {
+      // if the tab is already there, focus it
+      browser.tabs.update(tabs[0].id, {active: true});
+    } else {
+      // if the tab is not there, create it
+      browser.tabs.create({url: browser.runtime.getURL(url)});
+    }
+  })
+}
+
 export function i18nConditionalGet(str) {
   // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
   // using the browser.i18n API
@@ -332,17 +345,21 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
-export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event = false, is_chatgpt_web = false) {
+export function getActiveSpecialPromptsIDs(args = {}) {
+  const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
   let output = [];
-  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs addtags: " + addtags + " get_calendar_event: " + get_calendar_event + " is_chatgpt_web: " + is_chatgpt_web);
-  if(is_chatgpt_web){
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
+  if (is_chatgpt_web) {
     return output;
   }
-  if(addtags){
+  if (addtags) {
     output.push('prompt_add_tags');
   }
-  if(get_calendar_event){
+  if (get_calendar_event) {
     output.push('prompt_get_calendar_event');
+  }
+  if (get_task) {
+    output.push('prompt_get_task');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
