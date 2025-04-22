@@ -845,6 +845,9 @@ const newEmailListener = (folder, messagesList) => {
 
 async function processEmails(messages, addTagsAuto, spamFilter) {
     taWorkingStatus.startWorking();
+    
+    let prefs_aats = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts, spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts });
+
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
@@ -857,12 +860,18 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (addTagsAuto) {
+            if(prefs_aats.add_tags_enabled_accounts.length > 0){
+                let accountId = message.folder.accountId;
+                if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
+                    taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
+                    continue;
+                }
+            }
             let specialFullPrompt_add_tags = '';
             let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
-            let prefs_aat = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aat.connection_type, prefs_init.do_debug);
@@ -879,6 +888,13 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (spamFilter) {
+            if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let accountId = message.folder.accountId;
+                if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
+                    taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
+                    continue;
+                }
+            }
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', '');
