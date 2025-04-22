@@ -953,5 +953,20 @@
     },
     "maybe_CORS_openai_comp": {
         "message": "L'utilisation d'une API compatible avec OpenAI peut nécessiter la configuration des paramètres CORS sur le serveur."
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Cochez cette option si vous rédigez les e-mails au format texte brut."
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Nombre de jetons de contexte"
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Aucun texte sélectionné, souhaitez-vous insérer la réponse de l'IA au début de l'e-mail ?"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Le nombre de jetons de contexte à utiliser pour l'API Ollama. Mettez 0 si vous ne souhaitez pas le passer comme paramètre au serveur."
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Rédaction en texte brut"
     }
 }
