@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -314,7 +314,7 @@ async function disable_GetCalendarEvent(){
 }
 
 function validateCustomData_ChatGPTWeb(event) {
-  let is_valid = event.target.value.startsWith('/g/') || event.target.value == '';
+  let is_valid = validateChatGPTWebCustomData(event.target.value);
   event.target.style.borderColor = is_valid ? 'green' : 'red';
   document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }

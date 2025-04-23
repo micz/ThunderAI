@@ -411,6 +411,9 @@ export async function checkSparksPresence() {
   }
 }
 
+export function validateChatGPTWebCustomData(data) {
+  return data.startsWith('/g/') || data == '';
+}
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
