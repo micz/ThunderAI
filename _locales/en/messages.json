@@ -607,6 +607,10 @@
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
     "description": ""
   },
+  "OpenChatGPTTab_Info2": {
+    "message": "Opening ChatGPT Web from here will apply any configured settings for the model, project, and Custom GPT.",
+    "description": ""
+  },
   "placeholder_mail_text_body": {
     "message": "Mail body",
     "description": ""
@@ -1396,11 +1400,11 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_custom_gpt": {
-    "message": "ChatGPT Web custom GPT",
+    "message": "ChatGPT Web Custom GPT",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_custom_gpt_info": {
-    "message": "This is the custom GPT that will be enforced for the ChatGPT Web Interface.",
+    "message": "This is the Custom GPT that will be enforced for the ChatGPT Web Interface.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_custom_data_info": {
