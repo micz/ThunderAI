@@ -415,6 +415,11 @@ export function validateChatGPTWebCustomData(data) {
   return data.startsWith('/g/') || data == '';
 }
 
+export function sanitizeChatGPTWebCustomData(input) {
+  // Removes all characters that are not letters, numbers, dashes, or slashes
+  return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');
+}
+
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
 const insertHtml = function (replyHtml, fullBody_string) {

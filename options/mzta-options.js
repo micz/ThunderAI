@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTWebCustomData } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -682,12 +682,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab.addEventListener('click', async () => {
-    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: ''});
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: prefs_default.chatgpt_web_model, chatgpt_web_project: prefs_default.chatgpt_web_project, chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt});
+    
+    let base_url = 'https://chatgpt.com';
     let model_opt = '';
+    let webproject_set = false;
+    
     if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
       model_opt = '?model=' + encodeURIComponent(prefs_mod.chatgpt_web_model).toLowerCase();
     }
-    browser.tabs.create({ url: 'https://chatgpt.com/' + model_opt });
+    if((prefs_mod.chatgpt_web_project != '') && (prefs_mod.chatgpt_web_project != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_project);
+      webproject_set = true;
+    }
+    if(!webproject_set && (prefs_mod.chatgpt_web_custom_gpt != '') && (prefs_mod.chatgpt_web_custom_gpt != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_custom_gpt);
+    }
+    browser.tabs.create({ url: base_url + model_opt });
   });
 
   browser.runtime.getPlatformInfo().then(info => {
