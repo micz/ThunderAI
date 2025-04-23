@@ -313,6 +313,12 @@ async function disable_GetCalendarEvent(){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
+function validateCustomData_ChatGPTWeb(event) {
+  let is_valid = event.target.value.startsWith('/g/') || event.target.value == '';
+  event.target.style.borderColor = is_valid ? 'green' : 'red';
+  document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
@@ -448,6 +454,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
 
   let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   

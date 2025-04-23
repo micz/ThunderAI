@@ -25,6 +25,8 @@ export const prefs_default = {
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
+    chatgpt_web_project: '',
+    chatgpt_web_custom_gpt: '',
     chatgpt_api_key: '',
     chatgpt_model: '',
     chatgpt_developer_messages: '',
