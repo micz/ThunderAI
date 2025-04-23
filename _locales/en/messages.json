@@ -676,11 +676,11 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model": {
-    "message": "ChatGPT Web model",
+    "message": "ChatGPT Web Model",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model_info": {
-    "message": "This is the model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
+    "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_tempchat": {
@@ -1392,11 +1392,11 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_project": {
-    "message": "ChatGPT Web project",
+    "message": "ChatGPT Web Project",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_project_info": {
-    "message": "This is the project that will be enforced for the ChatGPT Web Interface.",
+    "message": "This is the Project that will be enforced for the ChatGPT Web Interface.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_custom_gpt": {

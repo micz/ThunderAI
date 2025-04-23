@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
 import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
@@ -33,8 +34,8 @@ let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    let prefs_debug = await browser.storage.sync.get({do_debug: false});
-    taLog = new taLogger("mzta-custom-prompts", prefs_debug.do_debug);
+    let prefs = await browser.storage.sync.get({ connection_type:prefs_default.connection_type, do_debug: prefs_default.do_debug });
+    taLog = new taLogger("mzta-custom-prompts", prefs.do_debug);
     
     setStorageSpace();
     
@@ -99,6 +100,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     i18n.updateDocument();
+
+    switch(prefs.connection_type) {
+        case 'chatgpt_web':
+            document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
+            break;
+        // case 'chatgpt_api':
+        //     document.getElementById('chatgpt_api').style.display = 'block';
+        //     break;
+        // case 'ollama_api':
+        //     document.getElementById('ollama_api').style.display = 'block';
+        //     break;
+        // case 'openai_comp_api':
+        //     document.getElementById('openai_comp_api').style.display = 'block';
+        //     break;
+        // case 'google_gemini_api':
+        //     document.getElementById('google_gemini_api').style.display = 'block';
+        //     break;
+    }
+
 
     //To add a new item
     var txtIdNew = document.getElementById('txtIdNew');

@@ -213,6 +213,36 @@ table .sort.desc {
     padding-right: 2px;
 }
 
+#chatgpt_web_additional_info_toggle td{
+    padding:0px 5px;
+    font-style: italic;
+}
+
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle{
+    background-color: rgb(255, 209, 183);
+    display:none;
+}
+
+#chatgpt_web_additional_info_toggle{
+    cursor: pointer;
+}
+
+#chatgpt_web_additional_info td{
+    vertical-align: top;
+}
+
+input.input_additional[type="text"]{
+    width: -moz-available;
+}
+
+.small_info{
+    font-size:smaller;
+}
+
+.conntype_chatgpt_web_option{
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;
@@ -258,5 +288,9 @@ table .sort.desc {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    #chatgpt_web_additional_info{
+        background-color: rgb(39, 11, 0);
     }
 }

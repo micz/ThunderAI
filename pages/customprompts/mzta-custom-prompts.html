@@ -78,6 +78,28 @@
               <input type="text" id="txtNameNew" name="name" class="input_new" tabindex="2">
             </td>
         </tr>
+        <tr id="chatgpt_web_additional_info_toggle"><td colspan="4"><span class="small_info">Show ChatGPT additional properties</span></td></tr>
+        <tr id="chatgpt_web_additional_info"><!-- ChatGPT Web additional info -->
+            <td colspan="2">
+                <label for="chatGPTWebModelNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</label>
+                <br>
+                <input type="text" id="chatGPTWebModelNew" name="chatGPTWebModelNew" class="input_new input_additional" tabindex="10">
+                <table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list">TODO</tr></table>
+                <br><br>
+                <label for="chatGPTWebProjectNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</label>
+                <br>
+                <input type="text" id="chatGPTWebProjectNew" name="chatGPTWebProjectNew" class="input_new input_additional" tabindex="11">
+                <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
+                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+            </td>
+            <td colspan="2">
+                <label for="chatGPTWebCustomGPTNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
+                <br>
+                <input type="text" id="chatGPTWebCustomGPTNew" name="chatGPTWebCustomGPTNew" class="input_new input_additional" tabindex="11">
+                <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
+                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+            </td>
+        </tr>
     </table>
         <div class="go_right_float">* __MSG_customPrompts_form_required_fields__</div>
         <br>
