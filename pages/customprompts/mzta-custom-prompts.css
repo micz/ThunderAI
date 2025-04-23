@@ -135,6 +135,15 @@ table .sort.desc {
     font-style: italic;
 }
 
+.field_title{
+    font-weight: bold;
+}
+
+.field_title_s{
+    font-weight: bold;
+    font-size: small;
+}
+
 #txtIdNew, .id_output{
     text-transform: lowercase;
 }

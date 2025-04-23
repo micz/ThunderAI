@@ -98,20 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // document.addEventListener('click', (e) => {
-    //     // Check if the click was outside the textarea or suggestion list
-    //     const isClickInsideTextarea = e.target.closest('.editor');
-    //     const isClickInsideAutocompleteList = e.target.closest('.autocomplete-list');
-      
-    //     if (!isClickInsideTextarea && !isClickInsideAutocompleteList) {
-    //       textareas.forEach(textarea => {
-    //         const container = textarea.closest('.autocomplete-container');
-    //         const autocompleteList = container.querySelector('.autocomplete-list');
-    //         hideSuggestions(autocompleteList);
-    //       });
-    //     }
-    // });
-
     i18n.updateDocument();
 
     //To add a new item
@@ -452,23 +438,27 @@ function loadPromptsList(values){
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
-                <td class="w08"><span class="type_show">` + type_output + `</span>
+                <td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
+                <br>
+                <span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
                 <option value="0"` + ((values.type == "0") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_always__</option>
                 <option value="1"` + ((values.type == "1") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_reading__</option>
                 <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
+              <br><br>
+              <span class="field_title_s">__MSG_customPrompts_form_label_Action__:</span>
+                <br><span class="action_show">` + action_output + `</span>
+                <select class="action_output hiddendata">
+                <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
+                <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
+                <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
+                </select>` +
+                `<span class="action hiddendata"></span>
+                
               </td>
                 <td class="w17">
-                    Action: <span class="action_show">` + action_output + `</span>
-                    <select class="action_output hiddendata">
-                    <option value="0"` + ((values.action == "0") ? ' selected':'') + `>__MSG_customPrompts_close_button__</option>
-                    <option value="1"` + ((values.action == "1") ? ' selected':'') + `>__MSG_customPrompts_do_reply__</option>
-                    <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
-                  </select>` +
-                  `<span class="action hiddendata"></span>
-                    <br>
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
                     <br>
                     <label><input type="checkbox" class="need_signature" disabled> __MSG_customPrompts_form_label_need_signature__</label>
