@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.3.6 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.3.5 - 22/04/2025</h2>
       <ul>
         <li>Using a prompt from the compose window with a "Do reply" action is changed in "Substitute Text", asking also to insert text if none is selected [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
