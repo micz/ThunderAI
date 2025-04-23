@@ -681,8 +681,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
-  btnChatGPTWeb_Tab.addEventListener('click', () => {
-    browser.tabs.create({ url: 'https://chatgpt.com/' });
+  btnChatGPTWeb_Tab.addEventListener('click', async () => {
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: ''});
+    let model_opt = '';
+    if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
+      model_opt = '?model=' + encodeURIComponent(prefs_mod.chatgpt_web_model).toLowerCase();
+    }
+    browser.tabs.create({ url: 'https://chatgpt.com/' + model_opt });
   });
 
   browser.runtime.getPlatformInfo().then(info => {
