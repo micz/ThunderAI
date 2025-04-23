@@ -63,6 +63,15 @@
     Position Compose Message (position_compose attribute):
     <num>: position number
 
+    ChatGPT Web Model (chatgpt_web_model attribute):
+    <model>: model name (e.g. gpt-4, gpt-3.5-turbo, etc.)
+
+    ChatGPT Web Project (chatgpt_web_project attribute):
+    <project>: project id url
+
+    ChatGPT Web Custom GPT (chatgpt_web_custom_gpt attribute):
+    <custom_gpt>: custom gpt id url
+
 */
 
 const defaultPrompts = [
