@@ -143,6 +143,9 @@ export function getMailBody(fullMessage){
       html += part.body;
     }
   }
+  if(html === "") {
+    html = text.replace(/\n/g, "<br>");
+  }
   return {text, html};
 }
 
