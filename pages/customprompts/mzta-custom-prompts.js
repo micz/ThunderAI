@@ -102,14 +102,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     i18n.updateDocument();
 
     switch(prefs.connection_type) {
-        case 'chatgpt_web':
+        case 'chatgpt_web': {
             // for the new item form
             document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
             // for the edit list items form
             document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
                 element.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
+                    let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
                     if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
                         additionalInfoRow.style.display = 'block';
                         e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
@@ -119,7 +119,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             });
+            document.querySelectorAll('input.chatGPTWebProject_output').forEach(element => {
+                element.addEventListener("input", validateCustomData_ChatGPTWeb);
+            });
+            document.querySelectorAll('input.chatGPTWebCustomGPT_output').forEach(element => {
+                element.addEventListener("input", validateCustomData_ChatGPTWeb);
+            });
             break;
+        }
         // case 'chatgpt_api':
         //     document.getElementById('chatgpt_api').style.display = 'block';
         //     break;
@@ -169,7 +176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     var chatgptWebModelNew = document.getElementById('chatGPTWebModelNew');
     var chatgptWebProjectNew = document.getElementById('chatGPTWebProjectNew');
     var chatgptWebCustomGptNew = document.getElementById('chatGPTWebCustomGPTNew');
-    chatgptWebModelNew.addEventListener("input", validateCustomData_ChatGPTWeb);
     chatgptWebProjectNew.addEventListener("input", validateCustomData_ChatGPTWeb);
     chatgptWebCustomGptNew.addEventListener("input", validateCustomData_ChatGPTWeb);
 
@@ -382,6 +388,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.text_output').style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
+    tr.querySelector('.chatgpt_web_additional_info').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
@@ -532,19 +539,19 @@ function loadPromptsList(values){
                     <div class="chatgpt_web_additional_info">
                         __MSG_prefs_OptionText_chatgpt_web_model__:
                         <br>
-                        <input type="text" id="chatGPTWebModelNew" class="input_new input_additional" tabindex="10">
+                        <input type="text" class="input_new input_additional chatGPTWebModel_output" tabindex="10">
                         <table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list">TODO</tr></table>
                         <br><br>
                         __MSG_prefs_OptionText_chatgpt_web_project__:
                         <br>
-                        <input type="text" id="chatGPTWebProjectNew" class="input_new input_additional" tabindex="11">
-                        <br><i class="small_info" id="chatGPTWebProjectNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
+                        <input type="text" id="chatGPTWebProject_` + values.id + `" class="input_new input_additional chatGPTWebProject_output" tabindex="11">
+                        <br><i class="small_info" id="chatGPTWebProject_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
                             <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
                         <br><br>
                         __MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
                         <br>
-                        <input type="text" id="chatGPTWebCustomGPTNew" class="input_new input_additional" tabindex="11">
-                        <br><i class="small_info" id="chatGPTWebCustomGPTNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
+                        <input type="text" id="chatGPTWebCustomGPT_` + values.id + `" class="input_new input_additional chatGPTWebCustomGPT_output" tabindex="11">
+                        <br><i class="small_info" id="chatGPTWebCustomGPT_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
                         <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
                     </div>
                 </td>
