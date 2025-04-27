@@ -18,7 +18,7 @@
 
 import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
-import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml } from "../../js/mzta-utils.js";
+import { isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
@@ -154,6 +154,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     var chatgptWebModelNew = document.getElementById('chatGPTWebModelNew');
     var chatgptWebProjectNew = document.getElementById('chatGPTWebProjectNew');
     var chatgptWebCustomGptNew = document.getElementById('chatGPTWebCustomGPTNew');
+    chatgptWebModelNew.addEventListener("input", validateCustomData_ChatGPTWeb);
+    chatgptWebProjectNew.addEventListener("input", validateCustomData_ChatGPTWeb);
+    chatgptWebCustomGptNew.addEventListener("input", validateCustomData_ChatGPTWeb);
 
     selectActionNew.addEventListener('change', (e) => {
         if (e.target.value === "2") {
