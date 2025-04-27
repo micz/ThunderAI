@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -311,12 +311,6 @@ async function disable_GetCalendarEvent(){
   no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
-}
-
-function validateCustomData_ChatGPTWeb(event) {
-  let is_valid = validateChatGPTWebCustomData(event.target.value);
-  event.target.style.borderColor = is_valid ? 'green' : 'red';
-  document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
