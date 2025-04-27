@@ -242,7 +242,7 @@ class MessagesArea extends HTMLElement {
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
                 case "2":     // replace text
-                     console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+                    //  console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
