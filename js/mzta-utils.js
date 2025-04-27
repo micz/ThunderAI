@@ -415,6 +415,10 @@ export function validateChatGPTWebCustomData(data) {
   return data.startsWith('/g/') || data == '';
 }
 
+export function sanitizeChatGPTModelData(input) {
+  return encodeURIComponent(input).toLowerCase()
+}
+
 export function sanitizeChatGPTWebCustomData(input) {
   // Removes all characters that are not letters, numbers, dashes, or slashes
   return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');

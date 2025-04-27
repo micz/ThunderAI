@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTWebCustomData } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let webproject_set = false;
     
     if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
-      model_opt = '?model=' + encodeURIComponent(prefs_mod.chatgpt_web_model).toLowerCase();
+      model_opt = '?model=' + sanitizeChatGPTModelData(prefs_mod.chatgpt_web_model);
     }
     if((prefs_mod.chatgpt_web_project != '') && (prefs_mod.chatgpt_web_project != undefined)){
       base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_project);
