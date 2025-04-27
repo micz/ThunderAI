@@ -150,6 +150,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
     var checkboxDefineResponseLangNew = document.getElementById('checkboxDefineResponseLangNew');
     var checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+    // ChatGTP Web Integration
+    var chatgptWebModelNew = document.getElementById('chatGPTWebModelNew');
+    var chatgptWebProjectNew = document.getElementById('chatGPTWebProjectNew');
+    var chatgptWebCustomGptNew = document.getElementById('chatGPTWebCustomGPTNew');
 
     selectActionNew.addEventListener('change', (e) => {
         if (e.target.value === "2") {
@@ -166,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!checkFields()) {
             return;
         }
-        let newItem = promptsList.add({
+        let newItemData = {
             id: String(txtIdNew.value.trim()).toLocaleLowerCase(),
             name: txtNameNew.value.trim(),
             text: txtTextNew.value.trim(),
@@ -182,7 +186,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
-        });
+        };
+
+        switch(prefs.connection_type) {
+            case 'chatgpt_web':
+                newItemData.chatgpt_web_model = chatgptWebModelNew.value.trim();
+                newItemData.chatgpt_web_project = chatgptWebProjectNew.value.trim();
+                newItemData.chatgpt_web_custom_gpt = chatgptWebCustomGptNew.value.trim();
+                break;
+            // case 'chatgpt_api':
+            //     document.getElementById('chatgpt_api').style.display = 'block';
+            //     break;
+            // case 'ollama_api':
+            //     document.getElementById('ollama_api').style.display = 'block';
+            //     break;
+            // case 'openai_comp_api':
+            //     document.getElementById('openai_comp_api').style.display = 'block';
+            //     break;
+            // case 'google_gemini_api':
+            //     document.getElementById('google_gemini_api').style.display = 'block';
+            //     break;
+        }
+
+        let newItem = promptsList.add(newItemData);
         idnumMax++;
         let curr_idnum = newItem[0].values().idnum;
         let checkboxes = document.querySelectorAll(`tr[data-idnum="${curr_idnum}"] input[type="checkbox"]`);
