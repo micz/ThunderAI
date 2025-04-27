@@ -103,7 +103,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     switch(prefs.connection_type) {
         case 'chatgpt_web':
+            // for the new item form
             document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
+            // for the edit list items form
+            document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
+                element.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
+                    if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+                        additionalInfoRow.style.display = 'block';
+                        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
+                    } else {
+                        additionalInfoRow.style.display = 'none';
+                        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info');
+                    }
+                });
+            });
             break;
         // case 'chatgpt_api':
         //     document.getElementById('chatgpt_api').style.display = 'block';
@@ -345,6 +360,7 @@ function showItemRowEditor(tr) {
     text_output.style.display = 'inline';
     textareaAutocomplete(text_output, autocompleteSuggestions)
     tr.querySelector('.text_show').style.display = 'none';
+    tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'block';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
@@ -365,6 +381,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.name_show').style.display = 'inline';
     tr.querySelector('.text_output').style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
+    tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
@@ -505,7 +522,32 @@ function loadPromptsList(values){
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
-                <td class="w40"><span class="text text_show"></span><div class="autocomplete-container"><textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea><ul class="autocomplete-list hidden"></ul></div></td>
+                <td class="w40">
+                    <span class="text text_show"></span>
+                    <div class="autocomplete-container">
+                        <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
+                        <ul class="autocomplete-list hidden"></ul>
+                    </div>
+                    <div class="chatgpt_web_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__</div>
+                    <div class="chatgpt_web_additional_info">
+                        __MSG_prefs_OptionText_chatgpt_web_model__:
+                        <br>
+                        <input type="text" id="chatGPTWebModelNew" class="input_new input_additional" tabindex="10">
+                        <table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list">TODO</tr></table>
+                        <br><br>
+                        __MSG_prefs_OptionText_chatgpt_web_project__:
+                        <br>
+                        <input type="text" id="chatGPTWebProjectNew" class="input_new input_additional" tabindex="11">
+                        <br><i class="small_info" id="chatGPTWebProjectNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
+                            <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+                        <br><br>
+                        __MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
+                        <br>
+                        <input type="text" id="chatGPTWebCustomGPTNew" class="input_new input_additional" tabindex="11">
+                        <br><i class="small_info" id="chatGPTWebCustomGPTNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
+                        <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+                    </div>
+                </td>
                 <td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
                 <br>
                 <span class="type_show">` + type_output + `</span>
@@ -524,7 +566,6 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                 </select>` +
                 `<span class="action hiddendata"></span>
-                
               </td>
                 <td class="w17">
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>

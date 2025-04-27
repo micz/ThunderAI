@@ -102,6 +102,10 @@ table .sort.desc {
     background-image: url(../images/listjs-arrow-sort-active-up.png);
 }
 
+tbody.list tr{
+    vertical-align: top;
+}
+
 .hiddendata{
     display: none;
 }
@@ -218,16 +222,16 @@ table .sort.desc {
     font-style: italic;
 }
 
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle{
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle{
     background-color: rgb(255, 209, 183);
     display:none;
 }
 
-#chatgpt_web_additional_info_toggle{
+#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
     cursor: pointer;
 }
 
-#chatgpt_web_additional_info_toggle:hover{
+#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
     background-color: rgb(255, 189, 153);
     text-decoration: underline;
 }
@@ -238,6 +242,11 @@ table .sort.desc {
 
 #chatgpt_web_additional_info td{
     vertical-align: top;
+}
+
+.chatgpt_web_additional_info_toggle{
+    width: -moz-available;
+    text-align: center;
 }
 
 input.input_additional[type="text"]{
