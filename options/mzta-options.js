@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab, validateChatGPTWebCustomData, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
