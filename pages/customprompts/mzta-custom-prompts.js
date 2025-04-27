@@ -119,6 +119,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         //     break;
     }
 
+    const chatgptWebAdditionalPropToggle = document.getElementById('chatgpt_web_additional_info_toggle');
+    chatgptWebAdditionalPropToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const additionalInfoRow = document.getElementById('chatgpt_web_additional_info');
+        if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+            additionalInfoRow.style.display = 'table-row';
+            let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
+            if (subspan) {
+                subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
+            }
+        } else {
+            additionalInfoRow.style.display = 'none';
+            let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
+            if (subspan) {
+                subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info');
+            }
+        }
+    });
+
 
     //To add a new item
     var txtIdNew = document.getElementById('txtIdNew');
