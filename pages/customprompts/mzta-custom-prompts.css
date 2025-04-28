@@ -25,6 +25,7 @@ table {
 thead {
     position: sticky;
     top: 26px;
+    z-index: 90;
 }
 
 #command_palette{
@@ -33,6 +34,7 @@ thead {
     padding-top: 1px;
     height: 26px;
     width: 100%;
+    z-index: 90;
 }
 
 #btnNew{
@@ -256,6 +258,7 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
 .chatgpt_web_additional_info_toggle{
     width: -moz-available;
     text-align: center;
+    margin-top: 10px;
 }
 
 .chatgpt_web_additional_info_show{
