@@ -795,10 +795,13 @@ function checkFields() {
 }
 
 
-function clearFields() {    //TODO add new fields
+function clearFields() {
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
     document.getElementById('txtTextNew').value = '';
+    document.getElementById('chatGPTWebModelNew').value = '';
+    document.getElementById('chatGPTWebProjectNew').value = '';
+    document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
     document.getElementById('selectActionNew').value = '0';
     document.getElementById('checkboxNeedSelectedNew').value = '0';
