@@ -1420,11 +1420,15 @@
     "description": ""
   },
   "customPrompts_show_additional_info": {
-    "message": "Show ChatGPT additional properties",
+    "message": "Show ChatGPT Web additional properties",
     "description": ""
   },
   "customPrompts_hide_additional_info": {
-    "message": "Hide ChatGPT additional properties",
+    "message": "Hide ChatGPT Web additional properties",
+    "description": ""
+  },
+  "customPrompts_show_additional_info_show": {
+    "message": "ChatGPT Web additional properties",
     "description": ""
   }
 }

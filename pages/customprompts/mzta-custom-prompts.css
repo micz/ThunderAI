@@ -148,6 +148,10 @@ tbody.list tr{
     font-size: small;
 }
 
+label, .id_show, .text_show, .name_show, .type_show, .action_show{
+    font-size: small;
+}
+
 #txtIdNew, .id_output{
     text-transform: lowercase;
 }
@@ -222,7 +226,7 @@ tbody.list tr{
     font-style: italic;
 }
 
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle{
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
     background-color: rgb(255, 209, 183);
     display:none;
 }
@@ -247,6 +251,22 @@ tbody.list tr{
 .chatgpt_web_additional_info_toggle{
     width: -moz-available;
     text-align: center;
+}
+
+.chatgpt_web_additional_info_show{
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 3px;
+    margin-top: 5px;
+}
+
+.chatgpt_web_additional_info_row{
+    display: flex;
+}
+
+.chatgpt_web_additional_info_row span{
+    margin-right: 0.4em;
 }
 
 input.input_additional[type="text"]{

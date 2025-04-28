@@ -23,6 +23,7 @@ import { taLogger } from "../../js/mzta-logger.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 
+let prefs = null;
 var promptsList = null;
 var somethingChanged = false;
 var positionMax_compose = 0;
@@ -34,7 +35,7 @@ let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    let prefs = await browser.storage.sync.get({ connection_type:prefs_default.connection_type, do_debug: prefs_default.do_debug });
+    prefs = await browser.storage.sync.get({ connection_type:prefs_default.connection_type, do_debug: prefs_default.do_debug });
     taLog = new taLogger("mzta-custom-prompts", prefs.do_debug);
     
     setStorageSpace();
@@ -119,10 +120,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             });
-            document.querySelectorAll('input.chatGPTWebProject_output').forEach(element => {
+            document.querySelectorAll('input.chatgpt_web_project_output').forEach(element => {
                 element.addEventListener("input", validateCustomData_ChatGPTWeb);
             });
-            document.querySelectorAll('input.chatGPTWebCustomGPT_output').forEach(element => {
+            document.querySelectorAll('input.chatgpt_web_custom_gpt_output').forEach(element => {
                 element.addEventListener("input", validateCustomData_ChatGPTWeb);
             });
             break;
@@ -341,6 +342,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
+    document.querySelectorAll('.chatgpt_web_additional_info_show').forEach(element => {
+        toggleAdditionalPropertiesShow(element);
+    });
+
 }, { once: true });
 
 //========= handling an item in a row 
@@ -366,7 +371,8 @@ function showItemRowEditor(tr) {
     text_output.style.display = 'inline';
     textareaAutocomplete(text_output, autocompleteSuggestions)
     tr.querySelector('.text_show').style.display = 'none';
-    tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'block';
+    toggleAdditionalPropertiesEditor(tr);
+    tr.querySelector('.chatgpt_web_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
@@ -389,6 +395,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
     tr.querySelector('.chatgpt_web_additional_info').style.display = 'none';
+    toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
@@ -400,6 +407,70 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = true;
     tr.querySelector('input.define_response_lang').disabled = true;
     tr.querySelector('input.use_diff_viewer').disabled = true;
+}
+
+function toggleAdditionalPropertiesShow(tr) {
+    switch(prefs.connection_type) {
+        case 'chatgpt_web': {
+            let element = tr.querySelector('.chatgpt_web_additional_info_show');
+            let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
+            let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show').innerText;
+            let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
+
+            if ((chatGPTWebModel_show !== '' && chatGPTWebModel_show !== 'undefined') || 
+                (chatGPTWebProject_show !== '' && chatGPTWebProject_show !== 'undefined') || 
+                (chatGPTWebCustomGPT_show !== '' && chatGPTWebCustomGPT_show !== 'undefined')) {
+                element.style.display = 'flex';
+            } else {
+                element.style.display = 'none';
+            }
+            break;
+        }
+        // case 'chatgpt_api':
+        //     document.getElementById('chatgpt_api').style.display = 'block';
+        //     break;
+        // case 'ollama_api':
+        //     document.getElementById('ollama_api').style.display = 'block';
+        //     break;
+        // case 'openai_comp_api':
+        //     document.getElementById('openai_comp_api').style.display = 'block';
+        //     break;
+        // case 'google_gemini_api':
+        //     document.getElementById('google_gemini_api').style.display = 'block';
+        //     break;
+    }
+}
+
+function toggleAdditionalPropertiesEditor(tr) {
+    switch(prefs.connection_type) {
+        case 'chatgpt_web': {
+            let element = tr.querySelector('.chatgpt_web_additional_info_show');
+            let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
+            info_toggle.style.display = 'block';
+            let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
+            let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show').innerText;
+            let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
+
+            if ((chatGPTWebModel_show !== '' && chatGPTWebModel_show !== 'undefined') || 
+                (chatGPTWebProject_show !== '' && chatGPTWebProject_show !== 'undefined') || 
+                (chatGPTWebCustomGPT_show !== '' && chatGPTWebCustomGPT_show !== 'undefined')) {
+                info_toggle.click();
+            }
+            break;
+        }
+        // case 'chatgpt_api':
+        //     document.getElementById('chatgpt_api').style.display = 'block';
+        //     break;
+        // case 'ollama_api':
+        //     document.getElementById('ollama_api').style.display = 'block';
+        //     break;
+        // case 'openai_comp_api':
+        //     document.getElementById('openai_comp_api').style.display = 'block';
+        //     break;
+        // case 'google_gemini_api':
+        //     document.getElementById('google_gemini_api').style.display = 'block';
+        //     break;
+    }
 }
 
 function toggleDiffviewer(e) {
@@ -449,6 +520,9 @@ function handleCancelClick(e) {
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
     // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
+    tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
+    tr.querySelector('.chatgpt_web_project_output').value = tr.querySelector('.chatgpt_web_project_show').innerText;
+    tr.querySelector('.chatgpt_web_custom_gpt_output').value = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
     hideItemRowEditor(tr);
 }
 
@@ -464,6 +538,9 @@ function handleConfirmClick(e) {
     tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
     tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
     tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+    tr.querySelector('.chatgpt_web_model_show').innerText = tr.querySelector('.chatgpt_web_model_output').value;
+    tr.querySelector('.chatgpt_web_project_show').innerText = tr.querySelector('.chatgpt_web_project_output').value;
+    tr.querySelector('.chatgpt_web_custom_gpt_show').innerText = tr.querySelector('.chatgpt_web_custom_gpt_output').value;
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
@@ -535,23 +612,28 @@ function loadPromptsList(values){
                         <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
+                    <div class="chatgpt_web_additional_info_show small_info"><span class="chatgpt_web_additional_info_row field_title">__MSG_customPrompts_show_additional_info_show__</span>
+                        <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</span><span class="chatgpt_web_model chatgpt_web_model_show">` + values.chatgpt_web_model + `</span></div>
+                        <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</span><span class="chatgpt_web_project chatgpt_web_project_show">` + values.chatgpt_web_project + `</span></div>
+                        <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span><span class="chatgpt_web_custom_gpt chatgpt_web_custom_gpt_show">` + values.chatgpt_web_custom_gpt + `</span></div>
+                    </div>
                     <div class="chatgpt_web_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__</div>
                     <div class="chatgpt_web_additional_info">
-                        __MSG_prefs_OptionText_chatgpt_web_model__:
+                        <span class="field_title_s">__MSG_prefs_OptionText_chatgpt_web_model__:</span>
                         <br>
-                        <input type="text" class="input_new input_additional chatGPTWebModel_output" tabindex="10">
+                        <input type="text" class="input_additional chatgpt_web_model_output" tabindex="10" value="` + values.chatgpt_web_model + `">
                         <table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list">TODO</tr></table>
                         <br><br>
-                        __MSG_prefs_OptionText_chatgpt_web_project__:
+                        <span class="field_title_s">__MSG_prefs_OptionText_chatgpt_web_project__:</span>
                         <br>
-                        <input type="text" id="chatGPTWebProject_` + values.id + `" class="input_new input_additional chatGPTWebProject_output" tabindex="11">
-                        <br><i class="small_info" id="chatGPTWebProject_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
+                        <input type="text" id="chatgpt_web_project_` + values.id + `" class="input_additional chatgpt_web_project_output" tabindex="11" value="` + values.chatgpt_web_project + `">
+                        <br><i class="small_info" id="chatgpt_web_project_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT_ID-PROJECT_NAME/project</b>
                             <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
                         <br><br>
-                        __MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
+                        <span class="field_title_s">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span>
                         <br>
-                        <input type="text" id="chatGPTWebCustomGPT_` + values.id + `" class="input_new input_additional chatGPTWebCustomGPT_output" tabindex="11">
-                        <br><i class="small_info" id="chatGPTWebCustomGPT_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
+                        <input type="text" id="chatgpt_web_custom_gpt_` + values.id + `" class="input_additional chatgpt_web_custom_gpt_output" tabindex="11" value="` + values.chatgpt_web_custom_gpt + `">
+                        <br><i class="small_info" id="chatgpt_web_custom_gpt_` + values.id + `_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM_GPT_ID</b>
                         <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
                     </div>
                 </td>
@@ -605,6 +687,28 @@ function loadPromptsList(values){
             return output;
         }
     };
+
+    switch(prefs.connection_type) {
+        case 'chatgpt_web': {
+            options.valueNames.push('chatgpt_web_model', 'chatgpt_web_project', 'chatgpt_web_custom_gpt');
+            break;
+        }
+        // case 'chatgpt_api':
+        //     document.getElementById('chatgpt_api').style.display = 'block';
+        //     break;
+        // case 'ollama_api':
+        //     document.getElementById('ollama_api').style.display = 'block';
+        //     break;
+        // case 'openai_comp_api':
+        //     document.getElementById('openai_comp_api').style.display = 'block';
+        //     break;
+        // case 'google_gemini_api':
+        //     document.getElementById('google_gemini_api').style.display = 'block';
+        //     break;
+    }
+
+    console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
+    console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
     promptsList = new List('all_prompts', options, values);
 
@@ -676,7 +780,7 @@ function checkFields() {
 }
 
 
-function clearFields() {
+function clearFields() {    //TODO add new fields
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
     document.getElementById('txtTextNew').value = '';
@@ -749,6 +853,7 @@ async function saveAll() {
         promptsList.reIndex();
         let newPrompts = promptsList.items.map(item => {
             // For each item in the array, return only the '_values' part
+            console.log(">>>>>>>>>>>>>>>> item: " + JSON.stringify(item))
             return item.values();
         });
         taLog.log('newPrompts: ' + JSON.stringify(newPrompts));
