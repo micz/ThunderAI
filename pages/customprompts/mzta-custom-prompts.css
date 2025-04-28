@@ -148,6 +148,11 @@ tbody.list tr{
     font-size: small;
 }
 
+.field_title_us{
+    font-weight: bold;
+    font-size: smaller;
+}
+
 label, .id_show, .text_show, .name_show, .type_show, .action_show{
     font-size: small;
 }
