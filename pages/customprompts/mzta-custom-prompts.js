@@ -722,8 +722,8 @@ function loadPromptsList(values){
         //     break;
     }
 
-    console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
-    console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
+    // console.log('>>>>>>>>>>>>> options: ' + JSON.stringify(options));
+    // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
     promptsList = new List('all_prompts', options, values);
 
@@ -868,7 +868,7 @@ async function saveAll() {
         promptsList.reIndex();
         let newPrompts = promptsList.items.map(item => {
             // For each item in the array, return only the '_values' part
-            console.log(">>>>>>>>>>>>>>>> item: " + JSON.stringify(item))
+            // console.log(">>>>>>>>>>>>>>>> item: " + JSON.stringify(item))
             return item.values();
         });
         taLog.log('newPrompts: ' + JSON.stringify(newPrompts));
