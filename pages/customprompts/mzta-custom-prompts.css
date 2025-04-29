@@ -339,4 +339,8 @@ input.input_additional[type="text"]{
     #chatgpt_web_additional_info{
         background-color: rgb(39, 11, 0);
     }
+
+    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
+        color: black;
+    }
 }
