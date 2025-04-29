@@ -412,7 +412,7 @@ export async function checkSparksPresence() {
 }
 
 export function validateChatGPTWebCustomData(data) {
-  return /^\/g\/[a-zA-Z0-9-]+$/.test(data) || data == '';
+  return /^\/g\/[a-zA-Z0-9/-]+$/.test(data) || data == '';
 }
 
 export function sanitizeChatGPTModelData(input) {
