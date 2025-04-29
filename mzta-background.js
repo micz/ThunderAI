@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -334,21 +334,39 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
         let call_opt = '';
+
+        let _base_url = "https://chatgpt.com";
+        let _webproject_set = false;
+        let _custom_gpt_set = false;
+        let _use_prompt_info_custom_gpt = false;
         let _custom_model = sanitizeChatGPTModelData(prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : prefs.chatgpt_web_model);
+        let _web_project = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_project != '' ? prompt_info.chatgpt_web_project : prefs.chatgpt_web_project)
+        let _custom_gpt = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_custom_gpt != '' ? prompt_info.chatgpt_web_custom_gpt : prefs.chatgpt_web_custom_gpt)
 
         if(prefs.chatgpt_web_tempchat){
             call_opt += '&temporary-chat=true';
         }
-//TODO chatgpt_web_project,chatgpt_web_custom_gpt
 
-        if((prompt_info.chatgpt_web_model != '')||(prefs.chatgpt_web_model != '')){
+        if((prompt_info.chatgpt_web_model != '') || (prefs.chatgpt_web_model != '')){
             call_opt += '&model=' + _custom_model;
         }
 
         taLog.log("[chatgpt_web] call_opt: " + call_opt);
 
+        // If there is a custom gpt on the prompt, but also a web_project on the prefs, we need to use the custom gpt
+        _use_prompt_info_custom_gpt = (prompt_info.chatgpt_web_custom_gpt != '' && prompt_info.chatgpt_web_project == '');
+
+        if(!_use_prompt_info_custom_gpt && ((prompt_info.chatgpt_web_project != '') || (prefs.chatgpt_web_project != ''))){
+            _base_url += _web_project;
+            _webproject_set = true;
+        }
+        if(!_webproject_set && ((prompt_info.chatgpt_web_custom_gpt != '') || (prefs.chatgpt_web_custom_gpt != ''))){
+            _base_url += _custom_gpt;
+            _custom_gpt_set = true;
+        }
+
         let win_options = {
-            url: "https://chatgpt.com?call_id=" + rand_call_id + call_opt,
+            url: _base_url + "?call_id=" + rand_call_id + call_opt,
             type: "popup",
         }
         
@@ -380,7 +398,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaDoCustomText=`+ do_custom_text +`;
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
                 let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
-                let mztaGPTModel="`+ _gpt_model +`";
+                let mztaGPTModel="`+ (_custom_gpt_set ? '' : _gpt_model) +`";
                 let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                 let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                 let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
