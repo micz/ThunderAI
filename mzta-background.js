@@ -317,6 +317,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
+    console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
     taLog.log("Prompt length: " + promptText.length);
     if(promptText.length > prefs.max_prompt_length){
         // Prompt too long for ChatGPT
@@ -333,13 +334,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
         let call_opt = '';
+        let _custom_model = (prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : sanitizeChatGPTModelData(prefs.chatgpt_web_model));
 
         if(prefs.chatgpt_web_tempchat){
             call_opt += '&temporary-chat=true';
         }
-//TODO
-        if(prefs.chatgpt_web_model != ''){
-            call_opt += '&model=' + sanitizeChatGPTModelData(prefs.chatgpt_web_model);
+//TODO chatgpt_web_project,chatgpt_web_custom_gpt
+
+        if((prompt_info.chatgpt_web_model != '')||(prefs.chatgpt_web_model != '')){
+            call_opt += '&model=' + _custom_model;
         }
 
         taLog.log("[chatgpt_web] call_opt: " + call_opt);
@@ -360,9 +363,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             async function handleChatGptWeb(createdTab) {
                 taLog.log("ChatGPT web interface script started...");
 
-                let _gpt_model = getGPTWebModelString(prefs.chatgpt_web_model);
+                let _gpt_model = getGPTWebModelString(_custom_model);
 
-                taLog.log("prefs.chatgpt_web_model: " + prefs.chatgpt_web_model);
+                taLog.log("_custom_model: " + _custom_model);
                 taLog.log("_gpt_model: " + _gpt_model);
 
                 let originalText = prompt_info.selection_text;
