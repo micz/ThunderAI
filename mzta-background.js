@@ -334,7 +334,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
 
         let rand_call_id = '_chatgptweb_' + generateCallID();
         let call_opt = '';
-        let _custom_model = (prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : sanitizeChatGPTModelData(prefs.chatgpt_web_model));
+        let _custom_model = sanitizeChatGPTModelData(prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : prefs.chatgpt_web_model);
 
         if(prefs.chatgpt_web_tempchat){
             call_opt += '&temporary-chat=true';
