@@ -380,6 +380,15 @@ async function getCustomPrompts() {
             if (prompt.use_diff_viewer === undefined) {
                 prompt.use_diff_viewer = "0";
             }
+            if(prompt.chatgpt_web_model === undefined){
+                prompt.chatgpt_web_model = "";
+            }
+            if(prompt.chatgpt_web_project === undefined){
+                prompt.chatgpt_web_project = "";
+            }
+            if(prompt.chatgpt_web_custom_gpt === undefined){
+                prompt.chatgpt_web_custom_gpt = "";
+            }
         });
         return prefs._custom_prompt;
     }
