@@ -1430,5 +1430,9 @@
   "customPrompts_show_additional_info_show": {
     "message": "Additional properties",
     "description": ""
+  },
+  "prefs_OptionText_CustomGPT_Warn": {
+    "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",
+    "description": ""
   }
 }
