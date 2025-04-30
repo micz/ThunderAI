@@ -89,8 +89,8 @@ function chatgpt_getRegenerateButton() {
         }
     }
     for (const mainSVG of document.querySelectorAll('main svg.icon-md-heavy')) {
-        if (mainSVG.querySelector('path[d^="M12.1318 2.50389C12.3321"]')){ // thumb up icon found
-            //console.log(">>>>>>>>>> found thumb up icon!");
+        if (mainSVG.querySelector('path[d^="M11 4.9099C11 4.47485"]')){ // read aloud icon found
+            //console.log(">>>>>>>>>> found read aloud icon!");
             return mainSVG.parentNode.parentNode;
         }
     }
