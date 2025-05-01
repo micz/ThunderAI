@@ -6,6 +6,7 @@
 
 <h2>Version 3.4.0 - ??/??/2025</h2>
       <ul>
+        <li><i>[ChatGPT Web]</i> It is now possible to define a Custom GPT or a Project in the options page to be used by default, or directly in a custom prompt to be used only for that prompt [<a href="https://github.com/micz/ThunderAI/issues/168">#168</a>, <a href="https://github.com/micz/ThunderAI/issues/277">#277</a>].</li>
         <li>The chatgpt.com access permission is no more requested when installing the addon. It's mandatory to give this permission to use the ChatGPT Web Interface integration [<a href="https://github.com/micz/ThunderAI/issues/293">#293</a>].</li>
         <li>Added the <i>{%mail_quoted_text%}</i> placeholder to get the quoted text when composing a new message [<a href="https://github.com/micz/ThunderAI/issues/324">#324</a>].</li>
         <li>Fix: In the <i>{%mail_typed_text%}</i> placeholder text on different lines is now separated by a space.</li>
