@@ -1434,5 +1434,9 @@
   "prefs_OptionText_CustomGPT_Warn": {
     "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",
     "description": ""
+  },
+  "prefs_OptionText_Project_No_temporary_chat_warn": {
+    "message": "If a Project is specified in the options or in a prompt, the temporary chat will not be used.",
+    "description": ""
   }
 }
