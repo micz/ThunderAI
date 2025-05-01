@@ -438,6 +438,10 @@ async function doProceed(message, customText = ''){
 }
 
 function doRetry(){
+    document.getElementById('mzta-model_warn').style.display = 'none';
+    document.getElementById('mzta-btn_retry').remove();
+    document.getElementById('mzta-loading').style.display = 'inline-block';
+    document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
     doProceed(current_message);
 }
 
