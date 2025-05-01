@@ -317,7 +317,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
-    console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
+    // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
     taLog.log("Prompt length: " + promptText.length);
     if(promptText.length > prefs.max_prompt_length){
         // Prompt too long for ChatGPT

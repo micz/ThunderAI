@@ -18,7 +18,7 @@
 // Firefox 115 and, consequently, Thunderbird 115 are not compatible with Intl.Segmenter.
 // ChatGPT is using Intl.Segmenter, so we have to do something about it or it won't work...
 
-console.log("[ThunderAI] Intl.Segmenter: " + Intl.Segmenter);
+// console.log("[ThunderAI] Intl.Segmenter: " + Intl.Segmenter);
 
 (function() {
     if('Segmenter' in Intl){
