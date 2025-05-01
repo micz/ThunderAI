@@ -233,7 +233,7 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
     font-style: italic;
 }
 
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
     background-color: rgb(255, 209, 183);
     display:none;
 }
@@ -336,11 +336,12 @@ input.input_additional[type="text"]{
         background-color: #4c4e58;
     }
 
-    #chatgpt_web_additional_info{
+    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
         background-color: rgb(39, 11, 0);
+        color: rgb(182, 182, 182);
     }
 
-    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
-        color: black;
+    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
+        background-color: rgb(88, 25, 0);
     }
 }
