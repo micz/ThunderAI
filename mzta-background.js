@@ -335,6 +335,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let rand_call_id = '_chatgptweb_' + generateCallID();
         let call_opt = '';
 
+        let _wait_time = 1000;
         let _base_url = "https://chatgpt.com";
         let _webproject_set = false;
         let _custom_gpt_set = false;
@@ -359,6 +360,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         if(!_use_prompt_info_custom_gpt && ((prompt_info.chatgpt_web_project != '') || (prefs.chatgpt_web_project != ''))){
             _base_url += _web_project;
             _webproject_set = true;
+            _wait_time = 2000;
         }
         if(!_webproject_set && ((prompt_info.chatgpt_web_custom_gpt != '') || (prefs.chatgpt_web_custom_gpt != ''))){
             _base_url += _custom_gpt;
@@ -404,9 +406,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
                 `;
 
-                taLog.log("Waiting 1 sec");
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                taLog.log("Waiting 1 sec done");
+                taLog.log("Waiting " + _wait_time + " millisec");
+                await new Promise(resolve => setTimeout(resolve, _wait_time));
+                taLog.log("Waiting " + _wait_time + " millisec done");
                 
                 await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
                 // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
