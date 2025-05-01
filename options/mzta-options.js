@@ -363,48 +363,6 @@ function getChatGPTWebModelsList_HTML(values, targetRowId) {
 }
   
 
-
-function getChatGPTWebModelsList_HTML(values, targetRowId) {
-  const rowElement = document.getElementById(targetRowId);
-  if (!rowElement) return;
-
-  // Clears any existing td elements
-  rowElement.innerHTML = '';
-
-  // First TD: label
-  const labelTd = document.createElement('td');
-  const label = document.createElement('i');
-  label.className = 'small_info';
-  const labelNobr = document.createElement('nobr');
-  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
-  label.appendChild(labelNobr);
-  labelTd.appendChild(label);
-
-  // Second TD: values
-  const valuesTd = document.createElement('td');
-  const valuesContainer = document.createElement('i');
-  valuesContainer.className = 'small_info';
-
-  values.forEach(value => {
-    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
-    const valueNobr = document.createElement('nobr');
-    valueNobr.className = 'conntype_chatgpt_web_option';
-    valueNobr.textContent = value;
-    const nbspAfter = document.createTextNode(' \u00A0 ');
-
-    valuesContainer.appendChild(nbspBefore);
-    valuesContainer.appendChild(valueNobr);
-    valuesContainer.appendChild(nbspAfter);
-  });
-
-  valuesTd.appendChild(valuesContainer);
-
-  // Adds the td elements to the row
-  rowElement.appendChild(labelTd);
-  rowElement.appendChild(valuesTd);
-}
-  
-
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
 
