@@ -310,9 +310,9 @@ class MessageInput extends HTMLElement {
         this._customTextArea.focus();
     }
 
-    async _customTextBtnClick(args) { console.log('>>>>>>>>> this in _customTextBtnClick:', this);
+    async _customTextBtnClick(args) {
         const customText = this._customTextArea.value;
-        console.log(">>>>>>>>>>>>>>>> customText: " + customText);
+        // console.log(">>>>>>>>>>>>>>>> customText: " + customText);
         args.customBtn.disabled = true;
         args.customBtn.classList.add('disabled');
         args.customLoading.style.display = 'inline-block';

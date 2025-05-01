@@ -411,6 +411,24 @@ export async function checkSparksPresence() {
   }
 }
 
+export function validateChatGPTWebCustomData(data) {
+  return /^\/g\/[a-zA-Z0-9/-]+$/.test(data) || data == '';
+}
+
+export function sanitizeChatGPTModelData(input) {
+  return encodeURIComponent(input).toLowerCase()
+}
+
+export function sanitizeChatGPTWebCustomData(input) {
+  // Removes all characters that are not letters, numbers, dashes, or slashes
+  return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');
+}
+
+export function validateCustomData_ChatGPTWeb(event) {
+  let is_valid = validateChatGPTWebCustomData(event.target.value);
+  event.target.style.borderColor = is_valid ? 'green' : 'red';
+  document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
+}
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 

@@ -18,7 +18,7 @@
         <td colspan="2" style="text-align:center;" class="warning"><b>__MSG_hyprland_warning__</b></td>
       </tr>
       <tr>
-        <td><span>__MSG_prefs_OptionText_chatgpt_win_text__</span>
+        <td><span class="opt_title">__MSG_prefs_OptionText_chatgpt_win_text__</span>
         <td>
           <label>
             <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_height__</span>
@@ -35,7 +35,7 @@
       </tr>
       <tr>
         <td><label>
-          <span>__MSG_prefs_OptionText_default_sign_name__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_default_sign_name__</span>
         </label></td>
         <td>
           <label>
@@ -45,7 +45,7 @@
       </tr>
       <tr>
         <td><label>
-          <span>__MSG_prefs_OptionText_default_chatgpt_lang__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_default_chatgpt_lang__</span>
         </label></td>
         <td>
           <label>
@@ -56,7 +56,7 @@
       <tr>
         <td>
           <label>
-            <span>__MSG_prefs_OptionText_reply_type__</span>
+            <span class="opt_title">__MSG_prefs_OptionText_reply_type__</span>
           </label>
         </td>
         <td>
@@ -70,7 +70,7 @@
       </tr>
       <tr>
         <td><label>
-          <span>__MSG_prefs_OptionText_dynamic_menu_order_alphabet__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_dynamic_menu_order_alphabet__</span>
         </label></td>
         <td>
           <label>
@@ -81,7 +81,7 @@
       </tr>
       <tr>
         <td><label>
-          <span>__MSG_prefs_OptionText_dynamic_menu_force_enter__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_dynamic_menu_force_enter__</span>
         </label></td>
         <td>
           <label>
@@ -92,7 +92,7 @@
       </tr>
       <tr>
         <td><label>
-          <span>__MSG_prefs_OptionText_placeholders_use_default_value__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_placeholders_use_default_value__</span>
         </label></td>
         <td>
           <label>
@@ -104,7 +104,7 @@
       <tr>
         <td>
           <label>
-            <span>__MSG_prefs_Connection_type__</span>
+            <span class="opt_title">__MSG_prefs_Connection_type__</span>
           </label>
         </td>
         <td>
@@ -122,7 +122,7 @@
       <tr>
       <tr class="conntype_chatgpt_web">
         <td><label>
-          <span>__MSG_prefs_OptionText_chatgpt_web_model__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
           <br><table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr><td><i class="small_info"><nobr>__MSG_AllowedValues__:</nobr></i></td><td><i class="small_info"> &nbsp; <nobr class="conntype_chatgpt_web_option">gpt-4o</nobr> &nbsp; <nobr class="conntype_chatgpt_web_option">gpt-4o-mini</nobr> &nbsp; <nobr class="conntype_chatgpt_web_option">gpt-4</nobr> &nbsp; <nobr class="conntype_chatgpt_web_option">o1</nobr> &nbsp; <nobr class="conntype_chatgpt_web_option">o3-mini</nobr> &nbsp; <nobr class="conntype_chatgpt_web_option">o3-mini-high</nobr></i></td></tr></table>
         </label></td>
         <td>
@@ -134,26 +134,53 @@
       </tr>
       <tr class="conntype_chatgpt_web">
         <td><label>
-          <span>__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
+          <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT-ID-PROJECT-NAME/project</b>
+            <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
         </label></td>
         <td>
           <label>
-            <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
-            &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__</span>
+            <input type="text" id="chatgpt_web_project" name="chatgpt_web_project" class="option-input" />
+            <br>__MSG_prefs_OptionText_chatgpt_web_project_info__
           </label>
         </td>
       </tr>
       <tr class="conntype_chatgpt_web">
         <td><label>
-          <span>__MSG_OpenChatGPTTab_Info__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</span>
+          <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM-GPT-ID</b>
+            <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
         </label></td>
         <td>
-            <button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
+          <label>
+            <input type="text" id="chatgpt_web_custom_gpt" name="chatgpt_web_custom_gpt" class="option-input" />
+            <br>__MSG_prefs_OptionText_chatgpt_web_custom_gpt_info__
+            <br>__MSG_prefs_OptionText_CustomGPT_Warn__
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_chatgpt_web">
+        <td><label>
+          <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="chatgpt_web_tempchat" name="chatgpt_web_tempchat" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_chatgpt_web_tempchat_info__
+              <br>__MSG_prefs_OptionText_Project_No_temporary_chat_warn__
+            </span>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_chatgpt_web">
+        <td colspan="2" style="padding:0px 2em;text-align:center;"><span>__MSG_OpenChatGPTTab_Info__</span>
+            <br><br><button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
+            <br><br>__MSG_OpenChatGPTTab_Info2__
         </td>
       </tr>
       <tr class="conntype_chatgpt_api">
         <td><label>
-          <span>__MSG_prefs_ChatGPT_API_Key__</span>
+          <span class="opt_title">__MSG_prefs_ChatGPT_API_Key__</span>
         </label></td>
         <td>
           <div class="api_key-container">
@@ -167,7 +194,7 @@
       <tr class="conntype_chatgpt_api">
         <td>
           <label>
-            <span>__MSG_ChatGPT_Models__</span>
+            <span class="opt_title">__MSG_ChatGPT_Models__</span>
           </label>
         </td>
         <td>
@@ -181,7 +208,7 @@
       <tr class="conntype_chatgpt_api">
         <td>
           <label>
-            <span>__MSG_ChatGPT_Developer_Messages__</span>
+            <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
           </label>
         </td>
         <td>
@@ -193,7 +220,7 @@
       </tr>
       <tr class="conntype_google_gemini_api">
         <td><label>
-          <span>__MSG_prefs_GoogleGemini_API_Key__</span>
+          <span class="opt_title">__MSG_prefs_GoogleGemini_API_Key__</span>
         </label></td>
         <td>
           <div class="api_key-container">
@@ -207,7 +234,7 @@
       <tr class="conntype_google_gemini_api">
         <td>
           <label>
-            <span>__MSG_GoogleGemini_Models__</span>
+            <span class="opt_title">__MSG_GoogleGemini_Models__</span>
           </label>
         </td>
         <td>
@@ -221,7 +248,7 @@
       <tr class="conntype_google_gemini_api">
         <td>
           <label>
-            <span>__MSG_GoogleGemini_SystemInstruction__</span>
+            <span class="opt_title">__MSG_GoogleGemini_SystemInstruction__</span>
           </label>
         </td>
         <td>
@@ -233,7 +260,7 @@
       </tr>
       <tr class="conntype_ollama_api">
         <td><label>
-          <span>__MSG_prefs_API_Host__</span>
+          <span class="opt_title">__MSG_prefs_API_Host__</span>
           <br><i class="small_info">__MSG_prefs_API_Host_Info__ http://127.0.0.1:11434</i>
         </label></td>
         <td>
@@ -253,7 +280,7 @@
       <tr class="conntype_ollama_api">
         <td>
           <label>
-            <span>__MSG_Ollama_Models__</span>
+            <span class="opt_title">__MSG_Ollama_Models__</span>
           </label>
         </td>
         <td>
@@ -266,7 +293,7 @@
       </tr>
       <tr class="conntype_openai_comp_api">
         <td><label>
-          <span>__MSG_prefs_API_Host__</span>
+          <span class="opt_title">__MSG_prefs_API_Host__</span>
           <br><i class="small_info">__MSG_prefs_API_Host_Info__ http://localhost:1234</i>
         </label></td>
         <td>
@@ -286,7 +313,7 @@
       </tr>
       <tr class="conntype_openai_comp_api">
         <td><label>
-          <span>__MSG_prefs_OptionText_openai_comp_use_v1__</span>
+          <span class="opt_title">__MSG_prefs_OptionText_openai_comp_use_v1__</span>
         </label></td>
         <td>
           <label>
@@ -297,7 +324,7 @@
       </tr>
       <tr class="conntype_openai_comp_api">
         <td><label>
-          <span>__MSG_prefs_OpenAIComp_API_Key__</span>
+          <span class="opt_title">__MSG_prefs_OpenAIComp_API_Key__</span>
           <br><i class="small_info">__MSG_Optional__</i>
         </label></td>
         <td>
@@ -312,7 +339,7 @@
       <tr class="conntype_openai_comp_api">
         <td>
           <label>
-            <span>__MSG_OpenAIComp_Models__</span>
+            <span class="opt_title">__MSG_OpenAIComp_Models__</span>
             <br><button id="btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button></td>
           </label>
         </td>
@@ -326,7 +353,7 @@
       </tr>
       <tr class="conntype_openai_comp_api">
         <td><label>
-          <span>__MSG_prefs_OpenAIComp_ChatName__</span>
+          <span class="opt_title">__MSG_prefs_OpenAIComp_ChatName__</span>
         </label></td>
         <td>
           <label>
@@ -336,7 +363,7 @@
         </td>
       </tr>
       <tr id="max_prompt_length_tr">
-        <td><span>__MSG_prefs_OptionText_max_prompt_length__</span></td>
+        <td><span class="opt_title">__MSG_prefs_OptionText_max_prompt_length__</span></td>
         <td>
           <label>
             <input type="number" id="max_prompt_length" name="max_prompt_length" class="option-input" />
@@ -345,7 +372,7 @@
         </td>
       </tr>
       <tr class="add_tags_tr">
-        <td><span>__MSG_prefs_OptionText_add_tags__</span>
+        <td><span class="opt_title">__MSG_prefs_OptionText_add_tags__</span>
         <br><button id="btnManageTagsInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTagsInfo__</button></td>
         <td>
           <label>
@@ -355,7 +382,7 @@
         </td>
       </tr>
       <tr class="spamfilter_tr">
-        <td><span>__MSG_prefs_OptionText_spamfilter__</span>
+        <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter__</span>
         <br><button id="btnManageSpamFilterInfo" class="btn_small">__MSG_prefs_OptionText_btnManageSpamFilterInfo__</button></td>
         <td>
           <label>
@@ -365,7 +392,7 @@
         </td>
       </tr>
       <tr class="get_calendar_event_tr">
-        <td><span>__MSG_prefs_OptionText_get_calendar_event__</span>
+        <td><span class="opt_title">__MSG_prefs_OptionText_get_calendar_event__</span>
         <br><button id="btnManageCalendarEventInfo" class="btn_small">__MSG_prefs_OptionText_btnManageCalendarEventInfo__</button></td>
         <td>
           <label>
@@ -375,7 +402,7 @@
         </td>
       </tr>
       <tr class="get_task_tr">
-        <td><span>__MSG_prefs_OptionText_get_task__</span>
+        <td><span class="opt_title">__MSG_prefs_OptionText_get_task__</span>
         <br><button id="btnManageTaskInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTaskInfo__</button></td>
         <td>
           <label>
@@ -393,7 +420,7 @@
       </tr>
       <tr>
         <td style="width:20em"><label>
-          <span>__MSG_Debug__</span>
+          <span class="opt_title">__MSG_Debug__</span>
         </label></td>
         <td>
           <label>

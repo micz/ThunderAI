@@ -74,6 +74,10 @@ span.dims_label{
     display: inline-block;
 }
 
+span.opt_title{
+    font-weight: bold;
+}
+
 #btn_custom_prompts{
     text-align: center;
     width: 100%;

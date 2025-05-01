@@ -22,7 +22,7 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab } from '../js/mzta-utils.js';
+import { checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -298,15 +298,21 @@ function disable_SpamFilter(){
 
 async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
+  let get_task = document.getElementById('get_task');
   let no_sparks_tr = document.getElementById('no_sparks');
   let no_sparks_text = document.getElementById('no_sparks_text');
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
   let conntype_select = document.getElementById("connection_type");
   get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
+  get_task.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
+  });
+  let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
+  get_task_tr_elements.forEach(get_task_tr => {
+    get_task_tr.style.display = get_task.disabled ? 'none' : 'table-row';
   });
   no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
@@ -448,6 +454,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
 
   let prefs = await browser.storage.sync.get({chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
@@ -673,8 +681,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
-  btnChatGPTWeb_Tab.addEventListener('click', () => {
-    browser.tabs.create({ url: 'https://chatgpt.com/' });
+  btnChatGPTWeb_Tab.addEventListener('click', async () => {
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: prefs_default.chatgpt_web_model, chatgpt_web_project: prefs_default.chatgpt_web_project, chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt});
+    
+    let base_url = 'https://chatgpt.com';
+    let model_opt = '';
+    let webproject_set = false;
+    
+    if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
+      model_opt = '?model=' + sanitizeChatGPTModelData(prefs_mod.chatgpt_web_model);
+    }
+    if((prefs_mod.chatgpt_web_project != '') && (prefs_mod.chatgpt_web_project != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_project);
+      webproject_set = true;
+    }
+    if(!webproject_set && (prefs_mod.chatgpt_web_custom_gpt != '') && (prefs_mod.chatgpt_web_custom_gpt != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_custom_gpt);
+    }
+    browser.tabs.create({ url: base_url + model_opt });
   });
 
   browser.runtime.getPlatformInfo().then(info => {

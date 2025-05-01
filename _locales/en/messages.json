@@ -607,6 +607,10 @@
     "message": "In case of login issues in the ThunderAI window, open ChatGPT in a new tab using the button on the right, log in, then close the tab and continue using ThunderAI.",
     "description": ""
   },
+  "OpenChatGPTTab_Info2": {
+    "message": "Opening ChatGPT Web from here will apply any configured settings for the model, project, and Custom GPT.",
+    "description": ""
+  },
   "placeholder_mail_text_body": {
     "message": "Mail body",
     "description": ""
@@ -672,11 +676,11 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model": {
-    "message": "ChatGPT Web model",
+    "message": "ChatGPT Web Model",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model_info": {
-    "message": "This is the model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
+    "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_tempchat": {
@@ -1385,6 +1389,54 @@
   },
   "AccountSelector_Spamfilter": {
     "message": "Choose the accounts where the spam filter is enabled",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_project": {
+    "message": "ChatGPT Web Project",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_project_info": {
+    "message": "This is the Project that will be enforced for the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_custom_gpt": {
+    "message": "ChatGPT Web Custom GPT",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+    "message": "This is the Custom GPT that will be enforced for the ChatGPT Web Interface.",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_custom_data_info": {
+    "message": "This must be in the following form:",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_custom_data_info2": {
+    "message": "You can find the correct value in the browser URL field when you open the related ChatGPT page.",
+    "description": ""
+  },
+  "customPrompts_Properties": {
+    "message": "Properties",
+    "description": ""
+  },
+  "customPrompts_show_additional_info": {
+    "message": "Show additional properties",
+    "description": ""
+  },
+  "customPrompts_hide_additional_info": {
+    "message": "Hide additional properties",
+    "description": ""
+  },
+  "customPrompts_show_additional_info_show": {
+    "message": "Additional properties",
+    "description": ""
+  },
+  "prefs_OptionText_CustomGPT_Warn": {
+    "message": "If a Project is specified in the options or in a prompt, it will override the Custom GPT setting.",
+    "description": ""
+  },
+  "prefs_OptionText_Project_No_temporary_chat_warn": {
+    "message": "If a Project is specified in the options or in a prompt, the temporary chat will not be used.",
     "description": ""
   }
 }

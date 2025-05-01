@@ -49,10 +49,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event = prefs.get_calendar_event;
     get_task = prefs.get_task;
     _ok_sparks = await checkSparksPresence() == 1;
-    console.log(">>>>>>>>>>>>>>>>> add_tags: " + add_tags);
-    console.log(">>>>>>>>>>>>>>>>> get_calendar_event: " + get_calendar_event);
-    console.log(">>>>>>>>>>>>>>>>> get_task: " + get_task);
-    console.log(">>>>>>>>>>>>>>>>> _ok_sparks: " + _ok_sparks);
+    // console.log(">>>>>>>>>>>>>>>>> add_tags: " + add_tags);
+    // console.log(">>>>>>>>>>>>>>>>> get_calendar_event: " + get_calendar_event);
+    // console.log(">>>>>>>>>>>>>>>>> get_task: " + get_task);
+    // console.log(">>>>>>>>>>>>>>>>> _ok_sparks: " + _ok_sparks);
     searchPrompt(active_prompts, tabId, tabType);
     i18n.updateDocument();
 
@@ -127,18 +127,18 @@ async function searchPrompt(allPrompts, tabId, tabType){
    let do_get_calendar_event = checkDoCalendarEvent();
    let do_get_task = checkDoTask();
 
-   console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
-   console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
-   console.log(">>>>>>>>>>> do_get_task: " + do_get_task);
-   console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
+  //  console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
+  //  console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
+  //  console.log(">>>>>>>>>>> do_get_task: " + do_get_task);
+  //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
    num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_task ? 1 : 0);
    //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
    if(num_special_menu_items > 0){
      max_num_el -= num_special_menu_items;
      first_num_el = num_special_menu_items;
-     console.log(">>>>>>>>>>>>> max_num_el: " + max_num_el);
-     console.log(">>>>>>>>>>>>> first_num_el: " + first_num_el);
+    //  console.log(">>>>>>>>>>>>> max_num_el: " + max_num_el);
+    //  console.log(">>>>>>>>>>>>> first_num_el: " + first_num_el);
      if(do_add_tags){
       filteredData = ensurePromptAddTagsFirst(filteredData);
       if (!filteredData[0].numberPrepended) {
@@ -164,7 +164,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
       }
    }
 
-   console.log(">>>>>>>>>>> filteredData after special items check: " + JSON.stringify(filteredData));
+  //  console.log(">>>>>>>>>>> filteredData after special items check: " + JSON.stringify(filteredData));
 
    Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
      let number = (index + first_num_el).toString();
