@@ -325,13 +325,15 @@ function customTextBtnClick(args) {
 }
 
 function checkGPTModel(model) {
-    if(model == '') return;
+    if(model == '') return Promise.resolve();
     doLog("checkGPTModel model: " + model);
   return new Promise((resolve, reject) => {
     // Set up an interval that shows the warning after 2 seconds
     const intervalId2 = setTimeout(() => {
-        document.getElementById('mzta-model_warn').style.display = 'inline-block';
-        document.getElementById('mzta-btn_model').style.display = 'inline';
+        let modelWarn = document.getElementById('mzta-model_warn');
+        let btnModel = document.getElementById('mzta-btn_model');
+        if (modelWarn) modelWarn.style.display = 'inline-block';
+        if (btnModel) btnModel.style.display = 'inline';
     }, 2000);
     // Set up an interval that checks the value every 100 milliseconds
     const intervalId = setInterval(() => {
@@ -339,15 +341,13 @@ function checkGPTModel(model) {
      // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
      const elements = document.querySelectorAll('[id*=radix] span')
 
-     for(element of elements){
+     for(let element of elements){
       // Check if the element exists and its content is '4' or '4o'
       doLog("checkGPTModel model found in DOM: " + element.textContent);
       if ((element && element.textContent === model)||(force_go)) {
         doLog("The GPT Model is now " + model);
         clearInterval(intervalId);
         clearTimeout(intervalId2);
-        document.getElementById('mzta-model_warn').style.display = 'none';
-        document.getElementById('mzta-btn_model').style.display = 'none';
         resolve(model);
         break;
       } else if (!element) {
