@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -205,15 +205,22 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     original_html = await getOriginalBody(tabId);
+                    let prefs_repl = await browser.storage.sync.get({composing_plain_text: prefs_default.composing_plain_text});
+                    if(prefs_repl.composing_plain_text){
+                        text = stripHtmlKeepLines(text);
+                    }
                     await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
             case 'chatgpt_replyMessage':
                 async function _replyMessage(message) {
-                    const paragraphsHtmlString = message.text;
+                    let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
+                    let prefs = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
+                    if(prefs.composing_plain_text){
+                        paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);
+                    }
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
                     if(prefs.reply_type === 'reply_sender'){
@@ -878,7 +885,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
 
         if (addTagsAuto || spamFilter) {
             curr_fullMessage = await browser.messages.getFull(message.id);
-            msg_text = await getMailBody(curr_fullMessage);
+            msg_text = getMailBody(curr_fullMessage);
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
         }
 

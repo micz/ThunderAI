@@ -21,11 +21,13 @@ export class Ollama {
     host = '';
     model = '';
     stream = false;
+    num_ctx = 0;
   
-    constructor(host, model, stream = false) {
+    constructor(host, model, stream = false, num_ctx = 0) {
       this.host = host.trim().replace(/\/+$/, "");
       this.model = model;
       this.stream = stream;
+      this.num_ctx = num_ctx;
     }
 
     fetchModels = async () => {
@@ -78,6 +80,7 @@ export class Ollama {
                 model: this.model, 
                 messages: messages,
                 stream: this.stream,
+                ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {})
             }),
         });
         return response;

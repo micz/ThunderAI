@@ -276,8 +276,12 @@ export const placeholdersUtils = {
           if (skip_additional_text && (p1 === 'additional_text')) {
             return match;
           }
+          const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
+          if (!currPlaceholder) {
+            return match;
+          }
           // Replace if found, otherwise keep the original or substitute with default value
-          return replacements[p1] || (use_default_value ? defaultPlaceholders.find(ph => ph.id === p1).default_value : match);
+          return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
         });
     },
 

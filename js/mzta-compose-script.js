@@ -24,12 +24,19 @@ switch (message.command) {
 
   case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
+    let force_insert = false;
     if (selectedText === '') {
-      return Promise.resolve(false);
+      if(!confirm(browser.i18n.getMessage("Replace_No_Selected_Text"))) {
+        return Promise.resolve(false);
+      }else{
+        force_insert = true;
+      }
     }
     const sel = window.getSelection();
     if (!sel || sel.type !== "Range" || !sel.rangeCount) {
-      return Promise.resolve(false);
+      if(!force_insert) {
+        return Promise.resolve(false);
+      }
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();

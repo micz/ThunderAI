@@ -22,6 +22,7 @@ export const prefs_default = {
     chatgpt_win_width: 700,
     default_chatgpt_lang: '',
     default_sign_name: '',
+    composing_plain_text: false,
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
@@ -32,6 +33,7 @@ export const prefs_default = {
     chatgpt_developer_messages: '',
     ollama_host: '',
     ollama_model: '',
+    ollama_num_ctx: 0,
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
     openai_comp_model: '',
     openai_comp_api_key: '',
