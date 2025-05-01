@@ -17,6 +17,7 @@
  */
 
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+export const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];  // List of models available in ChatGPT Web
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';

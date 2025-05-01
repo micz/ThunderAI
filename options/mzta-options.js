@@ -22,13 +22,11 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from '../js/mzta-utils.js';
+import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
 let permission_all_urls = false;
-
-const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];
 
 function saveOptions(e) {
   e.preventDefault();
