@@ -233,9 +233,22 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
     font-style: italic;
 }
 
-#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
     background-color: rgb(255, 209, 183);
     display:none;
+}
+
+.chatgpt_web_models_list_table{
+    background-color: rgb(255, 209, 183);
+    border:0;
+}
+
+.chatgpt_web_models_list_table *{
+    border:0;
+}
+
+.chatgpt_web_models_list_table td{
+    padding:2px;
 }
 
 #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{

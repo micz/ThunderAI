@@ -637,7 +637,7 @@ function loadPromptsList(values){
                         <span class="field_title_us">__MSG_prefs_OptionText_chatgpt_web_model__:</span>
                         <br>
                         <input type="text" class="input_additional chatgpt_web_model_output" tabindex="10" value="` + values.chatgpt_web_model + `">
-                        <table class="chatgpt_web_models_list_table" title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list_` + values.id + `">TODO</tr></table>
+                        <table class="chatgpt_web_models_list_table" title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list_` + values.id + `"></tr></table>
                         <br><br>
                         <span class="field_title_us">__MSG_prefs_OptionText_chatgpt_web_project__:</span>
                         <br>
