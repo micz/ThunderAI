@@ -396,7 +396,7 @@ async function doProceed(message, customText = ''){
 // console.log(">>>>>>>>>>>> doProceed customText: " + customText);
 // console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
 // console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
-    //check if there is che additional_text placeholder
+    //check if there is the additional_text placeholder
     if(final_prompt.includes('{%additional_text%}')){
         // console.log(">>>>>>>>>>>> found ph customText: " + customText);
         final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
