@@ -88,7 +88,7 @@
         "message": "Azione"
     },
     "customPrompts_form_label_need_selected": {
-        "message": "Necessaria la selezione di testo"
+        "message": "Devi selezionare del testo"
     },
     "customPrompts_form_label_need_signature": {
         "message": "Aggiungi sempre la firma"
