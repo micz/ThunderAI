@@ -194,7 +194,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     var btn_ok = document.createElement('button');
     btn_ok.id="mzta-btn_ok";
     btn_ok.classList.add('mzta-btn');
-    //console.log('default: '+prompt_action)
+    //console.log('>>>>>>>>>>>>>>> default: '+prompt_action)
     switch(String(prompt_action)){ 
         default:
         case "0":     // close window
