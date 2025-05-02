@@ -493,7 +493,7 @@
         "message": "Modello Web ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Questo è il modello che verrà utilizzato nell'interfaccia Web di ChatGPT. Se non viene specificato o ne viene fornito uno errato, ChatGPT imposterà il modello predefinito sulla pagina Web."
+        "message": "Questo è il Modello che verrà utilizzato nell'interfaccia Web di ChatGPT. Se non viene specificato o ne viene fornito uno errato, ChatGPT imposterà il modello predefinito sulla pagina Web."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporanea di ChatGPT"
@@ -745,7 +745,7 @@
         "message": "Puoi modificare il prompt come preferisci, ma la risposta ricevuta dall'AI deve essere in formato JSON come specificato nel prompt predefinito!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Per utilizzare la funzionalità degli eventi del calendario, installa il componente aggiuntivo ThunderAI Sparks."
+        "message": "Per utilizzare le funzionalità degli eventi del calendario e delle attività, installa il componente aggiuntivo ThunderAI Sparks."
     },
     "prefs_OptionText_download_now": {
         "message": "Scarica subito ThunderAI Sparks!"
@@ -928,7 +928,7 @@
         "message": "Seleziona il tuo fuso orario"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
-        "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario."
+        "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario e alle attività."
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Abilita il visualizzatore delle differenze"
@@ -971,5 +971,113 @@
     },
     "Replace_No_Selected_Text": {
         "message": "Nessun testo selezionato, vuoi inserire la risposta dell'IA all'inizio dell'email?"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Il visualizzatore delle differenze può essere selezionato quando l'azione è impostata su \"Sostituisci testo\"."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Ogni modifica viene salvata immediatamente."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Aprire ChatGPT Web da qui applicherà tutte le impostazioni configurate per il modello, il progetto e il GPT personalizzato."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Scegli gli account per i quali l'etichettatura automatica è attivata"
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Scegli gli account per i quali è attivo il filtro antispam"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Puoi trovare il valore corretto nel campo URL del browser quando apri la pagina ChatGPT corrispondente."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Per utilizzare l'integrazione con ChatGPT Web, devi concedere l'autorizzazione richiesta."
+    },
+    "ask_chatgptweb_permission_2_popup": {
+        "message": "Clicca qui per aprire una nuova scheda e seguire le istruzioni."
+    },
+    "GetTask_info_default": {
+        "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per ottenere un'attività dal testo selezionato."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Gestisci le impostazioni delle attività"
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Scegli per quale account attivare questa funzionalità in fondo a questa pagina."
+    },
+    "empty": {
+        "message": "Questo segnaposto non aggiunge testo, ma impedisce che il corpo dell'email venga automaticamente aggiunto alla fine del prompt."
+    },
+    "prompt_get_task": {
+        "message": "Aggiungi una nuova attività"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Aggiungi una nuova attività dal testo selezionato"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Se selezionato, verrà aggiunto un elemento nel menu per ottenere informazioni sull'attività dal testo selezionato."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Opzioni delle attività"
+    },
+    "GetTask_PageTitle": {
+        "message": "Gestisci le impostazioni delle attività"
+    },
+    "task_getting_data_error": {
+        "message": "Errore nel recupero dei dati dell'attività"
+    },
+    "task_opening_dialog_error": {
+        "message": "Errore nell'apertura della finestra di dialogo dell'attività"
+    },
+    "no_valid_data_received": {
+        "message": "Nessun dato valido ricevuto dall'IA."
+    },
+    "ask_chatgptweb_permission_2": {
+        "message": "Clicca qui per procedere."
+    },
+    "ask_chatgptweb_permission_ok": {
+        "message": "Autorizzazione concessa. Puoi cliccare qui per chiudere questa scheda e tornare alla finestra principale."
+    },
+    "prompt_proofread_this": {
+        "message": "Correggi questa email"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Correggi la seguente email e correggi anche eventuali errori di ortografia o grammatica. Rispondi solo con il testo corretto e senza commenti o altro testo aggiuntivo.\n\n\"{%mail_typed_text%}\""
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Progetto ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "GPT personalizzato per ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Questo è il GPT personalizzato che verrà caricato nell'interfaccia Web di ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Questo è il progetto che verrà utilizzato nell'interfaccia Web di ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Deve essere nel seguente formato:"
+    },
+    "customPrompts_Properties": {
+        "message": "Proprietà"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Mostra proprietà aggiuntive"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Nascondi proprietà aggiuntive"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Proprietà aggiuntive"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Se un Progetto è specificato nelle opzioni o in un prompt, sostituirà l'impostazione del GPT personalizzato."
+    },
+    "prompt_get_task_full_text": {
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un'attività dal testo seguente. Le informazioni estratte devono includere:\n- Data e ora di scadenza (incluso il fuso orario, se specificato)\n- Riepilogo dell'attività\n- Data e ora di inizio (incluso il fuso orario, se specificato)\nAssicurati che i dati siano formattati in modo chiaro e coerente, così da poter essere utilizzati direttamente per creare un'attività.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell’email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio basandoti su questo riferimento. Se la data e ora di inizio calcolate risultano precedenti a \"{%current_datetime%}\", ricalcola la data e ora di inizio utilizzando \"{%current_datetime%}\" come riferimento.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Questo è il formato da utilizzare:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riepilogo dell'attività\"\n}\nSe non ci sono informazioni sulle date, rimuovile.\nEcco il testo: \"{%selected_text%}\""
     }
 }
