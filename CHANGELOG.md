@@ -16,6 +16,7 @@
         <li>Added a check for the presence of the correct version of ThunderAI Sparks [<a href="https://github.com/micz/ThunderAI/issues/315">#315</a>].</li>
         <li><i>[All APIs]</i> Improved the form asking for additional text [<a href="https://github.com/micz/ThunderAI/issues/97">#97</a>].</li>
         <li><i>[All APIs]</i> Fix: Ensure HTML body is generated from plain text if no parts are available when processing incoming messages for tags or spam.</li>
+        <li>Fix a condition when using a prompt from the compose window with a "Do reply" action that is changed in "Substitute Text" [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
         <li>Custom Prompts form improved.</li>
         <li>Various improvements.</li>
         <li>...</li>
