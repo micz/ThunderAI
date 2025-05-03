@@ -485,8 +485,11 @@ const insertHtml = function (replyHtml, fullBody_string) {
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
   let reply = parser.parseFromString(replyHtml, "text/html");
   
-  // looking for the first quoted mail or the signature, which come first in case of "signature above the quote".
-  const prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
+  // looking for the first quoted mail (reply or forward) or the signature, which come first in case of "signature above the quote".
+  let prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
+  if(prefix_quote.length == 0){
+    prefix_quote = fullBody.getElementsByClassName("moz-forward-container");
+  }
   const prefix_sign = fullBody.getElementsByClassName("moz-signature");
 
   let firstElement = null;
