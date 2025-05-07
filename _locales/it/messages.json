@@ -1079,5 +1079,11 @@
     },
     "prompt_get_task_full_text": {
         "message": "Estrai tutti i dettagli rilevanti necessari per generare un'attività dal testo seguente. Le informazioni estratte devono includere:\n- Data e ora di scadenza (incluso il fuso orario, se specificato)\n- Riepilogo dell'attività\n- Data e ora di inizio (incluso il fuso orario, se specificato)\nAssicurati che i dati siano formattati in modo chiaro e coerente, così da poter essere utilizzati direttamente per creare un'attività.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell’email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio basandoti su questo riferimento. Se la data e ora di inizio calcolate risultano precedenti a \"{%current_datetime%}\", ricalcola la data e ora di inizio utilizzando \"{%current_datetime%}\" come riferimento.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Questo è il formato da utilizzare:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riepilogo dell'attività\"\n}\nSe non ci sono informazioni sulle date, rimuovile.\nEcco il testo: \"{%selected_text%}\""
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Testo citato nel corpo dell'email"
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Se un Progetto è specificato nelle opzioni o nel prompt, la chat temporanea non verrà utilizzata."
     }
 }
