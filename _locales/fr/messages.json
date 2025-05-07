@@ -1076,5 +1076,11 @@
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Si un projet est spécifié dans les options ou dans une invite, il remplacera le paramètre de GPT personnalisé."
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Veuillez relire l’e-mail suivant et corriger les éventuelles fautes d’orthographe ou de grammaire. Répondez uniquement avec le texte corrigé, sans ajouter de commentaires ou de texte supplémentaire.\n\n\" {%mail_typed_text%} \""
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extrait tous les détails pertinents nécessaires pour générer une tâche à partir du texte suivant. Les informations extraites doivent inclure :\n- Date et heure d'échéance (incluant le fuseau horaire, si précisé)\n- Résumé de la tâche\n- Date et heure de début (incluant le fuseau horaire, si précisé)\nAssure-toi que les données sont clairement et uniformément formatées afin qu’elles puissent être utilisées directement pour créer une tâche.\nS'il y a des références temporelles relatives, considère que la date et l’heure de l’e-mail sont \"{%mail_datetime%}\". Calcule la date et l’heure de début en te basant sur cette référence. Si la date et l’heure de début calculées sont antérieures à \"{%current_datetime%}\", recalcule-les en utilisant \"{%current_datetime%}\" comme base.\nSi tu ne peux pas obtenir une ou plusieurs des informations requises, réponds par une chaîne vide.\nGénère une réponse uniquement au format JSON. N’inclus aucun texte ou explication supplémentaire – fournis uniquement le JSON. Voici le format à utiliser :\n{\n\"InitialDate\" : \"YYYYMMDDTHHMMSS\",\n\"dueDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de la tâche ici\"\n}\nS'il n'y a pas d'informations concernant les dates, supprime-les.\nVoici le texte : \"{%selected_text%}\""
     }
 }
