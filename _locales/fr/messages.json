@@ -493,7 +493,7 @@
         "message": "Modèle Web ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "C'est le modèle qui sera appliqué pour l'interface Web de ChatGPT. Si aucun n'est spécifié ou si un modèle incorrect est fourni, le modèle par défaut sera défini par ChatGPT sur la page Web."
+        "message": "C'est le Modèle qui sera appliqué pour l'interface Web de ChatGPT. Si aucun n'est spécifié ou si un modèle incorrect est fourni, le modèle par défaut sera défini par ChatGPT sur la page Web."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporaire Web ChatGPT"
@@ -745,7 +745,7 @@
         "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse reçue de l'IA doit être au format JSON tel que spécifié dans l'invite par défaut !"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Pour utiliser la fonctionnalité d'événements de calendrier, veuillez installer l'addon ThunderAI Sparks."
+        "message": "Pour utiliser les fonctionnalités d’événements du calendrier et de tâches, veuillez installer l’extension ThunderAI Sparks."
     },
     "prefs_OptionText_download_now": {
         "message": "Téléchargez ThunderAI Sparks maintenant !"
@@ -886,7 +886,7 @@
         "message": "Vous"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
-        "message": "Si coché, le fuseau horaire spécifié sera appliqué aux événements du calendrier."
+        "message": "Si cette option est cochée, le fuseau horaire spécifié sera appliqué aux événements du calendrier et aux tâches."
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Forcer le fuseau horaire spécifié"
@@ -968,5 +968,113 @@
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Rédaction en texte brut"
+    },
+    "task_opening_dialog_error": {
+        "message": "Erreur lors de l’ouverture de la boîte de dialogue de la tâche"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Pour utiliser les fonctionnalités d’événements de calendrier et de tâches, veuillez installer une version mise à jour de l’extension ThunderAI Sparks."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "GPT personnalisé pour ChatGPT Web"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Le visualiseur de différences peut être sélectionné lorsque l'action est définie sur \"Remplacer le texte\"."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Pour utiliser l'intégration Web de ChatGPT, vous devez accorder l'autorisation requise."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Cela doit être dans le format suivant :"
+    },
+    "ask_chatgptweb_permission_2_popup": {
+        "message": "Cliquez ici pour ouvrir un nouvel onglet et suivre les instructions."
+    },
+    "ask_chatgptweb_permission_2": {
+        "message": "Cliquez ici pour continuer."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Si un projet est spécifié dans les options ou dans une invite, le chat temporaire ne sera pas utilisé."
+    },
+    "empty": {
+        "message": "Ce champ de remplacement n’ajoute aucun texte, mais empêche que le corps de l’e-mail soit automatiquement ajouté à la fin de l’invite."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Ouvrir ChatGPT Web depuis ici appliquera tous les paramètres configurés pour le modèle, le projet et le GPT personnalisé."
+    },
+    "GetTask_PageTitle": {
+        "message": "Gérer les paramètres des tâches"
+    },
+    "GetTask_info_default": {
+        "message": "Sur cette page, vous pouvez modifier l’invite par défaut utilisée pour extraire une tâche du texte sélectionné."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Gérer les paramètres des tâches"
+    },
+    "task_getting_data_error": {
+        "message": "Erreur lors de la récupération des données de la tâche"
+    },
+    "no_valid_data_received": {
+        "message": "Aucune donnée valide reçue de l'IA."
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Ajouter une nouvelle tâche à partir du texte sélectionné"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Si coché, un élément sera ajouté au menu pour obtenir des informations sur la tâche à partir du texte sélectionné."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Options des tâches"
+    },
+    "prompt_get_task": {
+        "message": "Ajouter une nouvelle tâche"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Chaque modification est enregistrée immédiatement."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Choisissez les comptes pour lesquels le filtre anti-spam est activé"
+    },
+    "ask_chatgptweb_permission_ok": {
+        "message": "Autorisation accordée. Vous pouvez cliquer ici pour fermer cet onglet et revenir à la fenêtre principale."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Choisissez pour quel compte activer cette fonctionnalité en bas de cette page."
+    },
+    "prompt_proofread_this": {
+        "message": "Relire cet e-mail"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Texte cité dans le corps du message"
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Choisissez les comptes pour lesquels le marquage automatique est activé"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Projet ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "C’est le projet qui sera appliqué pour l’interface Web de ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "C’est le GPT personnalisé qui sera appliqué pour l’interface Web de ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Vous pouvez trouver la valeur correcte dans la barre d’adresse du navigateur lorsque vous ouvrez la page ChatGPT correspondante."
+    },
+    "customPrompts_Properties": {
+        "message": "Propriétés"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Afficher les propriétés supplémentaires"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Masquer les propriétés supplémentaires"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Propriétés supplémentaires"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Si un projet est spécifié dans les options ou dans une invite, il remplacera le paramètre de GPT personnalisé."
     }
 }
