@@ -1076,5 +1076,11 @@
     },
     "customPrompts_show_additional_info_show": {
         "message": "Zusätzliche Eigenschaften"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extrahiere alle relevanten Details, die erforderlich sind, um eine Aufgabe aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes umfassen:\n- Fälligkeitsdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Aufgabenbeschreibung\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\nStelle sicher, dass die Daten klar und einheitlich formatiert sind, sodass sie direkt zur Erstellung einer Aufgabe verwendet werden können.\nWenn relative Zeitangaben vorhanden sind, beachte, dass das Datum und die Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechne das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechne das Startdatum und die Startzeit erneut unter Verwendung von \"{%current_datetime%}\" als Ausgangspunkt.\nWenn du eine oder mehrere der erforderlichen Informationen nicht erhalten kannst, gib bitte einen leeren String zurück.\nErzeuge eine Antwort ausschließlich im JSON-Format. Füge keinen zusätzlichen Text oder Erklärungen hinzu – liefere nur das JSON. Verwende folgendes Format:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Aufgabenbeschreibung hier\"\n}\nWenn keine Informationen über die Daten vorhanden sind, lasse sie weg.\nHier ist der Text: \"{%selected_text%}\""
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Bitte korrigieren Sie die folgende E-Mail und beheben Sie alle Rechtschreib- oder Grammatikfehler. Antworten Sie nur mit dem korrigierten Text, ohne zusätzliche Kommentare oder sonstigen Text.\n\n„{%mail_typed_text%}“"
     }
 }
