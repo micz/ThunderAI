@@ -63,6 +63,15 @@
     Position Compose Message (position_compose attribute):
     <num>: position number
 
+    ChatGPT Web Model (chatgpt_web_model attribute):
+    <model>: model name (e.g. gpt-4, gpt-3.5-turbo, etc.)
+
+    ChatGPT Web Project (chatgpt_web_project attribute):
+    <project>: project id url
+
+    ChatGPT Web Custom GPT (chatgpt_web_custom_gpt attribute):
+    <custom_gpt>: custom gpt id url
+
 */
 
 const defaultPrompts = [
@@ -77,6 +86,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -91,6 +103,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -105,6 +120,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -119,6 +137,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -133,6 +154,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -147,6 +171,26 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
+        is_default: "1",
+        is_special: "0",
+    },
+    {
+        id: 'prompt_proofread_this',
+        name: "__MSG_prompt_proofread_this__",
+        text: "prompt_proofread_this_full_text",
+        type: "2",
+        action: "2",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "1",
+        use_diff_viewer: "1",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -161,6 +205,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -175,6 +222,9 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        chatgpt_web_model: '',
+        chatgpt_web_project: '',
+        chatgpt_web_custom_gpt: '',
         is_default: "1",
         is_special: "0",
     },
@@ -199,6 +249,20 @@ const specialPrompts = [
         id: 'prompt_get_calendar_event',
         name: "__MSG_prompt_get_calendar_event__",
         text: "prompt_get_calendar_event_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "1",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        is_default: "1",
+        is_special: "1",
+    },
+    {
+        id: 'prompt_get_task',
+        name: "__MSG_prompt_get_task__",
+        text: "prompt_get_task_full_text",
         type: "1",
         action: "0",
         need_selected: "1",
@@ -343,6 +407,15 @@ async function getCustomPrompts() {
             if (prompt.use_diff_viewer === undefined) {
                 prompt.use_diff_viewer = "0";
             }
+            if(prompt.chatgpt_web_model === undefined){
+                prompt.chatgpt_web_model = "";
+            }
+            if(prompt.chatgpt_web_project === undefined){
+                prompt.chatgpt_web_project = "";
+            }
+            if(prompt.chatgpt_web_custom_gpt === undefined){
+                prompt.chatgpt_web_custom_gpt = "";
+            }
         });
         return prefs._custom_prompt;
     }
@@ -380,7 +453,7 @@ export async function getSpecialPrompts(){
                 updatedPrompts.push(newPrompt);
             }
         });
-
+        // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
         if (updatedPrompts.length !== prefs._special_prompts.length) {
             await browser.storage.local.set({ _special_prompts: updatedPrompts });
         }

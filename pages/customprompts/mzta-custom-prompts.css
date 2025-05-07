@@ -25,6 +25,7 @@ table {
 thead {
     position: sticky;
     top: 26px;
+    z-index: 90;
 }
 
 #command_palette{
@@ -33,6 +34,7 @@ thead {
     padding-top: 1px;
     height: 26px;
     width: 100%;
+    z-index: 90;
 }
 
 #btnNew{
@@ -102,6 +104,10 @@ table .sort.desc {
     background-image: url(../images/listjs-arrow-sort-active-up.png);
 }
 
+tbody.list tr{
+    vertical-align: top;
+}
+
 .hiddendata{
     display: none;
 }
@@ -133,6 +139,24 @@ table .sort.desc {
 .small_label{
     font-size: small;
     font-style: italic;
+}
+
+.field_title{
+    font-weight: bold;
+}
+
+.field_title_s{
+    font-weight: bold;
+    font-size: small;
+}
+
+.field_title_us{
+    font-weight: bold;
+    font-size: smaller;
+}
+
+label, .id_show, .text_show, .name_show, .type_show, .action_show{
+    font-size: small;
 }
 
 #txtIdNew, .id_output{
@@ -204,6 +228,80 @@ table .sort.desc {
     padding-right: 2px;
 }
 
+#chatgpt_web_additional_info_toggle td{
+    padding:0px 5px;
+    font-style: italic;
+}
+
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
+    background-color: rgb(255, 209, 183);
+    display:none;
+}
+
+.chatgpt_web_models_list_table{
+    background-color: rgb(255, 209, 183);
+    border:0;
+}
+
+.chatgpt_web_models_list_table *{
+    border:0;
+}
+
+.chatgpt_web_models_list_table td{
+    padding:2px;
+}
+
+#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
+    cursor: pointer;
+}
+
+#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
+    background-color: rgb(255, 189, 153);
+    text-decoration: underline;
+}
+
+#chatgpt_web_additional_info_toggle td{
+    text-align: center;
+}
+
+#chatgpt_web_additional_info td{
+    vertical-align: top;
+}
+
+.chatgpt_web_additional_info_toggle{
+    width: -moz-available;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.chatgpt_web_additional_info_show{
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 3px;
+    margin-top: 5px;
+}
+
+.chatgpt_web_additional_info_row{
+    display: flex;
+}
+
+.chatgpt_web_additional_info_row span{
+    margin-right: 0.4em;
+}
+
+input.input_additional[type="text"]{
+    width: -moz-available;
+}
+
+.small_info{
+    font-size:smaller;
+}
+
+.conntype_chatgpt_web_option{
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;
@@ -249,5 +347,14 @@ table .sort.desc {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
+        background-color: rgb(39, 11, 0);
+        color: rgb(182, 182, 182);
+    }
+
+    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
+        background-color: rgb(88, 25, 0);
     }
 }

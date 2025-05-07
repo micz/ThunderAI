@@ -22,13 +22,11 @@ import { OpenAI } from '../js/api/openai.js';
 import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
-import { checkSparksPresence, isThunderbird128OrGreater } from '../js/mzta-utils.js';
+import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from '../js/mzta-utils.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
 let permission_all_urls = false;
-
-const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];
 
 function saveOptions(e) {
   e.preventDefault();
@@ -300,56 +298,25 @@ function disable_SpamFilter(){
 
 async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
+  let get_task = document.getElementById('get_task');
   let no_sparks_tr = document.getElementById('no_sparks');
-  let is_spark_present = await checkSparksPresence()
+  let no_sparks_text = document.getElementById('no_sparks_text');
+  let wrong_sparks_text = document.getElementById('wrong_sparks_text');
+  let is_spark_present = await checkSparksPresence();
   let conntype_select = document.getElementById("connection_type");
-  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !is_spark_present;
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
+  get_task.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
   });
-  no_sparks_tr.style.display = (is_spark_present || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
-}
-
-
-function getChatGPTWebModelsList_HTML(values, targetRowId) {
-  const rowElement = document.getElementById(targetRowId);
-  if (!rowElement) return;
-
-  // Clears any existing td elements
-  rowElement.innerHTML = '';
-
-  // First TD: label
-  const labelTd = document.createElement('td');
-  const label = document.createElement('i');
-  label.className = 'small_info';
-  const labelNobr = document.createElement('nobr');
-  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
-  label.appendChild(labelNobr);
-  labelTd.appendChild(label);
-
-  // Second TD: values
-  const valuesTd = document.createElement('td');
-  const valuesContainer = document.createElement('i');
-  valuesContainer.className = 'small_info';
-
-  values.forEach(value => {
-    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
-    const valueNobr = document.createElement('nobr');
-    valueNobr.className = 'conntype_chatgpt_web_option';
-    valueNobr.textContent = value;
-    const nbspAfter = document.createTextNode(' \u00A0 ');
-
-    valuesContainer.appendChild(nbspBefore);
-    valuesContainer.appendChild(valueNobr);
-    valuesContainer.appendChild(nbspAfter);
+  let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
+  get_task_tr_elements.forEach(get_task_tr => {
+    get_task_tr.style.display = get_task.disabled ? 'none' : 'table-row';
   });
-
-  valuesTd.appendChild(valuesContainer);
-
-  // Adds the td elements to the row
-  rowElement.appendChild(labelTd);
-  rowElement.appendChild(valuesTd);
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
+  no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
+  wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
   
 
@@ -419,57 +386,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
+
+  let get_task_el = document.getElementById('get_task');
+  let get_task_info_btn = document.getElementById('btnManageTaskInfo');
+  get_task_el.addEventListener('click', (event) => {
+    get_task_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/customprompts/mzta-custom-prompts.html')});
-      }
-    })
+    openTab('../pages/customprompts/mzta-custom-prompts.html');
   });
 
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/addtags/mzta-add-tags.html')});
-      }
-    })
+    openTab('../pages/addtags/mzta-add-tags.html');
   });
 
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/spamfilter/mzta-spamfilter.html')});
-      }
-    })
+    openTab('../pages/spamfilter/mzta-spamfilter.html');
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
-    // check if the tab is already there
-    browser.tabs.query({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')}).then((tabs) => {
-      if (tabs.length > 0) {
-        // if the tab is already there, focus it
-        browser.tabs.update(tabs[0].id, {active: true});
-      } else {
-        // if the tab is not there, create it
-        browser.tabs.create({url: browser.runtime.getURL('../pages/get-calendar-event/mzta-get-calendar-event.html')});
-      }
-    })
+    openTab('../pages/get-calendar-event/mzta-get-calendar-event.html');
+  });
+
+  document.getElementById('btnManageTaskInfo').addEventListener('click', () => {
+    openTab('../pages/get-task/mzta-get-task.html');
   });
 
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
@@ -515,6 +457,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
   document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
   document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
 
   let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
@@ -741,12 +685,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab.addEventListener('click', async () => {
-    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: ''});
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: prefs_default.chatgpt_web_model, chatgpt_web_project: prefs_default.chatgpt_web_project, chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt});
+    
+    let base_url = 'https://chatgpt.com';
     let model_opt = '';
+    let webproject_set = false;
+    
     if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
-      model_opt = '?model=' + encodeURIComponent(prefs_mod.chatgpt_web_model).toLowerCase();
+      model_opt = '?model=' + sanitizeChatGPTModelData(prefs_mod.chatgpt_web_model);
     }
-    browser.tabs.create({ url: 'https://chatgpt.com/' + model_opt });
+    if((prefs_mod.chatgpt_web_project != '') && (prefs_mod.chatgpt_web_project != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_project);
+      webproject_set = true;
+    }
+    if(!webproject_set && (prefs_mod.chatgpt_web_custom_gpt != '') && (prefs_mod.chatgpt_web_custom_gpt != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_custom_gpt);
+    }
+    browser.tabs.create({ url: base_url + model_opt });
   });
 
   browser.runtime.getPlatformInfo().then(info => {

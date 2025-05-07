@@ -1,23 +1,10 @@
-#spamfilter_container, #account_selector_container, #spamfitler_reports_container{
+#get_task_prompt_container{
     width: 90%;
     margin: 20px auto;
 }
 
-#spamfilter_prompt_text{
+#get_task_prompt_text{
     width: 100%;
-}
-
-#account_selector_container{
-    margin-top: 40px;
-    margin-bottom: 40px;
-}
-
-#account_selector_checkboxes{
-    padding: 10px;
-    border: 1px solid gray;
-    width: 24em;
-    margin-bottom: 10px;
-    margin-top: 10px;
 }
 
 .infoline{  
@@ -39,7 +26,7 @@ table#miczPrefs {
     border: 1px solid #ccc;
 }
 
-.spamfilter_table_title{
+.get_task_table_title{
     width: 90%;
     margin: auto;
 }
@@ -104,27 +91,6 @@ table#miczPrefs  tr:last-child td {
     color: red;
 }
 
-#spamfilter_threshold_too_low{
-    display: none;
-    color:red;
-    font-weight: bold;
-    font-size: 1.1em;
-    margin-left: 10px;
-}
-
-table#report_data {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-table#report_data th, table#report_data td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-table#report_data th {
-    background-color: #f4f4f4;
-}
 
 @media (prefers-color-scheme: dark) {
     body {
@@ -149,19 +115,5 @@ table#report_data th {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
-    }
-
-    table#report_data th, 
-    table#report_data td {
-        border-color: #444;
-        color: #ddd;
-    }
-
-    table#report_data th {
-        background-color: #333;
-    }
-
-    table#report_data td {
-        background-color: #222;
     }
 }

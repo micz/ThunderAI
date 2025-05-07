@@ -16,6 +16,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+export const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];  // List of models available in ChatGPT Web
+
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
 
@@ -41,45 +44,53 @@ function fixMsgHeader(msgHeader) {
   return msgHeader;
 }
 
-export async function getCurrentIdentity(msgHeader, getFull = false) {
-  let identities_array = [];
-  let fallback_identity = '';
-  msgHeader = fixMsgHeader(msgHeader);
+export async function getAccountsList() {
   let accounts = await browser.accounts.list();
-     for (let account of accounts) {
-        for (let identity of account.identities) {
-          identities_array.push({id: identity.id, email:identity.email})
-          if(fallback_identity === '') {
-            fallback_identity = {id: identity.id, email:identity.email}
-            // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
-          }
-        }
-      }
-  // check if the author is an identity
-  let author = extractEmail(msgHeader.author);
-  let author_identity = identities_array.find(identity => identity.email === author);
-  if (author_identity) {
-    // console.log(">>>>>>>>>> getCurrentIdentity author_identity: " + JSON.stringify(author_identity));
-    return getFull ? author_identity : author_identity.id;
+  let accounts_array = [];
+  for (let account of accounts) {
+    let account_id = account.id;
+    let account_name = account.name;
+    accounts_array.push({id: account_id, name: account_name});
   }
-  let correspondents_array = msgHeader.bccList.concat(msgHeader.ccList, msgHeader.recipients);
-  correspondents_array = correspondents_array.map(correspondent => {
-    correspondent = extractEmail(correspondent);
-    let correspondent_identity = identities_array.find(identity => identity.email === author);
-    if (correspondent_identity) {
-      // console.log(">>>>>>>>>> getCurrentIdentity correspondent_identity: " + JSON.stringify(correspondent_identity));
-      return getFull ? correspondent_identity : correspondent_identity.id;
-    }
-  });
-  const matching_identity = correspondents_array.map(correspondent => identities_array.find(identity => identity.email === correspondent)).find(identity => identity !== undefined);
-  if(matching_identity) {
-    // console.log(">>>>>>>>>> getCurrentIdentity matching_identity: " + JSON.stringify(matching_identity));
-    return getFull ? matching_identity : matching_identity.id;
-  } else {  // no identity found. using the fallback one
-    // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
-    return getFull ? fallback_identity : fallback_identity.id;
-  }
+  return accounts_array;
 }
+
+export async function getCurrentIdentity(msgHeader, getFull = false) {
+  let identities = [];
+  let fallbackIdentity = null;
+
+  msgHeader = fixMsgHeader(msgHeader);
+
+  const accounts = await browser.accounts.list();
+  for (const account of accounts) {
+    for (const identity of account.identities) {
+      const entry = { id: identity.id, email: identity.email };
+      identities.push(entry);
+      if (!fallbackIdentity) fallbackIdentity = entry;
+    }
+  }
+
+  // Check if author is a known identity
+  const authorEmail = extractEmail(msgHeader.author);
+  const authorIdentity = identities.find(identity => identity.email === authorEmail);
+  if (authorIdentity) {
+    return getFull ? authorIdentity : authorIdentity.id;
+  }
+
+  // Check if any of the recipients (to/cc/bcc) are a known identity
+  const allRecipients = [...msgHeader.recipients, ...msgHeader.ccList, ...msgHeader.bccList];
+  for (const recipient of allRecipients) {
+    const email = extractEmail(recipient);
+    const identity = identities.find(id => id.email === email);
+    if (identity) {
+      return getFull ? identity : identity.id;
+    }
+  }
+
+  // Fallback
+  return getFull ? fallbackIdentity : fallbackIdentity?.id || null;
+}
+
 
 function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
@@ -201,6 +212,59 @@ export function getGPTWebModelString(model) {
     default:
       return model;
   }
+}
+
+export function getChatGPTWebModelsList_HTML(values, targetRowId) {
+  const rowElement = document.getElementById(targetRowId);
+  if (!rowElement) return;
+
+  // Clears any existing td elements
+  rowElement.innerHTML = '';
+
+  // First TD: label
+  const labelTd = document.createElement('td');
+  const label = document.createElement('i');
+  label.className = 'small_info';
+  const labelNobr = document.createElement('nobr');
+  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
+  label.appendChild(labelNobr);
+  labelTd.appendChild(label);
+
+  // Second TD: values
+  const valuesTd = document.createElement('td');
+  const valuesContainer = document.createElement('i');
+  valuesContainer.className = 'small_info';
+
+  values.forEach(value => {
+    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
+    const valueNobr = document.createElement('nobr');
+    valueNobr.className = 'conntype_chatgpt_web_option';
+    valueNobr.textContent = value;
+    const nbspAfter = document.createTextNode(' \u00A0 ');
+
+    valuesContainer.appendChild(nbspBefore);
+    valuesContainer.appendChild(valueNobr);
+    valuesContainer.appendChild(nbspAfter);
+  });
+
+  valuesTd.appendChild(valuesContainer);
+
+  // Adds the td elements to the row
+  rowElement.appendChild(labelTd);
+  rowElement.appendChild(valuesTd);
+}
+
+export function openTab(url){
+  // check if the tab is already there
+  browser.tabs.query({url: browser.runtime.getURL(url)}).then((tabs) => {
+    if (tabs.length > 0) {
+      // if the tab is already there, focus it
+      browser.tabs.update(tabs[0].id, {active: true});
+    } else {
+      // if the tab is not there, create it
+      browser.tabs.create({url: browser.runtime.getURL(url)});
+    }
+  })
 }
 
 export function i18nConditionalGet(str) {
@@ -337,17 +401,21 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
-export function getActiveSpecialPromptsIDs(addtags = false, get_calendar_event = false, is_chatgpt_web = false) {
+export function getActiveSpecialPromptsIDs(args = {}) {
+  const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
   let output = [];
-  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs addtags: " + addtags + " get_calendar_event: " + get_calendar_event + " is_chatgpt_web: " + is_chatgpt_web);
-  if(is_chatgpt_web){
+  // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
+  if (is_chatgpt_web) {
     return output;
   }
-  if(addtags){
+  if (addtags) {
     output.push('prompt_add_tags');
   }
-  if(get_calendar_event){
+  if (get_calendar_event) {
     output.push('prompt_get_calendar_event');
+  }
+  if (get_task) {
+    output.push('prompt_get_task');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
@@ -374,12 +442,38 @@ export function extractJsonObject(inputString) {
 
 export async function checkSparksPresence() {
   try {
-    return (await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"}) === 'ok');
+    let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});
+    if(sparks_current === undefined || sparks_current === null) {
+      return -1;
+    }
+    if (compareThunderbirdVersions(sparks_current, sparks_min) < 0) {
+      return 0;
+    }else{
+      return 1;
+    }
   } catch (error) {
-    return false;
+    return -1;
   }
 }
 
+export function validateChatGPTWebCustomData(data) {
+  return /^\/g\/[a-zA-Z0-9/-]+$/.test(data) || data == '';
+}
+
+export function sanitizeChatGPTModelData(input) {
+  return encodeURIComponent(input).toLowerCase()
+}
+
+export function sanitizeChatGPTWebCustomData(input) {
+  // Removes all characters that are not letters, numbers, dashes, or slashes
+  return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');
+}
+
+export function validateCustomData_ChatGPTWeb(event) {
+  let is_valid = validateChatGPTWebCustomData(event.target.value);
+  event.target.style.borderColor = is_valid ? 'green' : 'red';
+  document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
+}
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
@@ -388,8 +482,11 @@ const insertHtml = function (replyHtml, fullBody_string) {
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
   let reply = parser.parseFromString(replyHtml, "text/html");
   
-  // looking for the first quoted mail or the signature, which come first in case of "signature above the quote".
-  const prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
+  // looking for the first quoted mail (reply or forward) or the signature, which come first in case of "signature above the quote".
+  let prefix_quote = fullBody.getElementsByClassName("moz-cite-prefix");
+  if(prefix_quote.length == 0){
+    prefix_quote = fullBody.getElementsByClassName("moz-forward-container");
+  }
   const prefix_sign = fullBody.getElementsByClassName("moz-signature");
 
   let firstElement = null;

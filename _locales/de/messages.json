@@ -745,7 +745,7 @@
         "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Um die Kalenderevent-Funktion zu nutzen, installieren Sie bitte das ThunderAI Sparks-Addon."
+        "message": "Um die Funktionen für Kalenderereignisse und Aufgaben zu nutzen, installieren Sie bitte das ThunderAI Sparks Add-on."
     },
     "prefs_OptionText_download_now": {
         "message": "Laden Sie jetzt ThunderAI Sparks herunter!"
@@ -892,7 +892,7 @@
         "message": "Wähle deine Zeitzone"
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
-        "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalenderereignisse erzwungen."
+        "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalendereinträge und Aufgaben erzwungen."
     },
     "prefs_OptionText_add_tags_context_menu": {
         "message": "\"Tags hinzufügen\" im Kontextmenü anzeigen"
@@ -968,5 +968,119 @@
     },
     "prefs_OptionText_composing_plain_text_Info": {
         "message": "Aktivieren Sie diese Option, wenn Sie E-Mails im Nur-Text-Format verfassen."
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Zitierter Text im E-Mail-Textkörper"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Dies ist das Projekt, das für die ChatGPT-Weboberfläche verwendet wird."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Um Kalender- und Aufgabenfunktionen zu nutzen, installiere bitte eine aktualisierte Version des ThunderAI Sparks-Add-ons."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Der Differenz-Viewer kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ gesetzt ist."
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, überschreibt es die benutzerdefinierte GPT-Einstellung."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Aufgabeneinstellungen verwalten"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Dies ist der benutzerdefinierte GPT, der für die ChatGPT-Weboberfläche verwendet wird."
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "ChatGPT-Webprojekt"
+    },
+    "empty": {
+        "message": "Dieser Platzhalter fügt keinen Text hinzu, verhindert jedoch, dass der E-Mail-Text automatisch am Ende des Prompts angehängt wird."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Das Öffnen von ChatGPT Web von hier aus übernimmt alle konfigurierten Einstellungen für Modell, Projekt und benutzerdefinierten GPT."
+    },
+    "task_getting_data_error": {
+        "message": "Fehler beim Abrufen der Aufgabendaten"
+    },
+    "task_opening_dialog_error": {
+        "message": "Fehler beim Öffnen des Aufgabenfensters"
+    },
+    "no_valid_data_received": {
+        "message": "Keine gültigen Daten von der KI empfangen."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Wähle am Ende dieser Seite aus, für welches Konto diese Funktion aktiviert werden soll."
+    },
+    "prompt_get_task": {
+        "message": "Neue Aufgabe hinzufügen"
+    },
+    "GetTask_PageTitle": {
+        "message": "Aufgabeneinstellungen verwalten"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Füge eine neue Aufgabe aus dem ausgewählten Text hinzu"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Wenn ausgewählt, wird ein Element im Menü hinzugefügt, um Aufgabeninformationen aus dem ausgewählten Text zu erhalten."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Aufgabenoptionen"
+    },
+    "GetTask_info_default": {
+        "message": "Auf dieser Seite kannst du den Standard-Prompt anpassen, der verwendet wird, um eine Aufgabe aus dem ausgewählten Text zu erstellen."
+    },
+    "ask_chatgptweb_permission_2": {
+        "message": "Klicke hier, um fortzufahren."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Um die ChatGPT-Web-Integration zu nutzen, musst du die erforderliche Berechtigung erteilen."
+    },
+    "ask_chatgptweb_permission_2_popup": {
+        "message": "Klicke hier, um einen neuen Tab zu öffnen und den Anweisungen zu folgen."
+    },
+    "ask_chatgptweb_permission_ok": {
+        "message": "Berechtigung erteilt. Du kannst hier klicken, um diesen Tab zu schließen und zum Hauptfenster zurückzukehren."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Wähle die Konten aus, bei denen die automatische Verschlagwortung aktiviert ist"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Jede Änderung wird sofort gespeichert."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Wähle die Konten aus, bei denen der Spamfilter aktiviert ist"
+    },
+    "prompt_proofread_this": {
+        "message": "Korrigiere diese E-Mail"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "Benutzerdefinierter GPT für ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Dies muss folgendes Format haben:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Den richtigen Wert findest du im URL-Feld deines Browsers, wenn du die entsprechende ChatGPT-Seite öffnest."
+    },
+    "customPrompts_Properties": {
+        "message": "Eigenschaften"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Zusätzliche Eigenschaften anzeigen"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Zusätzliche Eigenschaften ausblenden"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Zusätzliche Eigenschaften"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extrahiere alle relevanten Details, die erforderlich sind, um eine Aufgabe aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes umfassen:\n- Fälligkeitsdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Aufgabenbeschreibung\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\nStelle sicher, dass die Daten klar und einheitlich formatiert sind, sodass sie direkt zur Erstellung einer Aufgabe verwendet werden können.\nWenn relative Zeitangaben vorhanden sind, beachte, dass das Datum und die Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechne das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechne das Startdatum und die Startzeit erneut unter Verwendung von \"{%current_datetime%}\" als Ausgangspunkt.\nWenn du eine oder mehrere der erforderlichen Informationen nicht erhalten kannst, gib bitte einen leeren String zurück.\nErzeuge eine Antwort ausschließlich im JSON-Format. Füge keinen zusätzlichen Text oder Erklärungen hinzu – liefere nur das JSON. Verwende folgendes Format:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Aufgabenbeschreibung hier\"\n}\nWenn keine Informationen über die Daten vorhanden sind, lasse sie weg.\nHier ist der Text: \"{%selected_text%}\""
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Bitte korrigieren Sie die folgende E-Mail und beheben Sie alle Rechtschreib- oder Grammatikfehler. Antworten Sie nur mit dem korrigierten Text, ohne zusätzliche Kommentare oder sonstigen Text.\n\n„{%mail_typed_text%}“"
     }
 }

@@ -57,6 +57,13 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'mail_quoted_text',
+        name: "__MSG_placeholder_mail_quoted_text__",
+        default_value: "",
+        type: 2,
+        is_default: "1",
+    },
+    {
         id: 'mail_subject',
         name: "__MSG_placeholder_mail_subject__",
         default_value: "",
@@ -168,6 +175,13 @@ const defaultPlaceholders = [
         type: 0,
         is_default: "1",
     },
+    {
+        id: 'empty',
+        name: "__MSG_placeholder_empty__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
 ];
 
 
@@ -183,7 +197,6 @@ export async function getPlaceholders(onlyEnabled = false){
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
     // console.log('>>>>>>>>>>>> getPlaceholders output: ' + JSON.stringify(output));
-    let prefs = await browser.storage.local.get({ add_tags: false });
     return output;
 }
 
@@ -288,7 +301,7 @@ export const placeholdersUtils = {
         return regex.test(text);
       },
 
-    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, selection_text, tags_full_list) {
+    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, tags_full_list) {
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         let finalSubs = {};
@@ -302,6 +315,9 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
+                    break;
+                case 'mail_quoted_text':
+                    finalSubs['mail_quoted_text'] = placeholdersUtils.failSafePlaceholders(only_quoted_text);
                     break;
                 case 'mail_subject':
                     finalSubs['mail_subject'] = placeholdersUtils.failSafePlaceholders(mail_subject);
@@ -351,6 +367,9 @@ export const placeholdersUtils = {
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'empty':
+                    finalSubs['empty'] = '';
                     break;
                 default:    // TODO Manage custom placeholders https://github.com/micz/ThunderAI/issues/156
                     break;

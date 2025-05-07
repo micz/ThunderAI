@@ -83,8 +83,16 @@ async function chatgpt_isIdle() {
 
 function chatgpt_getRegenerateButton() {
     for (const mainSVG of document.querySelectorAll('main svg.icon-md')) {
-        if (mainSVG.querySelector('path[d^="M3.06957"]')) // regen icon found
+        if (mainSVG.querySelector('path[d^="M3.06957"]')){ // regen icon found
+            //console.log(">>>>>>>>>> found regen icon!");
             return mainSVG.parentNode.parentNode;
+        }
+    }
+    for (const mainSVG of document.querySelectorAll('main svg.icon-md-heavy')) {
+        if (mainSVG.querySelector('path[d^="M11 4.9099C11 4.47485"]')){ // read aloud icon found
+            //console.log(">>>>>>>>>> found read aloud icon!");
+            return mainSVG.parentNode.parentNode;
+        }
     }
 }
 
@@ -186,7 +194,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     var btn_ok = document.createElement('button');
     btn_ok.id="mzta-btn_ok";
     btn_ok.classList.add('mzta-btn');
-    //console.log('default: '+prompt_action)
+    //console.log('>>>>>>>>>>>>>>> default: '+prompt_action)
     switch(String(prompt_action)){ 
         default:
         case "0":     // close window
@@ -317,13 +325,15 @@ function customTextBtnClick(args) {
 }
 
 function checkGPTModel(model) {
-    if(model == '') return;
+    if(model == '') return Promise.resolve();
     doLog("checkGPTModel model: " + model);
   return new Promise((resolve, reject) => {
     // Set up an interval that shows the warning after 2 seconds
     const intervalId2 = setTimeout(() => {
-        document.getElementById('mzta-model_warn').style.display = 'inline-block';
-        document.getElementById('mzta-btn_model').style.display = 'inline';
+        let modelWarn = document.getElementById('mzta-model_warn');
+        let btnModel = document.getElementById('mzta-btn_model');
+        if (modelWarn) modelWarn.style.display = 'inline-block';
+        if (btnModel) btnModel.style.display = 'inline';
     }, 2000);
     // Set up an interval that checks the value every 100 milliseconds
     const intervalId = setInterval(() => {
@@ -331,15 +341,13 @@ function checkGPTModel(model) {
      // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
      const elements = document.querySelectorAll('[id*=radix] span')
 
-     for(element of elements){
+     for(let element of elements){
       // Check if the element exists and its content is '4' or '4o'
       doLog("checkGPTModel model found in DOM: " + element.textContent);
       if ((element && element.textContent === model)||(force_go)) {
         doLog("The GPT Model is now " + model);
         clearInterval(intervalId);
         clearTimeout(intervalId2);
-        document.getElementById('mzta-model_warn').style.display = 'none';
-        document.getElementById('mzta-btn_model').style.display = 'none';
         resolve(model);
         break;
       } else if (!element) {
@@ -388,7 +396,7 @@ async function doProceed(message, customText = ''){
 // console.log(">>>>>>>>>>>> doProceed customText: " + customText);
 // console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
 // console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
-    //check if there is che additional_text placeholder
+    //check if there is the additional_text placeholder
     if(final_prompt.includes('{%additional_text%}')){
         // console.log(">>>>>>>>>>>> found ph customText: " + customText);
         final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
@@ -408,14 +416,7 @@ async function doProceed(message, customText = ''){
             break;
         case -2:    // textarea not found
             let curr_model_warn = document.getElementById('mzta-model_warn');
-            let message = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
-            let parts = message.split(/<a href="([^"]+)">([^<]+)<\\/a>/);
-            curr_model_warn.textContent = parts[0];
-            let link = document.createElement('a');
-            link.href = parts[1];
-            link.textContent = parts[2];
-            curr_model_warn.appendChild(link);
-            curr_model_warn.appendChild(document.createTextNode(parts[3]));
+            curr_model_warn.textContent = browser.i18n.getMessage("chatgpt_textarea_not_found_error");
             curr_model_warn.style.display = 'inline-block';
             document.getElementById('mzta-curr_msg').textContent = "";
             document.getElementById('mzta-loading').style.display = 'none';
@@ -437,6 +438,10 @@ async function doProceed(message, customText = ''){
 }
 
 function doRetry(){
+    document.getElementById('mzta-model_warn').style.display = 'none';
+    document.getElementById('mzta-btn_retry').remove();
+    document.getElementById('mzta-loading').style.display = 'inline-block';
+    document.getElementById('mzta-curr_msg').textContent = browser.i18n.getMessage("chatgpt_win_working");
     doProceed(current_message);
 }
 
@@ -647,7 +652,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             current_message = message;
             current_tabId = message.tabId;
             current_mailMessageId = message.mailMessageId;
-            if(current_mailMessageId == -1) {    // we are using the reply from the compose window!
+            if((current_mailMessageId == -1) && (current_action == '1')) {    // we are using the reply from the compose window!
                 current_action = '2'; // replace text
             }
             run();

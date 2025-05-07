@@ -27,29 +27,39 @@
       <table class="width_all">
         <tr>
             <td class="w19">
-                <label for="txtIdNew">*__MSG_customPrompts_form_label_ID__:</label>
+                <label for="txtIdNew" class="field_title">*__MSG_customPrompts_form_label_ID__:</label>
                 <br>
                 <input type="text" id="txtIdNew" name="id" class="input_new" tabindex="1">
                 <br><span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>                
             </td>
             <td rowspan="2" class="w25">
-                <label for="txtTextNew">*__MSG_customPrompts_form_label_Text__:</label>
+                <label for="txtTextNew" class="field_title">*__MSG_customPrompts_form_label_Text__:</label>
                 <br>
                 <div class="autocomplete-container">
                     <textarea id="txtTextNew" name="text" class="input_new text_output editor" tabindex="3"></textarea>
                     <ul class="autocomplete-list hidden"></ul>
                 </div>
             </td>
-            <td class="w19">
-                <label for="selectTypeNew">__MSG_customPrompts_add_to_menu__:</label>
+            <td rowspan="2" class="w19">
+                <label for="selectTypeNew" class="field_title">__MSG_customPrompts_add_to_menu__:</label>
                 <br>
                 <select id="selectTypeNew" name="type" tabindex="4" class="type_output">
                     <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
                     <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
                     <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
                 </select>
+                <br><br>
+                <label for="selectActionNew" class="field_title">__MSG_customPrompts_form_label_Action__:</label>
+                <br>
+                <select id="selectActionNew" name="action" tabindex="5">
+                    <option value="0">__MSG_customPrompts_close_button__</option>
+                    <option value="1">__MSG_customPrompts_do_reply__</option>
+                    <option value="2">__MSG_customPrompts_substitute_text__</option>
+                </select>
             </td>
             <td rowspan="2" class="w19">
+                <label class="field_title">__MSG_customPrompts_Properties__:</label>
+                <br>
                 <span class="need_selected_span"><input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" class="need_selected_new" value="1" tabindex="6"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label></span>
                 <br>
                 <input type="checkbox" id="checkboxNeedSignatureNew" name="need_signature" value="1" tabindex="7"> <label for="checkboxNeedSignatureNew">__MSG_customPrompts_form_label_need_signature__</label>
@@ -58,23 +68,36 @@
                 <br>
                 <input type="checkbox" id="checkboxDefineResponseLangNew" name="define_response_lang" value="1" tabindex="8"> <label for="checkboxDefineResponseLangNew">__MSG_customPrompts_form_label_define_response_lang__</label>
                 <br>
-                <input type="checkbox" id="checkboxUseDiffViewerNew" name="use_diff_viewer" value="1" tabindex="9"> <label for="checkboxUseDiffViewerNew">__MSG_customPrompts_form_label_use_diff_viewer__</label>
+                <input type="checkbox" id="checkboxUseDiffViewerNew" name="use_diff_viewer" value="1" tabindex="9" title="__MSG_customPrompts_form_label_use_diff_viewer_title__"> <label for="checkboxUseDiffViewerNew" title="__MSG_customPrompts_form_label_use_diff_viewer_title__">__MSG_customPrompts_form_label_use_diff_viewer__</label>
             </td>
         </tr>
         <tr>
             <td class="w19">
-              <label for="txtNameNew">*__MSG_customPrompts_form_label_Name__:</label>
+              <label for="txtNameNew" class="field_title">*__MSG_customPrompts_form_label_Name__:</label>
               <br>
               <input type="text" id="txtNameNew" name="name" class="input_new" tabindex="2">
             </td>
-            <td class="w19">
-              <label for="selectActionNew">__MSG_customPrompts_form_label_Action__:</label>
-              <br>
-              <select id="selectActionNew" name="action" tabindex="5">
-                  <option value="0">__MSG_customPrompts_close_button__</option>
-                  <option value="1">__MSG_customPrompts_do_reply__</option>
-                  <option value="2">__MSG_customPrompts_substitute_text__</option>
-              </select>
+        </tr>
+        <tr id="chatgpt_web_additional_info_toggle"><td colspan="4"><span class="small_info">__MSG_customPrompts_show_additional_info__</span></td></tr>
+        <tr id="chatgpt_web_additional_info"><!-- ChatGPT Web additional info -->
+            <td colspan="2">
+                <label for="chatGPTWebModelNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</label>
+                <br>
+                <input type="text" id="chatGPTWebModelNew" name="chatGPTWebModelNew" class="input_new input_additional" tabindex="10">
+                <table class="chatgpt_web_models_list_table" title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list"></tr></table>
+                <br><br>
+                <label for="chatGPTWebProjectNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</label>
+                <br>
+                <input type="text" id="chatGPTWebProjectNew" name="chatGPTWebProjectNew" class="input_new input_additional" tabindex="11">
+                <br><i class="small_info" id="chatGPTWebProjectNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/PROJECT-ID-PROJECT-NAME/project</b>
+                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
+            </td>
+            <td colspan="2">
+                <label for="chatGPTWebCustomGPTNew" class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</label>
+                <br>
+                <input type="text" id="chatGPTWebCustomGPTNew" name="chatGPTWebCustomGPTNew" class="input_new input_additional" tabindex="11">
+                <br><i class="small_info" id="chatGPTWebCustomGPTNew_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b>/g/CUSTOM-GPT-ID</b>
+                    <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__</i>
             </td>
         </tr>
     </table>
@@ -89,9 +112,9 @@
                 <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>
                 <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
                 <th class="sort" data-sort="text">__MSG_customPrompts_form_label_Text__</th>
-                <th class="sort" data-sort="type">__MSG_customPrompts_add_to_menu__</th>
-                <th>Properties</th>
-                <th>__MSG_customPrompts_form_label_Action__</th>
+                <th>&nbsp;</th>
+                <th>__MSG_customPrompts_Properties__</th>
+                <th>&nbsp;</th>
               </tr>
             </thead>
             <tbody class="list">

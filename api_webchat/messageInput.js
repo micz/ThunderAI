@@ -23,7 +23,7 @@
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
-messagesInputStyle .textContent = `
+messagesInputStyle.textContent = `
     :host {
         display: flex;
         justify-content: space-between;
@@ -66,16 +66,49 @@ messagesInputStyle .textContent = `
         padding: 5px;
         background: #F2F2F2;
     }
+    #mzta-custom_text{
+        padding:10px;
+        width:auto;
+        max-width:80%;
+        height:auto;
+        max-height:80%;
+        border-radius:5px;
+        overflow:auto;
+        position:fixed;
+        top:50%;
+        left:50%;
+        display:none;
+        transform:translate(-50%,-50%);
+        text-align:center;
+        background:#333;
+        color:white;
+        border:3px solid white;
+    }
+    #mzta-custom_loading{
+        height:50px;display:none;
+    }
+    #mzta-custom_textarea{
+        color:black;
+        padding:1px;
+        font-size:15px;
+        width:100%;
+    }
+    #mzta-custom_info{
+        text-align:center;
+        width:100%;
+        padding-bottom:10px;
+        font-size:15px;
+    }
     @media (prefers-color-scheme: dark) {
-    #messageInputField {
-        background-color: #303030;
-        color: #ffffff;
+        #messageInputField {
+            background-color: #303030;
+            color: #ffffff;
+        }
+        #statusLogger{
+            background: #212121;
+            color: #ffffff;
+        }
     }
-    #statusLogger{
-        background: #212121;
-        color: #ffffff;
-    }
-}
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
 
@@ -135,6 +168,27 @@ statusLogger.textContent = '';
 statusLogger.style.display = 'none';
 messageInputTemplate.content.appendChild(statusLogger);
 
+//div per custom text
+const customDiv = document.createElement('div');
+customDiv.id = 'mzta-custom_text';
+const customInfo = document.createElement('div');
+customInfo.id = 'mzta-custom_info';
+customInfo.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
+customDiv.appendChild(customInfo);
+const customTextArea = document.createElement('textarea');
+customTextArea.id = 'mzta-custom_textarea';
+customDiv.appendChild(customTextArea);
+const customLoading = document.createElement('img');
+customLoading.src = browser.runtime.getURL("/images/loading.gif");
+customLoading.id = "mzta-custom_loading";
+customDiv.appendChild(customLoading);
+const customBtn = document.createElement('button');
+customBtn.id = 'mzta-custom_btn';
+customBtn.textContent = browser.i18n.getMessage("chatgpt_win_send");
+customBtn.classList.add('mzta-btn');
+customDiv.appendChild(customBtn);
+messageInputTemplate.content.appendChild(customDiv);
+
 class MessageInput extends HTMLElement {
 
     model = '';
@@ -152,6 +206,13 @@ class MessageInput extends HTMLElement {
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
         this._stopButton.addEventListener('click', this._handleStopClick.bind(this));
+
+        this._customText = shadowRoot.querySelector('#mzta-custom_text');
+        this._customTextArea = shadowRoot.querySelector('#mzta-custom_textarea');
+        this._customLoading = shadowRoot.querySelector('#mzta-custom_loading');
+        this._customBtn = shadowRoot.querySelector('#mzta-custom_btn');
+        this._customBtn.addEventListener("click", () => { this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
+        this._customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
     }
 
     connectedCallback() {
@@ -242,6 +303,23 @@ class MessageInput extends HTMLElement {
 
     _setMessageInputValue(msg) {
         this._messageInputField.value = msg;
+    }
+
+    _showCustomTextField(){
+        this._customText.style.display = 'block';
+        this._customTextArea.focus();
+    }
+
+    async _customTextBtnClick(args) {
+        const customText = this._customTextArea.value;
+        // console.log(">>>>>>>>>>>>>>>> customText: " + customText);
+        args.customBtn.disabled = true;
+        args.customBtn.classList.add('disabled');
+        args.customLoading.style.display = 'inline-block';
+        args.customLoading.style.display = 'none';
+        let tab = await browser.tabs.query({ active: true, currentWindow: true });
+        browser.runtime.sendMessage({ command: "api_send_custom_text", custom_text: customText, tabId: tab[0].id });
+        args.customDiv.style.display = 'none';
     }
 }
 

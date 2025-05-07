@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, stripHtmlKeepLines } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -45,6 +45,7 @@ var original_html = '';
 var modified_html = '';
 
 let _process_incoming = false;
+let _sparks_presence = false;
 
 let prefs_init = {};
 await reload_pref_init();
@@ -52,7 +53,12 @@ await reload_pref_init();
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 
-let special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, await doGetCalendarEvent(prefs_init.get_calendar_event), (prefs_init.connection_type === "chatgpt_web"));
+let special_prompts_ids = getActiveSpecialPromptsIDs({
+    addtags: prefs_init.add_tags,
+    get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
+    get_task: doGetSparkFeature(prefs_init.get_task),
+    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+  });
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -146,11 +152,16 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: true, get_calendar_event: false, connection_type: 'chatgpt_web'});
-    doGetCalendarEvent(prefs_reload.get_calendar_event).then(calendarEvent => {
-        const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_reload.add_tags, calendarEvent, (prefs_reload.connection_type === "chatgpt_web"));
-        menus.reload(special_prompts_ids);
-    });
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getTask = doGetSparkFeature(prefs_reload.get_task);
+    const special_prompts_ids = getActiveSpecialPromptsIDs({
+        addtags: prefs_reload.add_tags,
+        get_calendar_event: getCalendarEvent,
+        get_task: getTask,
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+      });
+    menus.reload(special_prompts_ids);
     taLog.log("Reloading menus");
     return true;
 }
@@ -288,6 +299,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'assign_tags':
                 return _assign_tags(message);
                 break;
+            case 'api_send_custom_text':
+                browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
+                break;
             default:
                 break;
         }
@@ -310,6 +324,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     taLog.changeDebug(prefs.do_debug);
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
+    // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
     taLog.log("Prompt length: " + promptText.length);
     if(promptText.length > prefs.max_prompt_length){
         // Prompt too long for ChatGPT
@@ -327,18 +342,40 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         let rand_call_id = '_chatgptweb_' + generateCallID();
         let call_opt = '';
 
+        let _wait_time = 1000;
+        let _base_url = "https://chatgpt.com";
+        let _webproject_set = false;
+        let _custom_gpt_set = false;
+        let _use_prompt_info_custom_gpt = false;
+        let _custom_model = sanitizeChatGPTModelData(prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : prefs.chatgpt_web_model);
+        let _web_project = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_project != '' ? prompt_info.chatgpt_web_project : prefs.chatgpt_web_project)
+        let _custom_gpt = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_custom_gpt != '' ? prompt_info.chatgpt_web_custom_gpt : prefs.chatgpt_web_custom_gpt)
+
         if(prefs.chatgpt_web_tempchat){
             call_opt += '&temporary-chat=true';
         }
 
-        if(prefs.chatgpt_web_model != ''){
-            call_opt += '&model=' + encodeURIComponent(prefs.chatgpt_web_model).toLowerCase();
+        if((prompt_info.chatgpt_web_model != '') || (prefs.chatgpt_web_model != '')){
+            call_opt += '&model=' + _custom_model;
         }
 
         taLog.log("[chatgpt_web] call_opt: " + call_opt);
 
+        // If there is a custom gpt on the prompt, but also a web_project on the prefs, we need to use the custom gpt
+        _use_prompt_info_custom_gpt = (prompt_info.chatgpt_web_custom_gpt != '' && prompt_info.chatgpt_web_project == '');
+
+        if(!_use_prompt_info_custom_gpt && ((prompt_info.chatgpt_web_project != '') || (prefs.chatgpt_web_project != ''))){
+            _base_url += _web_project;
+            _webproject_set = true;
+            _wait_time = 2000;
+        }
+        if(!_webproject_set && ((prompt_info.chatgpt_web_custom_gpt != '') || (prefs.chatgpt_web_custom_gpt != ''))){
+            _base_url += _custom_gpt;
+            _custom_gpt_set = true;
+        }
+
         let win_options = {
-            url: "https://chatgpt.com?call_id=" + rand_call_id + call_opt,
+            url: _base_url + "?call_id=" + rand_call_id + call_opt,
             type: "popup",
         }
         
@@ -353,9 +390,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             async function handleChatGptWeb(createdTab) {
                 taLog.log("ChatGPT web interface script started...");
 
-                let _gpt_model = getGPTWebModelString(prefs.chatgpt_web_model);
+                let _gpt_model = getGPTWebModelString(_custom_model);
 
-                taLog.log("prefs.chatgpt_web_model: " + prefs.chatgpt_web_model);
+                taLog.log("_custom_model: " + _custom_model);
                 taLog.log("_gpt_model: " + _gpt_model);
 
                 let originalText = prompt_info.selection_text;
@@ -370,15 +407,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 let mztaDoCustomText=`+ do_custom_text +`;
                 let mztaPromptName="[`+ i18nConditionalGet(prompt_name) +`]";
                 let mztaPhDefVal="`+(prefs.placeholders_use_default_value?'1':'0')+`";
-                let mztaGPTModel="`+ _gpt_model +`";
+                let mztaGPTModel="`+ (_custom_gpt_set ? '' : _gpt_model) +`";
                 let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                 let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                 let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
                 `;
 
-                taLog.log("Waiting 1 sec");
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                taLog.log("Waiting 1 sec done");
+                taLog.log("Waiting " + _wait_time + " millisec");
+                await new Promise(resolve => setTimeout(resolve, _wait_time));
+                taLog.log("Waiting " + _wait_time + " millisec done");
                 
                 await browser.tabs.executeScript(createdTab.id, { code: pre_script + mzta_script, matchAboutBlank: false });
                 // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
@@ -623,17 +660,18 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-async function doGetCalendarEvent(get_calendar_event) {
-    if(get_calendar_event) {
-        return await checkSparksPresence();
+function doGetSparkFeature(spark_feature_active) {
+    if(spark_feature_active) {
+        return (_sparks_presence == 1);
     } else {
         return false;
     }
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({do_debug: false, add_tags: false, get_calendar_event: true, connection_type: 'chatgpt_web', add_tags_auto: false, add_tags_auto_force_existing: false, add_tags_auto_only_inbox: true, spamfilter: false, spamfilter_threshold: 70, dynamic_menu_force_enter: false, add_tags_context_menu: true, spamfilter_context_menu: true});
+    prefs_init = await browser.storage.sync.get({do_debug: prefs_default.do_debug, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, add_tags_auto: prefs_default.add_tags_auto, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox, spamfilter: prefs_default.spamfilter, spamfilter_threshold: prefs_default.spamfilter_threshold, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags_context_menu: prefs_default.add_tags_context_menu, spamfilter_context_menu: prefs_default.spamfilter_context_menu});
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
+    _sparks_presence = await checkSparksPresence();
 }
 
 
@@ -645,28 +683,57 @@ function setupStorageChangeListener() {
             // Process 'add_tags' changes
             if (changes.add_tags) {
                 const newTags = changes.add_tags.newValue;
-                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(newTags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: newTags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
             }
 
             // Process 'get_calendar_event' changes
             if (changes.get_calendar_event) {
                 const newCalendarEvent = changes.get_calendar_event.newValue;
-                doGetCalendarEvent(newCalendarEvent).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (prefs_init.connection_type === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'get_task' changes
+            if (changes.get_task) {
+                const newTask = changes.get_task.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(newTask);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
             }
 
             // Process 'connection_type' changes
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
-                doGetCalendarEvent(prefs_init.get_calendar_event).then(calendarEvent => {
-                    const special_prompts_ids = getActiveSpecialPromptsIDs(prefs_init.add_tags, calendarEvent, (newConnectionType === "chatgpt_web"));
-                    menus.reload(special_prompts_ids);
-                });
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    get_calendar_event: getCalendarEvent,
+                    get_task: getTask,
+                    is_chatgpt_web: (newConnectionType === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
 
                 if(newConnectionType === "chatgpt_web"){
                     removeContextMenu(contextMenuID_AddTags);
@@ -808,6 +875,9 @@ const newEmailListener = (folder, messagesList) => {
 
 async function processEmails(messages, addTagsAuto, spamFilter) {
     taWorkingStatus.startWorking();
+    
+    let prefs_aats = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts, spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts });
+
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
@@ -820,12 +890,18 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (addTagsAuto) {
+            if(prefs_aats.add_tags_enabled_accounts.length > 0){
+                let accountId = message.folder.accountId;
+                if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
+                    taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
+                    continue;
+                }
+            }
             let specialFullPrompt_add_tags = '';
             let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
-            let prefs_aat = await browser.storage.sync.get({ add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', add_tags_auto_force_existing: false });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aat.connection_type, prefs_init.do_debug);
@@ -842,6 +918,13 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         }
 
         if (spamFilter) {
+            if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let accountId = message.folder.accountId;
+                if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
+                    taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
+                    continue;
+                }
+            }
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', '');

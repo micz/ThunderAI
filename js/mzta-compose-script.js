@@ -79,11 +79,14 @@ switch (message.command) {
 
     for (const node of children) {
       if (node instanceof Element) {
-        if (node.classList.contains('moz-cite-prefix')) {
+        if (node.classList.contains('moz-cite-prefix')) { // quoted text in a reply
+          break;
+        }
+        if (node.classList.contains('moz-forward-container')) { // quoted text in a forward
           break;
         }
       }
-      t += node.textContent;
+      t += node.textContent + " ";
 
       // Track the first and last nodes for range
       if (!firstNode) {
@@ -109,6 +112,51 @@ switch (message.command) {
 
     return Promise.resolve(t);
   }
+
+  case "getOnlyQuotedText": {
+    let t = '';
+    const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+  
+    let firstNode = null;
+    let lastNode = null;
+    let foundCitePrefix = false;
+  
+    for (const node of children) {
+      if (!foundCitePrefix) {
+        if (node instanceof Element && (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container'))) {
+          foundCitePrefix = true;
+        } else {
+          continue;
+        }
+      }
+  
+      t += node.textContent + " ";
+  
+      if (!firstNode) {
+        firstNode = node;
+      }
+      if (node.textContent.trim() !== '') {
+        lastNode = node;
+      }
+    }
+  
+    if (!lastNode) {
+      lastNode = firstNode;
+    }
+  
+    if (message.do_autoselect && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  
+    return Promise.resolve(t);
+  }
+  
+  
 
   case 'sendAlert':
     //console.log(">>>>>> message.curr_tab_type: " + JSON.stringify(message.curr_tab_type));

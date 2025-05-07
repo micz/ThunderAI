@@ -12,13 +12,29 @@
     font-style: italic;
 }
 
-#addtags_excl_list_container{
+#addtags_excl_list_container, #account_selector_container{
     width: 90%;
     margin: 40px auto;
 }
 
 #addtags_excl_list{
     width: 30em;
+}
+
+#account_selector_container{
+    display: none;
+}
+
+#account_selector_checkboxes{
+    padding: 10px;
+    border: 1px solid gray;
+    width: 24em;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.add_tags_auto{
+    background-color: #e9ffdf;
 }
 
 .btn_div{
@@ -128,5 +144,9 @@ table#miczPrefs  tr:last-child td {
     
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    .add_tags_auto{
+        background-color: #415c35;
     }
 }

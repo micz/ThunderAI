@@ -44,24 +44,33 @@
         <div id="spamfilter_info_additional_statements"></div>
         <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
     </div>
-    <h2>__MSG_SpamReport_Title__</h2>
-    <table id="report_data">
-        <thead>
-            <tr>
-              <th>Message_ID</th>
-              <th>__MSG_Date__</th>
-              <th>__MSG_From__</th>
-              <th>__MSG_Subject__</th>
-              <th>__MSG_Spam_Value__</th>
-              <th>__MSG_Moved_to_Spam__</th>
-              <th>__MSG_Explanation__</th>
-              <th>__MSG_Report_Date__</th>
-            </tr>
-        </thead>
-        <tbody id="report_data_body">
-            <!-- Rows will be inserted dynamically -->
-        </tbody>
-    </table>
+    <div id="account_selector_container">
+      <div id="account_selector_info"><span class="section_title">__MSG_AccountSelector_Spamfilter__</span>
+      <br><span class="infoline">__MSG_AccountSelector_AutoTags_infoline__</span></div>
+      <div id="account_selector_checkboxes"></div>
+      <button type="button" id="accounts_select_all">Select All</button>
+    <button type="button" id="accounts_deselect_all">Deselect All</button>
+    </div>
+    <div id="spamfitler_reports_container">
+      <h2>__MSG_SpamReport_Title__</h2>
+      <table id="report_data">
+          <thead>
+              <tr>
+                <th>Message_ID</th>
+                <th>__MSG_Date__</th>
+                <th>__MSG_From__</th>
+                <th>__MSG_Subject__</th>
+                <th>__MSG_Spam_Value__</th>
+                <th>__MSG_Moved_to_Spam__</th>
+                <th>__MSG_Explanation__</th>
+                <th>__MSG_Report_Date__</th>
+              </tr>
+          </thead>
+          <tbody id="report_data_body">
+              <!-- Rows will be inserted dynamically -->
+          </tbody>
+      </table>
+    </div>
     <script src="mzta-spamfilter.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
 </body>

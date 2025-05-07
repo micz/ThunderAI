@@ -7,10 +7,23 @@
   <body>
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
-      <h2>Version 3.3.6 - ??/??/2025</h2>
+      <h2>Version 3.4.0 - 07/05/2025</h2>
       <ul>
+        <li><i>[All APIs]</i> Added a special prompt to get tasks data from emails [<a href="https://github.com/micz/ThunderAI/issues/333">#333</a>]. To use this feature, you must install also the <a href="https://addons.thunderbird.net/it/thunderbird/addon/thunderai-sparks/">Sparks</a> add-on.</li>
+        <li><i>[ChatGPT Web]</i> It is now possible to define a Custom GPT or a Project in the options page to be used by default, or directly in a custom prompt to be used only for that prompt [<a href="https://github.com/micz/ThunderAI/issues/168">#168</a>, <a href="https://github.com/micz/ThunderAI/issues/277">#277</a>].</li>
+        <li>The chatgpt.com access permission is no more requested when installing the addon. It's mandatory to give this permission to use the ChatGPT Web Interface integration [<a href="https://github.com/micz/ThunderAI/issues/293">#293</a>].</li>
+        <li>Added the <i>{%mail_quoted_text%}</i> placeholder to get the quoted text when composing a new message [<a href="https://github.com/micz/ThunderAI/issues/324">#324</a>].</li>
+        <li>Fix: correctly choosing the right account when replying [<a href="https://github.com/micz/ThunderAI/issues/369">#369</a>].</li>
+        <li>Fix: In the <i>{%mail_typed_text%}</i> placeholder text on different lines is now separated by a space.</li>
+        <li>Fix: correctly showing text differences when using {%mail_typed_text%} placeholder.</li>
+        <li>Added a default proofread prompt [<a href="https://github.com/micz/ThunderAI/issues/21">#21</a>].</li>
+        <li>Added a check for the presence of the correct version of ThunderAI Sparks [<a href="https://github.com/micz/ThunderAI/issues/315">#315</a>].</li>
+        <li>Added the <i>{%empty%}</i> placeholder to prevent the email body from being automatically appended at the end of the prompt [<a href="https://github.com/micz/ThunderAI/issues/345">#345</a>].</li>
+        <li><i>[All APIs]</i> Improved the form asking for additional text [<a href="https://github.com/micz/ThunderAI/issues/97">#97</a>].</li>
         <li><i>[All APIs]</i> Fix: Ensure HTML body is generated from plain text if no parts are available when processing incoming messages for tags or spam.</li>
-        <li>...</li>
+        <li>Fix a condition when using a prompt from the compose window with a "Do reply" action that is changed in "Substitute Text" [<a href="https://github.com/micz/ThunderAI/issues/353">#353</a>].</li>
+        <li>Custom Prompts form improved.</li>
+        <li>Various improvements.</li>
       </ul>
       <h2>Version 3.3.5 - 22/04/2025</h2>
       <ul>

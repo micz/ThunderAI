@@ -84,7 +84,8 @@ export class mzta_Menus {
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
                 text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
                 html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
-                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })
+                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect }),
+                only_quoted_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" })
             };
         };
     
@@ -105,11 +106,18 @@ export class mzta_Menus {
             let body_text = '';
             let selection_text = '';
             let only_typed_text = '';
+            let only_quoted_text = '';
+            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
+            if(selection_text === ''){
+                if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
+                    selection_text = only_typed_text;
+                }
+            }
+            only_quoted_text = msg_text.only_quoted_text.replace(/\s+/g, ' ').trim();
             curr_prompt.selection_text = selection_text;
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             curr_prompt.body_text = body_text;
-            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
             //open chatgpt window
             //console.log("Click menu item...");
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);
@@ -133,7 +141,7 @@ export class mzta_Menus {
                     break;
             }
 
-            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, tags_full_list);
+            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
@@ -252,12 +260,86 @@ export class mzta_Menus {
                             }
                         }catch(err){
                             console.error("[ThunderAI] Error opening calendar event dialog: ", err);
-                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("sparks_not_installed") });
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("calendar_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
                         break;  // Get a calendar event info - END
                     }
+                    case 'prompt_get_task': {  // Get a task info
+                        let task_data = '';
+                        let prefs_at = await browser.storage.sync.get({connection_type: '', calendar_enforce_timezone: false, calendar_timezone: '',});
+                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
+                            console.error("[ThunderAI | GetTask] Invalid connection type: " + prefs_at.connection_type);
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
+                        /* We expect to receive from the AI a JSON object like this:
+                        *  {
+                        *   "InitialDate": "YYYYMMDDTHHMMSS",
+                        *   "dueDate": "YYYYMMDDTHHMMSS",
+                        *   "summary": "Task summary here"
+                        *  } 
+                        */
+                        this.logger.log("fullPrompt: " + fullPrompt);
+                        let cmd_GetTask = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        await cmd_GetTask.initWorker();
+                        try{
+                            task_data = await cmd_GetTask.sendPrompt();
+                            // console.log(">>>>>>>>>>> task_data: " + task_data);
+                        }catch(err){
+                            console.error("[ThunderAI] Error getting task data: ", err.message);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
+                        let task_data_obj = {};
+                        try{
+                            task_data_obj = extractJsonObject(task_data);
+                            if (!task_data_obj.dueDate || isNaN(Date.parse(task_data_obj.dueDate)) || task_data_obj.dueDate == '' ) {
+                                delete task_data_obj.dueDate;
+                            }
+                            if (!task_data_obj.InitialDate || isNaN(Date.parse(task_data_obj.InitialDate)) || task_data_obj.InitialDate == '' ) {
+                                delete task_data_obj.InitialDate;
+                            }
+                        }catch(err){
+                            console.error("[ThunderAI] Error extracting JSON object from task data: ", err.message);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_getting_data_error") + ": " + err.message });
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
+                        // Timezone management
+                        task_data_obj.use_timezone = false;
+                        if(prefs_at.calendar_enforce_timezone){
+                            task_data_obj.use_timezone = true;
+                            task_data_obj.timezone = prefs_at.calendar_timezone;
+                        }
+                        let task_data_str = JSON.stringify(task_data_obj);
+                        // Timezone management - END
+                        this.logger.log("task_data: " + task_data);
+                        this.logger.log("task_data_obj: " + task_data_str);
+                        try{
+                            let result_openTaskDialog = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "openTaskDialog", task_data: task_data_str})
+                            if(result_openTaskDialog == 'ok'){
+                                taWorkingStatus.stopWorking();
+                                return {ok:'1'};
+                            } else {
+                                let err = result_openTaskDialog.error;
+                                if (err && typeof err === 'string' && err.startsWith('|>>')) {
+                                    result_openTaskDialog.error = browser.i18n.getMessage(result_openTaskDialog.error.substring(3));
+                                }
+                                browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + result_openTaskDialog.error });
+                                taWorkingStatus.stopWorking();
+                                return {ok:'0'};
+                            }
+                        }catch(err){
+                            console.error("[ThunderAI] Error opening task dialog: ", err);
+                            browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage("task_opening_dialog_error") + ": " + browser.i18n.getMessage("no_valid_data_received") });
+                            taWorkingStatus.stopWorking();
+                            return {ok:'0'};
+                        }
+                        break;
+                    }   // Get a task info - END
                     default:
                         console.error("[ThunderAI] Unknown special prompt id: " + curr_prompt.id);
                         taWorkingStatus.stopWorking();

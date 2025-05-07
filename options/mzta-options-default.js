@@ -26,6 +26,8 @@ export const prefs_default = {
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
+    chatgpt_web_project: '',
+    chatgpt_web_custom_gpt: '',
     chatgpt_api_key: '',
     chatgpt_model: '',
     chatgpt_developer_messages: '',
@@ -53,10 +55,13 @@ export const prefs_default = {
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
     add_tags_context_menu: true,
+    add_tags_enabled_accounts: [],
     get_calendar_event: true,
+    get_task: true,
     calendar_enforce_timezone: false,
     calendar_timezone: '',
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_context_menu: true,
+    spamfilter_enabled_accounts: [],
 }
