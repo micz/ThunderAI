@@ -56,44 +56,41 @@ export async function getAccountsList() {
 }
 
 export async function getCurrentIdentity(msgHeader, getFull = false) {
-  let identities_array = [];
-  let fallback_identity = '';
+  let identities = [];
+  let fallbackIdentity = null;
+
   msgHeader = fixMsgHeader(msgHeader);
-  let accounts = await browser.accounts.list();
-     for (let account of accounts) {
-        for (let identity of account.identities) {
-          identities_array.push({id: identity.id, email:identity.email})
-          if(fallback_identity === '') {
-            fallback_identity = {id: identity.id, email:identity.email}
-            // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
-          }
-        }
-      }
-  // check if the author is an identity
-  let author = extractEmail(msgHeader.author);
-  let author_identity = identities_array.find(identity => identity.email === author);
-  if (author_identity) {
-    // console.log(">>>>>>>>>> getCurrentIdentity author_identity: " + JSON.stringify(author_identity));
-    return getFull ? author_identity : author_identity.id;
-  }
-  let correspondents_array = msgHeader.bccList.concat(msgHeader.ccList, msgHeader.recipients);
-  correspondents_array = correspondents_array.map(correspondent => {
-    correspondent = extractEmail(correspondent);
-    let correspondent_identity = identities_array.find(identity => identity.email === author);
-    if (correspondent_identity) {
-      // console.log(">>>>>>>>>> getCurrentIdentity correspondent_identity: " + JSON.stringify(correspondent_identity));
-      return getFull ? correspondent_identity : correspondent_identity.id;
+
+  const accounts = await browser.accounts.list();
+  for (const account of accounts) {
+    for (const identity of account.identities) {
+      const entry = { id: identity.id, email: identity.email };
+      identities.push(entry);
+      if (!fallbackIdentity) fallbackIdentity = entry;
     }
-  });
-  const matching_identity = correspondents_array.map(correspondent => identities_array.find(identity => identity.email === correspondent)).find(identity => identity !== undefined);
-  if(matching_identity) {
-    // console.log(">>>>>>>>>> getCurrentIdentity matching_identity: " + JSON.stringify(matching_identity));
-    return getFull ? matching_identity : matching_identity.id;
-  } else {  // no identity found. using the fallback one
-    // console.log(">>>>>>>>>> getCurrentIdentity fallback_identity: " + JSON.stringify(fallback_identity));
-    return getFull ? fallback_identity : fallback_identity.id;
   }
+
+  // Check if author is a known identity
+  const authorEmail = extractEmail(msgHeader.author);
+  const authorIdentity = identities.find(identity => identity.email === authorEmail);
+  if (authorIdentity) {
+    return getFull ? authorIdentity : authorIdentity.id;
+  }
+
+  // Check if any of the recipients (to/cc/bcc) are a known identity
+  const allRecipients = [...msgHeader.recipients, ...msgHeader.ccList, ...msgHeader.bccList];
+  for (const recipient of allRecipients) {
+    const email = extractEmail(recipient);
+    const identity = identities.find(id => id.email === email);
+    if (identity) {
+      return getFull ? identity : identity.id;
+    }
+  }
+
+  // Fallback
+  return getFull ? fallbackIdentity : fallbackIdentity?.id || null;
 }
+
 
 function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
