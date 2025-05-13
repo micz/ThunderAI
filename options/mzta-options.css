@@ -31,11 +31,15 @@ table#miczPrefs td{
 table#miczPrefs tr:first-child td {
     border-top: none;
 }
-  
-table#miczPrefs  tr:last-child td {
+
+table#miczPrefs td.nb{
     border-bottom: none;
 }
 
+table#miczPrefs td.nt{
+    border-top: none;
+}
+  
 div#miczRelNotes{
     position:absolute;
     right: 0px;
@@ -226,6 +230,10 @@ input.option-input[type="text"]{
     font-size: 0.8em;
 }
 
+.lightbold{
+    color: #292929;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);
@@ -276,5 +284,9 @@ input.option-input[type="text"]{
 
     #no_sparks td{
         background: #3b514f;
+    }
+
+    .lightbold{
+        color: #f3f3f3;
     }
 }
