@@ -902,9 +902,9 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let tags_full_list = await getTagsList();
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aat.add_tags_maxnum, prefs_aat.add_tags_force_lang, prefs_aat.default_chatgpt_lang);
+            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-            let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aat.connection_type, prefs_init.do_debug);
+            let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aats.connection_type, prefs_init.do_debug);
             await cmd_addTags.initWorker();
             let tags_current_email = '';
             try {
@@ -914,7 +914,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             }
             taLog.log("tags_current_email: " + tags_current_email);
             let _data = { messageId: message.id, tags: tags_current_email.split(/,\s*/) };
-            _assign_tags(_data, !prefs_aat.add_tags_auto_force_existing);
+            _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing);
         }
 
         if (spamFilter) {
