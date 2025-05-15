@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.5.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.4.1 - 12/05/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Fix: correctly assigning tags when receiving mails. Thanks to <a href="https://github.com/jdkio">jdkio</a> [<a href="https://github.com/micz/ThunderAI/issues/374">#374</a>].</li>
