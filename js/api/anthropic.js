@@ -24,14 +24,14 @@ export class Anthropic {
   apiKey = '';
   version = '';
   model = '';
-  developer_messages = '';
+  max_tokens = 4096;  
   stream = false;
 
-  constructor(apiKey, version, model, developer_messages, stream) {
+  constructor(apiKey, version, model, max_tokens, stream) {
     this.apiKey = apiKey;
     this.version = version;
     this.model = model;
-    this.developer_messages = developer_messages;
+    this.max_tokens = max_tokens > 0 ? max_tokens : 4096;
     this.stream = stream;
   }
 
@@ -73,11 +73,7 @@ export class Anthropic {
     }
   }
 
-  fetchResponse = async (messages, maxTokens = 0) => {
-
-    if(this.developer_messages !== ''){
-       messages.push({role: "developer", content: [{"type": "text", "text": this.developer_messages}]});
-    }
+  fetchResponse = async (messages) => {
 
     // console.log(">>>>>>>>>>> Anthropic API request: " + JSON.stringify(messages));
 
@@ -90,10 +86,10 @@ export class Anthropic {
               "anthropic-version": this.version,
           },
           body: JSON.stringify({ 
-              model: this.model, 
+              model: this.model,
+              max_tokens: this.max_tokens,
               messages: messages,
               stream: this.stream,
-              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
           }),
       });
       return response;

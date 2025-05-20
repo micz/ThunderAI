@@ -1466,5 +1466,13 @@
   "Anthropic_Version_Info": {
     "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at: ",
     "description": ""
-  } 
+  },
+  "prefs_OptionText_anthropic_max_tokens": {
+    "message": "Anthropic Max Tokens",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_max_tokens_Info": {
+    "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
+    "description": ""
+  }
 }
