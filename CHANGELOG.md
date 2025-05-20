@@ -6,6 +6,7 @@
 
 <h2>Version 3.5.0 - ??/??/2025</h2>
       <ul>
+        <li>Fix: in the Spamfilter page the unsaved changes warning is now correctly shown.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.4.1 - 12/05/2025</h2>
