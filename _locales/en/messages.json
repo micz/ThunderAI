@@ -1438,5 +1438,33 @@
   "prefs_OptionText_Project_No_temporary_chat_warn": {
     "message": "If a Project is specified in the options or in a prompt, the temporary chat will not be used.",
     "description": ""
-  }
+  },
+  "prefs_Anthropic_API_Key": {
+    "message": "Anthropic API Key",
+    "description": ""
+  },
+  "prefs_Connection_type_Anthropic_API": {
+    "message": "Anthropic API",
+    "description": ""
+  },
+  "Anthropic_Models": {
+    "message": "Anthropic Models",
+    "description": ""
+  },
+  "Anthropic_Models_Fetch": {
+    "message": "Update Anthropic Models list",
+    "description": ""
+  },
+  "Anthropic_Models_Error_fetching": {
+    "message": "Error trying to fetch Anthropic models",
+    "description": ""
+  },
+  "Anthropic_Version": {
+    "message": "Anthropic API Version",
+    "description": ""
+  },
+  "Anthropic_Version_Info": {
+    "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at: ",
+    "description": ""
+  } 
 }
