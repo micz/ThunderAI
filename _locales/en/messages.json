@@ -1474,5 +1474,25 @@
   "prefs_OptionText_anthropic_max_tokens_Info": {
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
     "description": ""
+  },
+  "anthropic_empty_apikey": {
+    "message": "You've not added an API Key for the Anthropic API. Please insert one in the options page.",
+    "description": ""
+  },
+  "anthropic_empty_model": {
+    "message": "You've not choosen a model for the Anthropic API. Please choose one in the options page.",
+    "description": ""
+  },
+  "anthropic_empty_version": {
+    "message": "You've not added a version string for the Anthropic API. Please insert one in the options page.",
+    "description": ""
+  },
+  "anthropic_api_request_failed": {
+    "message": "Anthropic API request failed",
+    "description": ""
+  },
+  "anthropic_api_connecting": {
+    "message": "Attempting to connect to Anthropic API using the API key provided",
+    "description": ""
   }
 }

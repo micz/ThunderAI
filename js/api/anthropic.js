@@ -27,7 +27,7 @@ export class Anthropic {
   max_tokens = 4096;  
   stream = false;
 
-  constructor(apiKey, version, model, max_tokens, stream) {
+  constructor(apiKey, version, model, max_tokens = 4096, stream = false) {
     this.apiKey = apiKey;
     this.version = version;
     this.model = model;
@@ -84,6 +84,7 @@ export class Anthropic {
               "Content-Type": "application/json", 
               "x-api-key": this.apiKey,
               "anthropic-version": this.version,
+              "anthropic-dangerous-direct-browser-access": "true",
           },
           body: JSON.stringify({ 
               model: this.model,
