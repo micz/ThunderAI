@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
     document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
-    let anthropic = new Anthropic(document.getElementById("anthropic_api_key").value, document.getElementById("anthropic_version").value, '', true);
+    let anthropic = new Anthropic(document.getElementById("anthropic_api_key").value, document.getElementById("anthropic_version").value, '');
     anthropic.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;
@@ -727,7 +727,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       taLog.log("Anthropic models: " + JSON.stringify(data));
       data.response.forEach(model => {
-        if (!Array.from(select_anthropic_model.options).some(option => option.value === model.id)) {
+        const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
+        if (existingOption) {
+          existingOption.text = model.display_name + " (" + model.id + ")";
+        } else {
           const option = document.createElement('option');
           option.value = model.id;
           option.text = model.display_name + " (" + model.id + ")";
