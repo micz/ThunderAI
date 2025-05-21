@@ -17,39 +17,38 @@ Using an API integration, you can activate some automatic features:
 <br>
 
 
-> [!TIP]
-> **Using ChatGPT**
-> 
-> There is no need for an API key and is possibile to use this extension even with a free account, using the **ChatGPT web interface**!
-> 
-> If you want to connect with the OpenAI API integration, instead, you can use an **API Key**!
-
-<br>
-
-> [!TIP]
-> **Using Google Gemini**
-> 
-> Connect directly with Google Gemini API, using also the _System Instructions_ option if needed.
-
-<br>
-
-> [!TIP]
-> **Using Ollama**
+> [!NOTE]
+> **Available Integrations**
+> - **ChatGPT Web**
+>   - There is no need for an API key!
 >
-> It's also possible to use a local Ollama server!
+> <br>
 >
-> Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
-> 
-> [More info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/)
-
-<br>
-
-> [!TIP]
-> **Using an OpenAI Compatible API**
+> - **OpenAI API**
+>   - Connect directly to ChatGPT using your API key.
 >
-> You can also use a local OpenAI Compatible API server, like LM Studio or Mistral AI!
+> <br>
 > 
-> There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint.
+> - **Google Gemini**
+>   - You can use also the _System Instructions_ option if needed.
+> 
+> <br>
+> 
+> - **Using Ollama**
+>   - Just remember to add `OLLAMA_ORIGINS = moz-extension://*` to the Ollama server environment variables.
+>   - [More info about CORS](https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/)
+>
+> <br>
+> 
+> - **OpenAI Compatible API**
+>   - You can also use a local OpenAI Compatible API server, like LM Studio or Mistral AI!
+>   - There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint.
+> 
+> <br>
+> 
+> - **Anthropic API**
+>   - Use Claude directly!
+
 
 
 <br>
