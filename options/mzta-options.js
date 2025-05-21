@@ -24,6 +24,7 @@ import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
 import { Anthropic } from '../js/api/anthropic.js';
 import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from '../js/mzta-utils.js';
+import { openAICompConfigs } from '../js/api/openai_comp_configs.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -373,6 +374,21 @@ async function disable_GetCalendarEvent(){
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
+
+function loadOpenAICompConfigs(){
+  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+  openAICompConfigs.forEach(config => {
+    const option = document.createElement('option');
+    option.value = config.id;
+    option.text = config.name;
+    select_openai_comp_model.appendChild(option);
+  });
+}
+
+function resetOpenAICompConfigs(){
+  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+  select_openai_comp_model.value = 'custom';
+}
   
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -518,6 +534,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
   document.getElementById("anthropic_api_key").addEventListener("change", warn_Anthropic_APIKeyEmpty);
   document.getElementById("anthropic_version").addEventListener("change", warn_Anthropic_VersionEmpty);
+  document.getElementById("openai_comp_host").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById("openai_comp_chat_name").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById("openai_comp_use_v1").addEventListener("input", resetOpenAICompConfigs);
+  
 
   let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', anthropic_model: '', anthropic_version: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
@@ -825,6 +845,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     if ((info.os === "linux")&&(prefs.chatgpt_win_height!=0)&&(prefs.chatgpt_win_width!=0)){
       document.getElementById('hyprland_warning').style.display = 'table-row';
     }
+  });
+
+  loadOpenAICompConfigs();
+  let select_openai_comp_services_shortcut = document.getElementById('openai_comp_services_shortcut');
+  select_openai_comp_services_shortcut.addEventListener("change", () => {
+    let selectedOption = select_openai_comp_services_shortcut.options[select_openai_comp_services_shortcut.selectedIndex];
+    const config = openAICompConfigs.find(cfg => cfg.id === selectedOption.value);
+    if (config) {
+      document.getElementById('openai_comp_host').value = config.host || '';
+      // Clear all options from the select except the first (placeholder) one
+      const openaiCompModelSelect = document.getElementById('openai_comp_model');
+      openaiCompModelSelect.value = '';
+      while (openaiCompModelSelect.options.length > 0) {
+        openaiCompModelSelect.remove(0);
+      }
+      document.getElementById('openai_comp_use_v1').checked = !!config.use_v1;
+      document.getElementById('openai_comp_chat_name').value = config.chat_name || '';
+      // Trigger change events if needed
+      document.getElementById('openai_comp_host').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_model').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_use_v1').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_chat_name').dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
   });
 
 }, { once: true });

@@ -1506,5 +1506,17 @@
             "content": "$1"
         }
     }
+  },
+  "prefs_OpenAIComp_AvailableServices": {
+    "message": "Available Services",
+    "description": ""
+  },
+  "prefs_OpenAIComp_AvailableServices_Info": {
+    "message": "Choose one of the services available for the OpenAI Compatible API or insert one manually.",
+    "description": ""
+  },
+  "Custom": {
+    "message": "Custom",
+    "description": ""
   }
 }
