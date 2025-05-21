@@ -926,7 +926,9 @@ const newEmailListener = (folder, messagesList) => {
 
         taSpamReport.logger = taLog;
 
-        await processEmails(messages, prefs_init.add_tags_auto, prefs_init.spamfilter);
+        let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
+
+        await processEmails(messages, add_tags_auto_enabled, prefs_init.spamfilter);
 
         if(prefs_init.spamfilter){
             taSpamReport.truncReportData();
@@ -963,6 +965,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let specialFullPrompt_add_tags = '';
             let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
             let tags_full_list = await getTagsList();
+            // console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + curr_prompt_add_tags);
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang);
@@ -989,6 +992,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
                 }
             }
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
+            // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + curr_prompt_spamfilter);
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', '');
             taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
