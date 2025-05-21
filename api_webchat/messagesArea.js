@@ -165,7 +165,7 @@ class MessagesArea extends HTMLElement {
         let source = browser.i18n.getMessage("apiwebchat_you");
         switch (type) {
             case "user":
-                source = browser.i18n.getMessage("apiwebchat_you");;
+                source = browser.i18n.getMessage("apiwebchat_you");
                 break;
             case "info":
                 source = browser.i18n.getMessage("apiwebchat_info");
@@ -176,7 +176,16 @@ class MessagesArea extends HTMLElement {
 
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', type);
+        // Replace \n with <br> for correct HTML display
         messageElement.textContent = messageText;
+        // Replace \n with <br> elements for correct HTML display
+        messageElement.innerHTML = '';
+        messageText.split('\n').forEach((line, idx, arr) => {
+            messageElement.appendChild(document.createTextNode(line));
+            if (idx < arr.length - 1) {
+            messageElement.appendChild(document.createElement('br'));
+            }
+        });
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
     }
