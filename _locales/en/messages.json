@@ -451,10 +451,6 @@
     "message": "Using model",
     "description": ""
   },
-  "chagpt_api_connecting": {
-    "message": "Attempting to connect to OpenAI ChatGPT using the API key provided",
-    "description": ""
-  },
   "Debug": {
     "message": "Debug",
     "description": ""
@@ -499,14 +495,6 @@
     "message": "You've not choosen a model for the Ollama API. Please choose one in the options page.",
     "description": ""
   },
-  "ollama_api_connecting": {
-    "message": "Attempting to connect to the Ollama Local Server using the host",
-    "description": ""
-  },
-  "andModel": {
-    "message": "and model",
-    "description": ""
-  },
   "error_connection_interrupted": {
     "message": "The connection to the server was unexpectedly interrupted",
     "description": ""
@@ -545,10 +533,6 @@
   },
   "OpenAIComp_empty_model": {
     "message": "You've not choosen a model for the OpenAI Compatible API. Please choose one in the options page.",
-    "description": ""
-  },
-  "OpenAIComp_api_connecting": {
-    "message": "Attempting to connect to the OpenAI Compatible API Local Server using the host",
     "description": ""
   },
   "OpenAIComp_api_request_failed": {
@@ -953,10 +937,6 @@
   },
   "google_gemini_api_request_failed": {
     "message": "Google Gemini API request failed",
-    "description": ""
-  },
-  "google_gemini_api_connecting": {
-    "message": "Attempting to connect to Google Gemini using the API key provided",
     "description": ""
   },
   "google_gemini_empty_apikey": {
@@ -1491,8 +1471,40 @@
     "message": "Anthropic API request failed",
     "description": ""
   },
-  "anthropic_api_connecting": {
-    "message": "Attempting to connect to Anthropic API using the API key provided",
-    "description": ""
+  "_api_connecting": {
+    "message": "Attempting to connect to $api_string$ using the following configuration:",
+    "description": "",
+    "placeholders": {
+        "api_string": {
+            "content": "$1"
+        }
+    }
+  },
+  "_api_connecting_model": {
+    "message": "Model: $model$",
+    "description": "",
+    "placeholders": {
+        "model": {
+            "content": "$1"
+        }
+    }
+  },
+  "_api_connecting_host": {
+    "message": "Host: $api_host$",
+    "description": "",
+    "placeholders": {
+        "api_host": {
+            "content": "$1"
+        }
+    }
+  },
+  "_api_connecting_version": {
+    "message": "Version: $api_version$",
+    "description": "",
+    "placeholders": {
+        "api_version": {
+            "content": "$1"
+        }
+    }
   }
 }

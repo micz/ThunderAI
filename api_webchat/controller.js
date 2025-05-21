@@ -21,6 +21,7 @@
  */
 
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
+import { getAPIsInitMessageString } from '../js/mzta-utils.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -79,7 +80,7 @@ switch (llm) {
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("chagpt_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.chatgpt_model + "\"...", "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model), "info");
         browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
@@ -91,7 +92,7 @@ switch (llm) {
         messageInput.setModel(prefs_api.google_gemini_model);
         messagesArea.setLLMName("Google Gemini");
         worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("google_gemini_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.google_gemini_model + "\"...", "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model), "info");
         browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
@@ -104,7 +105,7 @@ switch (llm) {
         messagesArea.setLLMName("Ollama Local");
         worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, ollama_num_ctx: prefs_api.ollama_num_ctx, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("ollama_api_connecting") + " \"" + prefs_api.ollama_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.ollama_model + "\"...", "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Ollama API", prefs_api.ollama_model, prefs_api.ollama_host), "info");
         break;
     }
     case "openai_comp_api": {
@@ -115,7 +116,7 @@ switch (llm) {
         messageInput.setModel(prefs_api.openai_comp_model);
         messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
         worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("OpenAIComp_api_connecting") + " \"" + prefs_api.openai_comp_host + "\" " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.openai_comp_model + "\"...", "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("OpenAI Compatible API", prefs_api.openai_comp_model, prefs_api.openai_comp_host), "info");
         browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
@@ -127,7 +128,7 @@ switch (llm) {
         messageInput.setModel(prefs_api.anthropic_model);
         messagesArea.setLLMName("Anthropic");
         worker.postMessage({ type: 'init', anthropic_api_key: prefs_api.anthropic_api_key, anthropic_model: prefs_api.anthropic_model, anthropic_version: prefs_api.anthropic_version, anthropic_max_tokens: prefs_api.anthropic_max_tokens, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(browser.i18n.getMessage("anthropic_api_connecting") + " " +browser.i18n.getMessage("AndModel") + " \"" + prefs_api.anthropic_model + "\"...", "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Anthropic API", prefs_api.anthropic_model, '', prefs_api.anthropic_version), "info");
         browser.runtime.sendMessage({command: "anthropic_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }

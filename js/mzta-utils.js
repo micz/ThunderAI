@@ -401,6 +401,21 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
+export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '') {
+  let output = browser.i18n.getMessage("_api_connecting", api_string);
+  if (model_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_model", model_string);
+  }
+  if (host_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_host", host_string);
+  }
+  if (version_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_version", version_string);
+  }
+
+  return output;
+}
+
 export function getActiveSpecialPromptsIDs(args = {}) {
   const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
   let output = [];
@@ -474,6 +489,7 @@ export function validateCustomData_ChatGPTWeb(event) {
   event.target.style.borderColor = is_valid ? 'green' : 'red';
   document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }
+
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
