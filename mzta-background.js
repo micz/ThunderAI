@@ -326,8 +326,12 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
     taLog.log("Prompt length: " + promptText.length);
-    if(promptText.length > prefs.max_prompt_length){
-        // Prompt too long for ChatGPT
+    let _max_prompt_length = prefs.max_prompt_length;
+    if(prefs.connection_type == 'chatgpt_web'){
+        _max_prompt_length = prefs_default.max_prompt_length;
+    }
+    if((_max_prompt_length > 0) && (promptText.length > _max_prompt_length)){
+        // Prompt too long
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
         browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('msg_prompt_too_long') });
         return;
