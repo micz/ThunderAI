@@ -92,6 +92,13 @@ const defaultPlaceholders = [
         is_default: "1",
     },
     {
+        id: 'selected_html',
+        name: "__MSG_placeholder_selected_html__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+    },
+    {
         id: 'additional_text',
         name: "__MSG_placeholder_additional_text__",
         default_value: "",
@@ -301,7 +308,7 @@ export const placeholdersUtils = {
         return regex.test(text);
       },
 
-    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, tags_full_list) {
+    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list) {
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         let finalSubs = {};
@@ -330,6 +337,9 @@ export const placeholdersUtils = {
                     break;
                 case 'selected_text':
                     finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
+                    break;
+                case 'selected_html':
+                    finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
                     break;
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(curr_message.author);

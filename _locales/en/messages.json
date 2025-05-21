@@ -619,6 +619,10 @@
     "message": "Selected text",
     "description": ""
   },
+  "placeholder_selected_html": {
+    "message": "Selected html",
+    "description": ""
+  },
   "placeholder_additional_text": {
     "message": "Additional text",
     "description": ""
