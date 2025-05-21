@@ -814,7 +814,7 @@
         "message": "Prepoznaj neželjenu poštu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
+        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nU slučaju nedostatka podataka poruke, postavite vrijednost na 0 (nije spam) i navedite razlog.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\"\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Mogućnosti filtera neželjene pošte"
