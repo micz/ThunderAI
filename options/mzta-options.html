@@ -124,6 +124,7 @@
               <option value="chatgpt_web">__MSG_prefs_Connection_type_ChatGPT_Web__</option>
               <option value="chatgpt_api">__MSG_prefs_Connection_type_ChatGPT_API__</option>
               <option value="google_gemini_api">__MSG_prefs_Connection_type_Google_Gemini_API__</option>
+              <option value="anthropic_api">__MSG_prefs_Connection_type_Anthropic_API__</option>
               <option value="ollama_api">__MSG_prefs_Connection_type_Ollama_API__</option>
               <option value="openai_comp_api">__MSG_prefs_Connection_type_OpenAI_Comp_API__</option>
             </select>
@@ -381,6 +382,55 @@
           <label>
             <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" />
             <br>__MSG_prefs_OpenAIComp_ChatName_Info__
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_anthropic_api">
+        <td><label>
+          <span class="opt_title">__MSG_prefs_Anthropic_API_Key__</span>
+        </label></td>
+        <td>
+          <div class="api_key-container">
+            <label>
+              <input type="password" id="anthropic_api_key" name="anthropic_api_key" class="option-input"/>
+            </label>
+            <span class="toggle-icon" id="toggle_anthropic_api_key"><img src="../images/pwd-show.png" id="pwd-icon_anthropic_api_key"></span>
+          </div>
+        </td>
+      </tr>
+      <tr class="conntype_anthropic_api">
+        <td>
+          <label>
+            <span class="opt_title">__MSG_Anthropic_Models__</span>
+          </label>
+        </td>
+        <td>
+          <button id="btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="anthropic_model_fetch_loading">__MSG_Loading__</span><br>
+          <label>
+            <select id="anthropic_model" name="anthropic_model" class="option-input">
+            </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_anthropic_api">
+        <td>
+          <label>
+            <span class="opt_title">__MSG_Anthropic_Version__</span>
+          </label>
+        </td>
+        <td>
+          <label>
+            <input type="text" id="anthropic_version" name="anthropic_version" class="option-input" />
+            <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_anthropic_api">
+        <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
+        <td>
+          <label>
+            <input type="number" id="anthropic_max_tokens" name="anthropic_max_tokens" class="option-input" />
+            <br>__MSG_prefs_OptionText_anthropic_max_tokens_Info__
           </label>
         </td>
       </tr>

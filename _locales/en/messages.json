@@ -1192,7 +1192,7 @@
     "description" : ""
   },
   "prompt_spamfilter_full_text" : {
-    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explaination of no more than 10 words.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"spamValue\": <integer from 0 to 100>,\n\"explanation\": \"Brief explanation of your reasoning\",\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
+    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"spamValue\": <integer from 0 to 100>,\n\"explanation\": \"Brief explanation of your reasoning\"\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
     "description" : ""
   },
   "SpamFilter_prompt_prefs_title": {
@@ -1437,6 +1437,62 @@
   },
   "prefs_OptionText_Project_No_temporary_chat_warn": {
     "message": "If a Project is specified in the options or in a prompt, the temporary chat will not be used.",
+    "description": ""
+  },
+  "prefs_Anthropic_API_Key": {
+    "message": "Anthropic API Key",
+    "description": ""
+  },
+  "prefs_Connection_type_Anthropic_API": {
+    "message": "Anthropic API",
+    "description": ""
+  },
+  "Anthropic_Models": {
+    "message": "Anthropic Models",
+    "description": ""
+  },
+  "Anthropic_Models_Fetch": {
+    "message": "Update Anthropic Models list",
+    "description": ""
+  },
+  "Anthropic_Models_Error_fetching": {
+    "message": "Error trying to fetch Anthropic models",
+    "description": ""
+  },
+  "Anthropic_Version": {
+    "message": "Anthropic API Version",
+    "description": ""
+  },
+  "Anthropic_Version_Info": {
+    "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at: ",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_max_tokens": {
+    "message": "Anthropic Max Tokens",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_max_tokens_Info": {
+    "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
+    "description": ""
+  },
+  "anthropic_empty_apikey": {
+    "message": "You've not added an API Key for the Anthropic API. Please insert one in the options page.",
+    "description": ""
+  },
+  "anthropic_empty_model": {
+    "message": "You've not choosen a model for the Anthropic API. Please choose one in the options page.",
+    "description": ""
+  },
+  "anthropic_empty_version": {
+    "message": "You've not added a version string for the Anthropic API. Please insert one in the options page.",
+    "description": ""
+  },
+  "anthropic_api_request_failed": {
+    "message": "Anthropic API request failed",
+    "description": ""
+  },
+  "anthropic_api_connecting": {
+    "message": "Attempting to connect to Anthropic API using the API key provided",
     "description": ""
   }
 }
