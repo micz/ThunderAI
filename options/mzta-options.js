@@ -389,7 +389,12 @@ function resetOpenAICompConfigs(){
   let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
   select_openai_comp_model.value = 'custom';
 }
-  
+
+function resetMaxPromptLength(){
+  let maxPromptLength = document.getElementById('max_prompt_length');
+  maxPromptLength.value = prefs_default.max_prompt_length;
+  browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
+}  
 
 document.addEventListener('DOMContentLoaded', async () => {
   await restoreOptions();
@@ -871,7 +876,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('openai_comp_use_v1').dispatchEvent(new Event('change', { bubbles: true }));
       document.getElementById('openai_comp_chat_name').dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
   });
+
+  document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
 
 }, { once: true });
