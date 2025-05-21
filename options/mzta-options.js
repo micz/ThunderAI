@@ -853,6 +853,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let selectedOption = select_openai_comp_services_shortcut.options[select_openai_comp_services_shortcut.selectedIndex];
     const config = openAICompConfigs.find(cfg => cfg.id === selectedOption.value);
     if (config) {
+      if (!confirm(browser.i18n.getMessage('OpenAIComp_Configs_ConfirmApply', config.name))) {
+        return;
+      }
       document.getElementById('openai_comp_host').value = config.host || '';
       // Clear all options from the select except the first (placeholder) one
       const openaiCompModelSelect = document.getElementById('openai_comp_model');

@@ -1518,5 +1518,14 @@
   "Custom": {
     "message": "Custom",
     "description": ""
+  },
+  "OpenAIComp_Configs_ConfirmApply": {
+    "message": "Are you sure you want to apply the configuration \"$config_name$\"?",
+    "description": "",
+    "placeholders": {
+        "config_name": {
+            "content": "$1"
+        }
+    }
   }
 }
