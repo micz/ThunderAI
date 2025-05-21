@@ -7,6 +7,7 @@
 <h2>Version 3.5.0 - ??/??/2025</h2>
       <ul>
         <li>Added Anthropic API support [<a href="https://github.com/micz/ThunderAI/issues/349">#349</a>].</li>
+        <li><i>[OpenAI Comp API]</i>  Added a shortcut to select configurations for known AI services. Currently, <i>Grok AI</i> and <i>Mistral AI</i> are available [<a href="https://github.com/micz/ThunderAI/issues/378">#378</a>]. <a href="https://github.com/micz/ThunderAI/issues/new?template=feature_request.md">Open an issue</a> to request additional services.</li>
         <li>Fix: in the Spamfilter page the unsaved changes warning is now correctly shown.</li>
         <li>Fixed incoming emails elaboration that was failing when the auto tagging was enabled and then the complete tagging feature was disabled.</li>
         <li>...</li>
