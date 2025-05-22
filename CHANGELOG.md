@@ -13,7 +13,8 @@
         <li><i>[All APIs]</i> Added a button to the options page to reset the 'Max prompt length' value to its default.</li>
         <li>Fix: in the Spamfilter page the unsaved changes warning is now correctly shown.</li>
         <li>Fix: The default keyboard shortcut is no longer enforced at every Thunderbird startup [<a href="https://github.com/micz/ThunderAI/issues/384">#384</a>].</li>
-        <li>Fixed incoming emails elaboration that was failing when the auto tagging was enabled and then the complete tagging feature was disabled.</li>
+        <li>Fix: Incoming email processing now works correctly when auto-tagging is enabled and the full tagging feature is subsequently disabled.</li>
+        <li>Fix: The reply type is correctly saved. [<a href="https://github.com/micz/ThunderAI/issues/387">#387</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.4.1 - 12/05/2025</h2>
