@@ -208,7 +208,7 @@
         "message": "status usluge"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Dimenzije prozora ChatGPT"
+        "message": "Dimenzije prozora za AI razgovor"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Visina"
@@ -490,10 +490,10 @@
         "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati za ChatGPT web sučelje. Postavite na nulu kako biste onemogućili provjeru."
     },
     "prefs_OptionText_chatgpt_web_model": {
-        "message": "ChatGPT web model"
+        "message": "ChatGPT Web Model"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Ovo je model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
+        "message": "Ovo je Model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web privremeno čavrljanje"
@@ -745,7 +745,7 @@
         "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Za korištenje značajke kalendarskih događaja instalirajte dodatak ThunderAI Sparks."
+        "message": "Za korištenje značajki kalendarskih događaja i zadataka, molimo instalirajte dodatak ThunderAI Sparks."
     },
     "prefs_OptionText_download_now": {
         "message": "Preuzmite ThunderAI Sparks sada!"
