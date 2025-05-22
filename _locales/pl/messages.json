@@ -208,7 +208,7 @@
         "message": "status usługi"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Wymiary okna ChatGPT"
+        "message": "Wymiary okna czatu AI"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Wysokość"

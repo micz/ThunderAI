@@ -414,7 +414,7 @@
         "message": "若要使用此集成功能，您需要搭建一台兼容OpenAI API的本地服务器（如LM Studio）。服务器启动后，请在应用程序中的指定字段填入其地址。为确保ThunderAI与本地服务器之间通信正常，请务必正确配置CORS设置。"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "ChatGPT 窗口尺寸"
+        "message": "AI 聊天窗口尺寸"
     },
     "prefs_OptionText_chatgpt_win_width": {
         "message": "宽度"
