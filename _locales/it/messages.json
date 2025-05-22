@@ -487,7 +487,7 @@
         "message": "Lunghezza massima del prompt"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Questa è la lunghezza massima di caratteri che può essere utilizzata in un prompt. Altrimenti, verrà visualizzato un messaggio di errore. Il valore non è modificabile per l'interfaccia Web di ChatGPT."
+        "message": "Questa è la lunghezza massima di caratteri che può essere utilizzata in un prompt. Altrimenti, verrà visualizzato un messaggio di errore. Il valore non è modificabile per l'interfaccia Web di ChatGPT. Impostalo a zero per disabilitare il controllo."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Modello Web ChatGPT"

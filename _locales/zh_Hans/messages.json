@@ -90,7 +90,7 @@
         "message": "最大提示词长度"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "这是提示中可以使用的最大字符数。否则，将显示错误消息。该值在 ChatGPT Web 界面中不可编辑。"
+        "message": "这是提示中可以使用的最大字符数。否则，将显示错误消息。该值在 ChatGPT Web 界面中不可编辑。将其设置为零以禁用检查。"
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT Web 模型"

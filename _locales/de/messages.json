@@ -487,7 +487,7 @@
         "message": "Maximale Eingabelänge"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar."
+        "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar. Setzen Sie es auf null, um die Prüfung zu deaktivieren."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT Web-Modell"
