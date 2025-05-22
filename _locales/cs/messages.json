@@ -717,7 +717,7 @@
         "message": "Maximální délka výzvy"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Toto je maximální počet znaků, které lze použít ve výzvě. V opačném případě se zobrazí chybová zpráva. Tato hodnota není upravitelná pro webové rozhraní ChatGPT."
+        "message": "Toto je maximální počet znaků, které lze použít ve výzvě. V opačném případě se zobrazí chybová zpráva. Tato hodnota není upravitelná pro webové rozhraní ChatGPT. Nastavte na nulu pro deaktivaci kontroly."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Webový model ChatGPT"
