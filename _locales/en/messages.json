@@ -660,7 +660,7 @@
     "description": ""
   },
   "prefs_OptionText_max_prompt_length_Info" : {
-    "message": "This is the maximum number of characters that can be used in a prompt. Otherwise, an error message will be displayed. The value is not editable for the ChatGPT Web Interface. Set it to 0 to disable the check.",
+    "message": "This is the maximum number of characters that can be used in a prompt. Otherwise, an error message will be displayed. The value is not editable for the ChatGPT Web Interface. Set it to zero to disable the check.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model": {
