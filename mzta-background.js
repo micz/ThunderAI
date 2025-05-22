@@ -94,18 +94,6 @@ browser.contentScripts.register({
     runAt: "document_idle"
   });
 
-let ThunderAI_Shortcut = "Ctrl+Alt+A";
-
-// Shortcut
-messenger.commands.update({
-    name: "_thunderai__do_action",
-    shortcut: ThunderAI_Shortcut
-}).then(() => {
-    taLog.log('Shortcut [' + ThunderAI_Shortcut + '] registered successfully!');
-}).catch((error) => {
-    taLog.error('Error registering shortcut [' + ThunderAI_Shortcut + ']: ' + error);
-});
-
 // Listen for shortcut command
 messenger.commands.onCommand.addListener((command, tab) => {
     if (command === "_thunderai__do_action") {

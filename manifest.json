@@ -54,6 +54,9 @@
 	},
     "commands": {
         "_thunderai__do_action": {
+        "suggested_key": {
+            "default": "Ctrl+Alt+A"
+        },
         "description": "Opens the ThunderAI prompts menu"
         }
     },
