@@ -89,6 +89,11 @@ messagesAreaStyle.textContent = `
         color: navy;
         margin-bottom: var(--margin);
     }
+    .sel_info{
+        font-size: 0.7rem;
+        color: gray;
+        margin-top: 5px;
+    }
     /* diff viewer */
     .added {
         background-color: #d4fcdc;
@@ -236,6 +241,9 @@ class MessagesArea extends HTMLElement {
         if(promptData == null) { return; }
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
+        const selectionInfo = document.createElement('p');
+        selectionInfo.textContent = browser.i18n.getMessage("apiwebchat_selection_info");
+        selectionInfo.classList.add('sel_info');
         const actionButton = document.createElement('button');
         actionButton.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
@@ -244,15 +252,21 @@ class MessagesArea extends HTMLElement {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
                 promptData.action = "2"; // replace text
             }
+            let finalText = fullTextHTMLAtAssignment;
+            const selectedHTML = this.getCurrentSelectionHTML();
+            if(selectedHTML != "") {
+                finalText = selectedHTML;
+            }
+
             switch(promptData.action) {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
                 case "2":     // replace text
                     //  console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: fullTextHTMLAtAssignment, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
             }
@@ -260,7 +274,6 @@ class MessagesArea extends HTMLElement {
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
         closeButton.addEventListener('click', async () => {
-            // console.log("[ThunderAI] (close) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
         if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
@@ -282,6 +295,7 @@ class MessagesArea extends HTMLElement {
         }
 
         actionButtons.appendChild(closeButton);
+        actionButtons.appendChild(selectionInfo);
         this.messages.appendChild(actionButtons);
         this.scrollToBottom();
     }
@@ -356,6 +370,18 @@ class MessagesArea extends HTMLElement {
   
             this.accumulatingMessageEl = null;
         }
+    }
+
+    getCurrentSelectionHTML() {
+        const selection = window.getSelection();
+        // console.log(">>>>>>>>>>>>>>>> getCurrentSelectionHTML: " + JSON.stringify(selection.toString()));
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const container = document.createElement('div');
+            container.appendChild(range.cloneContents());
+            return container.innerHTML;
+        }
+        return '';
     }
 
 }

@@ -1531,5 +1531,9 @@
             "content": "$1"
         }
     }
+  },
+  "apiwebchat_selection_info": {
+    "message": "If you select some text, only that portion will be considered.",
+    "description": ""
   }
 }
