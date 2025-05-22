@@ -38,19 +38,27 @@ function saveOptions(e) {
     switch (element.type) {
       case 'checkbox':
         options[element.id] = element.checked;
+        taLog.log('Saving option: ' + element.id + ' = ' + element.checked);
         break;
       case 'number':
         options[element.id] = element.valueAsNumber;
+        taLog.log('Saving option: ' + element.id + ' = ' + element.valueAsNumber);
         break;
-        case 'text':
-        case 'password':
+      case 'text':
         options[element.id] = element.value.trim();
+        taLog.logger.log('Saving option: ' + element.id + ' = ' + element.value);
+        break;
+      case 'password':
+        options[element.id] = element.value.trim();
+        taLog.logger.log('Saving option: ' + element.id + ' = *********');
         break;
       default:
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
+          taLog.log('Saving option: ' + element.id + ' = ' + element.value);
         } else if (element.tagName === 'TEXTAREA') {
           options[element.id] = element.value.trim();
+          taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
         } else {
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
