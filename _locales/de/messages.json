@@ -1032,16 +1032,16 @@
     "GetTask_info_default": {
         "message": "Auf dieser Seite kannst du den Standard-Prompt anpassen, der verwendet wird, um eine Aufgabe aus dem ausgewählten Text zu erstellen."
     },
-    "ask_chatgptweb_permission_2": {
+    "ask_integration_permission_2": {
         "message": "Klicke hier, um fortzufahren."
     },
     "ask_chatgptweb_permission_1": {
         "message": "Um die ChatGPT-Web-Integration zu nutzen, musst du die erforderliche Berechtigung erteilen."
     },
-    "ask_chatgptweb_permission_2_popup": {
+    "ask_integration_permission_2_popup": {
         "message": "Klicke hier, um einen neuen Tab zu öffnen und den Anweisungen zu folgen."
     },
-    "ask_chatgptweb_permission_ok": {
+    "ask_integration_permission_ok": {
         "message": "Berechtigung erteilt. Du kannst hier klicken, um diesen Tab zu schließen und zum Hauptfenster zurückzukehren."
     },
     "AccountSelector_AutoTags": {

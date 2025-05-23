@@ -32,13 +32,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let granted = await messenger.permissions.request({ origins: ["https://*.chatgpt.com/*"] });
                 if(granted){
                     document.getElementById("chatgpt_web_permission").style.display = "none";
-                    document.getElementById("chatgpt_web_permission_ok").style.display = "block";
-                    taLog.log("ChatGPT web permission granted");
+                    document.getElementById("integration_permission_ok").style.display = "block";
+                    taLog.log("ChatGPT Web permission granted");
                 }else{
-                    taLog.log("ChatGPT web permission denied");
+                    taLog.log("ChatGPT Web permission denied");
                 }
             });
-            document.getElementById("chatgpt_web_permission_ok").addEventListener("click", async () => {
+            document.getElementById("integration_permission_ok").addEventListener("click", async () => {
+                await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
+            });
+        }
+    }
+    if(prefs.connection_type === 'anthropic_api'){
+        let permission_chatgpt = await messenger.permissions.contains({ origins: ["https://*.anthropic.com/*"] });
+        if(permission_chatgpt === false){
+            document.getElementById("anthropic_api_permission").style.display = "block";
+            document.getElementById("anthropic_api_permission").addEventListener("click", async () => {
+                let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
+                if(granted){
+                    document.getElementById("anthropic_api_permission").style.display = "none";
+                    document.getElementById("integration_permission_ok").style.display = "block";
+                    taLog.log("Anthropic API permission granted");
+                }else{
+                    taLog.log("Anthropic API web permission denied");
+                }
+            });
+            document.getElementById("integration_permission_ok").addEventListener("click", async () => {
                 await messenger.tabs.remove((await messenger.tabs.getCurrent()).id);
             });
         }

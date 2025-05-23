@@ -996,7 +996,7 @@
     "ask_chatgptweb_permission_1": {
         "message": "Per utilizzare l'integrazione con ChatGPT Web, devi concedere l'autorizzazione richiesta."
     },
-    "ask_chatgptweb_permission_2_popup": {
+    "ask_integration_permission_2_popup": {
         "message": "Clicca qui per aprire una nuova scheda e seguire le istruzioni."
     },
     "GetTask_info_default": {
@@ -1035,10 +1035,10 @@
     "no_valid_data_received": {
         "message": "Nessun dato valido ricevuto dall'IA."
     },
-    "ask_chatgptweb_permission_2": {
+    "ask_integration_permission_2": {
         "message": "Clicca qui per procedere."
     },
-    "ask_chatgptweb_permission_ok": {
+    "ask_integration_permission_ok": {
         "message": "Autorizzazione concessa. Puoi cliccare qui per chiudere questa scheda e tornare alla finestra principale."
     },
     "prompt_proofread_this": {

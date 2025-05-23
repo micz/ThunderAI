@@ -1348,18 +1348,22 @@
     "description": ""
   },
   "ask_chatgptweb_permission_1": {
-    "message": "To use the ChatGPT Web Integration, you need to grant the required permission.",
+    "message": "To use the ChatGPT Web integration, you need to grant the required permission.",
     "description": ""
   },
-  "ask_chatgptweb_permission_2_popup": {
+  "ask_anthropic_api_permission_1": {
+    "message": "To use the Anthropic API integration, you need to grant the required permission.",
+    "description": ""
+  },
+  "ask_integration_permission_2_popup": {
     "message": "Click here to open a new tab and follow the instructions.",
     "description": ""
   },
-  "ask_chatgptweb_permission_2": {
+  "ask_integration_permission_2": {
     "message": "Click here to proceed.",
     "description": ""
   },
-  "ask_chatgptweb_permission_ok": {
+  "ask_integration_permission_ok": {
     "message": "Permission granted. You can click here to close this tab and return to the main window.",
     "description": ""
   },

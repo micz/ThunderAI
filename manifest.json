@@ -38,6 +38,7 @@
         "messagesUpdate",
         "messagesMove",
         "https://*.chatgpt.com/*",
+        "https://*.anthropic.com/*",
         "<all_urls>"
     ],
     "background": {
