@@ -12,6 +12,7 @@
         <li><i>[All APIs]</i> In the API WebChat is now possibile to select a part of the answer and use only that [<a href="https://github.com/micz/ThunderAI/issues/356">#356</a>].</li>
         <li><i>[All APIs]</i> Setting the "Max prompt length" to zero on the options page will disable the length check when sending a prompt to the AI. [<a href="https://github.com/micz/ThunderAI/issues/380">#380</a>].</li>
         <li><i>[All APIs]</i> Added a button to the options page to reset the 'Max prompt length' value to its default.</li>
+        <li><i>[All APIs]</i> Adding tags automatically or with the context menu will now use also tags not created by ThunderAI [<a href="https://github.com/micz/ThunderAI/issues/390">#390</a>].</li>
         <li>Fix: in the Spamfilter page the unsaved changes warning is now correctly shown.</li>
         <li>Fix: The default keyboard shortcut is no longer enforced at every Thunderbird startup [<a href="https://github.com/micz/ThunderAI/issues/384">#384</a>].</li>
         <li>Fix: Incoming email processing now works correctly when auto-tagging is enabled and the full tagging feature is subsequently disabled.</li>
