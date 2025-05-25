@@ -870,7 +870,7 @@
         "message": "Pokud je zaškrtnuto, AI automaticky přidá štítky k nově přijatým e-mailům."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Vynutit existující štítky při automatickém označování"
+        "message": "Vynutit existující štítky při automatickém označování nebo použití kontextového menu"
     },
     "prompt_spamfilter_full_text": {
         "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"spamValue\": <celé číslo od 0 do 100>,\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\"\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
