@@ -20,12 +20,13 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
+import { addTags_getExclusionList } from './js/mzta-addatags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -160,16 +161,26 @@ async function _assign_tags(_data, create_new_tags = true) {
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
-    for (const tag of _data.tags) {
-        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
-        if (create_new_tags && !checkIfTagExists(tag, all_tags_list)) {
+    let add_tags_exclusions_list = await addTags_getExclusionList();
+    taLog.log("add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
+    const tags_final = _data.tags.filter(tag =>
+        !add_tags_exclusions_list.some(exclusion =>
+            tag.toLowerCase().includes(exclusion.toLowerCase())
+        )
+    );
+    if(!create_new_tags){
+        taLog.log("Not creating new tags, only assigning existing ones...");
+    }
+    for (const tag of tags_final) {
+        // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
+        if (create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
             taLog.log("Creating tag: " + tag);
             await createTag(tag);
         }
         new_tags.push(tag);
     }
-    await assignTagsToMessage(_data.messageId, new_tags);
-    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
+    let added_tags = await assignTagsToMessage(_data.messageId, new_tags);
+    taLog.log("Assigned tags: " + JSON.stringify(added_tags));
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {

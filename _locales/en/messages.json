@@ -1116,7 +1116,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing": {
-    "message": "Force existing tags when autotagging",
+    "message": "Force existing tags when autotagging or using the context menu",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing_Info": {

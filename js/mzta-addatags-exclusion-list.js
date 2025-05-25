@@ -16,8 +16,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// These methods are also defined in the file /js/mzta-compose-script.js
 
+
+// These methods are also defined in the file /js/mzta-compose-script.js
 export async function addTags_getExclusionList() {
     let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
     return prefs_excluded_tags.add_tags_exclusions;
