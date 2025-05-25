@@ -853,7 +853,7 @@
         "message": "Wenn ausgewählt, wird die KI nur vorhandene Tags zu neu empfangenen E-Mails hinzufügen und keine neuen Tags erstellen."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Vorhandene Tags beim automatischen Taggen erzwingen"
+        "message": "Vorhandene Tags beim automatischen Taggen oder bei der Verwendung des Kontextmenüs erzwingen"
     },
     "spamfilter_no_reports": {
         "message": "Es wurden noch keine Nachrichten auf Spam überprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte nur für die aktuelle Sitzung."
