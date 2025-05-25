@@ -54,17 +54,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     let add_tags_auto_el = document.getElementById('add_tags_auto');
-    let add_tags_auto_force_existing_tr = document.getElementById('add_tags_auto_force_existing_tr');
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
     let account_selector_container = document.getElementById('account_selector_container');
     let add_tags_auto_infoline = document.getElementById('add_tags_auto_infoline');
     add_tags_auto_el.addEventListener('click', (event) => {
-      add_tags_auto_force_existing_tr.style.display = event.target.checked ? 'table-row' : 'none';
       add_tags_auto_only_inbox_tr.style.display = event.target.checked ? 'table-row' : 'none';
       account_selector_container.style.display = event.target.checked ? 'block' : 'none';
       add_tags_auto_infoline.style.display = event.target.checked ? 'inline' : 'none';
     });
-    add_tags_auto_force_existing_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
     add_tags_auto_only_inbox_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
     account_selector_container.style.display = add_tags_auto_el.checked ? 'block' : 'none';
     add_tags_auto_infoline.style.display = add_tags_auto_el.checked ? 'inline' : 'none';
