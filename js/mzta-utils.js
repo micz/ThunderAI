@@ -357,8 +357,8 @@ export async function createTag(tag) {
 // }
 
 export function checkIfTagLabelExists(tag_label, tags_list) {
-  console.log(">>>>>>>>>>> checkIfTagExists tags_list: " + JSON.stringify(tags_list));
-  console.log(">>>>>>>>>>> checkIfTagExists tag_label: " + tag_label);
+  // console.log(">>>>>>>>>>> checkIfTagExists tags_list: " + JSON.stringify(tags_list));
+  // console.log(">>>>>>>>>>> checkIfTagExists tag_label: " + tag_label);
   const lowerTagLabel = tag_label.toLowerCase();
   return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
 }
@@ -376,18 +376,19 @@ export function checkIfTagLabelExists(tag_label, tags_list) {
 // }
 
 export async function assignTagsToMessage(messageId, tags) {
-  console.log(">>>>>>>>>>> assignTagsToMessage tags: " + JSON.stringify(tags));
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags: " + JSON.stringify(tags));
   let all_tags_list = await getTagsList();
   all_tags_list = all_tags_list[1];
   tags = getTagsKeyFromLabel(tags, all_tags_list);
-  console.log(">>>>>>>>>>> assignTagsToMessage tags after conversion: " + JSON.stringify(tags));
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags after conversion: " + JSON.stringify(tags));
   let msg_prop = await browser.messages.get(messageId);
-  console.log(">>>>>>>>>>> assignTagsToMessage msg_prop.tags: " + JSON.stringify(msg_prop.tags));
+  // console.log(">>>>>>>>>>> assignTagsToMessage msg_prop.tags: " + JSON.stringify(msg_prop.tags));
   tags = tags.concat(msg_prop.tags || []);
   tags = [...new Set(tags)];
-  console.log(">>>>>>>>>>> assignTagsToMessage tags after concat: " + JSON.stringify(tags));
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags after concat: " + JSON.stringify(tags));
   try {
-    return browser.messages.update(messageId, {tags: tags});
+    await browser.messages.update(messageId, {tags: tags});
+    return tags; // Return the updated tags for confirmation
   } catch (error) {
     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
   }

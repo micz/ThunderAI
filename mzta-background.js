@@ -160,6 +160,9 @@ async function _assign_tags(_data, create_new_tags = true) {
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
+    if(!create_new_tags){
+        taLog.log("Not creating new tags, only assigning existing ones...");
+    }
     for (const tag of _data.tags) {
         // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
         if (create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
@@ -168,8 +171,8 @@ async function _assign_tags(_data, create_new_tags = true) {
         }
         new_tags.push(tag);
     }
-    await assignTagsToMessage(_data.messageId, new_tags);
-    taLog.log("Assigned tags: " + JSON.stringify(new_tags));
+    let added_tags = await assignTagsToMessage(_data.messageId, new_tags);
+    taLog.log("Assigned tags: " + JSON.stringify(added_tags));
 }
 
 messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
