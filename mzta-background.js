@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -161,8 +161,8 @@ async function _assign_tags(_data, create_new_tags = true) {
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
     for (const tag of _data.tags) {
-        // console.log(">>>>>>>>>>>>>>> tag: " + tag);
-        if (create_new_tags && !checkIfTagExists(tag, all_tags_list)) {
+        // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
+        if (create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
             taLog.log("Creating tag: " + tag);
             await createTag(tag);
         }
