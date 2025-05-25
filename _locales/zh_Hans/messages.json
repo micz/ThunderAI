@@ -807,7 +807,7 @@
         "message": "在此页面中，您可以修改用于从选定文本获取日历事件的默认提示。"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "自动标记时强制使用现有标签"
+        "message": "在自动标记或使用上下文菜单时强制使用现有标签"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "如果选中，AI 将仅向收件箱文件夹中收到的电子邮件添加标签。"
