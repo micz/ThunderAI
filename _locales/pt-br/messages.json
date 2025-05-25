@@ -793,7 +793,7 @@
         "message": "Valor de spam"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forçar tags existentes ao adicionar automaticamente"
+        "message": "Forçar tags existentes ao usar a marcação automática ou o menu de contexto"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Adicionar tags automaticamente"

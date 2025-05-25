@@ -772,7 +772,7 @@
         "message": "Ako je označeno, AI će automatski dodati oznake novoprimljenim e-porukama."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Nametni postojeće oznake prilikom automatskog označavanja"
+        "message": "Prisilno koristi postojeće oznake pri automatskom označavanju ili korištenju kontekstnog izbornika"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Ako je označeno, AI će novoprimljenim e-porukama dodati samo postojeće oznake i neće stvarati nove oznake."

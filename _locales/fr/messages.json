@@ -850,7 +850,7 @@
         "message": "Ici, vous pouvez également insérer l'adresse d'un serveur distant."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forcer les tags existants lors de l'ajout automatique"
+        "message": "Forcer les balises existantes lors de l’auto-étiquetage ou de l’utilisation du menu contextuel"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Si coché, l'IA ajoutera uniquement les tags existants aux e-mails nouvellement reçus et ne créera pas de nouveaux tags."

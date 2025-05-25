@@ -790,7 +790,7 @@
         "message": "Wykrywanie e-maili spamowych"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Wymuszaj istniejące tagi podczas automatycznego tagowania"
+        "message": "Wymuś użycie istniejących tagów podczas automatycznego tagowania lub korzystania z menu kontekstowego"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Automatycznie dodawaj tagi"
