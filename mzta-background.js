@@ -26,6 +26,7 @@ import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
+import { addTags_getExclusionList } from './js/mzta-addatags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -160,10 +161,17 @@ async function _assign_tags(_data, create_new_tags = true) {
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
     taLog.log("assign_tags data: " + JSON.stringify(_data));
     let new_tags = [];
+    let add_tags_exclusions_list = await addTags_getExclusionList();
+    taLog.log("add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
+    const tags_final = _data.tags.filter(tag =>
+        !add_tags_exclusions_list.some(exclusion =>
+            tag.toLowerCase().includes(exclusion.toLowerCase())
+        )
+    );
     if(!create_new_tags){
         taLog.log("Not creating new tags, only assigning existing ones...");
     }
-    for (const tag of _data.tags) {
+    for (const tag of tags_final) {
         // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
         if (create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
             taLog.log("Creating tag: " + tag);
