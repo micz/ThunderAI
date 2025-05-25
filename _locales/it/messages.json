@@ -787,7 +787,7 @@
         "message": "Aggiungi tag automaticamente"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forza i tag esistenti durante l'autotagging"
+        "message": "Forza i tag esistenti durante l'autotagging o quando usi il menu di contesto"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
         "message": "Aggiungi tag solo alle email nella posta in arrivo"
