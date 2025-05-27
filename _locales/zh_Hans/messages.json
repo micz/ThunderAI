@@ -48,7 +48,7 @@
         "message": "保存所有变动"
     },
     "extensionDescription": {
-        "message": "使用ChatGPT、Google Gemini 或Ollama 来增强你的邮件！"
+        "message": "使用 ChatGPT、Google Gemini、Anthropic 或 Ollama 来提升你的电子邮件！"
     },
     "menu_title": {
         "message": "AI"
