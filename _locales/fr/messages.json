@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Utilise ChatGPT, Goolge Gemini ou Ollama pour améliorer tes e-mails !",
+        "message": "Utilise ChatGPT, Goolge Gemini, Anthropic ou Ollama pour améliorer tes e-mails !",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -1082,5 +1082,102 @@
     },
     "prompt_get_task_full_text": {
         "message": "Extrait tous les détails pertinents nécessaires pour générer une tâche à partir du texte suivant. Les informations extraites doivent inclure :\n- Date et heure d'échéance (incluant le fuseau horaire, si précisé)\n- Résumé de la tâche\n- Date et heure de début (incluant le fuseau horaire, si précisé)\nAssure-toi que les données sont clairement et uniformément formatées afin qu’elles puissent être utilisées directement pour créer une tâche.\nS'il y a des références temporelles relatives, considère que la date et l’heure de l’e-mail sont \"{%mail_datetime%}\". Calcule la date et l’heure de début en te basant sur cette référence. Si la date et l’heure de début calculées sont antérieures à \"{%current_datetime%}\", recalcule-les en utilisant \"{%current_datetime%}\" comme base.\nSi tu ne peux pas obtenir une ou plusieurs des informations requises, réponds par une chaîne vide.\nGénère une réponse uniquement au format JSON. N’inclus aucun texte ou explication supplémentaire – fournis uniquement le JSON. Voici le format à utiliser :\n{\n\"InitialDate\" : \"YYYYMMDDTHHMMSS\",\n\"dueDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de la tâche ici\"\n}\nS'il n'y a pas d'informations concernant les dates, supprime-les.\nVoici le texte : \"{%selected_text%}\""
+    },
+    "_api_connecting": {
+        "message": "Tentative de connexion à $api_string$ avec la configuration suivante :",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_empty_model": {
+        "message": "Vous n'avez pas choisi de modèle pour l'API Anthropic. Veuillez en sélectionner un dans la page des options."
+    },
+    "Anthropic_Version_Info": {
+        "message": "OBLIGATOIRE. Ne modifiez pas cette valeur sauf si vous savez ce que vous faites. Plus d'informations sur :"
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Pour utiliser l'intégration de l'API Anthropic, vous devez accorder l'autorisation requise."
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Le nombre maximum de jetons à générer dans la complétion. Le total des jetons de votre invite plus max_tokens ne peut pas dépasser la longueur du contexte du modèle."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Vous n'avez pas ajouté de clé API pour l'API Anthropic. Veuillez en insérer une dans la page des options."
+    },
+    "anthropic_empty_version": {
+        "message": "Vous n'avez pas ajouté de chaîne de version pour l'API Anthropic. Veuillez en insérer une dans la page des options."
+    },
+    "apiwebchat_selection_info": {
+        "message": "Si vous sélectionnez du texte, seule cette portion sera prise en compte."
+    },
+    "Anthropic_Version": {
+        "message": "Version de l’API Anthropic"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Nombre maximum de jetons Anthropic"
+    },
+    "anthropic_api_request_failed": {
+        "message": "Échec de la requête à l'API Anthropic"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Services Disponibles"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Choisissez l’un des services disponibles pour l’API compatible OpenAI ou saisissez-en un manuellement."
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Êtes-vous sûr de vouloir appliquer la configuration \"$config_name$\" ?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Clé API Anthropic"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API Anthropic"
+    },
+    "Anthropic_Models": {
+        "message": "Modèles Anthropic"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Mettre à jour la liste des modèles Anthropic"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Erreur lors de la tentative de récupération des modèles Anthropic"
+    },
+    "_api_connecting_model": {
+        "message": "Modèle : $model$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_host": {
+        "message": "Hôte : $api_host$",
+        "placeholders": {
+            "api_host": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_version": {
+        "message": "Version : $api_version$",
+        "placeholders": {
+            "api_version": {
+                "content": "$1"
+            }
+        }
+    },
+    "placeholder_selected_html": {
+        "message": "HTML sélectionné"
+    },
+    "Custom": {
+        "message": "Personnalisé"
     }
 }
