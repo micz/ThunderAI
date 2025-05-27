@@ -1085,5 +1085,8 @@
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Se un Progetto è specificato nelle opzioni o nel prompt, la chat temporanea non verrà utilizzata."
+    },
+    "placeholder_selected_html": {
+        "message": "HTML selezionato"
     }
 }
