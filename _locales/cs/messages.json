@@ -24,7 +24,7 @@
         "message": "Přidat do nabídky"
     },
     "extensionDescription": {
-        "message": "Použijte ChatGPT, Google Gemini nebo Ollama pro vylepšení vašich e-mailů!"
+        "message": "Použijte ChatGPT, Google Gemini, Anthropic nebo Ollama pro vylepšení vašich e-mailů!"
     },
     "menu_title": {
         "message": "AI"
