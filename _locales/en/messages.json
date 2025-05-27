@@ -1452,7 +1452,7 @@
     "description": ""
   },
   "Anthropic_Version_Info": {
-    "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at: ",
+    "message": "REQUIRED. Do not change this value unless you know what you're doing. More info at:",
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens": {
