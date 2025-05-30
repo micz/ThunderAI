@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Use o ChatGPT, Goolge Gemini ou o Ollama para aprimorar seus e-mails!",
+        "message": "Use o ChatGPT, Goolge Gemini, Anthropic ou o Ollama para aprimorar seus e-mails!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -208,7 +208,7 @@
         "message": "status do serviço"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Dimensões da janela do ChatGPT"
+        "message": "Dimensões da janela de chat de IA"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Altura"
@@ -487,7 +487,7 @@
         "message": "Comprimento máximo do prompt"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Este é o número máximo de caracteres que podem ser usados em um prompt. Caso contrário, uma mensagem de erro será exibida. O valor não é editável para a Interface Web do ChatGPT."
+        "message": "Este é o número máximo de caracteres que podem ser usados em um prompt. Caso contrário, uma mensagem de erro será exibida. O valor não é editável para a Interface Web do ChatGPT. Defina como zero para desativar a verificação."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Modelo Web do ChatGPT"
@@ -793,7 +793,7 @@
         "message": "Valor de spam"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forçar tags existentes ao adicionar automaticamente"
+        "message": "Forçar tags existentes ao usar a marcação automática ou o menu de contexto"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Adicionar tags automaticamente"
@@ -844,7 +844,7 @@
         "message": "Filtro de spam automático"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"spamValue\": <inteiro de 0 a 100>,\n\"explanation\": \"Breve explicação do seu raciocínio\",\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"spamValue\": <inteiro de 0 a 100>,\n\"explanation\": \"Breve explicação do seu raciocínio\"\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "Se o valor retornado pela IA estiver acima deste limite, o e-mail será movido para a pasta de spam."

@@ -48,6 +48,12 @@
             case "openai_comp_api":
                 this.worker = new Worker(new URL('./workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
                 break;
+            case "anthropic_api":
+                this.worker = new Worker(new URL('./workers/model-worker-anthropic.js', import.meta.url), { type: 'module' });
+                break;
+            default:
+                this.logger.log("Invalid LLM type: " + this.llm);
+                throw new Error("Invalid LLM type: " + this.llm);
         }
     }
 
@@ -71,6 +77,11 @@
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
                 this.worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: this.do_debug, i18nStrings: ''});
+                break;
+            }
+            case "anthropic_api": {
+                let prefs_api = await browser.storage.sync.get({anthropic_api_key: '', anthropic_model: '', anthropic_version: '2023-06-01', anthropic_max_tokens: 4096});
+                this.worker.postMessage({ type: 'init', anthropic_api_key: prefs_api.anthropic_api_key, anthropic_model: prefs_api.anthropic_model, anthropic_version: prefs_api.anthropic_version, anthropic_max_tokens: prefs_api.anthropic_max_tokens, do_debug: this.do_debug, i18nStrings: ''});
                 break;
             }
         }

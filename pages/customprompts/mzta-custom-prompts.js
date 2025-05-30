@@ -966,7 +966,7 @@ function checkPromptsConfigForPlaceholders(textarea){
 
       let tr_ancestor2 = textarea.closest('tr');
       let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if(String(textarea.value).indexOf('{%selected_text%}') != -1){
+      if((String(textarea.value).indexOf('{%selected_text%}') != -1)||(String(textarea.value).indexOf('{%selected_html%}') != -1)){
         if(!selected_text_element.checked){
             selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
         }else{

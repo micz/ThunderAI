@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Usa ChatGPT, Google Gemini oppure Ollama per migliorare le tue email!",
+        "message": "Usa ChatGPT, Google Gemini, Anthropic oppure Ollama per migliorare le tue email!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -487,7 +487,7 @@
         "message": "Lunghezza massima del prompt"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Questa è la lunghezza massima di caratteri che può essere utilizzata in un prompt. Altrimenti, verrà visualizzato un messaggio di errore. Il valore non è modificabile per l'interfaccia Web di ChatGPT."
+        "message": "Questa è la lunghezza massima di caratteri che può essere utilizzata in un prompt. Altrimenti, verrà visualizzato un messaggio di errore. Il valore non è modificabile per l'interfaccia Web di ChatGPT. Impostalo a zero per disabilitare il controllo."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Modello Web ChatGPT"
@@ -787,7 +787,7 @@
         "message": "Aggiungi tag automaticamente"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forza i tag esistenti durante l'autotagging"
+        "message": "Forza i tag esistenti durante l'autotagging o quando usi il menu di contesto"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
         "message": "Aggiungi tag solo alle email nella posta in arrivo"
@@ -856,7 +856,7 @@
         "message": "Valore soglia per lo spam"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"spamValue\": <intero da 0 a 100>,\n\"explanation\": \"Breve spiegazione del tuo ragionamento\",\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+        "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nIn caso di dati del messaggio mancanti, imposta il valore a 0 (non spam) e fornisci la motivazione.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"spamValue\": <intero da 0 a 100>,\n\"explanation\": \"Breve spiegazione del tuo ragionamento\"\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Se selezionato, l'IA aggiungerà solo i tag esistenti alle email appena ricevute e non creerà nuovi tag."
@@ -996,7 +996,7 @@
     "ask_chatgptweb_permission_1": {
         "message": "Per utilizzare l'integrazione con ChatGPT Web, devi concedere l'autorizzazione richiesta."
     },
-    "ask_chatgptweb_permission_2_popup": {
+    "ask_integration_permission_2_popup": {
         "message": "Clicca qui per aprire una nuova scheda e seguire le istruzioni."
     },
     "GetTask_info_default": {
@@ -1035,10 +1035,10 @@
     "no_valid_data_received": {
         "message": "Nessun dato valido ricevuto dall'IA."
     },
-    "ask_chatgptweb_permission_2": {
+    "ask_integration_permission_2": {
         "message": "Clicca qui per procedere."
     },
-    "ask_chatgptweb_permission_ok": {
+    "ask_integration_permission_ok": {
         "message": "Autorizzazione concessa. Puoi cliccare qui per chiudere questa scheda e tornare alla finestra principale."
     },
     "prompt_proofread_this": {
@@ -1085,5 +1085,102 @@
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
         "message": "Se un Progetto è specificato nelle opzioni o nel prompt, la chat temporanea non verrà utilizzata."
+    },
+    "placeholder_selected_html": {
+        "message": "HTML selezionato"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API Anthropic"
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Per utilizzare l'integrazione con l'API di Anthropic, è necessario concedere l'autorizzazione richiesta."
+    },
+    "Anthropic_Version_Info": {
+        "message": "OBBLIGATORIO. Non modificare questo valore a meno che tu non sappia esattamente cosa stai facendo. Maggiori informazioni su:"
+    },
+    "Anthropic_Models": {
+        "message": "Modelli di Anthropic"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Aggiorna l'elenco dei modelli di Anthropic"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Errore durante il tentativo di recupero dei modelli di Anthropic"
+    },
+    "Anthropic_Version": {
+        "message": "Versione API di Anthropic"
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Chiave API di Anthropic"
+    },
+    "anthropic_empty_model": {
+        "message": "Non hai selezionato un modello per l'API di Anthropic. Scegline uno nella pagina delle opzioni."
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Scegli uno dei servizi disponibili per l'API compatibile con OpenAI oppure inseriscine uno manualmente."
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Numero massimo di token di Anthropic"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Il numero massimo di token da generare nell'elaborazione. Il conteggio dei token del tuo prompt, sommato a max_tokens, non può superare la lunghezza di contesto del modello."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Non hai aggiunto una chiave per l'API di Anthropic. Inseriscila nella pagina delle opzioni."
+    },
+    "anthropic_empty_version": {
+        "message": "Non hai aggiunto la versione per l'API di Anthropic. Inseriscila nella pagina delle opzioni."
+    },
+    "_api_connecting": {
+        "message": "Tentativo di connessione a $api_string$ utilizzando la seguente configurazione:",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Modello: $model$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_host": {
+        "message": "Host: $api_host$",
+        "placeholders": {
+            "api_host": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Servizi Disponibili"
+    },
+    "Custom": {
+        "message": "Personalizzato"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Sei sicuro di voler applicare la configurazione \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Se selezioni del testo, verrà considerata solo quella parte."
+    },
+    "_api_connecting_version": {
+        "message": "Versione: $api_version$",
+        "placeholders": {
+            "api_version": {
+                "content": "$1"
+            }
+        }
+    },
+    "anthropic_api_request_failed": {
+        "message": "Richiesta all'API di Anthropic non riuscita"
     }
 }

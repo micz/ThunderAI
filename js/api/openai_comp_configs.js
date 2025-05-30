@@ -16,14 +16,34 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Config properties for OpenAI API Comp 
+    id: <unique ID>
+    name: <AI services Name>
+    chat_name: <AI Name used in the API webchat>
+    host: <API endpoint>
+    use_v1: <true/false> (keep "v1" path segment)
+*/
 
-
-// These methods are also defined in the file /js/mzta-compose-script.js
-export async function addTags_getExclusionList() {
-    let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
-    return prefs_excluded_tags.add_tags_exclusions;
-}
-
-export function addTags_setExclusionList(add_tags_exclusions) {
-    browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
-}
+export const openAICompConfigs = [
+    {
+        id: 'custom',
+        name: browser.i18n.getMessage('Custom'),
+        chat_name: 'OpenAI Comp API',
+        host: '',
+        use_v1: true,
+    },
+    {
+        id: 'grok',
+        name: 'Grok AI API',
+        chat_name: 'Grok AI',
+        host: 'https://api.x.ai',
+        use_v1: true,
+    },
+    {
+        id: 'mistral',
+        name: 'Mistral AI API',
+        chat_name: 'Mistral AI',
+        host: 'https://api.mistral.ai',
+        use_v1: true,
+    },
+];

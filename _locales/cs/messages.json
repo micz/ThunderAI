@@ -24,7 +24,7 @@
         "message": "Přidat do nabídky"
     },
     "extensionDescription": {
-        "message": "Použijte ChatGPT, Google Gemini nebo Ollama pro vylepšení vašich e-mailů!"
+        "message": "Použijte ChatGPT, Google Gemini, Anthropic nebo Ollama pro vylepšení vašich e-mailů!"
     },
     "menu_title": {
         "message": "AI"
@@ -207,7 +207,7 @@
         "message": "stav služby"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Rozměry okna ChatGPT"
+        "message": "Rozměry okna AI chatu"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Výška"
@@ -717,7 +717,7 @@
         "message": "Maximální délka výzvy"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Toto je maximální počet znaků, které lze použít ve výzvě. V opačném případě se zobrazí chybová zpráva. Tato hodnota není upravitelná pro webové rozhraní ChatGPT."
+        "message": "Toto je maximální počet znaků, které lze použít ve výzvě. V opačném případě se zobrazí chybová zpráva. Tato hodnota není upravitelná pro webové rozhraní ChatGPT. Nastavte na nulu pro deaktivaci kontroly."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "Webový model ChatGPT"
@@ -870,10 +870,10 @@
         "message": "Pokud je zaškrtnuto, AI automaticky přidá štítky k nově přijatým e-mailům."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Vynutit existující štítky při automatickém označování"
+        "message": "Vynutit existující štítky při automatickém označování nebo použití kontextového menu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"spamValue\": <celé číslo od 0 do 100>,\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
+        "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"spamValue\": <celé číslo od 0 do 100>,\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\"\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
     },
     "context_menu_mzta-add-tags": {
         "message": "Přidat štítky"

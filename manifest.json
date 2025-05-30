@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "3.4.1",
+    "version": "3.5.0",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
@@ -38,6 +38,7 @@
         "messagesUpdate",
         "messagesMove",
         "https://*.chatgpt.com/*",
+        "https://*.anthropic.com/*",
         "<all_urls>"
     ],
     "background": {
@@ -54,6 +55,9 @@
 	},
     "commands": {
         "_thunderai__do_action": {
+        "suggested_key": {
+            "default": "Ctrl+Alt+A"
+        },
         "description": "Opens the ThunderAI prompts menu"
         }
     },

@@ -22,6 +22,7 @@ export const prefs_default = {
     chatgpt_win_width: 700,
     default_chatgpt_lang: '',
     default_sign_name: '',
+    reply_type: 'reply_all',
     composing_plain_text: false,
     connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
@@ -42,6 +43,10 @@ export const prefs_default = {
     google_gemini_api_key: '',
     google_gemini_model: '',
     google_gemini_system_instruction: '',
+    anthropic_api_key: '',
+    anthropic_model: '',
+    anthropic_version: '2023-06-01',
+    anthropic_max_tokens: 4096,
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,

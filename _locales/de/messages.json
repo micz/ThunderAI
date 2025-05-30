@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Verwenden Sie ChatGPT, Google Gemini oder Ollama, um Ihre E-Mails zu verbessern!",
+        "message": "Verwenden Sie ChatGPT, Google Gemini, Anthropic oder Ollama, um Ihre E-Mails zu verbessern!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -487,7 +487,7 @@
         "message": "Maximale Eingabelänge"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar."
+        "message": "Dies ist die maximale Anzahl von Zeichen, die in einer Eingabe verwendet werden können. Andernfalls wird eine Fehlermeldung angezeigt. Der Wert ist für die ChatGPT-Webschnittstelle nicht bearbeitbar. Setzen Sie es auf null, um die Prüfung zu deaktivieren."
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT Web-Modell"
@@ -853,7 +853,7 @@
         "message": "Wenn ausgewählt, wird die KI nur vorhandene Tags zu neu empfangenen E-Mails hinzufügen und keine neuen Tags erstellen."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Vorhandene Tags beim automatischen Taggen erzwingen"
+        "message": "Vorhandene Tags beim automatischen Taggen oder bei der Verwendung des Kontextmenüs erzwingen"
     },
     "spamfilter_no_reports": {
         "message": "Es wurden noch keine Nachrichten auf Spam überprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte nur für die aktuelle Sitzung."
@@ -862,7 +862,7 @@
         "message": "Wenn ausgewählt, wird ThunderAI Spam-E-Mails automatisch in den Spam-Ordner verschieben."
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"spamValue\": <Ganzzahl von 0 bis 100>,\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
+        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nFalls Nachrichtendaten fehlen, setzen Sie den Wert auf 0 (kein Spam) und geben Sie den Grund an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"spamValue\": <Ganzzahl von 0 bis 100>,\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\"\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
@@ -1032,16 +1032,16 @@
     "GetTask_info_default": {
         "message": "Auf dieser Seite kannst du den Standard-Prompt anpassen, der verwendet wird, um eine Aufgabe aus dem ausgewählten Text zu erstellen."
     },
-    "ask_chatgptweb_permission_2": {
+    "ask_integration_permission_2": {
         "message": "Klicke hier, um fortzufahren."
     },
     "ask_chatgptweb_permission_1": {
         "message": "Um die ChatGPT-Web-Integration zu nutzen, musst du die erforderliche Berechtigung erteilen."
     },
-    "ask_chatgptweb_permission_2_popup": {
+    "ask_integration_permission_2_popup": {
         "message": "Klicke hier, um einen neuen Tab zu öffnen und den Anweisungen zu folgen."
     },
-    "ask_chatgptweb_permission_ok": {
+    "ask_integration_permission_ok": {
         "message": "Berechtigung erteilt. Du kannst hier klicken, um diesen Tab zu schließen und zum Hauptfenster zurückzukehren."
     },
     "AccountSelector_AutoTags": {
@@ -1082,5 +1082,102 @@
     },
     "prompt_proofread_this_full_text": {
         "message": "Bitte korrigieren Sie die folgende E-Mail und beheben Sie alle Rechtschreib- oder Grammatikfehler. Antworten Sie nur mit dem korrigierten Text, ohne zusätzliche Kommentare oder sonstigen Text.\n\n„{%mail_typed_text%}“"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Anthropic API"
+    },
+    "anthropic_empty_version": {
+        "message": "Sie haben keinen Versionsstring für die Anthropic-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Fehler beim Abrufen der Anthropic-Modelle"
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Anthropic API-Schlüssel"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Die maximale Anzahl von Tokens, die in der Vervollständigung generiert werden soll. Die Anzahl der Tokens Ihres Prompts plus max_tokens darf die Kontextlänge des Modells nicht überschreiten."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Anfrage an die Anthropic-API fehlgeschlagen"
+    },
+    "_api_connecting": {
+        "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration:",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Anthropic-Modellliste aktualisieren"
+    },
+    "Custom": {
+        "message": "Benutzerdefiniert"
+    },
+    "Anthropic_Version": {
+        "message": "Anthropic-API-Version"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Maximale Anzahl an Tokens für Anthropic"
+    },
+    "anthropic_empty_apikey": {
+        "message": "Sie haben keinen API-Schlüssel für die Anthropic-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Um die Anthropic-API-Integration zu verwenden, müssen Sie die erforderliche Berechtigung erteilen."
+    },
+    "Anthropic_Models": {
+        "message": "Anthropic Modelle"
+    },
+    "anthropic_empty_model": {
+        "message": "Sie haben kein Modell für die Anthropic-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "_api_connecting_model": {
+        "message": "Modell: $model$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_host": {
+        "message": "Host: $api_host$",
+        "placeholders": {
+            "api_host": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_version": {
+        "message": "Version: $api_version$",
+        "placeholders": {
+            "api_version": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Verfügbare Dienste"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Wählen Sie einen der verfügbaren Dienste für die OpenAI-kompatible API aus oder fügen Sie einen manuell ein."
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Sind Sie sicher, dass Sie die Konfiguration \"$config_name$\" anwenden möchten?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Wenn Sie einen Textabschnitt auswählen, wird nur dieser Teil berücksichtigt."
+    },
+    "placeholder_selected_html": {
+        "message": "Ausgewähltes HTML"
+    },
+    "Anthropic_Version_Info": {
+        "message": "ERFORDERLICH. Ändern Sie diesen Wert nicht, es sei denn, Sie wissen, was Sie tun. Weitere Informationen unter:"
     }
 }

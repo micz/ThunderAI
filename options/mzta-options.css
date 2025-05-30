@@ -120,6 +120,10 @@ tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
     background-color: rgb(233, 238, 169);
 }
 
+tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
+    background-color: rgb(255, 168, 204);
+}
+
 #chatgpt_model_fetch_loading{
     display: none;
     font-style: italic;
@@ -174,6 +178,11 @@ input.option-input[type="text"]{
 }
 
 #openai_comp_model_fetch_loading{
+    display: none;
+    font-style: italic;
+}
+
+#anthropic_model_fetch_loading{
     display: none;
     font-style: italic;
 }
@@ -263,6 +272,10 @@ input.option-input[type="text"]{
 
     tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
         background-color: rgb(72, 77, 3);
+    }
+
+    tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
+        background-color: rgb(83, 0, 35);
     }
 
     .api_key-container .toggle-icon img {

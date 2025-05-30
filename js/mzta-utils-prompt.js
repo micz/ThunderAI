@@ -29,7 +29,7 @@ export const taPromptUtils = {
         }
     },
 
-    async preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, subject_text, msg_text, only_typed_text, only_quoted_text, tags_full_list){
+    async preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, subject_text, msg_text, only_typed_text, only_quoted_text, tags_full_list){
         let fullPrompt = '';
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
@@ -37,7 +37,7 @@ export const taPromptUtils = {
             fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
         }else{
             // we have at least a placeholder, do the magic!
-            let finalSubs = await placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, tags_full_list);
+            let finalSubs = await placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list);
             // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
             let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
             fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();

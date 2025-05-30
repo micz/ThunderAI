@@ -48,7 +48,7 @@
         "message": "保存所有变动"
     },
     "extensionDescription": {
-        "message": "使用ChatGPT、Google Gemini 或Ollama 来增强你的邮件！"
+        "message": "使用 ChatGPT、Google Gemini、Anthropic 或 Ollama 来提升你的电子邮件！"
     },
     "menu_title": {
         "message": "AI"
@@ -90,7 +90,7 @@
         "message": "最大提示词长度"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "这是提示中可以使用的最大字符数。否则，将显示错误消息。该值在 ChatGPT Web 界面中不可编辑。"
+        "message": "这是提示中可以使用的最大字符数。否则，将显示错误消息。该值在 ChatGPT Web 界面中不可编辑。将其设置为零以禁用检查。"
     },
     "prefs_OptionText_chatgpt_web_model": {
         "message": "ChatGPT Web 模型"
@@ -414,7 +414,7 @@
         "message": "若要使用此集成功能，您需要搭建一台兼容OpenAI API的本地服务器（如LM Studio）。服务器启动后，请在应用程序中的指定字段填入其地址。为确保ThunderAI与本地服务器之间通信正常，请务必正确配置CORS设置。"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "ChatGPT 窗口尺寸"
+        "message": "AI 聊天窗口尺寸"
     },
     "prefs_OptionText_chatgpt_win_width": {
         "message": "宽度"
@@ -807,7 +807,7 @@
         "message": "在此页面中，您可以修改用于从选定文本获取日历事件的默认提示。"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "自动标记时强制使用现有标签"
+        "message": "在自动标记或使用上下文菜单时强制使用现有标签"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "如果选中，AI 将仅向收件箱文件夹中收到的电子邮件添加标签。"
@@ -840,7 +840,7 @@
         "message": "您可以根据需要更改提示词，但从 AI 收到的响应必须采用默认提示中指定的 JSON 格式！"
     },
     "prompt_spamfilter_full_text": {
-        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"spamValue\": <0 到 100 的整数>,\n\"explanation\": \"简要说明您的判断理由\",\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
+        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"spamValue\": <0 到 100 的整数>,\n\"explanation\": \"简要说明您的判断理由\"\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "如果 AI 返回的值高于此阈值，电子邮件将被移至垃圾邮件文件夹。"

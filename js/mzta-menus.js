@@ -82,6 +82,7 @@ export class mzta_Menus {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
                 selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
+                selection_html: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" }),
                 text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
                 html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
                 only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect }),
@@ -105,6 +106,7 @@ export class mzta_Menus {
     
             let body_text = '';
             let selection_text = '';
+            let selection_html = msg_text.selection_html;
             let only_typed_text = '';
             let only_quoted_text = '';
             only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
@@ -116,6 +118,7 @@ export class mzta_Menus {
             }
             only_quoted_text = msg_text.only_quoted_text.replace(/\s+/g, ' ').trim();
             curr_prompt.selection_text = selection_text;
+            curr_prompt.selection_html = selection_html;
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             curr_prompt.body_text = body_text;
             //open chatgpt window
@@ -141,7 +144,7 @@ export class mzta_Menus {
                     break;
             }
 
-            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
+            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':

@@ -22,6 +22,17 @@ switch (message.command) {
     return Promise.resolve(window.getSelection().toString());
   }
 
+  case "getSelectedHtml": {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return Promise.resolve('');
+    }
+    const range = selection.getRangeAt(0);
+    const div = document.createElement('div');
+    div.appendChild(range.cloneContents());
+    return Promise.resolve(div.innerHTML);
+  }
+
   case "replaceSelectedText": {
     const selectedText = window.getSelection().toString();
     let force_insert = false;

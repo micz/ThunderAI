@@ -350,19 +350,64 @@ export async function createTag(tag) {
   }
 }
 
-export function checkIfTagExists(tag, tags_list) {
-  return tags_list.hasOwnProperty("$ta-" + sanitizeString(tag)); 
+// export function checkIfTagExists(tag, tags_list) {
+//   console.log(">>>>>>>>>>> checkIfTagExists tags_list: " + JSON.stringify(tags_list));
+//   console.log(">>>>>>>>>>> checkIfTagExists tag: " + tag);
+//   return tags_list.hasOwnProperty("$ta-" + sanitizeString(tag)); 
+// }
+
+export function checkIfTagLabelExists(tag_label, tags_list) {
+  // console.log(">>>>>>>>>>> checkIfTagExists tags_list: " + JSON.stringify(tags_list));
+  // console.log(">>>>>>>>>>> checkIfTagExists tag_label: " + tag_label);
+  const lowerTagLabel = tag_label.toLowerCase();
+  return Object.values(tags_list).some(label => label.tag.toLowerCase() === lowerTagLabel);
 }
 
+// export async function assignTagsToMessage(messageId, tags) {
+//   console.log(">>>>>>>>>>> assignTagsToMessage messageId: tags: " + JSON.stringify(tags));
+//   tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
+//   let msg_prop = await browser.messages.get(messageId);
+//   tags = tags.concat(msg_prop.tags || []);
+//   try {
+//     return browser.messages.update(messageId, {tags: tags});
+//   } catch (error) {
+//     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
+//   }
+// }
+
 export async function assignTagsToMessage(messageId, tags) {
-  tags = tags.map(tag => `$ta-${sanitizeString(tag)}`);
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags: " + JSON.stringify(tags));
+  let all_tags_list = await getTagsList();
+  all_tags_list = all_tags_list[1];
+  tags = getTagsKeyFromLabel(tags, all_tags_list);
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags after conversion: " + JSON.stringify(tags));
   let msg_prop = await browser.messages.get(messageId);
+  // console.log(">>>>>>>>>>> assignTagsToMessage msg_prop.tags: " + JSON.stringify(msg_prop.tags));
   tags = tags.concat(msg_prop.tags || []);
+  tags = [...new Set(tags)];
+  // console.log(">>>>>>>>>>> assignTagsToMessage tags after concat: " + JSON.stringify(tags));
   try {
-    return browser.messages.update(messageId, {tags: tags});
+    await browser.messages.update(messageId, {tags: tags});
+    return tags; // Return the updated tags for confirmation
   } catch (error) {
     console.error('[ThunderAI] Error assigning tag [messageId: ', messageId, ' - tag: ', tag, ']:', error);
   }
+}
+
+function getTagsKeyFromLabel(tag_names, all_tags_list) {
+  const result = [];
+
+  tag_names.forEach(name => {
+    const lowerName = name.toLowerCase();
+    const match = Object.entries(all_tags_list).find(
+      ([, value]) => value.tag.toLowerCase() === lowerName
+    );
+    if (match) {
+      result.push(match[0]);
+    }
+  });
+
+  return result;
 }
 
 function sanitizeString(input) {
@@ -398,6 +443,21 @@ export async function transformTagsLabels(labels, tags_list) {
   for(let label of labels) {
       output.push(tags_list[label].tag);
   }
+  return output;
+}
+
+export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '') {
+  let output = browser.i18n.getMessage("_api_connecting", api_string);
+  if (model_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_model", model_string);
+  }
+  if (host_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_host", host_string);
+  }
+  if (version_string !== '') {
+    output += "\n" + browser.i18n.getMessage("_api_connecting_version", version_string);
+  }
+
   return output;
 }
 
@@ -474,6 +534,7 @@ export function validateCustomData_ChatGPTWeb(event) {
   event.target.style.borderColor = is_valid ? 'green' : 'red';
   document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }
+
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 

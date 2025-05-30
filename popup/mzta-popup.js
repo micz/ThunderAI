@@ -66,6 +66,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     }
+    if(prefs.connection_type === 'anthropic_api'){
+        let permission_anthropic = await browser.permissions.contains({ origins: ["https://*.anthropic.com/*"] });
+        if(permission_anthropic === false){
+            document.getElementById("mzta_search_banner").style.display = "none";
+            document.getElementById("ask_anthropic_api_perm").style.display = "block";
+            document.getElementById('ask_anthropic_api_perm').addEventListener('click', async () => {
+                await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+            });
+        }
+    }
 }, { once: true });
 
 async function searchPrompt(allPrompts, tabId, tabType){

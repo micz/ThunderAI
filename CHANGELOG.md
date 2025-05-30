@@ -4,6 +4,20 @@
 
 
 
+<h2>Version 3.5.0 - 30/05/2025</h2>
+      <ul>
+        <li>Added Anthropic API support [<a href="https://github.com/micz/ThunderAI/issues/349">#349</a>].</li>
+        <li>Added the <i>{%selected_html%}</i> placeholder to retrieve the HTML portion of the selected text [<a href="https://github.com/micz/ThunderAI/issues/368">#368</a>].</li>
+        <li><i>[OpenAI Comp API]</i>  Added a shortcut to select configurations for known AI services. Currently, <i>Grok AI</i> and <i>Mistral AI</i> are available [<a href="https://github.com/micz/ThunderAI/issues/378">#378</a>]. <a href="https://github.com/micz/ThunderAI/issues/new?template=feature_request.md">Open an issue</a> to request additional services.</li>
+        <li><i>[All APIs]</i> In the API WebChat is now possibile to select a part of the answer and use only that [<a href="https://github.com/micz/ThunderAI/issues/356">#356</a>].</li>
+        <li><i>[All APIs]</i> Setting the "Max prompt length" to zero on the options page will disable the length check when sending a prompt to the AI. [<a href="https://github.com/micz/ThunderAI/issues/380">#380</a>].</li>
+        <li><i>[All APIs]</i> Added a button to the options page to reset the 'Max prompt length' value to its default.</li>
+        <li><i>[All APIs]</i> Adding tags automatically or with the context menu will now use also tags not created by ThunderAI [<a href="https://github.com/micz/ThunderAI/issues/390">#390</a>].</li>
+        <li>Fix: in the Spamfilter page the unsaved changes warning is now correctly shown.</li>
+        <li>Fix: The default keyboard shortcut is no longer enforced at every Thunderbird startup [<a href="https://github.com/micz/ThunderAI/issues/384">#384</a>].</li>
+        <li>Fix: Incoming email processing now works correctly when auto-tagging is enabled and the full tagging feature is subsequently disabled.</li>
+        <li>Fix: The reply type is correctly saved in the options. [<a href="https://github.com/micz/ThunderAI/issues/387">#387</a>].</li>
+      </ul>
 <h2>Version 3.4.1 - 12/05/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Fix: correctly assigning tags when receiving mails. Thanks to <a href="https://github.com/jdkio">jdkio</a> [<a href="https://github.com/micz/ThunderAI/issues/374">#374</a>].</li>

@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Koristite ChatGPT, Google Gemini ili Ollama kako bi poboljšali vaše e-poruke!",
+        "message": "Koristite ChatGPT, Google Gemini, Anthropic ili Ollama kako bi poboljšali vaše e-poruke!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -208,7 +208,7 @@
         "message": "status usluge"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "Dimenzije prozora ChatGPT"
+        "message": "Dimenzije prozora za AI razgovor"
     },
     "prefs_OptionText_chatgpt_win_height": {
         "message": "Visina"
@@ -487,13 +487,13 @@
         "message": "Maksimalna duljina upita"
     },
     "prefs_OptionText_max_prompt_length_Info": {
-        "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati za ChatGPT web sučelje."
+        "message": "Ovo je najveći broj znakova koji se mogu koristiti u upitu. U protivnom će se prikazati poruka o pogrešci. Vrijednost nije moguće uređivati za ChatGPT web sučelje. Postavite na nulu kako biste onemogućili provjeru."
     },
     "prefs_OptionText_chatgpt_web_model": {
-        "message": "ChatGPT web model"
+        "message": "ChatGPT Web Model"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Ovo je model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
+        "message": "Ovo je Model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web privremeno čavrljanje"
@@ -745,7 +745,7 @@
         "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Za korištenje značajke kalendarskih događaja instalirajte dodatak ThunderAI Sparks."
+        "message": "Za korištenje značajki kalendarskih događaja i zadataka, molimo instalirajte dodatak ThunderAI Sparks."
     },
     "prefs_OptionText_download_now": {
         "message": "Preuzmite ThunderAI Sparks sada!"
@@ -772,7 +772,7 @@
         "message": "Ako je označeno, AI će automatski dodati oznake novoprimljenim e-porukama."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Nametni postojeće oznake prilikom automatskog označavanja"
+        "message": "Prisilno koristi postojeće oznake pri automatskom označavanju ili korištenju kontekstnog izbornika"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Ako je označeno, AI će novoprimljenim e-porukama dodati samo postojeće oznake i neće stvarati nove oznake."
@@ -814,7 +814,7 @@
         "message": "Prepoznaj neželjenu poštu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
+        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nU slučaju nedostatka podataka poruke, postavite vrijednost na 0 (nije spam) i navedite razlog.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\"\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Mogućnosti filtera neželjene pošte"
