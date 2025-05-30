@@ -21,6 +21,7 @@ Using an API integration, you can activate some automatic features:
 > **Available Integrations**
 > - **ChatGPT Web**
 >   - There is no need for an API key!
+>   - You can use a free account!
 >
 > <br>
 >
@@ -79,14 +80,15 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
-- Chinese (Simplified): [jeklau](https://github.com/jeklau)
-- Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/)
-- English (en-US): [Mic](https://github.com/micz/)
-- French (fr): Generated automatically, [Noam](https://github.com/noam-sc)
-- German (de): Generated automatically
-- Italian (it): [Mic](https://github.com/micz/)
-- Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak)
-- Português Brasileiro (pt-br): Bruno Pereira de Souza
+- Chinese (Simplified): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/) <img src="https://micz.it/weblate/thunderai/cs.svg">
+- French (fr): Generated automatically, [Noam](https://github.com/noam-sc) <img src="https://micz.it/weblate/thunderai/fr.svg">
+- German (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
+- Italian (it): [Mic](https://github.com/micz/) <img src="https://micz.it/weblate/thunderai/it.svg">
+- Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
+- Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
+
+Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)
 
 
 <br>
@@ -105,4 +107,3 @@ Are you using this addon in your Thunderbird?
 - <a href="https://github.com/KudoAI/chatgpt.js">chatgpt.js</a> for providing methods to interact with the ChatGPT web frontend
 - <a href="https://github.com/boxabirds">Julian Harris</a> for his project <a href="https://github.com/boxabirds/chatgpt-frontend-nobuild">chatgpt-frontend-nobuild</a>, that has been used as a starting point for the API Web Interface
 - <a href="https://hosted.weblate.org/widgets/thunderai/">Hosted Weblate</a> for managing the localization
-- <a href="https://github.com/ali-raheem/Aify">Aify</a> for inspiration
