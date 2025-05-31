@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.5.1 - 31/05/2025</h2>
+      <ul>
+        <li>Fix: correctly saving text options [<a href="https://github.com/micz/ThunderAI/issues/400">#400</a>].</li>
+      </ul>
 <h2>Version 3.5.0 - 30/05/2025</h2>
       <ul>
         <li>Added Anthropic API support [<a href="https://github.com/micz/ThunderAI/issues/349">#349</a>].</li>
