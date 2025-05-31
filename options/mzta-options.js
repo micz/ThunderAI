@@ -46,17 +46,17 @@ function saveOptions(e) {
         break;
       case 'text':
         options[element.id] = element.value.trim();
-        taLog.logger.log('Saving option: ' + element.id + ' = ' + element.value);
+        taLog.log('Saving option: ' + element.id + ' = ' + element.value);
         break;
       case 'password':
         options[element.id] = element.value.trim();
-        taLog.logger.log('Saving option: ' + element.id + ' = *********');
+        taLog.log('Saving option: ' + element.id + ' = *********');
         break;
       default:
         if (element.tagName === 'SELECT') {
           options[element.id] = element.value;
           taLog.log('Saving option: ' + element.id + ' = ' + element.value);
-        } else if (element.tagName === 'TEXTAREA') {
+        } if (element.tagName === 'TEXTAREA') {
           options[element.id] = element.value.trim();
           taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
         } else {
