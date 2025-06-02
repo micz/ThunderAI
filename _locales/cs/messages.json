@@ -723,7 +723,7 @@
         "message": "Webový model ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Toto je model, který bude vynucen pro webové rozhraní ChatGPT. Pokud není zadán žádný model nebo je zadán nesprávný, výchozí model bude nastaven ChatGPT na webové stránce."
+        "message": "Toto je model, který bude vynucen pro rozhraní ChatGPT Web. Pokud není specifikován žádný model nebo je poskytnut nesprávný, výchozí model bude nastaven ChatGPT na webové stránce."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Dočasný chat ChatGPT Web"
@@ -934,5 +934,249 @@
     },
     "apiwebchat_receiving_data": {
         "message": "Přijímám data"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Zkontrolujte pravopis a gramatiku následující emailové zprávy a opravte případné chyby. Odpovězte pouze opraveným textem, bez jakýchkoli dalších komentářů nebo textu.\n\n\"{%mail_typed_text%}\""
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Pro používání integrace ChatGPT Web musíte udělit požadované oprávnění."
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Přidat novou úlohu z vybraného textu"
+    },
+    "GetTask_info_default": {
+        "message": "Na této stránce můžete upravit výchozí výzvu používanou k získání úlohy z vybraného textu."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Vyberte účty, na kterých je povoleno automatické označování"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Každá změna je uložena okamžitě."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "Vlastní GPT pro ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Toto je Vlastní GPT, který bude vynucen pro rozhraní ChatGPT Web."
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Skrýt další vlastnosti"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Další vlastnosti"
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Pokud je v možnostech nebo v dotazu specifikován projekt, nebude použit dočasný chat."
+    },
+    "prompt_get_task": {
+        "message": "Přidat novou úlohu"
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Klíč API Anthropic"
+    },
+    "Anthropic_Version": {
+        "message": "Verze API Anthropic"
+    },
+    "Anthropic_Version_Info": {
+        "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
+    },
+    "_api_connecting_version": {
+        "message": "Verze: $api_version$",
+        "placeholders": {
+            "api_version": {
+                "content": "$1"
+            }
+        }
+    },
+    "Custom": {
+        "message": "Vlastní"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Zobrazovač rozdílů lze vybrat, když je akce nastavena na \"Nahradit text\"."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Otevření ChatGPT Web odtud použije všechny nakonfigurované nastavení pro model, projekt a Custom GPT."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Možnosti úloh"
+    },
+    "GetTask_PageTitle": {
+        "message": "Spravovat nastavení úloh"
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Spravovat nastavení úloh"
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Vyberte účet, pro který chcete aktivovat tuto funkci, dole na této stránce."
+    },
+    "empty": {
+        "message": "Tento zástupný symbol nepřidává žádný text, ale zabraňuje automatickému přidání těla emailu na konec výzvy."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Pro používání integrace API Anthropic musíte udělit požadované oprávnění."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Klikněte zde pro otevření nové karty a postupujte podle instrukcí."
+    },
+    "ask_integration_permission_2": {
+        "message": "Klikněte zde pro pokračování."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Oprávnění uděleno. Můžete kliknout zde pro zavření této karty a návrat do hlavního okna."
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Projekt ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Toto je projekt, který bude vynucen pro rozhraní ChatGPT Web."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Musí být ve formátu:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Správnou hodnotu najdete v poli URL prohlížeče, když otevřete související stránku ChatGPT."
+    },
+    "customPrompts_Properties": {
+        "message": "Vlastnosti"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Zobrazit další vlastnosti"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Pokud je v možnostech nebo v dotazu specifikován projekt, přepíše nastavení Vlastního GPT."
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API Anthropic"
+    },
+    "Anthropic_Models": {
+        "message": "Modely Anthropic"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Aktualizovat seznam modelů Anthropic"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Chyba při pokusu o načtení modelů Anthropic"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Maximální počet tokenů Anthropic"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Maximální počet tokenů, které se mají vygenerovat v dokončení. Počet tokenů vaší výzvy plus max_tokens nesmí překročit délku kontextu modelu."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Nepřidali jste klíč API pro API Anthropic. Vložte jej prosím na stránce s možnostmi."
+    },
+    "anthropic_empty_model": {
+        "message": "Nevybírali jste model pro API Anthropic. Vyberte jej prosím na stránce s možnostmi."
+    },
+    "anthropic_empty_version": {
+        "message": "Nepřidali jste řetězec verze pro API Anthropic. Vložte jej prosím na stránce s možnostmi."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Selhal požadavek API Anthropic"
+    },
+    "_api_connecting": {
+        "message": "Pokus o připojení k $api_string$ s následující konfigurací:",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Jste si jistí, že chcete použít konfiguraci \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Model: $model$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Pokud vyberete nějaký text, bude zohledněna pouze tato část."
+    },
+    "_api_connecting_host": {
+        "message": "API Server: $api_host$",
+        "placeholders": {
+            "api_host": {
+                "content": "$1"
+            }
+        }
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extrahujte všechny relevantní podrobnosti potřebné k vygenerování úlohy z následujícího textu.Extrahované informace by měly zahrnovat:\n- Datum a čas dokončení (včetně časového pásma, pokud je uvedeno)\n- Shrnutí úlohy\n- Počáteční datum a čas (včetně časového pásma, pokud je uvedeno)\nZajistěte, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytváření úloh.\nPokud existují relativní časové odkazy, vezměte v úvahu, že datum a čas emailu jsou \"{%mail_datetime%}\". Vypočítejte počáteční datum a čas na základě této reference. Pokud je vypočítané počáteční datum a čas dřívější než \"{%current_datetime%}\", přepočtěte počáteční datum a čas pomocí \"{%current_datetime%}\" jako základ.\nPokud se vám nepodaří získat jednu nebo více požadovaných informací, odpovězte prázdným řetězcem.\nVygenerujte odpověď pouze ve formátu JSON. Nezahrnujte žádný další text ani vysvětlení; poskytněte pouze JSON. Zde je formát, který má být použit:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Shrnutí úlohy zde\"\n}\nPokud nejsou k dispozici žádné informace o datech, odstraňte je.\nZde je text:\"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Pokud je zaškrtnuto, bude do nabídky přidána položka pro získání informací o úloze z vybraného textu."
+    },
+    "task_getting_data_error": {
+        "message": "Chyba při získávání dat úlohy"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Zaškrtněte tuto možnost, pokud skládáte emaily ve formátu prostého textu."
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Psaní v prostém textu"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Počet kontextových tokenů"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Počet kontextových tokenů, které se mají použít pro API Ollama. Nastavte na 0, pokud jej nechcete předávat jako parametr serveru."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Vyberte účty, na kterých je povolen filtr spamu"
+    },
+    "CORS_alternative_1": {
+        "message": "Problémy s nastavením CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Stiskněte tlačítko níže a udělte oprávnění <all_urls>, abyste se vyhnuli jakýmkoli problémům s CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Udělit oprávnění \"všechny URL\""
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Používání API kompatibilního s OpenAI může vyžadovat nastavení CORS na serveru."
+    },
+    "remember_CORS": {
+        "message": "Pamatujte, že musíte upravit nastavení CORS na serveru!"
+    },
+    "prompt_proofread_this": {
+        "message": "Zkontrolujte pravopis této emailové zprávy"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Citovaný text v těle emailu"
+    },
+    "hyprland_warning": {
+        "message": "Pokud máte problémy s otevíráním okna chatu AI, zkuste nastavit hodnoty výšky a šířky na 0. Tento problém se může vyskytnout na Linuxu v některých prostředích, například při používání Hyprlandu."
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Dostupné služby"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Vyberte jednu z dostupných služeb pro API kompatibilní s OpenAI nebo ji vložte ručně."
+    },
+    "placeholder_selected_html": {
+        "message": "Vybrané HTML"
+    },
+    "task_opening_dialog_error": {
+        "message": "Chyba při otevírání dialogu úlohy"
+    },
+    "no_valid_data_received": {
+        "message": "AI neposkytla žádná platná data."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Nebyl vybrán žádný text, chcete vložit odpověď AI na začátek emailu?"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Pro používání funkcí událostí v kalendáři a úloh, nainstalujte aktualizovanou verzi doplňku ThunderAI Sparks."
     }
 }
