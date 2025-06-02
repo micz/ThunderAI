@@ -4,6 +4,11 @@
 
 
 
+<h2>Version 3.5.2 - ??/??/2025</h2>
+      <ul>
+        <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
+        <li>...</li>
+      </ul>
 <h2>Version 3.5.1 - 31/05/2025</h2>
       <ul>
         <li>Fix: correctly saving text options [<a href="https://github.com/micz/ThunderAI/issues/400">#400</a>].</li>
