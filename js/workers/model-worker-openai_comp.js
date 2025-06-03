@@ -1,3 +1,48 @@
+
+// --- Patch fetch in the worker to delegate to main thread with streaming support ---
+let fetchCounter = 0;
+self.fetch = (...args) => {
+  const requestId = 'fetch_' + (++fetchCounter);
+  postMessage({ type: 'proxy-fetch', requestId, args });
+
+  return new Promise((resolve) => {
+    if (!self._fetchResolvers) self._fetchResolvers = {};
+    self._fetchResolvers[requestId] = resolve;
+  });
+};
+
+onmessage = (e) => {
+  if (e.data.type === 'proxy-fetch-response') {
+    const { requestId, response } = e.data;
+    const resolve = self._fetchResolvers?.[requestId];
+    if (resolve) {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(response.body));
+          controller.close();
+        }
+      });
+
+      const fakeResponse = {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          get: (name) => response.headers[name.toLowerCase()] || null
+        },
+        body: stream,
+        text: async () => response.body,
+        json: async () => JSON.parse(response.body)
+      };
+
+      resolve(fakeResponse);
+      delete self._fetchResolvers[requestId];
+    }
+  }
+};
+// --- End patch ---
+
+
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
  *  Copyright (C) 2024 - 2025  Mic (m@micz.it)

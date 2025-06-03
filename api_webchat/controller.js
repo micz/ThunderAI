@@ -137,7 +137,7 @@ switch (llm) {
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages
-worker.onmessage = function(event) {
+worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
         case 'messageSent':
@@ -155,6 +155,41 @@ worker.onmessage = function(event) {
             messagesArea.appendBotMessage(payload,'error');
             messageInput.enableInput();
             break;
+            case 'proxy-fetch': {
+    const [url, options] = event.data.args;
+    const requestId = event.data.requestId;
+    try {
+      const res = await fetch(url, options);
+      const body = await res.text();
+      const headersObj = {};
+      for (const [key, value] of res.headers.entries()) {
+        headersObj[key.toLowerCase()] = value;
+      }
+      worker.postMessage({
+        type: 'proxy-fetch-response',
+        requestId,
+        response: {
+          body,
+          status: res.status,
+          statusText: res.statusText,
+          ok: res.ok,
+          headers: headersObj,
+        }
+      });
+    } catch (err) {
+      worker.postMessage({
+        type: 'proxy-fetch-response',
+        requestId,
+        response: {
+          body: err.message,
+          status: 500,
+          statusText: 'Internal Error',
+          ok: false,
+          headers: {},
+        }
+      });
+    }
+  }
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
     }

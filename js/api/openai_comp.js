@@ -73,6 +73,7 @@ export class OpenAIComp {
       if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
 
       try {
+        console.log(">>>>>>>>>>> OpenAI API Comp request: ", this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions");
         const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
             method: "POST",
             headers: curr_headers,
