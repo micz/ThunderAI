@@ -151,6 +151,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     btn_model.textContent = browser.i18n.getMessage("chatgpt_btn_model");
     btn_model.onclick = async function() {
         force_go = true;
+        document.getElementById('mzta-model_warn').style.display = 'none';
     };
     modelWarnDiv.appendChild(btn_model);
     
