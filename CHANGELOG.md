@@ -6,6 +6,7 @@
 
 <h2>Version 3.5.2 - ??/??/2025</h2>
       <ul>
+        <li><i>[ChatGPT Web]</i> Fix: correctly hiding the model warning message when forcing to send the prompt.</li>
         <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
         <li>...</li>
       </ul>
