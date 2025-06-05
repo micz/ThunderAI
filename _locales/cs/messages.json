@@ -171,7 +171,7 @@
         "message": "Nejste přihlášeni do ChatGPT. Přihlaste se svými údaji, zavřete okno ChatGPT a poté opakujte akci. Následně již zůstanete přihlášeni."
     },
     "chatgpt_win_model_warning": {
-        "message": "Nastavili jste možnost použití určitého modelu, ten se ale nejspíše nenačítá správně. Zkontrolujte prosím danou hodnotu a zkuste to znovu. Pro pokračování můžete stisknout modré tlačítko."
+        "message": "Z nějakého důvodu není možné ověřit, zda byl načten správný model. Prozatím můžete pokračovat stisknutím modrého tlačítka."
     },
     "chatgpt_win_custom_text": {
         "message": "Sem zadejte dodatečný text pro dotaz."

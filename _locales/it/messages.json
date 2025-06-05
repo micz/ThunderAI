@@ -181,7 +181,7 @@
         "message": "Non sei connesso a ChatGPT. Effettua l'accesso con le tue credenziali, chiudi la finestra di ChatGPT e poi ripeti l'azione che avevi tentato. Rimarrai connesso in seguito."
     },
     "chatgpt_win_model_warning": {
-        "message": "Hai impostato l'opzione per utilizzare un modello specifico, ma sembra che non si stia caricando correttamente. Controlla il valore e riprova. Per ora, puoi premere il pulsante blu per continuare."
+        "message": "Per qualche motivo, non è possibile verificare se il modello corretto è stato caricato. Per ora, puoi premere il pulsante blu per continuare."
     },
     "chatgpt_win_custom_text": {
         "message": "Inserisci qui il testo aggiuntivo per il prompt."

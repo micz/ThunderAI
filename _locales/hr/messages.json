@@ -181,7 +181,7 @@
         "message": "Niste prijavljeni na ChatGPT. Prijavite se sa svojim vjerodajnicama, zatvorite prozor ChatGPT, a zatim ponovite radnju koju ste pokušali. Nakon toga ćete ostati prijavljeni."
     },
     "chatgpt_win_model_warning": {
-        "message": "Postavili ste opciju korištenja određenog modela, ali čini se da se ne učitava ispravno. Provjerite vrijednost i pokušajte ponovno. Za sada možete pritisnuti plavi gumb za nastavak."
+        "message": "Iz nekog razloga nije moguće provjeriti je li učitan ispravan model. Za sada možeš pritisnuti plavi gumb za nastavak."
     },
     "chatgpt_win_custom_text": {
         "message": "Ovdje umetnite dodatni tekst za upit."

@@ -181,7 +181,7 @@
         "message": "Sie sind nicht bei ChatGPT angemeldet. Bitte melden Sie sich mit Ihren Anmeldeinformationen an, schließen Sie das ChatGPT-Fenster und wiederholen Sie dann die Aktion, die Sie versucht haben. Danach bleiben Sie angemeldet."
     },
     "chatgpt_win_model_warning": {
-        "message": "Du hast die Option gewählt, ein bestimmtes Modell zu verwenden, aber es scheint, dass es nicht korrekt geladen wird. Bitte überprüfe den Wert und versuche es erneut. Du kannst jetzt den blauen Knopf drücken, um fortzufahren."
+        "message": "Aus irgendeinem Grund kann nicht überprüft werden, ob das richtige Modell geladen wurde. Du kannst vorerst auf die blaue Schaltfläche klicken, um fortzufahren."
     },
     "chatgpt_win_custom_text": {
         "message": "Fügen Sie hier den zusätzlichen Text für die Eingabeaufforderung ein."

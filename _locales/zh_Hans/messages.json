@@ -291,7 +291,7 @@
         "message": "您可以通过单击此页面右上角的齿轮图标并选择“管理扩展快捷方式”来更改快捷方式。"
     },
     "chatgpt_win_model_warning": {
-        "message": "您已设置使用特定模型的选项，但似乎无法正确加载。请检查值并重试。目前，您可以按蓝色按钮继续。"
+        "message": "由于某种原因，无法验证是否加载了正确的模型。现在，你可以点击蓝色按钮继续。"
     },
     "prefs_Connection_type_ChatGPT_API": {
         "message": "ChatGPT OpenAI API"
