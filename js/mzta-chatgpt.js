@@ -389,7 +389,7 @@ function operation_done(){
 }
 
 function checkLoggedIn(){
-    return !window.location.href.startsWith('https://chatgpt.com/auth/');
+    return !window.location.href.startsWith('https://chatgpt.com/auth/') && document.querySelector('button[data-testid*=login]') === null;
 }
 
 function showCustomTextField(){
@@ -634,10 +634,17 @@ function doLog(msg){
     }
 }
 
-function run(){
+function run(checkTab = null) {
     if(!checkLoggedIn()){
         // User not logged in
+        if(checkTab){
+            clearInterval(checkTab);
+        }
+        doLog("User not logged in, showing warning message.");
         alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
+        // we are not closing the window, because the user could try to log in
+        // doLog("User not logged in, closing window.");
+        // browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
     }else{
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
         (async () => {
@@ -666,7 +673,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if((current_mailMessageId == -1) && (current_action == '1')) {    // we are using the reply from the compose window!
                 current_action = '2'; // replace text
             }
-            run();
+            run(checkTab);
             break;
         case "chatgpt_alive":
             sendResponse({isAlive: true});
@@ -679,7 +686,7 @@ let checkTab = setInterval(() => {
     if(customDiv){
         clearInterval(checkTab);
     }else{
-        run();
+        run(checkTab);
     }
 }, 1000);
 
