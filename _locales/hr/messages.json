@@ -493,7 +493,7 @@
         "message": "ChatGPT Web Model"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Ovo je Model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici."
+        "message": "Ovo je Model koji će se provoditi za ChatGPT web sučelje. Ako nijedan nije naveden ili je naveden netočan, zadani model postavit će ChatGPT na web stranici. Ova postavka neće raditi s besplatnim ChatGPT računom."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web privremeno čavrljanje"

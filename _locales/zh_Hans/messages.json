@@ -96,7 +96,7 @@
         "message": "ChatGPT Web 模型"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "这是将为 ChatGPT Web 界面强制使用的模型。如果未指定或提供了不正确的模型，ChatGPT 将在网页上设置默认模型。"
+        "message": "这是将为 ChatGPT Web 界面强制使用的模型。如果未指定或提供了不正确的模型，ChatGPT 将在网页上设置默认模型。此设置不适用于免费的 ChatGPT 账户。"
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web 临时聊天"

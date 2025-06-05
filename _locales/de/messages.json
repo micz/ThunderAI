@@ -493,7 +493,7 @@
         "message": "ChatGPT Web-Modell"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt."
+        "message": "Dies ist das Modell, das für die ChatGPT-Webschnittstelle festgelegt wird. Wenn keines angegeben ist oder ein falsches Modell bereitgestellt wird, wird das Standardmodell von ChatGPT auf der Webseite festgelegt. Diese Einstellung funktioniert nicht mit einem kostenlosen ChatGPT-Konto."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "ChatGPT Web temporärer Chat"

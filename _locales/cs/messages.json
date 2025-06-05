@@ -723,7 +723,7 @@
         "message": "Webový model ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Toto je model, který bude vynucen pro rozhraní ChatGPT Web. Pokud není specifikován žádný model nebo je poskytnut nesprávný, výchozí model bude nastaven ChatGPT na webové stránce."
+        "message": "Toto je Model, který bude vynucen pro rozhraní ChatGPT Web. Pokud není specifikován žádný model nebo je poskytnut nesprávný, výchozí model bude nastaven ChatGPT na webové stránce. Toto nastavení nebude fungovat s bezplatným účtem ChatGPT."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Dočasný chat ChatGPT Web"
