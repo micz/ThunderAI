@@ -93,6 +93,7 @@ messagesAreaStyle.textContent = `
         font-size: 0.7rem;
         color: gray;
         margin-top: 5px;
+        display: none;
     }
     /* diff viewer */
     .added {
@@ -276,7 +277,10 @@ class MessagesArea extends HTMLElement {
         closeButton.addEventListener('click', async () => {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
-        if(promptData.action != 0) { actionButtons.appendChild(actionButton); }
+        if(promptData.action != 0) { 
+            actionButtons.appendChild(actionButton);
+            selectionInfo.style.display = "block"; // show selection info
+        }
 
         // diff viewer button
         if(promptData.prompt_info?.use_diff_viewer == "1") {
