@@ -248,7 +248,7 @@
     "description": ""
   },
   "chatgpt_win_model_warning": {
-    "message": "You have set the option to use a specific model, but it seems that it is not loading correctly. Please check the value and try again. For now, you can press the blue button to continue.",
+    "message": "For some reason, it's not possible to verify whether the correct model is loaded. For now, you can press the blue button to continue.",
     "description": ""
   },
   "chatgpt_win_custom_text": {
