@@ -39,6 +39,10 @@ table#miczPrefs td.nb{
 table#miczPrefs td.nt{
     border-top: none;
 }
+
+tr#chatgpt_web_models_list td{
+    border: none;
+}
   
 div#miczRelNotes{
     position:absolute;
