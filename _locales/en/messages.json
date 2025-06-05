@@ -668,7 +668,7 @@
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_model_info": {
-    "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage.",
+    "message": "This is the Model that will be enforced for the ChatGPT Web Interface. If none is specified or an incorrect one is provided, the default model will be set by ChatGPT on the webpage. This setting will not work with a ChatGPT free account.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_tempchat": {
