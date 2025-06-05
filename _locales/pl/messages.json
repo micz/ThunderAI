@@ -493,7 +493,7 @@
         "message": "Model interfejsu webowego ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "To jest model, który będzie wymuszony dla interfejsu webowego ChatGPT. Jeśli nie zostanie określony lub podano nieprawidłowy, domyślny model zostanie ustawiony przez ChatGPT na stronie."
+        "message": "To jest model, który będzie wymuszony dla interfejsu webowego ChatGPT. Jeśli nie zostanie określony lub podano nieprawidłowy, domyślny model zostanie ustawiony przez ChatGPT na stronie. To ustawienie nie będzie działać z darmowym kontem ChatGPT."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Tymczasowy czat w interfejsie webowym ChatGPT"
