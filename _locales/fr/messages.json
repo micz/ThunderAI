@@ -181,7 +181,7 @@
         "message": "Vous n'êtes pas connecté à ChatGPT. Veuillez vous connecter avec vos identifiants, fermer la fenêtre ChatGPT, puis répéter l'action que vous avez tentée. Vous resterez connecté par la suite."
     },
     "chatgpt_win_model_warning": {
-        "message": "Vous avez choisi d'utiliser un modèle spécifique, mais il semble qu'il ne se charge pas correctement. Veuillez vérifier la valeur et réessayer. Pour l'instant, vous pouvez appuyer sur le bouton bleu pour continuer."
+        "message": "Pour une raison quelconque, il n'est pas possible de vérifier si le bon modèle est chargé. Pour l’instant, vous pouvez appuyer sur le bouton bleu pour continuer."
     },
     "chatgpt_win_custom_text": {
         "message": "Insérez ici le texte supplémentaire pour la proposition."
