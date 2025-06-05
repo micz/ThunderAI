@@ -181,7 +181,7 @@
         "message": "Você não está logado no ChatGPT. Por favor, faça login com suas credenciais, feche a janela do ChatGPT e, em seguida, repita a ação que você tentou. Você permanecerá logado depois."
     },
     "chatgpt_win_model_warning": {
-        "message": "Você configurou a opção para usar um modelo específico, mas parece que ele não está carregando corretamente. Por favor, verifique o valor e tente novamente. Por enquanto, você pode pressionar o botão azul para continuar."
+        "message": "Por algum motivo, não é possível verificar se o modelo correto foi carregado. Por enquanto, você pode pressionar o botão azul para continuar."
     },
     "chatgpt_win_custom_text": {
         "message": "Insira aqui o texto adicional para o prompt."
