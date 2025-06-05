@@ -10,6 +10,7 @@
         <li><i>[ChatGPT Web]</i> Fix: ThunderAI is now working also with a free account [<a href="https://github.com/micz/ThunderAI/issues/408">#408</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: Correctly showing a warning message to a not logged in user [<a href="https://github.com/micz/ThunderAI/issues/411">#411</a>].</li>
         <li><i>[ChatGPT Web]</i> Improved the model not found message [<a href="https://github.com/micz/ThunderAI/issues/413">#413</a>].</li>
+        <li><i>[All APIs]</i> Fix: The selection info message in the API WebChat is shown only when needed [<a href="https://github.com/micz/ThunderAI/issues/412">#412</a>].</li>
         <li>Czech (cs) translation updated, thanks to <a href="https://hosted.weblate.org/user/jaroush/">Jaroslav Staněk</a>.</li>
         <li>...</li>
       </ul>
