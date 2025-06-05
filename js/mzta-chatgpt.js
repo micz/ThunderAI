@@ -342,6 +342,16 @@ function checkGPTModel(model) {
      // const element = document.querySelector('div#radix-\\\\:ri2\\\\: > div > span.text-token-text-secondary');
      const elements = document.querySelectorAll('[id*=radix] span')
 
+     // If there are no elements, we are using a free account, so go on immediately
+     if (elements.length === 0) {
+        doLog("checkGPTModel no model found in DOM, we are using free account.");
+        clearInterval(intervalId);
+        clearTimeout(intervalId2);
+        resolve('free');
+        return;
+      }
+
+     // Loop through the elements to find the one with the specified text content
      for(let element of elements){
       // Check if the element exists and its content is '4' or '4o'
       doLog("checkGPTModel model found in DOM: " + element.textContent);
