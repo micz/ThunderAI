@@ -493,7 +493,7 @@
         "message": "Modelo Web do ChatGPT"
     },
     "prefs_OptionText_chatgpt_web_model_info": {
-        "message": "Este é o modelo que será aplicado para a Interface Web do ChatGPT. Se nenhum for especificado ou um incorreto for fornecido, o modelo padrão será definido pelo ChatGPT na página web."
+        "message": "Este é o modelo que será aplicado para a Interface Web do ChatGPT. Se nenhum for especificado ou um incorreto for fornecido, o modelo padrão será definido pelo ChatGPT na página web. Essa configuração não funcionará com uma conta gratuita do ChatGPT."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
         "message": "Chat temporário Web do ChatGPT"
