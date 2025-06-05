@@ -181,7 +181,7 @@
         "message": "Nie jesteś zalogowany do ChatGPT. Zaloguj się swoimi danymi, zamknij okno ChatGPT, a następnie powtórz próbę. Po autoryzacji pozostaniesz zalogowany."
     },
     "chatgpt_win_model_warning": {
-        "message": "Ustawiłeś opcję używania określonego modelu, ale wygląda na to, że nie ładuje się on poprawnie. Sprawdź wartość i spróbuj ponownie. Na razie możesz nacisnąć niebieski przycisk, aby kontynuować."
+        "message": "Z jakiegoś powodu nie można zweryfikować, czy załadowano właściwy model. Na razie możesz nacisnąć niebieski przycisk, aby kontynuować."
     },
     "chatgpt_win_custom_text": {
         "message": "Wstaw tutaj dodatkowy tekst dla zapytania."
