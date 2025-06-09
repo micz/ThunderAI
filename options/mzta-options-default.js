@@ -30,6 +30,7 @@ export const prefs_default = {
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
     chatgpt_api_key: '',
+    chatgpt_api_store: false,
     chatgpt_model: '',
     chatgpt_developer_messages: '',
     ollama_host: '',

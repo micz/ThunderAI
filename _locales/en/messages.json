@@ -1539,5 +1539,13 @@
   "apiwebchat_selection_info": {
     "message": "If you select some text, only that portion will be considered.",
     "description": ""
+  },
+  "ChatGPT_StoreFlag": {
+    "message": "Use storage",
+    "description": ""
+  },
+  "ChatGPT_StoreFlag_info": {
+    "message": "If checked, your chats will be stored by OpenAI.",
+    "description": ""
   }
 }
