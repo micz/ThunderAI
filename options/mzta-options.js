@@ -87,8 +87,7 @@ async function restoreOptions() {
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
           element.value = result[element.id] || default_text_value;
           break;
-        default:
-        if (element.tagName === 'SELECT') {
+        case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
           if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
@@ -96,11 +95,12 @@ async function restoreOptions() {
           if (element.value === '') {
             element.selectedIndex = -1;
           }
-        } else if (element.tagName === 'TEXTAREA') {
+          break;
+        case 'textarea':
           element.value = result[element.id];
-        }else{
+          break;
+        default:
           console.error("[ThunderAI] Unhandled input type:", element.type);
-        }
       }
     });
   }
