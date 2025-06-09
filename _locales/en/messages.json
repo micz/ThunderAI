@@ -304,11 +304,11 @@
     "description": ""
   },
   "prefs_OptionText_reply_all": {
-    "message": "Reply to All",
+    "message": "Reply to all",
     "description": ""
   },
   "prefs_OptionText_reply_sender": {
-    "message": "Reply to Sender",
+    "message": "Reply to sender",
     "description": ""
   },
   "prefs_OptionText_reply_type": {
