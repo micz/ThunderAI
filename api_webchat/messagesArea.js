@@ -57,7 +57,9 @@ messagesAreaStyle.textContent = `
     }
     .action-buttons {
         line-height: 1.3;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .action-buttons button {
         display: inline;
@@ -65,6 +67,11 @@ messagesAreaStyle.textContent = `
         padding: 5px 10px;
         border-radius: 5px;
         cursor: pointer;
+    }
+    .action_btn_info {
+        font-size: 0.6rem;
+        color: gray;
+        display: inline-block;
     }
     @keyframes fadeIn {
         to {
@@ -94,6 +101,8 @@ messagesAreaStyle.textContent = `
         color: gray;
         margin-top: 5px;
         display: none;
+        width: 100%;
+        text-align: center;
     }
     /* diff viewer */
     .added {
@@ -158,9 +167,9 @@ class MessagesArea extends HTMLElement {
         this.llmName = llmName;
     }
 
-    handleTokensDone(promptData = null) {
+    async handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
-        this.addActionButtons(promptData);
+        await this.addActionButtons(promptData);
         this.addDivider();
     }
 
@@ -238,7 +247,7 @@ class MessagesArea extends HTMLElement {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
-    addActionButtons(promptData = null) {
+    async addActionButtons(promptData = null) {
         if(promptData == null) { return; }
         const actionButtons = document.createElement('div');
         actionButtons.classList.add('action-buttons');
@@ -246,7 +255,15 @@ class MessagesArea extends HTMLElement {
         selectionInfo.textContent = browser.i18n.getMessage("apiwebchat_selection_info");
         selectionInfo.classList.add('sel_info');
         const actionButton = document.createElement('button');
-        actionButton.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
+        const actionButton_line1 = document.createElement('span');
+        actionButton_line1.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
+        const actionButton_line2 = document.createElement('span');
+        actionButton_line2.classList.add('action_btn_info');
+        let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
+        actionButton_line2.textContent = reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
+        actionButton.appendChild(actionButton_line1);
+        actionButton.appendChild(document.createElement('br'));
+        actionButton.appendChild(actionButton_line2);
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
         actionButton.addEventListener('click', async () => {
@@ -299,8 +316,9 @@ class MessagesArea extends HTMLElement {
         }
 
         actionButtons.appendChild(closeButton);
-        actionButtons.appendChild(selectionInfo);
+        //actionButtons.appendChild(selectionInfo);
         this.messages.appendChild(actionButtons);
+        this.messages.appendChild(selectionInfo);
         this.scrollToBottom();
     }
 

@@ -137,7 +137,7 @@ switch (llm) {
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages
-worker.onmessage = function(event) {
+worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
         case 'messageSent':
@@ -148,7 +148,7 @@ worker.onmessage = function(event) {
             messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
             break;
         case 'tokensDone':
-            messagesArea.handleTokensDone(promptData);
+            await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
             break;
         case 'error':
