@@ -1547,5 +1547,13 @@
   "ChatGPT_StoreFlag_info": {
     "message": "If checked, your chats will be stored by OpenAI.",
     "description": ""
+  },
+  "prefs_ollama_think": {
+    "message": "Enable thinking",
+    "description": ""
+  },
+  "prefs_ollama_think_Info": {
+    "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
+    "description": ""
   }
 }
