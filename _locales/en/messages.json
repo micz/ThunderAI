@@ -1540,11 +1540,11 @@
     "message": "If you select some text, only that portion will be considered.",
     "description": ""
   },
-  "ChatGPT_StoreFlag": {
+  "ChatGPT_chatgpt_api_store": {
     "message": "Use storage",
     "description": ""
   },
-  "ChatGPT_StoreFlag_info": {
+  "ChatGPT_chatgpt_api_store_info": {
     "message": "If checked, your chats will be stored by OpenAI.",
     "description": ""
   },
