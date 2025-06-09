@@ -47,17 +47,17 @@ export const openAICompConfigs = [
         use_v1: true,
     },
     {
-        id: 'perplexity',
-        name: 'Perplexity API',
-        chat_name: 'Perplexity',
-        host: 'https://api.perplexity.ai',
-        use_v1: true,
-    },
-    {
         id: 'openrouter',
         name: 'OpenRouter API',
         chat_name: 'OpenRouter',
         host: 'https://openrouter.ai/api',
+        use_v1: true,
+    },
+    {
+        id: 'perplexity',
+        name: 'Perplexity API',
+        chat_name: 'Perplexity',
+        host: 'https://api.perplexity.ai',
         use_v1: true,
     },
 ];
