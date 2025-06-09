@@ -52,16 +52,16 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         taLog.log('Saving option: ' + element.id + ' = *********');
         break;
+      case 'select-one':
+        options[element.id] = element.value;
+        taLog.log('Saving option: ' + element.id + ' = ' + element.value);
+        break;
+      case 'textarea':
+        options[element.id] = element.value.trim();
+        taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
+        break;
       default:
-        if (element.tagName === 'SELECT') {
-          options[element.id] = element.value;
-          taLog.log('Saving option: ' + element.id + ' = ' + element.value);
-        } if (element.tagName === 'TEXTAREA') {
-          options[element.id] = element.value.trim();
-          taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
-        } else {
           console.error("[ThunderAI] Unhandled input type:", element.type);
-        }
     }
 
   browser.storage.sync.set(options);
