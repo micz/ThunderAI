@@ -46,4 +46,11 @@ export const openAICompConfigs = [
         host: 'https://api.mistral.ai',
         use_v1: true,
     },
+    {
+        id: 'perplexity',
+        name: 'Perplexity API',
+        chat_name: 'Perplexity',
+        host: 'https://api.perplexity.ai',
+        use_v1: true,
+    },
 ];
