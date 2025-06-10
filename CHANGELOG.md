@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.6.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.5.2 - 05/06/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: correctly hiding the model warning message when forcing to send the prompt [<a href="https://github.com/micz/ThunderAI/issues/410">#410</a>].</li>
