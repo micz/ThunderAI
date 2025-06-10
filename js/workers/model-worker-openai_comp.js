@@ -113,6 +113,10 @@ self.onmessage = async function(event) {
     
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;
+                if (!choices || choices.length === 0) {
+                    taLog.error("No choices found in parsed line: " + JSON.stringify(parsedLine));
+                    continue;
+                }
                 const { delta } = choices[0];
                 const { content } = delta;
                 // Update the UI with the new content
