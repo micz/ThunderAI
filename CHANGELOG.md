@@ -4,9 +4,13 @@
 
 
 
+<h2>Version 3.5.3 - 10/06/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly detecting when the response is completed.</li>
+      </ul>
 <h2>Version 3.5.2 - 05/06/2025</h2>
       <ul>
-        <li><i>[ChatGPT Web]</i> Fix: correctly hiding the model warning message when forcing to send the prompt [<a href="https://github.com/micz/ThunderAI/issues/410">#410</a>].</li>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly hiding the model warning message when forcing to send the prompt [<a href="https://github.com/micz/ThunderAI/issues/410">#410</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: ThunderAI is now working also with a free account [<a href="https://github.com/micz/ThunderAI/issues/408">#408</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: Correctly showing a warning message to a not logged in user [<a href="https://github.com/micz/ThunderAI/issues/411">#411</a>].</li>
         <li><i>[ChatGPT Web]</i> Improved the model not found message [<a href="https://github.com/micz/ThunderAI/issues/413">#413</a>].</li>
