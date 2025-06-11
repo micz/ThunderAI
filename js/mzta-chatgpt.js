@@ -83,13 +83,13 @@ async function chatgpt_isIdle() {
 
 function chatgpt_getRegenerateButton() {
     for (const mainSVG of document.querySelectorAll('main svg.icon-md')) {
-        if (mainSVG.querySelector('path[d^="M3.06957"]')){ // regen icon found
+        if (mainSVG.querySelector('path[d^="M3.502 16.6663V13"]')){ // regen icon found
             //console.log(">>>>>>>>>> found regen icon!");
             return mainSVG.parentNode.parentNode;
         }
     }
     for (const mainSVG of document.querySelectorAll('main svg.icon-md-heavy')) {
-        if (mainSVG.querySelector('path[d^="M11 4.9099C11 4.47485"]')){ // read aloud icon found
+        if (mainSVG.querySelector('path[d^="M9.75122 4.09203C9.75122"]')){ // read aloud icon found
             //console.log(">>>>>>>>>> found read aloud icon!");
             return mainSVG.parentNode.parentNode;
         }
@@ -206,7 +206,23 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             break;
         case "1":     // do reply
             btn_ok.disabled = true;
-            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+            const btn_ok_line1 = document.createElement('span');
+            btn_ok_line1.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+            const btn_ok_line2 = document.createElement('span');
+            btn_ok_line2.classList.add('action_btn_info');
+            btn_ok_line2.textContent = mztaReplyType == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
+            btn_ok_line1.style.display = 'block';
+            btn_ok_line1.style.margin = '0';
+            btn_ok_line1.style.padding = '0';
+            btn_ok_line1.style.lineHeight = '1';
+            btn_ok_line2.style.display = 'block';
+            btn_ok_line2.style.margin = '0';
+            btn_ok_line2.style.padding = '0';
+            btn_ok_line2.style.lineHeight = '1';
+            btn_ok_line2.style.fontSize = '0.7em';
+            btn_ok.appendChild(btn_ok_line1);
+            //btn_ok.appendChild(document.createElement('br'));
+            btn_ok.appendChild(btn_ok_line2);
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
                 await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
