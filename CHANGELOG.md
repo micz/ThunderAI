@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.5.4 - 13/06/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Changed again hot to detect when the response is completed.</li>
+      </ul>
 <h2>Version 3.5.3 - 10/06/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly detecting when the response is completed.</li>
