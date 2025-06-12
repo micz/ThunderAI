@@ -65,8 +65,16 @@ messagesAreaStyle.textContent = `
         display: inline;
         margin: 0 10px;
         padding: 5px 10px;
-        border-radius: 5px;
         cursor: pointer;
+        border: 1px outset buttonface;
+    }
+    .action-buttons button.close_btn, .action-buttons button.diffv_btn {
+        border-radius: 5px;
+    }
+    .action-buttons button.action_btn {
+        margin-right: 0;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
     }
     .action_btn_info {
         font-size: 0.6rem;
@@ -104,6 +112,7 @@ messagesAreaStyle.textContent = `
         width: 100%;
         text-align: center;
     }
+    
     /* diff viewer */
     .added {
         background-color: #d4fcdc;
@@ -114,6 +123,73 @@ messagesAreaStyle.textContent = `
         display: inline;
         text-decoration: line-through;
     }
+    
+    /* Split button styles */
+    .split-button {
+      display: inline-flex;
+      position: relative;
+      font-family: sans-serif;
+    }
+
+    .split-button button {
+      padding: 5px 0px 5px 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .split-button .dropdown-toggle {
+      border-left: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      margin-left:-1px;
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+      padding:0;
+    }
+
+    .dropdown-toggle svg {
+      fill: #555;
+      margin-left: -4px;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 2.55rem;
+      right:0;
+      display: none;
+      flex-direction: column;
+      background-color: white;
+      border: 1px solid #ccc;
+      min-width: 160px;
+      z-index: 1000;
+      margin-top: 2px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 5px;
+      text-align: right;
+      width: -moz-available;
+    }
+
+    .dropdown-menu button {
+      padding: 10px 14px;
+      border: none;
+      background-color: white;
+      text-align: right;
+      cursor: pointer;
+      font-size: 0.6rem;
+      color: gray;
+    }
+
+    .dropdown-menu button:hover {
+      background-color: #f0f0f0;
+    }
+
+    .dropdown-menu.show {
+      display: flex;
+    }
+      
+    /* Dark mode styles */
     @media (prefers-color-scheme: dark) {
         .added {
             background-color:rgb(0, 94, 0);
@@ -247,26 +323,17 @@ class MessagesArea extends HTMLElement {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
-    async addActionButtons(promptData = null) {
-        if(promptData == null) { return; }
-        const actionButtons = document.createElement('div');
-        actionButtons.classList.add('action-buttons');
-        const selectionInfo = document.createElement('p');
-        selectionInfo.textContent = browser.i18n.getMessage("apiwebchat_selection_info");
-        selectionInfo.classList.add('sel_info');
-        const actionButton = document.createElement('button');
-        const actionButton_line1 = document.createElement('span');
-        actionButton_line1.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
-        const actionButton_line2 = document.createElement('span');
-        actionButton_line2.classList.add('action_btn_info');
-        let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
-        actionButton_line2.textContent = reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
-        actionButton.appendChild(actionButton_line1);
-        actionButton.appendChild(document.createElement('br'));
-        actionButton.appendChild(actionButton_line2);
-        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
-        //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        actionButton.addEventListener('click', async () => {
+    // Helper to create dropdown options
+    createOption(label, callback) {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.onclick = callback;
+        return btn;
+    }
+
+    // click callcback for the "use this answer" button
+    handleUseThisAnswerButtonClick(replyType){
+        return async () => {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
                 promptData.action = "2"; // replace text
             }
@@ -279,7 +346,7 @@ class MessagesArea extends HTMLElement {
             switch(promptData.action) {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
+                    await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId, replyType: replyType});
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
                 case "2":     // replace text
@@ -288,14 +355,96 @@ class MessagesArea extends HTMLElement {
                     browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
                     break;
             }
-        });
+        }
+    }
+
+    async addActionButtons(promptData = null) {
+        if(promptData == null) { return; }
+        const actionButtons = document.createElement('div');
+        actionButtons.classList.add('action-buttons');
+        // Create the main container for the "use this answer" button when replying
+        const splitButton = document.createElement('div');
+        splitButton.className = 'split-button';
+        // selection info
+        const selectionInfo = document.createElement('p');
+        selectionInfo.textContent = browser.i18n.getMessage("apiwebchat_selection_info");
+        selectionInfo.classList.add('sel_info');
+        // main button
+        const actionButton = document.createElement('button');
+        actionButton.className = 'action_btn';
+        const actionButton_line1 = document.createElement('span');
+        actionButton_line1.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
+        actionButton.appendChild(actionButton_line1);
+        splitButton.appendChild(actionButton);
+        if((promptData.action == "1") && (promptData.mailMessageId != -1)) {
+            const actionButton_line2 = document.createElement('span');
+            actionButton_line2.classList.add('action_btn_info');
+            let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
+            actionButton_line2.textContent = reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
+            actionButton.appendChild(document.createElement('br'));
+            actionButton.appendChild(actionButton_line2);
+            // Dropdown toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'dropdown-toggle';
+            toggleBtn.setAttribute('aria-label', 'Show options');
+            // SVG icon
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 20 20');
+            svg.setAttribute('width', '16');
+            svg.setAttribute('height', '16');
+            svg.setAttribute('fill', 'currentColor');
+            svg.setAttribute('stroke-width', '2');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M19 9l-7 7-7-7');
+            svg.appendChild(path);
+            toggleBtn.appendChild(svg);
+            splitButton.appendChild(toggleBtn);
+            // Dropdown menu
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown-menu';
+            dropdown.id = 'dropdown';
+            // Add options
+            dropdown.appendChild(this.createOption(
+                reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_sender") : browser.i18n.getMessage("prefs_OptionText_reply_all"),
+                handleUseThisAnswerButtonClick(reply_type_pref.reply_type == 'reply_all' ? 'reply_sender' : 'reply_all'))
+            );
+            splitButton.appendChild(dropdown);
+            let dropdownJustOpened = false;
+            // Toggle function
+            toggleBtn.onclick = () => {
+                dropdownJustOpened = true;
+                dropdown.classList.toggle('show');
+            };
+            // Close on outside click
+            window.addEventListener('click', (e) => {
+            // Delay the execution to allow other handlers (like toggle) to run first
+                if (dropdownJustOpened) {
+                    dropdownJustOpened = false;
+                    return; // Skip this click because it's the one that opened the menu
+                }
+                setTimeout(() => {
+                    if (!splitButton.contains(e.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                }, 0);
+            });
+        }else{
+            actionButton.style.paddingRight = "10px";
+            actionButton.style.borderTopRightRadius = "5px";
+            actionButton.style.borderBottomRightRadius = "5px";
+            actionButton.style.marginRight = "10px";
+        }
+        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
+        //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+        actionButton.addEventListener('click', handleUseThisAnswerButtonClick(reply_type_pref.reply_type));
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
+        closeButton.classList.add('close_btn');
         closeButton.addEventListener('click', async () => {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
         if(promptData.action != 0) { 
-            actionButtons.appendChild(actionButton);
+            actionButtons.appendChild(splitButton);
             selectionInfo.style.display = "block"; // show selection info
         }
 
@@ -303,6 +452,7 @@ class MessagesArea extends HTMLElement {
         if(promptData.prompt_info?.use_diff_viewer == "1") {
             const diffvButton = document.createElement('button');
             diffvButton.textContent = browser.i18n.getMessage("btn_show_differences");
+            diffvButton.classList.add('diffv_btn');
             diffvButton.addEventListener('click', async () => {
                 let strippedText = fullTextHTMLAtAssignment.replace(/<\/?[^>]+(>|$)/g, "");
                 let originalText = promptData.prompt_info?.selection_text;
@@ -316,7 +466,6 @@ class MessagesArea extends HTMLElement {
         }
 
         actionButtons.appendChild(closeButton);
-        //actionButtons.appendChild(selectionInfo);
         this.messages.appendChild(actionButtons);
         this.messages.appendChild(selectionInfo);
         this.scrollToBottom();

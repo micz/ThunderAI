@@ -222,9 +222,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
-                    if(prefs.reply_type === 'reply_sender'){
+                    if (typeof message.reply_type === "undefined" || message.reply_type === null || message.reply_type === "") {
+                        message.reply_type = prefs.reply_type;
+                    }
+                    if(message.reply_type === 'reply_sender'){
                         replyType = 'replyToSender';
                     }
+                    taLog.log("Reply type: " + replyType);
                     //console.log('replyType: ' + replyType);
                     // browser.messageDisplay.getDisplayedMessage(message.tabId).then(async (mailMessage) => {
                     //     let reply_tab = await browser.compose.beginReply(mailMessage.id, replyType, {
