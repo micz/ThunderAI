@@ -222,7 +222,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
-                    console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
+                    // console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
                     if (typeof message.replyType === "undefined" || message.replyType === null || message.replyType === "") {
                         message.replyType = prefs.reply_type;
                     }
