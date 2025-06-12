@@ -332,7 +332,7 @@ class MessagesArea extends HTMLElement {
     }
 
     // click callcback for the "use this answer" button
-    handleUseThisAnswerButtonClick(replyType){
+    handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment){
         return async () => {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
                 promptData.action = "2"; // replace text
@@ -376,10 +376,12 @@ class MessagesArea extends HTMLElement {
         actionButton_line1.textContent = browser.i18n.getMessage("apiwebchat_use_this_answer");
         actionButton.appendChild(actionButton_line1);
         splitButton.appendChild(actionButton);
+        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
+        //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
+        let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
         if((promptData.action == "1") && (promptData.mailMessageId != -1)) {
             const actionButton_line2 = document.createElement('span');
             actionButton_line2.classList.add('action_btn_info');
-            let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
             actionButton_line2.textContent = reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
             actionButton.appendChild(document.createElement('br'));
             actionButton.appendChild(actionButton_line2);
@@ -406,7 +408,7 @@ class MessagesArea extends HTMLElement {
             // Add options
             dropdown.appendChild(this.createOption(
                 reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_sender") : browser.i18n.getMessage("prefs_OptionText_reply_all"),
-                handleUseThisAnswerButtonClick(reply_type_pref.reply_type == 'reply_all' ? 'reply_sender' : 'reply_all'))
+                this.handleUseThisAnswerButtonClick(promptData, reply_type_pref.reply_type == 'reply_all' ? 'reply_sender' : 'reply_all', fullTextHTMLAtAssignment))
             );
             splitButton.appendChild(dropdown);
             let dropdownJustOpened = false;
@@ -434,9 +436,7 @@ class MessagesArea extends HTMLElement {
             actionButton.style.borderBottomRightRadius = "5px";
             actionButton.style.marginRight = "10px";
         }
-        const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
-        //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        actionButton.addEventListener('click', handleUseThisAnswerButtonClick(reply_type_pref.reply_type));
+        actionButton.addEventListener('click', this.handleUseThisAnswerButtonClick(promptData,reply_type_pref.reply_type, fullTextHTMLAtAssignment));
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
         closeButton.classList.add('close_btn');
