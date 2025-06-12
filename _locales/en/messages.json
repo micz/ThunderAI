@@ -1555,5 +1555,9 @@
   "prefs_ollama_think_Info": {
     "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
     "description": ""
+  },
+  "chatgpt_win_change_reply_type": {
+    "message": "Click to change the reply type",
+    "description": ""
   }
 }

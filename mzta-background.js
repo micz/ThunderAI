@@ -222,10 +222,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                     //console.log('reply_type: ' + prefs.reply_type);
                     let replyType = 'replyToAll';
-                    if (typeof message.reply_type === "undefined" || message.reply_type === null || message.reply_type === "") {
-                        message.reply_type = prefs.reply_type;
+                    console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
+                    if (typeof message.replyType === "undefined" || message.replyType === null || message.replyType === "") {
+                        message.replyType = prefs.reply_type;
                     }
-                    if(message.reply_type === 'reply_sender'){
+                    if(message.replyType === 'reply_sender'){
                         replyType = 'replyToSender';
                     }
                     taLog.log("Reply type: " + replyType);
@@ -407,6 +408,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     if((originalText == null) || (originalText == "")) {
                         originalText = prompt_info.body_text;
                     }
+                    let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
                     //console.log(">>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
                     let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                     let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
@@ -419,7 +421,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mztaDoDebug="`+(prefs.do_debug?'1':'0')+`";
                     let mztaUseDiffViewer="`+(prompt_info.use_diff_viewer=='1'?'1':'0')+`";
                     let mztaOriginalText="`+ JSON.stringify(originalText).slice(1, -1) +`";
-                    let mztaReplyType="`+ await browser.storage.sync.get({reply_type: 'reply_all'}) + `";
+                    let mztaReplyType="`+ reply_type_pref.reply_type + `";
                     `;
 
                     taLog.log("Waiting " + _wait_time + " millisec");

@@ -203,6 +203,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
+            fixedDiv.appendChild(btn_ok);
             break;
         case "1":     // do reply
             btn_ok.disabled = true;
@@ -223,11 +224,58 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.appendChild(btn_ok_line1);
             //btn_ok.appendChild(document.createElement('br'));
             btn_ok.appendChild(btn_ok_line2);
-            btn_ok.onclick = async function() {
+            btn_ok.setAttribute('data-reply-type', mztaReplyType);
+            btn_ok.addEventListener('click', async function() {
                 const response = getSelectedHtml();
-                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                const currentReplyType = btn_ok.getAttribute('data-reply-type');
+                console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
+                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
-            };
+            });
+            // change reply type button
+            var btn_change_reply_type = document.createElement('button');
+            btn_change_reply_type.id = 'mzta-btn_change_reply_type';
+            btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
+            btn_change_reply_type.addEventListener('click', function() {
+                // console.log('>>>>>>>>>> change reply type clicked');
+                if(mztaReplyType == 'reply_all'){
+                    mztaReplyType = 'reply_sender';
+                    btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_sender");
+                }else{
+                    mztaReplyType = 'reply_all';
+                    btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_all");
+                }
+                btn_ok.setAttribute('data-reply-type', mztaReplyType);
+            });
+            // Create SVG element
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('width', '16');
+            svg.setAttribute('height', '16');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '2');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+            // Array of SVG path data for the two chasing arrows
+            const paths = [
+                'M23 4v6h-6',
+                'M1 20v-6h6',
+                'M3.51 9a9 9 0 0114.13-3.36L23 10',
+                'M20.49 15a9 9 0 01-14.13 3.36L1 14'
+                ];
+            // Create and append path elements
+            paths.forEach(d => {
+                const path = document.createElementNS(svgNS, 'path');
+                path.setAttribute('d', d);
+                svg.appendChild(path);
+            });
+            // Append SVG to button
+            btn_change_reply_type.appendChild(svg);
+            fixedDiv.appendChild(btn_ok);
+            fixedDiv.appendChild(btn_change_reply_type);
+            btn_change_reply_type.style.display = 'none';
             break;
         case "2":     // replace text
             btn_ok.disabled = true;
@@ -238,10 +286,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
+            fixedDiv.appendChild(btn_ok);
             break;
     }
     btn_ok.style.display = 'none';
-    fixedDiv.appendChild(btn_ok);
 
     if(mztaUseDiffViewer == '1'){
         // diff overlay div
@@ -396,6 +444,9 @@ function operation_done(){
     }
     curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
+    if(current_action == '1'){
+        document.getElementById('mzta-btn_change_reply_type').style.display = 'inline';
+    }
     if(mztaUseDiffViewer == '1'){
         document.getElementById('mzta-btn_diff').style.display = 'inline';
     }
