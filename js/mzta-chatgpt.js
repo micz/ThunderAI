@@ -228,7 +228,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.addEventListener('click', async function() {
                 const response = getSelectedHtml();
                 const currentReplyType = btn_ok.getAttribute('data-reply-type');
-                console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
+                // console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
                 await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             });
@@ -236,43 +236,26 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             var btn_change_reply_type = document.createElement('button');
             btn_change_reply_type.id = 'mzta-btn_change_reply_type';
             btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
+            // Create SVG element
+            let currentIcon = createReplyToSenderIcon(); 
+            // Append SVG to button
+            btn_change_reply_type.appendChild(currentIcon);
             btn_change_reply_type.addEventListener('click', function() {
                 // console.log('>>>>>>>>>> change reply type clicked');
+                btn_change_reply_type.removeChild(currentIcon);
                 if(mztaReplyType == 'reply_all'){
                     mztaReplyType = 'reply_sender';
+                    currentIcon = createReplyToAllIcon();
+                    btn_change_reply_type.appendChild(currentIcon);
                     btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_sender");
                 }else{
                     mztaReplyType = 'reply_all';
+                    currentIcon = createReplyToSenderIcon();
+                    btn_change_reply_type.appendChild(currentIcon);
                     btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_all");
                 }
                 btn_ok.setAttribute('data-reply-type', mztaReplyType);
             });
-            // Create SVG element
-            const svgNS = 'http://www.w3.org/2000/svg';
-            const svg = document.createElementNS(svgNS, 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            svg.setAttribute('width', '16');
-            svg.setAttribute('height', '16');
-            svg.setAttribute('fill', 'none');
-            svg.setAttribute('stroke', 'currentColor');
-            svg.setAttribute('stroke-width', '2');
-            svg.setAttribute('stroke-linecap', 'round');
-            svg.setAttribute('stroke-linejoin', 'round');
-            // Array of SVG path data for the two chasing arrows
-            const paths = [
-                'M23 4v6h-6',
-                'M1 20v-6h6',
-                'M3.51 9a9 9 0 0114.13-3.36L23 10',
-                'M20.49 15a9 9 0 01-14.13 3.36L1 14'
-                ];
-            // Create and append path elements
-            paths.forEach(d => {
-                const path = document.createElementNS(svgNS, 'path');
-                path.setAttribute('d', d);
-                svg.appendChild(path);
-            });
-            // Append SVG to button
-            btn_change_reply_type.appendChild(svg);
             fixedDiv.appendChild(btn_ok);
             fixedDiv.appendChild(btn_change_reply_type);
             btn_change_reply_type.style.display = 'none';
@@ -377,6 +360,44 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     fixedDiv.appendChild(customDiv);
 
     document.body.insertBefore(fixedDiv, document.body.firstChild);
+}
+
+// Create SVG icons as functions
+function createReplyToSenderIcon() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('fill', 'currentColor');
+  const path1 = document.createElementNS(svgNS, 'path');
+  path1.setAttribute('d', 'M0 0h24v24H0z');
+  path1.setAttribute('fill', 'none');
+  const path2 = document.createElementNS(svgNS, 'path');
+  path2.setAttribute('d', 'M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z');
+  svg.appendChild(path1);
+  svg.appendChild(path2);
+  return svg;
+}
+
+
+function createReplyToAllIcon() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('fill', 'currentColor');
+  const path1 = document.createElementNS(svgNS, 'path');
+  path1.setAttribute('d', 'M0 0h24v24H0z');
+  path1.setAttribute('fill', 'none');
+  const path2 = document.createElementNS(svgNS, 'path');
+  path2.setAttribute('d', 'M7 8V5l-7 7 7 7v-3l-4-4 4-4zm6 1V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z');
+  svg.appendChild(path1);
+  svg.appendChild(path2);
+  return svg;
 }
 
 function customTextBtnClick(args) {
