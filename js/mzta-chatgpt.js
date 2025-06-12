@@ -82,13 +82,13 @@ async function chatgpt_isIdle() {
 }}, 100);});}
 
 function chatgpt_getRegenerateButton() {
-    for (const mainSVG of document.querySelectorAll('main svg.icon-md')) {
+    for (const mainSVG of document.querySelectorAll('main svg.icon')) {
         if (mainSVG.querySelector('path[d^="M3.502 16.6663V13"]') || mainSVG.querySelector('path[d^="M3.06957"]')){ // regen icon found
             //console.log(">>>>>>>>>> found regen icon!");
             return mainSVG.parentNode.parentNode;
         }
     }
-    for (const mainSVG of document.querySelectorAll('main svg.icon-md-heavy')) {
+    for (const mainSVG of document.querySelectorAll('main svg.icon')) {
         if (mainSVG.querySelector('path[d^="M9.75122 4.09203C9.75122"]') || mainSVG.querySelector('path[d^="M11 4.9099C11 4.47485"]')){ // read aloud icon found
             //console.log(">>>>>>>>>> found read aloud icon!");
             return mainSVG.parentNode.parentNode;
