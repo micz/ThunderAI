@@ -6,6 +6,7 @@
 
 <h2>Version 3.6.0 - ??/??/2025</h2>
       <ul>
+        <li>When replying, it's now possibile to choose a different reply type (between "all" or "sender only") directly in the AI chat window [<a href="https://github.com/micz/ThunderAI/issues/372">#372</a>].</li>
         <li><i>[OpenAI API]</i> Added an option to enable the OpenAI storage for API requests [<a href="https://github.com/micz/ThunderAI/issues/406">#406</a>].</li>
         <li><i>[Ollama API]</i> Added an option to enable the thinking feature [<a href="https://github.com/micz/ThunderAI/issues/398">#398</a>].</li>
         <li><i>[OpenAI Comp API]</i> Handling responses without choices when using RAG [<a href="https://github.com/micz/ThunderAI/issues/416">#416</a>].</li>
