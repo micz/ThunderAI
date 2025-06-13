@@ -26,7 +26,7 @@ import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
-import { addTags_getExclusionList } from './js/mzta-addatags-exclusion-list.js';
+import { addTags_getExclusionList, checkExcludedTag } from './js/mzta-addatags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -155,7 +155,7 @@ async function _reload_menus() {
     return true;
 }
 
-async function _assign_tags(_data, create_new_tags = true) {
+async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
     let all_tags_list = await getTagsList();
     all_tags_list = all_tags_list[1];
     // console.log(">>>>>>>>>>>>>>> all_tags_list: " + JSON.stringify(all_tags_list));
@@ -165,7 +165,7 @@ async function _assign_tags(_data, create_new_tags = true) {
     taLog.log("add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
     const tags_final = _data.tags.filter(tag =>
         !add_tags_exclusions_list.some(exclusion =>
-            tag.toLowerCase().includes(exclusion.toLowerCase())
+            checkExcludedTag(tag, exclusion, exclusions_exact_match)
         )
     );
     if(!create_new_tags){
@@ -216,15 +216,15 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replyMessage(message) {
                     let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
-                    if(prefs.composing_plain_text){
+                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
+                    if(prefs_reply.composing_plain_text){
                         paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);
                     }
-                    //console.log('reply_type: ' + prefs.reply_type);
+                    //console.log('reply_type: ' + prefs_reply.reply_type);
                     let replyType = 'replyToAll';
                     // console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
                     if (typeof message.replyType === "undefined" || message.replyType === null || message.replyType === "") {
-                        message.replyType = prefs.reply_type;
+                        message.replyType = prefs_reply.reply_type;
                     }
                     if(message.replyType === 'reply_sender'){
                         replyType = 'replyToSender';
@@ -301,7 +301,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 return _popup_menu_ready();
                 break;
             case 'assign_tags':
-                return _assign_tags(message);
+                async function _do_assign_tags(message) {
+                    let prefs_assign_tags = await browser.storage.sync.get({add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match});
+                    return _assign_tags(message,true, prefs_assign_tags.add_tags_exclusions_exact_match);
+                }
+                return _do_assign_tags(message);
                 break;
             case 'api_send_custom_text':
                 browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
@@ -951,7 +955,16 @@ const newEmailListener = (folder, messagesList) => {
 async function processEmails(messages, addTagsAuto, spamFilter) {
     taWorkingStatus.startWorking();
     
-    let prefs_aats = await browser.storage.sync.get({ add_tags_maxnum: prefs_default.add_tags_maxnum, connection_type: prefs_default.connection_type, add_tags_force_lang: prefs_default.add_tags_force_lang, default_chatgpt_lang: prefs_default.default_chatgpt_lang, add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing, add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts, spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts });
+    let prefs_aats = await browser.storage.sync.get({
+        add_tags_maxnum: prefs_default.add_tags_maxnum,
+        connection_type: prefs_default.connection_type,
+        add_tags_force_lang: prefs_default.add_tags_force_lang,
+        default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+        add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
+        add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
+        add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
+        spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
+    });
 
     for await (let message of messages) {
         let curr_fullMessage = null;
@@ -990,7 +1003,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             }
             taLog.log("tags_current_email: " + tags_current_email);
             let _data = { messageId: message.id, tags: tags_current_email.split(/,\s*/) };
-            _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing);
+            _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
         }
 
         if (spamFilter) {

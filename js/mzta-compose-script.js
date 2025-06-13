@@ -335,6 +335,17 @@ switch (message.command) {
     function addTags_setExclusionList(add_tags_exclusions) {
       browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
     }
+
+    function checkExcludedTag(tag, excluded_word, exact_match = false) {
+        // Check if the tag is in the exclusion list
+        if (excluded_word === '') {
+            return false; // No exclusion word, so no exclusion
+        }
+        if(exact_match) {
+            return tag.toLowerCase() === excluded_word.toLowerCase();
+        }
+        return tag.toLowerCase().includes(excluded_word.toLowerCase());
+    }
     // ===================================================================================
 
     // Create and append the styles
@@ -463,7 +474,7 @@ switch (message.command) {
         no_submit = true;
       }
 
-      let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false});
+      let prefs_tags = await browser.storage.sync.get({add_tags_hide_exclusions: false, add_tags_exclusions_exact_match: false});
       let add_tags_exclusions_list = await addTags_getExclusionList();
 
       // console.log(">>>>>>>>>>>>> add_tags_exclusions_list: " + JSON.stringify(add_tags_exclusions_list));
@@ -472,7 +483,7 @@ switch (message.command) {
         .filter(word => word !== '')
         .map(word => {
           const isExcluded = add_tags_exclusions_list.some(exclusion => 
-            word.toLowerCase().includes(exclusion.toLowerCase())
+            checkExcludedTag(word, exclusion, prefs_tags.add_tags_exclusions_exact_match)
           );
 
           return {
