@@ -237,7 +237,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_change_reply_type.id = 'mzta-btn_change_reply_type';
             btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
             // Create SVG element
-            let currentIcon = createReplyToSenderIcon(); 
+            let currentIcon = createReplyToAllIcon();
             // Append SVG to button
             btn_change_reply_type.appendChild(currentIcon);
             btn_change_reply_type.addEventListener('click', function() {
@@ -245,12 +245,12 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 btn_change_reply_type.removeChild(currentIcon);
                 if(mztaReplyType == 'reply_all'){
                     mztaReplyType = 'reply_sender';
-                    currentIcon = createReplyToAllIcon();
+                    currentIcon = createReplyToSenderIcon();
                     btn_change_reply_type.appendChild(currentIcon);
                     btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_sender");
                 }else{
                     mztaReplyType = 'reply_all';
-                    currentIcon = createReplyToSenderIcon();
+                    currentIcon = createReplyToAllIcon();
                     btn_change_reply_type.appendChild(currentIcon);
                     btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_all");
                 }
