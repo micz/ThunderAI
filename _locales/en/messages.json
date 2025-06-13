@@ -315,6 +315,10 @@
     "message": "Reply type",
     "description": ""
   },
+  "prefs_OptionText_reply_type_Info": {
+    "message": "This is the default reply type that will be used when replying to an email. You can choose the other later in the reply dialog.",
+    "description": ""
+  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
     "description": ""
