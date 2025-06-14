@@ -79,7 +79,36 @@ export const taPromptUtils = {
         return chatgpt_lang;
     },
 
+    /**
+     * Extracts tags from the response text.
+     * @param {string} response_text - The response text from which to extract tags.
+     * @returns {Array} An array of tags extracted from the response text.
+     * 
+     * The response text should be a JSON with this structure:
+     * {
+     *   "tags": ["tag1", "tag2", ...]
+     * }
+     * 
+     * For backwords compatibility, if the response text is not a valid JSON,
+     * it will try to split the text by commas and return the resulting array.
+     */
     getTagsFromResponse(response_text){
-        
+        let tags = [];
+        if(response_text && response_text.length > 0){
+            try {
+                // Try to parse the response text as JSON
+                let response_json = JSON.parse(response_text);
+                if(response_json && Array.isArray(response_json.tags)){
+                    tags = response_json.tags;
+                } else if(response_json && response_json.tags && typeof response_json.tags === 'string'){
+                    // If tags is a string, split it by commas
+                    tags = response_json.tags.split(',').map(tag => tag.trim());
+                }
+            } catch (e) {
+                // If parsing fails, fallback to splitting by commas
+                tags = response_text.split(',').map(tag => tag.trim());
+            }
+        }
+        return tags;
     }
 };
