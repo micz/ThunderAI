@@ -97,16 +97,16 @@ export const taPromptUtils = {
         if(response_text && response_text.length > 0){
             try {
                 // Try to parse the response text as JSON
-                let response_json = JSON.parse(response_text);
+                let response_json = JSON.parse(response_text.trim());
                 if(response_json && Array.isArray(response_json.tags)){
                     tags = response_json.tags;
                 } else if(response_json && response_json.tags && typeof response_json.tags === 'string'){
                     // If tags is a string, split it by commas
-                    tags = response_json.tags.split(',').map(tag => tag.trim());
+                    tags = response_json.tags.split(/,\s*/).map(tag => tag.trim());
                 }
             } catch (e) {
                 // If parsing fails, fallback to splitting by commas
-                tags = response_text.split(',').map(tag => tag.trim());
+                tags = response_text.split(/,\s*/).map(tag => tag.trim());
             }
         }
         return tags;
