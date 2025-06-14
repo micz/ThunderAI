@@ -776,7 +776,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analyze the following email text and generate a comma-separated list of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details. The output should be only a list of comma separated tags without any additional comment or text.",
+    "message": "Analyze the following email text and generate a JSON array of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details.\nGenerate a response in JSON format only. The output should be only a JSON array of tags without any additional comment or text. Here is an example of the JSON format to be used:\n{\n'tags': ['tag1', 'tag2', 'tag3', 'tag4', 'tag5']\n}",
     "description": ""
   },
   "prompt_proofread_this": {
