@@ -17,6 +17,7 @@
  */
 
 import { placeholdersUtils } from './mzta-placeholders.js';
+import { extractJsonObject } from './mzta-utils.js';
 
 export const taPromptUtils = {
 
@@ -97,7 +98,7 @@ export const taPromptUtils = {
         if(response_text && response_text.length > 0){
             try {
                 // Try to parse the response text as JSON
-                let response_json = JSON.parse(response_text.trim());
+                let response_json = extractJsonObject(response_text.trim());
                 if(response_json && Array.isArray(response_json.tags)){
                     tags = response_json.tags;
                 } else if(response_json && response_json.tags && typeof response_json.tags === 'string'){
