@@ -1,0 +1,482 @@
+{
+    "customPrompts_managePrompts_help": {
+        "message": "更多資訊"
+    },
+    "prompt_reply_advanced": {
+        "message": "回覆這個討論串"
+    },
+    "prompt_translate_this": {
+        "message": "翻譯這段"
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "正在儲存自訂提示..."
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "預設的提示無法編輯。你可以先停用它們，然後複製提示內容，再貼到新的提示中，就能製作出修改版本。"
+    },
+    "prompt_rewrite_formal": {
+        "message": "改寫得比較正式一點"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "回覆在"
+    },
+    "prompt_reply": {
+        "message": "回覆這封郵件"
+    },
+    "prompt_rewrite_polite": {
+        "message": "改寫得比較有禮貌一點"
+    },
+    "prompt_classify": {
+        "message": "分類"
+    },
+    "prompt_summarize_this": {
+        "message": "摘要這段"
+    },
+    "prompt_this": {
+        "message": "提示這段"
+    },
+    "prompt_selection_needed": {
+        "message": "要繼續的話，你需要選取一些文字！"
+    },
+    "customPrompts_managePrompts": {
+        "message": "管理提示"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "你可以匯入和匯出提示。如果匯入的提示編號與現有提示相同，會覆寫現有提示；如果匯入的提示編號是新的，則會新增進來。"
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "如果一切都沒錯，匯入完成後點一下「儲存全部」按鈕。"
+    },
+    "customPrompts_start_saving": {
+        "message": "正在儲存提示..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "正在重新建立索引清單..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "正在篩選提示..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "正在儲存預設提示..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "正在重新載入選單..."
+    },
+    "customPrompts_saved": {
+        "message": "提示已儲存！"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "編號"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "必須要是獨一無二、小寫且不含空格"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "提示內容"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "動作"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "需要選取文字"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "總是加上簽名"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "要求提供額外文字"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "已啟用"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "啟用差異檢視器"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "必填欄位"
+    },
+    "customPrompts_btnCancel": {
+        "message": "取消"
+    },
+    "customPrompts_btnOK": {
+        "message": "確定"
+    },
+    "customPrompts_btnDelete": {
+        "message": "刪除"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "您確定要刪除這個項目嗎？"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "有未儲存的變動！"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "儲存全部"
+    },
+    "customPrompts_save_button": {
+        "message": "儲存"
+    },
+    "customPrompts_btnNew": {
+        "message": "新增"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "新增提示"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "新增至選單"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "總是"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "閱讀郵件"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "撰寫郵件"
+    },
+    "customPrompts_close_button": {
+        "message": "關閉按鈕"
+    },
+    "customPrompts_do_reply": {
+        "message": "回覆"
+    },
+    "customPrompts_substitute_text": {
+        "message": "取代文字"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "已完成！"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "使用選定的答案"
+    },
+    "chatgpt_win_close": {
+        "message": "關閉"
+    },
+    "chatgpt_btn_retry": {
+        "message": "重試"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "點擊「送出」按鈕提交提示。"
+    },
+    "chatgpt_win_model_warning": {
+        "message": "不知為何，沒辦法確認是否已載入正確的模型。目前你可以按下藍色按鈕繼續。"
+    },
+    "chatgpt_win_custom_text": {
+        "message": "在此處輸入用於提示的額外文字。"
+    },
+    "chatgpt_win_send": {
+        "message": "送出"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "使用 GPT-3.5"
+    },
+    "chatgpt_force_completion": {
+        "message": "強制結束"
+    },
+    "msg_prompt_too_long": {
+        "message": "您提供的文字太長了，需要縮短。"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "高度"
+    },
+    "prefs_status_page": {
+        "message": "服務狀態"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "預設簽名"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "回覆全部"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "回覆寄件人"
+    },
+    "prefsInfoTitle": {
+        "message": "重要資訊"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "管理你的提示"
+    },
+    "TranslateLink": {
+        "message": "了解怎麼做！"
+    },
+    "customPrompts_Import": {
+        "message": "匯入新的提示"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT 模型"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT 網頁介面"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API 金鑰"
+    },
+    "Loading": {
+        "message": "載入中…"
+    },
+    "error": {
+        "message": "ThunderAI 錯誤！"
+    },
+    "chagpt_api_send_button": {
+        "message": "使用模型"
+    },
+    "Ollama_Models": {
+        "message": "Ollama 模型"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI 相容 API"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "沒有找到模型"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "對話名稱"
+    },
+    "SearchPrompt": {
+        "message": "搜尋提示"
+    },
+    "Optional": {
+        "message": "可選的"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML 郵件本文"
+    },
+    "placeholder_selected_html": {
+        "message": "選取的 HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "額外文字"
+    },
+    "placeholder_junk_score": {
+        "message": "垃圾評分"
+    },
+    "placeholder_cc_list": {
+        "message": "副本清單"
+    },
+    "AllowedValues": {
+        "message": "允許的值"
+    },
+    "placeholder_tags_current_email": {
+        "message": "郵件標籤"
+    },
+    "placeholder_tags_full_list": {
+        "message": "現有標籤"
+    },
+    "AddTags_excl_list_title": {
+        "message": "排除清單"
+    },
+    "addtags_exclude_tag": {
+        "message": "排除標籤"
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "強制語言"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API 金鑰"
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "開發者訊息"
+    },
+    "From": {
+        "message": "來自"
+    },
+    "Explanation": {
+        "message": "說明"
+    },
+    "Spam_Value": {
+        "message": "垃圾訊息評分"
+    },
+    "spamfilter_not_moved": {
+        "message": "否"
+    },
+    "Report_Date": {
+        "message": "報告日期"
+    },
+    "apiwebchat_info": {
+        "message": "資訊"
+    },
+    "apiwebchat_stopping": {
+        "message": "結束中"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "額外屬性"
+    },
+    "Anthropic_Models": {
+        "message": "Anthropic 模型"
+    },
+    "_api_connecting_model": {
+        "message": "模型：$model$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "可用服務"
+    },
+    "prefs_ollama_think": {
+        "message": "啟用思考"
+    },
+    "extensionDescription": {
+        "message": "使用 ChatGPT、Google Gemini、Anthropic 或 Ollama 來幫你寫好你的郵件吧！"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "名稱"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "當動作設定為「取代文字」時，可以選取差異檢視器。"
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "您尚未登入 ChatGPT。請使用您的帳戶登入，關閉 ChatGPT 視窗，然後再嘗試您的動作。之後您就會維持登入。"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "選擇您要使用的文字，然後點擊按鈕。"
+    },
+    "chatgpt_win_working": {
+        "message": "製作中..."
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "寬度"
+    },
+    "Debug": {
+        "message": "除錯"
+    },
+    "placeholder_author": {
+        "message": "作者"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "接收資料中"
+    },
+    "placeholder_recipients": {
+        "message": "收件人"
+    },
+    "Subject": {
+        "message": "主旨"
+    },
+    "_api_connecting_version": {
+        "message": "版本：$api_version$",
+        "placeholders": {
+            "api_version": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_btnEdit": {
+        "message": "編輯"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "看起來 ChatGPT 的頁面好像要載很久了。如果它載完了，就點一下右邊的按鈕。如果問題還是持續發生，請檢查服務狀態。"
+    },
+    "apiwebchat_you": {
+        "message": "你"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "使用儲存"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "回覆類型"
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "版本說明"
+    },
+    "customPrompts_Properties": {
+        "message": "屬性"
+    },
+    "placeholder_folder_path": {
+        "message": "資料夾路徑"
+    },
+    "Date": {
+        "message": "日期"
+    },
+    "spamfilter_moved": {
+        "message": "是"
+    },
+    "Custom": {
+        "message": "自訂"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Anthropic API"
+    },
+    "save": {
+        "message": "儲存"
+    },
+    "apiwebchat_error": {
+        "message": "錯誤"
+    },
+    "backToOptionsText": {
+        "message": "選項"
+    },
+    "OpenChatGPTTab": {
+        "message": "打開 ChatGPT 分頁"
+    },
+    "placeholder_account_email_address": {
+        "message": "帳戶電子郵件地址"
+    },
+    "customPrompts_ExportAll": {
+        "message": "匯出所有提示"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "選單：按字母排序"
+    },
+    "prefs_API_Host": {
+        "message": "主機位址"
+    },
+    "placeholder_mail_text_body": {
+        "message": "郵件本文"
+    },
+    "prefs_Connection_type": {
+        "message": "連線類型"
+    },
+    "prefs_API_Host_Info": {
+        "message": "類似的"
+    },
+    "SendingPrompt": {
+        "message": "送出提示中..."
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "新增標籤"
+    },
+    "placeholder_mail_subject": {
+        "message": "郵件主旨"
+    },
+    "placeholder_folder_name": {
+        "message": "資料夾名稱"
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "系統指示"
+    },
+    "placeholder_selected_text": {
+        "message": "選取的文字"
+    },
+    "_api_connecting_host": {
+        "message": "主機：$api_host$",
+        "placeholders": {
+            "api_host": {
+                "content": "$1"
+            }
+        }
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI 錯誤"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI 警示"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "垃圾訊息閾值"
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "任務選項"
+    },
+    "btn_show_differences": {
+        "message": "顯示差異"
+    }
+}
