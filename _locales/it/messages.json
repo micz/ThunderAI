@@ -513,9 +513,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Puoi utilizzare segnaposto per dati aggiuntivi."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Puoi modificare il prompt come preferisci, ma la risposta ricevuta dall'IA deve essere una lista di tag separati da virgole!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Mantieni la compatibilità con \"v1\""
     },
@@ -741,7 +738,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Testo attuale del prompt"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Puoi modificare il prompt come preferisci, ma la risposta ricevuta dall'AI deve essere in formato JSON come specificato nel prompt predefinito!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -848,9 +845,6 @@
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "Se selezionato, ThunderAI sposterà automaticamente le email di spam nella cartella dello spam."
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Puoi modificare il prompt come desideri, ma la risposta ricevuta dall'IA deve essere in formato JSON come specificato nel prompt predefinito!"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Valore soglia per lo spam"

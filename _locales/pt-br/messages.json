@@ -513,9 +513,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Você pode usar espaços reservados para dados adicionais."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Você pode alterar o prompt como quiser, mas a resposta recebida da IA deve ser uma lista de tags separadas por vírgulas!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Manter a compatibilidade com \"v1\""
     },
@@ -741,7 +738,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Texto do prompt atual"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Você pode alterar o prompt como desejar, mas a resposta recebida da IA deve estar no formato JSON conforme especificado no prompt padrão!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -761,9 +758,6 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Erro ao abrir a caixa de diálogo do evento de calendário"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Você pode alterar o prompt como quiser, mas a resposta recebida da IA deve estar no formato JSON, conforme especificado no prompt padrão!"
     },
     "spamfilter_threshold_zero": {
         "message": "O limite de spam está em zero! Você marcará todos os e-mails como spam!"

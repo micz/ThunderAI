@@ -78,4 +78,8 @@ export const taPromptUtils = {
 
         return chatgpt_lang;
     },
+
+    getTagsFromResponse(response_text){
+        
+    }
 };

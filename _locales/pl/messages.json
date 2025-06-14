@@ -513,9 +513,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Możesz użyć dodatkowych symboli zastępczych danych."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Możesz zmienić polecenie według własnego uznania, ale odpowiedź otrzymana od AI musi być listą tagów oddzielonych przecinkami!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Zachowaj kompatybilność z \"v1\""
     },
@@ -732,7 +729,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Bieżący tekst zapytania"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Możesz zmienić monit według własnego uznania, ale odpowiedź otrzymana od AI musi być w formacie JSON, jak określono w domyślnym zapytaniu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -764,9 +761,6 @@
     "prefs_GoogleGemini_API_Key": {
         "message": "Klucz API Google Gemini",
         "description": "Klucz API dla interfejsu API Google Gemini"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Możesz zmienić prompt według własnego uznania, ale odpowiedź AI musi być w formacie JSON zgodnie z domyślnym promptem!"
     },
     "Subject": {
         "message": "Temat"

@@ -513,9 +513,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Možete koristiti dodatna rezervirana mjesta za podatke."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti popis oznaka odvojenih zarezima!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Zadrži \"v1\" kompatibilnost"
     },
@@ -741,7 +738,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Trenutačni tekst upita"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -806,9 +803,6 @@
     },
     "SpamFilter_prompt_text_title": {
         "message": "Trenutačni tekst upita"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prompt_spamfilter": {
         "message": "Prepoznaj neželjenu poštu"

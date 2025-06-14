@@ -513,9 +513,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Sie können zusätzliche Datenplatzhalter verwenden."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Sie können den Prompt nach Wunsch ändern, aber die Antwort der KI muss eine durch Kommas getrennte Liste von Tags sein!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
     },
@@ -741,7 +738,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Aktueller Prompt-Text"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -794,9 +791,6 @@
     },
     "SpamFilter_prompt_text_title": {
         "message": "Aktueller Aufforderungstext"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Sie können die Aufforderung nach Belieben ändern, aber die Antwort der KI muss im JSON-Format erfolgen, wie in der Standardaufforderung angegeben!"
     },
     "prompt_spamfilter": {
         "message": "Spam-E-Mails erkennen"

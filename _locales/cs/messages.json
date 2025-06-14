@@ -467,9 +467,6 @@
     "SpamFilter_prompt_text_title": {
         "message": "Aktuální text přikazu"
     },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Příkaz můžete změnit, jak chcete, ale odpověď přijatá z AI musí být ve formátu JSON, jak je uvedeno ve výchozím příkazu!"
-    },
     "Moved_to_Spam": {
         "message": "Přesunuto do Spamu"
     },
@@ -649,9 +646,6 @@
     },
     "prompt_get_calendar_event": {
         "message": "Přidej novou událost do kalendáře"
-    },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Výzvu můžete změnit, jak chcete, ale odpověď obdržená od AI musí být seznam štítků oddělených čárkou!"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Pokud je zaškrtnuto, AI bude přidávat štítky pouze e-mailům přijatým ve složce Doručená pošta."
@@ -839,7 +833,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Aktuální text výzvy"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Výzvu můžete změnit, jak si přejete, ale odpověď přijatá od AI musí být ve formátu JSON, jak je uvedeno ve výchozí výzvě!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
