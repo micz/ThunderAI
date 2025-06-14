@@ -1,1 +1,365 @@
-{}
+{
+    "importPrompts_invalidFile": {
+        "message": "Файл, который вы пытаетесь импортировать, не является допустимым файлом пользовательских промтов."
+    },
+    "chatgpt_empty_model": {
+        "message": "Вы не выбрали модель для API ChatGPT. Выберите ее на странице параметров."
+    },
+    "menu_title": {
+        "message": "ИИ"
+    },
+    "customPrompts_start_saving": {
+        "message": "Сохранение промта..."
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Запросить дополнительный текст"
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Вы не вошли в ChatGPT. Пожалуйста, войдите в систему, используя свои учетные данные, закройте окно ChatGPT, а затем повторите предпринятое вами действие. После этого вы останетесь в системе."
+    },
+    "customPrompts_import_completed": {
+        "message": "Импорт пользовательских промтов завершен! Вам нужно нажать кнопку «Сохранить все», чтобы сохранить изменения."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Файл, который вы пытаетесь импортировать, не содержит допустимых промтов."
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Обновить список моделей ChatGPT"
+    },
+    "customPrompts_managePrompts_help": {
+        "message": "Дополнительная информация"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Править"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Удалить"
+    },
+    "customPrompts_Import": {
+        "message": "Импорт новых промтов"
+    },
+    "prompt_classify": {
+        "message": "Классифицировать"
+    },
+    "importPrompts_confirmText": {
+        "message": "Вы собираетесь импортировать новые промты."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Вы можете импортировать и экспортировать промты. Существующие промты с теми же идентификатороми будут перезаписаны. Промты с новыми идентификаторами будут добавлены."
+    },
+    "prompt_this": {
+        "message": "Создать промт"
+    },
+    "customPrompts_btnOK": {
+        "message": "Да"
+    },
+    "prompt_lang": {
+        "message": "Ответить в"
+    },
+    "prompt_reply": {
+        "message": "Ответить на это письмо"
+    },
+    "prompt_reply_advanced": {
+        "message": "Ответить на эту тему"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Переписать вежливо"
+    },
+    "prompt_translate_this": {
+        "message": "Перевести"
+    },
+    "prompt_selection_needed": {
+        "message": "Чтобы продолжить, вам нужно выделить текст!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Управление промтами"
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Если все правильно, после импорта нажмите кнопку «Сохранить все»."
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Имя"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Текст промта"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Действие"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Системные промты не подлежат редактированию. Вы можете отключить их, затем скопировать текст промта и вставить его в новую, чтобы создать измененную версию."
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Включить"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Включить просмотрщик различий"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Просмотрщик различий можно выбрать, если установлено действие «Заменить текст»."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Обязательные поля"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Необходимо выделить текст"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Отмена"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Вы уверены, что хотите удалить этот элемент?"
+    },
+    "customPrompts_btnSaveAll": {
+        "message": "Сохранить все"
+    },
+    "customPrompts_btnNew": {
+        "message": "Добавить новый"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Добавить промт"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Добавить меню"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Всегда"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Составление письма"
+    },
+    "customPrompts_do_reply": {
+        "message": "Ответить"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Заменить текст"
+    },
+    "chatgpt_win_working": {
+        "message": "Обработка..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Завершена!"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Используй выбранный ответ"
+    },
+    "chatgpt_win_close": {
+        "message": "Закрыть"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Повторить попытку"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Нажмите кнопку «Отправить», чтобы отправить промт."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Вставьте сюда дополнительный текст промта."
+    },
+    "chatgpt_force_completion": {
+        "message": "Принудительное завершение"
+    },
+    "msg_prompt_too_long": {
+        "message": "Текст, который вы предоставили, слишком длинный. Вам нужно его сократить."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Заметки о выпуске"
+    },
+    "prefs_status_page": {
+        "message": "статус сервиса"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Имя подписи по умолчанию"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Язык по умолчанию для ответов"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Ответить всем"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Менеджер ваших промтов"
+    },
+    "prefsInfoTitle": {
+        "message": "Важная информация"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Может случиться так, что веб-интерфейс ChatGPT изменится таким образом, что это нарушит работу расширения. Проверьте страницу «Состояние службы», ссылка на которую находится внизу этой страницы. Также помните, что при первом использовании ThunderAI вам необходимо войти в ChatGPT."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Помните, что вы можете открыть меню ThunderAI с помощью сочетания клавиш CTRL+ALT+A."
+    },
+    "prefsDonation_1": {
+        "message": "Вам нравится это расширение?"
+    },
+    "backToOptionsText": {
+        "message": "Параметры"
+    },
+    "currently_used_prompt": {
+        "message": "Имя текущего промта"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "Веб интерфейс ChatGPT"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API ключ"
+    },
+    "Loading": {
+        "message": "Загрузка..."
+    },
+    "error": {
+        "message": "Ошибка ThunderAI!"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (локальная LLM)"
+    },
+    "prefs_API_Host": {
+        "message": "Адрес сервера"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Переписать формально"
+    },
+    "prefsInfoDesc_3": {
+        "message": "Для использования интеграции с Ollama вам необходимо настроить локальный сервер Ollama. После запуска сервера введите его адрес в указанное поле в приложении. Для обеспечения корректной связи между ThunderAI и сервером Ollama не забудьте установить OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prompt_summarize_this": {
+        "message": "Подвести итоги"
+    },
+    "customPrompts_close_button": {
+        "message": "Кнопка «Закрыть»"
+    },
+    "chatgpt_win_model_warning": {
+        "message": "По какой-то причине невозможно проверить, загружена ли правильная модель. Сейчас вы можете нажать синюю кнопку, чтобы продолжить."
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Нажмите здесь, чтобы отобразить кнопку «Использовать последний ответ», если ChatGPT завершил свою работу, но кнопка не появилась."
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Размеры окна чата ИИ"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Переиндексация списка..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Фильтрация промтов..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Сохранение пользовательских промтов..."
+    },
+    "customPrompts_saved": {
+        "message": "Промт сохранен!"
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Перезагрузка меню..."
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Всегда добавлять подпись"
+    },
+    "customPrompts_save_button": {
+        "message": "Сохранить"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Чтение письма"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Это тип ответа по умолчанию, который будет использоваться при ответе на электронное письмо. Вы можете выбрать другой позже в диалоговом окне ответа."
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Выберите текст, который вы хотите использовать, и нажмите кнопку."
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Кажется, что страница ChatGPT загружается слишком долго. Если загрузка завершится, нажмите кнопку справа. Если проблема не устранена, проверьте статус сервиса."
+    },
+    "customPrompts_ExportAll": {
+        "message": "Экспортировать все промты"
+    },
+    "chatgpt_win_send": {
+        "message": "Отправить"
+    },
+    "chatgpt_use_gpt35": {
+        "message": "Использовать GPT3.5"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Ответить отправителю"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Определите язык ответа в промте"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Высота"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Ширина"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Тип ответа"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Должен быть уникальным, строчным и без пробелов"
+    },
+    "prefsInfoDesc_2": {
+        "message": "Для использования API ChatGPT вам понадобится ключ API OpenAI ChatGPT и нужно выбрать модель."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Чтобы использовать эту интеграцию, вам необходимо настроить локальный сервер, совместимый с API OpenAI, например LM Studio. После запуска сервера введите его адрес в указанное поле в приложении. Чтобы обеспечить надлежащую связь между ThunderAI и локальным сервером, не забудьте правильно настроить параметры CORS."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Вы можете изменить сочетание клавиш, нажав на значок шестеренки в правом верхнем углу этой страницы и выбрав «Управление сочетанием клавиш расширения»."
+    },
+    "TranslateLink": {
+        "message": "Узнайте как!"
+    },
+    "prefsDonation_2": {
+        "message": "Рассмотрите возможность сделать пожертвование!"
+    },
+    "chagpt_api_send_button": {
+        "message": "Текущая модель"
+    },
+    "TranslateText": {
+        "message": "Хотите помочь перевести это дополнение?"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Вы не добавили API-ключ для API ChatGPT. Пожалуйста, введите его на странице параметров."
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "API, совместимый с OpenAI"
+    },
+    "customPrompts_start_import": {
+        "message": "Запуск импорта пользовательских промтов..."
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Обновить список моделей Ollama"
+    },
+    "Ollama_Models": {
+        "message": "Модели Ollama"
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Сохранение системных промтов..."
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Есть не сохраненные изменения!"
+    },
+    "Debug": {
+        "message": "Отладка"
+    },
+    "prefs_Connection_type": {
+        "message": "Тип соединения"
+    },
+    "extensionDescription": {
+        "message": "Используй ChatGPT, Goolge Gemini, Anthropic или Ollama, чтобы улучшить качество своих электронных писем!"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Активировать систему отладки"
+    },
+    "ChatGPT_Models": {
+        "message": "Модели ChatGPT"
+    }
+}
