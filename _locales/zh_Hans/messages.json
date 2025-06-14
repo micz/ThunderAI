@@ -882,7 +882,7 @@
         "message": "如果选中，“添加标签”上下文菜单项将在消息列表中右键单击电子邮件时显示。"
     },
     "noActiveCalendar": {
-        "message": "未找到激活的日历！"
+        "message": "未找到可编辑的日历！"
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "启用差异查看器"
@@ -928,5 +928,8 @@
     },
     "Explanation": {
         "message": "说明"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "当操作设置为“替换文本”时，可以选择差异查看器。"
     }
 }
