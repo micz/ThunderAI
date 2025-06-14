@@ -445,7 +445,7 @@ switch (message.command) {
     `;
     document.head.appendChild(style);
 
-    async function createDialog(inputString, onSubmit) {
+    async function createDialog(inputTags, onSubmit) {
       // Create the dialog
       const tags_dialog = document.createElement('dialog');
       tags_dialog.className = 'mzta_dialog';
@@ -461,8 +461,8 @@ switch (message.command) {
 
       let no_submit = false;
 
-      // Parse the input string into labels
-      const words = inputString.split(',').map(word => word.trim()).filter(word => word !== '');
+      // Fix the input array
+      const words = inputTags.map(word => word.trim()).filter(word => word !== '');
 
       // console.log(">>>>>>>>>>>>> words: " + JSON.stringify(words));
 

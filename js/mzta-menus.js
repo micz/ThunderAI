@@ -168,7 +168,7 @@ export class mzta_Menus {
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
-                        let tags_current_email = '';
+                        let tags_current_email = [];
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
@@ -183,7 +183,7 @@ export class mzta_Menus {
                         let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
                         await cmd_addTags.initWorker();
                         try{
-                            tags_current_email = (await cmd_addTags.sendPrompt()).trim();
+                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
@@ -191,7 +191,7 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        this.logger.log("tags_current_email: " + tags_current_email);
+                        this.logger.log("tags_current_email: " + JSON.stringify(tags_current_email));
                         this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         taWorkingStatus.stopWorking();

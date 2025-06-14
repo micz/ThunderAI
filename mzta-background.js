@@ -995,14 +995,14 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aats.connection_type, prefs_init.do_debug);
             await cmd_addTags.initWorker();
-            let tags_current_email = '';
+            let tags_current_email = [];
             try {
-                tags_current_email = (await cmd_addTags.sendPrompt()).trim();
+                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
             } catch (err) {
                 console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
             }
-            taLog.log("tags_current_email: " + tags_current_email);
-            let _data = { messageId: message.id, tags: tags_current_email.split(/,\s*/) };
+            taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+            let _data = { messageId: message.id, tags: tags_current_email };
             _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
         }
 
