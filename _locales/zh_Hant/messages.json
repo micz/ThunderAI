@@ -373,7 +373,7 @@
         "message": "看起來 ChatGPT 的頁面好像要載很久了。如果它載完了，就點一下右邊的按鈕。如果問題還是持續發生，請檢查服務狀態。"
     },
     "apiwebchat_you": {
-        "message": "你"
+        "message": "您"
     },
     "ChatGPT_chatgpt_api_store": {
         "message": "使用儲存"
@@ -433,7 +433,7 @@
         "message": "連線類型"
     },
     "prefs_API_Host_Info": {
-        "message": "類似的"
+        "message": "類似於"
     },
     "SendingPrompt": {
         "message": "送出提示中..."
@@ -716,7 +716,7 @@
         "message": "重置為預設"
     },
     "AddTags_excl_list_infoline": {
-        "message": "這是一份禁止新增到郵件的標籤清單。"
+        "message": "這是一份禁止在郵件中新增的標籤清單。"
     },
     "AddTags_prompt_prefs_title": {
         "message": "新增標籤選項"
@@ -803,7 +803,7 @@
         "message": "現有提示文字"
     },
     "SpamFilter_info_default": {
-        "message": "在此頁面中您可以修改用於偵測垃圾郵件的預設提示。"
+        "message": "在此頁面中，您可以修改用於偵測垃圾郵件的預設提示。"
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "如果 AI 傳回的值高於此閾值，則電子郵件將被移至垃圾郵件資料夾。"
@@ -812,7 +812,7 @@
         "message": "顯示「新增標籤」在快顯功能選單"
     },
     "remember_CORS": {
-        "message": "請記住，您需要在伺服器上設定 CORS 設定！"
+        "message": "記住，您需要在伺服器上設定 CORS 設定！"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "使用純文字撰寫"
@@ -1096,7 +1096,7 @@
         "message": "從以下文字中提取所有需要生成日曆事件的相關資訊。 提取的資訊應包含：\n- 事件名稱\n- 起始日期和時間（包含時區，如果指定）\n- 結束日期和時間（包含時間區，如果指定）\n- 整天事件（如果提及\n- 參與者\n確保數據以清晰一致的方式格式化，以便直接用於創建日曆事件。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。 如果計算出的起日期和時間早於「{%current_datetime%}」，則使用「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果持續時間沒有指定，則設定為一小時。\n參與者：{%author%}, {%recipients%}, {%cc_list%}。如果存在，請排除我的地址：{%account_email_address%}。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不要包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日曆事件摘要在此\",\n\"forceAllDay\": false,\n\"attendees\": [\"attendee1@example.com \",\"attendee2@example.com \",\"attendee3@example.com \"]\n}\n這裡是文字：「{%selected_text%}」"
     },
     "TranslateText": {
-        "message": "您想幫忙翻譯這個附加元件嗎？"
+        "message": "您願意幫忙翻譯這個附加元件嗎？"
     },
     "prompt_get_task_full_text": {
         "message": "從以下文字中提取所有需要生成任務的相關資訊。 提取的資訊應包含：\n- 截止日期和時間（包括時區，如果指定）\n- 任務總結\n- 初始日期和時間（包括時區，如果指定）\n確保數據以清晰一致的方式格式化，以便直接用於建立任務。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。如果計算出的起日期和時間早於「{%current_datetime%}」，則使用 「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"任務總結在此\"\n}\n如果沒有日期資訊，請刪除這些資訊。\n以下是文字：「{%selected_text%}」"
