@@ -171,7 +171,7 @@
         "message": "送出"
     },
     "chatgpt_use_gpt35": {
-        "message": "使用 GPT-3.5"
+        "message": "使用 GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "強制結束"
@@ -234,7 +234,7 @@
         "message": "沒有找到模型"
     },
     "prefs_OpenAIComp_ChatName": {
-        "message": "對話名稱"
+        "message": "聊天名稱"
     },
     "SearchPrompt": {
         "message": "搜尋提示"
@@ -483,7 +483,7 @@
         "message": "如果 ChatGPT 已完成工作但按鈕尚未出現，請按一下此處顯示「使用最後一個答案」按鈕。"
     },
     "prefs_OptionText_chatgpt_win_text": {
-        "message": "AI 對話視窗維度"
+        "message": "AI 聊天視窗維度"
     },
     "prefs_OptionText_default_chatgpt_lang": {
         "message": "回應的預設語言"
@@ -904,7 +904,7 @@
         "message": "排除精確匹配"
     },
     "hyprland_warning": {
-        "message": "如果您在開啟 AI 對話視窗時遇到問題，請嘗試將高度和寬度值設為 0。此問題可能會在某些環境下的 Linux 上出現，例如，使用 Hyprland 時。"
+        "message": "如果您在開啟 AI 聊天視窗時遇到問題，請嘗試將高度和寬度值設為 0。此問題可能會在某些環境下的 Linux 上出現，例如，使用 Hyprland 時。"
     },
     "prefs_Connection_type_Google_Gemini_API": {
         "message": "Google Gemini API"
