@@ -356,7 +356,7 @@ function loadCustomDataPHsList(values){
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                 </td>
-				<td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
+				<td class="w08"><span class="field_title_s">__MSG_customDataPH_add_to_menu__:</span>
                 <br>
 	                <span class="type_show">` + type_output + `</span>
 	                <select class="type_output hiddendata">

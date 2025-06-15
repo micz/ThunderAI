@@ -1611,5 +1611,9 @@
   "importCustomDataPH_invalidDataPHs": {
     "message": "The file you're trying to import does not contain any valid custom data placeholders.",
     "description": ""
+  },
+  "customDataPH_add_to_menu": {
+    "message": "Usable in prompts added to menu",
+    "description": ""
   }
 }
