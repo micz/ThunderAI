@@ -13,6 +13,7 @@
         <li><i>[OpenAI Comp API]</i> Handling responses without choices when using RAG [<a href="https://github.com/micz/ThunderAI/issues/416">#416</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added Perplexity configuration [<a href="https://github.com/micz/ThunderAI/issues/405">#405</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added OpenRouter configuration [<a href="https://github.com/micz/ThunderAI/issues/401">#401</a>].</li>
+        <li>Traditional Chinese (zh_Hant) translation added, thanks to <a href="https://github.com/evez">evez</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.5.2 - 05/06/2025</h2>
