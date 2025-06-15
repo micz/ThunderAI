@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ThunderAI - __MSG_customDataPH_manageDataPH__</title>
+    <link rel="stylesheet" href="mzta-custom-dataplaceholders.css">
+    <link rel="icon" href="../../images/icon-16px.png">
+</head>
+<body>
+    <div>
+        <h1 class="page_title">__MSG_customDataPH_manageDataPH__</h1>
+        <p>__MSG_customDataPH_manageDataPH_info_default__<br>
+            __MSG_customPrompts_managePrompts_info_default_3__
+        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a></p>
+    </div>
+    <div id="import_export">
+        <button id="btnExportAll">__MSG_customDataPH_ExportAll__</button><br>
+        <button id="btnImport">__MSG_customDataPH_Import__</button>
+    </div>
+    <div id="command_palette">
+      <button id="btnSaveAll" disabled>__MSG_btnSaveAll_string__</button>
+      <span id="msgDisplay"></span>
+      <button id="btnNew">__MSG_btnNew_string__</button>
+    </div>
+    <div id="formNew">
+      <table class="width_all">
+        <tr>
+            <td class="w19">
+                <label for="txtIdNew" class="field_title">*__MSG_customPrompts_form_label_ID__:</label>
+                <br>
+                <i>thunderai_custom_</i><input type="text" id="txtIdNew" name="id" class="input_new" tabindex="1">
+                <br><span class="small_label">[__MSG_customPrompts_form_label_ID_rules__]</span>                
+            </td>
+            <td rowspan="2" class="w25">
+                <label for="txtTextNew" class="field_title">*__MSG_customDataPH_form_label_Text__:</label>
+                <br>
+                <div class="autocomplete-container">
+                    <textarea id="txtTextNew" name="text" class="input_new text_output editor" tabindex="3"></textarea>
+                    <ul class="autocomplete-list hidden"></ul>
+                </div>
+            </td>
+			<td rowspan="2" class="w19">
+                <label for="selectTypeNew" class="field_title">__MSG_customPrompts_add_to_menu__:</label>
+                <br>
+                <select id="selectTypeNew" name="type" tabindex="4" class="type_output">
+                    <option value="0">__MSG_customPrompts_add_to_menu_always__</option>
+                    <option value="1">__MSG_customPrompts_add_to_menu_reading__</option>
+                    <option value="2">__MSG_customPrompts_add_to_menu_composing__</option>
+                </select>
+            </td>
+            <td rowspan="2" class="w19">
+                <label class="field_title">__MSG_customPrompts_Properties__:</label>
+                <br>
+                <span class="need_selected_span"><input type="checkbox" id="checkboxNeedSelectedNew" name="need_selected" class="need_selected_new" value="1" tabindex="6"> <label for="checkboxNeedSelectedNew">__MSG_customPrompts_form_label_need_selected__</label></span>
+                <br>
+                <span class="need_custom_text_span"><input type="checkbox" id="checkboxNeedCustomTextNew" name="need_custom_text" class="need_custom_text_new" value="1" tabindex="8"> <label for="checkboxNeedCustomTextNew">__MSG_customPrompts_form_label_need_custom_text__</label></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="w19">
+              <label for="txtNameNew" class="field_title">*__MSG_customPrompts_form_label_Name__:</label>
+              <br>
+              <input type="text" id="txtNameNew" name="name" class="input_new" tabindex="2">
+            </td>
+        </tr>
+    </table>
+        <div class="go_right_float">* __MSG_customPrompts_form_required_fields__</div>
+        <br>
+        <div class="go_right"><button id="btnAddNew" disabled>__MSG_customDataPH_btnAddNewCommit__</button></div>
+    </div>
+    <div id="all_custom_dataplaceholders">
+        <table class="prompts_list">
+            <thead>
+              <tr>
+                <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>
+                <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
+                <th class="sort" data-sort="text">__MSG_customDataPH_form_label_Text__</th>
+				<th>__MSG_customPrompts_Properties__</th>
+                <th>&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody class="list">
+            </tbody>
+          </table>
+    </div>
+    <div class="storage_space">__MSG_StorageSpace__: <span id="storage_space"></span></div>
+    <script src="../_lib/list.js"></script>
+    <script src="mzta-custom-dataplaceholders.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

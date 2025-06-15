@@ -1575,5 +1575,21 @@
   "customDataPH_Import": {
     "message": "Import new data placeholders",
     "description": ""
+  },
+  "customDataPH_form_label_Text": {
+    "message": "Data Placeholder Text",
+    "description": ""
+  },
+  "customDataPH_saving_custom": {
+    "message": "Saving custom data placeholders...",
+    "description": ""
+  },
+  "customDataPH_saved": {
+    "message": "Custom data placeholders saved!",
+    "description": ""
+  },
+  "customDataPH_btnAddNewCommit": {
+    "message": "Add the Data Placeholder",
+    "description": ""
   }
 }
