@@ -1591,5 +1591,25 @@
   "customDataPH_btnAddNewCommit": {
     "message": "Add the Data Placeholder",
     "description": ""
+  },
+  "importCustomDataPH_confirmText": {
+    "message": "You are about to import new custom data placeholders.",
+    "description": ""
+  },
+  "importCustomDataPH_start_import": {
+    "message": "Starting custom data placeholders import...",
+    "description": ""
+  },
+  "importCustomDataPH_import_completed": {
+    "message": "Custom data placeholders import completed! You need to click on the 'Save All' button to save your changes.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidFile": {
+    "message": "The file you're trying to import is not a valid custom data placeholders file.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidDataPHs": {
+    "message": "The file you're trying to import does not contain any valid custom data placeholders.",
+    "description": ""
   }
 }
