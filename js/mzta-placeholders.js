@@ -267,7 +267,7 @@ export async function prepareCustomDataPHsForImport(placeholders){
     // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport prompts: " + JSON.stringify(prompts));
     const output = await getCustomPlaceholders();
     // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport output: " + JSON.stringify(output));
-    prompts.forEach(placeholder => {
+    placeholders.forEach(placeholder => {
         if(output.some(p => p.id == placeholder.id)){
             Object.keys(placeholder).forEach(key => {
                output.find(p => p.id == placeholder.id)[key] = placeholder[key];

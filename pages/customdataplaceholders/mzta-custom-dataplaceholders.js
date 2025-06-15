@@ -156,14 +156,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnExportAll = document.getElementById('btnExportAll');
     btnExportAll.addEventListener('click', (e) => {
         e.preventDefault();
-        exportPrompts();
+        exportCustomDataPHs();
     });
 
-    async function exportPrompts() {
+    async function exportCustomDataPHs() {
         const manifest = browser.runtime.getManifest();
         const addonVersion = manifest.version;
-        const outputPrompts = preparePromptsForExport(await getPrompts());
-        let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
+        const outputCustomDataPHs = prepareCustomDataPHsForExport(await getCustomPlaceholders());
+        let outputObj = {id: 'thunderai-custom-data-placeholders', addon_version: addonVersion, customdataplaceholders: outputCustomDataPHs};
         const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
             type: "application/json",
           });
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const time_stamp = `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(currentDate.getDate()).padStart(2, '0')}${String(currentDate.getHours()).padStart(2, '0')}${String(currentDate.getMinutes()).padStart(2, '0')}${String(currentDate.getSeconds()).padStart(2, '0')}`;
         messenger.downloads.download({
             url: URL.createObjectURL(blob),
-            filename: `thunderai-prompts-${time_stamp}.json`,
+            filename: `thunderai-custom-data-placeholders-${time_stamp}.json`,
             saveAs: true,
         });
     }
@@ -179,57 +179,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnImport = document.getElementById('btnImport');
     btnImport.addEventListener('click', (e) => {
         e.preventDefault();
-        importPrompts();
+        importCustomDataPHs();
     });
 
-    function importPrompts() {
-        if(confirm(browser.i18n.getMessage("importPrompts_confirmText") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
-            //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from exportPrompts(), and if so, add it to the list
+    function importCustomDataPHs() {
+        if(confirm(browser.i18n.getMessage("importCustomDataPH_confirmText") + '\n' + browser.i18n.getMessage("customDataPH_manageDataPH_info_default") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
+            //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from importCustomDataPHs(), and if so, add it to the list
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
             input.click();
             input.onchange = async () => {
-                setMessage(browser.i18n.getMessage('customPrompts_start_import'));
+                setMessage(browser.i18n.getMessage('importCustomDataPH_start_import'));
                 const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = async () => {
                     const json = reader.result;
                     try {
                         const obj = JSON.parse(json);
-                        if(obj.id !== 'thunderai-prompts') {
-                            alert(browser.i18n.getMessage("importPrompts_invalidFile"));
-                            setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                        if(obj.id !== 'thunderai-custom-data-placeholders') {
+                            alert(browser.i18n.getMessage("importCustomDataPH_invalidFile"));
+                            setMessage(browser.i18n.getMessage('importCustomDataPH_invalidFile'),'red');
                             return;
                         }
                         // if(obj.addon_version !== manifest.version) {
                         //     alert(browser.i18n.getMessage("importPrompts_invalidVersion"));
                         //     return;
                         // }
-                        if(!Array.isArray(obj.prompts)) {
-                            alert(browser.i18n.getMessage("importPrompts_invalidPrompts"));
-                            setMessage(browser.i18n.getMessage('customPrompts_invalidPrompts'),'red');
+                        if(!Array.isArray(obj.customdataplaceholders)) {
+                            alert(browser.i18n.getMessage("importCustomDataPH_invalidDataPHs"));
+                            setMessage(browser.i18n.getMessage('importCustomDataPH_invalidDataPHs'),'red');
                             return;
                         }
-                        //setCustomPrompts(obj.prompts);
                         customDataPHsList.clear();
-                        loadCustomDataPHsList(await preparePromptsForImport(obj.prompts));
+                        loadCustomDataPHsList(await prepareCustomDataPHsForImport(obj.customdataplaceholders));
                         setSomethingChanged();
                         i18n.updateDocument();
-                        // browser.runtime.sendMessage({command: "reload_menus"});
-                        setMessage(browser.i18n.getMessage('customPrompts_import_completed'), 'orange');
-                        // msgTimeout = setTimeout(() => {
-                        //     clearMessage();
-                        // }, 10000);
+                        setMessage(browser.i18n.getMessage('importCustomDataPH_import_completed'), 'orange');
                     } catch(err) {
-                        alert(browser.i18n.getMessage("importPrompts_invalidFile") + ' ' + err);
-                        setMessage(browser.i18n.getMessage('importPrompts_invalidFile'),'red');
+                        alert(browser.i18n.getMessage("importCustomDataPH_invalidFile") + ' ' + err);
+                        setMessage(browser.i18n.getMessage('importCustomDataPH_invalidFile'),'red');
                         return;
                     }
                 };
                 reader.readAsText(file);
             };
-
         };
     }
 
