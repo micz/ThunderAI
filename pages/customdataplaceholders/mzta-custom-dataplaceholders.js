@@ -550,7 +550,7 @@ function checkSelectedBoxes(checkboxes = null) {
 
 //Save all custom data placeholders
 async function saveAll() {
-    setMessage(browser.i18n.getMessage('customDataPH_start_saving'));
+    setMessage(browser.i18n.getMessage('customDataPH_saving_custom'));
     setNothingChanged();
     if(customDataPHsList != null) {
         setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
