@@ -259,10 +259,6 @@
     "message": "Send",
     "description": ""
   },
-  "chatgpt_use_gpt35": {
-    "message": "Use GPT3.5",
-    "description": ""
-  },
   "chatgpt_force_completion": {
     "message": "force completion",
     "description": ""
