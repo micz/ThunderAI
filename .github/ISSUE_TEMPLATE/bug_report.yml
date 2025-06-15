@@ -52,6 +52,7 @@ body:
     attributes:
       label: Which integration are you using?
       options:
+        - -- Select an option --
         - ChatGPT Web Interface
         - OpenAI ChatGPT API
         - Google Gemini API
