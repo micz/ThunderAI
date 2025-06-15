@@ -167,11 +167,11 @@
     "message": "There are unsaved changes!",
     "description": ""
   },
-  "customPrompts_btnSaveAll": {
+  "btnSaveAll_string": {
     "message": "Save All",
     "description": ""
   },
-  "customPrompts_btnNew": {
+  "btnNew_string": {
     "message": "Add New",
     "description": ""
   },
@@ -1562,6 +1562,18 @@
   },
   "customDataPH_manageDataPH": {
     "message": "Manage Data Placeholders",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default": {
+    "message": "You can import and export the custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
+    "description": ""
+  },
+  "customDataPH_ExportAll": {
+    "message": "Export all custom data placeholders",
+    "description": ""
+  },
+  "customDataPH_Import": {
+    "message": "Import new data placeholders",
     "description": ""
   }
 }

@@ -120,10 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Es gibt ungespeicherte Änderungen!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Alle speichern"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Neu hinzufügen"
     },
     "customPrompts_btnAddNewCommit": {

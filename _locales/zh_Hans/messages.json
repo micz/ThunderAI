@@ -38,13 +38,13 @@
     "customPrompts_form_label_need_signature": {
         "message": "始终添加签名"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "新增"
     },
     "chatgpt_win_job_completed": {
         "message": "完成了！"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "保存所有变动"
     },
     "extensionDescription": {

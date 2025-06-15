@@ -80,13 +80,13 @@
     "customPrompts_form_label_enabled": {
         "message": "Povoleno"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Uložit vše"
     },
     "customPrompts_do_reply": {
         "message": "Odpovědět"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Přidat nový"
     },
     "customPrompts_close_button": {

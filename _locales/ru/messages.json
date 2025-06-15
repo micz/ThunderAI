@@ -110,10 +110,10 @@
     "customPrompts_btnDelete_confirmText": {
         "message": "Вы уверены, что хотите удалить этот элемент?"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Сохранить все"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Добавить новый"
     },
     "customPrompts_btnAddNewCommit": {
