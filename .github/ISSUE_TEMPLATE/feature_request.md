@@ -7,10 +7,6 @@ assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe it clearly.**\
-Provide a clear and concise explanation of the problem you're experiencing or the limitation you're facing.\
-_Example: "I'm often frustrated when I can't filter results by date..."_
-
 **Describe the feature you'd like to see implemented.**\
 What should happen? Describe the ideal solution or behavior in detail. Be as specific as possible.
 
