@@ -117,8 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             name: txtNameNew.value.trim(),
             text: txtTextNew.value.trim(),
 			type: selectTypeNew.value,
-            need_selected: (checkboxNeedSelectedNew.checked) ? 1 : 0,
-            need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             enabled: 1,
             is_default: 0,
             idnum: idnumMax + 1,
@@ -253,8 +251,6 @@ function showItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'none';
 	tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
-    tr.querySelector('input.need_selected').disabled = false;
-    tr.querySelector('input.need_custom_text').disabled = false;
 }
 
 function hideItemRowEditor(tr) {
@@ -266,8 +262,6 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'inline';
 	tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
-    tr.querySelector('input.need_selected').disabled = true;
-    tr.querySelector('input.need_custom_text').disabled = true;
 }
 
 // Confirm and log deletion action
@@ -317,18 +311,6 @@ function handleConfirmClick(e) {
     setSomethingChanged();
 }
 
-// Handle checkbox changes and log new state
-function handleCheckboxChange(e) {
-    e.preventDefault();
-    e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
-    //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
-    if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
-        let textarea = e.target.closest('tr').querySelector('.text_output');
-        checkPromptsConfigForPlaceholders(textarea);
-    }
-    
-}
-
 // Enable save button on input change
 function handleInputChange(e) {
     e.preventDefault();
@@ -348,8 +330,6 @@ function loadCustomDataPHsList(values){
             'name',
             'text',
             'type',
-            { name: 'need_selected', attr: 'checked_val'},
-            { name: 'need_custom_text', attr: 'checked_val'},
             { name: 'enabled', attr: 'checked_val'}
         ],
         item: function(values) {
@@ -387,10 +367,6 @@ function loadCustomDataPHsList(values){
 	              `<span class="type hiddendata"></span>
               </td>
                 <td class="w17">
-                    <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
-                    <br>
-                    <label><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span></label>
-                    <br>
                     <label><input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__</label>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
@@ -434,11 +410,6 @@ function loadCustomDataPHsList(values){
     let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
     btnConfirmItem_elements.forEach(element => {
         element.addEventListener('click', handleConfirmClick);
-    });
-
-    let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
-    checkbox_elements.forEach(element => {
-        element.addEventListener('change', handleCheckboxChange);
     });
 
     document.querySelectorAll('.input_mod').forEach(element => {
@@ -524,8 +495,6 @@ function setNothingChanged(){
 function checkSelectedBoxes(checkboxes = null) {
     if(checkboxes == null){
         checkboxes = [
-            ...document.querySelectorAll('.need_selected[type="checkbox"]'),
-            ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }
@@ -592,31 +561,4 @@ if(await isThunderbird128OrGreater()){
             event.preventDefault();
         }
     });    
-}
-
-function checkPromptsConfigForPlaceholders(textarea){
-    // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
-    let tr_ancestor = textarea.closest('tr');
-    let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(String(textarea.value).indexOf('{%additional_text%}') != -1){
-        if(!need_custom_text_element.checked){
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
-        }else{
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-        }
-      }else{
-        need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-      }
-
-      let tr_ancestor2 = textarea.closest('tr');
-      let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if((String(textarea.value).indexOf('{%selected_text%}') != -1)||(String(textarea.value).indexOf('{%selected_html%}') != -1)){
-        if(!selected_text_element.checked){
-            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
-        }else{
-            selected_text_element.closest('.need_selected_span').style.border = '';
-        }
-      }else{
-        selected_text_element.closest('.need_selected_span').style.border = '';
-      }
 }
