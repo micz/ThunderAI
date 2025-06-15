@@ -171,10 +171,6 @@
     "message": "Save All",
     "description": ""
   },
-  "customPrompts_save_button": {
-    "message": "Save",
-    "description": ""
-  },
   "customPrompts_btnNew": {
     "message": "Add New",
     "description": ""

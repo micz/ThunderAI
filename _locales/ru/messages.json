@@ -260,9 +260,6 @@
     "customPrompts_form_label_need_signature": {
         "message": "Всегда добавлять подпись"
     },
-    "customPrompts_save_button": {
-        "message": "Сохранить"
-    },
     "customPrompts_add_to_menu_reading": {
         "message": "Чтение письма"
     },

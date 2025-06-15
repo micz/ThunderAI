@@ -134,9 +134,6 @@
     "customPrompts_btnOK": {
         "message": "OK"
     },
-    "customPrompts_save_button": {
-        "message": "Uložit"
-    },
     "customPrompts_unsaved_changes": {
         "message": "Máte neuložené změny!"
     },
