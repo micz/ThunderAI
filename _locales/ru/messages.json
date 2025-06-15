@@ -26,7 +26,7 @@
     "ChatGPT_Models_Fetch": {
         "message": "Обновить список моделей ChatGPT"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Дополнительная информация"
     },
     "customPrompts_btnEdit": {

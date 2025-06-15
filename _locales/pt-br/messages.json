@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Gerenciar Prompts"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Mais informações"
     },
     "customPrompts_managePrompts_info_default": {

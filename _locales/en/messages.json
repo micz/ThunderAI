@@ -51,7 +51,7 @@
     "message": "Manage Prompts",
     "description": ""
   },
-  "customPrompts_managePrompts_help": {
+  "more_info_string": {
     "message": "More info",
     "description": ""
   },
@@ -1558,6 +1558,10 @@
   },
   "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
     "message": "If checked, the tags in the exclusion list will be matched exactly, otherwise they will be matched partially.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH": {
+    "message": "Manage Data Placeholders",
     "description": ""
   }
 }

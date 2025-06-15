@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Eingabeaufforderungen verwalten"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Informationen"
     },
     "customPrompts_managePrompts_info_default": {

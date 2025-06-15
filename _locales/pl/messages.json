@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Zarządzaj poleceniami"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Więcej informacji"
     },
     "customPrompts_managePrompts_info_default": {

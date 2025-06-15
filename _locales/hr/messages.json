@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Upravljaj upitima"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Više informacija"
     },
     "customPrompts_managePrompts_info_default": {
