@@ -315,6 +315,10 @@
     "message": "Manage your prompts",
     "description": ""
   },
+  "prefs_OptionText_btnManageCustomDataPH": {
+    "message": "Manage your data placeholders",
+    "description": ""
+  },
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""
