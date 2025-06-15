@@ -41,6 +41,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_html_body',
@@ -48,6 +49,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_typed_text',
@@ -55,6 +57,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 2,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_quoted_text',
@@ -62,6 +65,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 2,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_subject',
@@ -69,6 +73,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_folder_name',
@@ -76,6 +81,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 1,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_folder_path',
@@ -83,6 +89,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 1,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'selected_text',
@@ -90,6 +97,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'selected_html',
@@ -97,6 +105,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'additional_text',
@@ -104,6 +113,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'junk_score',
@@ -111,6 +121,7 @@ const defaultPlaceholders = [
         default_value: "0",
         type: 1,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'recipients',
@@ -118,6 +129,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'cc_list',
@@ -125,6 +137,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'author',
@@ -132,6 +145,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'mail_datetime',
@@ -139,6 +153,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 1,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'current_datetime',
@@ -146,6 +161,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'account_email_address',
@@ -153,6 +169,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'tags_current_email',
@@ -160,6 +177,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'tags_full_list',
@@ -167,6 +185,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'thunderai_def_sign',
@@ -174,6 +193,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'thunderai_def_lang',
@@ -181,6 +201,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
     {
         id: 'empty',
@@ -188,12 +209,13 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
+        enabled: 1,
     },
 ];
 
 
 export async function getPlaceholders(onlyEnabled = false){
-    const _defaultPlaceholders = await getDefaultPlaceholders_withProps();
+    const _defaultPlaceholders = await getDefaultPlaceholders();
     // console.log('>>>>>>>>>>>> getPlaceholders _defaultPlaceholders: ' + JSON.stringify(_defaultPlaceholders));
     const customPlaceholders = await getCustomPlaceholders();
     // console.log('>>>>>>>>>>>> getPlaceholders customPlaceholders: ' + JSON.stringify(customPlaceholders));
@@ -207,32 +229,14 @@ export async function getPlaceholders(onlyEnabled = false){
     return output;
 }
 
-async function getDefaultPlaceholders_withProps() {
-    let prefs = await browser.storage.local.get({_default_placeholders_properties: null});
-    // console.log('>>>>>>>>>>>> getDefaultPlaceholders_withProps prefs: ' + JSON.stringify(prefs));
-    //let defaultPlaceholders_prop = [...defaultPlaceholders];
+async function getDefaultPlaceholders() {
     let defaultPlaceholders_prop = JSON.parse(JSON.stringify(defaultPlaceholders));
     // console.log('>>>>>>>>>>>> getDefaultPlaceholders_withProps defaultPlaceholders: ' + JSON.stringify(defaultPlaceholders));
     // console.log('>>>>>>>>>>>> getDefaultPlaceholders_withProps defaultPlaceholders_prop: ' + JSON.stringify(defaultPlaceholders_prop));
-    if(prefs._default_placeholders_properties === null){     // no default Placeholders properties saved
-        defaultPlaceholders_prop.forEach((placeholder) => {
-            placeholder.enabled = 1;
-        })
-        // console.log('>>>>>>>>>>>> getDefaultPlaceholders_withProps [no prop saved] defaultPlaceholders_prop: ' + JSON.stringify(defaultPlaceholders_prop));
-    } else {    // we have saved default Placeholders properties
-        defaultPlaceholders_prop.forEach((placeholder) => {
-            if(prefs._default_Placeholders_properties?.[placeholder.id]){
-                placeholder.enabled = prefs._default_Placeholders_properties[placeholder.id].enabled;
-            }else{
-                placeholder.enabled = 1;
-            }
-        })
-        // console.log('>>>>>>>>>>>> getDefaultPlaceholders_withProps [prop saved] defaultPlaceholders_prop: ' + JSON.stringify(defaultPlaceholders_prop));
-    }
     return defaultPlaceholders_prop;
 }
 
-async function getCustomPlaceholders() {
+export async function getCustomPlaceholders() {
     let prefs = await browser.storage.local.get({_custom_placeholder: null});
     if(prefs._custom_placeholder === null){
         return [];
@@ -241,21 +245,60 @@ async function getCustomPlaceholders() {
     }
 }
 
-export async function setDefaultPlaceholdersProperties(placeholders) {
-    let default_placeholders_properties = {};
-    placeholders.forEach((placeholder) => {
-        default_placeholders_properties[placeholder.id] = {enabled: placeholder.enabled};
+export async function setCustomPlaceholders(placeholders) {
+    placeholders.forEach(ph => {
+        ph.id = placeholdersUtils.validateCustomDataPH_ID(ph.id);
+        ph.is_default = "0";
     });
-    //console.log('>>>>>>>>>>>>>> default_placeholders_properties: ' + JSON.stringify(default_placeholders_properties));
-    await browser.storage.local.set({_default_placeholders_properties: default_placeholders_properties});
+    await browser.storage.local.set({_custom_placeholder: placeholders});
 }
 
-export async function setCustomPlaceholders(placeholders) {
-    await browser.storage.local.set({_custom_placeholder: placeholders});
+export function prepareCustomDataPHsForExport(placeholders){
+    let output = [...placeholders];
+    output.forEach(placeholder => {
+        if(placeholder.is_default == 0){
+            delete placeholder['idnum'];
+        }
+    });
+    return output;
+}
+
+export async function prepareCustomDataPHsForImport(placeholders){
+    // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport prompts: " + JSON.stringify(prompts));
+    const output = await getCustomPlaceholders();
+    // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport output: " + JSON.stringify(output));
+    prompts.forEach(placeholder => {
+        if(output.some(p => p.id == placeholder.id)){
+            Object.keys(placeholder).forEach(key => {
+               output.find(p => p.id == placeholder.id)[key] = placeholder[key];
+            })
+        }else{
+            output.push(placeholder);
+        }
+    });
+    output.sort((a, b) => a.id.localeCompare(b.id));
+    // console.log(">>>>>>>>>>> prepareCustomDataPHsForImport final output: " + JSON.stringify(output));
+    return output;
 }
 
 
 export const placeholdersUtils = {
+
+    customPrefix: 'thunderai_custom_',
+
+    validateCustomDataPH_ID(placeholder_id){
+        if (!placeholder_id.startsWith(this.customPrefix)) {
+            return this.customPrefix + placeholder_id;
+        }
+        return placeholder_id;
+    },
+
+    stripCustomDataPH_ID_Prefix(placeholder_id){
+        if (placeholder_id.startsWith(this.customPrefix)) {
+            return placeholder_id.substring(this.customPrefix.length);
+        }
+        return placeholder_id;
+    },
 
     async extractPlaceholders(text) {
         // Regular expression to match patterns like {%...%}
