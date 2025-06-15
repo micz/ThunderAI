@@ -925,7 +925,7 @@
         "message": "Se selezionato, il fuso orario specificato verrà applicato agli eventi del calendario e alle attività."
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Abilita il visualizzatore delle differenze"
+        "message": "Abilita il visualizzatore di confronto del testo"
     },
     "apiwebchat_stopping": {
         "message": "Interruzione in corso"
@@ -967,7 +967,7 @@
         "message": "Nessun testo selezionato, vuoi inserire la risposta dell'IA all'inizio dell'email?"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Il visualizzatore delle differenze può essere selezionato quando l'azione è impostata su \"Sostituisci testo\"."
+        "message": "Il visualizzatore di confronto del testo può essere selezionato quando l'azione è impostata su \"Sostituisci testo\"."
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
