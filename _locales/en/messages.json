@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use ChatGPT, Goolge Gemini, Anthropic or Ollama to enhance your emails!",
+    "message": "Use ChatGPT, Google Gemini, Anthropic or Ollama to enhance your emails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -132,11 +132,11 @@
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer": {
-    "message": "Enable the diff viewer",
+    "message": "Enable the text comparison viewer",
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer_title": {
-    "message": "The diff viewer can be selected when the action is set to \"Substitute text\".",
+    "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
     "description": ""
   },
   "customPrompts_form_required_fields": {
@@ -404,7 +404,7 @@
     "description": ""
   },
   "customprompts_form_label_define_response_lang": {
-    "message": "Define the reponse language in the prompt",
+    "message": "Define the response language in the prompt",
     "description": ""
   },
   "prefs_Connection_type": {
@@ -448,7 +448,7 @@
     "description": ""
   },
   "chatgpt_empty_model": {
-    "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the ChatGPT API. Please choose one in the options page.",
     "description": ""
   },
   "chagpt_api_send_button": {
@@ -496,7 +496,7 @@
     "description": ""
   },
   "ollama_empty_model": {
-    "message": "You've not choosen a model for the Ollama API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Ollama API. Please choose one in the options page.",
     "description": ""
   },
   "error_connection_interrupted": {
@@ -511,7 +511,7 @@
     "message": "OpenAI ChatGPT API request failed",
     "description": ""
   },
-  "WaitingServerReponse": {
+  "WaitingServerResponse": {
     "message": "Waiting for the server response",
     "description": ""
   },
@@ -536,7 +536,7 @@
     "description": ""
   },
   "OpenAIComp_empty_model": {
-    "message": "You've not choosen a model for the OpenAI Compatible API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the OpenAI Compatible API. Please choose one in the options page.",
     "description": ""
   },
   "OpenAIComp_api_request_failed": {
@@ -564,7 +564,7 @@
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
-    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the hightlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
+    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the highlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_order_alphabet": {
@@ -948,7 +948,7 @@
     "description": ""
   },
   "google_gemini_empty_model": {
-    "message": "You've not choosen a model for the Google Gemini API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Google Gemini API. Please choose one in the options page.",
     "description": ""
   },
   "GoogleGemini_SystemInstruction": {
@@ -1100,7 +1100,7 @@
     "description": ""
   },
   "no_valid_data_received": {
-    "message": "No valid data recevied from the AI.",
+    "message": "No valid data received from the AI.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto": {
@@ -1464,7 +1464,7 @@
     "description": ""
   },
   "anthropic_empty_model": {
-    "message": "You've not choosen a model for the Anthropic API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Anthropic API. Please choose one in the options page.",
     "description": ""
   },
   "anthropic_empty_version": {

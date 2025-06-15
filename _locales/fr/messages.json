@@ -384,7 +384,7 @@
     "chatgpt_api_request_failed": {
         "message": "La demande d'API OpenAI ChatGPT a échoué"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "En attente de la réponse du serveur"
     },
     "prefs_API_Host_Info": {

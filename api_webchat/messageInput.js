@@ -296,7 +296,7 @@ class MessageInput extends HTMLElement {
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
-        this.setStatusMessage(browser.i18n.getMessage('WaitingServerReponse') + '...');
+        this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
         this.showStatusMessage();
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }

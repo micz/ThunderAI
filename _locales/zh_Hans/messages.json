@@ -356,7 +356,7 @@
     "prefsDonation_2": {
         "message": "考虑捐款！"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "正在等待服务器响应"
     },
     "OpenAIComp_Models_Error_fetching": {
