@@ -88,8 +88,10 @@ Are you using this addon in your Thunderbird?
 - Italian (it): [Mic](https://github.com/micz/) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
 - Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
+<br>
 
-Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)
+Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)  <br>
+_The language status represents the percentage of translated strings in the latest stable release._
 
 
 <br>
