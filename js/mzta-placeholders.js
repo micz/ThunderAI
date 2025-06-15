@@ -335,6 +335,19 @@ export const placeholdersUtils = {
         });
     },
 
+    async replaceCustomPlaceholders(text) {
+        let customPlaceholders = await getCustomPlaceholders(true);
+        // Regular expression to match patterns like {%thunderai_custom_...%}
+        return text.replace(/{%\s*thunderai_custom_(.*?)\s*%}/g, function(match, p1) {
+          // p1 contains the key inside {% %}
+          const currPlaceholder = customPlaceholders.find(ph => ph.id === 'thunderai_custom_' + p1);
+          if (!currPlaceholder) {
+            return match;
+          }
+          return currPlaceholder.text;
+        });
+    },
+
     hasPlaceholder(text, placeholder = "") {
         let regex;
       
@@ -349,9 +362,30 @@ export const placeholdersUtils = {
       
         // Check if the specific or any placeholder is present in the text
         return regex.test(text);
-      },
+    },
+
+    hasCustomPlaceholder(text, placeholder = "") {
+        let regex;
+      
+        // If a specific placeholder is provided, we search for it
+        if (placeholder !== "") {
+          // Dynamically build the regex for the specific placeholder
+          regex = new RegExp(`{%\s*${placeholder}\s*%}`);
+        } else {
+          // Otherwise, we search for any placeholder in the format {%thunderai_custom_ ... %}
+          regex = /{%\s*thunderai_custom_(.*?)\s*%}/;
+        }
+      
+        // Check if the specific or any placeholder is present in the text
+        return regex.test(text);
+    },
 
     async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list) {
+        // check if we have custom placeholders
+        if(placeholdersUtils.hasCustomPlaceholder(prompt_text)){
+            prompt_text = await placeholdersUtils.replaceCustomPlaceholders(prompt_text);
+        }
+
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         let finalSubs = {};
