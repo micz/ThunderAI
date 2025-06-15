@@ -362,9 +362,6 @@
     "OpenAIComp_Models_Error_fetching": {
         "message": "尝试获取 OpenAI 兼容 API 模型时出错"
     },
-    "chatgpt_use_gpt35": {
-        "message": "使用 GPT3.5"
-    },
     "customPrompts_Import": {
         "message": "导入新提示词"
     },

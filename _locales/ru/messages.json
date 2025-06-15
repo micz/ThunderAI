@@ -281,9 +281,6 @@
     "chatgpt_win_send": {
         "message": "Отправить"
     },
-    "chatgpt_use_gpt35": {
-        "message": "Использовать GPT3.5"
-    },
     "prefs_OptionText_reply_sender": {
         "message": "Ответить отправителю"
     },

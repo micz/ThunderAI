@@ -170,9 +170,6 @@
     "chatgpt_win_send": {
         "message": "送出"
     },
-    "chatgpt_use_gpt35": {
-        "message": "使用 GPT3.5"
-    },
     "chatgpt_force_completion": {
         "message": "強制結束"
     },

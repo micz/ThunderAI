@@ -189,9 +189,6 @@
     "chatgpt_win_send": {
         "message": "Pošalji"
     },
-    "chatgpt_use_gpt35": {
-        "message": "Koristi GPT3.5"
-    },
     "chatgpt_force_completion": {
         "message": "prisilno dovrši"
     },

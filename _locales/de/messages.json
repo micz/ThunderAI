@@ -189,9 +189,6 @@
     "chatgpt_win_send": {
         "message": "Senden"
     },
-    "chatgpt_use_gpt35": {
-        "message": "Verwenden Sie GPT3.5"
-    },
     "chatgpt_force_completion": {
         "message": "Abschluss erzwingen"
     },

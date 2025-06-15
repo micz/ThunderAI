@@ -189,9 +189,6 @@
     "chatgpt_win_send": {
         "message": "Invia"
     },
-    "chatgpt_use_gpt35": {
-        "message": "Usa GPT3.5"
-    },
     "chatgpt_force_completion": {
         "message": "forza il completamento"
     },

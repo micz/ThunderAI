@@ -188,9 +188,6 @@
     "chatgpt_win_send": {
         "message": "Odeslat"
     },
-    "chatgpt_use_gpt35": {
-        "message": "Použít GPT3.5"
-    },
     "chatgpt_force_completion": {
         "message": "vynutit doplnění"
     },
