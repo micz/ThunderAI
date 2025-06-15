@@ -18,7 +18,7 @@
 
 import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
-import { ChatGPTWeb_models, isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from "../../js/mzta-utils.js";
+import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
@@ -936,7 +936,7 @@ function clearMessage() {
 }
 
 async function setStorageSpace() {
-    let storage_space = await getCustomPromptsUsedSpace();
+    let storage_space = await getLocalStorageUsedSpace();
     document.getElementById('storage_space').textContent = storage_space;
 }
 
