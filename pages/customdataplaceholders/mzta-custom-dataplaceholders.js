@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let btnNew_elements = document.querySelectorAll(".input_new");
     if(btnNew_elements) {
         btnNew_elements.forEach(element => {
-            element.addEventListener('change', (e) => {
+            element.addEventListener('input', (e) => {
                 e.preventDefault();
                 checkFields();
             });
