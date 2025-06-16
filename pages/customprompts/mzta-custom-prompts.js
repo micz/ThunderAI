@@ -18,7 +18,7 @@
 
 import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
-import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from "../../js/mzta-utils.js";
+import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, openTab } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import { getPlaceholders, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
@@ -368,6 +368,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
 }, { once: true });
+
+document.getElementById('btnManageCustomDataPH').addEventListener('click', () => {
+    openTab('../pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
+  });
 
 //========= handling an item in a row 
 function handleEditClick(e) {
