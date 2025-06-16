@@ -20,15 +20,25 @@
 
     ================ BASE PROPERTIES
 
-    Types (type attribute):
+    id: unique identifier, used to identify the placeholder
+    name: name of the placeholder, used for display purposes
+    default_value: default value of the placeholder, used when the placeholder is not replaced (only for default placeholders)
+
+    type attribute:
     0: always show (when composing a part of the text must be selected if need_selected = 1)
     1: show when reading an email
     2: show when composing a mail (a part of the text must be selected if need_selected = 1)
 
+    is_default attribute:
+    0: Custom placeholder
+    1: Default placeholder (not editable, cannot be deleted)
+
     ================ USER PROPERTIES
-    Enabled (enabled attribute):
+    enabled attribute:
     0: Disabled
     1: Enabled
+
+    text: text of the placeholder (only for custom placeholders)
 
 */
 
