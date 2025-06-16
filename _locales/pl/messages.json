@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Zarządzaj poleceniami"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Więcej informacji"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,10 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Istnieją niezapisane zmiany!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Zapisz wszystko"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Dodaj nowe"
     },
     "customPrompts_btnAddNewCommit": {

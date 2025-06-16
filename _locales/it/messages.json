@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Gestisci i prompt"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Informazioni"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,10 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Ci sono modifiche non salvate!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Salva Tutto"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Aggiungi Nuovo"
     },
     "customPrompts_btnAddNewCommit": {

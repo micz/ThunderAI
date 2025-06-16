@@ -1,5 +1,5 @@
 {
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "更多資訊"
     },
     "prompt_reply_advanced": {
@@ -113,10 +113,10 @@
     "customPrompts_unsaved_changes": {
         "message": "有未儲存的變動！"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "儲存全部"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "新增"
     },
     "customPrompts_btnAddNewCommit": {

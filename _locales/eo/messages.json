@@ -8,7 +8,7 @@
     "prompt_rewrite_formal": {
         "message": "Reverki formale"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Pliaj informoj"
     },
     "customPrompts_managePrompts": {
@@ -20,10 +20,10 @@
     "customPrompts_form_required_fields": {
         "message": "Postulataj kampoj"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Konservi ĉion"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Aldoni novan"
     },
     "chatgpt_btn_retry": {

@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Eingabeaufforderungen verwalten"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Informationen"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,10 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Es gibt ungespeicherte Änderungen!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Alle speichern"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Neu hinzufügen"
     },
     "customPrompts_btnAddNewCommit": {

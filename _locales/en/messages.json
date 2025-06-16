@@ -51,7 +51,7 @@
     "message": "Manage Prompts",
     "description": ""
   },
-  "customPrompts_managePrompts_help": {
+  "more_info_string": {
     "message": "More info",
     "description": ""
   },
@@ -167,11 +167,11 @@
     "message": "There are unsaved changes!",
     "description": ""
   },
-  "customPrompts_btnSaveAll": {
+  "btnSaveAll_string": {
     "message": "Save All",
     "description": ""
   },
-  "customPrompts_btnNew": {
+  "btnNew_string": {
     "message": "Add New",
     "description": ""
   },
@@ -313,6 +313,10 @@
   },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCustomDataPH": {
+    "message": "Manage your data placeholders",
     "description": ""
   },
   "prefsInfoTitle": {
@@ -1554,6 +1558,62 @@
   },
   "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
     "message": "If checked, the tags in the exclusion list will be matched exactly, otherwise they will be matched partially.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH": {
+    "message": "Manage Data Placeholders",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default": {
+    "message": "You can import and export the custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
+    "description": ""
+  },
+  "customDataPH_ExportAll": {
+    "message": "Export all custom data placeholders",
+    "description": ""
+  },
+  "customDataPH_Import": {
+    "message": "Import new data placeholders",
+    "description": ""
+  },
+  "customDataPH_form_label_Text": {
+    "message": "Data Placeholder Text",
+    "description": ""
+  },
+  "customDataPH_saving_custom": {
+    "message": "Saving custom data placeholders...",
+    "description": ""
+  },
+  "customDataPH_saved": {
+    "message": "Custom data placeholders saved!",
+    "description": ""
+  },
+  "customDataPH_btnAddNewCommit": {
+    "message": "Add the Data Placeholder",
+    "description": ""
+  },
+  "importCustomDataPH_confirmText": {
+    "message": "You are about to import new custom data placeholders.",
+    "description": ""
+  },
+  "importCustomDataPH_start_import": {
+    "message": "Starting custom data placeholders import...",
+    "description": ""
+  },
+  "importCustomDataPH_import_completed": {
+    "message": "Custom data placeholders import completed! You need to click on the 'Save All' button to save your changes.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidFile": {
+    "message": "The file you're trying to import is not a valid custom data placeholders file.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidDataPHs": {
+    "message": "The file you're trying to import does not contain any valid custom data placeholders.",
+    "description": ""
+  },
+  "customDataPH_add_to_menu": {
+    "message": "Usable in prompts added to menu",
     "description": ""
   }
 }

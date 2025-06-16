@@ -587,7 +587,7 @@ const insertHtml = function (replyHtml, fullBody_string) {
   return fullBody.body.innerHTML;
 }
 
-export async function getCustomPromptsUsedSpace(){
+export async function getLocalStorageUsedSpace(){
   // we can't use this, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
   //let customprompts_space = await browser.storage.local.getBytesInUse("_custom_prompt");
   //let's use a workaround
