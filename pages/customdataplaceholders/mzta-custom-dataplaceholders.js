@@ -17,7 +17,7 @@
  */
 
 import { prefs_default } from "../../options/mzta-options-default.js";
-import { getLocalStorageUsedSpace, sanitizeHtml, isThunderbird128OrGreater } from "../../js/mzta-utils.js";
+import { getLocalStorageUsedSpace, sanitizeHtml, isThunderbird128OrGreater, openTab } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import { getPlaceholders, setCustomPlaceholders, getCustomPlaceholders, prepareCustomDataPHsForExport, prepareCustomDataPHsForImport, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
@@ -219,6 +219,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
         };
     }
+
+    document.getElementById('btnManagePrompts').addEventListener('click', () => {
+        openTab('/pages/customprompts/mzta-custom-prompts.html');
+    });
 
 }, { once: true });
 

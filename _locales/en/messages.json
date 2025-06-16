@@ -1565,6 +1565,10 @@
     "description": ""
   },
   "customDataPH_manageDataPH_info_default": {
+    "message": "You can define custom data placeholders to be used in your custom prompts. You can use here also the default data placeholders.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default_2": {
     "message": "You can import and export the custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
     "description": ""
   },
