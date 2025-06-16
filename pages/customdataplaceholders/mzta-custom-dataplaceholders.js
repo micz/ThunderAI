@@ -89,10 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
         textareas.forEach(textarea => {
-            textarea.addEventListener('input', (e) => {
-                checkPromptsConfigForPlaceholders(e.target);
-            });
-        textareaAutocomplete(textarea, autocompleteSuggestions);
+            textareaAutocomplete(textarea, autocompleteSuggestions);
         });
     });
 
@@ -103,8 +100,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     var txtNameNew = document.getElementById('txtNameNew');
     var txtTextNew = document.getElementById('txtTextNew');
 	var selectTypeNew = document.getElementById('selectTypeNew');
-    var checkboxNeedSelectedNew = document.getElementById('checkboxNeedSelectedNew');
-    var checkboxNeedCustomTextNew = document.getElementById('checkboxNeedCustomTextNew');
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
@@ -459,8 +454,6 @@ function clearFields() {
     document.getElementById('txtNameNew').value = '';
     document.getElementById('txtTextNew').value = '';
 	document.getElementById('selectTypeNew').value = '0';
-    document.getElementById('checkboxNeedSelectedNew').value = '0';
-    document.getElementById('checkboxNeedCustomTextNew').value = '0';
     document.getElementById('formNew').style.display = 'none';
 }
 
