@@ -953,7 +953,7 @@ async function checkPromptsConfigForPlaceholders(textarea){
     let curr_text = textarea.value;
     // First substitute the custom data placeholders
     curr_text = await placeholdersUtils.replaceCustomPlaceholders(curr_text);
-    console.log('>>>>>>>>>> curr_text after custom placeholders: ' + curr_text);
+    // console.log('>>>>>>>>>> curr_text after custom placeholders: ' + curr_text);
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
