@@ -562,7 +562,7 @@
         "message": "Dodaj tagi do tego e-maila"
     },
     "prompt_add_tags_full_text": {
-        "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj listę tagów oddzielonych przecinkami, które podsumowują jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich opisów jako tagów. Upewnij się, że tagi są zwięzłe i odpowiednie do treści e-maila.\nTekst e-maila: {%mail_text_body%}\nWeź pod uwagę następujące szczegóły w kontekście:\n- Nadawca: {%author%}\n- Odbiorcy: {%recipients%}\n- Lista DW: {%cc_list%}\n- Temat e-maila: {%mail_subject%}\nOprzyj swoje tagi na treści i kontekście e-maila, ignorując zbędne informacje lub nieistotne szczegóły. Wynik powinien być jedynie listą tagów oddzielonych przecinkami, bez żadnych dodatkowych komentarzy ani tekstu."
+        "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj tablicę JSON z tagami podsumowującymi jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich określeń jako tagów. Upewnij się, że tagi są zwięzłe i adekwatne do treści wiadomości.\nTekst e-maila: {%mail_text_body%}\nWeź pod uwagę następujące szczegóły w kontekście:\n- Nadawca: {%author%}\n- Odbiorcy: {%recipients%}\n- Lista DW: {%cc_list%}\n- Temat e-maila: {%mail_subject%}\nNa podstawie treści wiadomości i kontekstu wygeneruj tagi, pomijając zbędne informacje lub nieistotne szczegóły.\nWygeneruj odpowiedź wyłącznie w formacie JSON. Wynik powinien zawierać jedynie tablicę tagów w formacie JSON, bez dodatkowych komentarzy czy tekstu. Oto przykład wymaganego formatu:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Tagi e-maila"

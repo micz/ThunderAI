@@ -93,7 +93,7 @@
         "message": "已啟用"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "啟用差異檢視器"
+        "message": "啟用文字比較檢視器"
     },
     "customPrompts_form_required_fields": {
         "message": "必填欄位"
@@ -323,7 +323,7 @@
         "message": "名稱"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "當動作設定為「取代文字」時，可以選取差異檢視器。"
+        "message": "當動作設定為「取代文字」時，可以選取文字比較檢視器。"
     },
     "chatgpt_user_not_logged_in": {
         "message": "您尚未登入 ChatGPT。請使用您的帳戶登入，關閉 ChatGPT 視窗，然後再嘗試您的動作。之後您就會維持登入。"
@@ -1172,5 +1172,8 @@
     },
     "GetTask_PageTitle": {
         "message": "管理任務設定"
+    },
+    "WaitingServerResponse": {
+        "message": "等待伺服器回應"
     }
 }

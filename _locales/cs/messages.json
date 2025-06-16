@@ -789,7 +789,7 @@
         "message": "Pokud je zaškrtnuto, štitky, které jsou přítomny v seznamu vyloučení, budou skryty v potvrzovacím dialogu."
     },
     "prompt_add_tags_full_text": {
-        "message": "Analyzuj následující text e-mailu a vygeneruj seznam štítků oddělených čárkou, které shrnují jeho obsah. Použij témata, klíčová témata a relevantní deskriptory jako štitky. Zajisti, aby štitky byly stručné a relevantní k obsahu e-mailu.\nText e-mailu: {%mail_text_body%}\nPro kontext zvaž následující podrobnosti:\n- Odesílatel: {%author%}\n- Příjemci: {%recipients%}\n- Seznam kopií: {%cc_list%}\n- Předmět e-mailu: {%mail_subject%}\nZalož své štitky na textu a kontextu e-mailu, ignoruj zbytečné informace nebo triviální detaily. Výstup by měl být pouze seznam štítků oddělených čárkou bez jakéhokoli dalšího komentáře nebo textu."
+        "message": "Analyzujte následující text e-mailu a vytvořte JSON pole tagů, které shrnují jeho obsah. Jako tagy použijte témata, klíčová témata a relevantní popisné prvky. Ujistěte se, že tagy jsou stručné a relevantní k obsahu e-mailu.\nText e-mailu: {%mail_text_body%}\nPro kontext zvaž následující podrobnosti:\n- Odesílatel: {%author%}\n- Příjemci: {%recipients%}\n- Seznam kopií: {%cc_list%}\n- Předmět e-mailu: {%mail_subject%}\nVycházejte z textu e-mailu a kontextu při generování tagů, ignorujte zbytečné informace nebo nepodstatné detaily.\nVygenerujte odpověď pouze ve formátu JSON. Výstupem by mělo být pouze JSON pole tagů, bez jakéhokoli dalšího komentáře nebo textu. Zde je příklad formátu JSON, který je třeba použít:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "prefs_OptionText_add_tags_maxnum": {
         "message": "Maximální počet štítků"
