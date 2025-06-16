@@ -479,27 +479,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
-    openTab('../pages/customprompts/mzta-custom-prompts.html');
+    openTab('/pages/customprompts/mzta-custom-prompts.html');
   });
 
   document.getElementById('btnManageCustomDataPH').addEventListener('click', () => {
-    openTab('../pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
+    openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
   });
 
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
-    openTab('../pages/addtags/mzta-add-tags.html');
+    openTab('/pages/addtags/mzta-add-tags.html');
   });
 
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
-    openTab('../pages/spamfilter/mzta-spamfilter.html');
+    openTab('/pages/spamfilter/mzta-spamfilter.html');
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
-    openTab('../pages/get-calendar-event/mzta-get-calendar-event.html');
+    openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');
   });
 
   document.getElementById('btnManageTaskInfo').addEventListener('click', () => {
-    openTab('../pages/get-task/mzta-get-task.html');
+    openTab('/pages/get-task/mzta-get-task.html');
   });
 
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {

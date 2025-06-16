@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 }, { once: true });
 
 document.getElementById('btnManageCustomDataPH').addEventListener('click', () => {
-    openTab('../pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
+    openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
   });
 
 //========= handling an item in a row 
