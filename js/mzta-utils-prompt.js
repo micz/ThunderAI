@@ -38,6 +38,10 @@ export const taPromptUtils = {
             fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
         }else{
             // we have at least a placeholder, do the magic!
+            // check if we have custom placeholders
+            if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
+                curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
+            }
             let finalSubs = await placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list);
             // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
             let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});

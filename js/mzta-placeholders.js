@@ -391,11 +391,6 @@ export const placeholdersUtils = {
     },
 
     async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list) {
-        // check if we have custom placeholders
-        if(placeholdersUtils.hasCustomPlaceholder(prompt_text)){
-            prompt_text = await placeholdersUtils.replaceCustomPlaceholders(prompt_text);
-        }
-
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         let finalSubs = {};
