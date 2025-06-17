@@ -446,7 +446,7 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
-export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '') {
+export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '', additional_message = '') {
   let output = browser.i18n.getMessage("_api_connecting", api_string);
   if (model_string !== '') {
     output += "\n" + browser.i18n.getMessage("_api_connecting_model", model_string);
@@ -456,6 +456,9 @@ export function getAPIsInitMessageString(api_string, model_string = '', host_str
   }
   if (version_string !== '') {
     output += "\n" + browser.i18n.getMessage("_api_connecting_version", version_string);
+  }
+  if (additional_message !== '') {
+    output += "\n" + additional_message;
   }
 
   return output;
