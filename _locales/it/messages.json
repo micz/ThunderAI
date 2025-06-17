@@ -1170,5 +1170,23 @@
     },
     "anthropic_api_request_failed": {
         "message": "Richiesta all'API di Anthropic non riuscita"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Questa è la modalità di risposta predefinita che verrà utilizzata quando rispondi a un'email. Puoi scegliere l'altra modalità nella finestra di risposta."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Usa lo storage"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Se selezionato, le tue chat verranno memorizzate da OpenAI."
+    },
+    "prefs_ollama_think": {
+        "message": "Abilita il thinking"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Se selezionato, il Modello rifletterà prima di rispondere. Questa opzione funziona solo con i modelli che supportano la funzione \"think\"."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Gestisci i segnaposti dei tuoi dati"
     }
 }
