@@ -1573,7 +1573,7 @@
     "description": ""
   },
   "customDataPH_manageDataPH_info_default_2": {
-    "message": "You can import your custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
+    "message": "Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
     "description": ""
   },
   "customDataPH_ExportAll": {
