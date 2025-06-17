@@ -73,7 +73,7 @@ messageInput.setMessagesArea(messagesArea);
 
 switch (llm) {
     case "chatgpt_api": {
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, chatgpt_developer_messages: '', do_debug: false});
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, do_debug: false});
         let i18nStrings = {};
         i18nStrings["chatgpt_api_request_failed"] = browser.i18n.getMessage('chatgpt_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
@@ -95,8 +95,12 @@ switch (llm) {
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.google_gemini_model);
         messagesArea.setLLMName("Google Gemini");
+        let additional_text = '';
+        if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
+            additional_text += browser.i18n.getMessage("GoogleGemini_SystemInstruction") + ": " + prefs_api.google_gemini_system_instruction;
+        }
         worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model), "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model, '', '', additional_text), "info");
         browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
