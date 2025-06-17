@@ -1564,12 +1564,16 @@
     "message": "Manage Data Placeholders",
     "description": ""
   },
+  "customDataPH_manageDataPH_info_default_3": {
+    "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
+    "description": ""
+  },
   "customDataPH_manageDataPH_info_default": {
-    "message": "You can define custom data placeholders to be used in your custom prompts. You can use here also the default data placeholders.",
+    "message": "On this page, it is possible to define custom data placeholders to be used in your custom prompts.",
     "description": ""
   },
   "customDataPH_manageDataPH_info_default_2": {
-    "message": "You can import and export the custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
+    "message": "You can import your custom data placeholders. Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
     "description": ""
   },
   "customDataPH_ExportAll": {

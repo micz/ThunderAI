@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function importCustomDataPHs() {
-        if(confirm(browser.i18n.getMessage("importCustomDataPH_confirmText") + '\n' + browser.i18n.getMessage("customDataPH_manageDataPH_info_default") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
+        if(confirm(browser.i18n.getMessage("importCustomDataPH_confirmText") + '\n' + browser.i18n.getMessage("customDataPH_manageDataPH_info_default_2") + '\n' + browser.i18n.getMessage("customPrompts_managePrompts_info_default_3"))) {
             //ask the user to choose a JSON file, and then read it, check if the serialized JSON is valid as generated from importCustomDataPHs(), and if so, add it to the list
             const input = document.createElement('input');
             input.type = 'file';
