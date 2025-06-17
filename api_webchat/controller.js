@@ -73,14 +73,18 @@ messageInput.setMessagesArea(messagesArea);
 
 switch (llm) {
     case "chatgpt_api": {
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, do_debug: false});
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, chatgpt_developer_messages: '', do_debug: false});
         let i18nStrings = {};
         i18nStrings["chatgpt_api_request_failed"] = browser.i18n.getMessage('chatgpt_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, chatgpt_api_store: prefs_api.chatgpt_api_store, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model), "info");
+        let additional_text = 'OpenAI Store: ' + (prefs_api.chatgpt_api_store ? 'Yes' : 'No');
+        if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
+            additional_text += "\n" + browser.i18n.getMessage("ChatGPT_Developer_Messages") + ": " + prefs_api.chatgpt_developer_messages;
+        }
+        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model, '', '', additional_text), "info");
         browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
