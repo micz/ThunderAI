@@ -192,7 +192,7 @@ export function sanitizeHtml(input) {
 export function stripHtmlKeepLines(htmlString) {
   // Replaces <p> tags with a newline at the beginning
   // and removes all other HTML tags
-  return htmlString
+  return convertBrToNewlines(htmlString)
     .replace(/<p>/gi, '')                  // removes <p> tags
     .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
     .replace(/<[^>]*>/g, '')               // removes any other HTML tags
@@ -201,6 +201,10 @@ export function stripHtmlKeepLines(htmlString) {
 
 export function convertNewlinesToBr(text) {
   return text.replace(/\n/g, '<br>');
+}
+
+function convertBrToNewlines(html) {
+  return html.replace(/<br\s*\/?>/gi, '\n');
 }
 
 // This method is used to convert the model string id used in the URL
