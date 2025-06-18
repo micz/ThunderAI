@@ -94,7 +94,7 @@ export class mzta_Menus {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
-    
+            console.log(">>>>>>>>>>>>> msg_text: " + JSON.stringify(msg_text));
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
