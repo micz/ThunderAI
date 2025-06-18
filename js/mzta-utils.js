@@ -199,6 +199,10 @@ export function stripHtmlKeepLines(htmlString) {
     .trim();                               // removes leading/trailing whitespace
 }
 
+export function convertNewlinesToBr(text) {
+  return text.replace(/\n/g, '<br>');
+}
+
 // This method is used to convert the model string id used in the URL
 // to the model string used in the webpage
 export function getGPTWebModelString(model) {
