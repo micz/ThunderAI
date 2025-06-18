@@ -268,15 +268,16 @@ class MessagesArea extends HTMLElement {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', type);
         // Replace \n with <br> for correct HTML display
-        messageElement.textContent = messageText;
-        // Replace \n with <br> elements for correct HTML display
-        messageElement.innerHTML = '';
-        messageText.split('\n').forEach((line, idx, arr) => {
-            messageElement.appendChild(document.createTextNode(line));
-            if (idx < arr.length - 1) {
-            messageElement.appendChild(document.createElement('br'));
-            }
-        });
+        messageElement.appendChild(htmlStringToFragment(messageText));
+        // messageElement.textContent = messageText;
+        // // Replace \n with <br> elements for correct HTML display
+        // messageElement.innerHTML = '';
+        // messageText.split('\n').forEach((line, idx, arr) => {
+        //     messageElement.appendChild(document.createTextNode(line));
+        //     if (idx < arr.length - 1) {
+        //     messageElement.appendChild(document.createElement('br'));
+        //     }
+        // });
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
     }
@@ -337,10 +338,10 @@ class MessagesArea extends HTMLElement {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
                 promptData.action = "2"; // replace text
             }
-            let finalText = fullTextHTMLAtAssignment;
+            let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
             const selectedHTML = this.getCurrentSelectionHTML();
             if(selectedHTML != "") {
-                finalText = selectedHTML;
+                finalText = removeAloneBRs(selectedHTML);
             }
 
             switch(promptData.action) {
@@ -521,9 +522,11 @@ class MessagesArea extends HTMLElement {
     
             // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
-            const html = md.render(fullText);
+            const html = convertNewlinesToBr(md.render(fullText));
 
             this.fullTextHTML += html;
+
+            // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
     
             // Create a new DOM parser
             const parser = new DOMParser();
@@ -558,3 +561,45 @@ class MessagesArea extends HTMLElement {
 }
 
 customElements.define('messages-area', MessagesArea);
+
+
+function htmlStringToFragment(htmlString) {
+//   console.log(">>>>>>>>>>>>>>>> htmlStringToFragment htmlString: " + htmlString);
+  const normalizedHtml = htmlString.replace(/\n/g, '<br>');
+//   console.log(">>>>>>>>>>>>>>>> htmlStringToFragment normalizedHtml: " + normalizedHtml);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(normalizedHtml, 'text/html');
+  const fragment = document.createDocumentFragment();
+  Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+  return fragment;
+}
+
+function convertNewlinesToBr(text) {
+  return text.replace(/\n/g, '<br>');
+}
+
+function removeAloneBRs(htmlString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+
+  const brElements = Array.from(doc.querySelectorAll('br'));
+
+  brElements.forEach(br => {
+    let current = br;
+    let isInsideP = false;
+
+    while (current.parentElement) {
+      if (current.parentElement.tagName.toLowerCase() === 'p') {
+        isInsideP = true;
+        break;
+      }
+      current = current.parentElement;
+    }
+
+    if (!isInsideP) {
+      br.remove();
+    }
+  });
+
+  return doc.body.innerHTML;
+}

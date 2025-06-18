@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -81,12 +81,12 @@ export class mzta_Menus {
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
-                selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
-                selection_html: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" }),
-                text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
-                html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
-                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect }),
-                only_quoted_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" })
+                selection: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
+                selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
+                text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
+                html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
+                only_typed_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_quoted_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
     
@@ -94,7 +94,7 @@ export class mzta_Menus {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
-    
+            // console.log(">>>>>>>>>>>>> msg_text: " + JSON.stringify(msg_text));
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
