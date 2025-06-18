@@ -268,15 +268,16 @@ class MessagesArea extends HTMLElement {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', type);
         // Replace \n with <br> for correct HTML display
-        messageElement.textContent = messageText;
-        // Replace \n with <br> elements for correct HTML display
-        messageElement.innerHTML = '';
-        messageText.split('\n').forEach((line, idx, arr) => {
-            messageElement.appendChild(document.createTextNode(line));
-            if (idx < arr.length - 1) {
-            messageElement.appendChild(document.createElement('br'));
-            }
-        });
+        messageElement.appendChild(htmlStringToFragment(messageText));
+        // messageElement.textContent = messageText;
+        // // Replace \n with <br> elements for correct HTML display
+        // messageElement.innerHTML = '';
+        // messageText.split('\n').forEach((line, idx, arr) => {
+        //     messageElement.appendChild(document.createTextNode(line));
+        //     if (idx < arr.length - 1) {
+        //     messageElement.appendChild(document.createElement('br'));
+        //     }
+        // });
         this.messages.appendChild(messageElement);
         this.scrollToBottom();
     }
@@ -558,3 +559,15 @@ class MessagesArea extends HTMLElement {
 }
 
 customElements.define('messages-area', MessagesArea);
+
+
+function htmlStringToFragment(htmlString) {
+  console.log(">>>>>>>>>>>>>>>> htmlStringToFragment htmlString: " + htmlString);
+  const normalizedHtml = htmlString.replace(/\n/g, '<br>');
+  console.log(">>>>>>>>>>>>>>>> htmlStringToFragment normalizedHtml: " + normalizedHtml);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(normalizedHtml, 'text/html');
+  const fragment = document.createDocumentFragment();
+  Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+  return fragment;
+}
