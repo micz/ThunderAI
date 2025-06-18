@@ -486,22 +486,29 @@ class MessagesArea extends HTMLElement {
 
         // Iterate over each part of the diff to create the HTML output
         wordDiff.forEach(part => {
-            const diffElement = document.createElement("span");
-        
-            // Apply a different class depending on whether the word is added, removed, or unchanged
-            if (part.added) {
-              diffElement.className = "added";
-              diffElement.textContent = part.value;
-            } else if (part.removed) {
-              diffElement.className = "removed";
-              diffElement.textContent = part.value;
-            } else {
-              diffElement.textContent = part.value;
+            // Split part.value by <br> (handling <br>, <br/>, <br />)
+            const brRegex = /(<br\s*\/?>)/gi;
+            const segments = part.value.split(brRegex);
+
+            segments.forEach(segment => {
+            if (segment.match(brRegex)) {
+                // It's a <br>, add a real <br> element
+                messageElement.appendChild(document.createElement("br"));
+            } else if (segment.length > 0) {
+                const diffElement = document.createElement("span");
+                if (part.added) {
+                diffElement.className = "added";
+                diffElement.textContent = segment;
+                } else if (part.removed) {
+                diffElement.className = "removed";
+                diffElement.textContent = segment;
+                } else {
+                diffElement.textContent = segment;
+                }
+                messageElement.appendChild(diffElement);
             }
-        
-            // Add the element to the container
-            messageElement.appendChild(diffElement);
-          });
+            });
+        });
 
         const header = document.createElement('h2');
         header.textContent = browser.i18n.getMessage("chatgpt_win_diff_title");
