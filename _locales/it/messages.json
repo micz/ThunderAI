@@ -1188,5 +1188,11 @@
     },
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Gestisci i segnaposti dei tuoi dati"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Fai clic per cambiare il tipo di risposta"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Esclusione con corrispondenza esatta"
     }
 }
