@@ -49,6 +49,7 @@ messagesInputStyle.textContent = `
         height: 36px;
         cursor: pointer;
         border-radius: 10px;
+        border: 1px outset buttonface;
     }
     #stopButton {
         width: 44px;
