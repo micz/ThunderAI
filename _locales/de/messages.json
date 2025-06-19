@@ -1090,7 +1090,7 @@
         "message": "Anfrage an die Anthropic-API fehlgeschlagen"
     },
     "_api_connecting": {
-        "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration:",
+        "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1122,7 +1122,7 @@
         "message": "Sie haben kein Modell für die Anthropic-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
     "_api_connecting_model": {
-        "message": "Modell: $model$",
+        "message": "Modell",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1130,7 +1130,7 @@
         }
     },
     "_api_connecting_host": {
-        "message": "Host: $api_host$",
+        "message": "Host",
         "placeholders": {
             "api_host": {
                 "content": "$1"
@@ -1138,7 +1138,7 @@
         }
     },
     "_api_connecting_version": {
-        "message": "Version: $api_version$",
+        "message": "Version",
         "placeholders": {
             "api_version": {
                 "content": "$1"
