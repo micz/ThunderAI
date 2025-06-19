@@ -80,11 +80,12 @@ switch (llm) {
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
         worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, chatgpt_api_store: prefs_api.chatgpt_api_store, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        let additional_text = 'OpenAI Store: ' + (prefs_api.chatgpt_api_store ? 'Yes' : 'No');
+        let additional_text_elements = [];
+        additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
         if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
-            additional_text += "\n" + browser.i18n.getMessage("ChatGPT_Developer_Messages") + ": " + prefs_api.chatgpt_developer_messages;
+            additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
         }
-        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model, '', '', additional_text), "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model, '', '', additional_text_elements), "info");
         browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
@@ -95,12 +96,12 @@ switch (llm) {
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.google_gemini_model);
         messagesArea.setLLMName("Google Gemini");
-        let additional_text = '';
+        let additional_text_elements = [];
         if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
-            additional_text += browser.i18n.getMessage("GoogleGemini_SystemInstruction") + ": " + prefs_api.google_gemini_system_instruction;
+            additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
         }
         worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model, '', '', additional_text), "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model, '', '', additional_text_elements), "info");
         browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }

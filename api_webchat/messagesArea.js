@@ -103,6 +103,10 @@ messagesAreaStyle.textContent = `
         background: lightblue;
         color: navy;
         margin-bottom: var(--margin);
+        font-size: 0.8em;
+    }
+    .info_obj{
+        color:rgb(0, 71, 36);
     }
     .sel_info{
         font-size: 0.7rem;

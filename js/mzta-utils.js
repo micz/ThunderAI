@@ -454,16 +454,20 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
-export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '', additional_message = '') {
-  let output = browser.i18n.getMessage("_api_connecting", api_string);
+export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '', additional_messages = []) {
+  let output = "<i class='info_obj'>" + browser.i18n.getMessage("_api_connecting", api_string) + "</i>";
   if (model_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_model", model_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_model") + ":</span> " + model_string;
   }
   if (host_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_host", host_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_host") + ":</span> " + host_string;
   }
   if (version_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_version", version_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_version") + ":</span> " +  version_string;
+  }
+  let additional_message = '';
+  if (additional_messages.length > 0) {
+    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + msg.label + ":</span> " + msg.value).join("\n");
   }
   if (additional_message !== '') {
     output += "\n" + additional_message;

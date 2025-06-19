@@ -1472,7 +1472,7 @@
     "description": ""
   },
   "_api_connecting": {
-    "message": "Attempting to connect to $api_string$ using the following configuration:",
+    "message": "Attempting to connect to $api_string$ using the following configuration...",
     "description": "",
     "placeholders": {
         "api_string": {
@@ -1481,31 +1481,16 @@
     }
   },
   "_api_connecting_model": {
-    "message": "Model: $model$",
-    "description": "",
-    "placeholders": {
-        "model": {
-            "content": "$1"
-        }
-    }
+    "message": "Model",
+    "description": ""
   },
   "_api_connecting_host": {
-    "message": "Host: $api_host$",
-    "description": "",
-    "placeholders": {
-        "api_host": {
-            "content": "$1"
-        }
-    }
+    "message": "Host",
+    "description": ""
   },
   "_api_connecting_version": {
-    "message": "Version: $api_version$",
-    "description": "",
-    "placeholders": {
-        "api_version": {
-            "content": "$1"
-        }
-    }
+    "message": "Version",
+    "description": ""
   },
   "prefs_OpenAIComp_AvailableServices": {
     "message": "Available Services",
