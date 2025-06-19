@@ -1072,7 +1072,7 @@
         "message": "Extrait tous les détails pertinents nécessaires pour générer une tâche à partir du texte suivant. Les informations extraites doivent inclure :\n- Date et heure d'échéance (incluant le fuseau horaire, si précisé)\n- Résumé de la tâche\n- Date et heure de début (incluant le fuseau horaire, si précisé)\nAssure-toi que les données sont clairement et uniformément formatées afin qu’elles puissent être utilisées directement pour créer une tâche.\nS'il y a des références temporelles relatives, considère que la date et l’heure de l’e-mail sont \"{%mail_datetime%}\". Calcule la date et l’heure de début en te basant sur cette référence. Si la date et l’heure de début calculées sont antérieures à \"{%current_datetime%}\", recalcule-les en utilisant \"{%current_datetime%}\" comme base.\nSi tu ne peux pas obtenir une ou plusieurs des informations requises, réponds par une chaîne vide.\nGénère une réponse uniquement au format JSON. N’inclus aucun texte ou explication supplémentaire – fournis uniquement le JSON. Voici le format à utiliser :\n{\n\"InitialDate\" : \"YYYYMMDDTHHMMSS\",\n\"dueDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de la tâche ici\"\n}\nS'il n'y a pas d'informations concernant les dates, supprime-les.\nVoici le texte : \"{%selected_text%}\""
     },
     "_api_connecting": {
-        "message": "Tentative de connexion à $api_string$ avec la configuration suivante :",
+        "message": "Tentative de connexion à $api_string$ avec la configuration suivante ...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1139,7 +1139,7 @@
         "message": "Erreur lors de la tentative de récupération des modèles Anthropic"
     },
     "_api_connecting_model": {
-        "message": "Modèle : $model$",
+        "message": "Modèle",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1147,7 +1147,7 @@
         }
     },
     "_api_connecting_host": {
-        "message": "Hôte : $api_host$",
+        "message": "Hôte",
         "placeholders": {
             "api_host": {
                 "content": "$1"
@@ -1155,7 +1155,7 @@
         }
     },
     "_api_connecting_version": {
-        "message": "Version : $api_version$",
+        "message": "Version",
         "placeholders": {
             "api_version": {
                 "content": "$1"

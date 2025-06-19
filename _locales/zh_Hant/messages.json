@@ -303,7 +303,7 @@
         "message": "Anthropic 模型"
     },
     "_api_connecting_model": {
-        "message": "模型：$model$",
+        "message": "模型",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -353,7 +353,7 @@
         "message": "主旨"
     },
     "_api_connecting_version": {
-        "message": "版本：$api_version$",
+        "message": "版本",
         "placeholders": {
             "api_version": {
                 "content": "$1"
@@ -448,7 +448,7 @@
         "message": "選取的文字"
     },
     "_api_connecting_host": {
-        "message": "主機：$api_host$",
+        "message": "主機",
         "placeholders": {
             "api_host": {
                 "content": "$1"
@@ -848,7 +848,7 @@
         "message": "嘗試取得 Anthropic 模型時出錯"
     },
     "_api_connecting": {
-        "message": "嘗試使用以下配置連接到 $api_string$：",
+        "message": "嘗試使用以下配置連接到 $api_string$...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
