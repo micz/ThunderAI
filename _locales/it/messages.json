@@ -1188,5 +1188,62 @@
     },
     "prefs_OptionText_btnManageCustomDataPH": {
         "message": "Gestisci i segnaposti dei tuoi dati"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Fai clic per cambiare il tipo di risposta"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Esclusione con corrispondenza esatta"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Se selezionato, le parole nell'elenco delle esclusioni verranno confrontate esattamente con i tag. Altrimenti, verranno considerate corrispondenti anche quando incluse all'interno del tag."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Gestisci i segnaposto dei dati"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "In questa pagina è possibile definire segnaposto di dati personalizzati da utilizzare nei tuoi prompt personalizzati."
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Aggiungi il segnaposto di dati"
+    },
+    "customDataPH_saved": {
+        "message": "Segnaposto di dati personalizzati salvati!"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Salvataggio dei segnaposto di dati personalizzati in corso..."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Il file che stai cercando di importare non è un file valido di segnaposto di dati personalizzati."
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Puoi anche usare i segnaposto dei dati predefiniti con il completamento automatico, proprio come quando scrivi prompt personalizzati."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Esporta tutti i segnaposto di dati personalizzati"
+    },
+    "customDataPH_Import": {
+        "message": "Importa nuovi segnaposto di dati"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Testo del segnaposto di dati"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Stai per importare nuovi segnaposto di dati personalizzati."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Avvio dell'importazione dei segnaposto di dati personalizzati..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Importazione dei segnaposto di dati personalizzati completata! Devi cliccare sul pulsante \"Salva tutto\" per salvare le modifiche."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Il file che stai cercando di importare non contiene alcun segnaposto di dati personalizzati valido."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Utilizzabile nei prompt aggiunti al menu"
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "I segnaposto di dati esistenti con lo stesso ID verranno sovrascritti. I segnaposto con ID nuovi verranno aggiunti."
     }
 }
