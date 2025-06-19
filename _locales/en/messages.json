@@ -1542,7 +1542,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
-    "message": "If checked, the tags in the exclusion list will be matched exactly, otherwise they will be matched partially.",
+    "message": "If checked, the words in the exclusion list will be matched exactly with the tags. Otherwise, they will also match if included within the tag.",
     "description": ""
   },
   "customDataPH_manageDataPH": {
