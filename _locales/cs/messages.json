@@ -969,7 +969,7 @@
         "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
     },
     "_api_connecting_version": {
-        "message": "Verze: $api_version$",
+        "message": "Verze",
         "placeholders": {
             "api_version": {
                 "content": "$1"
@@ -1064,7 +1064,7 @@
         "message": "Selhal požadavek API Anthropic"
     },
     "_api_connecting": {
-        "message": "Pokus o připojení k $api_string$ s následující konfigurací:",
+        "message": "Pokus o připojení k $api_string$ s následující konfigurací...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1080,7 +1080,7 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Model: $model$",
+        "message": "Model",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1091,7 +1091,7 @@
         "message": "Pokud vyberete nějaký text, bude zohledněna pouze tato část."
     },
     "_api_connecting_host": {
-        "message": "API Server: $api_host$",
+        "message": "API Server",
         "placeholders": {
             "api_host": {
                 "content": "$1"
