@@ -130,6 +130,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-diff_content{overflow-y:scroll;text-align:justify;width:100%;height:22.5em;}";
     style.textContent += "#mzta-diff span.added{background-color: rgb(0, 94, 0);display:inline;} #mzta-diff span.removed{background-color: rgb(90, 0, 0);display:inline;text-decoration:line-through;}";
     style.textContent += "#mzta-btn_close_diff{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);}";
+    style.textContent += "#mzta-btn_change_reply_type{padding-left:4px;padding-right:10px;margin-left:0px;border-bottom-left-radius:0px;border-top-left-radius:0px;height:2.7em;}";
+    style.textContent += ".mzta-btn_reply{padding-right:4px;margin-right:0px;border-bottom-right-radius:0px;border-top-right-radius:0px;}";
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
@@ -206,7 +208,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             fixedDiv.appendChild(btn_ok);
             break;
         case "1":     // do reply
-            btn_ok.disabled = true;
+            disableButton(btn_ok);
             const btn_ok_line1 = document.createElement('span');
             btn_ok_line1.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             const btn_ok_line2 = document.createElement('span');
@@ -232,9 +234,12 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             });
+            btn_ok.classList.add('mzta-btn_reply');
             // change reply type button
             var btn_change_reply_type = document.createElement('button');
+            disableButton(btn_change_reply_type);
             btn_change_reply_type.id = 'mzta-btn_change_reply_type';
+            btn_change_reply_type.classList.add('mzta-btn');
             btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
             // Create SVG element
             let currentIcon = createReplyToAllIcon();
@@ -261,7 +266,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_change_reply_type.style.display = 'none';
             break;
         case "2":     // replace text
-            btn_ok.disabled = true;
+            disableButton(btn_ok);
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
@@ -309,7 +314,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         btn_diff.classList.add('mzta-btn');
         btn_diff.textContent = browser.i18n.getMessage('btn_show_differences');
         btn_diff.style.display = 'none';
-        btn_diff.disabled = true;
+        disableButton(btn_diff);
         btn_diff.onclick = async function() {
             diffContent.innerHTML = '';
             const response = getSelectedHtml();
@@ -645,23 +650,32 @@ document.addEventListener("selectionchange", function() {
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
         let btn_diff = document.getElementById('mzta-btn_diff');
+        let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
         if (isSomethingSelected()) {
-            btn_ok.disabled = false;
-            btn_ok.classList.remove('btn_disabled');
+            enableButton(btn_ok);
+            enableButton(btn_reply_type);
             if(mztaUseDiffViewer == '1'){
-                btn_diff.disabled = false;
-                btn_diff.classList.remove('btn_disabled');
+                enableButton(btn_diff);
             }
         } else {
-            btn_ok.disabled = true;
-            btn_ok.classList.add('btn_disabled');
+            disableButton(btn_ok);
+            disableButton(btn_reply_type);
             if(mztaUseDiffViewer == '1'){
-                btn_diff.disabled = true;
-                btn_diff.classList.add('btn_disabled');
+                disableButton(btn_diff);
             }
         }
      }, 300); // Delay in milliseconds
 });
+
+function enableButton(btn){
+    btn.disabled = false;
+    btn.classList.remove('btn_disabled');
+}
+
+function disableButton(btn){
+    btn.disabled = true;
+    btn.classList.add('btn_disabled');
+}
 
 function selectContentOnMouseDown(event) {
     // Reset the dragging flag when the mouse is pressed down
