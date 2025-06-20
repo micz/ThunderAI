@@ -650,16 +650,21 @@ document.addEventListener("selectionchange", function() {
      selectionChangeTimeout = setTimeout(function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
         let btn_diff = document.getElementById('mzta-btn_diff');
-        let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
         if (isSomethingSelected()) {
             enableButton(btn_ok);
-            enableButton(btn_reply_type);
+            if(current_action == '1'){
+                let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
+                enableButton(btn_reply_type);
+            }
             if(mztaUseDiffViewer == '1'){
                 enableButton(btn_diff);
             }
         } else {
             disableButton(btn_ok);
-            disableButton(btn_reply_type);
+            if(current_action == '1'){
+                let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
+                disableButton(btn_reply_type);
+            }
             if(mztaUseDiffViewer == '1'){
                 disableButton(btn_diff);
             }
