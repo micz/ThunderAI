@@ -1167,5 +1167,11 @@
     },
     "Custom": {
         "message": "Personnalisé"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Ceci est le type de réponse par défaut qui sera utilisé lors de la réponse à un e-mail. Vous pouvez choisir l'autre plus tard dans la fenêtre de réponse."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Gérez vos espaces réservés de données."
     }
 }
