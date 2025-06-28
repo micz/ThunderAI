@@ -907,7 +907,7 @@
         "message": "Réception des données"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Activer le visualiseur de différences"
+        "message": "Active la visionneuse de comparaison de texte"
     },
     "context_menu_mzta-spamfilter": {
         "message": "Analyser comme spam"
@@ -967,7 +967,7 @@
         "message": "GPT personnalisé pour ChatGPT Web"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Le visualiseur de différences peut être sélectionné lorsque l'action est définie sur \"Remplacer le texte\"."
+        "message": "La visionneuse de comparaison de texte peut être sélectionnée lorsque l’action est définie sur « Substituer le texte »."
     },
     "ask_chatgptweb_permission_1": {
         "message": "Pour utiliser l'intégration Web de ChatGPT, vous devez accorder l'autorisation requise."
@@ -1167,5 +1167,80 @@
     },
     "Custom": {
         "message": "Personnalisé"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Ceci est le type de réponse par défaut qui sera utilisé lors de la réponse à un e-mail. Vous pouvez choisir l'autre plus tard dans la fenêtre de réponse."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Gérez vos espaces réservés de données"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Si cette option est cochée, vos conversations seront enregistrées par OpenAI."
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Si cette option est cochée, le Modèle réfléchira avant de répondre. Cette option fonctionne uniquement avec les modèles qui prennent en charge la fonction « réfléchir »."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Cliquez pour changer le type de réponse"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Correspondance exacte des exclusions"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Sur cette page, il est possible de définir des espaces réservés de données personnalisés à utiliser dans vos invites personnalisées."
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Vous pouvez également utiliser les espaces réservés de données par défaut avec la saisie semi-automatique, comme lorsque vous rédigez des invites personnalisées."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Les espaces réservés de données existants avec le même identifiant seront écrasés. Les espaces réservés avec de nouveaux identifiants seront ajoutés."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Exporter tous les espaces réservés de données personnalisés"
+    },
+    "customDataPH_Import": {
+        "message": "Importer de nouveaux espaces réservés de données"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Texte de l'espace réservé de données"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Enregistrement des espaces réservés de données personnalisés..."
+    },
+    "customDataPH_saved": {
+        "message": "Espaces réservés de données personnalisés enregistrés !"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Ajouter l'espace réservé de données"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Vous êtes sur le point d'importer de nouveaux espaces réservés de données personnalisés."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Démarrage de l'importation des espaces réservés de données personnalisés..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Importation des espaces réservés de données personnalisés terminée ! Vous devez cliquer sur le bouton « Enregistrer tout » pour sauvegarder vos modifications."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Le fichier que vous essayez d'importer n'est pas un fichier valide d'espaces réservés de données personnalisés."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Le fichier que vous essayez d'importer ne contient aucun espace réservé de données personnalisés valide."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Utilisable dans les invites ajoutées au menu"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Utiliser le stockage"
+    },
+    "prefs_ollama_think": {
+        "message": "Activer la réflexion"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Si cette option est cochée, les mots de la liste d'exclusion correspondront exactement aux balises. Sinon, ils correspondront également s'ils sont inclus dans la balise."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Gérer les espaces réservés de données"
     }
 }

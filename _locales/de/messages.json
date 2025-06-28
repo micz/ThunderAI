@@ -904,7 +904,7 @@
         "message": "Empfange Daten"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Aktiviere den Unterschiedsbetrachter"
+        "message": "Die Textvergleichsansicht aktivieren"
     },
     "btn_show_differences": {
         "message": "Unterschiede anzeigen"
@@ -970,7 +970,7 @@
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Der Differenz-Viewer kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ gesetzt ist."
+        "message": "Die Textvergleichsansicht kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ eingestellt ist."
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, überschreibt es die benutzerdefinierte GPT-Einstellung."
@@ -1167,5 +1167,80 @@
     },
     "Anthropic_Version_Info": {
         "message": "ERFORDERLICH. Ändern Sie diesen Wert nicht, es sei denn, Sie wissen, was Sie tun. Weitere Informationen unter:"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Dies ist der Standard-Antworttyp, der beim Beantworten einer E-Mail verwendet wird. Du kannst später im Antwortdialog einen anderen auswählen."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Verwalte deine Datenplatzhalter"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert."
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen."
+    },
+    "prefs_ollama_think": {
+        "message": "Erlaube nachzudenken"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Klicke, um den Rückgabetyp zu ändern"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Ausschlüsse exakte Übereinstimmung"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Wenn aktiviert, werden die Wörter in der Ausschlussliste exakt mit den Tags abgeglichen. Andernfalls stimmen sie auch überein, wenn sie im Tag enthalten sind."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Datenplatzhalter verwalten"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Du kannst auch die Standard-Datenplatzhalter mit Autovervollständigung verwenden, genau wie beim Schreiben benutzerdefinierter Prompts."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Auf dieser Seite kannst du benutzerdefinierte Datenplatzhalter definieren, die in deinen benutzerdefinierten Prompts verwendet werden sollen."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Vorhandene Datenplatzhalter mit derselben ID werden überschrieben. Platzhalter mit neuen IDs werden hinzugefügt."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Alle benutzerdefinierten Datenplatzhalter exportieren"
+    },
+    "customDataPH_Import": {
+        "message": "Neue Datenplatzhalter importieren"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Datenplatzhalter-Text"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Speichern der benutzerdefinierten Datenplatzhalter..."
+    },
+    "customDataPH_saved": {
+        "message": "Benutzerdefinierte Datenplatzhalter gespeichert!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Datenplatzhalter hinzufügen"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Du bist dabei, neue benutzerdefinierte Datenplatzhalter zu importieren."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Import der benutzerdefinierten Datenplatzhalter wird gestartet..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Import der benutzerdefinierten Datenplatzhalter abgeschlossen! Du musst auf die Schaltfläche „Alle speichern“ klicken, um deine Änderungen zu speichern."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Die Datei, die du importieren möchtest, ist keine gültige Datei für benutzerdefinierte Datenplatzhalter."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Die Datei, die du importieren möchtest, enthält keine gültigen benutzerdefinierten Datenplatzhalter."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Verwendbar in Prompts, die dem Menü hinzugefügt wurden"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Verwende speicher"
     }
 }
