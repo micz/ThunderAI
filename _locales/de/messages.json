@@ -1175,9 +1175,12 @@
         "message": "Verwalte deine Datenplatzhalter"
     },
     "ChatGPT_chatgpt_api_store_info": {
-        "message": "Wenn aktiviert, werden deine Chats von OpenAI gespeichert."
+        "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert"
     },
     "prefs_ollama_think_Info": {
-        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen"
+        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen."
+    },
+    "prefs_ollama_think": {
+        "message": "Erlaube Ollama nachzudenken"
     }
 }
