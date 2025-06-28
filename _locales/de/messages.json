@@ -1167,5 +1167,17 @@
     },
     "Anthropic_Version_Info": {
         "message": "ERFORDERLICH. Ändern Sie diesen Wert nicht, es sei denn, Sie wissen, was Sie tun. Weitere Informationen unter:"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Dies ist der Standard-Antworttyp, der beim Beantworten einer E-Mail verwendet wird. Du kannst später im Antwortdialog einen anderen auswählen."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Verwalte deine Datenplatzhalter"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Wenn aktiviert, werden deine Chats von OpenAI gespeichert."
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen"
     }
 }
