@@ -1175,7 +1175,7 @@
         "message": "Verwalte deine Datenplatzhalter"
     },
     "ChatGPT_chatgpt_api_store_info": {
-        "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert"
+        "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert."
     },
     "prefs_ollama_think_Info": {
         "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen."
@@ -1241,6 +1241,6 @@
         "message": "Verwendbar in Prompts, die dem Menü hinzugefügt wurden"
     },
     "ChatGPT_chatgpt_api_store": {
-        "message": "Verwende Speicher in ChatGPT"
+        "message": "Verwende speicher"
     }
 }
