@@ -1023,9 +1023,51 @@
         "message": "Выберите учетные записи, для которых включена автоматическая пометка"
     },
     "AccountSelector_AutoTags_infoline": {
-        "message": "Каждое изменение сохраняется немедленно."
+        "message": "Каждое изменение сохраняется сразу."
     },
     "AccountSelector_Spamfilter": {
         "message": "Выберите учетные записи, в которых включен фильтр спама"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Веб-проект ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Это проект, который будет использоваться для веб-интерфейса ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT Пользовательский сайт GPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Это пользовательский GPT, который будет применяться для веб-интерфейса ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Это должно быть сделано в следующей форме:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Вы можете найти правильное значение в поле URL браузера при открытии соответствующей страницы ChatGPT."
+    },
+    "customPrompts_Properties": {
+        "message": "Свойства"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Показать доп. свойства"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Скрыть доп. свойства"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Доп. свойства"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Если в параметрах или в подсказке указан проект, он отменяет настройку Custom GPT."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Если в опциях или в подсказке указан Проект, временный чат не будет использоваться."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Ключ API Anthropic"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Anthropic API"
     }
 }
