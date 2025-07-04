@@ -93,10 +93,10 @@
         "message": "Включить"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Включить просмотрщик различий"
+        "message": "Включить просмотр текстовых сравнений"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Просмотрщик различий можно выбрать, если установлено действие «Заменить текст»."
+        "message": "Средство просмотра для сравнения текста можно выбрать, если для действия установлено значение \"Заменить текст\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Обязательные поля"
@@ -355,5 +355,161 @@
     },
     "ChatGPT_Models": {
         "message": "Модели ChatGPT"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Управление размещением данных"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели Ollama"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Модели не найдены"
+    },
+    "ollama_empty_host": {
+        "message": "Вы не добавили адрес хоста для API Ollama. Пожалуйста, укажите его на странице параметров."
+    },
+    "ollama_empty_model": {
+        "message": "Вы не выбрали модель для API Ollama. Пожалуйста, выберите ее на странице параметров."
+    },
+    "error_connection_interrupted": {
+        "message": "Соединение с сервером было неожиданно прервано"
+    },
+    "ollama_api_request_failed": {
+        "message": "Запрос API Ollama завершился неудачей"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Не удалось выполнить запрос API OpenAI ChatGPT"
+    },
+    "WaitingServerResponse": {
+        "message": "Ожидание ответа сервера"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Что-то вроде"
+    },
+    "OpenAIComp_Models": {
+        "message": "Совместимые с OpenAI модели API"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Обновление списка совместимых с OpenAI моделей API"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели OpenAI Compatible API"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Вы не добавили адрес хоста для OpenAI Compatible API. Пожалуйста, укажите его на странице параметров."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Вы не выбрали модель для OpenAI Compatible API. Пожалуйста, выберите ее на странице параметров."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Запрос OpenAI Comp API завершился неудачей"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Имя чата"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Это имя будет использоваться в чате ИИ."
+    },
+    "StorageSpace": {
+        "message": "Общее занимаемое пространство для хранения"
+    },
+    "SearchPrompt": {
+        "message": "Поисковые запросы"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Меню: немедленная отправка запроса"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Если флажок установлен, то при использовании сочетания клавиш CTRL+ALT+A будет автоматически отправляться выделенная подсказка из меню. В противном случае пользователю будет показано имя подсказки, и для ее отправки потребуется еще одно нажатие клавиши Enter."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Меню: упорядочить по алфавиту"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Если флажок установлен, подсказки в меню будут расположены в алфавитном порядке."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Установите значение 0, если вы не хотите указывать размер окна."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "Ключ API OpenAI Comp"
+    },
+    "Optional": {
+        "message": "Дополнительно"
+    },
+    "OpenChatGPTTab": {
+        "message": "Откройте вкладку ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "В случае проблем со входом в окно ThunderAI откройте ChatGPT в новой вкладке с помощью кнопки справа, войдите в систему, затем закройте вкладку и продолжите работу с ThunderAI."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "При открытии ChatGPT Web отсюда будут применены все настроенные параметры для модели, проекта и Custom GPT."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Тело письма"
+    },
+    "placeholder_mail_html_body": {
+        "message": "Тело письма HTML"
+    },
+    "placeholder_mail_subject": {
+        "message": "Тема письма"
+    },
+    "placeholder_folder_name": {
+        "message": "Имя папки"
+    },
+    "placeholder_folder_path": {
+        "message": "Путь к папке"
+    },
+    "placeholder_selected_text": {
+        "message": "Выделенный текст"
+    },
+    "placeholder_selected_html": {
+        "message": "Выделенный HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "Доп. текст"
+    },
+    "placeholder_junk_score": {
+        "message": "Ненужный балл"
+    },
+    "placeholder_recipients": {
+        "message": "Получатели"
+    },
+    "placeholder_cc_list": {
+        "message": "CC Список"
+    },
+    "placeholder_author": {
+        "message": "Автор"
+    },
+    "placeholder_account_email_address": {
+        "message": "Адрес эл. почты аккаунта"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Местоимения: использовать значение по умолчанию"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Если флажок установлен, то при отсутствии значения в поле заполняются значения по умолчанию. В противном случае заполнители останутся на месте."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Максимальная длина запроса"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Это максимальное кол-во символов, которое может быть использовано в подсказке. В противном случае будет выведено сообщение об ошибке. Это значение не редактируется в веб-интерфейсе ChatGPT. Установите нулевое значение, чтобы отключить проверку."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "Веб-модель ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Это модель, которая будет применяться для веб-интерфейса ChatGPT. Если модель не указана или указана неверно, ChatGPT установит на веб-странице модель по умолчанию. Эта настройка не будет работать с бесплатной учетной записью ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "Временный веб-чат ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Если флажок установлен, временный чат будет использоваться в веб-интерфейсе ChatGPT."
+    },
+    "chatgpt_btn_model": {
+        "message": "Используйте текущую модель"
     }
 }
