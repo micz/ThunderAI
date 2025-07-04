@@ -1089,6 +1089,124 @@
         "message": "Anthropic максимум токенов"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
-        "message": "Максимальное кол-во токенов , генерируемых в процессе завершения. Кол-во токенов в подсказке плюс max_tokens не может превышать длину контекста модели."
+        "message": "Максимальное кол-во токенов, генерируемых в процессе завершения. Кол-во токенов в подсказке плюс max_tokens не может превышать длину контекста модели."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Вы не добавили ключ API для API Anthropic. Пожалуйста, введите его на странице параметров."
+    },
+    "anthropic_empty_model": {
+        "message": "Вы не выбрали модель для Anthropic API. Пожалуйста, выберите ее на странице параметров."
+    },
+    "anthropic_empty_version": {
+        "message": "Вы не добавили строку версии для API Anthropic. Пожалуйста, вставьте ее на странице параметров."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Anthropic API-запрос не удался"
+    },
+    "_api_connecting": {
+        "message": "Попытка подключения к $api_string$ с использованием следующей конфигурации...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Модель"
+    },
+    "_api_connecting_host": {
+        "message": "Хост"
+    },
+    "_api_connecting_version": {
+        "message": "Версия"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Доступные услуги"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Выберите один из сервисов, доступных для OpenAI Compatible API, или вставьте его вручную."
+    },
+    "Custom": {
+        "message": "Пользовательский"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Вы уверены, что хотите применить конфигурацию \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Если вы выделите часть текста, будет рассмотрена только эта часть."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Использование хранилища"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Если флажок установлен, ваши чаты будут сохраняться OpenAI."
+    },
+    "prefs_ollama_think": {
+        "message": "Позволяет мыслить"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Если флажок установлен, Модель будет думать перед ответом. Эта опция работает только с моделями, поддерживающими функцию \"думать\"."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Нажмите, чтобы изменить тип ответа"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Исключения - точное соответствие"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Если флажок установлен, слова из списка исключений будут точно соответствовать тегам. В противном случае они также будут совпадать, если включены в тег."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Управление заполнителями данных"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "В автозаполнении можно также использовать стандартные заполнители данных, как и при написании пользовательских подсказок."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "На этой странице можно определить заполнители данных, которые будут использоваться в пользовательских подсказках."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Существующие держатели данных с тем же идентификатором будут перезаписаны. Будут добавлены местоположения с новыми идентификаторами."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Экспортируйте все размещаемые пользовательские данные"
+    },
+    "customDataPH_Import": {
+        "message": "Импорт новых заполнителей данных"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Текст для размещения данных"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Сохранение пользовательских заполнителей данных..."
+    },
+    "customDataPH_saved": {
+        "message": "Сохранение пользовательских данных!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Добавьте заполнитель данных"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Вы собираетесь импортировать новые пользовательские заполнители данных."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Запуск импорта пользовательских заполнителей данных..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Импорт пользовательских данных завершен! Чтобы сохранить изменения, нужно нажать кнопку \"Сохранить все\"."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Файл, который вы пытаетесь импортировать, не является действительным файлом пользовательских данных."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Файл, который вы пытаетесь импортировать, не содержит корректных заполнителей пользовательских данных."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Возможность использования в подсказках, добавленных в меню"
     }
 }
