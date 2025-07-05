@@ -93,10 +93,10 @@
         "message": "Включить"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Включить просмотрщик различий"
+        "message": "Включить просмотр текстовых сравнений"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Просмотрщик различий можно выбрать, если установлено действие «Заменить текст»."
+        "message": "Средство просмотра для сравнения текста можно выбрать, если для действия установлено значение \"Заменить текст\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Обязательные поля"
@@ -355,5 +355,858 @@
     },
     "ChatGPT_Models": {
         "message": "Модели ChatGPT"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Управление размещением данных"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели Ollama"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Модели не найдены"
+    },
+    "ollama_empty_host": {
+        "message": "Вы не добавили адрес хоста для API Ollama. Пожалуйста, укажите его на странице параметров."
+    },
+    "ollama_empty_model": {
+        "message": "Вы не выбрали модель для API Ollama. Пожалуйста, выберите ее на странице параметров."
+    },
+    "error_connection_interrupted": {
+        "message": "Соединение с сервером было неожиданно прервано"
+    },
+    "ollama_api_request_failed": {
+        "message": "Запрос API Ollama завершился неудачей"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Не удалось выполнить запрос API OpenAI ChatGPT"
+    },
+    "WaitingServerResponse": {
+        "message": "Ожидание ответа сервера"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Что-то вроде"
+    },
+    "OpenAIComp_Models": {
+        "message": "Совместимые с OpenAI модели API"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Обновление списка совместимых с OpenAI моделей API"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели OpenAI Compatible API"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Вы не добавили адрес хоста для OpenAI Compatible API. Пожалуйста, укажите его на странице параметров."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Вы не выбрали модель для OpenAI Compatible API. Пожалуйста, выберите ее на странице параметров."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Запрос OpenAI Comp API завершился неудачей"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Имя чата"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Это имя будет использоваться в чате ИИ."
+    },
+    "StorageSpace": {
+        "message": "Общее занимаемое пространство для хранения"
+    },
+    "SearchPrompt": {
+        "message": "Поисковые запросы"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Меню: немедленная отправка запроса"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Если флажок установлен, то при использовании сочетания клавиш CTRL+ALT+A будет автоматически отправляться выделенная подсказка из меню. В противном случае пользователю будет показано имя подсказки, и для ее отправки потребуется еще одно нажатие клавиши Enter."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Меню: упорядочить по алфавиту"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Если флажок установлен, подсказки в меню будут расположены в алфавитном порядке."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Установите значение 0, если вы не хотите указывать размер окна."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "Ключ API OpenAI Comp"
+    },
+    "Optional": {
+        "message": "Дополнительно"
+    },
+    "OpenChatGPTTab": {
+        "message": "Откройте вкладку ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "В случае проблем со входом в окно ThunderAI откройте ChatGPT в новой вкладке с помощью кнопки справа, войдите в систему, затем закройте вкладку и продолжите работу с ThunderAI."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "При открытии ChatGPT Web отсюда будут применены все настроенные параметры для модели, проекта и Custom GPT."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Тело письма"
+    },
+    "placeholder_mail_html_body": {
+        "message": "Тело письма HTML"
+    },
+    "placeholder_mail_subject": {
+        "message": "Тема письма"
+    },
+    "placeholder_folder_name": {
+        "message": "Имя папки"
+    },
+    "placeholder_folder_path": {
+        "message": "Путь к папке"
+    },
+    "placeholder_selected_text": {
+        "message": "Выделенный текст"
+    },
+    "placeholder_selected_html": {
+        "message": "Выделенный HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "Доп. текст"
+    },
+    "placeholder_junk_score": {
+        "message": "Ненужный балл"
+    },
+    "placeholder_recipients": {
+        "message": "Получатели"
+    },
+    "placeholder_cc_list": {
+        "message": "CC Список"
+    },
+    "placeholder_author": {
+        "message": "Автор"
+    },
+    "placeholder_account_email_address": {
+        "message": "Адрес эл. почты аккаунта"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Местоимения: использовать значение по умолчанию"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Если флажок установлен, то при отсутствии значения в поле заполняются значения по умолчанию. В противном случае заполнители останутся на месте."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Максимальная длина запроса"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Это максимальное кол-во символов, которое может быть использовано в подсказке. В противном случае будет выведено сообщение об ошибке. Это значение не редактируется в веб-интерфейсе ChatGPT. Установите нулевое значение, чтобы отключить проверку."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "Веб-модель ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Это модель, которая будет применяться для веб-интерфейса ChatGPT. Если модель не указана или указана неверно, ChatGPT установит на веб-странице модель по умолчанию. Эта настройка не будет работать с бесплатной учетной записью ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "Временный веб-чат ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Если флажок установлен, временный чат будет использоваться в веб-интерфейсе ChatGPT."
+    },
+    "chatgpt_btn_model": {
+        "message": "Использовать текущую модель"
+    },
+    "SendingPrompt": {
+        "message": "Отправка запроса..."
+    },
+    "AllowedValues": {
+        "message": "Разрешенные значения"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Вы можете использовать доп. держатели данных."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Сохраните совместимость с \"v1\""
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Если флажок установлен, сегмент \"v1\" в пути вызовов API будет сохранен, как и \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Здесь вы также можете вставить адрес удаленного сервера."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Похоже, что по крайней мере одна из ваших учетных записей использует дополнение Owl for Exchange. Существует известная проблема между Thunderbird и Owl, которая в настоящее время решается. На данный момент вы можете использовать ThunderAI при составлении писем, но не при их чтении."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Нажмите на значение, чтобы установить его."
+    },
+    "prompt_reply_full_text": {
+        "message": "Ответьте на следующее письмо. В ответе указывайте только необходимый текст, без лишних комментариев и прочего."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Не добавляйте тему письма в ответ."
+    },
+    "reply_same_lang": {
+        "message": "Отвечайте на том же языке."
+    },
+    "sign_msg_as": {
+        "message": "Подпишите сообщение как"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Ответьте на следующее письмо \"{%selected_text%}\", учитывая, что это полный поток писем \"{%mail_html_body%}\". Отвечайте только на нужный текст, без лишних комментариев или другого текста."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Перепишите следующий текст, сделав его более вежливым. В ответ отправьте только переписанный текст без дополнительных комментариев или другого текста."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Перепишите следующий текст, придав ему более формальный вид. Отправьте в ответ только переписанный текст без доп. комментариев или другого текста."
+    },
+    "prompt_classify_full_text": {
+        "message": "Классифицируйте следующий текст с точки зрения вежливости, теплоты, формальности, настойчивости, оскорбительности, указав процентное соотношение для каждой категории. В ответе укажите только категорию и оценку, без доп. комментариев или др. текста."
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "Резюмируйте следующее письмо в виде списка основных пунктов."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Переведите следующее письмо на"
+    },
+    "prompt_this_full_text": {
+        "message": "Отвечайте только нужным текстом, без лишних комментариев и прочего."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Добавить теги к письмам"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Если флажок установлен, в меню будет включен пункт для применения тегов к эл. письмам."
+    },
+    "prompt_add_tags": {
+        "message": "Добавить теги к этому письму"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Проанализируйте следующий текст эл. письма и создайте массив тегов JSON, которые кратко описывают его содержание. В качестве тегов используйте темы, ключевые темы и соответствующие дескрипторы. Убедитесь, что теги лаконичны и соответствуют содержанию письма.\nТекст письма: {%mail_text_body%}\nУчитывайте следующие сведения для контекста:\n- Отправитель: {%author%}\n- Получатели: {%recipients%}\n- Список CC: {%cc_list%}\n- Тема письма: {%mail_subject%}\nПожалуйста, основывайте свои теги на тексте и контексте письма, игнорируя ненужную информацию или тривиальные детали.\nГенерируйте ответ только в формате JSON. На выходе должен получиться только JSON-массив тегов без доп. комментариев и текста. Вот пример формата JSON, который необходимо использовать:\n{\n'tags': ['tag1', 'tag2', 'tag3', 'tag4', 'tag5']\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "Вычитать это письмо"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Вычитайте следующее письмо и исправьте все орфографические и грамматические ошибки. В ответ отправьте только исправленный текст без лишних комментариев или др. текста.\n\n\"{%mail_typed_text%}\""
+    },
+    "placeholder_tags_current_email": {
+        "message": "Почтовые теги"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Существующие теги"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Максимальное кол-во тегов"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Максимальное кол-во тегов, предложенных ИИ. Установите значение 0, если вы не хотите ограничивать кол-во тегов."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Ограничьте кол-во тегов до"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Скрыть исключенные теги"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Если флажок установлен, то теги, присутствующие в списке исключений, будут скрыты в диалоге подтверждения."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Управление настройками тегов"
+    },
+    "AddTags_PageTitle": {
+        "message": "Управление настройками тегов"
+    },
+    "AddTags_info_default": {
+        "message": "На этой странице вы можете изменить стандартную подсказку, используемую для добавления тегов к письмам, и управлять списком исключений."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Текущий текст подсказки"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Список исключений"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Это список тегов, которые запрещено добавлять в эл. письма."
+    },
+    "save": {
+        "message": "Сохранить"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Это утверждение будет добавлено в конце запроса:"
+    },
+    "reset_default": {
+        "message": "Сброс настроек по умолчанию"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Добавьте по одному слову в строку или разделите их запятой."
+    },
+    "addtags_dialog_title": {
+        "message": "Добавьте теги в эл. письмо"
+    },
+    "addtags_exclude_tag": {
+        "message": "Исключить тег"
+    },
+    "addtags_no_tags_received": {
+        "message": "Никаких меток от ИИ не получено."
+    },
+    "addtags_no_valid_tags": {
+        "message": "После фильтрации с помощью списка исключений не найдено ни одного правильного тега."
+    },
+    "thunderai_error_title": {
+        "message": "Ошибка ThunderAI"
+    },
+    "thunderai_warning_title": {
+        "message": "Предупреждение ThunderAI"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Первая буква заглавная"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Если флажок установлен, то в метке тегов будут использоваться строчные буквы, причем только первая буква будет прописной."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Параметры добавления тегов"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Поделитесь своими отзывами и помогите улучшить ThunderAI!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Нажмите здесь, это займет всего минуту!"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Вставка модели вручную"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Вставьте сюда название модели, которую вы хотите использовать."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Принудительно использовать язык"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Если флажок установлен, язык тегов будет принудительно соответствовать языку, заданному на странице параметров ThunderAI, если он указан."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Теги должны быть написаны на"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "API Google Gemini"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "Ключ API"
+    },
+    "GoogleGemini_Models": {
+        "message": "Модели API Google Gemini"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Обновление списка моделей Google Gemini"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить модели Google Gemini"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Запрос API Google Gemini завершился неудачей"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Вы не добавили ключ API для API Google Gemini. Пожалуйста, введите его на странице параметров."
+    },
+    "google_gemini_empty_model": {
+        "message": "Вы не выбрали модель для API Google Gemini. Пожалуйста, выберите ее на странице параметров."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Инструкция по системе"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Когда вы задаете инструкцию системы, вы даете модели доп. контекст для понимания задачи, обеспечиваете более индивидуальные ответы и придерживаетесь конкретных рекомендаций по отправке подсказок."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Сообщения разработчиков"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Когда вы задаете сообщения разработчика, вы даете модели доп. контекст для понимания задачи, предоставляете более индивидуальные ответы и придерживаетесь конкретных рекомендаций по отправке подсказок."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Вы можете использовать заполнитель {%tags_full_list%} в подсказке, чтобы перечислить доступные теги. С помощью соответствующей подсказки можно заставить выбирать теги только из списка уже существующих."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Набранный текст перед цитируемым телом письма"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Цитируемый текст в теле письма"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Добавьте новое событие календаря"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Извлеките из следующего текста все необходимые сведения, необходимые для создания календарного события. Извлеченная информация должна включать:\n- Название события\n- Дата и время начала (включая часовой пояс, если он указан)\n- Дата и время окончания (включая часовой пояс, если он указан)\n- Полный день (если указано)\n- Участники\nУбедитесь, что данные отформатированы четко и последовательно, чтобы их можно было напрямую использовать для создания календарного события.\nЕсли есть относительные временные ссылки, считайте, что дата и время письма - это \"{%mail_datetime%}\". Рассчитайте дату и время начала на основе этой ссылки. Если вычисленные дата и время начала раньше, чем \"{%current_datetime%}\", пересчитайте дату и время начала, взяв за основу \"{%current_datetime%}\".\nЕсли продолжительность не указана, установите ее равной одному часу.\nК ним относятся: {%author%}, {%recipients%}, {%cc_list%}. Если присутствует, исключите мой адрес: {%account_email_address%}.\nЕсли вы не можете получить одну или несколько требуемых данных, ответьте пустой строкой.\nГенерируйте ответ только в формате JSON. Не включайте никаких дополнительных текстов или пояснений; предоставляйте только JSON. Вот формат, который следует использовать:\n{\n\"startDate\": \"ГГГГММДДДХММССС\",\n\"endDate\": \"ГГГГММДДДХММССС\",\n\"summary\": \"Здесь выводится краткое описание события календаря\",\n\"forceAllDay\": false,\n\"attendees\": [участник1@example.com,участник2@example.com,участник3@example.com]\n}\nВот текст: \"{%selected_text%}\""
+    },
+    "prompt_get_task": {
+        "message": "Добавить новую задачу"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Извлеките из следующего текста все необходимые сведения, необходимые для составления задания. Извлеченная информация должна включать:\n- Дата и время выполнения (включая часовой пояс, если он указан)\n- краткое описание задачи\n- Начальная дата и время (включая часовой пояс, если он указан).\nУбедитесь, что данные отформатированы четко и последовательно, чтобы их можно было напрямую использовать для создания задачи.\nЕсли есть относительные временные ссылки, считайте, что дата и время письма - это \"{%mail_datetime%}\". Рассчитайте дату и время начала на основе этой ссылки. Если рассчитанные дата и время начала окажутся раньше, чем \"{%current_datetime%}\", пересчитайте дату и время начала, взяв за основу \"{%current_datetime%}\".\nЕсли вам не удалось получить одну или несколько требуемых данных, укажите в ответе пустую строку.\nГенерируйте ответ только в формате JSON. Не включайте никаких дополнительных текстов или пояснений; предоставляйте только JSON. Вот формат, который следует использовать:\n{\n\"InitialDate\": \"ГГГГММДДДХММССС\",\n\"dueDate\": \"ГГГГММДДДХММССС\",\n\"summary\": \"Резюме задачи здесь\"\n}\nЕсли информация о датах отсутствует, удалите их.\nВот текст: \"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Добавление нового события календаря из выделенного текста"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Если флажок установлен, в меню будет включен пункт для получения информации о событиях календаря из выделенного текста."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Параметры событий календаря"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Добавление нового задания из выделенного текста"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Если флажок установлен, в меню будет включен пункт для получения информации о задаче из выделенного текста."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Параметры задач"
+    },
+    "Select_your_timezone": {
+        "message": "Выберите часовой пояс"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Принудительное использование указанного часового пояса"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Если флажок установлен, для событий календаря и задач будет применяться указанный часовой пояс."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Управление настройками событий календаря"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Управление настройками событий календаря"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "На этой странице вы можете изменить стандартную подсказку, используемую для получения события календаря из выделенного текста."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Текущий текст подсказки"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "Вы можете изменить запрос по своему усмотрению, но ответ, полученный от AI, должен быть в формате JSON, как указано в запросе по умолчанию!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Чтобы использовать функции событий и задач календаря, установите аддон ThunderAI Sparks."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Чтобы использовать функции событий и задач календаря, установите обновленную версию аддона ThunderAI Sparks."
+    },
+    "GetTask_PageTitle": {
+        "message": "Настройки управления задачами"
+    },
+    "GetTask_info_default": {
+        "message": "На этой странице вы можете изменить стандартную подсказку, используемую для получения задания из выделенного текста."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Управление настройками задач"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Скачайте ThunderAI Sparks прямо сейчас!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Дата и время отправки письма"
+    },
+    "placeholder_current_datetime": {
+        "message": "Текущая дата и время"
+    },
+    "calendar_getting_data_error": {
+        "message": "Ошибка при получении данных о событиях календаря"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Ошибка при открытии диалогового окна события календаря"
+    },
+    "task_getting_data_error": {
+        "message": "Ошибка при получении данных о задании"
+    },
+    "task_opening_dialog_error": {
+        "message": "Ошибка при открытии диалогового окна задачи"
+    },
+    "no_valid_data_received": {
+        "message": "Не получены достоверные данные от ИИ."
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Добавляйте теги автоматически"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Если флажок установлен, ИИ будет автоматически добавлять теги к вновь полученным сообщениям электронной почты."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Выберите, для какой учетной записи активировать эту функцию, в нижней части этой страницы."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Принудительное использование существующих тегов при авто тегировании или использовании контекстного меню"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Если флажок установлен, ИИ будет добавлять только существующие теги к вновь полученным сообщениям эл. почты и не будет создавать новые теги."
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Добавляйте теги только к входящим сообщениям эл. почты"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Если флажок установлен, ИИ будет добавлять теги только к письмам, полученным в папке \"Входящие\"."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Подпись по умолчанию, определенная в опциях ThunderAI."
+    },
+    "thunderai_def_lang": {
+        "message": "Язык по умолчанию, определенный в опциях ThunderAI."
+    },
+    "empty": {
+        "message": "Эта вставка не добавляет никакого текста, но предотвращает автоматическое добавление тела письма в конец запроса."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Автоматический спам-фильтр"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Если флажок установлен, ThunderAI будет автоматически перемещать письма со спамом в папку \"Спам\"."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Управление настройками фильтра спама"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Управление настройками фильтра спама"
+    },
+    "SpamFilter_info_default": {
+        "message": "На этой странице вы можете изменить стандартный запрос, используемый для обнаружения спама в эл. почте."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Текущий текст подсказки"
+    },
+    "prompt_spamfilter": {
+        "message": "Обнаружение спама в эл. почте"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Проанализируйте следующее письмо и определите, является ли оно спамом или нет. Учитывайте такие факторы, как подозрительные ключевые слова, излишняя рекламная лексика, вводящие в заблуждение тематические строки, запросы личной информации и необычные адреса отправителей.\nУкажите значение от 0 (не спам) до 100 (спам) и объяснение, состоящее не более чем из 10 слов.\nВ случае отсутствия данных о сообщении установите значение 0 (не спам) и укажите причину.\nГенерируйте ответ только в формате JSON. Не включайте никаких доп. текстов или объяснений; предоставляйте только JSON. Вот формат, который следует использовать:\n{\n\"spamValue\": <целое число от 0 до 100>,\n\"explanation\": \"Краткое объяснение ваших рассуждений\"\n}\nЗдесь находится информация о почте:\nОтправитель: \"{%author%}\"\nТема: \"{%mail_subject%}\"\nHtml-тело: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Параметры спам-фильтра"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Порог спама"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Если значение, возвращаемое ИИ, превышает этот порог, письмо будет перемещено в папку \"Спам\"."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Порог спама слишком низок! Скорее всего, вы пометите слишком много писем как спам!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Порог спама равен нулю! Вы будете помечать все письма как спам!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Пока нет сообщений, проверенных на спам. Здесь вы найдете список последних 100 сообщений о спаме только для текущей сессии."
+    },
+    "SpamReport_Title": {
+        "message": "Отчеты спам-фильтра"
+    },
+    "Date": {
+        "message": "Дата"
+    },
+    "From": {
+        "message": "От"
+    },
+    "Subject": {
+        "message": "Тема"
+    },
+    "Spam_Value": {
+        "message": "Значение спама"
+    },
+    "Moved_to_Spam": {
+        "message": "Перемещено в спам"
+    },
+    "Explanation": {
+        "message": "Пояснение"
+    },
+    "Report_Date": {
+        "message": "Дата отчета"
+    },
+    "spamfilter_moved": {
+        "message": "Да"
+    },
+    "spamfilter_not_moved": {
+        "message": "Нет"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Добавить теги"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Анализ на предмет спама"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Показать пункт меню \"Добавить теги\""
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Если флажок установлен, пункт контекстного меню \"Добавить теги\" будет отображаться при щелчке ПКМ на письме в списке сообщений."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Показать пункт контекстного меню \"Анализировать на предмет спама\""
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Если флажок установлен, пункт контекстного меню \"Анализировать на спам\" будет отображаться при щелчке ПКМ на письме в списке сообщений."
+    },
+    "noActiveCalendar": {
+        "message": "Редактируемый календарь не найден!"
+    },
+    "btn_show_differences": {
+        "message": "Показать различия"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Различия между оригинальным и измененным текстом"
+    },
+    "apiwebchat_you": {
+        "message": "Вы"
+    },
+    "apiwebchat_info": {
+        "message": "Информация"
+    },
+    "apiwebchat_error": {
+        "message": "Ошибка"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Используйте этот ответ"
+    },
+    "apiwebchat_stopping": {
+        "message": "Остановка"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Получение данных"
+    },
+    "hyprland_warning": {
+        "message": "Если у вас возникли проблемы с открытием окна чата AI, попробуйте установить значения высоты и ширины на 0. Эта проблема может возникнуть на linux в некоторых средах, например, при использовании Hyprland."
+    },
+    "remember_CORS": {
+        "message": "Помните, что вам необходимо настроить параметры CORS на сервере!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Использование OpenAI Compatible API может потребовать настройки CORS на сервере."
+    },
+    "CORS_alternative_1": {
+        "message": "Проблемы с настройкой CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Нажмите кнопку ниже, чтобы дать разрешение <all_urls> во избежание проблем с CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Дайте разрешение на \"все URL-адреса\""
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Сочинение обычного текста"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Установите этот флажок, если вы составляете эл. письма в формате обычного текста."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Текст не выбран, вы хотите вставить ответ ИИ в начало письма?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Количество контекстных токенов"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Количество контекстных токенов, используемых для API Ollama. Установите значение 0, если вы не хотите передавать его в качестве параметра серверу."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Чтобы использовать веб-интеграцию ChatGPT, необходимо предоставить необходимые права."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Чтобы использовать интеграцию с API Anthropic, необходимо предоставить необходимые права."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Нажмите здесь, чтобы открыть новую вкладку и следовать инструкциям."
+    },
+    "ask_integration_permission_2": {
+        "message": "Нажмите здесь, чтобы продолжить."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Разрешение получено. Вы можете нажать здесь, чтобы закрыть эту вкладку и вернуться в главное окно."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Выберите учетные записи, для которых включена автоматическая пометка"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Каждое изменение сохраняется сразу."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Выберите учетные записи, в которых включен фильтр спама"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Веб-проект ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Это проект, который будет использоваться для веб-интерфейса ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT Пользовательский сайт GPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Это пользовательский GPT, который будет применяться для веб-интерфейса ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Это должно быть сделано в следующей форме:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Вы можете найти правильное значение в поле URL браузера при открытии соответствующей страницы ChatGPT."
+    },
+    "customPrompts_Properties": {
+        "message": "Свойства"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Показать доп. свойства"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Скрыть доп. свойства"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Доп. свойства"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Если в параметрах или в подсказке указан проект, он отменяет настройку Custom GPT."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Если в опциях или в подсказке указан Проект, временный чат не будет использоваться."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Ключ API Anthropic"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Антропный(Anthropic) API"
+    },
+    "Anthropic_Models": {
+        "message": "Антропологические модели"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Обновить список антропологических моделей"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Ошибка при попытке получить антропные модели"
+    },
+    "Anthropic_Version": {
+        "message": "Антропная версия API"
+    },
+    "Anthropic_Version_Info": {
+        "message": "ОБЯЗАТЕЛЬНО. Не изменяйте это значение, если не знаете, что делаете. Доп. информация на сайте:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Anthropic максимум токенов"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Максимальное кол-во токенов, генерируемых в процессе завершения. Кол-во токенов в подсказке плюс max_tokens не может превышать длину контекста модели."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Вы не добавили ключ API для API Anthropic. Пожалуйста, введите его на странице параметров."
+    },
+    "anthropic_empty_model": {
+        "message": "Вы не выбрали модель для Anthropic API. Пожалуйста, выберите ее на странице параметров."
+    },
+    "anthropic_empty_version": {
+        "message": "Вы не добавили строку версии для API Anthropic. Пожалуйста, вставьте ее на странице параметров."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Anthropic API-запрос не удался"
+    },
+    "_api_connecting": {
+        "message": "Попытка подключения к $api_string$ с использованием следующей конфигурации...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Модель"
+    },
+    "_api_connecting_host": {
+        "message": "Хост"
+    },
+    "_api_connecting_version": {
+        "message": "Версия"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Доступные услуги"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Выберите один из сервисов, доступных для OpenAI Compatible API, или вставьте его вручную."
+    },
+    "Custom": {
+        "message": "Пользовательский"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Вы уверены, что хотите применить конфигурацию \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Если вы выделите часть текста, будет рассмотрена только эта часть."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Использование хранилища"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Если флажок установлен, ваши чаты будут сохраняться OpenAI."
+    },
+    "prefs_ollama_think": {
+        "message": "Позволяет мыслить"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Если флажок установлен, Модель будет думать перед ответом. Эта опция работает только с моделями, поддерживающими функцию \"думать\"."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Нажмите, чтобы изменить тип ответа"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Исключения - точное соответствие"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Если флажок установлен, слова из списка исключений будут точно соответствовать тегам. В противном случае они также будут совпадать, если включены в тег."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Управление заполнителями данных"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "В автозаполнении можно также использовать стандартные заполнители данных, как и при написании пользовательских подсказок."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "На этой странице можно определить заполнители данных, которые будут использоваться в пользовательских подсказках."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Существующие держатели данных с тем же идентификатором будут перезаписаны. Будут добавлены местоположения с новыми идентификаторами."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Экспортируйте все размещаемые пользовательские данные"
+    },
+    "customDataPH_Import": {
+        "message": "Импорт новых заполнителей данных"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Текст для размещения данных"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Сохранение пользовательских заполнителей данных..."
+    },
+    "customDataPH_saved": {
+        "message": "Сохранение пользовательских данных!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Добавьте заполнитель данных"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Вы собираетесь импортировать новые пользовательские заполнители данных."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Запуск импорта пользовательских заполнителей данных..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Импорт пользовательских данных завершен! Чтобы сохранить изменения, нужно нажать кнопку \"Сохранить все\"."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Файл, который вы пытаетесь импортировать, не является действительным файлом пользовательских данных."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Файл, который вы пытаетесь импортировать, не содержит корректных заполнителей пользовательских данных."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Возможность использования в подсказках, добавленных в меню"
     }
 }
