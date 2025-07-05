@@ -1,3 +1,4 @@
+cs
 de
 en
 fr
@@ -5,6 +6,6 @@ hr
 it
 pl
 pt-br
-cs
+ru
 zh_Hans
 zh_Hant
