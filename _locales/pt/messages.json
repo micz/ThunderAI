@@ -124,5 +124,35 @@
     },
     "chatgpt_win_working": {
         "message": "Trabalho em curso..."
+    },
+    "customPrompts_managePrompts": {
+        "message": "Gerir prompts"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Os prompts padrão não são editáveis. Podes desativá-los, copiar o texto do prompt e colá-lo num novo, para criar uma versão modificada."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Podes importar e exportar prompts. Prompts existentes com o mesmo ID serão escritos por cima. Prompts com um ID novo serão adicionados."
+    },
+    "customPrompts_start_saving": {
+        "message": "A guardar prompts..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "A filtrar prompts..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "A guardar prompts padrão..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "A guardar prompts personalizados..."
+    },
+    "customPrompts_saved": {
+        "message": "Prompts guardados!"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Adicionar o prompt"
+    },
+    "customPrompts_do_reply": {
+        "message": "Responder"
     }
 }
