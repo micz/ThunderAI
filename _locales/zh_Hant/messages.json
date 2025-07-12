@@ -662,7 +662,7 @@
         }
     },
     "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
-        "message": "如果勾選中，則排除清單中的標籤將完全匹配，否則將部分匹配。"
+        "message": "若勾選此選項，排除列表中的詞語將與標籤完全匹配。否則，若詞語包含於標籤內，亦視為匹配。"
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "保持“v1”相容性"
@@ -1175,5 +1175,56 @@
     },
     "WaitingServerResponse": {
         "message": "等待伺服器回應"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "管理您的資料佔位符"
+    },
+    "customDataPH_manageDataPH": {
+        "message": "管理資料佔位符"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "您也可以使用自動完成功能的預設資料佔位符，就像撰寫自訂提示詞時一樣。"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "在此頁面上，您可以定義自訂資料佔位符，以便在您的自訂提示詞中使用。"
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "具有相同 ID 的現有資料佔位符將被覆寫。具有新 ID 的佔位符將被新增。"
+    },
+    "customDataPH_ExportAll": {
+        "message": "匯出所有自訂資料佔位符"
+    },
+    "customDataPH_Import": {
+        "message": "滙入新的資料佔位符"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "資料佔位符文字"
+    },
+    "customDataPH_saving_custom": {
+        "message": "儲存自訂資料佔位符..."
+    },
+    "customDataPH_saved": {
+        "message": "自訂資料佔位符已儲存！"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "新增資料佔位符"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "即將滙入新的自訂資料佔位符。"
+    },
+    "importCustomDataPH_start_import": {
+        "message": "開始滙入自訂資料佔位符..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "自訂資料佔位符滙入完成！請點擊「儲存所有」按鈕以儲存您的變更。"
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "您嘗試滙入的檔案不是有效的自訂資料佔位符檔案。"
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "您嘗試滙入的檔案未包含任何有效的自訂資料佔位符。"
+    },
+    "customDataPH_add_to_menu": {
+        "message": "已將可使用的內容新增至選單提示中。"
     }
 }
