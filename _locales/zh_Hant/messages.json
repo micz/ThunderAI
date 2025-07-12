@@ -662,7 +662,7 @@
         }
     },
     "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
-        "message": "若勾選此選項，排除列表中的詞語將與標籤完全匹配。否則，若詞語包含於標籤內，亦視為匹配。"
+        "message": "如果勾選，排除列表中的詞語將與標籤完全匹配。否則，若詞語包含於標籤內，亦視為匹配。"
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "保持“v1”相容性"
@@ -1012,7 +1012,7 @@
         "message": "情境 Token 數量"
     },
     "prefs_OptionText_chatgpt_web_custom_gpt": {
-        "message": "ChatGPT 網頁訂製 GPT"
+        "message": "ChatGPT 網頁自訂 GPT"
     },
     "thunderai_def_lang": {
         "message": "ThunderAI 選項中定義的預設語言。"
@@ -1063,7 +1063,7 @@
         "message": "垃圾郵件閾值太低！您可能會將太多郵件標記為垃圾郵件！"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "如果勾選中，AI 將僅對新收到的電子郵件新增現有標籤，而不會建立新標籤。"
+        "message": "如果勾選，AI 將僅對新收到的電子郵件新增現有標籤，而不會建立新標籤。"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "如果在選項或提示中指定了專案，它將覆蓋自訂 GPT 設定。"
@@ -1216,7 +1216,7 @@
         "message": "開始滙入自訂資料佔位符..."
     },
     "importCustomDataPH_import_completed": {
-        "message": "自訂資料佔位符滙入完成！請點擊「儲存所有」按鈕以儲存您的變更。"
+        "message": "自訂資料佔位符滙入完成！請點擊「儲存全部」按鈕以儲存您的變更。"
     },
     "importCustomDataPH_invalidFile": {
         "message": "您嘗試滙入的檔案不是有效的自訂資料佔位符檔案。"
@@ -1225,6 +1225,6 @@
         "message": "您嘗試滙入的檔案未包含任何有效的自訂資料佔位符。"
     },
     "customDataPH_add_to_menu": {
-        "message": "已將可使用的內容新增至選單提示中。"
+        "message": "已將可使用的內容新增至選單提示中"
     }
 }
