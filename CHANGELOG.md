@@ -3,7 +3,10 @@
 
 
 
-
+<h2>Version 3.5.5 - ??/??/2025</h2>
+      <ul>
+        <li><i>[All APIs]</i> Fix: Autotag and Antispam filter working again [<a href="https://github.com/micz/ThunderAI/issues/449">#449</a>].</li>
+      </ul>
 <h2>Version 3.5.4 - 13/06/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Changed again how to detect when the response is completed.</li>
