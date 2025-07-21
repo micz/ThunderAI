@@ -858,7 +858,7 @@ function setupPermissionsRemovedListener() {
             browser.storage.sync.set({add_tags: false});
         }
         // Process 'spamfilter' permissions removal
-        if (permissions.permissions.includes("messagesMove")) {
+        if (["messagesMove", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
             // console.log(">>>>>>>>>>> Permissions onRemoved: spamfilter");
             browser.storage.sync.set({spamfilter: false});
         }
