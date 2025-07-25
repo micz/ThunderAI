@@ -99,7 +99,7 @@ function chatgpt_getRegenerateButton() {
 function chatpgt_scrollToBottom () {
     try { 
         //document.querySelector('button[class*="cursor"][class*="bottom"]').click();
-        document.querySelector('path[d^="M12 21C11.7348"]')?.parentNode?.parentNode?.click();
+        document.querySelector('path[d^="M9.33468 3.33333C9.33468"]')?.parentNode?.parentNode?.click();
     }
     catch (err) { console.error('[ThunderAI] ', err); }
 }
