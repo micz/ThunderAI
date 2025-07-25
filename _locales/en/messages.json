@@ -19,6 +19,10 @@
     "message": "Reply to this thread",
     "description": ""
   },
+  "prompt_reply_custom_command": {
+    "message": "Reply with command",
+    "description": ""
+  },
   "prompt_rewrite_polite": {
     "message": "Rewrite polite",
     "description": ""
@@ -733,6 +737,10 @@
   },
   "prompt_reply_advanced_full_text": {
     "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
+  "prompt_reply_custom_command_full_text": {
+    "message": "Reply to the following email \"{%mail_text_body%}\". {%additional_text%}. Reply with only the needed text and with no extra comments or other text.",
     "description": ""
   },
   "prompt_rewrite_full_text": {
