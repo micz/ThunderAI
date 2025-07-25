@@ -871,7 +871,7 @@ function setupPermissionsRemovedListener() {
             browser.storage.sync.set({add_tags: false});
         }
         // Process 'spamfilter' permissions removal
-        if (permissions.permissions.includes("messagesMove")) {
+        if (["messagesMove", "messagesUpdate"].some(permission => permissions.permissions.includes(permission))) {
             // console.log(">>>>>>>>>>> Permissions onRemoved: spamfilter");
             browser.storage.sync.set({spamfilter: false});
         }
@@ -992,7 +992,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let tags_full_list = await getTagsList();
             // console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + curr_prompt_add_tags);
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-            specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', tags_full_list);
+            specialFullPrompt_add_tags = await taPromptUtils.preparePrompt(curr_prompt_add_tags, message, chatgpt_lang, '', '', body_text, curr_fullMessage.headers.subject, msg_text, '', '', tags_full_list);
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aats.connection_type, prefs_init.do_debug);
@@ -1019,7 +1019,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
             // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + curr_prompt_spamfilter);
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
-            let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', body_text, curr_fullMessage.headers.subject, msg_text, '', '');
+            let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', '', body_text, curr_fullMessage.headers.subject, msg_text, '', '', []);
             taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
             let cmd_spamfilter = new mzta_specialCommand(specialFullPrompt_spamfilter, prefs_init.connection_type, prefs_init.do_debug);
             await cmd_spamfilter.initWorker();
