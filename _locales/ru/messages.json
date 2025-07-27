@@ -1208,5 +1208,11 @@
     },
     "customDataPH_add_to_menu": {
         "message": "Возможность использования в подсказках, добавленных в меню"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Ответьте командой"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Ответьте на следующее письмо \"{%mail_text_body%}\". {%additional_text%}. Отвечайте только на нужный текст, без лишних комментариев или другого текста."
     }
 }
