@@ -1242,5 +1242,11 @@
     },
     "customDataPH_manageDataPH": {
         "message": "Gérer les espaces réservés de données"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Répondre avec une commande"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Répondez à l'e-mail suivant « {%mail_text_body%} ». {%additional_text%}. Répondez uniquement avec le texte nécessaire, sans commentaires ou texte supplémentaire."
     }
 }

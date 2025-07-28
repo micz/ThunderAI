@@ -1242,5 +1242,11 @@
     },
     "ChatGPT_chatgpt_api_store": {
         "message": "Verwende speicher"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Antworten Sie auf die folgende E-Mail „{%mail_text_body%}“. {%additional_text%}. Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text."
+    },
+    "prompt_reply_custom_command": {
+        "message": "Mit Befehl antworten"
     }
 }
