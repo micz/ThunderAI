@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use ChatGPT, Goolge Gemini, Anthropic or Ollama to enhance your emails!",
+    "message": "Use ChatGPT, Google Gemini, Anthropic or Ollama to enhance your emails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -17,6 +17,10 @@
   },
   "prompt_reply_advanced": {
     "message": "Reply to this thread",
+    "description": ""
+  },
+  "prompt_reply_custom_command": {
+    "message": "Reply with command",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -51,7 +55,7 @@
     "message": "Manage Prompts",
     "description": ""
   },
-  "customPrompts_managePrompts_help": {
+  "more_info_string": {
     "message": "More info",
     "description": ""
   },
@@ -132,11 +136,11 @@
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer": {
-    "message": "Enable the diff viewer",
+    "message": "Enable the text comparison viewer",
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer_title": {
-    "message": "The diff viewer can be selected when the action is set to \"Substitute text\".",
+    "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
     "description": ""
   },
   "customPrompts_form_required_fields": {
@@ -167,15 +171,11 @@
     "message": "There are unsaved changes!",
     "description": ""
   },
-  "customPrompts_btnSaveAll": {
+  "btnSaveAll_string": {
     "message": "Save All",
     "description": ""
   },
-  "customPrompts_save_button": {
-    "message": "Save",
-    "description": ""
-  },
-  "customPrompts_btnNew": {
+  "btnNew_string": {
     "message": "Add New",
     "description": ""
   },
@@ -259,10 +259,6 @@
     "message": "Send",
     "description": ""
   },
-  "chatgpt_use_gpt35": {
-    "message": "Use GPT3.5",
-    "description": ""
-  },
   "chatgpt_force_completion": {
     "message": "force completion",
     "description": ""
@@ -304,19 +300,27 @@
     "description": ""
   },
   "prefs_OptionText_reply_all": {
-    "message": "Reply to All",
+    "message": "Reply to all",
     "description": ""
   },
   "prefs_OptionText_reply_sender": {
-    "message": "Reply to Sender",
+    "message": "Reply to sender",
     "description": ""
   },
   "prefs_OptionText_reply_type": {
     "message": "Reply type",
     "description": ""
   },
+  "prefs_OptionText_reply_type_Info": {
+    "message": "This is the default reply type that will be used when replying to an email. You can choose the other later in the reply dialog.",
+    "description": ""
+  },
   "prefs_OptionText_btnManagePrompts": {
     "message": "Manage your prompts",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageCustomDataPH": {
+    "message": "Manage your data placeholders",
     "description": ""
   },
   "prefsInfoTitle": {
@@ -400,7 +404,7 @@
     "description": ""
   },
   "customprompts_form_label_define_response_lang": {
-    "message": "Define the reponse language in the prompt",
+    "message": "Define the response language in the prompt",
     "description": ""
   },
   "prefs_Connection_type": {
@@ -444,7 +448,7 @@
     "description": ""
   },
   "chatgpt_empty_model": {
-    "message": "You've not choosen a model for the ChatGPT API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the ChatGPT API. Please choose one in the options page.",
     "description": ""
   },
   "chagpt_api_send_button": {
@@ -492,7 +496,7 @@
     "description": ""
   },
   "ollama_empty_model": {
-    "message": "You've not choosen a model for the Ollama API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Ollama API. Please choose one in the options page.",
     "description": ""
   },
   "error_connection_interrupted": {
@@ -507,7 +511,7 @@
     "message": "OpenAI ChatGPT API request failed",
     "description": ""
   },
-  "WaitingServerReponse": {
+  "WaitingServerResponse": {
     "message": "Waiting for the server response",
     "description": ""
   },
@@ -532,7 +536,7 @@
     "description": ""
   },
   "OpenAIComp_empty_model": {
-    "message": "You've not choosen a model for the OpenAI Compatible API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the OpenAI Compatible API. Please choose one in the options page.",
     "description": ""
   },
   "OpenAIComp_api_request_failed": {
@@ -560,7 +564,7 @@
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_force_enter_info": {
-    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the hightlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
+    "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the highlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
     "description": ""
   },
   "prefs_OptionText_dynamic_menu_order_alphabet": {
@@ -695,10 +699,6 @@
     "message": "You can use additional data placeholders.",
     "description": ""
   },
-  "prefs_OptionText_btnManagePrompts_infoline2": {
-    "message": "You can change the prompt as you wish, but the response received from the AI must be a comma-separated list of tags!",
-    "description": ""
-  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": ""
@@ -739,6 +739,10 @@
     "message": "Reply to the following email \"{%selected_text%}\", considering this is the full thread of emails \"{%mail_html_body%}\". Reply with only the needed text and with no extra comments or other text.",
     "description": ""
   },
+  "prompt_reply_custom_command_full_text": {
+    "message": "Reply to the following email \"{%mail_text_body%}\". {%additional_text%}. Reply with only the needed text and with no extra comments or other text.",
+    "description": ""
+  },
   "prompt_rewrite_full_text": {
     "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text.",
     "description": ""
@@ -776,7 +780,7 @@
     "description": ""
   },
   "prompt_add_tags_full_text": {
-    "message": "Analyze the following email text and generate a comma-separated list of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details. The output should be only a list of comma separated tags without any additional comment or text.",
+    "message": "Analyze the following email text and generate a JSON array of tags that summarize its content. Use themes, key topics, and relevant descriptors as tags. Ensure the tags are concise and relevant to the email's content.\nEmail text: {%mail_text_body%}\nConsider the following details for context:\n- Sender: {%author%}\n- Recipients: {%recipients%}\n- CC list: {%cc_list%}\n- Email subject: {%mail_subject%}\nPlease base your tags on the email's text and context, ignoring unnecessary information or trivial details.\nGenerate a response in JSON format only. The output should be only a JSON array of tags without any additional comment or text. Here is an example of the JSON format to be used:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}",
     "description": ""
   },
   "prompt_proofread_this": {
@@ -948,7 +952,7 @@
     "description": ""
   },
   "google_gemini_empty_model": {
-    "message": "You've not choosen a model for the Google Gemini API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Google Gemini API. Please choose one in the options page.",
     "description": ""
   },
   "GoogleGemini_SystemInstruction": {
@@ -1047,7 +1051,7 @@
     "message": "Current prompt text",
     "description": ""
   },
-  "prefs_OptionText_GetCalendarEvent_infoline2": {
+  "prefs_OptionText_AdvancedPromptResponse_infoline2": {
     "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
     "description": ""
   },
@@ -1100,7 +1104,7 @@
     "description": ""
   },
   "no_valid_data_received": {
-    "message": "No valid data recevied from the AI.",
+    "message": "No valid data received from the AI.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto": {
@@ -1165,10 +1169,6 @@
   },
   "SpamFilter_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
-  },
-  "prefs_OptionText_spamfilter_infoline": {
-    "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
     "description": ""
   },
   "prompt_spamfilter" : {
@@ -1468,7 +1468,7 @@
     "description": ""
   },
   "anthropic_empty_model": {
-    "message": "You've not choosen a model for the Anthropic API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Anthropic API. Please choose one in the options page.",
     "description": ""
   },
   "anthropic_empty_version": {
@@ -1480,7 +1480,7 @@
     "description": ""
   },
   "_api_connecting": {
-    "message": "Attempting to connect to $api_string$ using the following configuration:",
+    "message": "Attempting to connect to $api_string$ using the following configuration...",
     "description": "",
     "placeholders": {
         "api_string": {
@@ -1489,31 +1489,16 @@
     }
   },
   "_api_connecting_model": {
-    "message": "Model: $model$",
-    "description": "",
-    "placeholders": {
-        "model": {
-            "content": "$1"
-        }
-    }
+    "message": "Model",
+    "description": ""
   },
   "_api_connecting_host": {
-    "message": "Host: $api_host$",
-    "description": "",
-    "placeholders": {
-        "api_host": {
-            "content": "$1"
-        }
-    }
+    "message": "Host",
+    "description": ""
   },
   "_api_connecting_version": {
-    "message": "Version: $api_version$",
-    "description": "",
-    "placeholders": {
-        "api_version": {
-            "content": "$1"
-        }
-    }
+    "message": "Version",
+    "description": ""
   },
   "prefs_OpenAIComp_AvailableServices": {
     "message": "Available Services",
@@ -1538,6 +1523,98 @@
   },
   "apiwebchat_selection_info": {
     "message": "If you select some text, only that portion will be considered.",
+    "description": ""
+  },
+  "ChatGPT_chatgpt_api_store": {
+    "message": "Use storage",
+    "description": ""
+  },
+  "ChatGPT_chatgpt_api_store_info": {
+    "message": "If checked, your chats will be stored by OpenAI.",
+    "description": ""
+  },
+  "prefs_ollama_think": {
+    "message": "Enable thinking",
+    "description": ""
+  },
+  "prefs_ollama_think_Info": {
+    "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
+    "description": ""
+  },
+  "chatgpt_win_change_reply_type": {
+    "message": "Click to change the reply type",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_exclusions_exact_match": {
+    "message": "Exclusions exact match",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+    "message": "If checked, the words in the exclusion list will be matched exactly with the tags. Otherwise, they will also match if included within the tag.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH": {
+    "message": "Manage Data Placeholders",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default_3": {
+    "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default": {
+    "message": "On this page, it is possible to define custom data placeholders to be used in your custom prompts.",
+    "description": ""
+  },
+  "customDataPH_manageDataPH_info_default_2": {
+    "message": "Existing data placeholders with the same ID will be overwritten. Placeholders with new IDs will be added.",
+    "description": ""
+  },
+  "customDataPH_ExportAll": {
+    "message": "Export all custom data placeholders",
+    "description": ""
+  },
+  "customDataPH_Import": {
+    "message": "Import new data placeholders",
+    "description": ""
+  },
+  "customDataPH_form_label_Text": {
+    "message": "Data Placeholder Text",
+    "description": ""
+  },
+  "customDataPH_saving_custom": {
+    "message": "Saving custom data placeholders...",
+    "description": ""
+  },
+  "customDataPH_saved": {
+    "message": "Custom data placeholders saved!",
+    "description": ""
+  },
+  "customDataPH_btnAddNewCommit": {
+    "message": "Add the Data Placeholder",
+    "description": ""
+  },
+  "importCustomDataPH_confirmText": {
+    "message": "You are about to import new custom data placeholders.",
+    "description": ""
+  },
+  "importCustomDataPH_start_import": {
+    "message": "Starting custom data placeholders import...",
+    "description": ""
+  },
+  "importCustomDataPH_import_completed": {
+    "message": "Custom data placeholders import completed! You need to click on the 'Save All' button to save your changes.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidFile": {
+    "message": "The file you're trying to import is not a valid custom data placeholders file.",
+    "description": ""
+  },
+  "importCustomDataPH_invalidDataPHs": {
+    "message": "The file you're trying to import does not contain any valid custom data placeholders.",
+    "description": ""
+  },
+  "customDataPH_add_to_menu": {
+    "message": "Usable in prompts added to menu",
     "description": ""
   }
 }

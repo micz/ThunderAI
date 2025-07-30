@@ -97,12 +97,11 @@ function saveOptions(e) {
         case 'password':
         options[element.id] = element.value.trim();
         break;
+      case 'select-one':
+        options[element.id] = element.value;
+        break;
       default:
-        if (element.tagName === 'SELECT') {
-          options[element.id] = element.value;
-        }else{
-          console.error("[ThunderAI] Unhandled input type:", element.type);
-        }
+        console.error("[ThunderAI] Unhandled input type:", element.type);
     }
 
   browser.storage.sync.set(options);

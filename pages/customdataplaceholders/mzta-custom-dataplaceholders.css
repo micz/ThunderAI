@@ -1,0 +1,360 @@
+@media (prefers-color-scheme: light) {
+    table th {
+        background-color: #ffffff;
+    }
+
+    #command_palette{
+        background-color: #ffffff; 
+    }
+
+    table.prompts_list tr:nth-child(even) {
+        background-color: #e9e9e9;
+    }
+
+    table.prompts_list tr:nth-child(odd) {
+        background-color: #f3f3f3;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #ccc;
+}
+
+thead {
+    position: sticky;
+    top: 26px;
+    z-index: 90;
+}
+
+#command_palette{
+    position: sticky;
+    top: 0;
+    padding-top: 1px;
+    height: 26px;
+    width: 100%;
+    z-index: 90;
+}
+
+#btnNew{
+    float: right;
+}
+
+#btnSaveAll{
+    float: left;
+}
+
+#msgDisplay{
+    padding-left: 40px;
+}
+
+table tr {
+    border-bottom: 1px solid #ccc;
+}
+
+table.prompts_list th {
+    padding: 8px;
+    text-align: left;
+}
+
+table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table td.w08{
+    width: 8vw;
+}
+
+table td.w17{
+    width: 17vw;
+}
+
+table td.w19{
+    width: 19vw;
+}
+
+table td.w25{
+    width: 25vw;
+}
+
+table td.w40{
+    width: 40vw;
+}
+
+table.prompts_list td.properties{
+    white-space: nowrap;
+}
+
+table .sort {
+    background-image: url(../images/listjs-arrow-sort-inactive.png);
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-right: 14px;
+    cursor: pointer;
+    cursor: hand;
+}
+
+table .sort.asc {
+    background-image: url(../images/listjs-arrow-sort-active-down.png);
+}
+
+table .sort.desc {
+    background-image: url(../images/listjs-arrow-sort-active-up.png);
+}
+
+tbody.list tr{
+    vertical-align: top;
+}
+
+.hiddendata{
+    display: none;
+}
+
+#formNew{
+    display: none;
+    width: 100%;
+    padding-bottom: 7px;
+}
+
+.text_output{
+    width: 98%;
+    height: 9em;
+}
+
+.go_right_float{
+    float: right;
+}
+
+.go_right{
+    width: 100%;
+    text-align: right;
+}
+
+.width_all{
+    width: 100%;
+}
+
+.small_label{
+    font-size: small;
+    font-style: italic;
+}
+
+.field_title{
+    font-weight: bold;
+}
+
+.field_title_s{
+    font-weight: bold;
+    font-size: small;
+}
+
+.field_title_us{
+    font-weight: bold;
+    font-size: smaller;
+}
+
+label, .id_show, .text_show, .name_show, .type_show, .action_show{
+    font-size: small;
+}
+
+#txtIdNew, .id_output{
+    text-transform: lowercase;
+}
+
+#import_export{
+    position: absolute;
+    right:10px;
+    top:10px;
+    text-align: right;
+}
+
+#btnExportAll{
+    margin-bottom: 3px;
+}
+
+.storage_space{
+    font-size: 0.8em;
+    font-weight: normal;
+    font-style: italic;
+    color: rgb(41, 41, 41);
+    text-align: right;
+    margin-right: 1px;
+}
+
+.page_title{
+    margin-bottom: 0px;
+}
+
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: small;
+}
+
+.autocomplete-list li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.autocomplete-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.autocomplete-list li.active {
+    background-color: #ddd;
+}
+
+.hidden {
+    display: none;
+}
+
+.need_custom_text_span, .need_selected_span{
+    padding-right: 2px;
+}
+
+#chatgpt_web_additional_info_toggle td{
+    padding:0px 5px;
+    font-style: italic;
+}
+
+#chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
+    background-color: rgb(255, 209, 183);
+    display:none;
+}
+
+.chatgpt_web_models_list_table{
+    background-color: rgb(255, 209, 183);
+    border:0;
+}
+
+.chatgpt_web_models_list_table *{
+    border:0;
+}
+
+.chatgpt_web_models_list_table td{
+    padding:2px;
+}
+
+#chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_toggle{
+    cursor: pointer;
+}
+
+#chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
+    background-color: rgb(255, 189, 153);
+    text-decoration: underline;
+}
+
+#chatgpt_web_additional_info_toggle td{
+    text-align: center;
+}
+
+#chatgpt_web_additional_info td{
+    vertical-align: top;
+}
+
+.chatgpt_web_additional_info_toggle{
+    width: -moz-available;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.chatgpt_web_additional_info_show{
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 3px;
+    margin-top: 5px;
+}
+
+.chatgpt_web_additional_info_row{
+    display: flex;
+}
+
+.chatgpt_web_additional_info_row span{
+    margin-right: 0.4em;
+}
+
+input.input_additional[type="text"]{
+    width: -moz-available;
+}
+
+.small_info{
+    font-size:smaller;
+}
+
+.conntype_chatgpt_web_option{
+    cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1C1B22;
+        color: rgb(251, 251, 254);
+    }
+    
+    a:link { color: #409EFF; }   
+    a:visited { color: #409EFF; }  
+    a:hover { color: #66B1FF; }   
+    a:active { color: #66B1FF; }
+
+    table {
+        background-color: #1C1B22;
+        border: 1px solid #ccc;
+    }
+
+    table.prompts_list th {
+        background-color: #4c4e58;
+        border: 1px solid rgb(251, 251, 254);
+        color: rgb(194, 194, 194);
+    }
+
+    #command_palette{
+        background-color: inherit; 
+    }
+
+    table.prompts_list tr:nth-child(even) {
+        background-color: #2E2F36;
+    }
+
+    .storage_space{
+        color: rgb(182, 182, 182);
+    }
+
+    .autocomplete-list {
+        background-color: #2E2F36;
+        border: 1px solid #2E2F36;
+    }
+    
+    .autocomplete-list li:hover {
+        background-color: #4c4e58;
+    }
+    
+    .autocomplete-list li.active {
+        background-color: #4c4e58;
+    }
+
+    #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
+        background-color: rgb(39, 11, 0);
+        color: rgb(182, 182, 182);
+    }
+
+    #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
+        background-color: rgb(88, 25, 0);
+    }
+}

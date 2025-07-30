@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -81,12 +81,12 @@ export class mzta_Menus {
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
-                selection: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" }),
-                selection_html: await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" }),
-                text: await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" }),
-                html: await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" }),
-                only_typed_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect }),
-                only_quoted_text: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" })
+                selection: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
+                selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
+                text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
+                html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
+                only_typed_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_quoted_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
     
@@ -94,7 +94,7 @@ export class mzta_Menus {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
-    
+            // console.log(">>>>>>>>>>>>> msg_text: " + JSON.stringify(msg_text));
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
                 //A selection is needed, but nothing is selected!
@@ -168,7 +168,7 @@ export class mzta_Menus {
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
-                        let tags_current_email = '';
+                        let tags_current_email = [];
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
@@ -183,7 +183,7 @@ export class mzta_Menus {
                         let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
                         await cmd_addTags.initWorker();
                         try{
-                            tags_current_email = (await cmd_addTags.sendPrompt()).trim();
+                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
@@ -191,7 +191,7 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        this.logger.log("tags_current_email: " + tags_current_email);
+                        this.logger.log("tags_current_email: " + JSON.stringify(tags_current_email));
                         this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
                         browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
                         taWorkingStatus.stopWorking();
@@ -350,6 +350,7 @@ export class mzta_Menus {
                         break;
                 }
             }else{  // Classic prompts for the API webchat
+                this.logger.log("fullPrompt: " + fullPrompt);
                 this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text, curr_prompt);
                 taWorkingStatus.stopWorking();
                 return {ok:'1'};

@@ -73,14 +73,19 @@ messageInput.setMessagesArea(messagesArea);
 
 switch (llm) {
     case "chatgpt_api": {
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', do_debug: false});
+        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, do_debug: false});
         let i18nStrings = {};
         i18nStrings["chatgpt_api_request_failed"] = browser.i18n.getMessage('chatgpt_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
-        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model), "info");
+        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, chatgpt_api_store: prefs_api.chatgpt_api_store, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        let additional_text_elements = [];
+        additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
+        if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
+            additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
+        }
+        messagesArea.appendUserMessage(getAPIsInitMessageString("ChatGPT API", prefs_api.chatgpt_model, '', '', additional_text_elements), "info");
         browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
@@ -91,19 +96,23 @@ switch (llm) {
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.google_gemini_model);
         messagesArea.setLLMName("Google Gemini");
+        let additional_text_elements = [];
+        if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
+            additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
+        }
         worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model), "info");
+        messagesArea.appendUserMessage(getAPIsInitMessageString("Google Gemini API", prefs_api.google_gemini_model, '', '', additional_text_elements), "info");
         browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         break;
     }
     case "ollama_api": {
-        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: '', ollama_num_ctx: 0, do_debug: false});
+        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: '', ollama_num_ctx: 0, ollama_think: false, do_debug: false});
         let i18nStrings = {};
         i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, ollama_num_ctx: prefs_api.ollama_num_ctx, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, ollama_num_ctx: prefs_api.ollama_num_ctx, ollama_think: prefs_api.ollama_think, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
         messagesArea.appendUserMessage(getAPIsInitMessageString("Ollama API", prefs_api.ollama_model, prefs_api.ollama_host), "info");
         break;
@@ -137,7 +146,7 @@ switch (llm) {
 //let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
 
 // Event listeners for worker messages
-worker.onmessage = function(event) {
+worker.onmessage = async function(event) {
     const { type, payload } = event.data;
     switch (type) {
         case 'messageSent':
@@ -148,7 +157,7 @@ worker.onmessage = function(event) {
             messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
             break;
         case 'tokensDone':
-            messagesArea.handleTokensDone(promptData);
+            await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
             break;
         case 'error':

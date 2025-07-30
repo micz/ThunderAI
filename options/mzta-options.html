@@ -12,7 +12,7 @@
         <td colspan="2"><div>__MSG_prefs_SurveyLinkText__<br><a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__</a></div></td>
       </tr>
       <tr id="owl_warning">
-        <td colspan="2"><div class="warning">__MSG_prefs_OptionText_owl_warning__ <a href="https://micz.it/thunderbird-addon-thunderai/owl/">__MSG_customPrompts_managePrompts_help__</a></div></td>
+        <td colspan="2"><div class="warning">__MSG_prefs_OptionText_owl_warning__ <a href="https://micz.it/thunderbird-addon-thunderai/owl/">__MSG_more_info_string__</a></div></td>
       </tr>
       <tr id="hyprland_warning">
         <td colspan="2" style="text-align:center;" class="warning"><b>__MSG_hyprland_warning__</b></td>
@@ -65,6 +65,7 @@
               <option value="reply_all">__MSG_prefs_OptionText_reply_all__</option>
               <option value="reply_sender">__MSG_prefs_OptionText_reply_sender__</option>
             </select>
+            <br>__MSG_prefs_OptionText_reply_type_info__
           </label>
         </td>
       </tr>
@@ -220,6 +221,19 @@
       <tr class="conntype_chatgpt_api">
         <td>
           <label>
+            <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
+          </label>
+        </td>
+        <td>
+          <label>
+            <input type="checkbox" id="chatgpt_api_store" name="chatgpt_api_store" class="option-input" />
+            &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_chatgpt_api">
+        <td>
+          <label>
             <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
           </label>
         </td>
@@ -283,21 +297,10 @@
       </tr>
       <tr class="conntype_ollama_api" id="ollama_api_cors_warning">
         <td colspan="2" style="text-align:center;">
-          __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_customPrompts_managePrompts_help__</a>]
+          __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
           <br><br><b>__MSG_CORS_alternative_1__</b>
           <br>__MSG_CORS_alternative_2__
             <br><br><button id="btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
-        </td>
-      </tr>
-      <tr class="conntype_ollama_api">
-        <td><label>
-          <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
-        </label></td>
-        <td>
-          <label>
-            <input type="number" id="ollama_num_ctx" name="ollama_num_ctx" class="option-input"/>
-            <br>__MSG_prefs_ollama_num_ctx_Info__
-          </label>
         </td>
       </tr>
       <tr class="conntype_ollama_api">
@@ -311,6 +314,28 @@
           <label>
             <select id="ollama_model" name="ollama_model" class="option-input">
             </select>
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_ollama_api">
+        <td><label>
+          <span class="opt_title">__MSG_prefs_ollama_think__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="ollama_think" name="ollama_think" class="option-input"/>
+            __MSG_prefs_ollama_think_Info__
+          </label>
+        </td>
+      </tr>
+      <tr class="conntype_ollama_api">
+        <td><label>
+          <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
+        </label></td>
+        <td>
+          <label>
+            <input type="number" id="ollama_num_ctx" name="ollama_num_ctx" class="option-input"/>
+            <br>__MSG_prefs_ollama_num_ctx_Info__
           </label>
         </td>
       </tr>
@@ -340,7 +365,7 @@
       </tr>
       <tr class="conntype_openai_comp_api" id="openai_comp_api_cors_warning">
         <td colspan="2" style="text-align:center;">
-          __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_customPrompts_managePrompts_help__</a>]
+          __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
           <br><br><b>__MSG_CORS_alternative_1__</b>
           <br>__MSG_CORS_alternative_2__
             <br><br><button id="btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
@@ -517,14 +542,15 @@
     </table>
     <div id="btn_custom_prompts">
         <button id="btnManagePrompts">__MSG_prefs_OptionText_btnManagePrompts__</button>
-        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_customPrompts_managePrompts_help__</a>
+        <br>__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
+        <br><button id="btnManageCustomDataPH">__MSG_prefs_OptionText_btnManageCustomDataPH__</button>
     </div>
     <div id="miczDescription">
       <h1>__MSG_prefsInfoTitle__</h1>
       <p>
         <span class="conntype_chatgpt_web">__MSG_prefsInfoDesc_1__<br></span>
         <span class="conntype_chatgpt_api">__MSG_prefsInfoDesc_2__<br></span>
-        <span class="conntype_ollama_api">__MSG_prefsInfoDesc_3__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_customPrompts_managePrompts_help__</a>]<br></span>
+        <span class="conntype_ollama_api">__MSG_prefsInfoDesc_3__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]<br></span>
         <span class="conntype_openai_comp_api">__MSG_prefsInfoDesc_4__</span>
         <br><span>__MSG_prefsInfoDesc_5__
           <br>__MSG_prefsInfoDesc_6__</span>

@@ -52,16 +52,16 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         taLog.log('Saving option: ' + element.id + ' = *********');
         break;
+      case 'select-one':
+        options[element.id] = element.value;
+        taLog.log('Saving option: ' + element.id + ' = ' + element.value);
+        break;
+      case 'textarea':
+        options[element.id] = element.value.trim();
+        taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
+        break;
       default:
-        if (element.tagName === 'SELECT') {
-          options[element.id] = element.value;
-          taLog.log('Saving option: ' + element.id + ' = ' + element.value);
-        } if (element.tagName === 'TEXTAREA') {
-          options[element.id] = element.value.trim();
-          taLog.log('Saving option: ' + element.id + ' = ' + element.value.trim());
-        } else {
           console.error("[ThunderAI] Unhandled input type:", element.type);
-        }
     }
 
   browser.storage.sync.set(options);
@@ -87,8 +87,7 @@ async function restoreOptions() {
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
           element.value = result[element.id] || default_text_value;
           break;
-        default:
-        if (element.tagName === 'SELECT') {
+        case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
           if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
@@ -96,11 +95,12 @@ async function restoreOptions() {
           if (element.value === '') {
             element.selectedIndex = -1;
           }
-        } else if (element.tagName === 'TEXTAREA') {
+          break;
+        case 'textarea':
           element.value = result[element.id];
-        }else{
+          break;
+        default:
           console.error("[ThunderAI] Unhandled input type:", element.type);
-        }
       }
     });
   }
@@ -479,23 +479,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
-    openTab('../pages/customprompts/mzta-custom-prompts.html');
+    openTab('/pages/customprompts/mzta-custom-prompts.html');
+  });
+
+  document.getElementById('btnManageCustomDataPH').addEventListener('click', () => {
+    openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
   });
 
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
-    openTab('../pages/addtags/mzta-add-tags.html');
+    openTab('/pages/addtags/mzta-add-tags.html');
   });
 
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
-    openTab('../pages/spamfilter/mzta-spamfilter.html');
+    openTab('/pages/spamfilter/mzta-spamfilter.html');
   });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
-    openTab('../pages/get-calendar-event/mzta-get-calendar-event.html');
+    openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');
   });
 
   document.getElementById('btnManageTaskInfo').addEventListener('click', () => {
-    openTab('../pages/get-task/mzta-get-task.html');
+    openTab('/pages/get-task/mzta-get-task.html');
   });
 
   document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {

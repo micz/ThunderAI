@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Eingabeaufforderungen verwalten"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Informationen"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,13 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Es gibt ungespeicherte Änderungen!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Alle speichern"
     },
-    "customPrompts_save_button": {
-        "message": "Speichern"
-    },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Neu hinzufügen"
     },
     "customPrompts_btnAddNewCommit": {
@@ -188,9 +185,6 @@
     },
     "chatgpt_win_send": {
         "message": "Senden"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Verwenden Sie GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "Abschluss erzwingen"
@@ -384,7 +378,7 @@
     "chatgpt_api_request_failed": {
         "message": "Anfrage an die OpenAI ChatGPT API fehlgeschlagen"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "Warten auf die Serverantwort"
     },
     "prefs_API_Host_Info": {
@@ -513,9 +507,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Sie können zusätzliche Datenplatzhalter verwenden."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Sie können den Prompt nach Wunsch ändern, aber die Antwort der KI muss eine durch Kommas getrennte Liste von Tags sein!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
     },
@@ -571,7 +562,7 @@
         "message": "Tags zu dieser E-Mail hinzufügen"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analysieren Sie den folgenden E-Mail-Text und erstellen Sie eine durch Kommas getrennte Liste von Tags, die den Inhalt zusammenfassen. Verwenden Sie Themen, Hauptthemen und relevante Beschreibungen als Tags. Stellen Sie sicher, dass die Tags prägnant und relevant für den Inhalt der E-Mail sind.\nE-Mail-Text: {%mail_text_body%}\nBerücksichtigen Sie die folgenden Details als Kontext:\n- Absender: {%author%}\n- Empfänger: {%recipients%}\n- CC-Liste: {%cc_list%}\n- E-Mail-Betreff: {%mail_subject%}\nBitte basieren Sie Ihre Tags auf dem Text und Kontext der E-Mail und ignorieren Sie unnötige Informationen oder triviale Details. Die Ausgabe sollte nur eine Liste von durch Kommas getrennten Tags ohne zusätzlichen Kommentar oder Text sein."
+        "message": "Analysiere den folgenden E-Mail-Text und erstelle ein JSON-Array mit Tags, die den Inhalt zusammenfassen. Verwende Themen, zentrale Schlagwörter und relevante Beschreibungen als Tags. Achte darauf, dass die Tags prägnant und inhaltlich relevant sind.\nE-Mail-Text: {%mail_text_body%}\nBerücksichtigen Sie die folgenden Details als Kontext:\n- Absender: {%author%}\n- Empfänger: {%recipients%}\n- CC-Liste: {%cc_list%}\n- E-Mail-Betreff: {%mail_subject%}\nErstelle die Tags auf Grundlage des E-Mail-Inhalts und Kontexts. Ignoriere unnötige Informationen oder unwichtige Details.\nGib die Antwort ausschließlich im JSON-Format aus. Die Ausgabe darf nur ein JSON-Array mit Tags enthalten – ohne weiteren Kommentar oder Text. Hier ein Beispiel für das zu verwendende JSON-Format:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "E-Mail-Tags"
@@ -741,7 +732,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Aktueller Prompt-Text"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Sie können den Prompt nach Belieben ändern, aber die von der KI erhaltene Antwort muss im JSON-Format sein, wie im Standard-Prompt angegeben!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -794,9 +785,6 @@
     },
     "SpamFilter_prompt_text_title": {
         "message": "Aktueller Aufforderungstext"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Sie können die Aufforderung nach Belieben ändern, aber die Antwort der KI muss im JSON-Format erfolgen, wie in der Standardaufforderung angegeben!"
     },
     "prompt_spamfilter": {
         "message": "Spam-E-Mails erkennen"
@@ -916,7 +904,7 @@
         "message": "Empfange Daten"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Aktiviere den Unterschiedsbetrachter"
+        "message": "Die Textvergleichsansicht aktivieren"
     },
     "btn_show_differences": {
         "message": "Unterschiede anzeigen"
@@ -982,7 +970,7 @@
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Der Differenz-Viewer kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ gesetzt ist."
+        "message": "Die Textvergleichsansicht kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ eingestellt ist."
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, überschreibt es die benutzerdefinierte GPT-Einstellung."
@@ -1102,7 +1090,7 @@
         "message": "Anfrage an die Anthropic-API fehlgeschlagen"
     },
     "_api_connecting": {
-        "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration:",
+        "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1134,7 +1122,7 @@
         "message": "Sie haben kein Modell für die Anthropic-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
     "_api_connecting_model": {
-        "message": "Modell: $model$",
+        "message": "Modell",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1142,7 +1130,7 @@
         }
     },
     "_api_connecting_host": {
-        "message": "Host: $api_host$",
+        "message": "Host",
         "placeholders": {
             "api_host": {
                 "content": "$1"
@@ -1150,7 +1138,7 @@
         }
     },
     "_api_connecting_version": {
-        "message": "Version: $api_version$",
+        "message": "Version",
         "placeholders": {
             "api_version": {
                 "content": "$1"
@@ -1179,5 +1167,86 @@
     },
     "Anthropic_Version_Info": {
         "message": "ERFORDERLICH. Ändern Sie diesen Wert nicht, es sei denn, Sie wissen, was Sie tun. Weitere Informationen unter:"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Dies ist der Standard-Antworttyp, der beim Beantworten einer E-Mail verwendet wird. Du kannst später im Antwortdialog einen anderen auswählen."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Verwalte deine Datenplatzhalter"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Wenn markiert, werden deine Chats bei OpenAI gespeichert."
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Wenn markiert, wird das Modell nachdenken bevor es antwortet. Diese Option funtioniert nur mit Modellen, die das \"think\" Feature unterstützen."
+    },
+    "prefs_ollama_think": {
+        "message": "Erlaube nachzudenken"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Klicke, um den Rückgabetyp zu ändern"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Ausschlüsse exakte Übereinstimmung"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Wenn aktiviert, werden die Wörter in der Ausschlussliste exakt mit den Tags abgeglichen. Andernfalls stimmen sie auch überein, wenn sie im Tag enthalten sind."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Datenplatzhalter verwalten"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Du kannst auch die Standard-Datenplatzhalter mit Autovervollständigung verwenden, genau wie beim Schreiben benutzerdefinierter Prompts."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Auf dieser Seite kannst du benutzerdefinierte Datenplatzhalter definieren, die in deinen benutzerdefinierten Prompts verwendet werden sollen."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Vorhandene Datenplatzhalter mit derselben ID werden überschrieben. Platzhalter mit neuen IDs werden hinzugefügt."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Alle benutzerdefinierten Datenplatzhalter exportieren"
+    },
+    "customDataPH_Import": {
+        "message": "Neue Datenplatzhalter importieren"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Datenplatzhalter-Text"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Speichern der benutzerdefinierten Datenplatzhalter..."
+    },
+    "customDataPH_saved": {
+        "message": "Benutzerdefinierte Datenplatzhalter gespeichert!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Datenplatzhalter hinzufügen"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Du bist dabei, neue benutzerdefinierte Datenplatzhalter zu importieren."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Import der benutzerdefinierten Datenplatzhalter wird gestartet..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Import der benutzerdefinierten Datenplatzhalter abgeschlossen! Du musst auf die Schaltfläche „Alle speichern“ klicken, um deine Änderungen zu speichern."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Die Datei, die du importieren möchtest, ist keine gültige Datei für benutzerdefinierte Datenplatzhalter."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Die Datei, die du importieren möchtest, enthält keine gültigen benutzerdefinierten Datenplatzhalter."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Verwendbar in Prompts, die dem Menü hinzugefügt wurden"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Verwende speicher"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Antworten Sie auf die folgende E-Mail „{%mail_text_body%}“. {%additional_text%}. Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text."
+    },
+    "prompt_reply_custom_command": {
+        "message": "Mit Befehl antworten"
     }
 }

@@ -192,11 +192,19 @@ export function sanitizeHtml(input) {
 export function stripHtmlKeepLines(htmlString) {
   // Replaces <p> tags with a newline at the beginning
   // and removes all other HTML tags
-  return htmlString
+  return convertBrToNewlines(htmlString)
     .replace(/<p>/gi, '')                  // removes <p> tags
     .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
     .replace(/<[^>]*>/g, '')               // removes any other HTML tags
     .trim();                               // removes leading/trailing whitespace
+}
+
+export function convertNewlinesToBr(text) {
+  return text.replace(/\n/g, '<br>');
+}
+
+function convertBrToNewlines(html) {
+  return html.replace(/<br\s*\/?>/gi, '\n');
 }
 
 // This method is used to convert the model string id used in the URL
@@ -446,16 +454,23 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
-export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '') {
-  let output = browser.i18n.getMessage("_api_connecting", api_string);
+export function getAPIsInitMessageString(api_string, model_string = '', host_string = '', version_string = '', additional_messages = []) {
+  let output = "<i class='info_obj'>" + browser.i18n.getMessage("_api_connecting", api_string) + "</i>";
   if (model_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_model", model_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_model") + ":</span> " + model_string;
   }
   if (host_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_host", host_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_host") + ":</span> " + host_string;
   }
   if (version_string !== '') {
-    output += "\n" + browser.i18n.getMessage("_api_connecting_version", version_string);
+    output += "\n<span class='info_obj'>" + browser.i18n.getMessage("_api_connecting_version") + ":</span> " +  version_string;
+  }
+  let additional_message = '';
+  if (additional_messages.length > 0) {
+    additional_message = additional_messages.map(msg => "<span class='info_obj'>" + msg.label + ":</span> " + msg.value).join("\n");
+  }
+  if (additional_message !== '') {
+    output += "\n" + additional_message;
   }
 
   return output;
@@ -587,7 +602,7 @@ const insertHtml = function (replyHtml, fullBody_string) {
   return fullBody.body.innerHTML;
 }
 
-export async function getCustomPromptsUsedSpace(){
+export async function getLocalStorageUsedSpace(){
   // we can't use this, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
   //let customprompts_space = await browser.storage.local.getBytesInUse("_custom_prompt");
   //let's use a workaround

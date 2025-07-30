@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Zarządzaj poleceniami"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Więcej informacji"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,13 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Istnieją niezapisane zmiany!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Zapisz wszystko"
     },
-    "customPrompts_save_button": {
-        "message": "Zapisz"
-    },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Dodaj nowe"
     },
     "customPrompts_btnAddNewCommit": {
@@ -188,9 +185,6 @@
     },
     "chatgpt_win_send": {
         "message": "Wyślij"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Użyj GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "wymuś zakończenie"
@@ -384,7 +378,7 @@
     "chatgpt_api_request_failed": {
         "message": "Zapytanie do API OpenAI ChatGPT nie powiodło się"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "Oczekiwanie na odpowiedź serwera"
     },
     "prefs_API_Host_Info": {
@@ -513,9 +507,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Możesz użyć dodatkowych symboli zastępczych danych."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Możesz zmienić polecenie według własnego uznania, ale odpowiedź otrzymana od AI musi być listą tagów oddzielonych przecinkami!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Zachowaj kompatybilność z \"v1\""
     },
@@ -571,7 +562,7 @@
         "message": "Dodaj tagi do tego e-maila"
     },
     "prompt_add_tags_full_text": {
-        "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj listę tagów oddzielonych przecinkami, które podsumowują jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich opisów jako tagów. Upewnij się, że tagi są zwięzłe i odpowiednie do treści e-maila.\nTekst e-maila: {%mail_text_body%}\nWeź pod uwagę następujące szczegóły w kontekście:\n- Nadawca: {%author%}\n- Odbiorcy: {%recipients%}\n- Lista DW: {%cc_list%}\n- Temat e-maila: {%mail_subject%}\nOprzyj swoje tagi na treści i kontekście e-maila, ignorując zbędne informacje lub nieistotne szczegóły. Wynik powinien być jedynie listą tagów oddzielonych przecinkami, bez żadnych dodatkowych komentarzy ani tekstu."
+        "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj tablicę JSON z tagami podsumowującymi jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich określeń jako tagów. Upewnij się, że tagi są zwięzłe i adekwatne do treści wiadomości.\nTekst e-maila: {%mail_text_body%}\nWeź pod uwagę następujące szczegóły w kontekście:\n- Nadawca: {%author%}\n- Odbiorcy: {%recipients%}\n- Lista DW: {%cc_list%}\n- Temat e-maila: {%mail_subject%}\nNa podstawie treści wiadomości i kontekstu wygeneruj tagi, pomijając zbędne informacje lub nieistotne szczegóły.\nWygeneruj odpowiedź wyłącznie w formacie JSON. Wynik powinien zawierać jedynie tablicę tagów w formacie JSON, bez dodatkowych komentarzy czy tekstu. Oto przykład wymaganego formatu:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Tagi e-maila"
@@ -732,7 +723,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Bieżący tekst zapytania"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Możesz zmienić monit według własnego uznania, ale odpowiedź otrzymana od AI musi być w formacie JSON, jak określono w domyślnym zapytaniu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -764,9 +755,6 @@
     "prefs_GoogleGemini_API_Key": {
         "message": "Klucz API Google Gemini",
         "description": "Klucz API dla interfejsu API Google Gemini"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Możesz zmienić prompt według własnego uznania, ale odpowiedź AI musi być w formacie JSON zgodnie z domyślnym promptem!"
     },
     "Subject": {
         "message": "Temat"

@@ -38,13 +38,13 @@
     "customPrompts_form_label_need_signature": {
         "message": "始终添加签名"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "新增"
     },
     "chatgpt_win_job_completed": {
         "message": "完成了！"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "保存所有变动"
     },
     "extensionDescription": {
@@ -65,7 +65,7 @@
     "customPrompts_managePrompts": {
         "message": "管理提示词"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "更多信息"
     },
     "customPrompts_managePrompts_info_default": {
@@ -115,9 +115,6 @@
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "您可以使用额外的数据占位符。"
-    },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "您可以根据需要更改提示，但从 AI 收到的响应必须是以逗号分隔的标签列表！"
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "保持“v1”兼容性"
@@ -196,9 +193,6 @@
     },
     "customPrompts_btnCancel": {
         "message": "取消"
-    },
-    "customPrompts_save_button": {
-        "message": "保存"
     },
     "customPrompts_add_to_menu": {
         "message": "添加到菜单"
@@ -359,14 +353,11 @@
     "prefsDonation_2": {
         "message": "考虑捐款！"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "正在等待服务器响应"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "尝试获取 OpenAI 兼容 API 模型时出错"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "使用 GPT3.5"
     },
     "customPrompts_Import": {
         "message": "导入新提示词"
@@ -651,7 +642,7 @@
         "message": "单击此处，只需一分钟！"
     },
     "prompt_add_tags_full_text": {
-        "message": "分析以下邮件文本，并生成一个用逗号分隔的标签列表，以概括其内容。使用主题、关键话题和相关描述词作为标签。确保标签简洁且与邮件内容相关。\n邮件文本：{%mail_text_body%}\n考虑以下细节以获取上下文：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请根据邮件文本和上下文生成标签，忽略不必要的信息或琐碎的细节。输出应仅为逗号分隔的标签列表，不包含任何额外评论或文字。"
+        "message": "请分析以下电子邮件文本，并生成一个 JSON 数组的标签，总结其内容。请使用主题、关键话题和相关描述词作为标签。确保标签简洁且与邮件内容密切相关。\n邮件文本：{%mail_text_body%}\n考虑以下细节以获取上下文：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请仅根据邮件正文和上下文生成标签，忽略无关信息或琐碎细节。\n请仅以 JSON 格式生成回复。输出应仅包含标签的 JSON 数组，不包含任何额外注释或文本。以下是需使用的 JSON 格式示例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_full_list": {
         "message": "现有标签"
@@ -830,14 +821,11 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "当前提示词文字"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "您可以根据需要更改提示，但从 AI 收到的响应必须采用默认提示中指定的 JSON 格式！"
     },
     "calendar_getting_data_error": {
         "message": "获取日历事件数据时出错"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "您可以根据需要更改提示词，但从 AI 收到的响应必须采用默认提示中指定的 JSON 格式！"
     },
     "prompt_spamfilter_full_text": {
         "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"spamValue\": <0 到 100 的整数>,\n\"explanation\": \"简要说明您的判断理由\"\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
@@ -882,7 +870,7 @@
         "message": "如果选中，“添加标签”上下文菜单项将在消息列表中右键单击电子邮件时显示。"
     },
     "noActiveCalendar": {
-        "message": "未找到激活的日历！"
+        "message": "未找到可编辑的日历！"
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "启用差异查看器"
@@ -928,5 +916,8 @@
     },
     "Explanation": {
         "message": "说明"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "当操作设置为“替换文本”时，可以选择差异查看器。"
     }
 }

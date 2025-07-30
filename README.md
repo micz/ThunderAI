@@ -81,14 +81,18 @@ Are you using this addon in your Thunderbird?
 
 ### Translations
 - Chinese (Simplified): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
 - Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French (fr): Generated automatically, [Noam](https://github.com/noam-sc) <img src="https://micz.it/weblate/thunderai/fr.svg">
 - German (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
 - Italian (it): [Mic](https://github.com/micz/) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
+- Russian (ru): [Maksim](https://hosted.weblate.org/user/law820314/)
 - Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
+<br>
 
-Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)
+Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)  <br>
+_The language status represents the percentage of translated strings in the latest stable release._
 
 
 <br>

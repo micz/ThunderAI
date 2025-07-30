@@ -25,12 +25,14 @@ export class OpenAI {
   model = '';
   developer_messages = '';
   stream = false;
+  store = false;
 
-  constructor(apiKey, model, developer_messages, stream) {
+  constructor(apiKey, model, developer_messages, stream, store) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;
     this.stream = stream;
+    this.store = store;
   }
 
 
@@ -89,6 +91,7 @@ export class OpenAI {
               model: this.model, 
               messages: messages,
               stream: this.stream,
+              store: this.store,
               ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
           }),
       });

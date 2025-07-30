@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Gerenciar Prompts"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Mais informações"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,13 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Existem alterações não salvas!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Salvar Tudo"
     },
-    "customPrompts_save_button": {
-        "message": "Salvar"
-    },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Adicionar Novo"
     },
     "customPrompts_btnAddNewCommit": {
@@ -188,9 +185,6 @@
     },
     "chatgpt_win_send": {
         "message": "Enviar"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Usar GPT-3.5"
     },
     "chatgpt_force_completion": {
         "message": "forçar conclusão"
@@ -384,7 +378,7 @@
     "chatgpt_api_request_failed": {
         "message": "A solicitação da API do OpenAI ChatGPT falhou"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "Aguardando a resposta do servidor"
     },
     "prefs_API_Host_Info": {
@@ -513,9 +507,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Você pode usar espaços reservados para dados adicionais."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Você pode alterar o prompt como quiser, mas a resposta recebida da IA deve ser uma lista de tags separadas por vírgulas!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Manter a compatibilidade com \"v1\""
     },
@@ -571,7 +562,7 @@
         "message": "Adicione tags a este e-mail"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analise o seguinte texto do e-mail e gere uma lista de tags separadas por vírgulas que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e relevantes para o conteúdo do e-mail.\nTexto do e-mail: {%mail_text_body%}\nConsidere os seguintes detalhes como contexto:\n- Remetente: {%author%}\n- Destinatários: {%recipients%}\n- Lista CC: {%cc_list%}\n- Assunto do e-mail: {%mail_subject%}\nBaseie suas tags no texto e contexto do e-mail, ignorando informações desnecessárias ou triviais. A saída deve ser apenas uma lista de tags separadas por vírgulas, sem nenhum comentário ou texto adicional."
+        "message": "Analise o seguinte texto de e-mail e gere um array JSON de tags que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e pertinentes ao conteúdo do e-mail.\nTexto do e-mail: {%mail_text_body%}\nConsidere os seguintes detalhes como contexto:\n- Remetente: {%author%}\n- Destinatários: {%recipients%}\n- Lista CC: {%cc_list%}\n- Assunto do e-mail: {%mail_subject%}\nBaseie-se no texto do e-mail e no contexto para gerar as tags, ignorando informações desnecessárias ou detalhes triviais.\nGere uma resposta somente no formato JSON. A saída deve ser apenas um array JSON de tags, sem nenhum comentário ou texto adicional. Aqui está um exemplo do formato JSON a ser usado:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Tags do e-mail"
@@ -741,7 +732,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Texto do prompt atual"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Você pode alterar o prompt como desejar, mas a resposta recebida da IA deve estar no formato JSON conforme especificado no prompt padrão!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -761,9 +752,6 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Erro ao abrir a caixa de diálogo do evento de calendário"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Você pode alterar o prompt como quiser, mas a resposta recebida da IA deve estar no formato JSON, conforme especificado no prompt padrão!"
     },
     "spamfilter_threshold_zero": {
         "message": "O limite de spam está em zero! Você marcará todos os e-mails como spam!"

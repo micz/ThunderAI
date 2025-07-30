@@ -1,0 +1,158 @@
+{
+    "prompt_lang": {
+        "message": "Responder em"
+    },
+    "prompt_selection_needed": {
+        "message": "Para avançar tens que selecionar texto!"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Pedir texto adicional"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "O visualizador de comparação de texto pode ser selecionado quando a ação escolhida é \"Substituir texto\"."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Concluído!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Seleciona o texto que queres usar e carrega no botão."
+    },
+    "prompt_reply_advanced": {
+        "message": "Responder a esta sequência"
+    },
+    "more_info_string": {
+        "message": "Mais informação"
+    },
+    "menu_title": {
+        "message": "IA"
+    },
+    "prompt_classify": {
+        "message": "Classificar"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Sempre"
+    },
+    "prompt_reply": {
+        "message": "Responder a este email"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Rescrever educadamente"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Rescrever formalmente"
+    },
+    "prompt_translate_this": {
+        "message": "Traduzir isto"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "A redefinir os índices da lista..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "A recarregar menus..."
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Deve ser único, letra minúscula e sem espaços"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Ação"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Necessário selecionar texto"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Adicionar sempre assinatura"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ativo"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Campos obrigatórios"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Editar"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Cancelar"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Apagar"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Tens a certeza que queres apagar este item?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Existem alterações por guardar!"
+    },
+    "btnSaveAll_string": {
+        "message": "Guardar Tudo"
+    },
+    "btnNew_string": {
+        "message": "Adicionar Novo"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Adicionar ao menu"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "A ler um email"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Substituir texto"
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Se estiver tudo certo, depois de importar carrega no botão \"Guardar Tudo\"."
+    },
+    "extensionDescription": {
+        "message": "Usa o ChatGPT, Google Gemini, Anthropic ou Ollama para melhorar os teus emails!"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nome"
+    },
+    "prompt_summarize_this": {
+        "message": "Resumir isto"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "A compor um email"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Ativar o visualizador de comparação de texto"
+    },
+    "chatgpt_win_working": {
+        "message": "Trabalho em curso..."
+    },
+    "customPrompts_managePrompts": {
+        "message": "Gerir prompts"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Os prompts padrão não são editáveis. Podes desativá-los, copiar o texto do prompt e colá-lo num novo, para criar uma versão modificada."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Podes importar e exportar prompts. Prompts existentes com o mesmo ID serão escritos por cima. Prompts com um ID novo serão adicionados."
+    },
+    "customPrompts_start_saving": {
+        "message": "A guardar prompts..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "A filtrar prompts..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "A guardar prompts padrão..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "A guardar prompts personalizados..."
+    },
+    "customPrompts_saved": {
+        "message": "Prompts guardados!"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Adicionar o prompt"
+    },
+    "customPrompts_do_reply": {
+        "message": "Responder"
+    }
+}

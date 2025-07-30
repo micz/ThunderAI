@@ -41,7 +41,7 @@
     "prompt_this": {
         "message": "Zeptat se"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Další informace"
     },
     "customPrompts_start_saving": {
@@ -80,13 +80,13 @@
     "customPrompts_form_label_enabled": {
         "message": "Povoleno"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Uložit vše"
     },
     "customPrompts_do_reply": {
         "message": "Odpovědět"
     },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Přidat nový"
     },
     "customPrompts_close_button": {
@@ -133,9 +133,6 @@
     },
     "customPrompts_btnOK": {
         "message": "OK"
-    },
-    "customPrompts_save_button": {
-        "message": "Uložit"
     },
     "customPrompts_unsaved_changes": {
         "message": "Máte neuložené změny!"
@@ -187,9 +184,6 @@
     },
     "chatgpt_win_send": {
         "message": "Odeslat"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Použít GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "vynutit doplnění"
@@ -353,7 +347,7 @@
     "chatgpt_api_request_failed": {
         "message": "Požadavek na OpenAI ChatGPT API selhal"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "Čekám na odpověď serveru"
     },
     "prefs_API_Host_Info": {
@@ -466,9 +460,6 @@
     },
     "SpamFilter_prompt_text_title": {
         "message": "Aktuální text přikazu"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Příkaz můžete změnit, jak chcete, ale odpověď přijatá z AI musí být ve formátu JSON, jak je uvedeno ve výchozím příkazu!"
     },
     "Moved_to_Spam": {
         "message": "Přesunuto do Spamu"
@@ -650,9 +641,6 @@
     "prompt_get_calendar_event": {
         "message": "Přidej novou událost do kalendáře"
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Výzvu můžete změnit, jak chcete, ale odpověď obdržená od AI musí být seznam štítků oddělených čárkou!"
-    },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Pokud je zaškrtnuto, AI bude přidávat štítky pouze e-mailům přijatým ve složce Doručená pošta."
     },
@@ -801,7 +789,7 @@
         "message": "Pokud je zaškrtnuto, štitky, které jsou přítomny v seznamu vyloučení, budou skryty v potvrzovacím dialogu."
     },
     "prompt_add_tags_full_text": {
-        "message": "Analyzuj následující text e-mailu a vygeneruj seznam štítků oddělených čárkou, které shrnují jeho obsah. Použij témata, klíčová témata a relevantní deskriptory jako štitky. Zajisti, aby štitky byly stručné a relevantní k obsahu e-mailu.\nText e-mailu: {%mail_text_body%}\nPro kontext zvaž následující podrobnosti:\n- Odesílatel: {%author%}\n- Příjemci: {%recipients%}\n- Seznam kopií: {%cc_list%}\n- Předmět e-mailu: {%mail_subject%}\nZalož své štitky na textu a kontextu e-mailu, ignoruj zbytečné informace nebo triviální detaily. Výstup by měl být pouze seznam štítků oddělených čárkou bez jakéhokoli dalšího komentáře nebo textu."
+        "message": "Analyzujte následující text e-mailu a vytvořte JSON pole tagů, které shrnují jeho obsah. Jako tagy použijte témata, klíčová témata a relevantní popisné prvky. Ujistěte se, že tagy jsou stručné a relevantní k obsahu e-mailu.\nText e-mailu: {%mail_text_body%}\nPro kontext zvaž následující podrobnosti:\n- Odesílatel: {%author%}\n- Příjemci: {%recipients%}\n- Seznam kopií: {%cc_list%}\n- Předmět e-mailu: {%mail_subject%}\nVycházejte z textu e-mailu a kontextu při generování tagů, ignorujte zbytečné informace nebo nepodstatné detaily.\nVygenerujte odpověď pouze ve formátu JSON. Výstupem by mělo být pouze JSON pole tagů, bez jakéhokoli dalšího komentáře nebo textu. Zde je příklad formátu JSON, který je třeba použít:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "prefs_OptionText_add_tags_maxnum": {
         "message": "Maximální počet štítků"
@@ -839,7 +827,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Aktuální text výzvy"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Výzvu můžete změnit, jak si přejete, ale odpověď přijatá od AI musí být ve formátu JSON, jak je uvedeno ve výchozí výzvě!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -981,7 +969,7 @@
         "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
     },
     "_api_connecting_version": {
-        "message": "Verze: $api_version$",
+        "message": "Verze",
         "placeholders": {
             "api_version": {
                 "content": "$1"
@@ -1076,7 +1064,7 @@
         "message": "Selhal požadavek API Anthropic"
     },
     "_api_connecting": {
-        "message": "Pokus o připojení k $api_string$ s následující konfigurací:",
+        "message": "Pokus o připojení k $api_string$ s následující konfigurací...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1092,7 +1080,7 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Model: $model$",
+        "message": "Model",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1103,7 +1091,7 @@
         "message": "Pokud vyberete nějaký text, bude zohledněna pouze tato část."
     },
     "_api_connecting_host": {
-        "message": "API Server: $api_host$",
+        "message": "API Server",
         "placeholders": {
             "api_host": {
                 "content": "$1"

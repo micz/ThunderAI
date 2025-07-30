@@ -41,6 +41,11 @@ export class OpenAIComp {
       "Content-Type": "application/json",
     };
     if(this.apiKey !== '') curr_headers["Authorization"] = "Bearer "+ this.apiKey;
+    
+    if(this.host.includes('openrouter.ai')) {
+      curr_headers['HTTP-Referer'] = 'https://micz.it/thunderbird-addon-thunderai/';
+      curr_headers['X-Title'] = 'ThunderAI';
+    }
 
     const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/models", {
         method: "GET",

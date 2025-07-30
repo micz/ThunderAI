@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Gérer les prompts"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Informations"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,13 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Il y a des modifications non enregistrées !"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Tout enregistrer"
     },
-    "customPrompts_save_button": {
-        "message": "Enregistrer"
-    },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Ajouter nouveau"
     },
     "customPrompts_btnAddNewCommit": {
@@ -188,9 +185,6 @@
     },
     "chatgpt_win_send": {
         "message": "Envoyer"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Utiliser GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "forcer l'achèvement"
@@ -384,7 +378,7 @@
     "chatgpt_api_request_failed": {
         "message": "La demande d'API OpenAI ChatGPT a échoué"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "En attente de la réponse du serveur"
     },
     "prefs_API_Host_Info": {
@@ -513,9 +507,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Vous pouvez utiliser des espaces réservés pour des données supplémentaires."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse de l'IA doit être une liste de tags séparés par des virgules !"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Conserver la compatibilité \"v1\""
     },
@@ -571,7 +562,7 @@
         "message": "Ajoutez des tags à ce courriel"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analysez le texte de courriel suivant et générez une liste de tags séparés par des virgules qui résument son contenu. Utilisez des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assurez-vous que les tags soient concis et pertinents pour le contenu du courriel.\nTexte du courriel : {%mail_text_body%}\nConsidérez les détails suivants pour le contexte :\n- Expéditeur : {%author%}\n- Destinataires : {%recipients%}\n- Liste CC : {%cc_list%}\n- Sujet du courriel : {%mail_subject%}\nVeuillez baser vos tags sur le texte et le contexte du courriel, en ignorant les informations inutiles ou triviales. La sortie doit être uniquement une liste de tags séparés par des virgules, sans aucun commentaire ou texte supplémentaire."
+        "message": "Analyse le texte de l’e-mail suivant et génère un tableau JSON de tags résumant son contenu. Utilise des thèmes, des sujets clés et des descripteurs pertinents comme tags. Assure-toi que les tags soient concis et en lien direct avec le contenu de l’e-mail.\nTexte du courriel : {%mail_text_body%}\nConsidérez les détails suivants pour le contexte :\n- Expéditeur : {%author%}\n- Destinataires : {%recipients%}\n- Liste CC : {%cc_list%}\n- Sujet du courriel : {%mail_subject%}\nGénère les tags en te basant sur le texte de l’e-mail et le contexte, en ignorant les informations inutiles ou les détails sans importance.\nGénère une réponse uniquement au format JSON. La sortie doit être uniquement un tableau JSON de tags, sans commentaire ni texte supplémentaire. Voici un exemple du format JSON à utiliser :\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Tags de courriels"
@@ -741,7 +732,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Texte du prompt actuel"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse reçue de l'IA doit être au format JSON tel que spécifié dans l'invite par défaut !"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -837,9 +828,6 @@
     "SpamFilter_prompt_text_title": {
         "message": "Texte du prompt actuelle"
     },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Vous pouvez modifier le prompt comme vous le souhaitez, mais la réponse de l'IA doit être au format JSON, comme spécifié dans le prompt par défaut !"
-    },
     "thunderai_def_lang": {
         "message": "Langue par défaut telle que définie dans les options de ThunderAI."
     },
@@ -919,7 +907,7 @@
         "message": "Réception des données"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Activer le visualiseur de différences"
+        "message": "Active la visionneuse de comparaison de texte"
     },
     "context_menu_mzta-spamfilter": {
         "message": "Analyser comme spam"
@@ -979,7 +967,7 @@
         "message": "GPT personnalisé pour ChatGPT Web"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Le visualiseur de différences peut être sélectionné lorsque l'action est définie sur \"Remplacer le texte\"."
+        "message": "La visionneuse de comparaison de texte peut être sélectionnée lorsque l’action est définie sur « Substituer le texte »."
     },
     "ask_chatgptweb_permission_1": {
         "message": "Pour utiliser l'intégration Web de ChatGPT, vous devez accorder l'autorisation requise."
@@ -1084,7 +1072,7 @@
         "message": "Extrait tous les détails pertinents nécessaires pour générer une tâche à partir du texte suivant. Les informations extraites doivent inclure :\n- Date et heure d'échéance (incluant le fuseau horaire, si précisé)\n- Résumé de la tâche\n- Date et heure de début (incluant le fuseau horaire, si précisé)\nAssure-toi que les données sont clairement et uniformément formatées afin qu’elles puissent être utilisées directement pour créer une tâche.\nS'il y a des références temporelles relatives, considère que la date et l’heure de l’e-mail sont \"{%mail_datetime%}\". Calcule la date et l’heure de début en te basant sur cette référence. Si la date et l’heure de début calculées sont antérieures à \"{%current_datetime%}\", recalcule-les en utilisant \"{%current_datetime%}\" comme base.\nSi tu ne peux pas obtenir une ou plusieurs des informations requises, réponds par une chaîne vide.\nGénère une réponse uniquement au format JSON. N’inclus aucun texte ou explication supplémentaire – fournis uniquement le JSON. Voici le format à utiliser :\n{\n\"InitialDate\" : \"YYYYMMDDTHHMMSS\",\n\"dueDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de la tâche ici\"\n}\nS'il n'y a pas d'informations concernant les dates, supprime-les.\nVoici le texte : \"{%selected_text%}\""
     },
     "_api_connecting": {
-        "message": "Tentative de connexion à $api_string$ avec la configuration suivante :",
+        "message": "Tentative de connexion à $api_string$ avec la configuration suivante ...",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1151,7 +1139,7 @@
         "message": "Erreur lors de la tentative de récupération des modèles Anthropic"
     },
     "_api_connecting_model": {
-        "message": "Modèle : $model$",
+        "message": "Modèle",
         "placeholders": {
             "model": {
                 "content": "$1"
@@ -1159,7 +1147,7 @@
         }
     },
     "_api_connecting_host": {
-        "message": "Hôte : $api_host$",
+        "message": "Hôte",
         "placeholders": {
             "api_host": {
                 "content": "$1"
@@ -1167,7 +1155,7 @@
         }
     },
     "_api_connecting_version": {
-        "message": "Version : $api_version$",
+        "message": "Version",
         "placeholders": {
             "api_version": {
                 "content": "$1"
@@ -1179,5 +1167,86 @@
     },
     "Custom": {
         "message": "Personnalisé"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Ceci est le type de réponse par défaut qui sera utilisé lors de la réponse à un e-mail. Vous pouvez choisir l'autre plus tard dans la fenêtre de réponse."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Gérez vos espaces réservés de données"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Si cette option est cochée, vos conversations seront enregistrées par OpenAI."
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Si cette option est cochée, le Modèle réfléchira avant de répondre. Cette option fonctionne uniquement avec les modèles qui prennent en charge la fonction « réfléchir »."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Cliquez pour changer le type de réponse"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Correspondance exacte des exclusions"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Sur cette page, il est possible de définir des espaces réservés de données personnalisés à utiliser dans vos invites personnalisées."
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Vous pouvez également utiliser les espaces réservés de données par défaut avec la saisie semi-automatique, comme lorsque vous rédigez des invites personnalisées."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Les espaces réservés de données existants avec le même identifiant seront écrasés. Les espaces réservés avec de nouveaux identifiants seront ajoutés."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Exporter tous les espaces réservés de données personnalisés"
+    },
+    "customDataPH_Import": {
+        "message": "Importer de nouveaux espaces réservés de données"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Texte de l'espace réservé de données"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Enregistrement des espaces réservés de données personnalisés..."
+    },
+    "customDataPH_saved": {
+        "message": "Espaces réservés de données personnalisés enregistrés !"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Ajouter l'espace réservé de données"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Vous êtes sur le point d'importer de nouveaux espaces réservés de données personnalisés."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Démarrage de l'importation des espaces réservés de données personnalisés..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Importation des espaces réservés de données personnalisés terminée ! Vous devez cliquer sur le bouton « Enregistrer tout » pour sauvegarder vos modifications."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Le fichier que vous essayez d'importer n'est pas un fichier valide d'espaces réservés de données personnalisés."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Le fichier que vous essayez d'importer ne contient aucun espace réservé de données personnalisés valide."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Utilisable dans les invites ajoutées au menu"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Utiliser le stockage"
+    },
+    "prefs_ollama_think": {
+        "message": "Activer la réflexion"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Si cette option est cochée, les mots de la liste d'exclusion correspondront exactement aux balises. Sinon, ils correspondront également s'ils sont inclus dans la balise."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Gérer les espaces réservés de données"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Répondre avec une commande"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Répondez à l'e-mail suivant « {%mail_text_body%} ». {%additional_text%}. Répondez uniquement avec le texte nécessaire, sans commentaires ou texte supplémentaire."
     }
 }

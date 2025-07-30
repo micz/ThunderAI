@@ -39,7 +39,7 @@
     "customPrompts_managePrompts": {
         "message": "Upravljaj upitima"
     },
-    "customPrompts_managePrompts_help": {
+    "more_info_string": {
         "message": "Više informacija"
     },
     "customPrompts_managePrompts_info_default": {
@@ -120,13 +120,10 @@
     "customPrompts_unsaved_changes": {
         "message": "Ima nespremljenih promjena!"
     },
-    "customPrompts_btnSaveAll": {
+    "btnSaveAll_string": {
         "message": "Spremi sve"
     },
-    "customPrompts_save_button": {
-        "message": "Spremi"
-    },
-    "customPrompts_btnNew": {
+    "btnNew_string": {
         "message": "Dodaj novo"
     },
     "customPrompts_btnAddNewCommit": {
@@ -188,9 +185,6 @@
     },
     "chatgpt_win_send": {
         "message": "Pošalji"
-    },
-    "chatgpt_use_gpt35": {
-        "message": "Koristi GPT3.5"
     },
     "chatgpt_force_completion": {
         "message": "prisilno dovrši"
@@ -384,7 +378,7 @@
     "chatgpt_api_request_failed": {
         "message": "OpenAI ChatGPT API zahtjev nije uspio"
     },
-    "WaitingServerReponse": {
+    "WaitingServerResponse": {
         "message": "Čeka se odgovor poslužitelja"
     },
     "prefs_API_Host_Info": {
@@ -513,9 +507,6 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Možete koristiti dodatna rezervirana mjesta za podatke."
     },
-    "prefs_OptionText_btnManagePrompts_infoline2": {
-        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti popis oznaka odvojenih zarezima!"
-    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Zadrži \"v1\" kompatibilnost"
     },
@@ -571,7 +562,7 @@
         "message": "Dodaj oznake ovoj e-poruci"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analiziraj sljedeći tekst e-poruke i generiraj popis oznaka odvojenih zarezima koji sažimaju njegov sadržaj. Koristi teme, ključne teme i relevantne deskriptore kao oznake. Provjeri jesu li oznake sažete i relevantne za sadržaj e-poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji svoje oznake na tekstu i kontekstu e-poruke, zanemarujući nepotrebne informacije ili trivijalne detalje. Izlaz bi trebao biti samo popis oznaka odvojenih zarezom bez dodatnih komentara ili teksta."
+        "message": "Analiziraj sljedeći tekst e-pošte i generiraj JSON niz oznaka koje sažimaju njezin sadržaj. Koristi teme, ključne pojmove i relevantne opise kao oznake. Pobrini se da oznake budu sažete i relevantne za sadržaj poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji oznake na tekstu poruke i kontekstu, zanemarujući nebitne informacije ili trivijalne detalje.\nGeneriraj odgovor isključivo u JSON formatu. Izlaz mora biti samo JSON niz oznaka, bez ikakvih dodatnih komentara ili teksta. Evo primjera formata koji treba koristiti:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Oznake e-pošte"
@@ -741,7 +732,7 @@
     "GetCalendarEvent_prompt_text_title": {
         "message": "Trenutačni tekst upita"
     },
-    "prefs_OptionText_GetCalendarEvent_infoline2": {
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
         "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
@@ -806,9 +797,6 @@
     },
     "SpamFilter_prompt_text_title": {
         "message": "Trenutačni tekst upita"
-    },
-    "prefs_OptionText_spamfilter_infoline": {
-        "message": "Možete promijeniti upit kako želite, ali odgovor primljen od AI mora biti u JSON formatu kako je navedeno u zadanom upitu!"
     },
     "prompt_spamfilter": {
         "message": "Prepoznaj neželjenu poštu"

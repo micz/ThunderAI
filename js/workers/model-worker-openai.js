@@ -38,7 +38,7 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         chatgpt_api_key = event.data.chatgpt_api_key;
         chatgpt_model = event.data.chatgpt_model;
-        openai = new OpenAI(chatgpt_api_key, chatgpt_model, event.data.chatgpt_developer_messages, true);
+        openai = new OpenAI(chatgpt_api_key, chatgpt_model, event.data.chatgpt_developer_messages, true, event.data.chatgpt_api_store);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai', do_debug);

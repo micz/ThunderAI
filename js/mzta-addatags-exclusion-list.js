@@ -27,3 +27,14 @@ export async function addTags_getExclusionList() {
 export function addTags_setExclusionList(add_tags_exclusions) {
     browser.storage.local.set({add_tags_exclusions: add_tags_exclusions});
 }
+
+export function checkExcludedTag(tag, excluded_word, exact_match = false) {
+    // Check if the tag is in the exclusion list
+    if (excluded_word === '') {
+        return false; // No exclusion word, so no exclusion
+    }
+    if(exact_match) {
+        return tag.toLowerCase() === excluded_word.toLowerCase();
+    }
+    return tag.toLowerCase().includes(excluded_word.toLowerCase());
+}

@@ -99,7 +99,7 @@ function chatgpt_getRegenerateButton() {
 function chatpgt_scrollToBottom () {
     try { 
         //document.querySelector('button[class*="cursor"][class*="bottom"]').click();
-        document.querySelector('path[d^="M9.33468 3.33333C9.33468 2.96617"]')?.parentNode?.parentNode?.click();
+        document.querySelector('path[d^="M9.33468 3.33333C9.33468"]')?.parentNode?.parentNode?.click();
     }
     catch (err) { console.error('[ThunderAI] ', err); }
 }
@@ -130,6 +130,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-diff_content{overflow-y:scroll;text-align:justify;width:100%;height:22.5em;}";
     style.textContent += "#mzta-diff span.added{background-color: rgb(0, 94, 0);display:inline;} #mzta-diff span.removed{background-color: rgb(90, 0, 0);display:inline;text-decoration:line-through;}";
     style.textContent += "#mzta-btn_close_diff{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);}";
+    style.textContent += "#mzta-btn_change_reply_type{padding-left:4px;padding-right:10px;margin-left:0px;border-bottom-left-radius:0px;border-top-left-radius:0px;height:2.7em;}";
+    style.textContent += ".mzta-btn_reply{padding-right:4px;margin-right:0px;border-bottom-right-radius:0px;border-top-right-radius:0px;}";
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
@@ -203,18 +205,68 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             btn_ok.onclick = async function() {
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
+            fixedDiv.appendChild(btn_ok);
             break;
         case "1":     // do reply
-            btn_ok.disabled = true;
-            btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
-            btn_ok.onclick = async function() {
+            disableButton(btn_ok);
+            const btn_ok_line1 = document.createElement('span');
+            btn_ok_line1.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
+            const btn_ok_line2 = document.createElement('span');
+            btn_ok_line2.classList.add('action_btn_info');
+            btn_ok_line2.textContent = mztaReplyType == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender");
+            btn_ok_line1.style.display = 'block';
+            btn_ok_line1.style.margin = '0';
+            btn_ok_line1.style.padding = '0';
+            btn_ok_line1.style.lineHeight = '1';
+            btn_ok_line2.style.display = 'block';
+            btn_ok_line2.style.margin = '0';
+            btn_ok_line2.style.padding = '0';
+            btn_ok_line2.style.lineHeight = '1';
+            btn_ok_line2.style.fontSize = '0.7em';
+            btn_ok.appendChild(btn_ok_line1);
+            //btn_ok.appendChild(document.createElement('br'));
+            btn_ok.appendChild(btn_ok_line2);
+            btn_ok.setAttribute('data-reply-type', mztaReplyType);
+            btn_ok.addEventListener('click', async function() {
                 const response = getSelectedHtml();
-                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId});
+                const currentReplyType = btn_ok.getAttribute('data-reply-type');
+                // console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
+                await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
-            };
+            });
+            btn_ok.classList.add('mzta-btn_reply');
+            // change reply type button
+            var btn_change_reply_type = document.createElement('button');
+            disableButton(btn_change_reply_type);
+            btn_change_reply_type.id = 'mzta-btn_change_reply_type';
+            btn_change_reply_type.classList.add('mzta-btn');
+            btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
+            // Create SVG element
+            let currentIcon = createReplyToAllIcon();
+            // Append SVG to button
+            btn_change_reply_type.appendChild(currentIcon);
+            btn_change_reply_type.addEventListener('click', function() {
+                // console.log('>>>>>>>>>> change reply type clicked');
+                btn_change_reply_type.removeChild(currentIcon);
+                if(mztaReplyType == 'reply_all'){
+                    mztaReplyType = 'reply_sender';
+                    currentIcon = createReplyToSenderIcon();
+                    btn_change_reply_type.appendChild(currentIcon);
+                    btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_sender");
+                }else{
+                    mztaReplyType = 'reply_all';
+                    currentIcon = createReplyToAllIcon();
+                    btn_change_reply_type.appendChild(currentIcon);
+                    btn_ok_line2.textContent = browser.i18n.getMessage("prefs_OptionText_reply_all");
+                }
+                btn_ok.setAttribute('data-reply-type', mztaReplyType);
+            });
+            fixedDiv.appendChild(btn_ok);
+            fixedDiv.appendChild(btn_change_reply_type);
+            btn_change_reply_type.style.display = 'none';
             break;
         case "2":     // replace text
-            btn_ok.disabled = true;
+            disableButton(btn_ok);
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_get_answer");
             btn_ok.onclick = async function() {
                 const response = getSelectedHtml();
@@ -222,10 +274,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
             };
+            fixedDiv.appendChild(btn_ok);
             break;
     }
     btn_ok.style.display = 'none';
-    fixedDiv.appendChild(btn_ok);
 
     if(mztaUseDiffViewer == '1'){
         // diff overlay div
@@ -262,29 +314,36 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         btn_diff.classList.add('mzta-btn');
         btn_diff.textContent = browser.i18n.getMessage('btn_show_differences');
         btn_diff.style.display = 'none';
-        btn_diff.disabled = true;
+        disableButton(btn_diff);
         btn_diff.onclick = async function() {
             diffContent.innerHTML = '';
             const response = getSelectedHtml();
             const wordDiff = Diff.diffWords(mztaOriginalText, response.replace(/<\\/?[^>]+(>|$)/g, ''));
             wordDiff.forEach(part => {
-                const diffElement = document.createElement('span');
-            
-                // Apply a different class depending on whether the word is added, removed, or unchanged
-                if (part.added) {
-                  diffElement.className = 'added';
-                  diffElement.textContent = part.value;
-                } else if (part.removed) {
-                  diffElement.className = 'removed';
-                  diffElement.textContent = part.value;
-                } else {
-                  diffElement.textContent = part.value;
+                // Split part.value by <br> (handling <br>, <br/>, <br />)
+                const brRegex = /(<br\s*\\/?>)/gi;
+                const segments = part.value.split(brRegex);
+
+                segments.forEach(segment => {
+                if (segment.match(brRegex)) {
+                    // It's a <br>, add a real <br> element
+                    diffContent.appendChild(document.createElement("br"));
+                } else if (segment.length > 0) {
+                    const diffElement = document.createElement("span");
+                    if (part.added) {
+                    diffElement.className = "added";
+                    diffElement.textContent = segment;
+                    } else if (part.removed) {
+                    diffElement.className = "removed";
+                    diffElement.textContent = segment;
+                    } else {
+                    diffElement.textContent = segment;
+                    }
+                    diffContent.appendChild(diffElement);
                 }
-            
-                // Add the element to the container
-                diffContent.appendChild(diffElement);
-                diffOverlay.style.display = 'block';
-              });
+                });
+            });
+            diffOverlay.style.display = 'block';
         };
         fixedDiv.appendChild(btn_diff);
     }
@@ -313,6 +372,44 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     fixedDiv.appendChild(customDiv);
 
     document.body.insertBefore(fixedDiv, document.body.firstChild);
+}
+
+// Create SVG icons as functions
+function createReplyToSenderIcon() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('fill', 'currentColor');
+  const path1 = document.createElementNS(svgNS, 'path');
+  path1.setAttribute('d', 'M0 0h24v24H0z');
+  path1.setAttribute('fill', 'none');
+  const path2 = document.createElementNS(svgNS, 'path');
+  path2.setAttribute('d', 'M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z');
+  svg.appendChild(path1);
+  svg.appendChild(path2);
+  return svg;
+}
+
+
+function createReplyToAllIcon() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('fill', 'currentColor');
+  const path1 = document.createElementNS(svgNS, 'path');
+  path1.setAttribute('d', 'M0 0h24v24H0z');
+  path1.setAttribute('fill', 'none');
+  const path2 = document.createElementNS(svgNS, 'path');
+  path2.setAttribute('d', 'M7 8V5l-7 7 7 7v-3l-4-4 4-4zm6 1V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z');
+  svg.appendChild(path1);
+  svg.appendChild(path2);
+  return svg;
 }
 
 function customTextBtnClick(args) {
@@ -379,6 +476,9 @@ function operation_done(){
     }
     curr_msg.style.display = 'block';
     document.getElementById('mzta-btn_ok').style.display = 'inline';
+    if(current_action == '1'){
+        document.getElementById('mzta-btn_change_reply_type').style.display = 'inline';
+    }
     if(mztaUseDiffViewer == '1'){
         document.getElementById('mzta-btn_diff').style.display = 'inline';
     }
@@ -550,22 +650,36 @@ document.addEventListener("selectionchange", function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
         let btn_diff = document.getElementById('mzta-btn_diff');
         if (isSomethingSelected()) {
-            btn_ok.disabled = false;
-            btn_ok.classList.remove('btn_disabled');
+            enableButton(btn_ok);
+            if(current_action == '1'){
+                let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
+                enableButton(btn_reply_type);
+            }
             if(mztaUseDiffViewer == '1'){
-                btn_diff.disabled = false;
-                btn_diff.classList.remove('btn_disabled');
+                enableButton(btn_diff);
             }
         } else {
-            btn_ok.disabled = true;
-            btn_ok.classList.add('btn_disabled');
+            disableButton(btn_ok);
+            if(current_action == '1'){
+                let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
+                disableButton(btn_reply_type);
+            }
             if(mztaUseDiffViewer == '1'){
-                btn_diff.disabled = true;
-                btn_diff.classList.add('btn_disabled');
+                disableButton(btn_diff);
             }
         }
      }, 300); // Delay in milliseconds
 });
+
+function enableButton(btn){
+    btn.disabled = false;
+    btn.classList.remove('btn_disabled');
+}
+
+function disableButton(btn){
+    btn.disabled = true;
+    btn.classList.add('btn_disabled');
+}
 
 function selectContentOnMouseDown(event) {
     // Reset the dragging flag when the mouse is pressed down

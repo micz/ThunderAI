@@ -18,9 +18,9 @@
 
 import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
-import { ChatGPTWeb_models, isThunderbird128OrGreater, getCustomPromptsUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from "../../js/mzta-utils.js";
+import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, openTab } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
-import { getPlaceholders } from "../../js/mzta-placeholders.js";
+import { getPlaceholders, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 
 let prefs = null;
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let btnNew_elements = document.querySelectorAll(".input_new");
     if(btnNew_elements) {
         btnNew_elements.forEach(element => {
-            element.addEventListener('change', (e) => {
+            element.addEventListener('input', (e) => {
                 e.preventDefault();
                 checkFields();
             });
@@ -88,13 +88,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const textareas = document.querySelectorAll('.editor');
     autocompleteSuggestions = (await getPlaceholders(true)).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
 
-    // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
+    // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
         textareas.forEach(textarea => {
-            textarea.addEventListener('input', (e) => {
-                checkPromptsConfigForPlaceholders(e.target);
+            textarea.addEventListener('input', async (e) => {
+                await checkPromptsConfigForPlaceholders(e.target);
             });
         textareaAutocomplete(textarea, autocompleteSuggestions);
         });
@@ -160,7 +160,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
-
 
     //To add a new item
     var txtIdNew = document.getElementById('txtIdNew');
@@ -369,6 +368,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
 }, { once: true });
+
+document.getElementById('btnManageCustomDataPH').addEventListener('click', () => {
+    openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
+  });
 
 //========= handling an item in a row 
 function handleEditClick(e) {
@@ -588,13 +591,13 @@ function handleConfirmClick(e) {
 }
 
 // Handle checkbox changes and log new state
-function handleCheckboxChange(e) {
+async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
     if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
         let textarea = e.target.closest('tr').querySelector('.text_output');
-        checkPromptsConfigForPlaceholders(textarea);
+        await checkPromptsConfigForPlaceholders(textarea);
     }
     
 }
@@ -936,7 +939,7 @@ function clearMessage() {
 }
 
 async function setStorageSpace() {
-    let storage_space = await getCustomPromptsUsedSpace();
+    let storage_space = await getLocalStorageUsedSpace();
     document.getElementById('storage_space').textContent = storage_space;
 }
 
@@ -950,11 +953,15 @@ if(await isThunderbird128OrGreater()){
     });    
 }
 
-function checkPromptsConfigForPlaceholders(textarea){
+async function checkPromptsConfigForPlaceholders(textarea){
+    let curr_text = textarea.value;
+    // First substitute the custom data placeholders
+    curr_text = await placeholdersUtils.replaceCustomPlaceholders(curr_text);
+    // console.log('>>>>>>>>>> curr_text after custom placeholders: ' + curr_text);
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(String(textarea.value).indexOf('{%additional_text%}') != -1){
+    if(String(curr_text).indexOf('{%additional_text%}') != -1){
         if(!need_custom_text_element.checked){
             need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
         }else{
@@ -966,7 +973,7 @@ function checkPromptsConfigForPlaceholders(textarea){
 
       let tr_ancestor2 = textarea.closest('tr');
       let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if((String(textarea.value).indexOf('{%selected_text%}') != -1)||(String(textarea.value).indexOf('{%selected_html%}') != -1)){
+      if((String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1)){
         if(!selected_text_element.checked){
             selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
         }else{
