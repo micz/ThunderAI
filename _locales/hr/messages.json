@@ -562,7 +562,7 @@
         "message": "Dodaj oznake ovoj e-poruci"
     },
     "prompt_add_tags_full_text": {
-        "message": "Analiziraj sljedeći tekst e-pošte i generiraj JSON niz oznaka koje sažimaju njezin sadržaj. Koristi teme, ključne pojmove i relevantne opise kao oznake. Pobrini se da oznake budu sažete i relevantne za sadržaj poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji oznake na tekstu poruke i kontekstu, zanemarujući nebitne informacije ili trivijalne detalje.\nGeneriraj odgovor isključivo u JSON formatu. Izlaz mora biti samo JSON niz oznaka, bez ikakvih dodatnih komentara ili teksta. Evo primjera formata koji treba koristiti:\n{\n'tags': ['tag1', 'tag2', 'tag3', 'tag4', 'tag5']\n}"
+        "message": "Analiziraj sljedeći tekst e-pošte i generiraj JSON niz oznaka koje sažimaju njezin sadržaj. Koristi teme, ključne pojmove i relevantne opise kao oznake. Pobrini se da oznake budu sažete i relevantne za sadržaj poruke.\nTekst e-poruke: {%mail_text_body%}\nUzmi u obzir sljedeće pojedinosti za kontekst:\n- Šalje: {%author%}\n- Primatelji: {%recipients%}\n- CC popis: {%cc_list%}\n- Naslov: {%mail_subject%}\nTemelji oznake na tekstu poruke i kontekstu, zanemarujući nebitne informacije ili trivijalne detalje.\nGeneriraj odgovor isključivo u JSON formatu. Izlaz mora biti samo JSON niz oznaka, bez ikakvih dodatnih komentara ili teksta. Evo primjera formata koji treba koristiti:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_current_email": {
         "message": "Oznake e-pošte"
