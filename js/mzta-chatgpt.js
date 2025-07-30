@@ -468,7 +468,6 @@ function checkGPTModel(model) {
   });
 }
 
-
 function operation_done(){
     let curr_msg = document.getElementById('mzta-curr_msg');
     curr_msg.textContent = browser.i18n.getMessage("chatgpt_win_job_completed");

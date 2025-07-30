@@ -1021,6 +1021,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt(curr_prompt_spamfilter, message, chatgpt_lang, '', '', body_text, curr_fullMessage.headers.subject, msg_text, '', '', []);
             taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
+            console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
             let cmd_spamfilter = new mzta_specialCommand(specialFullPrompt_spamfilter, prefs_init.connection_type, prefs_init.do_debug);
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';

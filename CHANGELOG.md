@@ -3,7 +3,6 @@
 
 
 
-
 <h2>Version 3.6.0 - 30/07/2025</h2>
       <ul>
         <li>Now it's possibile to define custom data placeholders to be used in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/156">#156</a>].</li>
@@ -21,9 +20,22 @@
         <li>Traditional Chinese (zh_Hant) translation added, thanks to <a href="https://github.com/evez">evez</a>.</li>
         <li>Some English typing errors have been fixed [<a href="https://github.com/micz/ThunderAI/issues/422">#422</a>].</li>
       </ul>
+<h2>Version 3.5.5 - ??/??/2025</h2>
+      <ul>
+        <li><i>[All APIs]</i> Fix: Autotag and Antispam filter working again [<a href="https://github.com/micz/ThunderAI/issues/449">#449</a>].</li>
+      </ul>
+<h2>Version 3.5.4 - 13/06/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Changed again how to detect when the response is completed.</li>
+        <li><i>[ChatGPT Web]</i> Fix: Auto scroll to bottom works again.</li>
+      </ul>
+<h2>Version 3.5.3 - 10/06/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly detecting when the response is completed.</li>
+      </ul>
 <h2>Version 3.5.2 - 05/06/2025</h2>
       <ul>
-        <li><i>[ChatGPT Web]</i> Fix: correctly hiding the model warning message when forcing to send the prompt [<a href="https://github.com/micz/ThunderAI/issues/410">#410</a>].</li>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly hiding the model warning message when forcing to send the prompt [<a href="https://github.com/micz/ThunderAI/issues/410">#410</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: ThunderAI is now working also with a free account [<a href="https://github.com/micz/ThunderAI/issues/408">#408</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: Correctly showing a warning message to a not logged in user [<a href="https://github.com/micz/ThunderAI/issues/411">#411</a>].</li>
         <li><i>[ChatGPT Web]</i> Improved the model not found message [<a href="https://github.com/micz/ThunderAI/issues/413">#413</a>].</li>
