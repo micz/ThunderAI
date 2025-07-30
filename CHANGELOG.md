@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 3.6.0 - ??/??/2025</h2>
+<h2>Version 3.6.0 - 30/07/2025</h2>
       <ul>
         <li>Now it's possibile to define custom data placeholders to be used in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/156">#156</a>].</li>
         <li>Improved the handling of HTML and line breaks between the email text and the AI Chat.</li>
@@ -20,7 +20,6 @@
         <li><i>[OpenAI Comp API]</i> Added OpenRouter configuration [<a href="https://github.com/micz/ThunderAI/issues/401">#401</a>].</li>
         <li>Traditional Chinese (zh_Hant) translation added, thanks to <a href="https://github.com/evez">evez</a>.</li>
         <li>Some English typing errors have been fixed [<a href="https://github.com/micz/ThunderAI/issues/422">#422</a>].</li>
-        <li>...</li>
       </ul>
 <h2>Version 3.5.2 - 05/06/2025</h2>
       <ul>
