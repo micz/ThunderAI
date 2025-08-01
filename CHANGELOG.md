@@ -20,7 +20,7 @@
         <li>Traditional Chinese (zh_Hant) translation added, thanks to <a href="https://github.com/evez">evez</a>.</li>
         <li>Some English typing errors have been fixed [<a href="https://github.com/micz/ThunderAI/issues/422">#422</a>].</li>
       </ul>
-<h2>Version 3.5.5 - ??/??/2025</h2>
+<h2>Version 3.5.5 - 21/07/2025</h2>
       <ul>
         <li><i>[All APIs]</i> Fix: Autotag and Antispam filter working again [<a href="https://github.com/micz/ThunderAI/issues/449">#449</a>].</li>
       </ul>
