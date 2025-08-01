@@ -18,6 +18,7 @@
         <li><i>[OpenAI Comp API]</i> Added Perplexity configuration [<a href="https://github.com/micz/ThunderAI/issues/405">#405</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added OpenRouter configuration [<a href="https://github.com/micz/ThunderAI/issues/401">#401</a>].</li>
         <li>Traditional Chinese (zh_Hant) translation added, thanks to <a href="https://github.com/evez">evez</a>.</li>
+        <li>Russian (ru) translation added, thanks to <a href="https://hosted.weblate.org/user/law820314/">Maksim</a>.</li>
         <li>Some English typing errors have been fixed [<a href="https://github.com/micz/ThunderAI/issues/422">#422</a>].</li>
       </ul>
 <h2>Version 3.5.5 - 21/07/2025</h2>
