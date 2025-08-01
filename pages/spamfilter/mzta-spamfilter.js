@@ -176,16 +176,38 @@ async function loadSpamReport(){
       // Create a new row
       const row = document.createElement("tr");
 
-      row.innerHTML = `
-          <td>${report.headerMessageId}</td>
-          <td>${new Date(report.message_date).toLocaleString()}</td>
-          <td>${report.from.join(", ")}</td>
-          <td>${report.subject.join(", ")}</td>
-          <td>${report.spamValue}</td>
-          <td>${report.moved?browser.i18n.getMessage("spamfilter_moved"):browser.i18n.getMessage("spamfilter_not_moved")} (${report.SpamThreshold})</td>
-          <td>${report.explanation}</td>
-          <td>${new Date(report.report_date).toLocaleString()}</td>
-      `;
+      // Create and append each cell as a DOM element
+      const tdHeaderMessageId = document.createElement("td");
+      tdHeaderMessageId.textContent = report.headerMessageId;
+      row.appendChild(tdHeaderMessageId);
+
+      const tdMessageDate = document.createElement("td");
+      tdMessageDate.textContent = new Date(report.message_date).toLocaleString();
+      row.appendChild(tdMessageDate);
+
+      const tdFrom = document.createElement("td");
+      tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : report.from;
+      row.appendChild(tdFrom);
+
+      const tdSubject = document.createElement("td");
+      tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : report.subject;
+      row.appendChild(tdSubject);
+
+      const tdSpamValue = document.createElement("td");
+      tdSpamValue.textContent = report.spamValue;
+      row.appendChild(tdSpamValue);
+
+      const tdMoved = document.createElement("td");
+      tdMoved.textContent = (report.moved ? browser.i18n.getMessage("spamfilter_moved") : browser.i18n.getMessage("spamfilter_not_moved")) + ` (${report.SpamThreshold})`;
+      row.appendChild(tdMoved);
+
+      const tdExplanation = document.createElement("td");
+      tdExplanation.textContent = report.explanation;
+      row.appendChild(tdExplanation);
+
+      const tdReportDate = document.createElement("td");
+      tdReportDate.textContent = new Date(report.report_date).toLocaleString();
+      row.appendChild(tdReportDate);
 
       // Append the row to the table
       tableBody.appendChild(row);
