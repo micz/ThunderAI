@@ -1226,5 +1226,11 @@
     },
     "customDataPH_add_to_menu": {
         "message": "已將可使用的內容新增至選單提示中"
+    },
+    "prompt_reply_custom_command": {
+        "message": "依指令回覆"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "請回覆以下電子郵件 \"{%mail_text_body%}”。{%additional_text%}。僅回覆所需內容，不要提供任何註解或其他文字。"
     }
 }
