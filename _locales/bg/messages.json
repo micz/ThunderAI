@@ -1,1 +1,32 @@
-{}
+{
+    "extensionDescription": {
+        "message": "Използвайте ChatGPT, Google Gemini, Anthropic или Ollama, за да подобрите вашите имейли!"
+    },
+    "menu_title": {
+        "message": "ИИ"
+    },
+    "prompt_lang": {
+        "message": "Отговорено за"
+    },
+    "prompt_reply": {
+        "message": "Отговор на този имейл"
+    },
+    "prompt_reply_advanced": {
+        "message": "Отговор към тази нишка"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Отговаряне с команда"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Препаписване по-учтиво"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Пренаписване по-формално"
+    },
+    "prompt_classify": {
+        "message": "Класифициране"
+    },
+    "prompt_summarize_this": {
+        "message": "Обобщаване"
+    }
+}
