@@ -1,24 +1,24 @@
 {
     "extensionDescription": {
-        "message": "¡Usa ChatGPT, Goolge Gemini, Anthropic u Ollama para mejorar tus emails!"
+        "message": "¡Usa ChatGPT, Google Gemini, Anthropic u Ollama para mejorar tus emails!"
     },
     "menu_title": {
         "message": "IA"
     },
     "prompt_lang": {
-        "message": "Respuesta en"
+        "message": "Responder en"
     },
     "prompt_reply": {
-        "message": "Respuesta a este email"
+        "message": "Responder a este email"
     },
     "prompt_reply_advanced": {
-        "message": "Respuesta a este hilo"
+        "message": "Responder a este hilo"
     },
     "prompt_rewrite_polite": {
-        "message": "Reescribe educado"
+        "message": "Reescribe de manera cortés"
     },
     "prompt_rewrite_formal": {
-        "message": "Reescribir formal"
+        "message": "Reescribe de manera formal"
     },
     "prompt_summarize_this": {
         "message": "Resume esto"
@@ -28,5 +28,164 @@
     },
     "prompt_classify": {
         "message": "Clasificar"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Responder con comando"
+    },
+    "prompt_this": {
+        "message": "Crea un prompt de esto"
+    },
+    "prompt_selection_needed": {
+        "message": "Para proceder, ¡necesita seleccionar un texto!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Gestionar Prompts"
+    },
+    "more_info_string": {
+        "message": "Más información"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Los prompts predeterminados no son editables. Puedes deshabilitarlos, luego copiar el texto y pegarlo en uno nuevo para crear una versión modificada."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Puedes importar y exportar los prompts. Los prompts existentes con el mismo ID serán sobrescritos. Se agregarán nuevos prompts con nuevos ID."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Si todo es correcto, después de la importación, haga clic en el botón \"Guardar todo\"."
+    },
+    "customPrompts_start_saving": {
+        "message": "Guardando prompts..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Reindexando lista..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtrando prompts..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Guardando prompts predeterminados..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Guardando prompts personalizados..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Recargando menús..."
+    },
+    "customPrompts_saved": {
+        "message": "¡Prompts guardados!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Debe ser único, en minúscula y sin espacios"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nombre"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Texto del prompt"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Acción"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Selección de texto necesaria"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Siempre añadir la firma"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Solicitar texto adicional"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Habilitado"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Permitir el visor de comparación de texto"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "El visor de comparación de texto se puede seleccionar cuando la acción se establece en \"sustituir texto\"."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Campos obligatorios"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Editar"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Cancelar"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Eliminar"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "¿Estás seguro de que quieres eliminar este elemento?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "¡Hay cambios sin guardar!"
+    },
+    "btnSaveAll_string": {
+        "message": "Guardar todo"
+    },
+    "btnNew_string": {
+        "message": "Añadir nuevo"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Añadir el prompt"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Añadir al menú"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Siempre"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Leyendo un correo"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Escribiendo un correo"
+    },
+    "customPrompts_close_button": {
+        "message": "Botón de cerrar"
+    },
+    "customPrompts_do_reply": {
+        "message": "Hacer respuesta"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Sustituir texto"
+    },
+    "chatgpt_win_working": {
+        "message": "Trabajo en progreso..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "¡Completo!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Selecciona el texto que deseas utilizar y haz clic en el botón."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Usa la respuesta seleccionada"
+    },
+    "chatgpt_win_close": {
+        "message": "Cerrar"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Parece que ChatGPT se está tomando demasiado tiempo para cargar. Si termina, haz clic en el botón de la derecha. Si el problema persiste, consulta el estado del servicio."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Reintentar"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Clic en el botón 'Enviar' para usar el prompt."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "No estás conectado a ChatGPT. Por favor, inicia sesión con tus credenciales, cierra la ventana ChatGPT y luego repite la acción que intentaste. Permanecerás conectado."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Por alguna razón, no es posible verificar si el modelo correcto está cargado. Por ahora, puedes pulsar el botón azul para continuar."
     }
 }
