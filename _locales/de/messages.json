@@ -1248,5 +1248,8 @@
     },
     "prompt_reply_custom_command": {
         "message": "Mit Befehl antworten"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Bitte beachten Sie, dass alle <br>-Tags in der Antwort der KI durch Zeilenumbrüche ersetzt werden."
     }
 }

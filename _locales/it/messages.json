@@ -1251,5 +1251,8 @@
     },
     "prompt_reply_custom_command_full_text": {
         "message": "Rispondi alla seguente email \"{%mail_text_body%}\". {%additional_text%}. Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo."
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Ricorda che eventuali tag <br> nella risposta dell'IA verranno sostituiti con interruzioni di riga."
     }
 }
