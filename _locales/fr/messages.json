@@ -1248,5 +1248,8 @@
     },
     "prompt_reply_custom_command_full_text": {
         "message": "Répondez à l'e-mail suivant « {%mail_text_body%} ». {%additional_text%}. Répondez uniquement avec le texte nécessaire, sans commentaires ou texte supplémentaire."
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Veuillez noter que toutes les balises <br> dans la réponse de l'IA seront remplacées par des sauts de ligne."
     }
 }
