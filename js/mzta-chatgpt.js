@@ -502,7 +502,7 @@ async function doProceed(message, customText = ''){
     if(_gpt_model != ''){
         await checkGPTModel(_gpt_model);
     }
-    let final_prompt = message.prompt;
+    let final_prompt = replaceBrWithNewline(message.prompt);
 // console.log(">>>>>>>>>>>> doProceed customText: " + customText);
 // console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
 // console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
@@ -772,6 +772,10 @@ function run(checkTab = null) {
             document.addEventListener('mouseup', selectContentOnMouseUp);
         })();
     }
+}
+
+function replaceBrWithNewline(input) {
+  return input.replace(/<br\\s*\\/?>/gi, '\\n');
 }
 
 // In the content script
