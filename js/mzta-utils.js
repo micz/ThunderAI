@@ -17,7 +17,7 @@
  */
 
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-export const ChatGPTWeb_models = ['gpt-4o', 'o3', 'o4-mini', 'o4-mini-high', 'gpt-4o-mini'];  // List of models available in ChatGPT Web
+export const ChatGPTWeb_models = ['gpt-5','gpt-5-thinking','gpt-4o'];  // List of models available in ChatGPT Web
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
@@ -212,7 +212,10 @@ function convertBrToNewlines(html) {
 export function getGPTWebModelString(model) {
   model = model.toLowerCase().trim();
   switch (model) {
-    case 'GPT-4o':
+    case 'gpt-5':
+      return '5';
+    case 'gpt-5-thinking':
+      return '5 Thinking';  
     case 'gpt-4o':
       return '4o';
     case 'gpt-4o-mini':
