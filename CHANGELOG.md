@@ -6,6 +6,7 @@
 
 <h2>Version 3.6.1 - ??/??/2025</h2>
       <ul>
+        <li><i>[OpenAI Comp API]</i> Perplexity configuration fixed [<a href="https://github.com/micz/ThunderAI/issues/461">#461</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.6.0 - 30/07/2025</h2>
