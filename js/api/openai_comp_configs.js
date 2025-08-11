@@ -58,6 +58,6 @@ export const openAICompConfigs = [
         name: 'Perplexity API',
         chat_name: 'Perplexity',
         host: 'https://api.perplexity.ai',
-        use_v1: true,
+        use_v1: false,
     },
 ];
