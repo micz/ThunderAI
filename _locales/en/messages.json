@@ -1616,5 +1616,9 @@
   "customDataPH_add_to_menu": {
     "message": "Usable in prompts added to menu",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_web_br_replace_info": {
+    "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
+    "description": ""
   }
 }
