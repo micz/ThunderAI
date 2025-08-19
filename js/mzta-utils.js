@@ -199,6 +199,19 @@ export function stripHtmlKeepLines(htmlString) {
     .trim();                               // removes leading/trailing whitespace
 }
 
+export function htmlBodyToPlainText(html) {
+  return html
+    .replace(/<head[\s\S]*?<\/head>/gi, '') // remove <head> and its content
+    .replace(/<br\s*\/?>/gi, '\n')          // replace <br> with newline
+    .replace(/<\/p\s*>/gi, '\n')            // replace </p> with newline
+    .replace(/<p\s*>/gi, '')                // remove <p> tag
+    .replace(/<[^>]*>/g, ' ')               // remove any other HTML tags
+    .replace(/[ \t]+\n/g, '\n')             // remove spaces before newline
+    .replace(/\n{2,}/g, '\n')               // compress multiple newlines into one
+    .replace(/\s+/g, ' ')                   // normalize spaces inside lines
+    .trim();                                // trim spaces at start and end
+}
+
 export function convertNewlinesToBr(text) {
   return text.replace(/\n/g, '<br>');
 }
