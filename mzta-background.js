@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines, htmlBodyToPlainText } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -977,6 +977,10 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             curr_fullMessage = await browser.messages.getFull(message.id);
             msg_text = getMailBody(curr_fullMessage);
             body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            if( body_text.length == 0 ){
+                taLog.log("No text found in the message body, trying to convert HTML to plain text...");
+                body_text = htmlBodyToPlainText(msg_text.html);
+            }
         }
 
         if (addTagsAuto) {
