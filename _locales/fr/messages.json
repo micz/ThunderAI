@@ -838,10 +838,10 @@
         "message": "Ici, vous pouvez également insérer l'adresse d'un serveur distant."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forcer les balises existantes lors de l’auto-étiquetage ou de l’utilisation du menu contextuel"
+        "message": "Forcer les balises existantes"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "Si coché, l'IA ajoutera uniquement les tags existants aux e-mails nouvellement reçus et ne créera pas de nouveaux tags."
+        "message": "Si coché, l'IA ajoutera uniquement les tags existants et ne créera pas de nouveaux tags."
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "Si coché, ThunderAI déplacera automatiquement les e-mails indésirables dans le dossier spam."
