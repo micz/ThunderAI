@@ -1120,11 +1120,11 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing": {
-    "message": "Force existing tags when autotagging or using the context menu",
+    "message": "Force existing tags",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing_Info": {
-    "message": "If checked, the AI will add only existing tags to newly received emails, and won't create new tags.",
+    "message": "If checked, the AI will add only existing tags and won't create new tags.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {

@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr, checkIfTagLabelExists } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -169,7 +169,8 @@ export class mzta_Menus {
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, default_chatgpt_lang: '', do_debug: false});
+                        let tags_current_email_final = [];
+                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, add_tags_auto_force_existing: false, default_chatgpt_lang: '', do_debug: false});
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
                             taWorkingStatus.stopWorking();
@@ -177,6 +178,8 @@ export class mzta_Menus {
                         }
                         fullPrompt = taPromptUtils.finalizePrompt_add_tags(fullPrompt, prefs_at.add_tags_maxnum, prefs_at.add_tags_force_lang, prefs_at.default_chatgpt_lang);
                         this.logger.log("fullPrompt: " + fullPrompt);
+                        let create_new_tags = !prefs_at.add_tags_auto_force_existing;
+                        let all_tags_list = tags_full_list[1];
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
@@ -184,6 +187,17 @@ export class mzta_Menus {
                         await cmd_addTags.initWorker();
                         try{
                             tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                            if(!create_new_tags){
+                                    this.logger.log("Not creating new tags, only showing existing ones...");
+                                }
+                                for (const tag of tags_current_email) {
+                                    // console.log(">>>>>>>>>>>>>>> tag: " + JSON.stringify(tag));
+                                    if (!create_new_tags && !checkIfTagLabelExists(tag, all_tags_list)) {
+                                        this.logger.log("Removing tag from the list: " + tag);
+                                    }else{
+                                        tags_current_email_final.push(tag);
+                                    }
+                                }
                             // console.log(">>>>>>>>>>> tags_current_email: " + tags_current_email);
                         }catch(err){
                             console.error("[ThunderAI] Error getting tags: ", err);
@@ -191,9 +205,9 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
-                        this.logger.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                        this.logger.log("tags_current_email_final: " + JSON.stringify(tags_current_email_final));
                         this.logger.log("tags_full_list: " + JSON.stringify(tags_full_list));
-                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email, messageId: curr_message.id});
+                        browser.tabs.sendMessage(tabs[0].id, {command: "getTags", tags: tags_current_email_final, messageId: curr_message.id});
                         taWorkingStatus.stopWorking();
                         return {ok:'1'};
                         break;  // Add tags to the email - END
