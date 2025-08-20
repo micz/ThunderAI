@@ -1620,5 +1620,13 @@
   "prefs_OptionText_chatgpt_web_br_replace_info": {
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
     "description": ""
+  },
+  "prefs_OpenAIComp_ClearModelsList": {
+    "message": "Clear Models List",
+    "description": ""
+  },
+  "OpenAIComp_ClearModelsList_Confirm": {
+    "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
+    "description": ""
   }
 }
