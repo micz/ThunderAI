@@ -7,6 +7,7 @@
 <h2>Version 3.6.1 - ??/??/2025</h2>
       <ul>
         <li><i>[OpenAI Comp API]</i> Perplexity configuration fixed [<a href="https://github.com/micz/ThunderAI/issues/461">#461</a>].</li>
+        <li><i>[OpenAI Comp API]</i> Added a button to clear the models list [<a href="https://github.com/micz/ThunderAI/issues/472">#472</a>].</li>
         <li><i>[ChatGPT Web]</i> Fix: Any &lt;br&gt; tag in the response is now replaced with a line break [<a href="https://github.com/micz/ThunderAI/issues/462">#462</a>].</li>
         <li><i>[ChatGPT Web]</i> Models list updated. [<a href="https://github.com/micz/ThunderAI/issues/464">#464</a>].</li>
         <li><i>[All APIs]</i> Fix: If the incoming email has no text only part, the html part is used [<a href="https://github.com/micz/ThunderAI/issues/470">#470</a>].</li>
