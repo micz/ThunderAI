@@ -11,6 +11,7 @@
         <li><i>[ChatGPT Web]</i> Models list updated. [<a href="https://github.com/micz/ThunderAI/issues/464">#464</a>].</li>
         <li><i>[All APIs]</i> Fix: If the incoming email has no text only part, the html part is used [<a href="https://github.com/micz/ThunderAI/issues/470">#470</a>].</li>
         <li><i>[All APIs]</i> Fix: Improved the extraction of the plain text from html emails [<a href="https://github.com/micz/ThunderAI/issues/469">#469</a>].</li>
+        <li><i>[All APIs]</i> If the option to use only existing tags is enabled, this now works also when adding tags manually using the ThunderAI menu [<a href="https://github.com/micz/ThunderAI/issues/475">#475</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.6.0 - 30/07/2025</h2>
