@@ -201,15 +201,16 @@ export function stripHtmlKeepLines(htmlString) {
 
 export function htmlBodyToPlainText(html) {
   return html
-    .replace(/<head[\s\S]*?<\/head>/gi, '') // remove <head> and its content
-    .replace(/<br\s*\/?>/gi, '\n')          // replace <br> with newline
-    .replace(/<\/p\s*>/gi, '\n')            // replace </p> with newline
-    .replace(/<p\s*>/gi, '')                // remove <p> tag
-    .replace(/<[^>]*>/g, ' ')               // remove any other HTML tags
-    .replace(/[ \t]+\n/g, '\n')             // remove spaces before newline
-    .replace(/\n{2,}/g, '\n')               // compress multiple newlines into one
-    .replace(/\s+/g, ' ')                   // normalize spaces inside lines
-    .trim();                                // trim spaces at start and end
+    .replace(/<head[\s\S]*?<\/head>/gi, '') 
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p\s*>/gi, '\n')
+    .replace(/<p\s*>/gi, '')
+    .replace(/<\/(div|section|article|li|ul|ol|table|tr|td|th)>/gi, '\n') // newline for block tags
+    .replace(/<[^>]*>/g, '') // remove all other tags with no extra spaces
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
 }
 
 export function convertNewlinesToBr(text) {
