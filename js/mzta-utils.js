@@ -198,7 +198,7 @@ export function stripHtmlKeepLines(htmlString) {
     .replace(/<[^>]*>/g, '')               // removes any other HTML tags
     .trim();                               // removes leading/trailing whitespace
 }
-function htmlBodyToPlainText(htmlString) {
+export function htmlBodyToPlainText(htmlString) {
 	// Create a new DOMParser instance
 	const parser = new DOMParser();
 	// Parse the HTML string
