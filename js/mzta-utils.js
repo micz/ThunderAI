@@ -206,7 +206,9 @@ export function htmlBodyToPlainText(htmlString) {
 	
   // remove invisible elements https://stackoverflow.com/questions/39813081/queryselector-where-display-is-not-none
    // return doc;
-  const docsan=doc.querySelectorAll('[style*="visibility:hidden"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  doc.querySelectorAll('[style*="display:none"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  
   // Extract text content
   const textContent = doc.body.textContent || "";
 	// Trim whitespace
