@@ -198,19 +198,24 @@ export function stripHtmlKeepLines(htmlString) {
     .replace(/<[^>]*>/g, '')               // removes any other HTML tags
     .trim();                               // removes leading/trailing whitespace
 }
-
-export function htmlBodyToPlainText(html) {
-  return html
-    .replace(/<head[\s\S]*?<\/head>/gi, '') 
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p\s*>/gi, '\n')
-    .replace(/<p\s*>/gi, '')
-    .replace(/<\/(div|section|article|li|ul|ol|table|tr|td|th)>/gi, '\n') // newline for block tags
-    .replace(/<[^>]*>/g, '') // remove all other tags with no extra spaces
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{2,}/g, '\n')
-    .replace(/[ \t]+/g, ' ')
-    .trim();
+function htmlBodyToPlainText(htmlString) {
+	// Create a new DOMParser instance
+	const parser = new DOMParser();
+	// Parse the HTML string
+	const doc = parser.parseFromString(htmlString, 'text/html');
+	
+  // remove invisible elements https://stackoverflow.com/questions/39813081/queryselector-where-display-is-not-none
+   // return doc;
+  const docsan=doc.querySelectorAll('[style*="visibility:hidden"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
+  // Extract text content
+  const textContent = doc.body.textContent || "";
+	// Trim whitespace
+	return textContent
+  .replace(/[ \t]+\n/g, '\n')
+  .replace(/\n{2,}/g, '\n')
+  .replace(/[ \t]+/g, ' ')
+  .replace(/&nbsp;/gi,"")
+  .trim();
 }
 
 export function convertNewlinesToBr(text) {
