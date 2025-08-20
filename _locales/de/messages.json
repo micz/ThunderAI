@@ -1251,5 +1251,11 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Bitte beachten Sie, dass alle <br>-Tags in der Antwort der KI durch Zeilenumbrüche ersetzt werden."
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Möchten Sie die Modellliste wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Modellliste löschen"
     }
 }
