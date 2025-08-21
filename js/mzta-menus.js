@@ -19,7 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr } from './mzta-utils.js'
+import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr, cleanupNewlines } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -81,11 +81,11 @@ export class mzta_Menus {
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
-                selection: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
+                selection: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
                 selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
-                text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
+                text: "hello\n" + cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
                 html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
-                only_typed_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
                 only_quoted_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
@@ -109,17 +109,17 @@ export class mzta_Menus {
             let selection_html = msg_text.selection_html;
             let only_typed_text = '';
             let only_quoted_text = '';
-            only_typed_text = msg_text.only_typed_text.replace(/\s+/g, ' ').trim();
-            selection_text = msg_text.selection.replace(/\s+/g, ' ').trim();
+            only_typed_text = msg_text.only_typed_text.replace(/[ \t]+/g, ' ').trim();
+            selection_text = msg_text.selection.replace(/[ \t]+/g, ' ').trim();
             if(selection_text === ''){
                 if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
                     selection_text = only_typed_text;
                 }
             }
-            only_quoted_text = msg_text.only_quoted_text.replace(/\s+/g, ' ').trim();
+            only_quoted_text = msg_text.only_quoted_text.replace(/[ \t]+/g, ' ').trim();
             curr_prompt.selection_text = selection_text;
             curr_prompt.selection_html = selection_html;
-            body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            body_text = msg_text.text.replace(/[ \t]+/g, ' ').trim();
             curr_prompt.body_text = body_text;
             //open chatgpt window
             //console.log("Click menu item...");
@@ -143,7 +143,7 @@ export class mzta_Menus {
                     curr_message = curr_messages;
                     break;
             }
-
+            
             fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
             
             switch(curr_prompt.id){
