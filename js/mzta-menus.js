@@ -83,7 +83,7 @@ export class mzta_Menus {
             return {tabId: tabs[0].id, 
                 selection: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
                 selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
-                text: "hello\n" + cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
+                text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
                 html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
                 only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
                 only_quoted_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
@@ -143,7 +143,7 @@ export class mzta_Menus {
                     curr_message = curr_messages;
                     break;
             }
-            
+
             fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
             
             switch(curr_prompt.id){
