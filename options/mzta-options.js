@@ -511,8 +511,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       option.text = modelName;
       select_openai_comp_model.appendChild(option);
       select_openai_comp_model.value = modelName;
-      select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));    
+      select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
     }
+  });
+
+  document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
+    if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
+      return;
+    }
+    let select_openai_comp_model = document.getElementById('openai_comp_model');
+    while (select_openai_comp_model.options.length > 0) {
+      select_openai_comp_model.remove(0);
+    }
+    select_openai_comp_model.value = '';
+    select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
   document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {

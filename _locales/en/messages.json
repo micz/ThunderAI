@@ -1120,11 +1120,11 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing": {
-    "message": "Force existing tags when autotagging or using the context menu",
+    "message": "Force existing tags",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_force_existing_Info": {
-    "message": "If checked, the AI will add only existing tags to newly received emails, and won't create new tags.",
+    "message": "If checked, the AI will add only existing tags and won't create new tags.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
@@ -1619,6 +1619,14 @@
   },
   "prefs_OptionText_chatgpt_web_br_replace_info": {
     "message": "Please note that any <br> tags in the AI's response will be replaced with line breaks.",
+    "description": ""
+  },
+  "prefs_OpenAIComp_ClearModelsList": {
+    "message": "Clear Models List",
+    "description": ""
+  },
+  "OpenAIComp_ClearModelsList_Confirm": {
+    "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
     "description": ""
   }
 }

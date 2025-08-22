@@ -778,7 +778,7 @@
         "message": "Aggiungi tag automaticamente"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forza i tag esistenti durante l'autotagging o quando usi il menu di contesto"
+        "message": "Forza i tag esistenti"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
         "message": "Aggiungi tag solo alle email nella posta in arrivo"
@@ -847,7 +847,7 @@
         "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nIn caso di dati del messaggio mancanti, imposta il valore a 0 (non spam) e fornisci la motivazione.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"spamValue\": <intero da 0 a 100>,\n\"explanation\": \"Breve spiegazione del tuo ragionamento\"\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "Se selezionato, l'IA aggiungerà solo i tag esistenti alle email appena ricevute e non creerà nuovi tag."
+        "message": "Se selezionato, l'IA aggiungerà solo i tag esistenti e non creerà nuovi tag."
     },
     "spamfilter_threshold_too_low": {
         "message": "La soglia di spam è troppo bassa! Probabilmente considererai troppe email come spam!"
@@ -1254,5 +1254,11 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Ricorda che eventuali tag <br> nella risposta dell'IA verranno sostituiti con interruzioni di riga."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Svuota l'elenco dei modelli"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Sei sicuro di voler cancellare l’elenco dei modelli? Questa azione non può essere annullata."
     }
 }

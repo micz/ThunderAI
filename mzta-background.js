@@ -976,11 +976,6 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         if (addTagsAuto || spamFilter) {
             curr_fullMessage = await browser.messages.getFull(message.id);
             msg_text = getMailBody(curr_fullMessage);
-            // body_text = msg_text.text.replace(/\s+/g, ' ').trim();
-            // if( body_text.length == 0 ){
-            //     taLog.log("No text found in the message body, trying to convert HTML to plain text...");
-            //     body_text = htmlBodyToPlainText(msg_text.html);
-            // }
             taLog.log("Startin from the HTML body if present and converting to plain text...");
             body_text = htmlBodyToPlainText(msg_text.html);
             if( body_text.length == 0 ){
