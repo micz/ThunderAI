@@ -239,6 +239,14 @@ function convertBrToNewlines(html) {
   return html.replace(/<br\s*\/?>/gi, '\n');
 }
 
+export function convertNewlinesToParagraphs(input) {
+  return input
+    .split('\n')
+    .map(line => `<p>${line}</p>`)
+    .join('');
+}
+
+
 // This method is used to convert the model string id used in the URL
 // to the model string used in the webpage
 export function getGPTWebModelString(model) {
