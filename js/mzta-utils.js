@@ -213,15 +213,26 @@ export function htmlBodyToPlainText(htmlString) {
   const textContent = doc.body.textContent || "";
 	// Trim whitespace
 	return textContent
+  .replace(/\r\n/g, '\n')
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{2,}/g, '\n')
   .replace(/[ \t]+/g, ' ')
   .replace(/&nbsp;/gi,"")
   .trim();
 }
+ 
+export function cleanupNewlines(text) {
+  return text
+  .replace(/\r\n/g, '\n')
+  .replace(/[ \t]+\n/g, '\n')
+  .replace(/\n{2,}/g, '\n')
+  .replace(/[ \t]+/g, ' ')
+  .replace(/&nbsp;/gi,' ')
+  .trim();
+}
 
 export function convertNewlinesToBr(text) {
-  return text.replace(/\n/g, '<br>');
+  return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
 }
 
 function convertBrToNewlines(html) {
