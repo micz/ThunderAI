@@ -32,23 +32,23 @@ let isDragging = false;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     let textArea = document.getElementById('prompt-textarea')
-    let old_textArea = false;
-    if(!textArea){
-        textArea = document.querySelector('form textarea');
-        old_textArea = true;
-    }
     //check if the textarea has been found
     if(!textArea) {
         console.error("[ThunderAI] Textarea not found!");
         return -2;
     }
-    if(old_textArea){
-        textArea.value = msg;
-        textArea.dispatchEvent(new Event('input', { bubbles: true })); // enable send button
-    } else {    // from sept 2024
-        textArea.innerText = msg;
-        textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    // from sept 2024
+    // Remove existing content
+    while (textArea.firstChild) {
+        textArea.removeChild(textArea.firstChild);
     }
+    // Parse msg as HTML and append its nodes
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(msg, 'text/html');
+    Array.from(doc.body.childNodes).forEach(node => {
+        textArea.appendChild(node.cloneNode(true));
+    });
+    textArea.dispatchEvent(new Event('input', { bubbles: true }));
     //wait for the button to change from the audio button to the send button (from nov-2024)
     await new Promise(resolve => setTimeout(resolve, 1000));
     let sendButton = document.querySelector('[data-testid="send-button"]') // pre-GPT-4o
@@ -502,7 +502,7 @@ async function doProceed(message, customText = ''){
     if(_gpt_model != ''){
         await checkGPTModel(_gpt_model);
     }
-    let final_prompt = replaceBrWithNewline(message.prompt);
+    let final_prompt = message.prompt;
 // console.log(">>>>>>>>>>>> doProceed customText: " + customText);
 // console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
 // console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
@@ -772,10 +772,6 @@ function run(checkTab = null) {
             document.addEventListener('mouseup', selectContentOnMouseUp);
         })();
     }
-}
-
-function replaceBrWithNewline(input) {
-  return input.replace(/<br\\s*\\/?>/gi, '\\n');
 }
 
 // In the content script
