@@ -86,7 +86,7 @@ export class mzta_Menus {
                 text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
                 html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
                 only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
-                only_quoted_text: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
+                only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
     
