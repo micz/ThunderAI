@@ -818,6 +818,13 @@ function setupStorageChangeListener() {
                 if(newConnectionType === "chatgpt_web"){
                     removeContextMenu(contextMenuID_AddTags);
                     removeContextMenu(contextMenuID_Spamfilter);
+                }else{
+                    if(prefs_init.add_tags && prefs_init.add_tags_context_menu){
+                        addContextMenu(contextMenuID_AddTags);
+                    }
+                    if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu){
+                        addContextMenu(contextMenuID_Spamfilter);
+                    }
                 }
             }
 
@@ -902,12 +909,12 @@ function removeContextMenu(menu_id) {
 }
 
 // Add Context menu: Add tags
-if(prefs_init.add_tags && prefs_init.add_tags_context_menu){
+if(prefs_init.add_tags && prefs_init.add_tags_context_menu && (prefs_init.connection_type !== "chatgpt_web")){
     addContextMenu(contextMenuID_AddTags);
 }
 
 // Add Context menu: Spamfilter
-if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu){
+if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && (prefs_init.connection_type !== "chatgpt_web")){
     addContextMenu(contextMenuID_Spamfilter);
 }
 
