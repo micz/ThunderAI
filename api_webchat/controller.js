@@ -21,7 +21,7 @@
  */
 
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
-import { getAPIsInitMessageString } from '../js/mzta-utils.js';
+import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -204,6 +204,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function sendPrompt(message){
-    messageInput._setMessageInputValue(message.prompt);
+    messageInput._setMessageInputValue(convertNewlinesToBr(message.prompt));
     messageInput._handleNewChatMessage();
 }
