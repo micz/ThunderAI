@@ -20,7 +20,7 @@ import { mzta_script } from './js/mzta-chatgpt.js';
 import { prefs_default } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
-import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines, htmlBodyToPlainText } from './js/mzta-utils.js';
+import { getCurrentIdentity, getOriginalBody, replaceBody, setBody, i18nConditionalGet, generateCallID, migrateCustomPromptsStorage, migrateDefaultPromptsPropStorage, getGPTWebModelString, getTagsList, createTag, assignTagsToMessage, checkIfTagLabelExists, getActiveSpecialPromptsIDs, checkSparksPresence, getMessages, getMailBody, extractJsonObject, contextMenuID_AddTags, contextMenuID_Spamfilter, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, stripHtmlKeepLines, htmlBodyToPlainText, convertNewlinesToParagraphs } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import { getSpamFilterPrompt } from './js/mzta-prompts.js';
@@ -438,6 +438,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     // let mailMessage = await browser.messageDisplay.getDisplayedMessage(curr_tabId);
                     let mailMessageId = -1;
                     if(mailMessage) mailMessageId = mailMessage.id;
+                    promptText = convertNewlinesToParagraphs(promptText);
                     browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
