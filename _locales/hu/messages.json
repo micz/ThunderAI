@@ -1,0 +1,17 @@
+{
+    "extensionDescription": {
+        "message": "Használja a ChatGPT, Google Gemini, Anthropic vagy Ollama modelleket, hogy még jobbá tegye emailjeit!"
+    },
+    "menu_title": {
+        "message": "MI"
+    },
+    "prompt_reply": {
+        "message": "Válasz erre az emailre"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Újraírás udvariasabban"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Újraírás formálisan"
+    }
+}
