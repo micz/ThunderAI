@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 3.6.1 - ??/??/2025</h2>
+<h2>Version 3.6.1 - 23/08/2025</h2>
       <ul>
         <li><i>[OpenAI Comp API]</i> Perplexity configuration fixed [<a href="https://github.com/micz/ThunderAI/issues/461">#461</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added a button to clear the models list [<a href="https://github.com/micz/ThunderAI/issues/472">#472</a>].</li>
@@ -16,7 +16,6 @@
         <li><i>[All APIs]</i> Fix: Improved how the line breaks are rendered in the AI chat [<a href="https://github.com/micz/ThunderAI/issues/469">#469</a>].</li>
         <li><i>[All APIs]</i> If the option to use only existing tags is enabled, this now works also when adding tags manually using the ThunderAI menu [<a href="https://github.com/micz/ThunderAI/issues/475">#475</a>].</li>
         <li><i>[All APIs][ChatGPT Web]</i> Fix: Correctly showing and hiding the context menu when changing connection type.</li>
-        <li>...</li>
       </ul>
 <h2>Version 3.6.0 - 30/07/2025</h2>
       <ul>
