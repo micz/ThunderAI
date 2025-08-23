@@ -874,7 +874,7 @@
         "message": "By używać wydarzeń w kalendarzu prosimy zainstalować zaktualizowaną wersję dodatku ThunderAI Sparks."
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "Włącz widok zmian"
+        "message": "Włącz podgląd zmian"
     },
     "placeholder_folder_name": {
         "message": "Nazwa folderu"
