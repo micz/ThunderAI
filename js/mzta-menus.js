@@ -144,7 +144,19 @@ export class mzta_Menus {
                     break;
             }
 
-            fullPrompt = await taPromptUtils.preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, await getMailSubject(tabs[0]), msg_text, only_typed_text, only_quoted_text, tags_full_list);
+            fullPrompt = await taPromptUtils.preparePrompt({
+                curr_prompt: curr_prompt,
+                curr_message: curr_message,
+                chatgpt_lang: chatgpt_lang,
+                selection_text: selection_text,
+                selection_html: selection_html,
+                body_text: body_text,
+                subject_text: await getMailSubject(tabs[0]),
+                msg_text: msg_text,
+                only_typed_text: only_typed_text,
+                only_quoted_text: only_quoted_text,
+                tags_full_list: tags_full_list
+            });
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
