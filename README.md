@@ -87,7 +87,7 @@ Are you using this addon in your Thunderbird?
 - German (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
 - Italian (it): [Mic](https://github.com/micz/) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
-- Russian (ru): [Maksim](https://hosted.weblate.org/user/law820314/)
+- Russian (ru): [Maksim](https://hosted.weblate.org/user/law820314/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
 <br>
 
