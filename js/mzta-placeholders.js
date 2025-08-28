@@ -221,6 +221,14 @@ const defaultPlaceholders = [
         is_default: "1",
         enabled: 1,
     },
+    {
+        id: 'mail_attachments_info',
+        name: "__MSG_placeholder_mail_attachments_info__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        enabled: 1,
+    }
 ];
 
 
@@ -459,6 +467,16 @@ export const placeholdersUtils = {
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'mail_attachments_info':
+                    let attachments_info_string = "";
+                    let attachments_info = await browser.messages.listAttachments(curr_message.id);
+                    if(attachments_info && attachments_info.length > 0){
+                        attachments_info_string = attachments_info.map(att => "\"" + att.name + "\" [" + att.contentType + "] (" + Math.round(att.size / 1024) + " KB)").join("\n");
+                    }
+                    attachments_info_string = attachments_info_string.trimEnd();
+                    finalSubs['mail_attachments_info'] = placeholdersUtils.failSafePlaceholders(attachments_info_string);
+                    // console.log(">>>>>>>>>> mail_attachments_info: " + finalSubs['mail_attachments_info']);
                     break;
                 case 'empty':
                     finalSubs['empty'] = '';
