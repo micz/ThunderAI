@@ -33,6 +33,13 @@ export const openAICompConfigs = [
         use_v1: true,
     },
     {
+        id: 'deepseek',
+        name: 'DeepSeek API',
+        chat_name: 'DeepSeek',
+        host: 'https://api.deepseek.com',
+        use_v1: false,
+    },
+    {
         id: 'grok',
         name: 'Grok API',
         chat_name: 'Grok',
