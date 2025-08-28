@@ -345,7 +345,7 @@ class MessagesArea extends HTMLElement {
         }
 
         // Check for newlines in the batch
-        if (tokens.includes('\n')) {
+        if (tokens.endsWith('\n')) {
             this.flushAccumulatingMessage();
         }
     }

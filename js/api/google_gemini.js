@@ -72,9 +72,10 @@ export class GoogleGemini {
   
   fetchResponse = async (messages) => {
     // Smart streaming: disabilita streaming per risposte piccole
-    const messageLength = messages.map(m => m.parts?.map(p => p.text).join('') || '').join('');
-    const shouldStream = false; ///this.stream && (messageLength > 500 || !this.adaptiveStreaming);
-    //console.log(">>>>>>>>>> Google Gemini shouldStream: " + shouldStream);
+    const messageLength = messages.map(m => m.parts?.map(p => p.text).join('') || '').join('').length;
+    console.log(">>>>>>>>>> Google Gemini messageLength: " + messageLength);
+    const shouldStream = this.stream && (messageLength > 200 || !this.adaptiveStreaming);
+    console.log(">>>>>>>>>> Google Gemini shouldStream: " + shouldStream);
     try {
       let google_gemini_body = {
         contents:messages

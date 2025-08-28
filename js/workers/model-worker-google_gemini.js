@@ -42,16 +42,15 @@ let tokenBatch = '';
 let batchTimer = null;
 let timeoutTimer = null;
 let lastBatchTime = 0;
-let batchStartTime = 0;
 
 // Function to send batched tokens
 function sendTokenBatch(force = false, reason = 'unknown') {
     if (tokenBatch && (force || tokenBatch.length >= TOKEN_BATCH_SIZE || performance.now() - lastBatchTime >= TOKEN_BATCH_DELAY)) {
+        console.log(`>>>>>>>>>>>>> Sending token batch (reason: ${reason}):`, tokenBatch);
         postMessage({ type: 'tokenBatch', payload: { tokens: tokenBatch } });
         // Reset batch state
         tokenBatch = '';
         lastBatchTime = performance.now();
-        batchStartTime = 0;
         // Clear all timers
         if (batchTimer) {
             clearTimeout(batchTimer);
@@ -67,10 +66,6 @@ function sendTokenBatch(force = false, reason = 'unknown') {
 // Function to add token to batch
 function addTokenToBatch(token) {
     tokenBatch += token;
-    // Set batch start time for the first token
-    if (tokenBatch.length === token.length) {
-        batchStartTime = performance.now();
-    }
     // Send immediately if batch is full
     if (tokenBatch.length >= TOKEN_BATCH_SIZE) {
         sendTokenBatch(true, 'size-limit');
@@ -119,60 +114,79 @@ self.onmessage = async function(event) {
             throw new Error("[ThunderAI] Google Gemini API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let buffer = '';
-        while (true) {
-            if (stopStreaming) {
-                stopStreaming = false;
-                reader.cancel();
-                // Send any remaining tokens in the batch
-                sendTokenBatch(true, 'stream-stop');
-                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
-                assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
-                break;
-            }
-            const { done, value } = await reader.read();
-            if (done) {
-                // Send any remaining tokens in the batch
-                sendTokenBatch(true, 'stream-stop');
-                conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
-                assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
-                break;
-            }
-            // lots of low-level Google Gemini response parsing stuff
-            const chunk = decoder.decode(value);
-            buffer += chunk;
-            taLog.log("buffer " + buffer);
-            const lines = buffer.split("\n");
-            buffer = lines.pop();
-            let parsedLines = [];
-            //console.log(">>>>>>>>>>>>>>> lines: " + JSON.stringify(lines));
-            try{
-                parsedLines = lines
-                    .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
-                    .filter((line) => line !== "" ) // Remove empty lines
-                    // .map((line) => JSON.parse(line)); // Parse the JSON string
-                    .map((line) => {
-                        taLog.log("line: " + JSON.stringify(line));
-                        return JSON.parse(line);
-                    });
-            }catch(e){
-                taLog.error("Error parsing lines: " + e);
-            }
-            for (const parsedLine of parsedLines) {
-                const { candidates } = parsedLine;
-                const { content } = candidates[0];
-                const { parts } = content;
-                const { text } = parts[0];
-                // Update the UI with the new content
-                if (text) {
-                    assistantResponseAccumulator += text;
-                    // Add to batch instead of sending immediately
-                    addTokenToBatch(text);
+        // Check if the response is streaming (SSE/chunks)
+        const contentType = response.headers.get('content-type') || '';
+        const isStreaming = contentType.includes('text/event-stream') || contentType.includes('application/x-ndjson');
+
+        if (isStreaming) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = '';
+            while (true) {
+                if (stopStreaming) {
+                    stopStreaming = false;
+                    reader.cancel();
+                    // Send any remaining tokens in the batch
+                    sendTokenBatch(true, 'stream-stop');
+                    conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
+                    assistantResponseAccumulator = '';
+                    postMessage({ type: 'tokensDone' });
+                    break;
                 }
+                const { done, value } = await reader.read();
+                if (done) {
+                    // Send any remaining tokens in the batch
+                    sendTokenBatch(true, 'stream-stop');
+                    conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
+                    assistantResponseAccumulator = '';
+                    postMessage({ type: 'tokensDone' });
+                    break;
+                }
+                // lots of low-level Google Gemini response parsing stuff
+                const chunk = decoder.decode(value);
+                buffer += chunk;
+                taLog.log("buffer " + buffer);
+                const lines = buffer.split("\n");
+                buffer = lines.pop();
+                let parsedLines = [];
+                //console.log(">>>>>>>>>>>>>>> lines: " + JSON.stringify(lines));
+                try{
+                    parsedLines = lines
+                        .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
+                        .filter((line) => line !== "" ) // Remove empty lines
+                        // .map((line) => JSON.parse(line)); // Parse the JSON string
+                        .map((line) => {
+                            taLog.log("line: " + JSON.stringify(line));
+                            return JSON.parse(line);
+                        });
+                }catch(e){
+                    taLog.error("Error parsing lines: " + e);
+                }
+                for (const parsedLine of parsedLines) {
+                    const { candidates } = parsedLine;
+                    const { content } = candidates[0];
+                    const { parts } = content;
+                    const { text } = parts[0];
+                    // Update the UI with the new content
+                    if (text) {
+                        assistantResponseAccumulator += text;
+                        // Add to batch instead of sending immediately
+                        addTokenToBatch(text);
+                    }
+                }
+            }
+        } else {
+            // Non-streaming: send the entire text in a single batch
+            try {
+                const responseJson = await response.json();
+                const text = responseJson.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                assistantResponseAccumulator = text;
+                postMessage({ type: 'tokenBatch', payload: { tokens: text } });
+                postMessage({ type: 'tokensDone' });
+                conversationHistory.push({ role: 'model', parts: [{ "text": assistantResponseAccumulator }] });
+                assistantResponseAccumulator = '';
+            } catch (e) {
+                taLog.error("Error parsing non-streaming response: " + e);
             }
         }
     } else if (event.data.type === 'stop') {
