@@ -34,6 +34,58 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 
+// Token batching configuration - optimized for better performance
+const TOKEN_BATCH_SIZE = 25; // Send tokens in batches of 25 characters
+const TOKEN_BATCH_DELAY = 25; // Max 25ms between batches
+const TOKEN_BATCH_TIMEOUT = 100; // Force flush after 100ms regardless of size
+let tokenBatch = '';
+let batchTimer = null;
+let timeoutTimer = null;
+let lastBatchTime = 0;
+let batchStartTime = 0;
+
+// Function to send batched tokens
+function sendTokenBatch(force = false, reason = 'unknown') {
+    if (tokenBatch && (force || tokenBatch.length >= TOKEN_BATCH_SIZE || performance.now() - lastBatchTime >= TOKEN_BATCH_DELAY)) {
+        postMessage({ type: 'tokenBatch', payload: { tokens: tokenBatch } });
+        // Reset batch state
+        tokenBatch = '';
+        lastBatchTime = performance.now();
+        batchStartTime = 0;
+        // Clear all timers
+        if (batchTimer) {
+            clearTimeout(batchTimer);
+            batchTimer = null;
+        }
+        if (timeoutTimer) {
+            clearTimeout(timeoutTimer);
+            timeoutTimer = null;
+        }
+    }
+}
+
+// Function to add token to batch
+function addTokenToBatch(token) {
+    tokenBatch += token;
+    // Set batch start time for the first token
+    if (tokenBatch.length === token.length) {
+        batchStartTime = performance.now();
+    }
+    // Send immediately if batch is full
+    if (tokenBatch.length >= TOKEN_BATCH_SIZE) {
+        sendTokenBatch(true, 'size-limit');
+    } else {
+        // Set timer to send batch if it's the first token in a new batch
+        if (tokenBatch.length === token.length && !batchTimer) {
+            batchTimer = setTimeout(() => sendTokenBatch(true, 'delay-timeout'), TOKEN_BATCH_DELAY);
+        }
+        // Set timeout-based flushing if not already set
+        if (!timeoutTimer) {
+            timeoutTimer = setTimeout(() => sendTokenBatch(true, 'timeout-flush'), TOKEN_BATCH_TIMEOUT);
+        }
+    }
+}
+
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         google_gemini_api_key = event.data.google_gemini_api_key;
@@ -70,11 +122,12 @@ self.onmessage = async function(event) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
-    
         while (true) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                // Send any remaining tokens in the batch
+                sendTokenBatch(true, 'stream-stop');
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
@@ -82,6 +135,8 @@ self.onmessage = async function(event) {
             }
             const { done, value } = await reader.read();
             if (done) {
+                // Send any remaining tokens in the batch
+                sendTokenBatch(true, 'stream-stop');
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
@@ -94,6 +149,7 @@ self.onmessage = async function(event) {
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
+            //console.log(">>>>>>>>>>>>>>> lines: " + JSON.stringify(lines));
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
@@ -106,7 +162,6 @@ self.onmessage = async function(event) {
             }catch(e){
                 taLog.error("Error parsing lines: " + e);
             }
-    
             for (const parsedLine of parsedLines) {
                 const { candidates } = parsedLine;
                 const { content } = candidates[0];
@@ -115,7 +170,8 @@ self.onmessage = async function(event) {
                 // Update the UI with the new content
                 if (text) {
                     assistantResponseAccumulator += text;
-                    postMessage({ type: 'newToken', payload: { token: text } });
+                    // Add to batch instead of sending immediately
+                    addTokenToBatch(text);
                 }
             }
         }

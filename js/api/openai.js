@@ -33,6 +33,7 @@ export class OpenAI {
     this.developer_messages = developer_messages;
     this.stream = stream;
     this.store = store;
+    this.adaptiveStreaming = true; // Enable adaptive streaming based on request size
   }
 
 
@@ -73,28 +74,34 @@ export class OpenAI {
   }
 
   fetchResponse = async (messages, maxTokens = 0) => {
-
+   
     if(this.developer_messages !== ''){
        messages.push({role: "developer", content: [{"type": "text", "text": this.developer_messages}]});
     }
 
+
     // console.log(">>>>>>>>>>> OpenAI API request: " + JSON.stringify(messages));
+    
+    // Determine if we should use streaming based on request complexity
+    const messageLength = messages.map(m => m.content).join('').length;
+    const shouldStream = this.stream && (messageLength > 500 || !this.adaptiveStreaming);
+    
+    const requestBody = { 
+        model: this.model, 
+        messages: messages,
+        stream: shouldStream,
+        store: this.store,
+        ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+    };
 
     try {
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
-          headers: { 
-              "Content-Type": "application/json", 
-              Authorization: "Bearer "+ this.apiKey
-          },
-          body: JSON.stringify({ 
-              model: this.model, 
-              messages: messages,
-              stream: this.stream,
-              store: this.store,
-              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
-          }),
+          headers: headers,
+          body: bodyString,
       });
+      
       return response;
     }catch (error) {
         console.error("[ThunderAI] OpenAI API request failed: " + error);

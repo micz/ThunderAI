@@ -34,6 +34,63 @@ let taLog = null;
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
 
+// Token batching configuration - optimized for better performance
+const TOKEN_BATCH_SIZE = 25; // Send tokens in batches of 25 characters
+const TOKEN_BATCH_DELAY = 25; // Max 25ms between batches
+const TOKEN_BATCH_TIMEOUT = 100; // Force flush after 100ms regardless of size
+let tokenBatch = '';
+let batchTimer = null;
+let timeoutTimer = null;
+let lastBatchTime = 0;
+let batchStartTime = 0;
+
+// Function to send batched tokens
+function sendTokenBatch(force = false, reason = 'unknown') {
+    if (tokenBatch && (force || tokenBatch.length >= TOKEN_BATCH_SIZE || performance.now() - lastBatchTime >= TOKEN_BATCH_DELAY)) {
+        postMessage({ type: 'tokenBatch', payload: { tokens: tokenBatch } });
+
+        // Reset batch state
+        tokenBatch = '';
+        lastBatchTime = performance.now();
+        batchStartTime = 0;
+        
+        // Clear all timers
+        if (batchTimer) {
+            clearTimeout(batchTimer);
+            batchTimer = null;
+        }
+        if (timeoutTimer) {
+            clearTimeout(timeoutTimer);
+            timeoutTimer = null;
+        }
+    }
+}
+
+// Function to add token to batch
+function addTokenToBatch(token) {
+    tokenBatch += token;
+    
+    // Set batch start time for the first token
+    if (tokenBatch.length === token.length) {
+        batchStartTime = performance.now();
+    }
+    
+    // Send immediately if batch is full
+    if (tokenBatch.length >= TOKEN_BATCH_SIZE) {
+        sendTokenBatch(true, 'size-limit');
+    } else {
+        // Set timer to send batch if it's the first token in a new batch
+        if (tokenBatch.length === token.length && !batchTimer) {
+            batchTimer = setTimeout(() => sendTokenBatch(true, 'delay-timeout'), TOKEN_BATCH_DELAY);
+        }
+        
+        // Set timeout-based flushing if not already set
+        if (!timeoutTimer) {
+            timeoutTimer = setTimeout(() => sendTokenBatch(true, 'timeout-flush'), TOKEN_BATCH_TIMEOUT);
+        }
+    }
+}
+
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         chatgpt_api_key = event.data.chatgpt_api_key;
@@ -43,9 +100,11 @@ self.onmessage = async function(event) {
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai', do_debug);
     } else if (event.data.type === 'chatMessage') {
+
         conversationHistory.push({ role: 'user', content: event.data.message });
 
-    const response = await openai.fetchResponse(conversationHistory); //4096);
+        const response = await openai.fetchResponse(conversationHistory); //4096);
+        
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
@@ -67,26 +126,61 @@ self.onmessage = async function(event) {
             throw new Error("[ThunderAI] OpenAI ChatGPT API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
+        // Check if this is a streaming or non-streaming response
+        const isStreaming = response.headers.get('content-type')?.includes('text/event-stream');
+        
+        if (!isStreaming) {
+            // Handle non-streaming response
+            try {
+                const responseData = await response.json();
+                const content = responseData.choices[0].message.content;
+                
+                conversationHistory.push({ role: 'assistant', content: content });
+                assistantResponseAccumulator = content;
+                
+                // Send the complete response as a single batch
+                postMessage({ type: 'tokenBatch', payload: { tokens: content } });
+                postMessage({ type: 'tokensDone' });
+                return;
+            } catch (error) {
+                console.error(`[ThunderAI Worker Debug] Error processing non-streaming response:`, error);
+                postMessage({ type: 'error', payload: 'Failed to process non-streaming response: ' + error.message });
+                return;
+            }
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
+        
+        console.log(`[ThunderAI Worker Debug] Starting to read stream...`);
     
         while (true) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                
+                // Send any remaining tokens in the batch
+                sendTokenBatch(true, 'stream-stop');
+                
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
                 postMessage({ type: 'tokensDone' });
                 break;
             }
             const { done, value } = await reader.read();
+            
             if (done) {
+                // Send any remaining tokens in the batch
+                sendTokenBatch(true, 'stream-stop');
+
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
+
                 postMessage({ type: 'tokensDone' });
                 break;
             }
+            
             // lots of low-level OpenAI response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
@@ -114,7 +208,9 @@ self.onmessage = async function(event) {
                 // Update the UI with the new content
                 if (content) {
                     assistantResponseAccumulator += content;
-                    postMessage({ type: 'newToken', payload: { token: content } });
+                    
+                    // Add to batch instead of sending immediately
+                    addTokenToBatch(content);
                 }
             }
         }

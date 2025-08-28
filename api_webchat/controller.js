@@ -156,6 +156,10 @@ worker.onmessage = async function(event) {
             messagesArea.handleNewToken(payload.token);
             messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
             break;
+        case 'tokenBatch':
+            messagesArea.handleTokenBatch(payload.tokens);
+            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();

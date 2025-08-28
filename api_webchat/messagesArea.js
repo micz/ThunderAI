@@ -324,6 +324,32 @@ class MessagesArea extends HTMLElement {
         }
     }
 
+    // Optimized method to handle batched tokens
+    handleTokenBatch(tokens) {
+
+        if (!this.accumulatingMessageEl) {
+            this.createNewAccumulatingMessage();
+        }
+
+        // Create a single text node instead of multiple spans for better performance
+        const batchElement = document.createElement('span');
+        batchElement.classList.add('token');
+        batchElement.textContent = tokens;
+        this.accumulatingMessageEl.appendChild(batchElement);
+
+        // Only scroll if we haven't scrolled recently (reduce scroll frequency)
+        const now = performance.now();
+        if (!this.lastScrollTime || now - this.lastScrollTime > 100) { // Max 10 scrolls per second
+            this.scrollToBottom();
+            this.lastScrollTime = now;
+        }
+
+        // Check for newlines in the batch
+        if (tokens.includes('\n')) {
+            this.flushAccumulatingMessage();
+        }
+    }
+
     scrollToBottom() {
         this.messages.scrollTop = this.messages.scrollHeight;
     }

@@ -24,6 +24,7 @@ export class GoogleGemini {
   model = '';
   system_instruction = '';
   stream = false;
+  adaptiveStreaming = true; // Smart streaming
 
   constructor(apiKey, model, system_instruction, stream) {
     this.apiKey = apiKey;
@@ -70,14 +71,14 @@ export class GoogleGemini {
   }
   
   fetchResponse = async (messages) => {
+    // Smart streaming: disabilita streaming per risposte piccole
+    const messageLength = messages.map(m => m.parts?.map(p => p.text).join('') || '').join('');
+    const shouldStream = false; ///this.stream && (messageLength > 500 || !this.adaptiveStreaming);
+    //console.log(">>>>>>>>>> Google Gemini shouldStream: " + shouldStream);
     try {
-
       let google_gemini_body = {
         contents:messages
       };
-
-      // console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
-
       if(this.system_instruction !== '') {
         google_gemini_body.system_instruction = {
           parts:{
@@ -85,10 +86,10 @@ export class GoogleGemini {
           }
         }
       }
-
+      
       // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (shouldStream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",
           headers: { 
               "Content-Type": "application/json"
