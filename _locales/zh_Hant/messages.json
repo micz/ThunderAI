@@ -788,7 +788,7 @@
         "message": "ThunderAI 選項中定義的預設簽章。"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "自動標記或快顯功能選單時強制使用現有標記"
+        "message": "強制使用現有標記"
     },
     "prefs_OptionText_add_tags_auto_Info2": {
         "message": "在此頁面底部選擇要啟動此功能的帳戶。"
@@ -1063,7 +1063,7 @@
         "message": "垃圾郵件閾值太低！您可能會將太多郵件標記為垃圾郵件！"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "如果勾選，AI 將僅對新收到的電子郵件新增現有標籤，而不會建立新標籤。"
+        "message": "如果勾選，AI 將僅新增現有標籤，而不會建立新標籤。"
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "如果在選項或提示中指定了專案，它將覆蓋自訂 GPT 設定。"
@@ -1232,5 +1232,14 @@
     },
     "prompt_reply_custom_command_full_text": {
         "message": "請回覆以下電子郵件 \"{%mail_text_body%}”。{%additional_text%}。僅回覆所需內容，不要提供任何註解或其他文字。"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "請注意，AI 回應中的任何 <br> 標籤將被替換為換行。"
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "清除模型清單"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "確定要清除模型清單嗎？這個動作無法復原。"
     }
 }
