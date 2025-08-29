@@ -30,7 +30,7 @@ export const taPromptUtils = {
         }
     },
 
-    async preparePrompt(args){ console.log(">>>>>>>>>> taPromptUtils.preparePrompt args: " + JSON.stringify(args));
+    async preparePrompt(args){
         const {
             curr_prompt = {},
             curr_message = {},

@@ -419,7 +419,7 @@ export const placeholdersUtils = {
         } = args || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
-        console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
+        // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
         for(let currPH of currPHs){
             switch(currPH.id){

@@ -1049,7 +1049,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
                 msg_text: msg_text
             });
             taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
-            console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
+            // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
             let cmd_spamfilter = new mzta_specialCommand(specialFullPrompt_spamfilter, prefs_init.connection_type, prefs_init.do_debug);
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';
