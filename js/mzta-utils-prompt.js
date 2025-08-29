@@ -59,7 +59,7 @@ export const taPromptUtils = {
             let finalSubs = await placeholdersUtils.getPlaceholdersValues({
                 prompt_text: curr_prompt.text,
                 curr_message: curr_message,
-                mail_subject:subject_text,
+                mail_subject: subject_text,
                 body_text: body_text,
                 msg_text: msg_text,
                 only_typed_text: only_typed_text,
