@@ -191,7 +191,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // we have the additional_text placeholder, do the magic!
                         let finalSubs = {};
                         finalSubs["additional_text"] = userInput;
-                        promptData.prompt = placeholdersUtils.replacePlaceholders(promptData.prompt, finalSubs, ph_def_val==='1')
+                        promptData.prompt = placeholdersUtils.replacePlaceholders({
+                            text: promptData.prompt,
+                            replacements: finalSubs,
+                            use_default_value: ph_def_val==='1'
+                        })
                     }
                     sendPrompt(promptData);
                 }

@@ -30,7 +30,21 @@ export const taPromptUtils = {
         }
     },
 
-    async preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, subject_text, msg_text, only_typed_text, only_quoted_text, tags_full_list){
+    async preparePrompt(args){ console.log(">>>>>>>>>> taPromptUtils.preparePrompt args: " + JSON.stringify(args));
+        const {
+            curr_prompt = {},
+            curr_message = {},
+            chatgpt_lang = '',
+            selection_text = '',
+            selection_html = '',
+            body_text = '',
+            subject_text = '',
+            msg_text = {},
+            only_typed_text = '',
+            only_quoted_text = '',
+            tags_full_list = ["", []]
+        } = args || {};
+
         let fullPrompt = '';
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
@@ -42,10 +56,25 @@ export const taPromptUtils = {
             if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
                 curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
             }
-            let finalSubs = await placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list);
-            // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
+            let finalSubs = await placeholdersUtils.getPlaceholdersValues({
+                prompt_text: curr_prompt.text,
+                curr_message: curr_message,
+                mail_subject:subject_text,
+                body_text: body_text,
+                msg_text: msg_text,
+                only_typed_text: only_typed_text,
+                only_quoted_text: only_quoted_text,
+                selection_text: selection_text,
+                selection_html: selection_html,
+                tags_full_list: tags_full_list
+            });
             let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-            fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
+            fullPrompt = (placeholdersUtils.replacePlaceholders({
+                text: curr_prompt.text,
+                replacements: finalSubs,
+                use_default_value: prefs_ph.placeholders_use_default_value,
+                skip_additional_text: true
+            }) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
         }
 
         return fullPrompt;

@@ -337,19 +337,25 @@ export const placeholdersUtils = {
         return matches;
     },
 
-    replacePlaceholders(text, replacements, use_default_value = false, skip_additional_text = false) {
+    replacePlaceholders(args) {
+        const {
+            text = "",
+            replacements = {},
+            use_default_value = false,
+            skip_additional_text = false
+        } = args || {};
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
-          // p1 contains the key inside {% %}
-          if (skip_additional_text && (p1 === 'additional_text')) {
-            return match;
-          }
-          const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
-          if (!currPlaceholder) {
-            return match;
-          }
-          // Replace if found, otherwise keep the original or substitute with default value
-          return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
+            // p1 contains the key inside {% %}
+            if (skip_additional_text && (p1 === 'additional_text')) {
+                return match;
+            }
+            const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
+            if (!currPlaceholder) {
+                return match;
+            }
+            // Replace if found, otherwise keep the original or substitute with default value
+            return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
         });
     },
 
@@ -398,9 +404,22 @@ export const placeholdersUtils = {
         return regex.test(text);
     },
 
-    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list) {
+    async getPlaceholdersValues(args) {
+        const {
+            prompt_text = "",
+            curr_message = {},
+            mail_subject = "",
+            body_text = "",
+            msg_text = {},
+            only_typed_text = "",
+            only_quoted_text = "",
+            selection_text = "",
+            selection_html = "",
+            tags_full_list = ["", []]
+        } = args || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
+        console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
         for(let currPH of currPHs){
             switch(currPH.id){
