@@ -7,6 +7,7 @@
 <h2>Version 3.7.0 - ??/??/2025</h2>
       <ul>
         <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.6.1 - 23/08/2025</h2>
