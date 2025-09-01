@@ -477,6 +477,12 @@ function sanitizeString(input) {
   return sanitized;
 }
 
+export function normalizeStringList(list) {
+  let _array_new = list.split(/[\n,]+/);
+  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
+  return _array_new.join('\n');
+}
+
 function generateHexColorForTag() {
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);
