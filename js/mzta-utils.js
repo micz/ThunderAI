@@ -477,10 +477,11 @@ function sanitizeString(input) {
   return sanitized;
 }
 
-export function normalizeStringList(list) {
+export function normalizeStringList(list, returnArray = false) {
   let _array_new = list.split(/[\n,]+/);
   _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
-  return _array_new.join('\n');
+  if(!returnArray) return _array_new.join('\n');
+  return _array_new;
 }
 
 function generateHexColorForTag() {
