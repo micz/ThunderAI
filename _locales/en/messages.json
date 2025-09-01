@@ -1139,6 +1139,10 @@
     "message": "The list must contain at least one tag. The tags must be separated by a comma.",
     "description": ""
   },
+  "prompt_add_tags_use_list": {
+    "message": "Use only these tags, that are comma separated in the list",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_auto_only_inbox": {
     "message": "Only add tags to inbox emails",
     "description": ""

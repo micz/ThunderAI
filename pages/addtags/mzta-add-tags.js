@@ -100,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('add_tags_maxnum').addEventListener('change', updateAdditionalPromptStatements);
     document.getElementById('add_tags_force_lang').addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_auto_uselist').addEventListener('change', updateAdditionalPromptStatements);
+    document.getElementById('add_tags_auto_uselist_list').addEventListener('change', updateAdditionalPromptStatements);
 
     updateAdditionalPromptStatements();
 
@@ -124,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     excl_list_save_btn.addEventListener('click', () => {
-        let excl_array_new = normalizeStringList(excl_list_textarea.value, true);
+        let excl_array_new = normalizeStringList(excl_list_textarea.value, 2);
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
         excl_list_textarea.value = excl_array_new.join('\n');
@@ -189,19 +191,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 async function updateAdditionalPromptStatements(){
-    let prefs_ = await browser.storage.sync.get({add_tags_maxnum: 3, add_tags_force_lang: true, default_chatgpt_lang: ''});
+    let prefs_ = await browser.storage.sync.get({
+      add_tags_maxnum: prefs_default.add_tags_maxnum,
+      add_tags_force_lang: prefs_default.add_tags_force_lang,
+      default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+      add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
+      add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
+    });
     let el_tag_limit = document.getElementById('addtags_info_additional_statements');
-    if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')){
+    if((prefs_.add_tags_maxnum > 0)||(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== '')||(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== '')){
         el_tag_limit.textContent = browser.i18n.getMessage("addtags_info_additional_statements") + " \""
         if(prefs_.add_tags_maxnum > 0){
-          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +"."
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + prefs_.add_tags_maxnum +". "
         }
         if(prefs_.add_tags_force_lang && prefs_.default_chatgpt_lang !== ''){
-          if(prefs_.add_tags_maxnum > 0){
-            el_tag_limit.textContent += " "
-          }
-          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + "."
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + prefs_.default_chatgpt_lang + ". "
         }
+        if(prefs_.add_tags_auto_uselist && prefs_.add_tags_auto_uselist_list.trim() !== ''){
+          el_tag_limit.textContent += browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + prefs_.add_tags_auto_uselist_list + ".";
+        }
+        el_tag_limit.textContent = el_tag_limit.textContent.trim();
         el_tag_limit.textContent += "\".";
         el_tag_limit.style.display = 'block';
     }else{
@@ -263,6 +272,9 @@ async function restoreOptions() {
         case 'password':
           let default_text_value = '';
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
+          if(element.id === 'add_tags_auto_uselist_list') {
+            result[element.id] = normalizeStringList(result[element.id], 1);
+          }
           element.value = result[element.id] || default_text_value;
           break;
         default:

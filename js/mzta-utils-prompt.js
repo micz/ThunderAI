@@ -80,12 +80,15 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
         if(add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
+        }
+        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+            fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + " " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
