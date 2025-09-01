@@ -22,7 +22,7 @@ import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-import { getAccountsList } from "../../js/mzta-utils.js";
+import { getAccountsList, normalizeStringList } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
@@ -124,8 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     excl_list_save_btn.addEventListener('click', () => {
-        let excl_array_new = excl_list_textarea.value.split(/[\n,]+/);
-        excl_array_new = Array.from(new Set(excl_array_new.map(item => item.trim().toLowerCase()))).sort();
+        let excl_array_new = normalizeStringList(excl_list_textarea.value, true);
         addTags_setExclusionList(excl_array_new);
         excl_list_save_btn.disabled = true;
         excl_list_textarea.value = excl_array_new.join('\n');
@@ -233,6 +232,9 @@ function saveOptions(e) {
         options[element.id] = element.value;
         break;
       case 'textarea':
+        if(element.id === 'add_tags_auto_uselist_list') {
+          element.value = normalizeStringList(element.value);
+        }
         options[element.id] = element.value.trim();
         break;
       default:
