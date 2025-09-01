@@ -17,8 +17,14 @@
     margin: 40px auto;
 }
 
-#addtags_excl_list{
+#addtags_excl_list, #add_tags_auto_uselist_list{
     width: 30em;
+}
+
+#add_tags_auto_uselist_list:disabled {
+    background-color: #eee;
+    color: #888;
+    cursor: not-allowed;
 }
 
 #account_selector_container{
@@ -37,13 +43,17 @@
     background-color: #e9ffdf;
 }
 
+tr.add_tags_auto_sub td{
+    padding-left: 0.8em !important;
+}
+
 .btn_div{
     width: 100%;
     display: flex;
     justify-content: space-between;
 }
 
-#addtags_info_additional_statements, #add_tags_auto_only_inbox_tr{
+#addtags_info_additional_statements, #add_tags_auto_only_inbox_tr, #add_tags_auto_uselist_tr{
     display: none;
 }
 

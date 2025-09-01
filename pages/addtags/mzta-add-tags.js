@@ -57,14 +57,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
     let account_selector_container = document.getElementById('account_selector_container');
     let add_tags_auto_infoline = document.getElementById('add_tags_auto_infoline');
+    let add_tags_auto_uselist_tr = document.getElementById('add_tags_auto_uselist_tr');
     add_tags_auto_el.addEventListener('click', (event) => {
       add_tags_auto_only_inbox_tr.style.display = event.target.checked ? 'table-row' : 'none';
       account_selector_container.style.display = event.target.checked ? 'block' : 'none';
       add_tags_auto_infoline.style.display = event.target.checked ? 'inline' : 'none';
+      add_tags_auto_uselist_tr.style.display = event.target.checked ? 'table-row' : 'none';
+
     });
     add_tags_auto_only_inbox_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
     account_selector_container.style.display = add_tags_auto_el.checked ? 'block' : 'none';
     add_tags_auto_infoline.style.display = add_tags_auto_el.checked ? 'inline' : 'none';
+    add_tags_auto_uselist_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
+
+    let add_tags_auto_uselist = document.getElementById('add_tags_auto_uselist');
+    let add_tags_auto_uselist_list = document.getElementById('add_tags_auto_uselist_list');
+    add_tags_auto_uselist.addEventListener('click', (event) => {
+      add_tags_auto_uselist_list.disabled = !event.target.checked;
+    });
+    add_tags_auto_uselist_list.disabled = !add_tags_auto_uselist.checked;
 
     addtags_reset_btn.addEventListener('click', () => {
         addtags_textarea.value = browser.i18n.getMessage('prompt_add_tags_full_text');
@@ -221,6 +232,9 @@ function saveOptions(e) {
       case 'select-one':
         options[element.id] = element.value;
         break;
+      case 'textarea':
+        options[element.id] = element.value.trim();
+        break;
       default:
         console.error("[ThunderAI] Unhandled input type:", element.type);
     }
@@ -243,6 +257,7 @@ async function restoreOptions() {
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
+        case 'textarea':
         case 'password':
           let default_text_value = '';
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;

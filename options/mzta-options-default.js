@@ -62,6 +62,8 @@ export const prefs_default = {
     add_tags_auto: false,
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
+    add_tags_auto_uselist: false,
+    add_tags_auto_uselist_list: '',
     add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
     get_calendar_event: true,
