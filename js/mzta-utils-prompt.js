@@ -126,7 +126,7 @@ export const taPromptUtils = {
      * For backwords compatibility, if the response text is not a valid JSON,
      * it will try to split the text by commas and return the resulting array.
      */
-    getTagsFromResponse(response_text){
+    getTagsFromResponse(response_text, filter_tags = false, filter_tags_list = ''){
         let tags = [];
         if(response_text && response_text.length > 0){
             try {
@@ -142,6 +142,10 @@ export const taPromptUtils = {
                 // If parsing fails, fallback to splitting by commas
                 tags = response_text.split(/,\s*/).map(tag => tag.trim());
             }
+        }
+        if(filter_tags && filter_tags_list && filter_tags_list.length > 0){
+            const allowedTags = filter_tags_list.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+            tags = tags.filter(tag => allowedTags.includes(tag.toLowerCase()));
         }
         return tags;
     }

@@ -973,6 +973,8 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
         add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
         add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
+        add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
+        add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
         spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
     });
 
@@ -1020,7 +1022,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             await cmd_addTags.initWorker();
             let tags_current_email = [];
             try {
-                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             } catch (err) {
                 console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
             }
