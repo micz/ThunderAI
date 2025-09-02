@@ -1009,7 +1009,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
-                curr_message: curr_message,
+                curr_message: message,
                 chatgpt_lang: chatgpt_lang,
                 body_text: body_text,
                 subject_text: curr_fullMessage.headers.subject,
