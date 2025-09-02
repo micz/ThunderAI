@@ -1144,7 +1144,7 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
-    "message": "Only add tags to inbox emails",
+    "message": "Only add tags to emails in the inbox",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {
