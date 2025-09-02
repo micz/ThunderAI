@@ -364,35 +364,6 @@ export function generateCallID(length = 10) {
   return result;
 }
 
-export function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
-  const selectEl = document.getElementById(selectId);
-  if (!selectEl) return;
-
-  const prevValue = selectEl.value;
-
-  const options = [
-    { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-    { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-    { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-    { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-    { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-    { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-  ];
-
-  selectEl.innerHTML = '';
-
-  for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
-    const optionEl = document.createElement('option');
-    optionEl.value = opt.value;
-    optionEl.textContent = browser.i18n.getMessage(opt.msgKey) || opt.msgKey;
-    selectEl.appendChild(optionEl);
-  }
-
-  if (options.some(o => o.value === prevValue)) {
-    selectEl.value = prevValue;
-  }
-}
-
 export async function getTagsList(){
   let messageTags = [];
   if(await isThunderbird128OrGreater()) {
