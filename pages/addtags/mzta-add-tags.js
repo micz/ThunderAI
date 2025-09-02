@@ -23,17 +23,18 @@ import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
 import { getAccountsList, normalizeStringList, isAPIKeyValue } from "../../js/mzta-utils.js";
-import { injectConnectionUI } from "../_lib/connection-ui.js";
+import { injectConnectionUI, updateWarnings } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-      injectConnectionUI({
+      await injectConnectionUI({
         afterTrId: 'connection_ui_anchor',
         selectId: 'add_tags_connection_type',
-        no_chatgpt_web: true
+        no_chatgpt_web: true,
+        taLog: taLog
       });
     } catch (e) {
       console.error('Failed to inject connection UI (add-tags)', e);
@@ -195,6 +196,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       let checkboxes = document.querySelectorAll('.accountCheckbox');
       checkboxes.forEach(checkbox => checkbox.checked = false);
     });
+
+    updateWarnings();
 
 });
 

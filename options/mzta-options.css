@@ -110,11 +110,6 @@ div#miczTranslate{
     background: #bbf7f1;
 }
 
-textarea.option-textarea{
-    width: -moz-available;
-    height: 10em;
-}
-
 #owl_warning{
     display: none;
 }

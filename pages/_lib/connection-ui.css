@@ -32,6 +32,11 @@ tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
     font-style: italic;
 }
 
+textarea.option-textarea{
+    width: -moz-available;
+    height: 10em;
+}
+
 .api_key-container {
     position: relative;
     width: 100%;

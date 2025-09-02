@@ -1,20 +1,41 @@
-// connection-ui.js
-// Public API:
-//   injectConnectionUI({ afterTrId, groupId?, selectId?, defaultType?, idSuffix?, onTypeChange? })
-//
-// All variable names and comments are in English.
-// It generates the connection type UI rows and handles basic show/hide behavior.
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+import { OpenAI } from '../../js/api/openai.js';
+import { Ollama } from '../../js/api/ollama.js';
+import { OpenAIComp } from '../../js/api/openai_comp.js'
+import { GoogleGemini } from '../../js/api/google_gemini.js';
+import { Anthropic } from '../../js/api/anthropic.js';
+import { validateCustomData_ChatGPTWeb, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from '../../js/mzta-utils.js';
+import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 
 export const varConnectionUI = {
   permission_all_urls: false
 }
 
-export function injectConnectionUI({
+export async function injectConnectionUI({
     afterTrId = '',
     selectId = '',
     no_chatgpt_web = false,
     defaultType = '',
     tr_class = '',
+    taLog = console
   } = {}) {
 
   const anchorTr = document.getElementById(afterTrId);
@@ -396,192 +417,416 @@ export function injectConnectionUI({
   });
 
   // Bindings
-  const bindClick = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('click', cb); };
-  const bindChange = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('change', cb); };
-  const bindInput = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('input', cb); };
+  // const bindClick = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('click', cb); };
+  // const bindChange = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('change', cb); };
+  // const bindInput = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('input', cb); };
 
   populateConnectionTypeOptions(selectId, no_chatgpt_web);
 
-  let selectEl = document.getElementById(selectId);
+  let conntype_select = document.getElementById(selectId);
 
-  if (!selectEl) {
+  if (!conntype_select) {
     console.error('[ThuderAI | injectConnectionUI] Select not found after insertion.');
   }
 
-  const bindPasswordToggle = (idBase) => {
-    const input = document.getElementById(idBase);
-    const toggler = document.getElementById(`toggle_\${idBase}`);
-    const icon = document.getElementById(`pwd-icon_\${idBase}`);
-    if (!input || !toggler) return;
-    toggler.addEventListener('click', () => {
-      input.type = input.type === 'password' ? 'text' : 'password';
-      if (icon) icon.src = input.type === 'password' ? '/images/pwd-show.png' : '/images/pwd-hide.png';
-    });
-  };
+  conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select));
+  conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
+  conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
+  conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  conntype_select.addEventListener("change", warn_Anthropic_APIKeyEmpty);
+  conntype_select.addEventListener("change", warn_Anthropic_VersionEmpty);
+  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
+  document.getElementById("chatgpt_api_key").addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+  document.getElementById("ollama_host").addEventListener("change", warn_Ollama_HostEmpty);
+  document.getElementById("openai_comp_host").addEventListener("change", warn_OpenAIComp_HostEmpty);
+  document.getElementById("google_gemini_api_key").addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+  document.getElementById("anthropic_api_key").addEventListener("change", warn_Anthropic_APIKeyEmpty);
+  document.getElementById("anthropic_version").addEventListener("change", warn_Anthropic_VersionEmpty);
+  document.getElementById("openai_comp_host").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById("openai_comp_chat_name").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById("openai_comp_use_v1").addEventListener("input", resetOpenAICompConfigs);
 
-  bindPasswordToggle('chatgpt_api_key');
-  bindPasswordToggle('google_gemini_api_key');
-  bindPasswordToggle('openai_comp_api_key');
-  bindPasswordToggle('anthropic_api_key');
+  showConnectionOptions(conntype_select);
+  loadOpenAICompConfigs();
+  warn_ChatGPT_APIKeyEmpty();
+  warn_Ollama_HostEmpty();
+  warn_OpenAIComp_HostEmpty();
+  warn_GoogleGemini_APIKeyEmpty();
+  warn_Anthropic_APIKeyEmpty();
+  warn_Anthropic_VersionEmpty();
 
-  // Live warnings and enable/disable logic
-  const applyLiveWarnings = () => {
-    // ChatGPT API
-    const chatgptKey = document.getElementById('chatgpt_api_key');
-    const btnChatGPT = document.getElementById('btnUpdateChatGPTModels');
-    const selChatGPT = document.getElementById('chatgpt_model');
-    if (chatgptKey && btnChatGPT && selChatGPT) {
-      const empty = !chatgptKey.value;
-      chatgptKey.style.border = empty ? '2px solid red' : '';
-      btnChatGPT.disabled = !!empty;
-      selChatGPT.disabled = !!empty;
-      if (!empty) {
-        selChatGPT.style.border = (!selChatGPT.value || selChatGPT.selectedIndex === -1) ? '2px solid red' : '';
-      } else {
-        selChatGPT.style.border = '';
+  const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
+  const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
+  const icon_img_chatgpt_api_key = document.getElementById('pwd-icon_chatgpt_api_key');
+
+  toggleIcon_chatgpt_api_key.addEventListener('click', () => {
+      const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_chatgpt_api_key.setAttribute('type', type);
+
+      icon_img_chatgpt_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  const passwordField_google_gemini_api_key = document.getElementById('google_gemini_api_key');
+  const toggleIcon_google_gemini_api_key = document.getElementById('toggle_google_gemini_api_key');
+  const icon_img_google_gemini_api_key = document.getElementById('pwd-icon_google_gemini_api_key');
+
+  toggleIcon_google_gemini_api_key.addEventListener('click', () => {
+      const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_google_gemini_api_key.setAttribute('type', type);
+
+      icon_img_google_gemini_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  const passwordField_openai_comp_api_key = document.getElementById('openai_comp_api_key');
+  const toggleIcon_openai_comp_api_key = document.getElementById('toggle_openai_comp_api_key');
+  const icon_img_openai_comp_api_key = document.getElementById('pwd-icon_openai_comp_api_key');
+
+  toggleIcon_openai_comp_api_key.addEventListener('click', () => {
+      const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_openai_comp_api_key.setAttribute('type', type);
+
+      icon_img_openai_comp_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  const passwordField_anthropic_api_key = document.getElementById('anthropic_api_key');
+  const toggleIcon_anthropic_api_key = document.getElementById('toggle_anthropic_api_key');
+  const icon_img_anthropic_api_key = document.getElementById('pwd-icon_anthropic_api_key');
+
+  toggleIcon_anthropic_api_key.addEventListener('click', () => {
+      const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordField_anthropic_api_key.setAttribute('type', type);
+
+      icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
+  });
+
+  const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
+  btnChatGPTWeb_Tab.addEventListener('click', async () => {
+    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: prefs_default.chatgpt_web_model, chatgpt_web_project: prefs_default.chatgpt_web_project, chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt});
+    
+    let base_url = 'https://chatgpt.com';
+    let model_opt = '';
+    let webproject_set = false;
+    
+    if((prefs_mod.chatgpt_web_model != '') && (prefs_mod.chatgpt_web_model != undefined)){
+      model_opt = '?model=' + sanitizeChatGPTModelData(prefs_mod.chatgpt_web_model);
+    }
+    if((prefs_mod.chatgpt_web_project != '') && (prefs_mod.chatgpt_web_project != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_project);
+      webproject_set = true;
+    }
+    if(!webproject_set && (prefs_mod.chatgpt_web_custom_gpt != '') && (prefs_mod.chatgpt_web_custom_gpt != undefined)){
+      base_url += sanitizeChatGPTWebCustomData(prefs_mod.chatgpt_web_custom_gpt);
+    }
+    browser.tabs.create({ url: base_url + model_opt });
+  });
+
+  let select_openai_comp_services_shortcut = document.getElementById('openai_comp_services_shortcut');
+  select_openai_comp_services_shortcut.addEventListener("change", () => {
+    let selectedOption = select_openai_comp_services_shortcut.options[select_openai_comp_services_shortcut.selectedIndex];
+    const config = openAICompConfigs.find(cfg => cfg.id === selectedOption.value);
+    if (config) {
+      if (!confirm(browser.i18n.getMessage('OpenAIComp_Configs_ConfirmApply', config.name))) {
+        return;
       }
-    }
-
-    // Google Gemini API
-    const geminiKey = document.getElementById('google_gemini_api_key');
-    const btnGemini = document.getElementById('btnUpdateGoogleGeminiModels');
-    const selGemini = document.getElementById('google_gemini_model');
-    if (geminiKey && btnGemini && selGemini) {
-      const empty = !geminiKey.value;
-      geminiKey.style.border = empty ? '2px solid red' : '';
-      btnGemini.disabled = !!empty;
-      selGemini.disabled = !!empty;
-      if (!empty) {
-        selGemini.style.border = (!selGemini.value || selGemini.selectedIndex === -1) ? '2px solid red' : '';
-      } else {
-        selGemini.style.border = '';
+      document.getElementById('openai_comp_host').value = config.host || '';
+      // Clear all options from the select except the first (placeholder) one
+      const openaiCompModelSelect = document.getElementById('openai_comp_model');
+      openaiCompModelSelect.value = '';
+      while (openaiCompModelSelect.options.length > 0) {
+        openaiCompModelSelect.remove(0);
       }
+      document.getElementById('openai_comp_use_v1').checked = !!config.use_v1;
+      document.getElementById('openai_comp_chat_name').value = config.chat_name || '';
+      // Trigger change events if needed
+      document.getElementById('openai_comp_host').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_model').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_use_v1').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('openai_comp_chat_name').dispatchEvent(new Event('change', { bubbles: true }));
     }
+  });
 
-    // Ollama API
-    const ollamaHost = document.getElementById('ollama_host');
-    const btnOllama = document.getElementById('btnUpdateOllamaModels');
-    const selOllama = document.getElementById('ollama_model');
-    if (ollamaHost && btnOllama && selOllama) {
-      const empty = !ollamaHost.value;
-      ollamaHost.style.border = empty ? '2px solid red' : '';
-      btnOllama.disabled = !!empty;
-      selOllama.disabled = !!empty;
-      if (!empty) {
-        selOllama.style.border = (!selOllama.value || selOllama.selectedIndex === -1) ? '2px solid red' : '';
-      } else {
-        selOllama.style.border = '';
-      }
-    }
-
-    // OpenAI-Compatible API
-    const openaiCompHost = document.getElementById('openai_comp_host');
-    const btnOpenAIComp = document.getElementById('btnUpdateOpenAICompModels');
-    const selOpenAIComp = document.getElementById('openai_comp_model');
-    if (openaiCompHost && btnOpenAIComp && selOpenAIComp) {
-      const empty = !openaiCompHost.value;
-      openaiCompHost.style.border = empty ? '2px solid red' : '';
-      btnOpenAIComp.disabled = !!empty;
-      selOpenAIComp.disabled = !!empty;
-      if (!empty) {
-        selOpenAIComp.style.border = (!selOpenAIComp.value || selOpenAIComp.selectedIndex === -1) ? '2px solid red' : '';
-      } else {
-        selOpenAIComp.style.border = '';
-      }
-    }
-
-    // Anthropic API
-    const anthropicKey = document.getElementById('anthropic_api_key');
-    const btnAnthropic = document.getElementById('btnUpdateAnthropicModels');
-    const selAnthropic = document.getElementById('anthropic_model');
-    const anthropicVersion = document.getElementById('anthropic_version');
-    if (anthropicKey && selAnthropic) {
-      const emptyKey = !anthropicKey.value;
-      anthropicKey.style.border = emptyKey ? '2px solid red' : '';
-      if (btnAnthropic) btnAnthropic.disabled = !!emptyKey;
-      if (selAnthropic) selAnthropic.disabled = !!emptyKey;
-      if (!emptyKey && selAnthropic) {
-        selAnthropic.style.border = (!selAnthropic.value || selAnthropic.selectedIndex === -1) ? '2px solid red' : '';
-      } else if (selAnthropic) {
-        selAnthropic.style.border = '';
-      }
-    }
-    if (anthropicVersion) {
-      const emptyVer = !anthropicVersion.value;
-      anthropicVersion.style.border = emptyVer ? '2px solid red' : '';
-    }
-  };
-
-  // Bind inputs to live warnings
-  bindInput('chatgpt_api_key', applyLiveWarnings);
-  bindInput('google_gemini_api_key', applyLiveWarnings);
-  bindInput('ollama_host', applyLiveWarnings);
-  bindInput('openai_comp_host', applyLiveWarnings);
-  bindInput('anthropic_api_key', applyLiveWarnings);
-  bindInput('anthropic_version', applyLiveWarnings);
-
-  bindChange('chatgpt_model', applyLiveWarnings);
-  bindChange('google_gemini_model', applyLiveWarnings);
-  bindChange('ollama_model', applyLiveWarnings);
-  bindChange('openai_comp_model', applyLiveWarnings);
-  bindChange('anthropic_model', applyLiveWarnings);
-
-  // Run once on init
-  applyLiveWarnings();
-
-
-  // Bind button clicks to provided callbacks (page-specific logic stays outside)
-  // bindClick('btnChatGPTWeb_Tab', onOpenChatGPTWebTab);
-  // bindClick('btnUpdateChatGPTModels', onFetchChatGPTModels);
-  // bindClick('btnUpdateGoogleGeminiModels', onFetchGoogleGeminiModels);
-  // bindClick('btnUpdateOllamaModels', onFetchOllamaModels);
-  // bindClick('btnUpdateOpenAICompModels', onFetchOpenAICompModels);
-  // bindClick('btnOpenAICompForceModel', onOpenAICompForceModel);
-  // bindClick('btnOpenAICompClearModelsList', onOpenAICompClearModelsList);
-  // bindClick('btnUpdateAnthropicModels', onFetchAnthropicModels);
-  // bindClick('btnGiveAllUrlsPermission_ollama_api', onGiveAllUrlsPermissionOllama);
-  // bindClick('btnGiveAllUrlsPermission_openai_comp_api', onGiveAllUrlsPermissionOpenAIComp);
-
-  selectEl.addEventListener("change", () => showConnectionOptions(selectEl));
-
-  showConnectionOptions(selectEl);
+  let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', anthropic_model: '', anthropic_version: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
+  // OpenAI API ChatGPT model fetching
+  let select_chatgpt_model = document.getElementById('chatgpt_model');
+  const chatgpt_option = document.createElement('option');
+  chatgpt_option.value = prefs.chatgpt_model;
+  chatgpt_option.text = prefs.chatgpt_model;
+  select_chatgpt_model.appendChild(chatgpt_option);
+  select_chatgpt_model.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
+
+  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
+    document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
+    let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, '', true);
+    openai.fetchModels().then((data) => {
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      taLog.log("ChatGPT models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        if (!Array.from(select_chatgpt_model.options).some(option => option.value === model.id)) {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.text = model.id;
+          select_chatgpt_model.appendChild(option);
+        }
+      });
+      document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+    });
+    
+    warn_ChatGPT_APIKeyEmpty();
+  });
+
+  // Google Gemini API model fetching
+  let select_google_gemini_model = document.getElementById('google_gemini_model');
+  const google_gemini_option = document.createElement('option');
+  google_gemini_option.value = prefs.google_gemini_model;
+  google_gemini_option.text = prefs.google_gemini_model;
+  select_google_gemini_model.appendChild(google_gemini_option);
+  select_google_gemini_model.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
+
+  document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
+    document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
+    let google_gemini = new GoogleGemini(document.getElementById("google_gemini_api_key").value, '', true);
+    google_gemini.fetchModels().then((data) => {
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      taLog.log("GoogleGemini models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        if (!Array.from(select_google_gemini_model.options).some(option => option.value === model.name.substring(model.name.lastIndexOf("/") + 1))) {
+          const option = document.createElement('option');
+          option.value = model.name.substring(model.name.lastIndexOf("/") + 1);
+          option.text = model.displayName;
+          select_google_gemini_model.appendChild(option);
+        }
+      });
+      document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+    });
+    
+    warn_GoogleGemini_APIKeyEmpty();
+  });
+
+  // Ollama API Model fetching
+  let select_ollama_model = document.getElementById('ollama_model');
+  const ollama_option = document.createElement('option');
+  ollama_option.value = prefs.ollama_model;
+  ollama_option.text = prefs.ollama_model;
+  select_ollama_model.appendChild(ollama_option);
+  select_ollama_model.addEventListener("change", warn_Ollama_HostEmpty);
+
+  document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
+    document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
+    let ollama = new Ollama(document.getElementById("ollama_host").value, true);
+    try {
+      let data = await ollama.fetchModels();
+      if(!data){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        return;
+      }
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      if(data.response.models.length == 0){
+        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
+        return;
+      }
+      taLog.log("Ollama models: " + JSON.stringify(data));
+      data.response.models.forEach(model => {
+        if (!Array.from(select_ollama_model.options).some(option => option.value === model.model)) {
+          const option = document.createElement('option');
+          option.value = model.model;
+          option.text = model.name + " (" + model.model + ")";
+          select_ollama_model.appendChild(option);
+        }
+      });
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+    } catch (error) {
+      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
+      alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
+    }
+    
+    warn_Ollama_HostEmpty();
+  });
+
+  // OpenAI Comp API Model fetching
+  let select_openai_comp_model = document.getElementById('openai_comp_model');
+  const openai_comp_option = document.createElement('option');
+  openai_comp_option.value = prefs.openai_comp_model;
+  openai_comp_option.text = prefs.openai_comp_model;
+  select_openai_comp_model.appendChild(openai_comp_option);
+  select_openai_comp_model.addEventListener("change", warn_OpenAIComp_HostEmpty);
+
+  document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
+    document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
+    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true, document.getElementById("openai_comp_use_v1").checked);
+    openai_comp.fetchModels().then((data) => {
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      taLog.log("OpenAIComp models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        if (!Array.from(select_openai_comp_model.options).some(option => option.value === model.id)) {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.text = model.id;
+          select_openai_comp_model.appendChild(option);
+        }
+      });
+      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+    });
+    
+    warn_OpenAIComp_HostEmpty();
+  });
+
+   // Anthropic API model fetching
+  let select_anthropic_model = document.getElementById('anthropic_model');
+  const anthropic_option = document.createElement('option');
+  anthropic_option.value = prefs.anthropic_model;
+  anthropic_option.text = prefs.anthropic_model;
+  select_anthropic_model.appendChild(anthropic_option);
+  select_anthropic_model.addEventListener("change", warn_Anthropic_APIKeyEmpty);
+  select_anthropic_model.addEventListener("change", warn_Anthropic_VersionEmpty);
+
+  document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
+    document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
+    let anthropic = new Anthropic(document.getElementById("anthropic_api_key").value, document.getElementById("anthropic_version").value, '');
+    anthropic.fetchModels().then((data) => {
+      if(!data.ok){
+        let errorDetail;
+        try {
+          errorDetail = JSON.parse(data.error);
+          errorDetail = errorDetail.error.message;
+        } catch (e) {
+          errorDetail = data.error;
+        }
+        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
+        alert(browser.i18n.getMessage("Anthropic_Models_Error_fetching")+": " + errorDetail);
+        return;
+      }
+      taLog.log("Anthropic models: " + JSON.stringify(data));
+      data.response.forEach(model => {
+        const existingOption = Array.from(select_anthropic_model.options).find(option => option.value === model.id);
+        if (existingOption) {
+          existingOption.text = model.display_name + " (" + model.id + ")";
+        } else {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.text = model.display_name + " (" + model.id + ")";
+          select_anthropic_model.appendChild(option);
+        }
+      });
+      document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+    });
+    
+    warn_Anthropic_APIKeyEmpty();
+  });
+
+    document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
+      let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
+      if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
+        let select_openai_comp_model = document.getElementById('openai_comp_model');
+        let option = document.createElement('option');
+        option.value = modelName;
+        option.text = modelName;
+        select_openai_comp_model.appendChild(option);
+        select_openai_comp_model.value = modelName;
+        select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  
+    document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
+      if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
+        return;
+      }
+      let select_openai_comp_model = document.getElementById('openai_comp_model');
+      while (select_openai_comp_model.options.length > 0) {
+        select_openai_comp_model.remove(0);
+      }
+      select_openai_comp_model.value = '';
+      select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  
+    document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
+      permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+    });
+  
+    document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
+      permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+    });
+  
+  warn_ChatGPT_APIKeyEmpty();
+  warn_Ollama_HostEmpty();
+  warn_OpenAIComp_HostEmpty();
+  warn_GoogleGemini_APIKeyEmpty();
+  warn_Anthropic_APIKeyEmpty();
+  warn_Anthropic_VersionEmpty();
+
   return {
-    select: selectEl,
-    onTypeChange: (fn) => { onTypeChange = fn; fn(selectEl.value, { select: selectEl }); }
+    select: conntype_select,
+    onTypeChange: (fn) => { onTypeChange = fn; fn(conntype_select.value, { select: conntype_select }); }
   };
 }
 
 
-function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
-  const selectEl = document.getElementById(selectId);
-  if (!selectEl) return;
+// From here there are exported functions
 
-  const prevValue = selectEl.value;
-
-  const options = [
-    { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-    { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-    { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-    { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-    { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-    { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-  ];
-
-  selectEl.innerHTML = '';
-
-  for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
-    const optionEl = document.createElement('option');
-    optionEl.value = opt.value;
-    optionEl.textContent = browser.i18n.getMessage(opt.msgKey) || opt.msgKey;
-    selectEl.appendChild(optionEl);
-  }
-
-  if (options.some(o => o.value === prevValue)) {
-    selectEl.value = prevValue;
-  }
+export function updateWarnings() {
+  warn_ChatGPT_APIKeyEmpty();
+  warn_Ollama_HostEmpty();
+  warn_OpenAIComp_HostEmpty();
+  warn_GoogleGemini_APIKeyEmpty();
+  warn_Anthropic_APIKeyEmpty();
+  warn_Anthropic_VersionEmpty();
 }
-
 
 export function showConnectionOptions(conntype_select) {
   let chatgpt_web_display = 'table-row';
@@ -649,4 +894,183 @@ export function showConnectionOptions(conntype_select) {
     document.getElementById('openai_comp_api_cors_warning').style.display = 'none';
     document.getElementById('ollama_api_cors_warning').style.display = 'none';
   }
+}
+
+
+// From here there are internal functions
+
+function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
+  const conntype_select = document.getElementById(selectId);
+  if (!conntype_select) return;
+
+  const prevValue = conntype_select.value;
+
+  const options = [
+    { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
+    { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
+    { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
+    { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
+    { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
+    { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
+  ];
+
+  conntype_select.innerHTML = '';
+
+  for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
+    const optionEl = document.createElement('option');
+    optionEl.value = opt.value;
+    optionEl.textContent = browser.i18n.getMessage(opt.msgKey) || opt.msgKey;
+    conntype_select.appendChild(optionEl);
+  }
+
+  if (options.some(o => o.value === prevValue)) {
+    conntype_select.value = prevValue;
+  }
+}
+
+function warn_ChatGPT_APIKeyEmpty() {
+  let apiKeyInput = document.getElementById('chatgpt_api_key');
+  let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
+  let modelChatGPT = document.getElementById('chatgpt_model');
+  if(apiKeyInput.value === ''){
+    apiKeyInput.style.border = '2px solid red';
+    btnFetchChatGPTModels.disabled = true;
+    modelChatGPT.disabled = true;
+    modelChatGPT.selectedIndex = -1;
+    modelChatGPT.style.border = '';
+  }else{
+    apiKeyInput.style.border = '';
+    btnFetchChatGPTModels.disabled = false;
+    modelChatGPT.disabled = false;
+    if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
+      modelChatGPT.style.border = '2px solid red';
+    }else{
+      modelChatGPT.style.border = '';
+    }
+  }
+}
+
+function warn_GoogleGemini_APIKeyEmpty() {
+  let apiKeyInput = document.getElementById('google_gemini_api_key');
+  let btnFetchGoogleGeminiModels = document.getElementById('btnUpdateGoogleGeminiModels');
+  let modelGoogleGemini = document.getElementById('google_gemini_model');
+  if(apiKeyInput.value === ''){
+    apiKeyInput.style.border = '2px solid red';
+    btnFetchGoogleGeminiModels.disabled = true;
+    modelGoogleGemini.disabled = true;
+    modelGoogleGemini.selectedIndex = -1;
+    modelGoogleGemini.style.border = '';
+  }else{
+    apiKeyInput.style.border = '';
+    btnFetchGoogleGeminiModels.disabled = false;
+    modelGoogleGemini.disabled = false;
+    if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
+      modelGoogleGemini.style.border = '2px solid red';
+    }else{
+      modelGoogleGemini.style.border = '';
+    }
+  }
+}
+
+function warn_Ollama_HostEmpty() {
+  let hostInput = document.getElementById('ollama_host');
+  let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
+  let modelOllama = document.getElementById('ollama_model');
+  if(hostInput.value === ''){
+    hostInput.style.border = '2px solid red';
+    btnFetchOllamaModels.disabled = true;
+    modelOllama.disabled = true;
+    modelOllama.selectedIndex = -1;
+    modelOllama.style.border = '';
+  }else{
+    hostInput.style.border = '';
+    btnFetchOllamaModels.disabled = false;
+    modelOllama.disabled = false;
+    if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
+      modelOllama.style.border = '2px solid red';
+    }else{
+      modelOllama.style.border = '';
+    }
+  }
+}
+
+function warn_OpenAIComp_HostEmpty() {
+  let hostInput = document.getElementById('openai_comp_host');
+  let btnUpdateOpenAICompModels = document.getElementById('btnUpdateOpenAICompModels');
+  let modelOpenAIComp = document.getElementById('openai_comp_model');
+  if(hostInput.value === ''){
+    hostInput.style.border = '2px solid red';
+    btnUpdateOpenAICompModels.disabled = true;
+    modelOpenAIComp.disabled = true;
+    modelOpenAIComp.selectedIndex = -1;
+    modelOpenAIComp.style.border = '';
+  }else{
+    hostInput.style.border = '';
+    btnUpdateOpenAICompModels.disabled = false;
+    modelOpenAIComp.disabled = false;
+    if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
+      modelOpenAIComp.style.border = '2px solid red';
+    }else{
+      modelOpenAIComp.style.border = '';
+    }
+  }
+}
+
+function warn_Anthropic_APIKeyEmpty() {
+  let apiKeyInput = document.getElementById('anthropic_api_key');
+  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  let modelAnthropic = document.getElementById('anthropic_model');
+  if(apiKeyInput.value === ''){
+    apiKeyInput.style.border = '2px solid red';
+    btnFetchAnthropicModels.disabled = true;
+    modelAnthropic.disabled = true;
+    modelAnthropic.selectedIndex = -1;
+    modelAnthropic.style.border = '';
+  }else{
+    apiKeyInput.style.border = '';
+    btnFetchAnthropicModels.disabled = false;
+    modelAnthropic.disabled = false;
+    if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
+      modelAnthropic.style.border = '2px solid red';
+    }else{
+      modelAnthropic.style.border = '';
+    }
+  }
+}
+
+function warn_Anthropic_VersionEmpty() {
+  let versionInput = document.getElementById('anthropic_version');
+  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  let modelAnthropic = document.getElementById('anthropic_model');
+  if(versionInput.value === ''){
+    versionInput.style.border = '2px solid red';
+    btnFetchAnthropicModels.disabled = true;
+    modelAnthropic.disabled = true;
+    modelAnthropic.selectedIndex = -1;
+    modelAnthropic.style.border = '';
+  }else{
+    versionInput.style.border = '';
+    btnFetchAnthropicModels.disabled = false;
+    modelAnthropic.disabled = false;
+    if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
+      modelAnthropic.style.border = '2px solid red';
+    }else{
+      modelAnthropic.style.border = '';
+    }
+  }
+}
+
+function resetOpenAICompConfigs(){
+  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+  select_openai_comp_model.value = 'custom';
+}
+
+function loadOpenAICompConfigs(){
+  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+  openAICompConfigs.forEach(config => {
+    const option = document.createElement('option');
+    option.value = config.id;
+    option.text = config.name;
+    select_openai_comp_model.appendChild(option);
+  });
 }
