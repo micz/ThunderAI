@@ -1132,11 +1132,11 @@
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_uselist_Info": {
-    "message": "If checked, the AI will add only tags from the list below. The list must contain comma separated list of allowed tags.",
+    "message": "If checked, the AI will add only tags from the list below.",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_uselist_list_Info": {
-    "message": "The list must contain at least one tag. The tags must be separated by a comma.",
+    "message": "The list must contain at least one tag. Add a tag per line, or separated by a comma.",
     "description": ""
   },
   "prompt_add_tags_use_list": {
