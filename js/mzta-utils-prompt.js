@@ -80,12 +80,15 @@ export const taPromptUtils = {
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
         if(add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
+        }
+        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+            fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + " " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
@@ -126,7 +129,7 @@ export const taPromptUtils = {
      * For backwords compatibility, if the response text is not a valid JSON,
      * it will try to split the text by commas and return the resulting array.
      */
-    getTagsFromResponse(response_text){
+    getTagsFromResponse(response_text, filter_tags = false, filter_tags_list = ''){
         let tags = [];
         if(response_text && response_text.length > 0){
             try {
@@ -142,6 +145,10 @@ export const taPromptUtils = {
                 // If parsing fails, fallback to splitting by commas
                 tags = response_text.split(/,\s*/).map(tag => tag.trim());
             }
+        }
+        if(filter_tags && filter_tags_list && filter_tags_list.length > 0){
+            const allowedTags = filter_tags_list.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+            tags = tags.filter(tag => allowedTags.includes(tag.toLowerCase()));
         }
         return tags;
     }

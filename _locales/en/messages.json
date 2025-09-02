@@ -1127,8 +1127,24 @@
     "message": "If checked, the AI will add only existing tags and won't create new tags.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_auto_uselist": {
+    "message": "Use only these tags",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_uselist_Info": {
+    "message": "If checked, the AI will add only tags from the list below.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+    "message": "The list must contain at least one tag. Add a tag per line, or separated by a comma.",
+    "description": ""
+  },
+  "prompt_add_tags_use_list": {
+    "message": "Use only these tags, that are comma separated in the list",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_auto_only_inbox": {
-    "message": "Only add tags to inbox emails",
+    "message": "Only add tags to emails in the inbox",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {

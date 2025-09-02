@@ -477,6 +477,26 @@ function sanitizeString(input) {
   return sanitized;
 }
 
+/* returnType:
+  0: string comma separated (default)
+  1: string \n separated
+  2: array
+*/
+export function normalizeStringList(list, returnType = 0) {
+  let _array_new = list.split(/[\n,]+/);
+  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
+  switch(returnType) {
+    case 0:
+      return _array_new.join(', ');
+    case 1:
+      return _array_new.join('\n');
+    case 2:
+      return _array_new;
+    default:
+      return _array_new.join(', ');
+  }
+}
+
 function generateHexColorForTag() {
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);

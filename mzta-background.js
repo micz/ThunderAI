@@ -973,6 +973,8 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
         add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
         add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
+        add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
+        add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
         spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
     });
 
@@ -1007,20 +1009,20 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
-                curr_message: curr_message,
+                curr_message: message,
                 chatgpt_lang: chatgpt_lang,
                 body_text: body_text,
                 subject_text: curr_fullMessage.headers.subject,
                 msg_text: msg_text,
                 tags_full_list: tags_full_list
             });
-            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang);
+            specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, prefs_aats.connection_type, prefs_init.do_debug);
             await cmd_addTags.initWorker();
             let tags_current_email = [];
             try {
-                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
+                tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             } catch (err) {
                 console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
             }
