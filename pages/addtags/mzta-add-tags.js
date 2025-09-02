@@ -22,15 +22,23 @@ import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-import { getAccountsList, normalizeStringList, populateConnectionTypeOptions } from "../../js/mzta-utils.js";
+import { getAccountsList, normalizeStringList, isAPIKeyValue } from "../../js/mzta-utils.js";
+import { injectConnectionUI } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
-
+    try {
+      injectConnectionUI({
+        afterTrId: 'connection_ui_anchor',
+        selectId: 'add_tags_connection_type',
+        no_chatgpt_web: true
+      });
+    } catch (e) {
+      console.error('Failed to inject connection UI (add-tags)', e);
+    }
     i18n.updateDocument();
-    populateConnectionTypeOptions('add_tags_connection_type', true);
     await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {
@@ -257,7 +265,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;

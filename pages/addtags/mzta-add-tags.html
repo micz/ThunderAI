@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>ThunderAI - __MSG_AddTags_PageTitle__</title>
     <link rel="stylesheet" href="mzta-add-tags.css">
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
     <link rel="icon" href="../../images/icon-16px.png">
 </head>
 <body>
@@ -23,15 +24,7 @@
               </label>
             </td>
           </tr>
-          <tr class="add_tags_tr specific_integration specific_integration_sub">
-            <td><span>__MSG_prefs_Connection_type__</span>
-            </td>
-            <td>
-              <label>
-                <select id="add_tags_connection_type" name="add_tags_connection_type" class="option-input"></select>
-              </label>
-            </td>
-          </tr>
+          <tr id="connection_ui_anchor"></tr>
           <tr class="add_tags_tr">
             <td><span>__MSG_prefs_OptionText_add_tags_maxnum__</span></td>
             <td>

@@ -23,12 +23,12 @@ import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
 import { Anthropic } from '../js/api/anthropic.js';
-import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, populateConnectionTypeOptions } from '../js/mzta-utils.js';
+import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, isAPIKeyValue } from '../js/mzta-utils.js';
 import { openAICompConfigs } from '../js/api/openai_comp_configs.js';
+import { injectConnectionUI, varConnectionUI, showConnectionOptions } from '../pages/_lib/connection-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
-let permission_all_urls = false;
 
 function saveOptions(e) {
   e.preventDefault();
@@ -70,7 +70,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" || element.id=="google_gemini_api_key" || element.id=="anthropic_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -107,79 +107,6 @@ async function restoreOptions() {
 
   let getting = await browser.storage.sync.get(prefs_default);
   setCurrentChoice(getting);
-}
-
-function showConnectionOptions() {
-  disable_MaxPromptLength();
-  disable_AddTags();
-  disable_SpamFilter();
-  disable_GetCalendarEvent();
-  let chatgpt_web_display = 'table-row';
-  let chatgpt_api_display = 'none';
-  let ollama_api_display = 'none';
-  let openai_comp_api_display = 'none';
-  let google_gemini_api_display = 'none';
-  let anthropic_api_display = 'none';
-  let conntype_select = document.getElementById("connection_type");
-  let parent = conntype_select.parentElement.parentElement.parentElement;
-  parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
-  parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
-  parent.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
-  parent.classList.toggle("conntype_openai_comp_api", (conntype_select.value === "openai_comp_api"));
-  parent.classList.toggle("conntype_google_gemini_api", (conntype_select.value === "google_gemini_api"));
-  parent.classList.toggle("conntype_anthropic_api", (conntype_select.value === "anthropic_api"));
-  if (conntype_select.value === "chatgpt_web") {
-    chatgpt_web_display = 'table-row';
-  }else{
-    chatgpt_web_display = 'none';
-  }
-  if (conntype_select.value === "chatgpt_api") {
-    chatgpt_api_display = 'table-row';
-  }else{
-    chatgpt_api_display = 'none';
-  }
-  if (conntype_select.value === "ollama_api") {
-    ollama_api_display = 'table-row';
-  }else{
-    ollama_api_display = 'none';
-  }
-  if (conntype_select.value === "openai_comp_api") {
-    openai_comp_api_display = 'table-row';
-  }else{
-    openai_comp_api_display = 'none';
-  }
-  if (conntype_select.value === "google_gemini_api") {
-    google_gemini_api_display = 'table-row';
-  }else{
-    google_gemini_api_display = 'none';
-  }
-  if (conntype_select.value === "anthropic_api") {
-    anthropic_api_display = 'table-row';
-  }else{
-    anthropic_api_display = 'none';
-  }
-  document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
-    element.style.display = chatgpt_web_display;
-  });
-  document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
-    element.style.display = chatgpt_api_display;
-  });
-  document.querySelectorAll(".conntype_ollama_api").forEach(element => {
-    element.style.display = ollama_api_display;
-  });
-  document.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
-    element.style.display = openai_comp_api_display;
-  });
-  document.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
-    element.style.display = google_gemini_api_display;
-  });
-  document.querySelectorAll(".conntype_anthropic_api").forEach(element => {
-    element.style.display = anthropic_api_display;
-  });
-  if (permission_all_urls) {
-    document.getElementById('openai_comp_api_cors_warning').style.display = 'none';
-    document.getElementById('ollama_api_cors_warning').style.display = 'none';
-  }
 }
 
 function warn_ChatGPT_APIKeyEmpty() {
@@ -405,10 +332,10 @@ function resetMaxPromptLength(){
 }  
 
 document.addEventListener('DOMContentLoaded', async () => {
-  populateConnectionTypeOptions('connection_type');
+  injectConnectionUI({ afterTrId: 'connection_ui_anchor', selectId: 'connection_type' });
   await restoreOptions();
 
-  permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
+  varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
 
   _isThunderbird128OrGreater = await isThunderbird128OrGreater();
 
@@ -503,38 +430,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/get-task/mzta-get-task.html');
   });
 
-  document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
-    let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
-    if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
-      let select_openai_comp_model = document.getElementById('openai_comp_model');
-      let option = document.createElement('option');
-      option.value = modelName;
-      option.text = modelName;
-      select_openai_comp_model.appendChild(option);
-      select_openai_comp_model.value = modelName;
-      select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  });
+  // document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
+  //   let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
+  //   if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
+  //     let select_openai_comp_model = document.getElementById('openai_comp_model');
+  //     let option = document.createElement('option');
+  //     option.value = modelName;
+  //     option.text = modelName;
+  //     select_openai_comp_model.appendChild(option);
+  //     select_openai_comp_model.value = modelName;
+  //     select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
+  //   }
+  // });
 
-  document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
-    if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
-      return;
-    }
-    let select_openai_comp_model = document.getElementById('openai_comp_model');
-    while (select_openai_comp_model.options.length > 0) {
-      select_openai_comp_model.remove(0);
-    }
-    select_openai_comp_model.value = '';
-    select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
-  });
+  // document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
+  //   if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
+  //     return;
+  //   }
+  //   let select_openai_comp_model = document.getElementById('openai_comp_model');
+  //   while (select_openai_comp_model.options.length > 0) {
+  //     select_openai_comp_model.remove(0);
+  //   }
+  //   select_openai_comp_model.value = '';
+  //   select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
+  // });
 
-  document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
-    permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
-  });
+  // document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
+  //   permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+  // });
 
-  document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
-    permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
-  });
+  // document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
+  //   permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+  // });
 
   getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
   document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
@@ -546,13 +473,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   let conntype_select = document.getElementById("connection_type");
-  conntype_select.addEventListener("change", showConnectionOptions);
   conntype_select.addEventListener("change", warn_ChatGPT_APIKeyEmpty);
   conntype_select.addEventListener("change", warn_Ollama_HostEmpty);
   conntype_select.addEventListener("change", warn_OpenAIComp_HostEmpty);
   conntype_select.addEventListener("change", warn_GoogleGemini_APIKeyEmpty);
   conntype_select.addEventListener("change", warn_Anthropic_APIKeyEmpty);
   conntype_select.addEventListener("change", warn_Anthropic_VersionEmpty);
+  conntype_select.addEventListener("change", disable_MaxPromptLength);
   conntype_select.addEventListener("change", disable_AddTags);
   conntype_select.addEventListener("change", disable_SpamFilter);
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
@@ -568,7 +495,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById("openai_comp_chat_name").addEventListener("input", resetOpenAICompConfigs);
   document.getElementById("openai_comp_use_v1").addEventListener("input", resetOpenAICompConfigs);
   
-
+  showConnectionOptions(conntype_select);
+  disable_MaxPromptLength();
+  disable_AddTags();
+  disable_SpamFilter();
+  disable_GetCalendarEvent();
+  
   let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', anthropic_model: '', anthropic_version: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
   
   // OpenAI API ChatGPT model fetching
@@ -793,14 +725,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     warn_Anthropic_APIKeyEmpty();
   });
 
-  showConnectionOptions();
   warn_ChatGPT_APIKeyEmpty();
   warn_Ollama_HostEmpty();
   warn_OpenAIComp_HostEmpty();
   warn_GoogleGemini_APIKeyEmpty();
   warn_Anthropic_APIKeyEmpty();
   warn_Anthropic_VersionEmpty();
-  disable_MaxPromptLength();
   disable_AddTags();
   disable_SpamFilter();
   disable_GetCalendarEvent();

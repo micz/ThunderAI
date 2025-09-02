@@ -104,40 +104,6 @@ div#miczTranslate{
     font-size:smaller;
 }
 
-tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
-    background-color: rgb(185, 220, 252);
-}
-
-tr.conntype_chatgpt_web, tr.conntype_chatgpt_web2{
-    background-color: rgb(255, 209, 183);
-}
-
-tr.conntype_ollama_api, tr.conntype_ollama_api2{
-    background-color: rgb(177, 238, 169);
-}
-
-tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
-    background-color: rgb(213, 169, 238);
-}
-
-tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
-    background-color: rgb(233, 238, 169);
-}
-
-tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
-    background-color: rgb(255, 168, 204);
-}
-
-#chatgpt_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#google_gemini_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
 #no_sparks td{
     text-align: center;
     padding: 1em !important;
@@ -147,48 +113,6 @@ tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
 textarea.option-textarea{
     width: -moz-available;
     height: 10em;
-}
-
-.api_key-container {
-    position: relative;
-    width: 100%;
-}
-
-.api_key-container input {
-    width: -moz-available;
-    margin-right: 25px;
-}
-
-input[type="text"], input[type="password"]{
-    border-radius: 4px;
-    padding: 2px;
-}
-
-input.option-input[type="text"]{
-    width: -moz-available;
-}
-
-.api_key-container .toggle-icon {
-    position: absolute;
-    right: 0px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-}
-
-#ollama_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#openai_comp_model_fetch_loading{
-    display: none;
-    font-style: italic;
-}
-
-#anthropic_model_fetch_loading{
-    display: none;
-    font-style: italic;
 }
 
 #owl_warning{
@@ -233,10 +157,6 @@ input.option-input[type="text"]{
 
 #mzta_top_msg div a:hover{
     color: #FF6600;
-}
-
-.conntype_chatgpt_web_option{
-    cursor: pointer;
 }
 
 .btn_small{
