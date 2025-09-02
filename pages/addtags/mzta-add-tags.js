@@ -242,9 +242,9 @@ function saveOptions(e) {
         break;
       case 'textarea':
         if(element.id === 'add_tags_auto_uselist_list') {
-          element.value = normalizeStringList(element.value);
+          element.value = normalizeStringList(element.value, 1);
         }
-        options[element.id] = element.value.trim();
+        options[element.id] = normalizeStringList(element.value);
         break;
       default:
         console.error("[ThunderAI] Unhandled input type:", element.type);
