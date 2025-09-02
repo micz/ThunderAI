@@ -23,7 +23,7 @@ import { Ollama } from '../js/api/ollama.js';
 import { OpenAIComp } from '../js/api/openai_comp.js'
 import { GoogleGemini } from '../js/api/google_gemini.js';
 import { Anthropic } from '../js/api/anthropic.js';
-import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML } from '../js/mzta-utils.js';
+import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, populateConnectionTypeOptions } from '../js/mzta-utils.js';
 import { openAICompConfigs } from '../js/api/openai_comp_configs.js';
 
 let taLog = new taLogger("mzta-options",true);
@@ -405,6 +405,7 @@ function resetMaxPromptLength(){
 }  
 
 document.addEventListener('DOMContentLoaded', async () => {
+  populateConnectionTypeOptions('connection_type');
   await restoreOptions();
 
   permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
