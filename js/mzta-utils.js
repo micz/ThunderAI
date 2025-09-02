@@ -364,7 +364,7 @@ export function generateCallID(length = 10) {
   return result;
 }
 
-export function populateConnectionTypeOptions(selectId) {
+export function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
   const selectEl = document.getElementById(selectId);
   if (!selectEl) return;
 
@@ -381,7 +381,7 @@ export function populateConnectionTypeOptions(selectId) {
 
   selectEl.innerHTML = '';
 
-  for (const opt of options) {
+  for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     const optionEl = document.createElement('option');
     optionEl.value = opt.value;
     optionEl.textContent = browser.i18n.getMessage(opt.msgKey) || opt.msgKey;

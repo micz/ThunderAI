@@ -22,7 +22,7 @@ import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-import { getAccountsList, normalizeStringList } from "../../js/mzta-utils.js";
+import { getAccountsList, normalizeStringList, populateConnectionTypeOptions } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
@@ -30,6 +30,7 @@ let taLog = new taLogger("mzta-addtags-page",true);
 document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
+    populateConnectionTypeOptions('add_tags_connection_type', true);
     await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {

@@ -43,7 +43,12 @@
     background-color: #e9ffdf;
 }
 
-tr.add_tags_auto_sub td{
+.specific_integration{
+    background-color: #dfeaff;
+}
+
+tr.add_tags_auto_sub td,
+tr.specific_integration_sub td{
     padding-left: 0.8em !important;
 }
 
@@ -158,5 +163,9 @@ table#miczPrefs  tr:last-child td {
 
     .add_tags_auto{
         background-color: #415c35;
+    }
+
+    .specific_integration{
+        background-color: #2E3A4F;
     }
 }

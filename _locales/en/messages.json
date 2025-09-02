@@ -1151,6 +1151,14 @@
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_use_specific_integration": {
+    "message": "Use specific Model and API",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
+    "description": ""
+  },
   "placeholder_thunderai_def_sign": {
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""

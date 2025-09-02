@@ -66,6 +66,8 @@ export const prefs_default = {
     add_tags_auto_uselist_list: '',
     add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
+    add_tags_use_specific_integration: false,
+    add_tags_connection_type: '',
     get_calendar_event: true,
     get_task: true,
     calendar_enforce_timezone: false,
