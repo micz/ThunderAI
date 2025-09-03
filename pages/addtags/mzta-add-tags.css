@@ -52,6 +52,10 @@ tr.specific_integration_sub td{
     padding-left: 0.8em !important;
 }
 
+.specific_integration_sub{
+    display: none;
+}
+
 .btn_div{
     width: 100%;
     display: flex;

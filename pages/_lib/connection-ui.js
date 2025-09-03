@@ -45,7 +45,7 @@ export async function injectConnectionUI({
   }
 
   let tpl = `
-  <tr${tr_class ? ` class="${tr_class}"` : ''}>
+  <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_Connection_type__</span>
@@ -828,6 +828,15 @@ export function updateWarnings() {
   warn_Anthropic_VersionEmpty();
 }
 
+export function changeConnTypeRowColor(conntype_row, conntype_select) {
+  conntype_row.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
+  conntype_row.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
+  conntype_row.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
+  conntype_row.classList.toggle("conntype_openai_comp_api", (conntype_select.value === "openai_comp_api"));
+  conntype_row.classList.toggle("conntype_google_gemini_api", (conntype_select.value === "google_gemini_api"));
+  conntype_row.classList.toggle("conntype_anthropic_api", (conntype_select.value === "anthropic_api"));  
+}
+
 export function showConnectionOptions(conntype_select) {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
@@ -836,12 +845,7 @@ export function showConnectionOptions(conntype_select) {
   let google_gemini_api_display = 'none';
   let anthropic_api_display = 'none';
   let parent = conntype_select.parentElement.parentElement.parentElement;
-  parent.classList.toggle("conntype_chatgpt_web", (conntype_select.value === "chatgpt_web"));
-  parent.classList.toggle("conntype_chatgpt_api", (conntype_select.value === "chatgpt_api"));
-  parent.classList.toggle("conntype_ollama_api", (conntype_select.value === "ollama_api"));
-  parent.classList.toggle("conntype_openai_comp_api", (conntype_select.value === "openai_comp_api"));
-  parent.classList.toggle("conntype_google_gemini_api", (conntype_select.value === "google_gemini_api"));
-  parent.classList.toggle("conntype_anthropic_api", (conntype_select.value === "anthropic_api"));
+  changeConnTypeRowColor(parent, conntype_select);
   if (conntype_select.value === "chatgpt_web") {
     chatgpt_web_display = 'table-row';
   }else{

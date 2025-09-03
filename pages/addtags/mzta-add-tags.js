@@ -23,16 +23,18 @@ import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
 import { getAccountsList, normalizeStringList, isAPIKeyValue } from "../../js/mzta-utils.js";
-import { injectConnectionUI, updateWarnings } from "../_lib/connection-ui.js";
+import { injectConnectionUI, updateWarnings, changeConnTypeRowColor } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
+let conntype_select_id = 'add_tags_connection_type';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
       await injectConnectionUI({
         afterTrId: 'connection_ui_anchor',
-        selectId: 'add_tags_connection_type',
+        tr_class: 'specific_integration_sub',
+        selectId: conntype_select_id,
         no_chatgpt_web: true,
         taLog: taLog
       });
@@ -45,6 +47,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
+
+    let conntype_el = document.getElementById(conntype_select_id);
+    let add_tags_use_specific_integration_el = document.getElementById('add_tags_use_specific_integration');
+    let conntype_row = document.getElementById(conntype_select_id + '_tr');
+    add_tags_use_specific_integration_el.addEventListener('change', (event) => {
+      console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+        tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      conntype_el.style.display = event.target.checked ? 'table-row' : 'none';
+      changeConnTypeRowColor(conntype_row, conntype_el);
+    });
+
+    console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+    document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+        tr.style.display = add_tags_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+    document.getElementById(conntype_select_id + '_tr').style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
+    changeConnTypeRowColor(conntype_row, conntype_el);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
