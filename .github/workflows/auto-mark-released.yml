@@ -64,7 +64,7 @@ jobs:
                   owner,
                   repo,
                   name: releasedLabel,
-                  color: '184738', // deep green from your palette
+                  color: '184738', // deep green
                   description: 'Feature released.'
                 });
               } else {
@@ -84,3 +84,34 @@ jobs:
             });
 
             core.info(`Issue #${issue.number} relabeled as "${releasedLabel}".`);
+
+            // === NEW: add release comment with milestone if present ===
+            const milestone = issue.milestone;
+            if (!milestone || !milestone.title) {
+              core.info('Issue has no milestone; no release comment added.');
+              return;
+            }
+
+            const commentBody = `Released in version ${milestone.title}.`;
+
+            // Avoid duplicate comment if the action reruns
+            const existingComments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: issue.number, per_page: 100 }
+            );
+
+            const alreadyCommented = existingComments.some(c =>
+              typeof c.body === 'string' && c.body.trim() === commentBody
+            );
+
+            if (alreadyCommented) {
+              core.info('Release comment already present; skipping comment creation.');
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: commentBody
+              });
+              core.info('Release comment added.');
+            }
