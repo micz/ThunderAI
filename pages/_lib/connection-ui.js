@@ -45,7 +45,7 @@ export async function injectConnectionUI({
   }
 
   let tpl = `
-  <tr ${tr_class}>
+  <tr${tr_class ? ` class="${tr_class}"` : ''}>
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_Connection_type__</span>
@@ -57,7 +57,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_apiwebchat_info__</span>
     </label></td>
@@ -67,7 +67,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
       <br><table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list"></tr></table>
@@ -79,7 +79,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
       <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/PROJECT-ID-PROJECT-NAME/project</b>
@@ -92,7 +92,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</span>
       <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/CUSTOM-GPT-ID</b>
@@ -106,7 +106,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
@@ -119,13 +119,13 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td colspan="2" style="padding:0px 2em;text-align:center;"><span>__MSG_OpenChatGPTTab_Info__</span>
         <br><br><button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
         <br><br>__MSG_OpenChatGPTTab_Info2__
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ChatGPT_API_Key__</span>
     </label></td>
@@ -138,7 +138,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_Models__</span>
@@ -151,7 +151,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
@@ -164,7 +164,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
@@ -177,7 +177,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_GoogleGemini_API_Key__</span>
     </label></td>
@@ -190,7 +190,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_GoogleGemini_Models__</span>
@@ -203,7 +203,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_GoogleGemini_SystemInstruction__</span>
@@ -216,7 +216,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_API_Host__</span>
       <br><i class="small_info">__MSG_prefs_API_Host_Info__ http://127.0.0.1:11434</i>
@@ -227,7 +227,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api" id="ollama_api_cors_warning">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="ollama_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
@@ -235,7 +235,7 @@ export async function injectConnectionUI({
         <br><br><button id="btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
-  <tr class="conntype_ollama_api">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Ollama_Models__</span>
@@ -248,7 +248,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_think__</span>
     </label></td>
@@ -259,7 +259,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
     </label></td>
@@ -270,7 +270,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_AvailableServices__</span>
     </label></td>
@@ -281,7 +281,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_API_Host__</span>
       <br><i class="small_info">__MSG_prefs_API_Host_Info__ http://localhost:1234</i>
@@ -293,7 +293,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api" id="openai_comp_api_cors_warning">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="openai_comp_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
@@ -301,7 +301,7 @@ export async function injectConnectionUI({
         <br><br><button id="btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_openai_comp_use_v1__</span>
     </label></td>
@@ -312,7 +312,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_API_Key__</span>
       <br><i class="small_info">__MSG_Optional__</i>
@@ -326,7 +326,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_OpenAIComp_Models__</span>
@@ -341,7 +341,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_ChatName__</span>
     </label></td>
@@ -352,7 +352,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_Anthropic_API_Key__</span>
     </label></td>
@@ -365,7 +365,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_Models__</span>
@@ -378,7 +378,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_Version__</span>
@@ -391,7 +391,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
       <label>
