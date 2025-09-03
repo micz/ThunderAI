@@ -81,4 +81,11 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
+    spamfilter_use_specific_integration: false,
+    spamfilter_connection_type: '',
+    spamfilter_chatgpt_model: '',
+    spamfilter_ollama_model: '',
+    spamfilter_openai_comp_model: '',
+    spamfilter_google_gemini_model: '',
+    spamfilter_anthropic_model: '',
 }
