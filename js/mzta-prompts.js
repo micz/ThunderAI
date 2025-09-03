@@ -348,7 +348,7 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSp
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
     let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
-    if(includeSpecial.length == 0){
+    if((includeSpecial.length == 0) && !allSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
         // console.log(">>>>>>>>>> getPrompts includeSpecial: " + JSON.stringify(includeSpecial));
@@ -543,8 +543,9 @@ export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
 }
 
-export function loadPrompt(id) {
-    let allPrompts = getPrompts(false,[],true);
+export async function loadPrompt(id) {
+    let allPrompts = await getPrompts(false,[],true);
+    // console.log(">>>>>>>>>>>> loadPrompt id: " + id + " - allPrompts: " + JSON.stringify(allPrompts));
     return allPrompts.find(prompt => prompt.id === id);
 }
 
