@@ -72,6 +72,12 @@
     ChatGPT Web Custom GPT (chatgpt_web_custom_gpt attribute):
     <custom_gpt>: custom gpt id url
 
+    API Connection Type
+    <api_type>: api type
+
+    API Model
+    <api_model>: api model
+
 */
 
 const defaultPrompts = [
@@ -89,6 +95,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -106,6 +114,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -123,6 +133,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -140,6 +152,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -157,6 +171,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -174,6 +190,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -191,6 +209,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -208,6 +228,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -225,6 +247,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -242,6 +266,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -259,6 +285,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -273,6 +301,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -287,6 +317,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -301,6 +333,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -432,6 +466,12 @@ async function getCustomPrompts() {
             }
             if(prompt.chatgpt_web_custom_gpt === undefined){
                 prompt.chatgpt_web_custom_gpt = "";
+            }
+            if(prompt.api_type === undefined){
+                prompt.api_type = "";
+            }
+            if(prompt.api_model === undefined){
+                prompt.api_model = "";
             }
         });
         return prefs._custom_prompt;
