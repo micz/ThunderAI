@@ -28,6 +28,7 @@ import { injectConnectionUI, updateWarnings, changeConnTypeRowColor } from "../_
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
 let conntype_select_id = 'add_tags_connection_type';
+let model_prefix = 'add_tags_';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         afterTrId: 'connection_ui_anchor',
         tr_class: 'specific_integration_sub',
         selectId: conntype_select_id,
+        modelId_prefix: model_prefix,
         no_chatgpt_web: true,
         taLog: taLog
       });
@@ -218,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       checkboxes.forEach(checkbox => checkbox.checked = false);
     });
 
-    updateWarnings();
+    updateWarnings(model_prefix);
 
 });
 
