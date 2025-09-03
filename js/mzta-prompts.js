@@ -436,6 +436,11 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
+                prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
+                prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
+                prompt.chatgpt_web_custom_gpt = prefs._default_prompts_properties[prompt.id].chatgpt_web_custom_gpt;
+                prompt.api_type = prefs._default_prompts_properties[prompt.id].api_type;
+                prompt.api_model = prefs._default_prompts_properties[prompt.id].api_model;
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -481,7 +486,17 @@ async function getCustomPrompts() {
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled, need_custom_text: prompt.need_custom_text};
+        default_prompts_properties[prompt.id] = {
+            position_compose: prompt.position_compose,
+            position_display: prompt.position_display,
+            enabled: prompt.enabled,
+            need_custom_text: prompt.need_custom_text,
+            chatgpt_web_model: prompt.chatgpt_web_model,
+            chatgpt_web_project: prompt.chatgpt_web_project,
+            chatgpt_web_custom_gpt: prompt.chatgpt_web_custom_gpt,
+            api_type: prompt.api_type,
+            api_model: prompt.api_model
+        };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
@@ -526,4 +541,43 @@ export async function setSpecialPrompts(prompts) {
 
 export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
+}
+
+export async function savePrompt(prompt) {
+    // console.log(">>>>>>>>>>>>> savePrompt prompt: " + JSON.stringify(prompt));
+    if (prompt.id === undefined) {
+        throw new Error("Invalid prompt: " + JSON.stringify(prompt));
+    }
+    // Special Prompt
+    if (prompt.is_special === "1") {
+        let specialPrompts = await getSpecialPrompts();
+        let index = specialPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            specialPrompts.push(prompt);
+        } else {
+            specialPrompts[index] = prompt;
+        }
+        await setSpecialPrompts(specialPrompts);
+        return;
+    }
+    // Custom Prompt
+    if (prompt.is_default === "0") {
+        let customPrompts = await getCustomPrompts();
+        let index = customPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            customPrompts.push(prompt);
+        } else {
+            customPrompts[index] = prompt;
+        }
+        await setCustomPrompts(customPrompts);
+    } else {       // Default Prompt
+        let defaultPrompts = getDefaultPrompts_withProps();
+        let index = defaultPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            defaultPrompts.push(prompt);
+        } else {
+            defaultPrompts[index] = prompt;
+        }
+        await setDefaultPromptsProperties(defaultPrompts);
+    }
 }
