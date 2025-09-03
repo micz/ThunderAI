@@ -590,6 +590,14 @@ export function isAPIKeyValue(id){
   return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
 }
 
+export function getConnectionType(conntype, prompt) {
+  if (prompt?.api != null && prompt.api !== '') {
+    return prompt.api;
+  } else {
+    return conntype;
+  }
+}
+
 export async function checkSparksPresence() {
   try {
     let sparks_current = await browser.runtime.sendMessage('thunderai-sparks@micz.it',{action: "checkPresence"});
