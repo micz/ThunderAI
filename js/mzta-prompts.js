@@ -341,7 +341,7 @@ const specialPrompts = [
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = []){ // includeSpecial is an array of active special prompts ids
+export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
@@ -352,7 +352,7 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = []){ // i
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
         // console.log(">>>>>>>>>> getPrompts includeSpecial: " + JSON.stringify(includeSpecial));
-        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1);
+        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1 || allSpecial);
         // output = output.filter(obj => {
         //     const isIncluded = includeSpecial.includes(obj.id);
         //     const isNotSpecial = obj.is_special != 1;
@@ -541,6 +541,11 @@ export async function setSpecialPrompts(prompts) {
 
 export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
+}
+
+export function loadPrompt(id) {
+    let allPrompts = getPrompts(false,[],true);
+    return allPrompts.find(prompt => prompt.id === id);
 }
 
 export async function savePrompt(prompt) {
