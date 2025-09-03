@@ -895,6 +895,7 @@ menus.loadMenus(special_prompts_ids);
 
 // Context Menus
 function addContextMenu(menu_id) {
+    browser.menus.remove(menu_id);
     browser.menus.create({
         id: menu_id,
         title: browser.i18n.getMessage("context_menu_" + menu_id),
