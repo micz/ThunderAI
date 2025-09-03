@@ -56,6 +56,29 @@ tr.specific_integration_sub td{
     display: none;
 }
 
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.group td {
+  border-top: none;
+  border-bottom: none;
+}
+
+.specific_integration_sub td:first-child {
+  border-left: 10px solid #dfeaff;
+}
+
+.specific_integration_sub td:last-child {
+  border-right: 10px solid #dfeaff;
+}
+
+#connection_ui_end td{
+    height: 6px;
+    background-color: #dfeaff;
+}
+
 .btn_div{
     width: 100%;
     display: flex;

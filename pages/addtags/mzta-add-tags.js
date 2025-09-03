@@ -18,7 +18,7 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
+import { getSpecialPrompts, setSpecialPrompts, loadPrompt, savePrompt } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
@@ -50,11 +50,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener("change", saveOptions);
       });
 
+    document.querySelectorAll(".option-input-model").forEach(element => {
+        element.addEventListener("change", updatePromptAPIInfo);
+      });
+
     let conntype_el = document.getElementById(conntype_select_id);
+
+    conntype_el.addEventListener('change', updatePromptAPIInfo);
+
     let add_tags_use_specific_integration_el = document.getElementById('add_tags_use_specific_integration');
     let conntype_row = document.getElementById(conntype_select_id + '_tr');
     add_tags_use_specific_integration_el.addEventListener('change', (event) => {
-      console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+      // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
       document.querySelectorAll(".specific_integration_sub").forEach(tr => {
         tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
       });
@@ -62,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       changeConnTypeRowColor(conntype_row, conntype_el);
     });
 
-    console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+    // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
     document.querySelectorAll(".specific_integration_sub").forEach(tr => {
         tr.style.display = add_tags_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
       });
@@ -221,7 +228,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     updateWarnings(model_prefix);
-
 });
 
 
@@ -253,6 +259,19 @@ async function updateAdditionalPromptStatements(){
     }
 }
 
+async function updatePromptAPIInfo(){
+  let conntype = document.getElementById(conntype_select_id).value;
+  let model_value = conntype.substring(0, conntype.length - 4) + '_model';
+  let model = document.getElementById(model_prefix + model_value).value;
+  console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
+  let add_tags_prompt = await loadPrompt('prompt_add_tags');
+  console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  add_tags_prompt.api = conntype;
+  add_tags_prompt.model = model;
+  console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  await savePrompt(add_tags_prompt);
+}
+
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
@@ -260,7 +279,7 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
-
+  // console.log(">>>>>>>>>> Saving option: " + element.id + " = " + element.value);
     switch (element.type) {
       case 'checkbox':
         options[element.id] = element.checked;
@@ -273,6 +292,7 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
+        // console.log(">>>>>>>>>> Saving option [select-one]: " + element.id + " = " + element.value);
         options[element.id] = element.value;
         break;
       case 'textarea':
@@ -314,13 +334,20 @@ async function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-          let default_select_value = '';
-          if(element.id == 'reply_type') default_select_value = 'reply_all';
-          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          element.value = result[element.id] || default_select_value;
-          if (element.value === '') {
-            element.selectedIndex = -1;
-          }
+            let default_select_value = '';
+            const restoreValue = result[element.id] || default_select_value;
+            // Check if option exists
+            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // If it doesn't exist and restoreValue is not empty, create it
+            if (!optionExists && restoreValue !== '') {
+              let newOption = new Option(restoreValue, restoreValue);
+              element.add(newOption);
+            }
+            // Set value
+            element.value = restoreValue;
+            if (element.value === '') {
+              element.selectedIndex = -1;
+            }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
