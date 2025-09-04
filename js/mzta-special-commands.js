@@ -17,7 +17,7 @@
  */
  // Call the API to use a special prompt
 
- import { prefs_default } from "../options/mzta-options-default";
+ import { prefs_default } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
 
  
