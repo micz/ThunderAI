@@ -1140,7 +1140,7 @@
     "description": ""
   },
   "prompt_add_tags_use_list": {
-    "message": "Use only these tags, that are comma separated in the list",
+    "message": "Use only the tags in this comma separated list",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
