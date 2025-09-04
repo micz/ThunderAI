@@ -550,6 +550,7 @@ export function getAPIsInitMessageString(args = {}) {
 export function getActiveSpecialPromptsIDs(args = {}) {
   const {
     addtags = false,
+    addtags_api = false,
     get_calendar_event = false,
     get_task = false,
     is_chatgpt_web = false
@@ -559,6 +560,9 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
+    if (addtags_api && addtags) {
+      output.push('prompt_add_tags');
+    }
     return output;
   }
   if (addtags) {
