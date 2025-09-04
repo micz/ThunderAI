@@ -63,6 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
     if(prefs_add_tags.connection_type == 'chatgpt_web'){
        add_tags_use_specific_integration_el.checked = true;
+       add_tags_use_specific_integration_el.dispatchEvent(new Event('change'));
+       add_tags_use_specific_integration_el.disabled = true;
     }
 
     let conntype_row = document.getElementById(conntype_select_id + '_tr');
