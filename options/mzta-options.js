@@ -18,8 +18,21 @@
 
 import { prefs_default } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
-import { ChatGPTWeb_models, checkSparksPresence, isThunderbird128OrGreater, openTab, getChatGPTWebModelsList_HTML, isAPIKeyValue } from '../js/mzta-utils.js';
-import { injectConnectionUI, varConnectionUI, showConnectionOptions, updateWarnings } from '../pages/_lib/connection-ui.js';
+import {
+  ChatGPTWeb_models,
+  checkSparksPresence,
+  isThunderbird128OrGreater,
+  openTab,
+  getChatGPTWebModelsList_HTML,
+  isAPIKeyValue,
+  getConnectionType,
+} from '../js/mzta-utils.js';
+import {
+  injectConnectionUI,
+  varConnectionUI,
+  showConnectionOptions,
+  updateWarnings
+} from '../pages/_lib/connection-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
 let _isThunderbird128OrGreater = true;
@@ -111,39 +124,36 @@ function disable_MaxPromptLength(){
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
 }
 
-function disable_AddTags(){
+function disable_AddTags(prefs_opt){
   let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
-  add_tags.disabled = (conntype_select.value === "chatgpt_web");
-  add_tags.checked = add_tags.disabled ? false : add_tags.checked;
+  let add_tags_disabled = (getConnectionType(conntype_select.value, {api: prefs_opt.add_tags_use_specific_integration ? prefs_opt.add_tags_connection_type : ''}) === "chatgpt_web");
+  console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
+  add_tags.checked = add_tags_disabled ? false : add_tags.checked;
   let add_tags_checked_original = add_tags.checked;
   if(!add_tags.checked){
     let add_tags_info_btn = document.getElementById('btnManageTagsInfo');
     add_tags_info_btn.disabled = 'disabled';
   }
-  let add_tags_tr_elements = document.querySelectorAll('.add_tags_tr');
-  add_tags_tr_elements.forEach(add_tags_tr => {
-    add_tags_tr.style.display = (add_tags.disabled) ? 'none' : 'table-row';
-  });
+  let add_tags_warn_API_needed = document.getElementById('add_tags_warn_API_needed');
+  add_tags_warn_API_needed.style.display = (add_tags_disabled) ? 'inline-block' : 'none';
   if(add_tags_checked_original != add_tags.checked){
     browser.storage.sync.set({add_tags: add_tags.checked});
   }
 }
 
-function disable_SpamFilter(){
+function disable_SpamFilter(prefs_opt){
   let spamfilter = document.getElementById('spamfilter');
   let conntype_select = document.getElementById("connection_type");
-  spamfilter.disabled = (conntype_select.value === "chatgpt_web");
+  let spamfilter_disabled = (getConnectionType(conntype_select.value, {api: prefs_opt.spamfilter_use_specific_integration ? prefs_opt.spamfilter_connection_type : ''}) === "chatgpt_web");;
   let spamfilter_checked_original = spamfilter.checked;
-  spamfilter.checked = spamfilter.disabled ? false : spamfilter.checked;
+  spamfilter.checked = spamfilter_disabled ? false : spamfilter.checked;
   if(!spamfilter.checked){
     let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
     spamfilter_info_btn.disabled = 'disabled';
   }
-  let spamfilter_tr_elements = document.querySelectorAll('.spamfilter_tr');
-  spamfilter_tr_elements.forEach(spamfilter_tr => {
-    spamfilter_tr.style.display = (spamfilter.disabled) ? 'none' : 'table-row';
-  });
+  let spamfilter_warn_API_needed = document.getElementById('spamfilter_warn_API_needed');
+  spamfilter_warn_API_needed.style.display = (spamfilter_disabled) ? 'inline-block' : 'none';
   if(spamfilter_checked_original != spamfilter.checked){
     browser.storage.sync.set({spamfilter: spamfilter.checked});
   }
@@ -291,16 +301,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  let prefs_opt = await browser.storage.sync.get({
+    add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
+    add_tags_connection_type: prefs_default.add_tags_connection_type,
+    spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
+    spamfilter_connection_type: prefs_default.spamfilter_connection_type,
+  });
+
   let conntype_select = document.getElementById("connection_type");
   conntype_select.addEventListener("change", disable_MaxPromptLength);
-  conntype_select.addEventListener("change", disable_AddTags);
-  conntype_select.addEventListener("change", disable_SpamFilter);
+  conntype_select.addEventListener("change", () => disable_AddTags(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_SpamFilter(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
   
   showConnectionOptions(conntype_select);
   disable_MaxPromptLength();
-  disable_AddTags();
-  disable_SpamFilter();
+  disable_AddTags(prefs_opt);
+  disable_SpamFilter(prefs_opt);
   disable_GetCalendarEvent();
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);

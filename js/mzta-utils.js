@@ -606,6 +606,7 @@ export function isAPIKeyValue(id){
 }
 
 export function getConnectionType(conntype, prompt) {
+  console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
   if (prompt?.api != null && prompt.api !== '') {
     return prompt.api;
   } else {

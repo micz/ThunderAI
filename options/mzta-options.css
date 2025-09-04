@@ -104,6 +104,11 @@ div#miczTranslate{
     font-size:smaller;
 }
 
+.warn_API_needed{
+    display: none;
+    font-weight: bold;
+}
+
 #no_sparks td{
     text-align: center;
     padding: 1em !important;
