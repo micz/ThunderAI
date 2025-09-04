@@ -548,7 +548,14 @@ export function getAPIsInitMessageString(args = {}) {
 }
 
 export function getActiveSpecialPromptsIDs(args = {}) {
-  const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
+  const {
+    addtags = false,
+    get_calendar_event = false,
+    get_task = false,
+    is_chatgpt_web = false
+  } = args;
+  // The Antispam filter is not here, because this method is used only
+  // to reload the ThunderAI button menu, not the context menu
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
