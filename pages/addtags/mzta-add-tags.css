@@ -79,6 +79,10 @@ table {
     background-color: #dfeaff;
 }
 
+#connection_ui_end{
+    display: none;
+}
+
 .btn_div{
     width: 100%;
     display: flex;

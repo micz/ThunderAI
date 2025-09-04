@@ -55,10 +55,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     let conntype_el = document.getElementById(conntype_select_id);
+    let conntype_end_el = document.getElementById('connection_ui_end');
 
     conntype_el.addEventListener('change', updatePromptAPIInfo);
 
     let add_tags_use_specific_integration_el = document.getElementById('add_tags_use_specific_integration');
+    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
+    if(prefs_add_tags.connection_type == 'chatgpt_web'){
+       add_tags_use_specific_integration_el.checked = true;
+    }
+
     let conntype_row = document.getElementById(conntype_select_id + '_tr');
     add_tags_use_specific_integration_el.addEventListener('change', (event) => {
       // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
@@ -66,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
       });
       conntype_el.style.display = event.target.checked ? 'table-row' : 'none';
+      conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
       changeConnTypeRowColor(conntype_row, conntype_el);
     });
 
@@ -74,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tr.style.display = add_tags_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
       });
     document.getElementById(conntype_select_id + '_tr').style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
+    conntype_end_el.style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
     changeConnTypeRowColor(conntype_row, conntype_el);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
@@ -188,7 +196,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         accountsContainer.appendChild(document.createElement('br'));
     });
 
-    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [] });
     let add_tags_enabled_accounts = prefs_add_tags.add_tags_enabled_accounts;
     taLog.log("add_tags_enabled_accounts = " + JSON.stringify(add_tags_enabled_accounts) + ".");
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
