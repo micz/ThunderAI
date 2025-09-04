@@ -17,7 +17,7 @@
  */
  // Call the API to use a special prompt
 
-
+ import { prefs_default } from "../options/mzta-options-default";
  import { taLogger } from './mzta-logger.js';
 
  
@@ -61,9 +61,9 @@
         switch (this.llm) {
             case "chatgpt_api": {
                 let prefs_api = await browser.storage.sync.get({
-                    chatgpt_api_key: '',
-                    chatgpt_model: '',
-                    chatgpt_developer_messages: ''
+                    chatgpt_api_key: prefs_default.chatgpt_api_key,
+                    chatgpt_model: prefs_default.chatgpt_model,
+                    chatgpt_developer_messages: prefs_default.chatgpt_developer_messages
                 });
                 this.worker.postMessage({
                     type: 'init',
@@ -77,9 +77,9 @@
             }
             case "google_gemini_api": {
                 let prefs_api = await browser.storage.sync.get({
-                    google_gemini_api_key: '',
-                    google_gemini_model: '',
-                    google_gemini_system_instruction: ''
+                    google_gemini_api_key: prefs_default.google_gemini_api_key,
+                    google_gemini_model: prefs_default.google_gemini_model,
+                    google_gemini_system_instruction: prefs_default.google_gemini_system_instruction
                 });
                 this.worker.postMessage({
                     type: 'init',
@@ -93,8 +93,8 @@
             }
             case "ollama_api": {
                 let prefs_api = await browser.storage.sync.get({
-                    ollama_host: '',
-                    ollama_model: '',
+                    ollama_host: prefs_default.ollama_host,
+                    ollama_model: prefs_default.ollama_model,
                 });
                 this.worker.postMessage({
                     type: 'init',
@@ -107,12 +107,11 @@
             }
             case "openai_comp_api": {
                 let prefs_api = await browser.storage.sync.get({
-                    openai_comp_host: '',
-                    openai_comp_model: '',
-                    openai_comp_api_key: '',
-                    openai_comp_use_v1: true,
-                    openai_comp_chat_name: '',
-                    do_debug: false,
+                    openai_comp_host: prefs_default.openai_comp_host,
+                    openai_comp_model: prefs_default.openai_comp_model,
+                    openai_comp_api_key: prefs_default.openai_comp_api_key,
+                    openai_comp_use_v1: prefs_default.openai_comp_use_v1,
+                    openai_comp_chat_name: prefs_default.openai_comp_chat_name,
                 });
                 this.worker.postMessage({
                     type: 'init',
@@ -127,10 +126,10 @@
             }
             case "anthropic_api": {
                 let prefs_api = await browser.storage.sync.get({
-                    anthropic_api_key: '',
-                    anthropic_model: '',
-                    anthropic_version: '2023-06-01',
-                    anthropic_max_tokens: 4096,
+                    anthropic_api_key: prefs_default.anthropic_api_key,
+                    anthropic_model: prefs_default.anthropic_model,
+                    anthropic_version: prefs_default.anthropic_version,
+                    anthropic_max_tokens: prefs_default.anthropic_max_tokens,
                 });
                 this.worker.postMessage({
                     type: 'init',
