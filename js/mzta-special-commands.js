@@ -30,7 +30,12 @@
     logger = null;
     do_debug = false;
 
-    constructor(prompt, llm, do_debug = false) {
+    constructor(args = {}) {
+        let {
+            prompt = '',
+            llm = '',
+            do_debug = false
+        } = args;
         this.prompt = prompt;
         this.llm = llm;
         this.logger = new taLogger('mzta_specialCommand', do_debug);

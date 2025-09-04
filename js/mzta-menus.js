@@ -195,7 +195,11 @@ export class mzta_Menus {
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
+                        let cmd_addTags = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: prefs_at.connection_type,
+                            do_debug: prefs_at.do_debug
+                        });
                         await cmd_addTags.initWorker();
                         try{
                             tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
@@ -243,7 +247,11 @@ export class mzta_Menus {
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
                         this.logger.log("fullPrompt: " + fullPrompt);
-                        let cmd_GetCalendarEvent = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_GetCalendarEvent = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: prefs_at.connection_type,
+                            do_debug: true
+                        });
                         await cmd_GetCalendarEvent.initWorker();
                         try{
                             calendar_event_data = await cmd_GetCalendarEvent.sendPrompt();
@@ -311,7 +319,11 @@ export class mzta_Menus {
                         *  } 
                         */
                         this.logger.log("fullPrompt: " + fullPrompt);
-                        let cmd_GetTask = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_GetTask = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: prefs_at.connection_type,
+                            do_debug: true
+                        });
                         await cmd_GetTask.initWorker();
                         try{
                             task_data = await cmd_GetTask.sendPrompt();

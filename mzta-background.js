@@ -1071,7 +1071,11 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-            let cmd_addTags = new mzta_specialCommand(specialFullPrompt_add_tags, getConnectionType(prefs_aats.connection_type, curr_prompt_add_tags), prefs_init.do_debug);
+            let cmd_addTags = new mzta_specialCommand({
+                prompt: specialFullPrompt_add_tags,
+                llm: getConnectionType(prefs_aats.connection_type, curr_prompt_add_tags),
+                do_debug: prefs_init.do_debug
+            });
             await cmd_addTags.initWorker();
             let tags_current_email = [];
             try {
@@ -1105,7 +1109,11 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             });
             taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
             // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
-            let cmd_spamfilter = new mzta_specialCommand(specialFullPrompt_spamfilter, getConnectionType(prefs_init.connection_type, curr_prompt_spamfilter), prefs_init.do_debug);
+            let cmd_spamfilter = new mzta_specialCommand({
+                prompt: specialFullPrompt_spamfilter,
+                llm: getConnectionType(prefs_init.connection_type, curr_prompt_spamfilter),
+                do_debug: prefs_init.do_debug
+            });
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';
             taLog.log("Sending the prompt...");
