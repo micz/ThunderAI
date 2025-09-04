@@ -578,6 +578,10 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   return output;
 }
 
+export function checkSpecificIntegration(use, conntype){
+  return use && (conntype != null) && (conntype !== '');
+}
+
 export function extractJsonObject(inputString) {
   try {
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);
