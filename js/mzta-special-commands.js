@@ -66,6 +66,7 @@
     }
 
     async initWorker() {
+        // console.log((">>>>>>>>>>>> this.custom_model: " + this.custom_model));
         switch (this.llm) {
             case "chatgpt_api": {
                 let prefs_api = await browser.storage.sync.get({

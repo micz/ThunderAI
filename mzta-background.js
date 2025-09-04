@@ -1058,7 +1058,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let specialFullPrompt_add_tags = '';
             let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
             let tags_full_list = await getTagsList();
-            // console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + curr_prompt_add_tags);
+            // console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
@@ -1071,9 +1071,11 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             });
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+            // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
             let cmd_addTags = new mzta_specialCommand({
                 prompt: specialFullPrompt_add_tags,
                 llm: getConnectionType(prefs_aats.connection_type, curr_prompt_add_tags),
+                custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
                 do_debug: prefs_init.do_debug
             });
             await cmd_addTags.initWorker();

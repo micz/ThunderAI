@@ -36,6 +36,7 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
+        // console.log(">>>>>>>>>>>>>> event.data: " + JSON.stringify(event.data));
         anthropic_api_key = event.data.anthropic_api_key;
         anthropic_model = event.data.anthropic_model;
         anthropic = new Anthropic(anthropic_api_key, event.data.anthropic_version, anthropic_model, event.data.anthropic_max_tokens, true);
