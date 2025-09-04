@@ -46,7 +46,8 @@ import {
     stripHtmlKeepLines,
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
-    getConnectionType
+    getConnectionType,
+    checkSpecificIntegration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -83,7 +84,7 @@ taWorkingStatus.taLog = taLog;
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
-    addtags_api: prefs_init.add_tags_use_specific_integration,
+    addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
     get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
     get_task: doGetSparkFeature(prefs_init.get_task),
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
@@ -174,7 +175,7 @@ async function _reload_menus() {
     let getTask = doGetSparkFeature(prefs_reload.get_task);
     const special_prompts_ids = getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
-        addtags_api: prefs_init.add_tags_use_specific_integration,
+        addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
         get_calendar_event: getCalendarEvent,
         get_task: getTask,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
@@ -814,7 +815,7 @@ function setupStorageChangeListener() {
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: newTags,
-                    addtags_api: prefs_init.add_tags_use_specific_integration,
+                    addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
@@ -829,7 +830,7 @@ function setupStorageChangeListener() {
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
-                    addtags_api: prefs_init.add_tags_use_specific_integration,
+                    addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
@@ -844,7 +845,7 @@ function setupStorageChangeListener() {
                 let getTask = doGetSparkFeature(newTask);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
-                    addtags_api: prefs_init.add_tags_use_specific_integration,
+                    addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
@@ -859,7 +860,7 @@ function setupStorageChangeListener() {
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
-                    addtags_api: prefs_init.add_tags_use_specific_integration,
+                    addtags_api: checkSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
                     get_task: getTask,
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
@@ -961,12 +962,12 @@ function removeContextMenu(menu_id) {
 }
 
 // Add Context menu: Add tags
-if(prefs_init.add_tags && prefs_init.add_tags_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||(prefs_init.add_tags_use_specific_integration && (prefs_init.add_tags_connection_type !== "")))){
+if(prefs_init.add_tags && prefs_init.add_tags_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type))){
     addContextMenu(contextMenuID_AddTags);
 }
 
 // Add Context menu: Spamfilter
-if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||(prefs_init.spamfilter_use_specific_integration && (prefs_init.spamfilter_connection_type !== "")))){
+if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type))){
     addContextMenu(contextMenuID_Spamfilter);
 }
 
