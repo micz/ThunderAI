@@ -67,7 +67,7 @@ export const prefs_default = {
     add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
     add_tags_use_specific_integration: false,
-    add_tags_connection_type: '',
+    add_tags_connection_type: 'chatgpt_api',
     add_tags_chatgpt_model: '',
     add_tags_ollama_model: '',
     add_tags_openai_comp_model: '',
