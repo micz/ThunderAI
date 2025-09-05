@@ -19,7 +19,19 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr, cleanupNewlines, checkIfTagLabelExists } from './mzta-utils.js'
+import {
+    getLanguageDisplayName,
+    getMenuContextCompose,
+    getMenuContextDisplay,
+    i18nConditionalGet,
+    getMailSubject,
+    getTagsList,
+    extractJsonObject,
+    convertNewlinesToBr,
+    cleanupNewlines,
+    checkIfTagLabelExists,
+    getConnectionType,
+ } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -195,9 +207,12 @@ export class mzta_Menus {
                         // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
+                        console.log(">>>>>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
+                        console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
                         let cmd_addTags = new mzta_specialCommand({
                             prompt: fullPrompt,
-                            llm: prefs_at.connection_type,
+                            llm: getConnectionType(prefs_at.connection_type, curr_prompt),
+                            custom_model: curr_prompt.model ? curr_prompt.model : '',
                             do_debug: prefs_at.do_debug
                         });
                         await cmd_addTags.initWorker();
