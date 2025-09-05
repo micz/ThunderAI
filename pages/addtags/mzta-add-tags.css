@@ -199,4 +199,16 @@ table#miczPrefs  tr:last-child td {
     .specific_integration{
         background-color: #2E3A4F;
     }
+
+    .specific_integration_sub td:first-child {
+        border-left: 10px solid #2E3A4F;
+    }
+
+    .specific_integration_sub td:last-child {
+        border-right: 10px solid #2E3A4F;
+    }
+
+    #connection_ui_end td{
+        background-color: #2E3A4F;
+    }
 }
