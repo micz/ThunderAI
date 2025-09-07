@@ -195,8 +195,9 @@ export class mzta_Menus {
                         let tags_current_email = [];
                         let tags_current_email_final = [];
                         let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, add_tags_auto_force_existing: false, default_chatgpt_lang: '', do_debug: false});
-                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
-                            console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
+                        let def_conntype = getConnectionType(prefs_at.connection_type, curr_prompt);
+                        if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
+                            console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -204,14 +205,14 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
-                        // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
                         console.log(">>>>>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
                         console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
+                        console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
                         let cmd_addTags = new mzta_specialCommand({
                             prompt: fullPrompt,
-                            llm: getConnectionType(prefs_at.connection_type, curr_prompt),
+                            llm: def_conntype,
                             custom_model: curr_prompt.model ? curr_prompt.model : '',
                             do_debug: prefs_at.do_debug
                         });
