@@ -294,12 +294,12 @@ async function updatePromptAPIInfo(){
   let conntype = document.getElementById(conntype_select_id).value;
   let model_value = conntype.substring(0, conntype.length - 4) + '_model';
   let model = document.getElementById(model_prefix + model_value).value;
-  console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
   let add_tags_prompt = await loadPrompt('prompt_add_tags');
-  console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
   add_tags_prompt.api = conntype;
   add_tags_prompt.model = model;
-  console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
   await savePrompt(add_tags_prompt);
 }
 
