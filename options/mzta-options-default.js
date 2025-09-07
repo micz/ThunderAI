@@ -82,7 +82,7 @@ export const prefs_default = {
     spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
     spamfilter_use_specific_integration: false,
-    spamfilter_connection_type: '',
+    spamfilter_connection_type: 'chatgpt_api',
     spamfilter_chatgpt_model: '',
     spamfilter_ollama_model: '',
     spamfilter_openai_comp_model: '',

@@ -1151,11 +1151,11 @@
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
     "description": ""
   },
-  "prefs_OptionText_add_tags_use_specific_integration": {
+  "prefs_OptionText_use_specific_integration": {
     "message": "Use specific Model and API",
     "description": ""
   },
-  "prefs_OptionText_add_tags_use_specific_integration_Info": {
+  "prefs_OptionText_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""
   },
@@ -1209,6 +1209,14 @@
   },
   "SpamFilter_prompt_prefs_title": {
     "message": "Spam Filter Options",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_use_specific_integration": {
+    "message": "Use specific Model and API",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for the spam filter, regardless the one chosen in the ThunderAI options page.",
     "description": ""
   },
   "prefs_OptionText_spamfilter_threshold": {
