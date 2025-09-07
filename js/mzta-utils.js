@@ -605,7 +605,10 @@ export function isAPIKeyValue(id){
   return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
 }
 
-export function getConnectionType(conntype, prompt) {
+export function getConnectionType(conntype, prompt, use_promptspecific_api = true) {
+  if(!use_promptspecific_api) {
+    return conntype;
+  }
   console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
   if (prompt?.api != null && prompt.api !== '') {
     return prompt.api;
