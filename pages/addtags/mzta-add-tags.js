@@ -18,12 +18,29 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts, loadPrompt, savePrompt } from "../../js/mzta-prompts.js";
+import {
+  getSpecialPrompts,
+  setSpecialPrompts,
+  loadPrompt,
+  savePrompt,
+  clearPromptAPI
+} from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-import { getAccountsList, normalizeStringList, isAPIKeyValue } from "../../js/mzta-utils.js";
-import { injectConnectionUI, updateWarnings, changeConnTypeRowColor } from "../_lib/connection-ui.js";
+import {
+  addTags_getExclusionList,
+  addTags_setExclusionList
+} from "../../js/mzta-addatags-exclusion-list.js";
+import {
+  getAccountsList,
+  normalizeStringList,
+  isAPIKeyValue
+} from "../../js/mzta-utils.js";
+import {
+  injectConnectionUI,
+  updateWarnings,
+  changeConnTypeRowColor
+} from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
@@ -76,6 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       conntype_el.style.display = event.target.checked ? 'table-row' : 'none';
       conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
       changeConnTypeRowColor(conntype_row, conntype_el);
+      if(!event.target.checked){
+        clearPromptAPI('prompt_add_tags');
+      }else{
+        updatePromptAPIInfo();
+      }
     });
 
     // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
