@@ -587,3 +587,10 @@ export async function savePrompt(prompt) {
         await setDefaultPromptsProperties(defaultPrompts);
     }
 }
+
+export async function clearPromptAPI(id){
+    let _prompt = await loadPrompt(id);
+    _prompt.api_type = "";
+    _prompt.api_model = "";
+    await savePrompt(_prompt);
+}
