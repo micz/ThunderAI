@@ -590,7 +590,7 @@ export async function savePrompt(prompt) {
 
 export async function clearPromptAPI(id){
     let _prompt = await loadPrompt(id);
-    _prompt.api_type = "";
-    _prompt.api_model = "";
+    _prompt.api = "";
+    _prompt.model = "";
     await savePrompt(_prompt);
 }
