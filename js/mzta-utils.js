@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 
@@ -388,7 +389,7 @@ export async function getTagsList(){
 }
 
 export async function createTag(tag) {
-  let prefs_tag = await browser.storage.sync.get({add_tags_first_uppercase: true});
+  let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     if(await isThunderbird128OrGreater()) {

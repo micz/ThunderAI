@@ -17,11 +17,15 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 
 let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, connection_type: 'chatgpt_web'});
+    let prefs = await browser.storage.sync.get({
+        do_debug: prefs_default.do_debug,
+        connection_type: prefs_default.connection_type,
+    });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     if(prefs.connection_type === 'chatgpt_web'){

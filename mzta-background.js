@@ -414,7 +414,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     if((originalText == null) || (originalText == "")) {
                         originalText = prompt_info.body_text;
                     }
-                    let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
+                    let reply_type_pref = await browser.storage.sync.get({ reply_type: prefs_default.reply_type });
                     //console.log(">>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
                     let pre_script = `let mztaWinId = `+ createdTab.windowId +`;
                     let mztaStatusPageDesc="`+ browser.i18n.getMessage("prefs_status_page") +`";
