@@ -83,6 +83,10 @@ input.option-input[type="text"]{
     cursor: pointer;
 }
 
+span.opt_title{
+    font-weight: bold;
+}
+
 @media (prefers-color-scheme: dark) {
     tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
         background-color: rgb(0, 0, 58);
