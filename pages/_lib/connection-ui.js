@@ -22,7 +22,11 @@ import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
 import { Anthropic } from '../../js/api/anthropic.js';
-import { validateCustomData_ChatGPTWeb, sanitizeChatGPTModelData, sanitizeChatGPTWebCustomData } from '../../js/mzta-utils.js';
+import {
+  validateCustomData_ChatGPTWeb,
+  sanitizeChatGPTModelData,
+  sanitizeChatGPTWebCustomData
+} from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 
 export const varConnectionUI = {
@@ -201,6 +205,20 @@ export async function injectConnectionUI({
       <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input option-input-model"></select>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_google_gemini_thinking_budget__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="google_gemini_thinking_budget" name="google_gemini_thinking_budget" class="option-input"/>
+        <br>__MSG_prefs_google_gemini_thinking_budget_Info__
+        <br><a href="https://ai.google.dev/gemini-api/docs/thinking#set-budget">__MSG_more_info_string__</a>
       </label>
     </td>
   </tr>

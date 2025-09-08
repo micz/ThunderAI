@@ -1668,5 +1668,13 @@
   "warn_API_needed": {
     "message": "To use this feature, you need an API integration rather than the ChatGPT Web Integration. You can define a specific API in the feature settings page by first checking the checkbox above and then clicking the button on the left.",
     "description": ""
+  },
+  "prefs_google_gemini_thinking_budget": {
+    "message": "Thinking Budget",
+    "description": ""
+  },
+  "prefs_google_gemini_thinking_budget_Info": {
+    "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
+    "description": ""
   }
 }
