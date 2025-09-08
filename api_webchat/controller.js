@@ -97,7 +97,13 @@ switch (llm) {
         break;
     }
     case "google_gemini_api": {
-        let prefs_api = await browser.storage.sync.get({google_gemini_api_key: '', google_gemini_model: '', google_gemini_system_instruction: '', do_debug: false});
+        let prefs_api = await browser.storage.sync.get({
+            google_gemini_api_key: '',
+            google_gemini_model: '',
+            google_gemini_system_instruction: '',
+            google_gemini_thinking_budget: 0,
+            do_debug: false,
+        });
         let i18nStrings = {};
         i18nStrings["google_gemini_api_request_failed"] = browser.i18n.getMessage('google_gemini_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
@@ -107,6 +113,7 @@ switch (llm) {
         if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
         }
+        additional_text_elements.push({label: 'Thinking Budget', value: prefs_api.google_gemini_thinking_budget});
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
