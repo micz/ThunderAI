@@ -1652,5 +1652,13 @@
   "chatgpt_click_force_completion": {
     "message": "It seems that it's not possible to get if ChatGPT has finished. Click here to force the completion of the job.",
     "description": ""
+  },
+  "SelectAll": {
+    "message": "Select All",
+    "description": ""
+  },
+  "DeselectAll": {
+    "message": "Deselect All",
+    "description": ""
   }
 }
