@@ -138,6 +138,7 @@ switch (llm) {
             google_gemini_api_key: prefs_api.google_gemini_api_key,
             google_gemini_model: prefs_api.google_gemini_model,
             google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
+            google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings
         });

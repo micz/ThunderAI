@@ -42,6 +42,7 @@ self.onmessage = async function(event) {
             apiKey: google_gemini_api_key,
             model: google_gemini_model,
             system_instruction: event.data.google_gemini_system_instruction,
+            thinking_budget: event.data.google_gemini_thinking_budget,
             stream: true
         });
         do_debug = event.data.do_debug;
