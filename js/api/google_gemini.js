@@ -38,6 +38,11 @@ export class GoogleGemini {
     this.system_instruction = system_instruction;
     this.stream = stream;
     this.thinkingBudget = thinkingBudget;
+    /* Info from: https://ai.google.dev/gemini-api/docs/thinking?#set-budget
+      # Turn on thinking with a specific token limit: "thinkingBudget": 1024
+      # Thinking off: "thinkingBudget": 0
+      # Turn on dynamic thinking: "thinkingBudget": -1
+    */
   }
 
 
