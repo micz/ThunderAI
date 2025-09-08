@@ -24,17 +24,20 @@ export class GoogleGemini {
   model = '';
   system_instruction = '';
   stream = false;
+  thinkingBudget = 0; //Off
 
   constructor({
     apiKey = '',
     model = '',
     system_instruction = '',
-    stream = false
+    stream = false,
+    thinkingBudget = 0
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.system_instruction = system_instruction;
     this.stream = stream;
+    this.thinkingBudget = thinkingBudget;
   }
 
 
@@ -88,7 +91,12 @@ export class GoogleGemini {
           parts:{
             text: this.system_instruction
           }
-        }
+        };
+        google_gemini_body.generationConfig = {
+          thinkingConfig: {
+            thinkingBudget: this.thinkingBudget,
+          }
+        };
       }
 
       // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
