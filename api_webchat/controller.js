@@ -20,6 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+import { prefs_default } from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 
@@ -75,13 +76,27 @@ messageInput.setMessagesArea(messagesArea);
 
 switch (llm) {
     case "chatgpt_api": {
-        let prefs_api = await browser.storage.sync.get({chatgpt_api_key: '', chatgpt_model: '', chatgpt_developer_messages:'', chatgpt_api_store: false, do_debug: false});
+        let prefs_api = await browser.storage.sync.get({
+            chatgpt_api_key: prefs_default.chatgpt_api_key,
+            chatgpt_model: prefs_default.chatgpt_model,
+            chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
+            chatgpt_api_store: prefs_default.chatgpt_api_store,
+            do_debug: prefs_default.do_debug,
+        });
         let i18nStrings = {};
         i18nStrings["chatgpt_api_request_failed"] = browser.i18n.getMessage('chatgpt_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.chatgpt_model);
         messagesArea.setLLMName("ChatGPT");
-        worker.postMessage({ type: 'init', chatgpt_api_key: prefs_api.chatgpt_api_key, chatgpt_model: prefs_api.chatgpt_model, chatgpt_developer_messages: prefs_api.chatgpt_developer_messages, chatgpt_api_store: prefs_api.chatgpt_api_store, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({
+            type: 'init',
+            chatgpt_api_key: prefs_api.chatgpt_api_key,
+            chatgpt_model: prefs_api.chatgpt_model,
+            chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
+            chatgpt_api_store: prefs_api.chatgpt_api_store,
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings
+        });
         let additional_text_elements = [];
         additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
         if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
@@ -93,16 +108,19 @@ switch (llm) {
             model_string: prefs_api.chatgpt_model,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "openai_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "google_gemini_api": {
         let prefs_api = await browser.storage.sync.get({
-            google_gemini_api_key: '',
-            google_gemini_model: '',
-            google_gemini_system_instruction: '',
-            google_gemini_thinking_budget: 0,
-            do_debug: false,
+            google_gemini_api_key: prefs_default.google_gemini_api_key,
+            google_gemini_model: prefs_default.google_gemini_model,
+            google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
+            google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
+            do_debug: prefs_default.do_debug,
         });
         let i18nStrings = {};
         i18nStrings["google_gemini_api_request_failed"] = browser.i18n.getMessage('google_gemini_api_request_failed');
@@ -115,24 +133,51 @@ switch (llm) {
         }
         additional_text_elements.push({label: 'Thinking Budget', value: prefs_api.google_gemini_thinking_budget});
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        worker.postMessage({ type: 'init', google_gemini_api_key: prefs_api.google_gemini_api_key, google_gemini_model: prefs_api.google_gemini_model, google_gemini_system_instruction: prefs_api.google_gemini_system_instruction, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({
+            type: 'init',
+            google_gemini_api_key: prefs_api.google_gemini_api_key,
+            google_gemini_model: prefs_api.google_gemini_model,
+            google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings
+        });
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Google Gemini API",
             model_string: prefs_api.google_gemini_model,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "google_gemini_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "ollama_api": {
-        let prefs_api = await browser.storage.sync.get({ollama_host: '', ollama_model: '', ollama_num_ctx: 0, ollama_think: false, do_debug: false});
+        let prefs_api = await browser.storage.sync.get({
+            ollama_host: prefs_default.ollama_host,
+            ollama_model: prefs_default.ollama_model,
+            ollama_num_ctx: prefs_default.ollama_num_ctx,
+            ollama_think: prefs_default.ollama_think,
+            do_debug: prefs_default.do_debug,
+        });
         let i18nStrings = {};
         i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.ollama_model);
         messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({ type: 'init', ollama_host: prefs_api.ollama_host, ollama_model: prefs_api.ollama_model, ollama_num_ctx: prefs_api.ollama_num_ctx, ollama_think: prefs_api.ollama_think, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
-        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        worker.postMessage({
+            type: 'init',
+            ollama_host: prefs_api.ollama_host,
+            ollama_model: prefs_api.ollama_model,
+            ollama_num_ctx: prefs_api.ollama_num_ctx,
+            ollama_think: prefs_api.ollama_think,
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings
+        });
+        browser.runtime.sendMessage({
+            command: "ollama_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
@@ -144,13 +189,28 @@ switch (llm) {
         break;
     }
     case "openai_comp_api": {
-        let prefs_api = await browser.storage.sync.get({openai_comp_host: '', openai_comp_model: '', openai_comp_api_key: '', openai_comp_use_v1: true, openai_comp_chat_name: '', do_debug: false});
+        let prefs_api = await browser.storage.sync.get({
+            openai_comp_host: prefs_default.openai_comp_host,
+            openai_comp_model: prefs_default.openai_comp_model,
+            openai_comp_api_key: prefs_default.openai_comp_api_key,
+            openai_comp_use_v1: prefs_default.openai_comp_use_v1,
+            openai_comp_chat_name: prefs_default.openai_comp_chat_name,
+            do_debug: prefs_default.do_debug,
+        });
         let i18nStrings = {};
         i18nStrings["OpenAIComp_api_request_failed"] = browser.i18n.getMessage('OpenAIComp_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.openai_comp_model);
         messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
-        worker.postMessage({ type: 'init', openai_comp_host: prefs_api.openai_comp_host, openai_comp_model: prefs_api.openai_comp_model, openai_comp_api_key: prefs_api.openai_comp_api_key, openai_comp_use_v1: prefs_api.openai_comp_use_v1, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({
+            type: 'init',
+            openai_comp_host: prefs_api.openai_comp_host,
+            openai_comp_model: prefs_api.openai_comp_model,
+            openai_comp_api_key: prefs_api.openai_comp_api_key,
+            openai_comp_use_v1: prefs_api.openai_comp_use_v1,
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings
+        });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
@@ -159,17 +219,34 @@ switch (llm) {
             host_string: prefs_api.openai_comp_host,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "openai_comp_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "anthropic_api": {
-        let prefs_api = await browser.storage.sync.get({anthropic_api_key: '', anthropic_model: '', anthropic_version: '2023-06-01', anthropic_max_tokens: 4096, do_debug: false});
+        let prefs_api = await browser.storage.sync.get({
+            anthropic_api_key: prefs_default.anthropic_api_key,
+            anthropic_model: prefs_default.anthropic_model,
+            anthropic_version: prefs_default.anthropic_version,
+            anthropic_max_tokens: prefs_default.anthropic_max_tokens,
+            do_debug: prefs_default.do_debug,
+        });
         let i18nStrings = {};
         i18nStrings["anthropic_api_request_failed"] = browser.i18n.getMessage('anthropic_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.anthropic_model);
         messagesArea.setLLMName("Anthropic");
-        worker.postMessage({ type: 'init', anthropic_api_key: prefs_api.anthropic_api_key, anthropic_model: prefs_api.anthropic_model, anthropic_version: prefs_api.anthropic_version, anthropic_max_tokens: prefs_api.anthropic_max_tokens, do_debug: prefs_api.do_debug, i18nStrings: i18nStrings});
+        worker.postMessage({
+            type: 'init',
+            anthropic_api_key: prefs_api.anthropic_api_key,
+            anthropic_model: prefs_api.anthropic_model,
+            anthropic_version: prefs_api.anthropic_version,
+            anthropic_max_tokens: prefs_api.anthropic_max_tokens,
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings
+        });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
@@ -178,7 +255,10 @@ switch (llm) {
             version_string: prefs_api.anthropic_version,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "anthropic_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "anthropic_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
 }
