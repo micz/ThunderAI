@@ -1207,7 +1207,7 @@
     "message": "Spam Filter Options",
     "description": ""
   },
-  "prefs_OptionText_spamfilter_use_specific_integration": {
+  "prefs_OptionText_use_specific_integration": {
     "message": "Use specific Model and API",
     "description": ""
   },
