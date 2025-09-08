@@ -580,7 +580,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
     document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
-    let openai = new OpenAI(document.getElementById("chatgpt_api_key").value, '', true);
+    let openai = new OpenAI({
+      apiKey: document.getElementById("chatgpt_api_key").value,
+      stream: true
+    });
     openai.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;
@@ -620,7 +623,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
     document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
-    let google_gemini = new GoogleGemini(document.getElementById("google_gemini_api_key").value, '', true);
+    let google_gemini = new GoogleGemini({
+      apiKey: document.getElementById("google_gemini_api_key").value,
+      stream: true
+    });
     google_gemini.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;
@@ -660,7 +666,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
     document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
-    let ollama = new Ollama(document.getElementById("ollama_host").value, true);
+    let ollama = new Ollama({
+      host: document.getElementById("ollama_host").value,
+      stream: true
+    });
     try {
       let data = await ollama.fetchModels();
       if(!data){
@@ -718,7 +727,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
-    let openai_comp = new OpenAIComp(document.getElementById("openai_comp_host").value , null, document.getElementById("openai_comp_api_key").value, true, document.getElementById("openai_comp_use_v1").checked);
+    let openai_comp = new OpenAIComp({
+      host: document.getElementById("openai_comp_host").value,
+      model: null,
+      apiKey: document.getElementById("openai_comp_api_key").value,
+      stream: true,
+      use_v1: document.getElementById("openai_comp_use_v1").checked
+    });
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;
@@ -759,7 +774,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
     document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
-    let anthropic = new Anthropic(document.getElementById("anthropic_api_key").value, document.getElementById("anthropic_version").value, '');
+    let anthropic = new Anthropic({
+      apiKey: document.getElementById("anthropic_api_key").value,
+      version: document.getElementById("anthropic_version").value
+    });
     anthropic.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;

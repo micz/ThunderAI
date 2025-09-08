@@ -27,7 +27,13 @@ export class Anthropic {
   max_tokens = 4096;  
   stream = false;
 
-  constructor(apiKey, version, model, max_tokens = 4096, stream = false) {
+  constructor({
+    apiKey = '',
+    version = '',
+    model = '',
+    max_tokens = 4096,
+    stream = false,
+  } = {}) {
     this.apiKey = apiKey;
     this.version = version;
     this.model = model;

@@ -25,7 +25,12 @@ export class GoogleGemini {
   system_instruction = '';
   stream = false;
 
-  constructor(apiKey, model, system_instruction, stream) {
+  constructor({
+    apiKey = '',
+    model = '',
+    system_instruction = '',
+    stream = false
+  } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.system_instruction = system_instruction;

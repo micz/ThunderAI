@@ -27,8 +27,14 @@ export class OpenAIComp {
   use_v1 = true;
   stream = false;
 
-  constructor(host, model, apiKey = '', stream = false, use_v1 = true) {
-    this.host = host.trim().replace(/\/+$/, "");
+  constructor({
+    host = '',
+    model = '',
+    apiKey = '',
+    stream = false,
+    use_v1 = true,
+  } = {}) {
+    this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
     this.apiKey = apiKey;

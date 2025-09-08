@@ -38,7 +38,12 @@ self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         google_gemini_api_key = event.data.google_gemini_api_key;
         google_gemini_model = event.data.google_gemini_model;
-        google_gemini = new GoogleGemini(google_gemini_api_key, google_gemini_model, event.data.google_gemini_system_instruction, true);
+        google_gemini = new GoogleGemini({
+            apiKey: google_gemini_api_key,
+            model: google_gemini_model,
+            system_instruction: event.data.google_gemini_system_instruction,
+            stream: true
+        });
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-google_gemini', do_debug);
