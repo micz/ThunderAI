@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+import { prefs_default } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
@@ -522,7 +522,11 @@ export async function injectConnectionUI({
 
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
   btnChatGPTWeb_Tab.addEventListener('click', async () => {
-    let prefs_mod = await browser.storage.sync.get({chatgpt_web_model: prefs_default.chatgpt_web_model, chatgpt_web_project: prefs_default.chatgpt_web_project, chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt});
+    let prefs_mod = await browser.storage.sync.get({
+      chatgpt_web_model: prefs_default.chatgpt_web_model,
+      chatgpt_web_project: prefs_default.chatgpt_web_project,
+      chatgpt_web_custom_gpt: prefs_default.chatgpt_web_custom_gpt
+    });
     
     let base_url = 'https://chatgpt.com';
     let model_opt = '';
