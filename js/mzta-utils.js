@@ -251,6 +251,7 @@ export function convertNewlinesToParagraphs(input) {
 // This method is used to convert the model string id used in the URL
 // to the model string used in the webpage
 export function getGPTWebModelString(model) {
+  if (!model) return '';
   model = model.toLowerCase().trim();
   switch (model) {
     case 'gpt-5':
@@ -639,6 +640,7 @@ export function validateChatGPTWebCustomData(data) {
 }
 
 export function sanitizeChatGPTModelData(input) {
+  if(!input) return '';
   return encodeURIComponent(input).toLowerCase()
 }
 
