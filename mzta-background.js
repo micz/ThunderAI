@@ -1058,7 +1058,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             let specialFullPrompt_add_tags = '';
             let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
             let tags_full_list = await getTagsList();
-            // console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
+            //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
             specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_add_tags,
@@ -1099,7 +1099,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
                 }
             }
             let curr_prompt_spamfilter = await getSpamFilterPrompt();
-            // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + curr_prompt_spamfilter);
+            // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
             let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
                 curr_prompt: curr_prompt_spamfilter,
