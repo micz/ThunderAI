@@ -10,6 +10,7 @@
         <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
         <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
         <li><i>[Google Gemini API]</i>Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
+        <li>Various code improvements and minor bugs fixed.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.6.1 - 23/08/2025</h2>

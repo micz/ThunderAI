@@ -549,10 +549,21 @@ export function getAPIsInitMessageString(args = {}) {
 }
 
 export function getActiveSpecialPromptsIDs(args = {}) {
-  const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
+  const {
+    addtags = false,
+    addtags_api = false,
+    get_calendar_event = false,
+    get_task = false,
+    is_chatgpt_web = false
+  } = args;
+  // The Antispam filter is not here, because this method is used only
+  // to reload the ThunderAI button menu, not the context menu
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
+    if (addtags_api && addtags) {
+      output.push('prompt_add_tags');
+    }
     return output;
   }
   if (addtags) {
@@ -566,6 +577,10 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
+}
+
+export function checkSpecificIntegration(use, conntype){
+  return use && (conntype != null) && (conntype !== '');
 }
 
 export function extractJsonObject(inputString) {
@@ -584,6 +599,22 @@ export function extractJsonObject(inputString) {
     console.error("[ThunderAI] Error extracting JSON object:", error);
     throw new Error("Error extracting JSON object: " + error.message);
     return null;
+  }
+}
+
+export function isAPIKeyValue(id){
+  return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
+}
+
+export function getConnectionType(conntype, prompt, use_promptspecific_api = true) {
+  if(!use_promptspecific_api) {
+    return conntype;
+  }
+  console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
+  if (prompt?.api != null && prompt.api !== '') {
+    return prompt.api;
+  } else {
+    return conntype;
   }
 }
 

@@ -18,23 +18,95 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
+import {
+  getSpecialPrompts,
+  setSpecialPrompts,
+  loadPrompt,
+  savePrompt,
+  clearPromptAPI
+} from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { addTags_getExclusionList, addTags_setExclusionList } from "../../js/mzta-addatags-exclusion-list.js";
-import { getAccountsList, normalizeStringList } from "../../js/mzta-utils.js";
+import {
+  addTags_getExclusionList,
+  addTags_setExclusionList
+} from "../../js/mzta-addatags-exclusion-list.js";
+import {
+  getAccountsList,
+  normalizeStringList,
+  isAPIKeyValue
+} from "../../js/mzta-utils.js";
+import {
+  injectConnectionUI,
+  updateWarnings,
+  changeConnTypeRowColor
+} from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
+let conntype_select_id = 'add_tags_connection_type';
+let model_prefix = 'add_tags_';
 
 document.addEventListener('DOMContentLoaded', async () => {
-
+    try {
+      await injectConnectionUI({
+        afterTrId: 'connection_ui_anchor',
+        tr_class: 'specific_integration_sub',
+        selectId: conntype_select_id,
+        modelId_prefix: model_prefix,
+        no_chatgpt_web: true,
+        taLog: taLog
+      });
+    } catch (e) {
+      console.error('Failed to inject connection UI (add-tags)', e);
+    }
     i18n.updateDocument();
     await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
+
+    document.querySelectorAll(".option-input-model").forEach(element => {
+        element.addEventListener("change", updatePromptAPIInfo);
+      });
+
+    let conntype_el = document.getElementById(conntype_select_id);
+    let conntype_end_el = document.getElementById('connection_ui_end');
+
+    conntype_el.addEventListener('change', updatePromptAPIInfo);
+
+    let add_tags_use_specific_integration_el = document.getElementById('add_tags_use_specific_integration');
+    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
+    if(prefs_add_tags.connection_type == 'chatgpt_web'){
+       add_tags_use_specific_integration_el.checked = true;
+       add_tags_use_specific_integration_el.dispatchEvent(new Event('change'));
+       add_tags_use_specific_integration_el.disabled = true;
+    }
+
+    let conntype_row = document.getElementById(conntype_select_id + '_tr');
+    add_tags_use_specific_integration_el.addEventListener('change', (event) => {
+      // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+        tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      conntype_el.style.display = event.target.checked ? 'table-row' : 'none';
+      conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
+      changeConnTypeRowColor(conntype_row, conntype_el);
+      if(!event.target.checked){
+        clearPromptAPI('prompt_add_tags');
+      }else{
+        updatePromptAPIInfo();
+      }
+    });
+
+    // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
+    document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+        tr.style.display = add_tags_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+    document.getElementById(conntype_select_id + '_tr').style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
+    conntype_end_el.style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
+    changeConnTypeRowColor(conntype_row, conntype_el);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
@@ -148,7 +220,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         accountsContainer.appendChild(document.createElement('br'));
     });
 
-    let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [] });
     let add_tags_enabled_accounts = prefs_add_tags.add_tags_enabled_accounts;
     taLog.log("add_tags_enabled_accounts = " + JSON.stringify(add_tags_enabled_accounts) + ".");
     document.querySelectorAll('.accountCheckbox').forEach(checkbox => {
@@ -187,6 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       checkboxes.forEach(checkbox => checkbox.checked = false);
     });
 
+    updateWarnings(model_prefix);
 });
 
 
@@ -218,6 +290,19 @@ async function updateAdditionalPromptStatements(){
     }
 }
 
+async function updatePromptAPIInfo(){
+  let conntype = document.getElementById(conntype_select_id).value;
+  let model_value = conntype.substring(0, conntype.length - 4) + '_model';
+  let model = document.getElementById(model_prefix + model_value).value;
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
+  let add_tags_prompt = await loadPrompt('prompt_add_tags');
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  add_tags_prompt.api = conntype;
+  add_tags_prompt.model = model;
+  // console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
+  await savePrompt(add_tags_prompt);
+}
+
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
@@ -225,7 +310,7 @@ function saveOptions(e) {
   e.preventDefault();
   let options = {};
   let element = e.target;
-
+  // console.log(">>>>>>>>>> Saving option: " + element.id + " = " + element.value);
     switch (element.type) {
       case 'checkbox':
         options[element.id] = element.checked;
@@ -238,6 +323,7 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
+        // console.log(">>>>>>>>>> Saving option [select-one]: " + element.id + " = " + element.value);
         options[element.id] = element.value;
         break;
       case 'textarea':
@@ -256,7 +342,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -279,13 +365,20 @@ async function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-          let default_select_value = '';
-          if(element.id == 'reply_type') default_select_value = 'reply_all';
-          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          element.value = result[element.id] || default_select_value;
-          if (element.value === '') {
-            element.selectedIndex = -1;
-          }
+            let default_select_value = '';
+            const restoreValue = result[element.id] || default_select_value;
+            // Check if option exists
+            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // If it doesn't exist and restoreValue is not empty, create it
+            if (!optionExists && restoreValue !== '') {
+              let newOption = new Option(restoreValue, restoreValue);
+              element.add(newOption);
+            }
+            // Set value
+            element.value = restoreValue;
+            if (element.value === '') {
+              element.selectedIndex = -1;
+            }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }

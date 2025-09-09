@@ -95,7 +95,7 @@ switch (llm) {
             chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
             chatgpt_api_store: prefs_api.chatgpt_api_store,
             do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
@@ -140,7 +140,7 @@ switch (llm) {
             google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
             google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
             do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
         });
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Google Gemini API",
@@ -210,7 +210,7 @@ switch (llm) {
             openai_comp_api_key: prefs_api.openai_comp_api_key,
             openai_comp_use_v1: prefs_api.openai_comp_use_v1,
             do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
@@ -246,7 +246,7 @@ switch (llm) {
             anthropic_version: prefs_api.anthropic_version,
             anthropic_max_tokens: prefs_api.anthropic_max_tokens,
             do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings
+            i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});

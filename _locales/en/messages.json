@@ -1140,7 +1140,7 @@
     "description": ""
   },
   "prompt_add_tags_use_list": {
-    "message": "Use only these tags, that are comma separated in the list",
+    "message": "Use only the tags in this comma separated list",
     "description": ""
   },
   "prefs_OptionText_add_tags_auto_only_inbox": {
@@ -1149,6 +1149,10 @@
   },
   "prefs_OptionText_add_tags_auto_only_inbox_Info": {
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""
   },
   "placeholder_thunderai_def_sign": {
@@ -1201,6 +1205,14 @@
   },
   "SpamFilter_prompt_prefs_title": {
     "message": "Spam Filter Options",
+    "description": ""
+  },
+  "prefs_OptionText_use_specific_integration": {
+    "message": "Use specific Model and API",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for the spam filter, regardless the one chosen in the ThunderAI options page.",
     "description": ""
   },
   "prefs_OptionText_spamfilter_threshold": {
@@ -1651,6 +1663,18 @@
   },
   "chatgpt_click_force_completion": {
     "message": "It seems that it's not possible to get if ChatGPT has finished. Click here to force the completion of the job.",
+    "description": ""
+  },
+  "warn_API_needed": {
+    "message": "To use this feature, you need an API integration rather than the ChatGPT Web Integration. You can define a specific API in the feature settings page by first checking the checkbox above and then clicking the button on the left.",
+    "description": ""
+  },
+  "prefs_google_gemini_thinking_budget": {
+    "message": "Thinking Budget",
+    "description": ""
+  },
+  "prefs_google_gemini_thinking_budget_Info": {
+    "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
     "description": ""
   }
 }

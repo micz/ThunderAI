@@ -21,6 +21,7 @@ import { taLogger } from '../../js/mzta-logger.js';
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { isAPIKeyValue } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
@@ -110,7 +111,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
