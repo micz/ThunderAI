@@ -487,15 +487,15 @@ export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
         default_prompts_properties[prompt.id] = {
-            position_compose: prompt.position_compose,
-            position_display: prompt.position_display,
-            enabled: prompt.enabled,
-            need_custom_text: prompt.need_custom_text,
-            chatgpt_web_model: prompt.chatgpt_web_model,
-            chatgpt_web_project: prompt.chatgpt_web_project,
-            chatgpt_web_custom_gpt: prompt.chatgpt_web_custom_gpt,
-            api_type: prompt.api_type,
-            api_model: prompt.api_model
+            position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
+            position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+            enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
+            need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
+            chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
+            chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
+            chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
+            api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+            api_model: (prompt.api_model === undefined || prompt.api_model === "undefined") ? "" : prompt.api_model
         };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
