@@ -870,14 +870,8 @@ function setupStorageChangeListener() {
                 if(newConnectionType === "chatgpt_web"){
                     removeContextMenu(contextMenuID_AddTags);
                     removeContextMenu(contextMenuID_Spamfilter);
-                }else{
-                    if(prefs_init.add_tags && prefs_init.add_tags_context_menu){
-                        addContextMenu(contextMenuID_AddTags);
-                    }
-                    if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu){
-                        addContextMenu(contextMenuID_Spamfilter);
-                    }
                 }
+                addContextMenuItems();
             }
 
             // context menu changes for add_tags and spamfilter
@@ -961,16 +955,19 @@ function removeContextMenu(menu_id) {
     taLog.log("Context menu removed: " + menu_id);
 }
 
-// Add Context menu: Add tags
-if(prefs_init.add_tags && prefs_init.add_tags_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type))){
-    addContextMenu(contextMenuID_AddTags);
+function addContextMenuItems() {
+    // Add Context menu: Add tags
+    if(prefs_init.add_tags && prefs_init.add_tags_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type))){
+        addContextMenu(contextMenuID_AddTags);
+    }
+
+    // Add Context menu: Spamfilter
+    if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type))){
+        addContextMenu(contextMenuID_Spamfilter);
+    }
 }
 
-// Add Context menu: Spamfilter
-if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && ((prefs_init.connection_type !== "chatgpt_web")||checkSpecificIntegration(prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type))){
-    addContextMenu(contextMenuID_Spamfilter);
-}
-
+addContextMenuItems();
 
 // Listen for context menu item clicks
 browser.menus.onClicked.addListener( (info, tab) => {
