@@ -643,6 +643,7 @@ export function sanitizeChatGPTModelData(input) {
 }
 
 export function sanitizeChatGPTWebCustomData(input) {
+  if(!input) return '';
   // Removes all characters that are not letters, numbers, dashes, or slashes
   return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');
 }
