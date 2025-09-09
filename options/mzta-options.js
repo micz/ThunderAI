@@ -128,7 +128,7 @@ function disable_AddTags(prefs_opt){
   let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
   let add_tags_disabled = (getConnectionType(conntype_select.value, {api: prefs_opt.add_tags_use_specific_integration ? prefs_opt.add_tags_connection_type : ''}) === "chatgpt_web");
-  console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
+  // console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
   add_tags.checked = add_tags_disabled ? false : add_tags.checked;
   let add_tags_checked_original = add_tags.checked;
   if(!add_tags.checked){
