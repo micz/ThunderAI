@@ -31,7 +31,14 @@ let tabType;
 let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: prefs_default.do_debug, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs = await browser.storage.sync.get({
+      do_debug: prefs_default.do_debug,
+      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+      add_tags: prefs_default.add_tags,
+      get_calendar_event: prefs_default.get_calendar_event,
+      get_task: prefs_default.get_task,
+      connection_type: prefs_default.connection_type
+    });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -191,7 +198,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
    filteredData.forEach(item => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
-       itemDiv.textContent = item.label;
+       itemDiv.textContent = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
        itemDiv.setAttribute('data-id', item.id);
        if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_task')){
          itemDiv.className += ' special_prompt';
