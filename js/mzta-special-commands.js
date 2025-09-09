@@ -19,8 +19,6 @@
 
  import { prefs_default } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
- import { prefs_default } from '../options/mzta-options-default.js';
-
  
  export class mzta_specialCommand {
     
