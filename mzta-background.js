@@ -41,6 +41,7 @@ import {
     extractJsonObject,
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
+    contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
     stripHtmlKeepLines,
@@ -946,9 +947,11 @@ function addContextMenu(menu_id) {
     browser.menus.create({
         id: menu_id,
         title: browser.i18n.getMessage("context_menu_" + menu_id),
-        contexts: ["message_list"]
+        contexts: ["message_list"],
+        icons: contextMenuIconsPath[menu_id],
     });
     taLog.log("Context menu added: " + menu_id);
+    console.log(">>>>>>> contextMenuIconsPath[menu_id]: " + contextMenuIconsPath[menu_id]);
 }
 
 function removeContextMenu(menu_id) {
