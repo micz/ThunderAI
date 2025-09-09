@@ -108,7 +108,10 @@ switch (llm) {
             model_string: prefs_api.chatgpt_model,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "openai_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "openai_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "google_gemini_api": {
@@ -116,6 +119,7 @@ switch (llm) {
             google_gemini_api_key: prefs_default.google_gemini_api_key,
             google_gemini_model: prefs_default.google_gemini_model,
             google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
+            google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
             do_debug: prefs_default.do_debug,
         });
         let i18nStrings = {};
@@ -127,12 +131,14 @@ switch (llm) {
         if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
         }
+        additional_text_elements.push({label: 'Thinking Budget', value: prefs_api.google_gemini_thinking_budget});
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         worker.postMessage({
             type: 'init',
             google_gemini_api_key: prefs_api.google_gemini_api_key,
             google_gemini_model: prefs_api.google_gemini_model,
             google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
+            google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
         });
@@ -141,7 +147,10 @@ switch (llm) {
             model_string: prefs_api.google_gemini_model,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "google_gemini_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "google_gemini_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "ollama_api": {
@@ -164,9 +173,12 @@ switch (llm) {
             ollama_num_ctx: prefs_api.ollama_num_ctx,
             ollama_think: prefs_api.ollama_think,
             do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings,
+            i18nStrings: i18nStrings
         });
-        browser.runtime.sendMessage({command: "ollama_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "ollama_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
@@ -208,7 +220,10 @@ switch (llm) {
             host_string: prefs_api.openai_comp_host,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "openai_comp_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "openai_comp_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
     case "anthropic_api": {
@@ -241,7 +256,10 @@ switch (llm) {
             version_string: prefs_api.anthropic_version,
             additional_messages: additional_text_elements
         }), "info");
-        browser.runtime.sendMessage({command: "anthropic_api_ready_" + call_id, window_id: (await browser.windows.getCurrent()).id});
+        browser.runtime.sendMessage({
+            command: "anthropic_api_ready_" + call_id,
+            window_id: (await browser.windows.getCurrent()).id
+        });
         break;
     }
 }

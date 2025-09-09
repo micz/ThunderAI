@@ -19,6 +19,7 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
+import { prefs_default } from '../options/mzta-options-default.js';
 import {
     getLanguageDisplayName,
     getMenuContextCompose,
@@ -194,7 +195,14 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, add_tags_auto_force_existing: false, default_chatgpt_lang: '', do_debug: false});
+                        let prefs_at = await browser.storage.sync.get({
+                            add_tags_maxnum: prefs_default.add_tags_maxnum,
+                            connection_type: prefs_default.connection_type,
+                            add_tags_force_lang: prefs_default.add_tags_force_lang,
+                            add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
+                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+                            do_debug: prefs_default.do_debug,
+                        });
                         let def_conntype = getConnectionType(prefs_at.connection_type, curr_prompt);
                         if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
@@ -246,7 +254,11 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_calendar_event': {  // Get a calendar event info
                         let calendar_event_data = '';
-                        let prefs_at = await browser.storage.sync.get({connection_type: '', calendar_enforce_timezone: false, calendar_timezone: '',});
+                        let prefs_at = await browser.storage.sync.get({
+                            connection_type: prefs_default.connection_type,
+                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
+                            calendar_timezone: prefs_default.calendar_timezone,
+                        });
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
                             taWorkingStatus.stopWorking();

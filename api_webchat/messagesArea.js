@@ -20,6 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+import { prefs_default } from '../options/mzta-options-default.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -383,7 +384,7 @@ class MessagesArea extends HTMLElement {
         splitButton.appendChild(actionButton);
         const fullTextHTMLAtAssignment = this.fullTextHTML.trim().replace(/^"|"$/g, '').replace(/^<p>&quot;/, '<p>').replace(/&quot;<\/p>$/, '</p>'); // strip quotation marks
         //console.log(">>>>>>>>>>>> fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
-        let reply_type_pref = await browser.storage.sync.get({reply_type: 'reply_all'});
+        let reply_type_pref = await browser.storage.sync.get({ reply_type: prefs_default.reply_type });
         if((promptData.action == "1") && (promptData.mailMessageId != -1)) {
             const actionButton_line2 = document.createElement('span');
             actionButton_line2.classList.add('action_btn_info');

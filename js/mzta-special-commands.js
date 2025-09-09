@@ -19,6 +19,7 @@
 
  import { prefs_default } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
+ import { prefs_default } from '../options/mzta-options-default.js';
 
  
  export class mzta_specialCommand {
@@ -72,7 +73,7 @@
                 let prefs_api = await browser.storage.sync.get({
                     chatgpt_api_key: prefs_default.chatgpt_api_key,
                     chatgpt_model: prefs_default.chatgpt_model,
-                    chatgpt_developer_messages: prefs_default.chatgpt_developer_messages
+                    chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
                 });
                 this.worker.postMessage({
                     type: 'init',
@@ -88,13 +89,15 @@
                 let prefs_api = await browser.storage.sync.get({
                     google_gemini_api_key: prefs_default.google_gemini_api_key,
                     google_gemini_model: prefs_default.google_gemini_model,
-                    google_gemini_system_instruction: prefs_default.google_gemini_system_instruction
+                    google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
+                    google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
                 });
                 this.worker.postMessage({
                     type: 'init',
                     google_gemini_api_key: prefs_api.google_gemini_api_key,
                     google_gemini_model: this.custom_model != '' ? this.custom_model : prefs_api.google_gemini_model,
                     google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
+                    google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
                     do_debug: this.do_debug,
                     i18nStrings: ''
                 });
@@ -121,6 +124,7 @@
                     openai_comp_api_key: prefs_default.openai_comp_api_key,
                     openai_comp_use_v1: prefs_default.openai_comp_use_v1,
                     openai_comp_chat_name: prefs_default.openai_comp_chat_name,
+                    do_debug: prefs_default.do_debug,
                 });
                 this.worker.postMessage({
                     type: 'init',

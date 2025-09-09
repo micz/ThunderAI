@@ -42,7 +42,12 @@ self.onmessage = async function(event) {
             ollama_model = event.data.ollama_model;
             ollama_num_ctx = event.data.ollama_num_ctx;
             //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
-            ollama = new Ollama(ollama_host, ollama_model, true, ollama_num_ctx);
+            ollama = new Ollama({
+                host: ollama_host,
+                model: ollama_model,
+                stream: true,
+                num_ctx: ollama_num_ctx
+            });
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);
