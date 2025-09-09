@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
+    active_prompts.forEach(item => {
+        item.label = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+    });
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
     connection_type = prefs.connection_type;
@@ -198,7 +201,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
    filteredData.forEach(item => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
-       itemDiv.textContent = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+       itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
        if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_task')){
          itemDiv.className += ' special_prompt';
