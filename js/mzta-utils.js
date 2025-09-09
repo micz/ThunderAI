@@ -611,7 +611,7 @@ export function getConnectionType(conntype, prompt, use_promptspecific_api = tru
   if(!use_promptspecific_api) {
     return conntype;
   }
-  console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
+  // console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
   if (prompt?.api != null && prompt.api !== '') {
     return prompt.api;
   } else {
