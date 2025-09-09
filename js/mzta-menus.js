@@ -417,6 +417,7 @@ export class mzta_Menus {
                 }
             }else{  // Classic prompts for the API webchat
                 this.logger.log("fullPrompt: " + fullPrompt);
+                this.logger.log("curr_prompt: " + JSON.stringify(curr_prompt));
                 this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text, curr_prompt);
                 taWorkingStatus.stopWorking();
                 return {ok:'1'};
