@@ -31,7 +31,7 @@ Using an API integration, you can activate some automatic features:
 > <br>
 > 
 > - **Google Gemini**
->   - You can use also the _System Instructions_ option if needed.
+>   - You can use also the _System Instructions_ and _thinkingBudget_ options if needed.
 > 
 > <br>
 > 
