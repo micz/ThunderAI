@@ -31,7 +31,14 @@ let tabType;
 let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: prefs_default.do_debug, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs = await browser.storage.sync.get({
+      do_debug: prefs_default.do_debug,
+      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+      add_tags: prefs_default.add_tags,
+      get_calendar_event: prefs_default.get_calendar_event,
+      get_task: prefs_default.get_task,
+      connection_type: prefs_default.connection_type
+    });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -42,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
+    active_prompts.forEach(item => {
+        item.label = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+    });
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
     connection_type = prefs.connection_type;

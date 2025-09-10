@@ -18,11 +18,12 @@
 
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { extractJsonObject } from './mzta-utils.js';
+import { prefs_default } from '../options/mzta-options-default.js';
 
 export const taPromptUtils = {
 
     async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({default_sign_name: ''});
+        let prefs = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
         if(prefs.default_sign_name===''){
             return '';
         }else{
@@ -68,7 +69,7 @@ export const taPromptUtils = {
                 selection_html: selection_html,
                 tags_full_list: tags_full_list
             });
-            let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
+            let prefs_ph = await browser.storage.sync.get({ placeholders_use_default_value: prefs_default.placeholders_use_default_value });
             fullPrompt = (placeholdersUtils.replacePlaceholders({
                 text: curr_prompt.text,
                 replacements: finalSubs,
@@ -88,7 +89,7 @@ export const taPromptUtils = {
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
         }
         if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
-            fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + " " + add_tags_auto_uselist_list + ".";
+            fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
@@ -104,7 +105,7 @@ export const taPromptUtils = {
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
         if(String(curr_prompt.define_response_lang) == "1"){
-            let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
+            let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
             chatgpt_lang = prefs.default_chatgpt_lang;
             if(chatgpt_lang === ''){
                 chatgpt_lang = browser.i18n.getMessage("reply_same_lang");

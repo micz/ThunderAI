@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 
@@ -24,6 +25,10 @@ export const getMenuContextDisplay = () => 'message_display_action_menu';
 
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
+export const contextMenuIconsPath = {
+  [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
+  [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
+};
 
 export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
@@ -250,6 +255,7 @@ export function convertNewlinesToParagraphs(input) {
 // This method is used to convert the model string id used in the URL
 // to the model string used in the webpage
 export function getGPTWebModelString(model) {
+  if (!model) return '';
   model = model.toLowerCase().trim();
   switch (model) {
     case 'gpt-5':
@@ -388,7 +394,7 @@ export async function getTagsList(){
 }
 
 export async function createTag(tag) {
-  let prefs_tag = await browser.storage.sync.get({add_tags_first_uppercase: true});
+  let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     if(await isThunderbird128OrGreater()) {
@@ -548,10 +554,21 @@ export function getAPIsInitMessageString(args = {}) {
 }
 
 export function getActiveSpecialPromptsIDs(args = {}) {
-  const { addtags = false, get_calendar_event = false, get_task = false, is_chatgpt_web = false } = args;
+  const {
+    addtags = false,
+    addtags_api = false,
+    get_calendar_event = false,
+    get_task = false,
+    is_chatgpt_web = false
+  } = args;
+  // The Antispam filter is not here, because this method is used only
+  // to reload the ThunderAI button menu, not the context menu
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
+    if (addtags_api && addtags) {
+      output.push('prompt_add_tags');
+    }
     return output;
   }
   if (addtags) {
@@ -565,6 +582,10 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
+}
+
+export function checkSpecificIntegration(use, conntype){
+  return use && (conntype != null) && (conntype !== '');
 }
 
 export function extractJsonObject(inputString) {
@@ -583,6 +604,22 @@ export function extractJsonObject(inputString) {
     console.error("[ThunderAI] Error extracting JSON object:", error);
     throw new Error("Error extracting JSON object: " + error.message);
     return null;
+  }
+}
+
+export function isAPIKeyValue(id){
+  return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
+}
+
+export function getConnectionType(conntype, prompt, use_promptspecific_api = true) {
+  if(!use_promptspecific_api) {
+    return conntype;
+  }
+  // console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
+  if (prompt?.api != null && prompt.api !== '') {
+    return prompt.api;
+  } else {
+    return conntype;
   }
 }
 
@@ -607,10 +644,12 @@ export function validateChatGPTWebCustomData(data) {
 }
 
 export function sanitizeChatGPTModelData(input) {
+  if(!input) return '';
   return encodeURIComponent(input).toLowerCase()
 }
 
 export function sanitizeChatGPTWebCustomData(input) {
+  if(!input) return '';
   // Removes all characters that are not letters, numbers, dashes, or slashes
   return input.replace(/[^\p{L}\p{N}\/-]+/gu, '');
 }

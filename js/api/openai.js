@@ -27,7 +27,13 @@ export class OpenAI {
   stream = false;
   store = false;
 
-  constructor(apiKey, model, developer_messages, stream, store) {
+  constructor({
+    apiKey = '',
+    model = '',
+    developer_messages = '',
+    stream = false,
+    store = false
+  } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;

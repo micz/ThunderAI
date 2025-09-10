@@ -72,6 +72,12 @@
     ChatGPT Web Custom GPT (chatgpt_web_custom_gpt attribute):
     <custom_gpt>: custom gpt id url
 
+    API Connection Type
+    <api_type>: api type
+
+    API Model
+    <api_model>: api model
+
 */
 
 const defaultPrompts = [
@@ -89,6 +95,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -106,6 +114,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -123,6 +133,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -140,6 +152,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -157,6 +171,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -174,6 +190,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -191,6 +209,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -208,6 +228,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -225,6 +247,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -242,6 +266,8 @@ const defaultPrompts = [
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "0",
     },
@@ -259,6 +285,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -273,6 +301,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -287,6 +317,8 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
@@ -301,24 +333,26 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
         is_default: "1",
         is_special: "1",
     },
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = []){ // includeSpecial is an array of active special prompts ids
+export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
     // console.log('>>>>>>>>>>>> getPrompts customPrompts: ' + JSON.stringify(customPrompts));
     const specialPrompts = await getSpecialPrompts();
     let output = specialPrompts.concat(_defaultPrompts).concat(customPrompts);
-    if(includeSpecial.length == 0){
+    if((includeSpecial.length == 0) && !allSpecial){
         output = output.filter(obj => obj.is_special != 1); // we do not want special prompts
     }else{
         // console.log(">>>>>>>>>> getPrompts includeSpecial: " + JSON.stringify(includeSpecial));
-        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1);
+        output = output.filter(obj => includeSpecial.includes(obj.id) || obj.is_special != 1 || allSpecial);
         // output = output.filter(obj => {
         //     const isIncluded = includeSpecial.includes(obj.id);
         //     const isNotSpecial = obj.is_special != 1;
@@ -402,6 +436,11 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
+                prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
+                prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
+                prompt.chatgpt_web_custom_gpt = prefs._default_prompts_properties[prompt.id].chatgpt_web_custom_gpt;
+                prompt.api_type = prefs._default_prompts_properties[prompt.id].api_type;
+                prompt.api_model = prefs._default_prompts_properties[prompt.id].api_model;
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -433,6 +472,12 @@ async function getCustomPrompts() {
             if(prompt.chatgpt_web_custom_gpt === undefined){
                 prompt.chatgpt_web_custom_gpt = "";
             }
+            if(prompt.api_type === undefined){
+                prompt.api_type = "";
+            }
+            if(prompt.api_model === undefined){
+                prompt.api_model = "";
+            }
         });
         return prefs._custom_prompt;
     }
@@ -441,7 +486,17 @@ async function getCustomPrompts() {
 export async function setDefaultPromptsProperties(prompts) {
     let default_prompts_properties = {};
     prompts.forEach((prompt) => {
-        default_prompts_properties[prompt.id] = {position_compose: prompt.position_compose, position_display: prompt.position_display, enabled: prompt.enabled, need_custom_text: prompt.need_custom_text};
+        default_prompts_properties[prompt.id] = {
+            position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
+            position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+            enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
+            need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
+            chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
+            chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
+            chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
+            api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+            api_model: (prompt.api_model === undefined || prompt.api_model === "undefined") ? "" : prompt.api_model
+        };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
     await browser.storage.local.set({_default_prompts_properties: default_prompts_properties});
@@ -486,4 +541,56 @@ export async function setSpecialPrompts(prompts) {
 
 export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
+}
+
+export async function loadPrompt(id) {
+    let allPrompts = await getPrompts(false,[],true);
+    // console.log(">>>>>>>>>>>> loadPrompt id: " + id + " - allPrompts: " + JSON.stringify(allPrompts));
+    return allPrompts.find(prompt => prompt.id === id);
+}
+
+export async function savePrompt(prompt) {
+    // console.log(">>>>>>>>>>>>> savePrompt prompt: " + JSON.stringify(prompt));
+    if (prompt.id === undefined) {
+        throw new Error("Invalid prompt: " + JSON.stringify(prompt));
+    }
+    // Special Prompt
+    if (prompt.is_special === "1") {
+        let specialPrompts = await getSpecialPrompts();
+        let index = specialPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            specialPrompts.push(prompt);
+        } else {
+            specialPrompts[index] = prompt;
+        }
+        await setSpecialPrompts(specialPrompts);
+        return;
+    }
+    // Custom Prompt
+    if (prompt.is_default === "0") {
+        let customPrompts = await getCustomPrompts();
+        let index = customPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            customPrompts.push(prompt);
+        } else {
+            customPrompts[index] = prompt;
+        }
+        await setCustomPrompts(customPrompts);
+    } else {       // Default Prompt
+        let defaultPrompts = getDefaultPrompts_withProps();
+        let index = defaultPrompts.findIndex(p => p.id === prompt.id);
+        if (index === -1) {
+            defaultPrompts.push(prompt);
+        } else {
+            defaultPrompts[index] = prompt;
+        }
+        await setDefaultPromptsProperties(defaultPrompts);
+    }
+}
+
+export async function clearPromptAPI(id){
+    let _prompt = await loadPrompt(id);
+    _prompt.api = "";
+    _prompt.model = "";
+    await savePrompt(_prompt);
 }

@@ -102,6 +102,8 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://loading.io">loading.io</a> for the loading SVGs
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
+- [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
+- [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
 
 
 <br>

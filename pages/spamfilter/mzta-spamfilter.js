@@ -18,17 +18,38 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
+import { getSpecialPrompts, setSpecialPrompts, loadPrompt, savePrompt, clearPromptAPI } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
-import { getAccountsList } from "../../js/mzta-utils.js";
+import { getAccountsList, isAPIKeyValue } from "../../js/mzta-utils.js";
+import {
+  injectConnectionUI,
+  updateWarnings,
+  changeConnTypeRowColor
+} from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-spamfilter-page",true);
 taSpamReport.logger = taLog;
 
+let conntype_select_id = 'spamfilter_connection_type';
+let model_prefix = 'spamfilter_';
+
 document.addEventListener('DOMContentLoaded', async () => {
+
+    try {
+      await injectConnectionUI({
+        afterTrId: 'connection_ui_anchor',
+        tr_class: 'specific_integration_sub',
+        selectId: conntype_select_id,
+        modelId_prefix: model_prefix,
+        no_chatgpt_web: true,
+        taLog: taLog
+      });
+    } catch (e) {
+      console.error('Failed to inject connection UI (spamfilter)', e);
+    }
 
     i18n.updateDocument();
     await restoreOptions();
@@ -39,6 +60,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("spamfilter_threshold").addEventListener("input", check_spamfilter_threshold);
     check_spamfilter_threshold({target: document.getElementById("spamfilter_threshold")});
+
+    // Bind prompt API updates to connection type and model selects
+    document.querySelectorAll(".option-input-model").forEach(element => {
+      element.addEventListener("change", updatePromptAPIInfo);
+    });
+    const conntype_el = document.getElementById(conntype_select_id);
+    if (conntype_el) {
+      conntype_el.addEventListener('change', updatePromptAPIInfo);
+      const conntype_row = document.getElementById(conntype_select_id + '_tr');
+      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+    }
+
+    // Specific integration toggle behavior
+    const spamfilter_use_specific_integration_el = document.getElementById('spamfilter_use_specific_integration');
+    let prefs_spamfilter_init = await browser.storage.sync.get({ spamfilter_enabled_accounts: [], connection_type: 'chatgpt_web' });
+    if(prefs_spamfilter_init.connection_type == 'chatgpt_web'){
+      spamfilter_use_specific_integration_el.checked = true;
+      spamfilter_use_specific_integration_el.dispatchEvent(new Event('change'));
+      spamfilter_use_specific_integration_el.disabled = true;
+    }
+    const conntype_end_el = document.getElementById('connection_ui_end');
+    const conntype_row = document.getElementById(conntype_select_id + '_tr');
+    spamfilter_use_specific_integration_el.addEventListener('change', async (event) => {
+      document.querySelectorAll('.specific_integration_sub').forEach(tr => {
+        tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      if (conntype_row) conntype_row.style.display = event.target.checked ? 'table-row' : 'none';
+      if (conntype_end_el) conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
+      if(!event.target.checked){
+        await clearPromptAPI('prompt_spamfilter');
+      }else{
+        updatePromptAPIInfo();
+      }
+      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+    });
+
+    // Initialize visibility per current toggle value
+    document.querySelectorAll('.specific_integration_sub').forEach(tr => {
+      tr.style.display = spamfilter_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+    });
+    if (conntype_row) conntype_row.style.display = spamfilter_use_specific_integration_el.checked ? 'table-row' : 'none';
+    if (conntype_end_el) conntype_end_el.style.display = spamfilter_use_specific_integration_el.checked ? 'table-row' : 'none';
 
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
     let spamfilter_save_btn = document.getElementById('btn_save_prompt');
@@ -136,6 +199,9 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
 
     loadSpamReport();
+    updateWarnings(model_prefix);
+    // Sync prompt API/model once on load
+    updatePromptAPIInfo();
 });
 
 function check_spamfilter_threshold(event) {
@@ -163,6 +229,21 @@ async function loadSpamReport(){
     }else{
       populateTable(report_data);
     }
+}
+
+async function updatePromptAPIInfo(){
+  const conntypeEl = document.getElementById(conntype_select_id);
+  if (!conntypeEl || !conntypeEl.value) return;
+  const conntype = conntypeEl.value;
+  const model_value = conntype.substring(0, conntype.length - 4) + '_model';
+  const modelEl = document.getElementById(model_prefix + model_value);
+  if (!modelEl) return;
+  const model = modelEl.value;
+  let spamfilter_prompt = await loadPrompt('prompt_spamfilter');
+  if (!spamfilter_prompt) return;
+  spamfilter_prompt.api = conntype;
+  spamfilter_prompt.model = model;
+  await savePrompt(spamfilter_prompt);
 }
 
  // Function to populate the table
@@ -228,11 +309,14 @@ function saveOptions(e) {
       case 'number':
         options[element.id] = element.valueAsNumber;
         break;
-        case 'text':
-        case 'password':
+      case 'text':
+      case 'password':
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
+        options[element.id] = element.value;
+        break;
+      case 'textarea':
         options[element.id] = element.value;
         break;
       default:
@@ -245,7 +329,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
-      taLog.log("Options restoring " + element.id + " = " + (element.id=="chatgpt_api_key" || element.id=="openai_comp_api_key" ? "****************" : result[element.id]));
+      taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
           element.checked = result[element.id] || false;
@@ -257,6 +341,7 @@ async function restoreOptions() {
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
+        case 'textarea':
         case 'password':
           let default_text_value = '';
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
@@ -267,7 +352,15 @@ async function restoreOptions() {
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
           if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          element.value = result[element.id] || default_select_value;
+          if(element.id == 'spamfilter_connection_type') default_select_value = 'chatgpt_api';
+          const restoreValue = result[element.id] || default_select_value;
+          // Ensure option exists before restoring
+          let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+          if (!optionExists && restoreValue !== '') {
+            let newOption = new Option(restoreValue, restoreValue);
+            element.add(newOption);
+          }
+          element.value = restoreValue;
           if (element.value === '') {
             element.selectedIndex = -1;
           }

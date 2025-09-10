@@ -19,7 +19,20 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { getLanguageDisplayName, getMenuContextCompose, getMenuContextDisplay, i18nConditionalGet, getMailSubject, getTagsList, extractJsonObject, convertNewlinesToBr, cleanupNewlines, checkIfTagLabelExists } from './mzta-utils.js'
+import { prefs_default } from '../options/mzta-options-default.js';
+import {
+    getLanguageDisplayName,
+    getMenuContextCompose,
+    getMenuContextDisplay,
+    i18nConditionalGet,
+    getMailSubject,
+    getTagsList,
+    extractJsonObject,
+    convertNewlinesToBr,
+    cleanupNewlines,
+    checkIfTagLabelExists,
+    getConnectionType,
+ } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -182,9 +195,17 @@ export class mzta_Menus {
                     case 'prompt_add_tags': {   // Add tags to the email
                         let tags_current_email = [];
                         let tags_current_email_final = [];
-                        let prefs_at = await browser.storage.sync.get({add_tags_maxnum: 3, connection_type: '', add_tags_force_lang: true, add_tags_auto_force_existing: false, default_chatgpt_lang: '', do_debug: false});
-                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
-                            console.error("[ThunderAI | AddTags] Invalid connection type: " + prefs_at.connection_type);
+                        let prefs_at = await browser.storage.sync.get({
+                            add_tags_maxnum: prefs_default.add_tags_maxnum,
+                            connection_type: prefs_default.connection_type,
+                            add_tags_force_lang: prefs_default.add_tags_force_lang,
+                            add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
+                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+                            do_debug: prefs_default.do_debug,
+                        });
+                        let def_conntype = getConnectionType(prefs_at.connection_type, curr_prompt);
+                        if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
+                            console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -192,10 +213,17 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let create_new_tags = !prefs_at.add_tags_auto_force_existing;
                         let all_tags_list = tags_full_list[1];
-                        // TODO: use the current API, abort if using chatgpt web
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        let cmd_addTags = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,prefs_at.do_debug);
+                        console.log(">>>>>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
+                        console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
+                        console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
+                        let cmd_addTags = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: def_conntype,
+                            custom_model: curr_prompt.model ? curr_prompt.model : '',
+                            do_debug: prefs_at.do_debug
+                        });
                         await cmd_addTags.initWorker();
                         try{
                             tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt());
@@ -226,7 +254,11 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_calendar_event': {  // Get a calendar event info
                         let calendar_event_data = '';
-                        let prefs_at = await browser.storage.sync.get({connection_type: '', calendar_enforce_timezone: false, calendar_timezone: '',});
+                        let prefs_at = await browser.storage.sync.get({
+                            connection_type: prefs_default.connection_type,
+                            calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
+                            calendar_timezone: prefs_default.calendar_timezone,
+                        });
                         if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
                             taWorkingStatus.stopWorking();
@@ -243,7 +275,11 @@ export class mzta_Menus {
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
                         this.logger.log("fullPrompt: " + fullPrompt);
-                        let cmd_GetCalendarEvent = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_GetCalendarEvent = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: prefs_at.connection_type,
+                            do_debug: true
+                        });
                         await cmd_GetCalendarEvent.initWorker();
                         try{
                             calendar_event_data = await cmd_GetCalendarEvent.sendPrompt();
@@ -311,7 +347,11 @@ export class mzta_Menus {
                         *  } 
                         */
                         this.logger.log("fullPrompt: " + fullPrompt);
-                        let cmd_GetTask = new mzta_specialCommand(fullPrompt,prefs_at.connection_type,true);
+                        let cmd_GetTask = new mzta_specialCommand({
+                            prompt: fullPrompt,
+                            llm: prefs_at.connection_type,
+                            do_debug: true
+                        });
                         await cmd_GetTask.initWorker();
                         try{
                             task_data = await cmd_GetTask.sendPrompt();
@@ -377,6 +417,7 @@ export class mzta_Menus {
                 }
             }else{  // Classic prompts for the API webchat
                 this.logger.log("fullPrompt: " + fullPrompt);
+                this.logger.log("curr_prompt: " + JSON.stringify(curr_prompt));
                 this.openChatGPT(fullPrompt, curr_prompt.action, tabs[0].id, curr_prompt.name, curr_prompt.need_custom_text, curr_prompt);
                 taWorkingStatus.stopWorking();
                 return {ok:'1'};
