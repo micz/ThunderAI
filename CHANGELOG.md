@@ -6,13 +6,13 @@
 
 <h2>Version 3.7.0 - ??/??/2025</h2>
       <ul>
-        <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
-        <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
-        <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
-        <li><i>[Google Gemini API]</i>Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
-        <li>Various code improvements and minor bugs fixed.</li>
         <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
+        <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
+        <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
+        <li><i>[Google Gemini API]</i>Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added DeepSeek configuration [<a href="https://github.com/micz/ThunderAI/issues/486">#486</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
+        <li>Various code improvements and minor bugs fixed.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.6.1 - 23/08/2025</h2>
