@@ -1675,6 +1675,8 @@
   },
   "prefs_google_gemini_thinking_budget_Info": {
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
+    "description": ""
+  },
   "SelectAll": {
     "message": "Select All",
     "description": ""
