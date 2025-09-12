@@ -33,6 +33,13 @@ Using an API integration, you can activate some automatic features:
 > - **Google Gemini**
 >   - You can use also the _System Instructions_ and _thinkingBudget_ options if needed.
 > 
+> 
+> <br>
+> 
+> - **Anthropic API**
+>   - Use Claude directly!
+>
+>
 > <br>
 > 
 > - **Using Ollama**
@@ -44,11 +51,6 @@ Using an API integration, you can activate some automatic features:
 > - **OpenAI Compatible API**
 >   - You can also use a local OpenAI Compatible API server, like LM Studio or Mistral AI!
 >   - There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint.
-> 
-> <br>
-> 
-> - **Anthropic API**
->   - Use Claude directly!
 
 
 
