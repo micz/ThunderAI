@@ -3,8 +3,6 @@ name: pre-release comment issues
 on:
   release:
     types: [published, edited]
-  # opzionale: test manuale
-  workflow_dispatch: {}
 
 permissions:
   contents: read
