@@ -1260,5 +1260,47 @@
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Sei sicuro di voler cancellare l’elenco dei modelli? Questa azione non può essere annullata."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Usa solo questi tag"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Se selezionato, l'IA aggiungerà solo i tag dall'elenco qui sotto."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "L’elenco deve contenere almeno un tag. Aggiungi un tag per riga o separato da una virgola."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Usa solo i tag in questo elenco separato da virgole"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Se selezionato, il Modello e l’API specificati qui sotto verranno utilizzati per aggiungere tag alle email, indipendentemente da quello scelto nella pagina delle opzioni di ThunderAI."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informazioni sugli allegati nell’email"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Usa Modello e API specifici"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Se selezionato, il Modello e l’API specificati qui sotto verranno utilizzati per il filtro antispam, indipendentemente da quello scelto nella pagina delle opzioni di ThunderAI."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Sembra che non sia possibile verificare se ChatGPT ha terminato. Clicca qui per forzare il completamento del lavoro."
+    },
+    "warn_API_needed": {
+        "message": "Per utilizzare questa funzionalità, è necessaria un’integrazione API invece dell’integrazione Web di ChatGPT. Puoi definire una specifica API nella pagina delle impostazioni della funzionalità selezionando prima la casella di controllo qui sopra e poi cliccando il pulsante a sinistra."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Definisci il numero di token da utilizzare per il ragionamento. Lascia questo campo vuoto se il modello selezionato non supporta il ragionamento o se desideri utilizzare il metodo predefinito. Inserisci 0 per disabilitare il ragionamento oppure -1 per abilitarlo in modo dinamico."
+    },
+    "SelectAll": {
+        "message": "Seleziona tutto"
+    },
+    "DeselectAll": {
+        "message": "Deseleziona tutto"
     }
 }
