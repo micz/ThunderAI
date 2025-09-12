@@ -48,7 +48,7 @@ jobs:
 
               const milestoneTitle = parsed.milestoneTitle; // es. "3.7.0"
               const prereleaseTagDisplay = tagName.startsWith("v") ? tagName : `v${tagName}`;
-              const commentBody = `This feature could be tested in pre-release ${prereleaseTagDisplay}.`;
+              const commentBody = `This feature is available for testing in the pre-release version ${prereleaseTagDisplay}.`;
 
               core.info(`(MAIN) Looking for milestone '${milestoneTitle}' in ${owner}/${repo}`);
 
