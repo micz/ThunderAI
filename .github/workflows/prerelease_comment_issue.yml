@@ -1,0 +1,102 @@
+name: pre-release comment issues
+
+on:
+  release:
+    types: [published, edited]
+  # opzionale: test manuale
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  comment-milestone-issues:
+    # consenti il run manuale per test; in produzione resta solo prerelease
+    if: ${{ github.event.release.prerelease == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug context (no checkout)
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Default branch: ${{ github.event.repository.default_branch }}"
+          echo "Release tag: ${{ github.event.release.tag_name || 'N/A' }}"
+          echo "This workflow file lives on MAIN and is executed as-is (no checkout)."
+
+      - name: Add comment to issues of matching milestone (filtered by labels)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // core, github, context are already available in github-script
+            await (async () => {
+              const parsePrereleaseTag = (tag) => {
+                const m = /^v?(\d+\.\d+\.\d+)pre(\d+)$/.exec(tag ?? "");
+                return m ? { milestoneTitle: m[1], preNumber: Number(m[2]) } : null;
+              };
+
+              const { owner, repo } = context.repo;
+
+              // If this is a manual run, exit with a clear message
+              if (context.eventName !== 'release') {
+                core.notice("Manual run: no release payload, nothing to do.");
+                return;
+              }
+
+              const tagName = context.payload.release?.tag_name;
+              if (!tagName) { core.notice("No tag_name found on release event."); return; }
+
+              const parsed = parsePrereleaseTag(tagName);
+              if (!parsed) { core.notice(`Tag '${tagName}' does not match vX.Y.ZpreN. Skipping.`); return; }
+
+              const milestoneTitle = parsed.milestoneTitle; // es. "3.7.0"
+              const prereleaseTagDisplay = tagName.startsWith("v") ? tagName : `v${tagName}`;
+              const commentBody = `This feature could be tested in pre-release ${prereleaseTagDisplay}.`;
+
+              core.info(`(MAIN) Looking for milestone '${milestoneTitle}' in ${owner}/${repo}`);
+
+              // Find milestone (open or closed)
+              const milestones = await github.paginate(
+                github.rest.issues.listMilestones,
+                { owner, repo, state: "all", per_page: 100 }
+              );
+              const milestone = milestones.find(m => m.title === milestoneTitle);
+              if (!milestone) { core.warning(`Milestone '${milestoneTitle}' not found.`); return; }
+
+              // All issues in the milestone
+              const issues = await github.paginate(
+                github.rest.issues.listForRepo,
+                { owner, repo, milestone: milestone.number, state: "all", per_page: 100 }
+              );
+
+              // Only issues (no PRs) with the requested labels
+              const allowed = new Set(["status: in review", "status: ready for release"]);
+              const targets = issues.filter(i =>
+                !i.pull_request &&
+                Array.isArray(i.labels) &&
+                i.labels.some(l => allowed.has(l.name))
+              );
+
+              core.info(`Candidate issues: ${targets.length}`);
+
+              let commented = 0;
+              for (const issue of targets) {
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: issue.number, per_page: 100 }
+                );
+
+                const exists = comments.some(c => (c.body || "").trim() === commentBody);
+                if (exists) {
+                  core.info(`#${issue.number}: comment already present, skip.`);
+                  continue;
+                }
+
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number, body: commentBody
+                });
+                commented++;
+                core.info(`#${issue.number}: comment added.`);
+              }
+
+              core.info(`Done. Added comment to ${commented} issue(s).`);
+            })();
