@@ -778,7 +778,7 @@
         "message": "Ajouter des tags automatiquement"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "Ajouter des tags uniquement aux e-mails de la boîte de réception"
+        "message": "Ajoutez des balises uniquement aux e-mails de la boîte de réception"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Seuil de spam"
@@ -1257,5 +1257,47 @@
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "Êtes-vous sûr de vouloir effacer la liste des modèles ? Cette action est irréversible."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Utilisez uniquement ces balises"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Si cette option est cochée, l’IA ajoutera uniquement des balises de la liste ci-dessous."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "La liste doit contenir au moins une balise. Ajoutez une balise par ligne ou séparée par une virgule."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Utilisez uniquement les balises de cette liste séparée par des virgules"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Si cette option est cochée, le Modèle et l’API spécifiés ci-dessous seront utilisés pour ajouter des balises aux e-mails, quel que soit celui choisi dans la page des options de ThunderAI."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informations sur les pièces jointes dans l’e-mail"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Utiliser un Modèle et une API spécifiques"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Si cette option est cochée, le Modèle et l’API spécifiés ci-dessous seront utilisés pour le filtre anti-spam, quel que soit celui choisi dans la page des options de ThunderAI."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Il semble qu’il ne soit pas possible de savoir si ChatGPT a terminé. Cliquez ici pour forcer l’achèvement du travail."
+    },
+    "warn_API_needed": {
+        "message": "Pour utiliser cette fonctionnalité, vous avez besoin d’une intégration API plutôt que de l’intégration Web de ChatGPT. Vous pouvez définir une API spécifique dans la page des paramètres de la fonctionnalité en cochant d’abord la case ci-dessus, puis en cliquant sur le bouton à gauche."
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Définissez le nombre de jetons à utiliser pour le raisonnement. Laissez ce champ vide si le modèle sélectionné ne prend pas en charge le raisonnement ou si vous souhaitez utiliser la méthode par défaut. Entrez 0 pour désactiver le raisonnement, ou -1 pour l’activer de manière dynamique."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "SelectAll": {
+        "message": "Tout sélectionner"
+    },
+    "DeselectAll": {
+        "message": "Tout désélectionner"
     }
 }
