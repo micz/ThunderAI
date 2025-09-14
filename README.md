@@ -38,6 +38,7 @@ Using an API integration, you can activate some automatic features:
 > 
 > - **Anthropic API**
 >   - Use Claude directly!
+>   - You need to grant the permission "_Access your data for sites in the https://anthropic.com domain_" to use Anthropic API.
 >
 >
 > <br>
