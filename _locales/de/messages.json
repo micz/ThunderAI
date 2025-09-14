@@ -760,7 +760,7 @@
         "message": "Wenn ausgewählt, wird die KI automatisch Tags zu neu empfangenen E-Mails hinzufügen."
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "Tags nur zu E-Mails im Posteingang hinzufügen"
+        "message": "Fügen Sie nur Tags zu E-Mails im Posteingang hinzu"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Wenn ausgewählt, wird die KI nur Tags zu E-Mails hinzufügen, die im Posteingangsordner empfangen wurden."
@@ -1257,5 +1257,47 @@
     },
     "prefs_OpenAIComp_ClearModelsList": {
         "message": "Modellliste löschen"
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Verwenden Sie nur diese Tags"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Wenn diese Option aktiviert ist, fügt die KI nur Tags aus der folgenden Liste hinzu."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "Die Liste muss mindestens einen Tag enthalten. Fügen Sie pro Zeile einen Tag hinzu oder trennen Sie sie durch ein Komma."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Verwenden Sie nur die Tags in dieser durch Kommas getrennten Liste"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Wenn diese Option aktiviert ist, werden das unten angegebene Modell und die API zum Hinzufügen von Tags zu E-Mails verwendet, unabhängig von der in der ThunderAI-Optionsseite gewählten Einstellung."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informationen zu den Anhängen in der E-Mail"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Spezifisches Modell und API verwenden"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Wenn diese Option aktiviert ist, werden das unten angegebene Modell und die API für den Spamfilter verwendet, unabhängig von der in der ThunderAI-Optionsseite gewählten Einstellung."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Es scheint nicht möglich zu sein festzustellen, ob ChatGPT fertig ist. Klicken Sie hier, um den Abschluss des Auftrags zu erzwingen."
+    },
+    "warn_API_needed": {
+        "message": "Um diese Funktion zu nutzen, benötigen Sie eine API-Integration anstelle der ChatGPT-Webintegration. Sie können eine spezifische API auf der Einstellungsseite der Funktion definieren, indem Sie zuerst das obige Kontrollkästchen aktivieren und dann auf die Schaltfläche links klicken."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Legen Sie die Anzahl der Token fest, die für das Denken verwendet werden sollen. Lassen Sie dieses Feld leer, wenn das ausgewählte Modell Denken nicht unterstützt oder wenn Sie die Standardmethode verwenden möchten. Geben Sie 0 ein, um das Denken zu deaktivieren, oder -1, um dynamisches Denken zu aktivieren."
+    },
+    "SelectAll": {
+        "message": "Alles auswählen"
+    },
+    "DeselectAll": {
+        "message": "Alles abwählen"
     }
 }
