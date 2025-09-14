@@ -1043,7 +1043,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         if (addTagsAuto || spamFilter) {
             curr_fullMessage = await browser.messages.getFull(message.id);
             msg_text = getMailBody(curr_fullMessage);
-            taLog.log("Startin from the HTML body if present and converting to plain text...");
+            taLog.log("Starting from the HTML body if present and converting to plain text...");
             body_text = htmlBodyToPlainText(msg_text.html);
             if( body_text.length == 0 ){
                 taLog.log("No HTML found in the message body, using plain text...");
