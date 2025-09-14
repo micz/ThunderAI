@@ -20,7 +20,7 @@ import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
 import {
   checkSparksPresence,
-  checkSpecificIntegration,
+  checkAPIIntegration,
 } from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
@@ -371,7 +371,7 @@ function filterPromptsForTab(prompts_data, filtering){
 }
 
 function checkDoAddTags(){
-  return add_tags && ((connection_type !== "chatgpt_web" || checkSpecificIntegration(add_tags_use_specific_integration,add_tags_connection_type)) && tabType !== 'messageCompose');
+  return add_tags && checkAPIIntegration(connection_type, add_tags_use_specific_integration,add_tags_connection_type) && (tabType !== 'messageCompose');
 }
 
 function checkDoCalendarEvent(){

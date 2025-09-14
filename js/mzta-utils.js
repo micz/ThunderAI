@@ -584,7 +584,11 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   return output;
 }
 
-export function checkSpecificIntegration(use, conntype){
+export function checkAPIIntegration(connection_type, use_specific_integration, specific_integration_conntype){
+  return (connection_type !== "chatgpt_web") || (use_specific_integration && (specific_integration_conntype != null) && (specific_integration_conntype !== ''));
+}
+
+export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
 }
 
