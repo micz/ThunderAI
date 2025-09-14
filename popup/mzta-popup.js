@@ -18,12 +18,17 @@
 
 import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
-import { checkSparksPresence } from "../js/mzta-utils.js";
+import {
+  checkSparksPresence,
+  checkSpecificIntegration,
+} from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
 let connection_type = 'chatgpt_web';
 let add_tags = false;
+let add_tags_use_specific_integration = false;
+let add_tags_connection_type = '';
 let get_calendar_event = false;
 let get_task = false;
 let _ok_sparks = false;
@@ -35,6 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       do_debug: prefs_default.do_debug,
       dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
       add_tags: prefs_default.add_tags,
+      add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
+      add_tags_connection_type: prefs_default.add_tags_connection_type,
       get_calendar_event: prefs_default.get_calendar_event,
       get_task: prefs_default.get_task,
       connection_type: prefs_default.connection_type
@@ -56,6 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     menuSendImmediately = prefs.dynamic_menu_force_enter;
     connection_type = prefs.connection_type;
     add_tags = prefs.add_tags;
+    add_tags_use_specific_integration = prefs.add_tags_use_specific_integration;
+    add_tags_connection_type = prefs.add_tags_connection_type;
     get_calendar_event = prefs.get_calendar_event;
     get_task = prefs.get_task;
     _ok_sparks = await checkSparksPresence() == 1;
@@ -362,7 +371,7 @@ function filterPromptsForTab(prompts_data, filtering){
 }
 
 function checkDoAddTags(){
-  return add_tags && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose');
+  return add_tags && ((connection_type !== "chatgpt_web" || checkSpecificIntegration(add_tags_use_specific_integration,add_tags_connection_type)) && tabType !== 'messageCompose');
 }
 
 function checkDoCalendarEvent(){
