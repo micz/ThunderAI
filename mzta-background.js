@@ -951,7 +951,7 @@ function addContextMenu(menu_id) {
         icons: contextMenuIconsPath[menu_id],
     });
     taLog.log("Context menu added: " + menu_id);
-    console.log(">>>>>>> contextMenuIconsPath[menu_id]: " + contextMenuIconsPath[menu_id]);
+    // console.log(">>>>>>> contextMenuIconsPath[menu_id]: " + contextMenuIconsPath[menu_id]);
 }
 
 function removeContextMenu(menu_id) {
