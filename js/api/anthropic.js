@@ -55,7 +55,7 @@ export class Anthropic {
 
       if (!response.ok) {
           const errorDetail = await response.text();
-          let err_msg = "[ThunderAI] Anthropic API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+          let err_msg = "[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
           console.error(err_msg);
           let output = {};
           output.ok = false;
@@ -70,11 +70,11 @@ export class Anthropic {
 
       return output;
     }catch (error) {
-      console.error("[ThunderAI] Anthropic API request failed: " + error);
+      console.error("[ThunderAI] Claude API request failed: " + error);
       let output = {};
       output.is_exception = true;
       output.ok = false;
-      output.error = "Anthropic API request failed: " + error;
+      output.error = "Claude API request failed: " + error;
       return output;
     }
   }
@@ -101,11 +101,11 @@ export class Anthropic {
       });
       return response;
     }catch (error) {
-        console.error("[ThunderAI] Anthropic API request failed: " + error);
+        console.error("[ThunderAI] Claude API request failed: " + error);
         let output = {};
         output.is_exception = true;
         output.ok = false;
-        output.error = "Anthropic API request failed: " + error;
+        output.error = "Claude API request failed: " + error;
         return output;
     }
   }

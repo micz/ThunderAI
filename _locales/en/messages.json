@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use ChatGPT, Google Gemini, Anthropic or Ollama to enhance your emails!",
+    "message": "Use ChatGPT, Google Gemini, Claude or Ollama to enhance your emails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -1384,7 +1384,7 @@
     "description": ""
   },
   "ask_anthropic_api_permission_1": {
-    "message": "To use the Anthropic API integration, you need to grant the required permission.",
+    "message": "To use the Claude API integration, you need to grant the required permission.",
     "description": ""
   },
   "ask_integration_permission_2_popup": {
@@ -1460,27 +1460,27 @@
     "description": ""
   },
   "prefs_Anthropic_API_Key": {
-    "message": "Anthropic API Key",
+    "message": "Claude API Key",
     "description": ""
   },
   "prefs_Connection_type_Anthropic_API": {
-    "message": "Anthropic API",
+    "message": "Claude API",
     "description": ""
   },
   "Anthropic_Models": {
-    "message": "Anthropic Models",
+    "message": "Claude Models",
     "description": ""
   },
   "Anthropic_Models_Fetch": {
-    "message": "Update Anthropic Models list",
+    "message": "Update Claude Models list",
     "description": ""
   },
   "Anthropic_Models_Error_fetching": {
-    "message": "Error trying to fetch Anthropic models",
+    "message": "Error trying to fetch Claude models",
     "description": ""
   },
   "Anthropic_Version": {
-    "message": "Anthropic API Version",
+    "message": "Claude API Version",
     "description": ""
   },
   "Anthropic_Version_Info": {
@@ -1488,7 +1488,7 @@
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens": {
-    "message": "Anthropic Max Tokens",
+    "message": "Claude Max Tokens",
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens_Info": {
@@ -1496,19 +1496,19 @@
     "description": ""
   },
   "anthropic_empty_apikey": {
-    "message": "You've not added an API Key for the Anthropic API. Please insert one in the options page.",
+    "message": "You've not added an API Key for the Claude API. Please insert one in the options page.",
     "description": ""
   },
   "anthropic_empty_model": {
-    "message": "You've not chosen a model for the Anthropic API. Please choose one in the options page.",
+    "message": "You've not chosen a model for the Claude API. Please choose one in the options page.",
     "description": ""
   },
   "anthropic_empty_version": {
-    "message": "You've not added a version string for the Anthropic API. Please insert one in the options page.",
+    "message": "You've not added a version string for the Claude API. Please insert one in the options page.",
     "description": ""
   },
   "anthropic_api_request_failed": {
-    "message": "Anthropic API request failed",
+    "message": "Claude API request failed",
     "description": ""
   },
   "_api_connecting": {

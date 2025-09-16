@@ -300,7 +300,7 @@
         "message": "額外屬性"
     },
     "Anthropic_Models": {
-        "message": "Anthropic 模型"
+        "message": "Claude 模型"
     },
     "_api_connecting_model": {
         "message": "模型",
@@ -317,7 +317,7 @@
         "message": "啟用思考"
     },
     "extensionDescription": {
-        "message": "使用 ChatGPT、Google Gemini、Anthropic 或 Ollama 來幫你寫好你的郵件吧！"
+        "message": "使用 ChatGPT、Google Gemini、Claude 或 Ollama 來幫你寫好你的郵件吧！"
     },
     "customPrompts_form_label_Name": {
         "message": "名稱"
@@ -394,7 +394,7 @@
         "message": "自訂"
     },
     "prefs_Connection_type_Anthropic_API": {
-        "message": "Anthropic API"
+        "message": "Claude API"
     },
     "save": {
         "message": "儲存"
@@ -645,13 +645,13 @@
         "message": "這是將針對 ChatGPT 網頁介面強制執行的專案。"
     },
     "Anthropic_Models_Fetch": {
-        "message": "更新 Anthropic 模型列表"
+        "message": "更新 Claude 模型列表"
     },
     "prefs_Anthropic_API_Key": {
-        "message": "Anthropic API 金鑰"
+        "message": "Claude API 金鑰"
     },
     "anthropic_api_request_failed": {
-        "message": "Anthropic API 請求失敗"
+        "message": "Claude API 請求失敗"
     },
     "OpenAIComp_Configs_ConfirmApply": {
         "message": "您確定要套用設定「$config_name$」嗎？",
@@ -815,7 +815,7 @@
         "message": "點擊此處開啟新分頁並按照說明進行操作。"
     },
     "ask_anthropic_api_permission_1": {
-        "message": "要使用 Anthropic API 整合，您需要授予所需的權限。"
+        "message": "要使用 Claude API 整合，您需要授予所需的權限。"
     },
     "ask_integration_permission_ok": {
         "message": "已授予權限。您可以按一下此處關閉此分頁並返回主視窗。"
@@ -845,7 +845,7 @@
         "message": "如果在選項或提示中指定了專案，則不會使用臨時聊天。"
     },
     "Anthropic_Models_Error_fetching": {
-        "message": "嘗試取得 Anthropic 模型時出錯"
+        "message": "嘗試取得 Claude 模型時出錯"
     },
     "_api_connecting": {
         "message": "嘗試使用以下配置連接到 $api_string$...",
@@ -856,10 +856,10 @@
         }
     },
     "anthropic_empty_model": {
-        "message": "您尚未選擇 Anthropic API 的模型。請在選項頁面中選擇一個。"
+        "message": "您尚未選擇 Claude API 的模型。請在選項頁面中選擇一個。"
     },
     "anthropic_empty_version": {
-        "message": "您尚未新增 Anthropic API 的版本字串。請在選項頁面中輸入一個。"
+        "message": "您尚未新增 Claude API 的版本字串。請在選項頁面中輸入一個。"
     },
     "ChatGPT_chatgpt_api_store_info": {
         "message": "如果勾選，您的聊天記錄將由 OpenAI 儲存。"
@@ -916,7 +916,7 @@
         "message": "自動新增標籤"
     },
     "anthropic_empty_apikey": {
-        "message": "您尚未新增 Anthropic API 的 API 金鑰。請在選項頁面中輸入一個。"
+        "message": "您尚未新增 Claude API 的 API 金鑰。請在選項頁面中輸入一個。"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "手動輸入模型"
@@ -928,7 +928,7 @@
         "message": "管理任務設定"
     },
     "Anthropic_Version": {
-        "message": "Anthropic API 版本"
+        "message": "Claude API 版本"
     },
     "prefs_OptionText_spamfilter": {
         "message": "自動垃圾郵件過濾器"
@@ -937,7 +937,7 @@
         "message": "已移到垃圾郵件"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Anthropic 最大 Token 數"
+        "message": "Claude 最大 Token 數"
     },
     "prefs_OpenAIComp_API_Key": {
         "message": "OpenAI 相容 API 金鑰"

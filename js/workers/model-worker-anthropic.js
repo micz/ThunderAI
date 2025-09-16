@@ -71,7 +71,7 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
             }
             postMessage({ type: 'error', payload: i18nStrings["anthropic_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] Anthropic API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            throw new Error("[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
         const reader = response.body.getReader();
@@ -94,7 +94,7 @@ self.onmessage = async function(event) {
                 postMessage({ type: 'tokensDone' });
                 break;
             }
-            // lots of low-level Anthropic response parsing stuff
+            // lots of low-level Claude response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
             taLog.log("buffer " + buffer);

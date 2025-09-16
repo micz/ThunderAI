@@ -251,7 +251,7 @@ switch (llm) {
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "Anthropic API",
+            api_string: "Claude API",
             model_string: prefs_api.anthropic_model,
             version_string: prefs_api.anthropic_version,
             additional_messages: additional_text_elements

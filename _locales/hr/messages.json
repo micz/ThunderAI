@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Koristite ChatGPT, Google Gemini, Anthropic ili Ollama kako bi poboljšali vaše e-poruke!",
+        "message": "Koristite ChatGPT, Google Gemini, Claude ili Ollama kako bi poboljšali vaše e-poruke!",
         "description": "Description of the extension."
     },
     "menu_title": {

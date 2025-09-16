@@ -56,9 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(granted){
                     document.getElementById("anthropic_api_permission").style.display = "none";
                     document.getElementById("integration_permission_ok").style.display = "block";
-                    taLog.log("Anthropic API permission granted");
+                    taLog.log("Claude API permission granted");
                 }else{
-                    taLog.log("Anthropic API web permission denied");
+                    taLog.log("Claude API web permission denied");
                 }
             });
             document.getElementById("integration_permission_ok").addEventListener("click", async () => {

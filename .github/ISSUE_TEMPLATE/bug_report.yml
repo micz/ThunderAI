@@ -56,7 +56,7 @@ body:
         - ChatGPT Web Interface
         - OpenAI ChatGPT API
         - Google Gemini API
-        - Anthropic API
+        - Claude API
         - Ollama API
         - OpenAI Compatible API
   - type: markdown
