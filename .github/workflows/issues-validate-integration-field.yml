@@ -1,0 +1,75 @@
+name: Validate Integration Field
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  check-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate dropdown selection (only for bug report form)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const bodyText = issue.body || "";
+
+            // ---- Guard: only act if this looks like a Bug Report form ----
+            if (!bodyText.includes("### The problem")) {
+              core.info("Skipped: This issue does not contain '### The problem', so it is not a Bug Report.");
+              return;
+            }
+            core.info("Detected a Bug Report issue. Proceeding with validation...");
+
+            // Extract selection under "Which integration are you using?"
+            const header = "### Which integration are you using?";
+            const nextHeaderRegex = /\n### /;
+            let selection = "";
+
+            const startIdx = bodyText.indexOf(header);
+            if (startIdx !== -1) {
+              const afterHeader = bodyText.slice(startIdx + header.length).replace(/^\r?\n+/, "");
+              const nextHeaderIdx = afterHeader.search(nextHeaderRegex);
+              selection = (nextHeaderIdx === -1 ? afterHeader : afterHeader.slice(0, nextHeaderIdx)).trim();
+            }
+
+            core.info(`Integration field extracted: "${selection}"`);
+
+            const isInvalid = !selection || selection.startsWith("-- Select an option");
+            if (isInvalid) {
+              core.info("Integration field is invalid or not selected.");
+            } else {
+              core.info("Integration field is valid. Nothing to do.");
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = issue.number;
+
+            // Avoid duplicate comments
+            const marker = "please specify **Which integration are you using?**";
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const alreadyCommented = comments.some(c => c.body && c.body.includes(marker));
+
+            if (isInvalid) {
+              if (!alreadyCommented) {
+                core.info("No existing reminder found. Posting a new comment...");
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number,
+                  body: [
+                    `👋 Hello @${issue.user.login}!`,
+                    `To complete your bug report, please specify which integration you are using.`,
+                    "",
+                    "Right now the field `**Which integration are you using?**` is set to `-- Select an option --`.",
+                    "",
+                    "Click **Edit** at the top right of the issue, choose a valid option from the dropdown, and save.",
+                  ].join("\n")
+                });
+              } else {
+                core.info("Reminder comment already exists. Skipping new comment.");
+              }
+            }
