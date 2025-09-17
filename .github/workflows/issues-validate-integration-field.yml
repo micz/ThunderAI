@@ -1,4 +1,4 @@
-name: Validate Integration Field
+name: Issues Validate Integration Field
 
 on:
   issues:
