@@ -1,0 +1,117 @@
+name: Mark released issues on close
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  mark-released:
+    # Run only if closed as completed AND has at least one "status:" label
+    if: ${{ github.event.issue.state_reason == 'completed' && contains(toJSON(github.event.issue.labels), 'status:') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set "released" label when closed completed and was ready for release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Helpers
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue = context.payload.issue;
+            if (!issue) {
+              core.info('No issue payload found, skipping.');
+              return;
+            }
+
+            // Only proceed if closed as "completed" (not "not_planned")
+            const isCompleted = issue.state_reason === 'completed';
+            if (!isCompleted) {
+              core.info('Issue state_reason is not "completed"; skipping.');
+              return;
+            }
+
+            const getName = (l) => typeof l === 'string' ? l : l.name;
+            const labels = (issue.labels || []).map(getName);
+
+            // Status detection (robust to case/spacing)
+            const isStatusLabel = (name) => /^status:\s*/i.test(String(name || ''));
+            const hasAnyStatus = labels.some(isStatusLabel);
+            if (!hasAnyStatus) {
+              core.info('Issue has no "status:*" label; skipping.');
+              return;
+            }
+
+            const READY_REGEX = /^status:\s*ready\s*for\s*release$/i;
+            const hasReady = labels.some((n) => READY_REGEX.test(String(n || '')));
+            if (!hasReady) {
+              core.info('Issue is not "status: ready for release"; nothing to do.');
+              return;
+            }
+
+            const releasedLabel = 'status: released';
+
+            // Ensure "released" label exists
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: releasedLabel });
+            } catch (e) {
+              if (e.status === 404) {
+                core.info(`Label "${releasedLabel}" not found. Creating it.`);
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: releasedLabel,
+                  color: '184738', // deep green
+                  description: 'Feature released.'
+                });
+              } else {
+                throw e;
+              }
+            }
+
+            // Remove all status:* labels, add "status: released"
+            const filtered = labels.filter((name) => !isStatusLabel(name));
+            const newLabels = [...new Set([...filtered, releasedLabel])];
+
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: issue.number,
+              labels: newLabels
+            });
+
+            core.info(`Issue #${issue.number} relabeled as "${releasedLabel}".`);
+
+            // === NEW: add release comment with milestone if present ===
+            const milestone = issue.milestone;
+            if (!milestone || !milestone.title) {
+              core.info('Issue has no milestone; no release comment added.');
+              return;
+            }
+
+            const commentBody = `Released in version ${milestone.title}.`;
+
+            // Avoid duplicate comment if the action reruns
+            const existingComments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: issue.number, per_page: 100 }
+            );
+
+            const alreadyCommented = existingComments.some(c =>
+              typeof c.body === 'string' && c.body.trim() === commentBody
+            );
+
+            if (alreadyCommented) {
+              core.info('Release comment already present; skipping comment creation.');
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: commentBody
+              });
+              core.info('Release comment added.');
+            }
