@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Utilise ChatGPT, Goolge Gemini, Anthropic ou Ollama pour améliorer tes e-mails !",
+        "message": "Utilise ChatGPT, Goolge Gemini, Claude ou Ollama pour améliorer tes e-mails !",
         "description": "Description of the extension."
     },
     "menu_title": {
