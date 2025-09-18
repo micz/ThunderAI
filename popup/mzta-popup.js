@@ -18,12 +18,17 @@
 
 import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
-import { checkSparksPresence } from "../js/mzta-utils.js";
+import {
+  checkSparksPresence,
+  checkAPIIntegration,
+} from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
 let connection_type = 'chatgpt_web';
 let add_tags = false;
+let add_tags_use_specific_integration = false;
+let add_tags_connection_type = '';
 let get_calendar_event = false;
 let get_task = false;
 let _ok_sparks = false;
@@ -31,7 +36,16 @@ let tabType;
 let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: prefs_default.do_debug, dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter, add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs = await browser.storage.sync.get({
+      do_debug: prefs_default.do_debug,
+      dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+      add_tags: prefs_default.add_tags,
+      add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
+      add_tags_connection_type: prefs_default.add_tags_connection_type,
+      get_calendar_event: prefs_default.get_calendar_event,
+      get_task: prefs_default.get_task,
+      connection_type: prefs_default.connection_type
+    });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
@@ -42,10 +56,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     let _prompts_data = reponse.lastShortcutPromptsData;
     taLog.log("_prompts_data: " + JSON.stringify(_prompts_data));
     let active_prompts = filterPromptsForTab(_prompts_data, filtering);
+    active_prompts.forEach(item => {
+        item.label = new DOMParser().parseFromString(item.label, "text/html").documentElement.textContent;
+    });
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
     connection_type = prefs.connection_type;
     add_tags = prefs.add_tags;
+    add_tags_use_specific_integration = prefs.add_tags_use_specific_integration;
+    add_tags_connection_type = prefs.add_tags_connection_type;
     get_calendar_event = prefs.get_calendar_event;
     get_task = prefs.get_task;
     _ok_sparks = await checkSparksPresence() == 1;
@@ -352,7 +371,7 @@ function filterPromptsForTab(prompts_data, filtering){
 }
 
 function checkDoAddTags(){
-  return add_tags && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose');
+  return add_tags && checkAPIIntegration(connection_type, add_tags_use_specific_integration,add_tags_connection_type) && (tabType !== 'messageCompose');
 }
 
 function checkDoCalendarEvent(){

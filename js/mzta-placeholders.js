@@ -16,6 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { prefs_default } from '../options/mzta-options-default.js';
+
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
 
     ================ BASE PROPERTIES
@@ -221,6 +223,14 @@ const defaultPlaceholders = [
         is_default: "1",
         enabled: 1,
     },
+    {
+        id: 'mail_attachments_info',
+        name: "__MSG_placeholder_mail_attachments_info__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        enabled: 1,
+    }
 ];
 
 
@@ -329,19 +339,25 @@ export const placeholdersUtils = {
         return matches;
     },
 
-    replacePlaceholders(text, replacements, use_default_value = false, skip_additional_text = false) {
+    replacePlaceholders(args) {
+        const {
+            text = "",
+            replacements = {},
+            use_default_value = false,
+            skip_additional_text = false
+        } = args || {};
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
-          // p1 contains the key inside {% %}
-          if (skip_additional_text && (p1 === 'additional_text')) {
-            return match;
-          }
-          const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
-          if (!currPlaceholder) {
-            return match;
-          }
-          // Replace if found, otherwise keep the original or substitute with default value
-          return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
+            // p1 contains the key inside {% %}
+            if (skip_additional_text && (p1 === 'additional_text')) {
+                return match;
+            }
+            const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
+            if (!currPlaceholder) {
+                return match;
+            }
+            // Replace if found, otherwise keep the original or substitute with default value
+            return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
         });
     },
 
@@ -390,9 +406,22 @@ export const placeholdersUtils = {
         return regex.test(text);
     },
 
-    async getPlaceholdersValues(prompt_text, curr_message, mail_subject, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list) {
+    async getPlaceholdersValues(args) {
+        const {
+            prompt_text = "",
+            curr_message = {},
+            mail_subject = "",
+            body_text = "",
+            msg_text = {},
+            only_typed_text = "",
+            only_quoted_text = "",
+            selection_text = "",
+            selection_html = "",
+            tags_full_list = ["", []]
+        } = args || {};
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
+        // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
         for(let currPH of currPHs){
             switch(currPH.id){
@@ -453,12 +482,22 @@ export const placeholdersUtils = {
                     finalSubs['tags_full_list'] = placeholdersUtils.failSafePlaceholders(tags_full_list[0]);
                     break;
                 case 'thunderai_def_sign':
-                    let prefs_def_sign = await browser.storage.sync.get({default_sign_name: ''});
+                    let prefs_def_sign = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
                     finalSubs['thunderai_def_sign'] = placeholdersUtils.failSafePlaceholders(prefs_def_sign.default_sign_name);
                     break;
                 case 'thunderai_def_lang':
-                    let prefs_def_lang = await browser.storage.sync.get({default_chatgpt_lang: ''});
+                    let prefs_def_lang = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'mail_attachments_info':
+                    let attachments_info_string = "";
+                    let attachments_info = await browser.messages.listAttachments(curr_message.id);
+                    if(attachments_info && attachments_info.length > 0){
+                        attachments_info_string = attachments_info.map(att => "\"" + att.name + "\" [" + att.contentType + "] (" + Math.round(att.size / 1024) + " KB)").join("\n");
+                    }
+                    attachments_info_string = attachments_info_string.trimEnd();
+                    finalSubs['mail_attachments_info'] = placeholdersUtils.failSafePlaceholders(attachments_info_string);
+                    // console.log(">>>>>>>>>> mail_attachments_info: " + finalSubs['mail_attachments_info']);
                     break;
                 case 'empty':
                     finalSubs['empty'] = '';

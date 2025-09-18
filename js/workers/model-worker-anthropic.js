@@ -36,9 +36,16 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
+        // console.log(">>>>>>>>>>>>>> event.data: " + JSON.stringify(event.data));
         anthropic_api_key = event.data.anthropic_api_key;
         anthropic_model = event.data.anthropic_model;
-        anthropic = new Anthropic(anthropic_api_key, event.data.anthropic_version, anthropic_model, event.data.anthropic_max_tokens, true);
+        anthropic = new Anthropic({
+            apiKey: anthropic_api_key,
+            version: event.data.anthropic_version,
+            model: anthropic_model,
+            max_tokens: event.data.anthropic_max_tokens,
+            stream: true
+        });
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-anthropic', do_debug);
@@ -64,7 +71,7 @@ self.onmessage = async function(event) {
                 taLog.log("error_message: " + JSON.stringify(error_message));
             }
             postMessage({ type: 'error', payload: i18nStrings["anthropic_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] Anthropic API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            throw new Error("[ThunderAI] Claude API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
         }
 
         const reader = response.body.getReader();
@@ -87,7 +94,7 @@ self.onmessage = async function(event) {
                 postMessage({ type: 'tokensDone' });
                 break;
             }
-            // lots of low-level Anthropic response parsing stuff
+            // lots of low-level Claude response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
             taLog.log("buffer " + buffer);

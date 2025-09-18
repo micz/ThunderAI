@@ -1065,10 +1065,10 @@
         "message": "Если в опциях или в подсказке указан Проект, временный чат не будет использоваться."
     },
     "prefs_Anthropic_API_Key": {
-        "message": "Ключ API Anthropic"
+        "message": "Ключ API Claude"
     },
     "prefs_Connection_type_Anthropic_API": {
-        "message": "Антропный(Anthropic) API"
+        "message": "Антропный(Claude) API"
     },
     "Anthropic_Models": {
         "message": "Антропологические модели"
@@ -1086,22 +1086,22 @@
         "message": "ОБЯЗАТЕЛЬНО. Не изменяйте это значение, если не знаете, что делаете. Доп. информация на сайте:"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Anthropic максимум токенов"
+        "message": "Claude максимум токенов"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Максимальное кол-во токенов, генерируемых в процессе завершения. Кол-во токенов в подсказке плюс max_tokens не может превышать длину контекста модели."
     },
     "anthropic_empty_apikey": {
-        "message": "Вы не добавили ключ API для API Anthropic. Пожалуйста, введите его на странице параметров."
+        "message": "Вы не добавили ключ API для API Claude. Пожалуйста, введите его на странице параметров."
     },
     "anthropic_empty_model": {
-        "message": "Вы не выбрали модель для Anthropic API. Пожалуйста, выберите ее на странице параметров."
+        "message": "Вы не выбрали модель для Claude API. Пожалуйста, выберите ее на странице параметров."
     },
     "anthropic_empty_version": {
-        "message": "Вы не добавили строку версии для API Anthropic. Пожалуйста, вставьте ее на странице параметров."
+        "message": "Вы не добавили строку версии для API Claude. Пожалуйста, вставьте ее на странице параметров."
     },
     "anthropic_api_request_failed": {
-        "message": "Anthropic API-запрос не удался"
+        "message": "Claude API-запрос не удался"
     },
     "_api_connecting": {
         "message": "Попытка подключения к $api_string$ с использованием следующей конфигурации...",

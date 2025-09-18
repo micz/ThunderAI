@@ -31,8 +31,15 @@ Using an API integration, you can activate some automatic features:
 > <br>
 > 
 > - **Google Gemini**
->   - You can use also the _System Instructions_ option if needed.
+>   - You can use also the _System Instructions_ and _thinkingBudget_ options if needed.
 > 
+> 
+> <br>
+> 
+> - **Claude API**
+>   - You need to grant the permission "_Access your data for sites in the https://anthropic.com domain_" to use the Claude API.
+>
+>
 > <br>
 > 
 > - **Using Ollama**
@@ -44,11 +51,6 @@ Using an API integration, you can activate some automatic features:
 > - **OpenAI Compatible API**
 >   - You can also use a local OpenAI Compatible API server, like LM Studio or Mistral AI!
 >   - There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint.
-> 
-> <br>
-> 
-> - **Anthropic API**
->   - Use Claude directly!
 
 
 
@@ -102,6 +104,8 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://loading.io">loading.io</a> for the loading SVGs
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
+- [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
+- [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
 
 
 <br>

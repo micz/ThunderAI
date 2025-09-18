@@ -1,6 +1,6 @@
 {
     "extensionDescription": {
-        "message": "Verwenden Sie ChatGPT, Google Gemini, Anthropic oder Ollama, um Ihre E-Mails zu verbessern!",
+        "message": "Verwenden Sie ChatGPT, Google Gemini, Claude oder Ollama, um Ihre E-Mails zu verbessern!",
         "description": "Description of the extension."
     },
     "menu_title": {
@@ -760,7 +760,7 @@
         "message": "Wenn ausgewählt, wird die KI automatisch Tags zu neu empfangenen E-Mails hinzufügen."
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "Tags nur zu E-Mails im Posteingang hinzufügen"
+        "message": "Fügen Sie nur Tags zu E-Mails im Posteingang hinzu"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Wenn ausgewählt, wird die KI nur Tags zu E-Mails hinzufügen, die im Posteingangsordner empfangen wurden."
@@ -1072,22 +1072,22 @@
         "message": "Bitte korrigieren Sie die folgende E-Mail und beheben Sie alle Rechtschreib- oder Grammatikfehler. Antworten Sie nur mit dem korrigierten Text, ohne zusätzliche Kommentare oder sonstigen Text.\n\n„{%mail_typed_text%}“"
     },
     "prefs_Connection_type_Anthropic_API": {
-        "message": "Anthropic API"
+        "message": "Claude API"
     },
     "anthropic_empty_version": {
-        "message": "Sie haben keinen Versionsstring für die Anthropic-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+        "message": "Sie haben keinen Versionsstring für die Claude-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
     },
     "Anthropic_Models_Error_fetching": {
-        "message": "Fehler beim Abrufen der Anthropic-Modelle"
+        "message": "Fehler beim Abrufen der Claude-Modelle"
     },
     "prefs_Anthropic_API_Key": {
-        "message": "Anthropic API-Schlüssel"
+        "message": "Claude API-Schlüssel"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Die maximale Anzahl von Tokens, die in der Vervollständigung generiert werden soll. Die Anzahl der Tokens Ihres Prompts plus max_tokens darf die Kontextlänge des Modells nicht überschreiten."
     },
     "anthropic_api_request_failed": {
-        "message": "Anfrage an die Anthropic-API fehlgeschlagen"
+        "message": "Anfrage an die Claude-API fehlgeschlagen"
     },
     "_api_connecting": {
         "message": "Verbindungsversuch zu $api_string$ mit der folgenden Konfiguration...",
@@ -1098,28 +1098,28 @@
         }
     },
     "Anthropic_Models_Fetch": {
-        "message": "Anthropic-Modellliste aktualisieren"
+        "message": "Claude-Modellliste aktualisieren"
     },
     "Custom": {
         "message": "Benutzerdefiniert"
     },
     "Anthropic_Version": {
-        "message": "Anthropic-API-Version"
+        "message": "Claude-API-Version"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Maximale Anzahl an Tokens für Anthropic"
+        "message": "Maximale Anzahl an Tokens für Claude"
     },
     "anthropic_empty_apikey": {
-        "message": "Sie haben keinen API-Schlüssel für die Anthropic-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
+        "message": "Sie haben keinen API-Schlüssel für die Claude-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
     },
     "ask_anthropic_api_permission_1": {
-        "message": "Um die Anthropic-API-Integration zu verwenden, müssen Sie die erforderliche Berechtigung erteilen."
+        "message": "Um die Claude-API-Integration zu verwenden, müssen Sie die erforderliche Berechtigung erteilen."
     },
     "Anthropic_Models": {
-        "message": "Anthropic Modelle"
+        "message": "Claude Modelle"
     },
     "anthropic_empty_model": {
-        "message": "Sie haben kein Modell für die Anthropic-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+        "message": "Sie haben kein Modell für die Claude-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
     "_api_connecting_model": {
         "message": "Modell",
@@ -1257,5 +1257,47 @@
     },
     "prefs_OpenAIComp_ClearModelsList": {
         "message": "Modellliste löschen"
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Verwenden Sie nur diese Tags"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Wenn diese Option aktiviert ist, fügt die KI nur Tags aus der folgenden Liste hinzu."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "Die Liste muss mindestens einen Tag enthalten. Fügen Sie pro Zeile einen Tag hinzu oder trennen Sie sie durch ein Komma."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Verwenden Sie nur die Tags in dieser durch Kommas getrennten Liste"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Wenn diese Option aktiviert ist, werden das unten angegebene Modell und die API zum Hinzufügen von Tags zu E-Mails verwendet, unabhängig von der in der ThunderAI-Optionsseite gewählten Einstellung."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informationen zu den Anhängen in der E-Mail"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Spezifisches Modell und API verwenden"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Wenn diese Option aktiviert ist, werden das unten angegebene Modell und die API für den Spamfilter verwendet, unabhängig von der in der ThunderAI-Optionsseite gewählten Einstellung."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Es scheint nicht möglich zu sein festzustellen, ob ChatGPT fertig ist. Klicken Sie hier, um den Abschluss des Auftrags zu erzwingen."
+    },
+    "warn_API_needed": {
+        "message": "Um diese Funktion zu nutzen, benötigen Sie eine API-Integration anstelle der ChatGPT-Webintegration. Sie können eine spezifische API auf der Einstellungsseite der Funktion definieren, indem Sie zuerst das obige Kontrollkästchen aktivieren und dann auf die Schaltfläche links klicken."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Legen Sie die Anzahl der Token fest, die für das Denken verwendet werden sollen. Lassen Sie dieses Feld leer, wenn das ausgewählte Modell Denken nicht unterstützt oder wenn Sie die Standardmethode verwenden möchten. Geben Sie 0 ein, um das Denken zu deaktivieren, oder -1, um dynamisches Denken zu aktivieren."
+    },
+    "SelectAll": {
+        "message": "Alles auswählen"
+    },
+    "DeselectAll": {
+        "message": "Alles abwählen"
     }
 }

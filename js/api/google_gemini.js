@@ -24,12 +24,26 @@ export class GoogleGemini {
   model = '';
   system_instruction = '';
   stream = false;
+  thinking_budget = ''; // Model default
 
-  constructor(apiKey, model, system_instruction, stream) {
+  constructor({
+    apiKey = '',
+    model = '',
+    system_instruction = '',
+    stream = false,
+    thinking_budget = '',
+  } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.system_instruction = system_instruction;
     this.stream = stream;
+    this.thinking_budget = String(thinking_budget ?? '').trim();
+    /* Info from: https://ai.google.dev/gemini-api/docs/thinking?#set-budget
+      # Turn on thinking with a specific token limit: "thinking_budget": 1024
+      # Thinking off: "thinking_budget": 0
+      # Turn on dynamic thinking: "thinking_budget": -1
+      # Keep model default thinking: "thinking_budget": ""
+    */
   }
 
 
@@ -83,7 +97,15 @@ export class GoogleGemini {
           parts:{
             text: this.system_instruction
           }
-        }
+        };
+      }
+
+      if(this.thinking_budget !== '') {
+        google_gemini_body.generationConfig = {
+          thinkingConfig: {
+            thinking_budget: this.thinking_budget,
+          }
+        };
       }
 
       // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));

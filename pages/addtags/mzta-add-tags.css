@@ -17,8 +17,14 @@
     margin: 40px auto;
 }
 
-#addtags_excl_list{
+#addtags_excl_list, #add_tags_auto_uselist_list{
     width: 30em;
+}
+
+#add_tags_auto_uselist_list:disabled {
+    background-color: #eee;
+    color: #888;
+    cursor: not-allowed;
 }
 
 #account_selector_container{
@@ -37,13 +43,53 @@
     background-color: #e9ffdf;
 }
 
+.specific_integration{
+    background-color: #dfeaff;
+}
+
+tr.add_tags_auto_sub td,
+tr.specific_integration_sub td{
+    padding-left: 0.8em !important;
+}
+
+.specific_integration_sub{
+    display: none;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.group td {
+  border-top: none;
+  border-bottom: none;
+}
+
+.specific_integration_sub td:first-child {
+  border-left: 10px solid #dfeaff;
+}
+
+.specific_integration_sub td:last-child {
+  border-right: 10px solid #dfeaff;
+}
+
+#connection_ui_end td{
+    height: 6px;
+    background-color: #dfeaff;
+}
+
+#connection_ui_end{
+    display: none;
+}
+
 .btn_div{
     width: 100%;
     display: flex;
     justify-content: space-between;
 }
 
-#addtags_info_additional_statements, #add_tags_auto_only_inbox_tr{
+#addtags_info_additional_statements, #add_tags_auto_only_inbox_tr, #add_tags_auto_uselist_tr{
     display: none;
 }
 
@@ -62,6 +108,7 @@ table#miczPrefs {
 
 .section_title{
     font-weight: bold;
+    font-size: 1.2em;
 }
 
 table#miczPrefs td{
@@ -148,5 +195,21 @@ table#miczPrefs  tr:last-child td {
 
     .add_tags_auto{
         background-color: #415c35;
+    }
+
+    .specific_integration{
+        background-color: #2E3A4F;
+    }
+
+    .specific_integration_sub td:first-child {
+        border-left: 10px solid #2E3A4F;
+    }
+
+    .specific_integration_sub td:last-child {
+        border-right: 10px solid #2E3A4F;
+    }
+
+    #connection_ui_end td{
+        background-color: #2E3A4F;
     }
 }

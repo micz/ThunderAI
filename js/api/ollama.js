@@ -24,8 +24,14 @@ export class Ollama {
     num_ctx = 0;
     think = false;
   
-    constructor(host, model, stream = false, num_ctx = 0, think = false) {
-      this.host = host.trim().replace(/\/+$/, "");
+    constructor({
+      host = '',
+      model = '',
+      stream = false,
+      num_ctx = 0,
+      think = false,
+    } = {}) {
+      this.host = (host || '').trim().replace(/\/+$/, "");
       this.model = model;
       this.stream = stream;
       this.num_ctx = num_ctx;

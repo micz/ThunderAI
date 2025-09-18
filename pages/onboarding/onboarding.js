@@ -17,11 +17,15 @@
  */
 
 import { taLogger } from '../../js/mzta-logger.js';
+import { prefs_default } from '../../options/mzta-options-default.js';
 
 let taLog = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    let prefs = await browser.storage.sync.get({do_debug: false, connection_type: 'chatgpt_web'});
+    let prefs = await browser.storage.sync.get({
+        do_debug: prefs_default.do_debug,
+        connection_type: prefs_default.connection_type,
+    });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
     if(prefs.connection_type === 'chatgpt_web'){
@@ -52,9 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(granted){
                     document.getElementById("anthropic_api_permission").style.display = "none";
                     document.getElementById("integration_permission_ok").style.display = "block";
-                    taLog.log("Anthropic API permission granted");
+                    taLog.log("Claude API permission granted");
                 }else{
-                    taLog.log("Anthropic API web permission denied");
+                    taLog.log("Claude API web permission denied");
                 }
             });
             document.getElementById("integration_permission_ok").addEventListener("click", async () => {

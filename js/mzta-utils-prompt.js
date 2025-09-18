@@ -18,11 +18,12 @@
 
 import { placeholdersUtils } from './mzta-placeholders.js';
 import { extractJsonObject } from './mzta-utils.js';
+import { prefs_default } from '../options/mzta-options-default.js';
 
 export const taPromptUtils = {
 
     async getDefaultSignature(){
-        let prefs = await browser.storage.sync.get({default_sign_name: ''});
+        let prefs = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
         if(prefs.default_sign_name===''){
             return '';
         }else{
@@ -30,7 +31,21 @@ export const taPromptUtils = {
         }
     },
 
-    async preparePrompt(curr_prompt, curr_message, chatgpt_lang, selection_text, selection_html, body_text, subject_text, msg_text, only_typed_text, only_quoted_text, tags_full_list){
+    async preparePrompt(args){
+        const {
+            curr_prompt = {},
+            curr_message = {},
+            chatgpt_lang = '',
+            selection_text = '',
+            selection_html = '',
+            body_text = '',
+            subject_text = '',
+            msg_text = {},
+            only_typed_text = '',
+            only_quoted_text = '',
+            tags_full_list = ["", []]
+        } = args || {};
+
         let fullPrompt = '';
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
@@ -42,21 +57,39 @@ export const taPromptUtils = {
             if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
                 curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
             }
-            let finalSubs = await placeholdersUtils.getPlaceholdersValues(curr_prompt.text, curr_message, subject_text, body_text, msg_text, only_typed_text, only_quoted_text, selection_text, selection_html, tags_full_list);
-            // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
-            let prefs_ph = await browser.storage.sync.get({placeholders_use_default_value: false});
-            fullPrompt = (placeholdersUtils.replacePlaceholders(curr_prompt.text, finalSubs, prefs_ph.placeholders_use_default_value, true) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
+            let finalSubs = await placeholdersUtils.getPlaceholdersValues({
+                prompt_text: curr_prompt.text,
+                curr_message: curr_message,
+                mail_subject: subject_text,
+                body_text: body_text,
+                msg_text: msg_text,
+                only_typed_text: only_typed_text,
+                only_quoted_text: only_quoted_text,
+                selection_text: selection_text,
+                selection_html: selection_html,
+                tags_full_list: tags_full_list
+            });
+            let prefs_ph = await browser.storage.sync.get({ placeholders_use_default_value: prefs_default.placeholders_use_default_value });
+            fullPrompt = (placeholdersUtils.replacePlaceholders({
+                text: curr_prompt.text,
+                replacements: finalSubs,
+                use_default_value: prefs_ph.placeholders_use_default_value,
+                skip_additional_text: true
+            }) + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang).trim();
         }
 
         return fullPrompt;
     },
 
-    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang){
+    finalizePrompt_add_tags(fullPrompt, add_tags_maxnum, add_tags_force_lang, default_chatgpt_lang, add_tags_auto_uselist = false, add_tags_auto_uselist_list = ''){
         if(add_tags_maxnum > 0){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_maxnum") + " " + add_tags_maxnum +".";
         }
         if(add_tags_force_lang && default_chatgpt_lang !== ''){
             fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_force_lang") + " " + default_chatgpt_lang + ".";
+        }
+        if(add_tags_auto_uselist && add_tags_auto_uselist_list && add_tags_auto_uselist_list.length > 0){
+            fullPrompt += " \n" + browser.i18n.getMessage("prompt_add_tags_use_list") + ": " + add_tags_auto_uselist_list + ".";
         }
 
         return fullPrompt;
@@ -72,7 +105,7 @@ export const taPromptUtils = {
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
         if(String(curr_prompt.define_response_lang) == "1"){
-            let prefs = await browser.storage.sync.get({default_chatgpt_lang: ''});
+            let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
             chatgpt_lang = prefs.default_chatgpt_lang;
             if(chatgpt_lang === ''){
                 chatgpt_lang = browser.i18n.getMessage("reply_same_lang");
@@ -97,7 +130,7 @@ export const taPromptUtils = {
      * For backwords compatibility, if the response text is not a valid JSON,
      * it will try to split the text by commas and return the resulting array.
      */
-    getTagsFromResponse(response_text){
+    getTagsFromResponse(response_text, filter_tags = false, filter_tags_list = ''){
         let tags = [];
         if(response_text && response_text.length > 0){
             try {
@@ -113,6 +146,10 @@ export const taPromptUtils = {
                 // If parsing fails, fallback to splitting by commas
                 tags = response_text.split(/,\s*/).map(tag => tag.trim());
             }
+        }
+        if(filter_tags && filter_tags_list && filter_tags_list.length > 0){
+            const allowedTags = filter_tags_list.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+            tags = tags.filter(tag => allowedTags.includes(tag.toLowerCase()));
         }
         return tags;
     }

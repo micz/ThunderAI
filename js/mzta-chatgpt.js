@@ -29,6 +29,7 @@ let current_tabId = null;
 let current_mailMessageId = null;
 let selectionChangeTimeout = null;
 let isDragging = false;
+let delay_wait_completion = 7000; // milliseconds
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     let textArea = document.getElementById('prompt-textarea')
@@ -77,9 +78,10 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
 async function chatgpt_isIdle() {
     return new Promise(resolve => {
         const intervalId = setInterval(() => {
-            if (chatgpt_getRegenerateButton() || do_force_completion) {
-                clearInterval(intervalId); resolve(true);
-}}, 100);});}
+              if (chatgpt_getRegenerateButton() || do_force_completion) {
+                 clearInterval(intervalId); resolve(true);
+              }
+            }, 100);});}
 
 function chatgpt_getRegenerateButton() {
     for (const mainSVG of document.querySelectorAll('main svg.icon')) {
@@ -132,6 +134,9 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-btn_close_diff{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);}";
     style.textContent += "#mzta-btn_change_reply_type{padding-left:4px;padding-right:10px;margin-left:0px;border-bottom-left-radius:0px;border-top-left-radius:0px;height:2.7em;}";
     style.textContent += ".mzta-btn_reply{padding-right:4px;margin-right:0px;border-bottom-right-radius:0px;border-top-right-radius:0px;}";
+    style.textContent += "#mzta-forcecomp-hint{display:none;position:fixed;bottom:30px;right:90px;width:20em;background: #c3cefeff;color: #111827;padding:10px 14px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.2);font-size:14px;font-weight:bold;z-index:2000;pointer:default;}";
+    style.textContent += "#mzta-forcecomp-hint .label{display:block;line-height:1.3;}";
+    style.textContent += "#mzta-forcecomp-hint svg{position:absolute;bottom:-10px;right:-20px;width:40px;height:40px;}";
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
@@ -371,6 +376,39 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     customDiv.appendChild(customBtn);
     fixedDiv.appendChild(customDiv);
 
+    // light background hint with diagonal thick arrow
+    let forcecompletionHint_div = document.createElement('div');
+    forcecompletionHint_div.id = 'mzta-forcecomp-hint';
+    forcecompletionHint_div.addEventListener("click", () => {
+       do_force_completion = true;
+    });
+
+    let arrowLabel = document.createElement('span');
+    arrowLabel.className = 'label';
+    forcecompletionHint_div.style.cursor = 'default';
+    arrowLabel.textContent = browser.i18n.getMessage("chatgpt_click_force_completion");
+    forcecompletionHint_div.appendChild(arrowLabel);
+    arrowLabel.addEventListener("click", () => {
+       do_force_completion = true;
+    });
+
+    // SVG solid arrow (triangle)
+    const svgNS = 'http://www.w3.org/2000/svg';
+    let hintArrow = document.createElementNS(svgNS, 'svg');
+    hintArrow.setAttribute('viewBox', '0 0 40 40');
+    hintArrow.addEventListener("click", () => {
+       do_force_completion = true;
+    });
+
+    let arrowPolygon = document.createElementNS(svgNS, 'polygon');
+    arrowPolygon.setAttribute('points', '0,0 40,40 0,28');
+    arrowPolygon.setAttribute('fill', '#c3cefeff');
+
+    hintArrow.appendChild(arrowPolygon);
+    forcecompletionHint_div.appendChild(hintArrow);
+
+    fixedDiv.appendChild(forcecompletionHint_div);
+
     document.body.insertBefore(fixedDiv, document.body.firstChild);
 }
 
@@ -484,6 +522,7 @@ function operation_done(){
     }
     document.getElementById('mzta-loading').style.display = 'none';
     document.getElementById('mzta-force-completion').style.display = 'none';
+    document.getElementById('mzta-forcecomp-hint').style.display = 'none';
     chatpgt_scrollToBottom();
 }
 
@@ -543,7 +582,11 @@ async function doProceed(message, customText = ''){
             curr_model_warn.insertAdjacentElement('afterend', btn_retry);
             break;
     }
+    const forcecompletionHintTimeout = setTimeout(() => {
+        document.getElementById('mzta-forcecomp-hint').style.display = 'block';
+    }, delay_wait_completion);
     await chatgpt_isIdle();
+    clearTimeout(forcecompletionHintTimeout);
     operation_done();
 }
 

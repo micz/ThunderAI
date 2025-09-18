@@ -3,7 +3,7 @@
         "message": "Respondi per"
     },
     "extensionDescription": {
-        "message": "Uzu ChatGPT, Google Gemini, Anthropic aŭ Ollama por poluri viajn retpoŝtajn mesaĝojn!"
+        "message": "Uzu ChatGPT, Google Gemini, Claude aŭ Ollama por poluri viajn retpoŝtajn mesaĝojn!"
     },
     "prompt_rewrite_formal": {
         "message": "Reverki formale"

@@ -108,7 +108,7 @@
         "message": "Se estiver tudo certo, depois de importar carrega no botão \"Guardar Tudo\"."
     },
     "extensionDescription": {
-        "message": "Usa o ChatGPT, Google Gemini, Anthropic ou Ollama para melhorar os teus emails!"
+        "message": "Usa o ChatGPT, Google Gemini, Claude ou Ollama para melhorar os teus emails!"
     },
     "customPrompts_form_label_Name": {
         "message": "Nome"

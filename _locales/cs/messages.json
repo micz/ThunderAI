@@ -24,7 +24,7 @@
         "message": "Přidat do nabídky"
     },
     "extensionDescription": {
-        "message": "Použijte ChatGPT, Google Gemini, Anthropic nebo Ollama pro vylepšení vašich e-mailů!"
+        "message": "Použijte ChatGPT, Google Gemini, Claude nebo Ollama pro vylepšení vašich e-mailů!"
     },
     "menu_title": {
         "message": "AI"
@@ -960,10 +960,10 @@
         "message": "Přidat novou úlohu"
     },
     "prefs_Anthropic_API_Key": {
-        "message": "Klíč API Anthropic"
+        "message": "Klíč API Claude"
     },
     "Anthropic_Version": {
-        "message": "Verze API Anthropic"
+        "message": "Verze API Claude"
     },
     "Anthropic_Version_Info": {
         "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
@@ -1001,7 +1001,7 @@
         "message": "Tento zástupný symbol nepřidává žádný text, ale zabraňuje automatickému přidání těla emailu na konec výzvy."
     },
     "ask_anthropic_api_permission_1": {
-        "message": "Pro používání integrace API Anthropic musíte udělit požadované oprávnění."
+        "message": "Pro používání integrace API Claude musíte udělit požadované oprávnění."
     },
     "ask_integration_permission_2_popup": {
         "message": "Klikněte zde pro otevření nové karty a postupujte podle instrukcí."
@@ -1034,34 +1034,34 @@
         "message": "Pokud je v možnostech nebo v dotazu specifikován projekt, přepíše nastavení Vlastního GPT."
     },
     "prefs_Connection_type_Anthropic_API": {
-        "message": "API Anthropic"
+        "message": "API Claude"
     },
     "Anthropic_Models": {
-        "message": "Modely Anthropic"
+        "message": "Modely Claude"
     },
     "Anthropic_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Anthropic"
+        "message": "Aktualizovat seznam modelů Claude"
     },
     "Anthropic_Models_Error_fetching": {
-        "message": "Chyba při pokusu o načtení modelů Anthropic"
+        "message": "Chyba při pokusu o načtení modelů Claude"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Maximální počet tokenů Anthropic"
+        "message": "Maximální počet tokenů Claude"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Maximální počet tokenů, které se mají vygenerovat v dokončení. Počet tokenů vaší výzvy plus max_tokens nesmí překročit délku kontextu modelu."
     },
     "anthropic_empty_apikey": {
-        "message": "Nepřidali jste klíč API pro API Anthropic. Vložte jej prosím na stránce s možnostmi."
+        "message": "Nepřidali jste klíč API pro API Claude. Vložte jej prosím na stránce s možnostmi."
     },
     "anthropic_empty_model": {
-        "message": "Nevybírali jste model pro API Anthropic. Vyberte jej prosím na stránce s možnostmi."
+        "message": "Nevybírali jste model pro API Claude. Vyberte jej prosím na stránce s možnostmi."
     },
     "anthropic_empty_version": {
-        "message": "Nepřidali jste řetězec verze pro API Anthropic. Vložte jej prosím na stránce s možnostmi."
+        "message": "Nepřidali jste řetězec verze pro API Claude. Vložte jej prosím na stránce s možnostmi."
     },
     "anthropic_api_request_failed": {
-        "message": "Selhal požadavek API Anthropic"
+        "message": "Selhal požadavek API Claude"
     },
     "_api_connecting": {
         "message": "Pokus o připojení k $api_string$ s následující konfigurací...",
