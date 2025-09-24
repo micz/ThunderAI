@@ -115,8 +115,24 @@ self.onmessage = async function(event) {
     
             for (const parsedLine of parsedLines) {
                 const { candidates } = parsedLine;
+
+                if (!Array.isArray(candidates) || candidates.length === 0) {
+                    taLog.warn('[ThunderAI] Gemini stream skipped: candidates is not a non-empty array');
+                    continue;
+                }
+
                 const { content } = candidates[0];
+                if (!content || typeof content !== 'object') {
+                    taLog.warn('[ThunderAI] Gemini stream skipped: missing candidate content');
+                    continue;
+                }
+
                 const { parts } = content;
+                if (!Array.isArray(parts) || parts.length === 0) {
+                    taLog.warn('[ThunderAI] Gemini stream skipped: parts is not a non-empty array. [finishReason: ' + content.finishReason + ']');
+                    continue;
+                }
+
                 const { text } = parts[0];
                 // Update the UI with the new content
                 if (text) {
