@@ -151,5 +151,26 @@
     },
     "Ollama_Models_Fetch": {
         "message": "Ĝisdatigi liston de modeloj Ollama"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Respondi al ĉiuj"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Respondi al sendinto"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Speco de respondo"
+    },
+    "SelectAll": {
+        "message": "Elekti ĉion"
+    },
+    "DeselectAll": {
+        "message": "Malelekti ĉion"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Respondi per komando"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Anstataŭigi tekston"
     }
 }
