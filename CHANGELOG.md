@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.1 - 26/09/2025</h2>
+      <ul>
+        <li><i>[Google Gemini API]</i> Fix: correctly handling empty responses [<a href="https://github.com/micz/ThunderAI/issues/514">#514</a>].</li>
+      </ul>
 <h2>Version 3.7.0 - 18/09/2025</h2>
       <ul>
         <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
