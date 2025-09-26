@@ -129,7 +129,7 @@ self.onmessage = async function(event) {
 
                 const { parts } = content;
                 if (!Array.isArray(parts) || parts.length === 0) {
-                    taLog.warn('[ThunderAI] Gemini stream skipped: parts is not a non-empty array. [finishReason: ' + content.finishReason + ']');
+                    taLog.warn('[ThunderAI] Gemini stream skipped: parts is not a non-empty array. [finishReason: ' + candidates[0].finishReason + ']');
                     continue;
                 }
 
