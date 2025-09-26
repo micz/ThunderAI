@@ -6,7 +6,7 @@
 
 <h2>Version 3.7.1 - 26/09/2025</h2>
       <ul>
-        <li><i>[Google Gemini API]</i> Fix: correctly handling empty responses [<a href="https://github.com/micz/ThunderAI/issues/514">#514</a>].</li>
+        <li><i>[Google Gemini API]</i> Fix: Correctly handling empty responses [<a href="https://github.com/micz/ThunderAI/issues/514">#514</a>].</li>
       </ul>
 <h2>Version 3.7.0 - 18/09/2025</h2>
       <ul>
