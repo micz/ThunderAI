@@ -832,11 +832,11 @@ export async function injectConnectionUI({
     });
   
     document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
-      permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
   
     document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
-      permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
   
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
