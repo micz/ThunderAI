@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.2 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.1 - 26/09/2025</h2>
       <ul>
         <li><i>[Google Gemini API]</i> Fix: Correctly handling empty responses [<a href="https://github.com/micz/ThunderAI/issues/514">#514</a>].</li>
