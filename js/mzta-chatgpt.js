@@ -582,11 +582,16 @@ async function doProceed(message, customText = ''){
             curr_model_warn.insertAdjacentElement('afterend', btn_retry);
             break;
     }
-    const forcecompletionHintTimeout = setTimeout(() => {
-        document.getElementById('mzta-forcecomp-hint').style.display = 'block';
-    }, delay_wait_completion);
+    let forcecompletionHintTimeout;
+    if(send_result == 0){
+            forcecompletionHintTimeout = setTimeout(() => {
+            document.getElementById('mzta-forcecomp-hint').style.display = 'block';
+        }, delay_wait_completion);
+    }
     await chatgpt_isIdle();
-    clearTimeout(forcecompletionHintTimeout);
+    if(send_result == 0){
+        clearTimeout(forcecompletionHintTimeout);
+    }
     operation_done();
 }
 
@@ -598,6 +603,13 @@ function doRetry(){
     doProceed(current_message);
 }
 
+async function showForceCompletionHint(){
+    const forcecompletionHintTimeout = setTimeout(() => {
+        document.getElementById('mzta-forcecomp-hint').style.display = 'block';
+    }, delay_wait_completion);
+    await chatgpt_isIdle();
+    clearTimeout(forcecompletionHintTimeout);
+}
 
 function removeTagsAndReturnHTML(rootElement, removeTags, preserveTags) {
     const fragment = document.createDocumentFragment();
