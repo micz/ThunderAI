@@ -18,7 +18,7 @@
         "message": "Отговаряне с команда"
     },
     "prompt_rewrite_polite": {
-        "message": "Препаписване по-учтиво"
+        "message": "Пренаписване по-учтиво"
     },
     "prompt_rewrite_formal": {
         "message": "Пренаписване по-формално"
@@ -31,5 +31,167 @@
     },
     "prompt_translate_this": {
         "message": "Превеждане"
+    },
+    "prompt_this": {
+        "message": "Поискайте това"
+    },
+    "prompt_selection_needed": {
+        "message": "Селектирайте текст, за да продължите!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Управление на подкани"
+    },
+    "more_info_string": {
+        "message": "Повече информация"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Подканите по подразбиране не са редактируеми. Можете да ги изключите, да копирате текста им и да го поставите в нова, модифицирана версия."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Можете да внесете и изнесете подканите. Съществуващите подкани със същото ID ще бъдат презаписани. Подканите с нови ID-та ще бъдат добавени."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Ако всичко е правилно, след внасянето натиснете бутона \"Запази всичко\"."
+    },
+    "customPrompts_start_saving": {
+        "message": "Запазване на подканите..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Преиндексиране на списъка..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Филтриране на подканите..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Запазване на подкани по подразбиране..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Запазване на персонализирани подкани..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Презареждане на менюта..."
+    },
+    "customPrompts_saved": {
+        "message": "Подканите са запазени!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Трябва да е уникално, с малки букви и без разстояния"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Име"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Текст на подкана"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Действие"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Необходима е селекция на текст"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Винаги добавяй подпис"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Поискай допълнителен текст"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Разрешено"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Активиране на инструмента за сравнение на текст"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Инструментът за сравнение на текст може да бъде избран, когато действието е зададено на „Замести текст“."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Задължително поле"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Редакция"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Откажи"
+    },
+    "customPrompts_btnOK": {
+        "message": "ОК"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Изтрий"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Сигурни ли сте, че искате да изтриете този елемент?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Има незапазени промени!"
+    },
+    "btnSaveAll_string": {
+        "message": "Запази всичко"
+    },
+    "btnNew_string": {
+        "message": "Добави нов"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Добави подканата"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Добави към меню"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Винаги"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Четене на писмо"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Писане на писмо"
+    },
+    "customPrompts_close_button": {
+        "message": "Бутон за изключване"
+    },
+    "customPrompts_do_reply": {
+        "message": "Отговори"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Замени тескт"
+    },
+    "chatgpt_win_working": {
+        "message": "В процес на работа..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Завършено!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Изберете текста, който искате да използвате, и щракнете върху бутона."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Използвайте избрания отговор"
+    },
+    "chatgpt_win_close": {
+        "message": "Затвори"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Изглежда, че страницата на ChatGPT се зарежда твърде бавно. Ако зареждането приключи, щракнете върху бутона вдясно. Ако проблемът продължава, моля, проверете състоянието на услугата."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Повторeн опит"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Кликнете върху бутона за изпращане, за да изпратите подканата."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Не сте влезли в ChatGPT. Моля, влезте с вашите идентификационни данни, затворете прозореца на ChatGPT и след това повторете действието, което сте опитали. След това ще останете влезли."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "По някаква причина не е възможно да се провери дали е зареден правилният модел. Засега можете да натиснете синия бутон, за да продължите."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Въведете тук допълнителния текст за подканата."
+    },
+    "chatgpt_win_send": {
+        "message": "Изпрати"
     }
 }
