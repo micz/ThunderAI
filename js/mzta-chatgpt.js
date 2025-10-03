@@ -816,7 +816,7 @@ function run(checkTab = null) {
     }else{
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
         (async () => {
-            if(mztaDoCustomText === 1){
+            if(mztaDoCustomText === "1"){
                 showCustomTextField();
             } else {
                 await doProceed(current_message);
