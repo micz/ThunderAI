@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 3.7.2 - ??/??/2025</h2>
+<h2>Version 3.7.2 - 03/10/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Not showing the force complete hint if the prompt has not been sent.</li>
         <li><i>[ChatGPT Web]</i> Fix: Correctly getting when ChatGPT has finished sending the response even when using custom projects.</li>
