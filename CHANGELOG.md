@@ -8,7 +8,7 @@
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Not showing the force complete hint if the prompt has not been sent.</li>
         <li><i>[ChatGPT Web]</i> Fix: Correctly getting when ChatGPT has finished sending the response even when using custom projects.</li>
-        <li>...</li>
+        <li><i>[ChatGPT Web]</i> Fix: Under certain conditions, asking for additional text prevents ThunderAI from sending the prompt to ChatGPT [<a href="https://github.com/micz/ThunderAI/issues/522">#522</a>].</li>
       </ul>
 <h2>Version 3.7.1 - 26/09/2025</h2>
       <ul>
