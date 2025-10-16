@@ -6,6 +6,7 @@
 
 <h2>Version 3.7.3 - ??/??/2025</h2>
       <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly managing custom projects in any condition [<a href="https://github.com/micz/ThunderAI/issues/520">#520</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.7.2 - 03/10/2025</h2>
