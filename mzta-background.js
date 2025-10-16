@@ -394,6 +394,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             let _webproject_set = false;
             let _custom_gpt_set = false;
             let _use_prompt_info_custom_gpt = false;
+            prompt_info.chatgpt_web_model = prompt_info.chatgpt_web_model.trim();
+            prompt_info.chatgpt_web_project = prompt_info.chatgpt_web_project.trim();
+            prompt_info.chatgpt_web_custom_gpt = prompt_info.chatgpt_web_custom_gpt.trim();
             let _custom_model = sanitizeChatGPTModelData(prompt_info.chatgpt_web_model != '' ? prompt_info.chatgpt_web_model : prefs.chatgpt_web_model);
             let _web_project = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_project != '' ? prompt_info.chatgpt_web_project : prefs.chatgpt_web_project)
             let _custom_gpt = sanitizeChatGPTWebCustomData(prompt_info.chatgpt_web_custom_gpt != '' ? prompt_info.chatgpt_web_custom_gpt : prefs.chatgpt_web_custom_gpt)

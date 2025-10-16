@@ -438,9 +438,9 @@ async function getDefaultPrompts_withProps() {
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
-                prompt.chatgpt_web_custom_gpt = prefs._default_prompts_properties[prompt.id].chatgpt_web_custom_gpt;
-                prompt.api_type = prefs._default_prompts_properties[prompt.id].api_type;
-                prompt.api_model = prefs._default_prompts_properties[prompt.id].api_model;
+                prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
+                prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
+                prompt.api_model = (prefs._default_prompts_properties[prompt.id]?.api_model || '').trim();
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
