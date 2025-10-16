@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.3 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.2 - 03/10/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Not showing the force complete hint if the prompt has not been sent.</li>
