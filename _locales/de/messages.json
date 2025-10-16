@@ -1115,6 +1115,9 @@
     "ask_anthropic_api_permission_1": {
         "message": "Um die Claude-API-Integration zu verwenden, müssen Sie die erforderliche Berechtigung erteilen."
     },
+    "ask_openai_api_permission_1": {
+        "message": "Um die OpenAI-API-Integration zu verwenden, müssen Sie die erforderliche Berechtigung erteilen."
+    },
     "Anthropic_Models": {
         "message": "Claude Modelle"
     },

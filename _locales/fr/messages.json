@@ -1088,6 +1088,9 @@
     "ask_anthropic_api_permission_1": {
         "message": "Pour utiliser l'intégration de l'API Claude, vous devez accorder l'autorisation requise."
     },
+    "ask_openai_api_permission_1": {
+        "message": "Pour utiliser l'intégration de l'API OpenAI, vous devez accorder l'autorisation requise."
+    },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Le nombre maximum de jetons à générer dans la complétion. Le total des jetons de votre invite plus max_tokens ne peut pas dépasser la longueur du contexte du modèle."
     },
