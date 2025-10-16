@@ -4,10 +4,10 @@
 
 
 
-<h2>Version 3.7.3 - ??/??/2025</h2>
+<h2>Version 3.7.3 - 16/10/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly managing custom projects in any condition [<a href="https://github.com/micz/ThunderAI/issues/520">#520</a>].</li>
-        <li>...</li>
+        <li><i>[OpenAI API]</i> Added an optional permission for the OpenAI API endpoint to avoid a CORS errors [<a href="https://github.com/micz/ThunderAI/issues/529">#529</a>].</li>
       </ul>
 <h2>Version 3.7.2 - 03/10/2025</h2>
       <ul>
