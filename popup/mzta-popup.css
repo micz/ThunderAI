@@ -68,7 +68,7 @@ body {
     background-color: #cfe9ff;
   }
   
-  #ask_chatgpt_web_perm, #ask_anthropic_api_perm{
+  #ask_chatgpt_web_perm, #ask_anthropic_api_perm, #ask_openai_api_perm{
     display: none;
     max-width: 20em;
     background-color: red;

@@ -1387,6 +1387,10 @@
     "message": "To use the Claude API integration, you need to grant the required permission.",
     "description": ""
   },
+  "ask_openai_api_permission_1": {
+    "message": "To use the OpenAI API integration, you need to grant the required permission.",
+    "description": ""
+  },
   "ask_integration_permission_2_popup": {
     "message": "Click here to open a new tab and follow the instructions.",
     "description": ""

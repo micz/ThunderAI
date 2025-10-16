@@ -182,7 +182,7 @@ h2 {
   box-shadow: inset 5px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-#chatgpt_web_permission, #anthropic_api_permission {
+#chatgpt_web_permission, #anthropic_api_permission, #openai_api_permission {
   display: none;
   background-color: red;
   color: white;
@@ -196,7 +196,7 @@ h2 {
   transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-#chatgpt_web_permission:hover, #anthropic_api_permission:hover {
+#chatgpt_web_permission:hover, #anthropic_api_permission:hover, #openai_api_permission:hover {
   background-color: darkred;
   transform: scale(1.05);
 }

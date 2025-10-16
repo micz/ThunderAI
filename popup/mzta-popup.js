@@ -95,6 +95,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     }
+    if(prefs.connection_type === 'chatgpt_api'){
+        let permission_openai = await browser.permissions.contains({ origins: ["https://*.openai.com/*"] });
+        if(permission_openai === false){
+            document.getElementById("mzta_search_banner").style.display = "none";
+            document.getElementById("ask_openai_api_perm").style.display = "block";
+            document.getElementById('ask_openai_api_perm').addEventListener('click', async () => {
+                await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+            });
+        }
+    }
 }, { once: true });
 
 async function searchPrompt(allPrompts, tabId, tabType){

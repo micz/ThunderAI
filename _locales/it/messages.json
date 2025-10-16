@@ -1083,6 +1083,9 @@
     "ask_anthropic_api_permission_1": {
         "message": "Per utilizzare l'integrazione con l'API di Claude, è necessario concedere l'autorizzazione richiesta."
     },
+    "ask_openai_api_permission_1": {
+        "message": "Per utilizzare l'integrazione con l'API di OpenAI, è necessario concedere l'autorizzazione richiesta."
+    },
     "Anthropic_Version_Info": {
         "message": "OBBLIGATORIO. Non modificare questo valore a meno che tu non sappia esattamente cosa stai facendo. Maggiori informazioni su:"
     },
