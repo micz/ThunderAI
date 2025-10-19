@@ -348,7 +348,7 @@
         "message": "Тип соединения"
     },
     "extensionDescription": {
-        "message": "Используй ChatGPT, Goolge Gemini, Anthropic или Ollama, чтобы улучшить качество своих электронных писем!"
+        "message": "Используй ChatGPT, Goolge Gemini, Claude или Ollama, чтобы улучшить качество своих электронных писем!"
     },
     "prefs_OptionText_do_debug_info": {
         "message": "Активировать систему отладки"
