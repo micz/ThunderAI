@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.4 - 20/10/2025</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fixed a bug preventing the ChatGPT web interface from working in new installs [<a href="https://github.com/micz/ThunderAI/issues/534">#534</a>].</li>
+      </ul>
 <h2>Version 3.7.3 - 16/10/2025</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly managing custom projects in any condition [<a href="https://github.com/micz/ThunderAI/issues/520">#520</a>].</li>
