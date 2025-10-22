@@ -120,7 +120,7 @@ self.onmessage = async function(event) {
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;
                 if (!choices || choices.length === 0) {
-                    taLog.warning("No choices found in parsed line: " + JSON.stringify(parsedLine));
+                    taLog.warn("No choices found in parsed line: " + JSON.stringify(parsedLine));
                     continue;
                 }
                 const { delta } = choices[0];
