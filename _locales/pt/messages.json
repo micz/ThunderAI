@@ -154,5 +154,23 @@
     },
     "customPrompts_do_reply": {
         "message": "Responder"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Responder com o comando"
+    },
+    "chatgpt_win_close": {
+        "message": "Fechar"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Utilize a resposta escolhida"
+    },
+    "customPrompts_close_button": {
+        "message": "Botão de Fechar"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Repetir"
+    },
+    "chatgpt_win_send": {
+        "message": "Enviar"
     }
 }
