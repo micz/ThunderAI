@@ -1,1 +1,59 @@
-{}
+{
+    "menu_title": {
+        "message": "IA"
+    },
+    "more_info_string": {
+        "message": "Informații"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Acțiune"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Adaugă întotdeauna semnatura"
+    },
+    "extensionDescription": {
+        "message": "Folosește ChatGPT, Google Gemini, Claude sau Ollama pentru îmbunătățirea e-mailurilor tale!"
+    },
+    "prompt_lang": {
+        "message": "Răspunde în"
+    },
+    "prompt_reply": {
+        "message": "Răspunde la acest e-mail"
+    },
+    "prompt_reply_advanced": {
+        "message": "Răspunde la această conversație"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Răspunde cu instrucțiuni suplimentare"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Rescrie politicos"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Rescrie formal"
+    },
+    "prompt_classify": {
+        "message": "Clasifica"
+    },
+    "prompt_summarize_this": {
+        "message": "Sumarizează"
+    },
+    "prompt_translate_this": {
+        "message": "Tradu"
+    },
+    "prompt_selection_needed": {
+        "message": "Pentru a putea continua trebuie selectat un text!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Administrare prompturi"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Prompturile predefinite nu pot fi modificate. Însă poți să le dezactivezi, să le copiezi și, în final, să creezi o nouă versiune a lor."
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "msg_prompt_too_long": {
+        "message": "Textul pe care l-ai furnizat este pre lung. Este necesară reducerea lui."
+    }
+}
