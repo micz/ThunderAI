@@ -55,5 +55,179 @@
     },
     "msg_prompt_too_long": {
         "message": "Textul pe care l-ai furnizat este pre lung. Este necesară reducerea lui."
+    },
+    "prefsDonation_2": {
+        "message": "Consideră o donație!"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Poți importa și exporta prompturile. Prompturile existente cu același ID vor fi suprascrise. Prompturile cu ID-uri noi vor fi adăugate."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Dacă totul este corect, dupa import apasă pe butonul 'Salvează Tot'."
+    },
+    "customPrompts_saved": {
+        "message": "Prompturile au fost salvate!"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nume"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Traducere"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Este necesară selecția unui text"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Solicită text suplimentar"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Câmpuri necesare"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Renunță"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Șterge"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Ești sigur că dorești ștergerea acestui element?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Există schimbări nesalvate!"
+    },
+    "btnSaveAll_string": {
+        "message": "Salvează Tot"
+    },
+    "btnNew_string": {
+        "message": "Adaugă"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Adaugă Promptul"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Adaugă la meniu"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Întotdeauna"
+    },
+    "customPrompts_close_button": {
+        "message": "Buton de închidere"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Înlocuiește textul"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Finalizat!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Selectează textul pe care vrei să-l folosești și apasă butonul."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Folosește răspunsul selectat"
+    },
+    "chatgpt_win_close": {
+        "message": "Închide"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Reîncearcă"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Apasă butonul de trimitere pentru a transmite promptul."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Introdu aici textul suplimentar pentru prompt."
+    },
+    "chatgpt_win_send": {
+        "message": "Trimite"
+    },
+    "prefs_status_page": {
+        "message": "starea serviciului"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Dimensiunile ferestrei de dialog IA"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Înălțime"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Lățime"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Numele semnăturii implicite"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Limba implicită pentru răspunsuri"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Răspunde tuturor"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Răspunde expeditorului"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Tipul răspunsului"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Administrează prompturile"
+    },
+    "prompt_this": {
+        "message": "Întreabă"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Trebuie să fie unic, cu litere mici și fără spații"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Activat"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Activează compararea de text"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Comparatorul de text poate fi selectat când acțiunea este setată pe \"Înlocuire text\"."
+    },
+    "customPrompts_btnEdit": {
+        "message": "Editează"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Citirea unui e-mail"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Compunerea unui e-mail"
+    },
+    "customPrompts_do_reply": {
+        "message": "Răspunde"
+    },
+    "chatgpt_win_working": {
+        "message": "În lucru..."
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Se pare că pagina ChatGPT durează prea mult să se încarce. Dacă încărcarea se termină, faceți clic pe butonul din dreapta. Dacă problema persistă, vă rugăm să verificați starea serviciului."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Nu ești conectat la ChatGPT. Te rugăm să te conectezi cu datele tale de autentificare, să închizi fereastra ChatGPT și apoi să repeți acțiunea încercată. Vei rămâne conectat ulterior."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Din anumite motive, nu este posibil să verificăm dacă este încărcat modelul corect. Deocamdată, puteți apăsa butonul albastru pentru a continua."
+    },
+    "chatgpt_force_completion": {
+        "message": "închidere forțată"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Apăsați aici pentru a afișa butonul 'Utilizați ultimul răspuns' dacă ChatGPT a terminat treaba, dar butonul nu a apărut."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Note de Lansare"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Acesta este tipul de răspuns implicit care va fi utilizat atunci când răspundeți la un e-mail. Puteți alege celălalt tip ulterior în fereastra de răspuns."
+    },
+    "prefsInfoTitle": {
+        "message": "Informații Importante"
+    },
+    "prefsInfoDesc_1": {
+        "message": "S-ar putea ca interfața web ChatGPT să se modifice într-un mod care să perturbe funcționarea addon-ului. Verificați pagina \"Starea serviciului\" accesibilă prin legătura din partea de jos a acestei pagini. De asemenea, rețineți că prima dată când utilizați ThunderAI, trebuie să vă conectați la ChatGPT."
     }
 }
