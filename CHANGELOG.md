@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.6 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.5 - 22/10/2025</h2>
       <ul>
         <li><i>[OpenAI API]</i> Fixed a bug when handling responses without choices [<a href="https://github.com/micz/ThunderAI/issues/535">#535</a>].</li>
