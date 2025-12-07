@@ -592,8 +592,11 @@ export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
 }
 
-export function extractJsonObject(inputString) {
+export function extractJsonObject(inputString, fixBraces = true) {
   try {
+    if (fixBraces) {
+      inputString = fixJsonBraces(inputString);
+    }
     const jsonMatch = inputString.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const jsonObject = JSON.parse(jsonMatch[0]);
@@ -610,6 +613,23 @@ export function extractJsonObject(inputString) {
     return null;
   }
 }
+
+function fixJsonBraces(inputString) {
+  let result = inputString.trim();
+  const hasOpen = result.startsWith("{");
+  const hasClose = result.endsWith("}");
+
+  if (hasClose && !hasOpen) {
+    return "{" + result;
+  }
+
+  if (hasOpen && !hasClose) {
+    return result + "}";
+  }
+
+  return result;
+}
+
 
 export function isAPIKeyValue(id){
   return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
