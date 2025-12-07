@@ -24,6 +24,7 @@ export class Anthropic {
   apiKey = '';
   version = '';
   model = '';
+  system_prompt = '';
   max_tokens = 4096;  
   stream = false;
 
@@ -31,12 +32,14 @@ export class Anthropic {
     apiKey = '',
     version = '',
     model = '',
+    system_prompt = '',
     max_tokens = 4096,
     stream = false,
   } = {}) {
     this.apiKey = apiKey;
     this.version = version;
     this.model = model;
+    this.system_prompt = system_prompt;
     this.max_tokens = max_tokens > 0 ? max_tokens : 4096;
     this.stream = stream;
   }
@@ -95,6 +98,7 @@ export class Anthropic {
           body: JSON.stringify({ 
               model: this.model,
               max_tokens: this.max_tokens,
+              system: this.system_prompt,
               messages: messages,
               stream: this.stream,
           }),
