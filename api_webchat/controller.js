@@ -230,6 +230,7 @@ switch (llm) {
         let prefs_api = await browser.storage.sync.get({
             anthropic_api_key: prefs_default.anthropic_api_key,
             anthropic_model: prefs_default.anthropic_model,
+            anthropic_system_prompt: prefs_default.anthropic_system_prompt,
             anthropic_version: prefs_default.anthropic_version,
             anthropic_max_tokens: prefs_default.anthropic_max_tokens,
             do_debug: prefs_default.do_debug,
@@ -238,11 +239,12 @@ switch (llm) {
         i18nStrings["anthropic_api_request_failed"] = browser.i18n.getMessage('anthropic_api_request_failed');
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
         messageInput.setModel(prefs_api.anthropic_model);
-        messagesArea.setLLMName("Anthropic");
+        messagesArea.setLLMName("Claude");
         worker.postMessage({
             type: 'init',
             anthropic_api_key: prefs_api.anthropic_api_key,
             anthropic_model: prefs_api.anthropic_model,
+            anthropic_system_prompt: prefs_api.anthropic_system_prompt,
             anthropic_version: prefs_api.anthropic_version,
             anthropic_max_tokens: prefs_api.anthropic_max_tokens,
             do_debug: prefs_api.do_debug,
@@ -250,6 +252,7 @@ switch (llm) {
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: "System Prompt", value: prefs_api.anthropic_system_prompt});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Claude API",
             model_string: prefs_api.anthropic_model,
