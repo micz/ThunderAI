@@ -43,6 +43,7 @@ self.onmessage = async function(event) {
             apiKey: anthropic_api_key,
             version: event.data.anthropic_version,
             model: anthropic_model,
+            system_prompt: event.data.anthropic_system_prompt,
             max_tokens: event.data.anthropic_max_tokens,
             stream: true
         });
