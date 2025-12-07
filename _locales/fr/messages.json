@@ -1302,5 +1302,11 @@
     },
     "DeselectAll": {
         "message": "Tout désélectionner"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Prompt Système"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Vous pouvez améliorer les performances de Claude en utilisant un Prompt Système pour lui attribuer un rôle. Cette technique, appelée guidage par rôle, est la méthode la plus efficace pour utiliser les system prompts avec Claude. Le rôle approprié peut transformer Claude d’un assistant généraliste en un véritable expert virtuel dans votre domaine."
     }
 }
