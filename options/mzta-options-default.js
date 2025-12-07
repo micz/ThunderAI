@@ -50,6 +50,7 @@ export const prefs_default = {
     anthropic_model: '',
     anthropic_version: '2023-06-01',
     anthropic_max_tokens: 4096,
+    anthropic_system_prompt: '',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,

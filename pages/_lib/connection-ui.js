@@ -400,6 +400,19 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="anthropic_system_prompt" name="anthropic_system_prompt" class="option-input option-textarea"></textarea>
+        <br>__MSG_Anthropic_System_Prompt_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_Anthropic_Version__</span>
       </label>
     </td>
