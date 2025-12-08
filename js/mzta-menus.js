@@ -215,9 +215,9 @@ export class mzta_Menus {
                         let all_tags_list = tags_full_list[1];
                         // COMMENTED TO DO TESTS
                         // tags_current_email = "recipients, TEST, home, work, CAR, light";
-                        console.log(">>>>>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
-                        console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
-                        console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
+                        // console.log(">>>>>>>>>>>>> curr_prompt: " + JSON.stringify(curr_prompt));
+                        // console.log(">>>>>>>>>>>>>> prefs_at.connection_type: " + JSON.stringify(prefs_at.connection_type));
+                        // console.log(">>>>>>>>>>>>>> def_conntype: " + JSON.stringify(def_conntype));
                         let cmd_addTags = new mzta_specialCommand({
                             prompt: fullPrompt,
                             llm: def_conntype,
