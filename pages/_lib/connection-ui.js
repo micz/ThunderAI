@@ -598,6 +598,13 @@ export async function injectConnectionUI({
     let openai = new OpenAI({
       apiKey: document.getElementById("chatgpt_api_key").value,
     });
+    let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
+    if(!granted){
+        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        taLog.log("OpenAI API permission denied");
+        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        return;
+    }
     openai.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;
