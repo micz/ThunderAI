@@ -1311,5 +1311,8 @@
     },
     "Anthropic_System_Prompt_Info": {
         "message": "Puoi migliorare le prestazioni di Claude usando un System Prompt per assegnargli un ruolo. Questa tecnica, chiamata role prompting, è il modo più efficace per utilizzare i system prompt con Claude. Il ruolo appropriato può trasformare Claude da assistente generico a un vero esperto virtuale nel tuo settore."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Hai negato l’autorizzazione necessaria per recuperare i modelli per questa integrazione."
     }
 }
