@@ -137,6 +137,9 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-forcecomp-hint{display:none;position:fixed;bottom:30px;right:90px;width:20em;background: #c3cefeff;color: #111827;padding:10px 14px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.2);font-size:14px;font-weight:bold;z-index:2000;pointer:default;}";
     style.textContent += "#mzta-forcecomp-hint .label{display:block;line-height:1.3;}";
     style.textContent += "#mzta-forcecomp-hint svg{position:absolute;bottom:-10px;right:-20px;width:40px;height:40px;}";
+    style.textContent += "#thread-bottom-container{padding-bottom: 100px !important;box-sizing: border-box;}";
+
+
 
     // Add <style> to the page's <head>
     document.head.appendChild(style);
