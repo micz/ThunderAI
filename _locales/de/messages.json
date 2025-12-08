@@ -1308,5 +1308,8 @@
     },
     "Anthropic_System_Prompt_Info": {
         "message": "Du kannst die Leistung von Claude verbessern, indem du ein System Prompt verwendest, um ihm eine Rolle zuzuweisen. Diese Technik, bekannt als Rollenvorgabe, ist die effektivste Methode, um System Prompts mit Claude zu nutzen. Die richtige Rolle kann Claude von einem allgemeinen Assistenten in einen virtuellen Fachexperten verwandeln."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Sie haben die optionale Berechtigung verweigert, die zum Abrufen der Modelle für diese Integration erforderlich ist."
     }
 }
