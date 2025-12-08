@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.7 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.6 - 08/12/2025</h2>
       <ul>
         <li><i>[Claude API]</i> Added the System Prompt configuration option [<a href="https://github.com/micz/ThunderAI/issues/549">#549</a>].</li>
