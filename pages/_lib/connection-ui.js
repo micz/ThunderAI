@@ -787,6 +787,13 @@ export async function injectConnectionUI({
       apiKey: document.getElementById("anthropic_api_key").value,
       version: document.getElementById("anthropic_version").value,
     });
+    let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
+    if(!granted){
+        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        taLog.warn("Claude API web permission denied");
+        alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
+        return;
+    }
     anthropic.fetchModels().then((data) => {
       if(!data.ok){
         let errorDetail;

@@ -1696,5 +1696,9 @@
   "Anthropic_System_Prompt_Info": {
     "message": "You can improve Claude performance by using a System Prompt to give it a role. This technique, known as role prompting, is the most powerful way to use system prompts with Claude. The right role can turn Claude from a general assistant into your virtual domain expert.",
     "description": ""
+  },
+  "Optional_Permission_Denied_Model_Fetching": {
+    "message": "You have denied the optional permission needed to fetch models for this integration.",
+    "description": ""
   }
 }
