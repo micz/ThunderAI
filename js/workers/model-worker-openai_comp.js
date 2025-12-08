@@ -107,6 +107,7 @@ self.onmessage = async function(event) {
             try{
                 parsedLines = lines
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
+                    .map((line) => line.replace(/^: OPENROUTER PROCESSING/, "").trim()) // Remove the ": OPENROUTER PROCESSING " prefix
                     .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
