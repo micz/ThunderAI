@@ -106,9 +106,15 @@ self.onmessage = async function(event) {
                     .filter((line) => line !== "" ) // Remove empty lines
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
-                        taLog.log("line: " + JSON.stringify(line));
-                        return JSON.parse(line);
-                    });
+                         try {
+                            taLog.log("line: " + JSON.stringify(line));
+                            return JSON.parse(line);
+                        } catch (e) {
+                            taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
+                            return null;
+                        }
+                    })
+                    .filter((parsed) => parsed !== null);
             }catch(e){
                 taLog.error("Error parsing lines: " + e);
             }
