@@ -905,5 +905,8 @@
     },
     "placeholder_mail_quoted_text": {
         "message": "Zacytowany tekst w treści maila"
+    },
+    "placeholder_selected_html": {
+        "message": "Zaznaczony HTML"
     }
 }
