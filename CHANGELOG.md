@@ -7,7 +7,7 @@
 <h2>Version 3.7.7 - 14/12/2025</h2>
       <ul>
         <li><i>[Claude API][OpenAI API]</i> Fix: asking required permissions before fetching models [<a href="https://github.com/micz/ThunderAI/issues/558">#558</a>].</li>
-        <li><i>[Ollama API][Google Gemini API][OpenAI API][OpenAI Comp API]</i> Fix: improved error handling when parsing responses [<a href="https://github.com/micz/ThunderAI/issues/550">#550</a>].</li>
+        <li><i>[Google Gemini API][Ollama API][OpenAI API][OpenAI Comp API]</i> Fix: improved error handling when parsing responses [<a href="https://github.com/micz/ThunderAI/issues/550">#550</a>].</li>
       </ul>
 <h2>Version 3.7.6 - 08/12/2025</h2>
       <ul>
