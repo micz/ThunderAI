@@ -1,0 +1,1281 @@
+{
+    "extensionDescription": {
+        "message": "Χρησιμοποιήστε το ChatGPT, το Google Gemini, το Claude ή το Ollama για να βελτιώσετε τα email σας!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "Απάντηση σε"
+    },
+    "prompt_reply": {
+        "message": "Απάντηση σε αυτό το email"
+    },
+    "prompt_reply_advanced": {
+        "message": "Απάντηση σε αυτό το νήμα"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Απάντηση με εντολή"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Ξαναγράψε ευγενικά"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Ξαναγράψε επίσημα"
+    },
+    "prompt_classify": {
+        "message": "Ταξινόμησε"
+    },
+    "prompt_summarize_this": {
+        "message": "Συνόψισε"
+    },
+    "prompt_translate_this": {
+        "message": "Μετάφρασε το"
+    },
+    "prompt_this": {
+        "message": "Μήνυμα για"
+    },
+    "prompt_selection_needed": {
+        "message": "Για να συνεχίσετε, πρέπει να επιλέξετε κάποιο κείμενο!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Διαχείριση μηνυμάτων"
+    },
+    "more_info_string": {
+        "message": "Περισσότερες πληροφορίες"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Τα προεπιλεγμένα μηνύματα δεν είναι επεξεργάσιμα. Μπορείτε να τα απενεργοποιήσετε και στη συνέχεια, να αντιγράψετε το κείμενο του μηνύματος και να το επικολλήσετε σε ένα νέο για να δημιουργήσετε μια τροποποιημένη έκδοση."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Μπορείτε να εισαγάγετε και να εξαγάγετε τα μηνύματα προτροπής. Τα υπάρχοντα μηνύματα προτροπής με το ίδιο αναγνωριστικό θα αντικατασταθούν. Θα προστεθούν μηνύματα προτροπής με νέα αναγνωριστικά."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Εάν όλα είναι σωστά, μετά την εισαγωγή κάντε κλικ στο κουμπί «Αποθήκευση όλων»."
+    },
+    "customPrompts_start_saving": {
+        "message": "Αποθήκευση μηνυμάτων…"
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Επαναδημιουργία ευρετηρίου λίστας..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Φιλτράρισμα μηνυμάτων…"
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Αποθήκευση προεπιλεγμένων μηνυμάτων..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Αποθήκευση προσαρμοσμένων μηνυμάτων..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Επαναφόρτωση μενού..."
+    },
+    "customPrompts_saved": {
+        "message": "Τα μηνύματα αποθηκεύτηκαν!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Πρέπει να είναι μοναδικό, με πεζά γράμματα και χωρίς κενά"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Όνομα"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Κείμενο μηνύματος"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Δράση"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Χρειάζεται επιλογή κειμένου"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Προσθέστε πάντα την υπογραφή σας"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Ζητήστε επιπλέον κείμενο"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Ενεργό"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Ενεργοποίησε την σύγκριση κειμένων"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Η προβολή σύγκρισης κειμένου μπορεί να επιλεγεί όταν η ενέργεια έχει οριστεί σε \"Αντικατάσταση κειμένου\"."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Απαιτούμενα πεδία"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Επεξεργασία"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Ακύρωση"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Διαγραφή"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το στοιχείο;"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Υπάρχουν μη αποθηκευμένες αλλαγές!"
+    },
+    "btnSaveAll_string": {
+        "message": "Αποθήκευση όλων"
+    },
+    "btnNew_string": {
+        "message": "Προσθήκη νέας"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Πρόσθεσε το μήνυμα"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Προσθήκη σε μενού"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Πάντα"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Ανάγνωση ενός email"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Σύνταξη email"
+    },
+    "customPrompts_close_button": {
+        "message": "Κουμπί κλεισίματος"
+    },
+    "customPrompts_do_reply": {
+        "message": "Απαντήστε"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Κείμενο αντικατάστασης"
+    },
+    "chatgpt_win_working": {
+        "message": "Εργασία σε εξέλιξη…"
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Ολοκληρώθηκε!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Επιλέξτε το κείμενο που θέλετε να χρησιμοποιήσετε και κάντε κλικ στο κουμπί."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Χρησιμοποιήστε την επιλεγμένη απάντηση"
+    },
+    "chatgpt_win_close": {
+        "message": "Κλείσε"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Φαίνεται ότι η σελίδα ChatGPT αργεί πολύ να φορτώσει. Εάν ολοκληρωθεί η φόρτωση, κάντε κλικ στο κουμπί στα δεξιά. Εάν το πρόβλημα επιμένει, ελέγξτε την κατάσταση της υπηρεσίας."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Ξαναδοκίμασε"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Κάντε κλικ στο κουμπί αποστολής για να υποβάλετε το μήνυμα."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Δεν είστε συνδεδεμένοι στο ChatGPT. Συνδεθείτε με τα διαπιστευτήριά σας, κλείστε το παράθυρο του ChatGPT και, στη συνέχεια, επαναλάβετε την ενέργεια που επιχειρήσατε. Θα παραμείνετε συνδεδεμένοι και στη συνέχεια."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Για κάποιο λόγο, δεν είναι δυνατό να επαληθευτεί εάν έχει φορτωθεί το σωστό μοντέλο. Προς το παρόν, μπορείτε να πατήσετε το μπλε κουμπί για να συνεχίσετε."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Εισαγάγετε εδώ το επιπλέον κείμενο για το μήνυμα."
+    },
+    "chatgpt_win_send": {
+        "message": "Αποστολή"
+    },
+    "chatgpt_force_completion": {
+        "message": "αναγκαστική ολοκλήρωση"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Κάντε κλικ εδώ για να εμφανιστεί το κουμπί «Χρήση τελευταίας απάντησης» εάν το ChatGPT έχει ολοκληρώσει την εργασία του αλλά το κουμπί δεν έχει εμφανιστεί."
+    },
+    "msg_prompt_too_long": {
+        "message": "Το κείμενο που δώσατε είναι πολύ μεγάλο. Πρέπει να το μικρύνετε."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Σημειώσεις έκδοσης"
+    },
+    "prefs_status_page": {
+        "message": "κατάσταση υπηρεσίας"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Διαστάσεις παραθύρου συνομιλίας AI"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Υψος"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Πλάτος"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Προεπιλεγμένο όνομα υπογραφής"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Προεπιλεγμένη γλώσσα για τις απαντήσεις"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Απάντηση σε όλους"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Απάντηση στον αποστολέα"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Τύπος απάντησης"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Αυτός είναι ο προεπιλεγμένος τύπος απάντησης που θα χρησιμοποιείται κατά την απάντηση σε ένα μήνυμα ηλεκτρονικού ταχυδρομείου. Μπορείτε να επιλέξετε τον άλλον αργότερα στο παράθυρο διαλόγου απάντησης."
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Διαχειριστείτε τις προτροπές σας"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Διαχειριστείτε τα placeholder δεδομένων σας"
+    },
+    "prefsInfoTitle": {
+        "message": "Σημαντικές πληροφορίες"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Μπορεί να συμβεί η διεπαφή ιστού του ChatGPT να αλλάξει με τρόπο που να διαταράσσει τον τρόπο λειτουργίας του πρόσθετου. Ελέγξτε τη σελίδα \"Κατάσταση υπηρεσίας\" που βρίσκεται στο κάτω μέρος αυτής της σελίδας. Επίσης, να θυμάστε ότι την πρώτη φορά που θα χρησιμοποιήσετε το ThunderAI, πρέπει να συνδεθείτε στο ChatGPT."
+    },
+    "prefsInfoDesc_2": {
+        "message": "Για να χρησιμοποιήσετε το ChatGPT API, χρειάζεστε ένα κλειδί OpenAI ChatGPT API και πρέπει να επιλέξετε ένα μοντέλο."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Για να χρησιμοποιήσετε την ενσωμάτωση με το Ollama, πρέπει να ρυθμίσετε έναν τοπικό διακομιστή Ollama. Μόλις ο διακομιστής λειτουργήσει, εισαγάγετε τη διεύθυνσή του στο καθορισμένο πεδίο μέσα στην εφαρμογή. Για να διασφαλίσετε την σωστή επικοινωνία μεταξύ του ThunderAI και του διακομιστή Ollama, θυμηθείτε να ορίσετε την παράμετρο OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Για να χρησιμοποιήσετε αυτήν την ενσωμάτωση, πρέπει να ρυθμίσετε έναν τοπικό διακομιστή συμβατό με το OpenAI API, όπως το LM Studio. Μόλις ο διακομιστής εκτελεστεί, εισαγάγετε τη διεύθυνσή του στο καθορισμένο πεδίο μέσα στην εφαρμογή. Για να διασφαλίσετε την σωστή επικοινωνία μεταξύ του ThunderAI και του τοπικού διακομιστή, θυμηθείτε να ορίσετε σωστά τις ρυθμίσεις CORS."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Να θυμάστε ότι μπορείτε να ανοίξετε το μενού ThunderAI χρησιμοποιώντας τη συντόμευση πληκτρολογίου CTRL+ALT+A."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Μπορείτε να αλλάξετε τη συντόμευση κάνοντας κλικ στο εικονίδιο του γραναζιού επάνω δεξιά σε αυτήν τη σελίδα και επιλέγοντας \"Διαχείριση συντόμευσης επέκτασης\"."
+    },
+    "prefsDonation_1": {
+        "message": "Σας αρέσει αυτό το πρόσθετο;"
+    },
+    "prefsDonation_2": {
+        "message": "Σκεφτείτε να κάνετε μια δωρεά!"
+    },
+    "backToOptionsText": {
+        "message": "Επιλογές"
+    },
+    "TranslateText": {
+        "message": "Θέλετε να βοηθήσετε στη μετάφραση αυτού του πρόσθετου;"
+    },
+    "TranslateLink": {
+        "message": "Μάθετε πώς!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Εξαγωγή όλων των προτροπών"
+    },
+    "customPrompts_Import": {
+        "message": "Εισαγωγή νέων μηνυμάτων προτροπής"
+    },
+    "importPrompts_confirmText": {
+        "message": "Πρόκειται να εισαγάγετε νέα μηνύματα."
+    },
+    "customPrompts_start_import": {
+        "message": "Έναρξη εισαγωγής προσαρμοσμένων μηνυμάτων προτροπής..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Η εισαγωγή προσαρμοσμένων μηνυμάτων ολοκληρώθηκε! Πρέπει να κάνετε κλικ στο κουμπί «Αποθήκευση όλων» για να αποθηκεύσετε τις αλλαγές σας."
+    },
+    "importPrompts_invalidFile": {
+        "message": "Το αρχείο που προσπαθείτε να εισαγάγετε δεν είναι έγκυρο αρχείο προσαρμοσμένων μηνυμάτων."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Το αρχείο που προσπαθείτε να εισαγάγετε δεν περιέχει έγκυρα μηνύματα."
+    },
+    "currently_used_prompt": {
+        "message": "Όνομα προτροπής που χρησιμοποιείται αυτήν τη στιγμή"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Ορίστε τη γλώσσα απόκρισης στην προτροπή"
+    },
+    "prefs_Connection_type": {
+        "message": "Τύπος σύνδεσης"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "Διεπαφή Ιστού ChatGPT"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "Κλειδί API ChatGPT"
+    },
+    "ChatGPT_Models": {
+        "message": "Μοντέλα ChatGPT"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Ενημέρωση λίστας μοντέλων ChatGPT"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων ChatGPT"
+    },
+    "Loading": {
+        "message": "Φόρτωση..."
+    },
+    "error": {
+        "message": "Σφάλμα ThunderAI!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Δεν έχετε προσθέσει Κλειδί API για το API ChatGPT. Εισαγάγετε ένα στη σελίδα επιλογών."
+    },
+    "chatgpt_empty_model": {
+        "message": "Δεν έχετε επιλέξει μοντέλο για το ChatGPT API. Επιλέξτε ένα από τη σελίδα επιλογών."
+    },
+    "chagpt_api_send_button": {
+        "message": "Χρήση μοντέλου"
+    },
+    "Debug": {
+        "message": "Εντοπισμός σφαλμάτων"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Ενεργοποίηση του συστήματος εντοπισμού σφαλμάτων"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Τοπικό LLM)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "API συμβατό με OpenAI"
+    },
+    "prefs_API_Host": {
+        "message": "Διεύθυνση κεντρικού υπολογιστή"
+    },
+    "Ollama_Models": {
+        "message": "Μοντέλα Ollama"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Ενημέρωση λίστας μοντέλων Ollama"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Ollama"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Δεν βρέθηκαν μοντέλα"
+    },
+    "ollama_empty_host": {
+        "message": "Δεν έχετε προσθέσει Διεύθυνση κεντρικού υπολογιστή για το API Ollama. Εισαγάγετε μία στη σελίδα επιλογών."
+    },
+    "ollama_empty_model": {
+        "message": "Δεν έχετε επιλέξει μοντέλο για το API Ollama. Επιλέξτε ένα από τη σελίδα επιλογών."
+    },
+    "error_connection_interrupted": {
+        "message": "Η σύνδεση με τον διακομιστή διακόπηκε απροσδόκητα"
+    },
+    "ollama_api_request_failed": {
+        "message": "Το αίτημα API του Ollama απέτυχε"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Το αίτημα του OpenAI ChatGPT API απέτυχε"
+    },
+    "WaitingServerResponse": {
+        "message": "Αναμονή για την απόκριση του διακομιστή"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Κάτι σαν"
+    },
+    "OpenAIComp_Models": {
+        "message": "Μοντέλα API συμβατά με OpenAI"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Ενημέρωση λίστας μοντέλων API συμβατών με OpenAI"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Δεν έχετε προσθέσει Διεύθυνση κεντρικού υπολογιστή για το API συμβατό με OpenAI. Εισαγάγετε μία στη σελίδα επιλογών."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Δεν έχετε επιλέξει μοντέλο για το API συμβατό με OpenAI. Επιλέξτε ένα από τη σελίδα επιλογών."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Το αίτημα του OpenAI Comp API απέτυχε"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Όνομα συνομιλίας"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Αυτό είναι το όνομα που θα χρησιμοποιηθεί στη συνομιλία με τεχνητή νοημοσύνη."
+    },
+    "StorageSpace": {
+        "message": "Συνολικός αποθηκευτικός χώρος που καταλαμβάνεται"
+    },
+    "SearchPrompt": {
+        "message": "Αναζήτηση μηνυμάτων"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Μενού: άμεση αποστολή"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Εάν είναι επιλεγμένο, η χρήση της συντόμευσης πληκτρολογίου CTRL+ALT+A θα στείλει αυτόματα την επισημασμένη προτροπή από το μενού. Διαφορετικά, το όνομα της προτροπής θα εμφανιστεί στον χρήστη, απαιτώντας ένα ακόμη πάτημα του πλήκτρου Enter για την αποστολή της."
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Μενού: αλφαβητική σειρά"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Εάν είναι επιλεγμένο, οι προτροπές στο μενού θα ταξινομηθούν αλφαβητικά."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Ορίστε την τιμή σε 0 εάν δεν θέλετε να καθορίσετε το μέγεθος του παραθύρου."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "Κλειδί API OpenAI Comp"
+    },
+    "Optional": {
+        "message": "Προαιρετικό"
+    },
+    "OpenChatGPTTab": {
+        "message": "Άνοιγμα καρτέλας ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "Σε περίπτωση προβλημάτων σύνδεσης στο παράθυρο του ThunderAI, ανοίξτε το ChatGPT σε μια νέα καρτέλα χρησιμοποιώντας το κουμπί στα δεξιά, συνδεθείτε και, στη συνέχεια, κλείστε την καρτέλα και συνεχίστε να χρησιμοποιείτε το ThunderAI."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Ανοίγοντας το ChatGPT Web από εδώ θα εφαρμοστούν τυχόν διαμορφωμένες ρυθμίσεις για το μοντέλο, το έργο και το Custom GPT."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Σώμα αλληλογραφίας"
+    },
+    "placeholder_mail_html_body": {
+        "message": "Σώμα αλληλογραφίας HTML"
+    },
+    "placeholder_mail_subject": {
+        "message": "Θέμα μηνύματος"
+    },
+    "placeholder_folder_name": {
+        "message": "Όνομα φακέλου"
+    },
+    "placeholder_folder_path": {
+        "message": "Διαδρομή φακέλου"
+    },
+    "placeholder_selected_text": {
+        "message": "Επιλεγμένο κείμενο"
+    },
+    "placeholder_selected_html": {
+        "message": "Επιλεγμένη HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "Επιπλέον κείμενο"
+    },
+    "placeholder_junk_score": {
+        "message": "Βαθμολογία ανεπιθύμητης αλληλογραφίας"
+    },
+    "placeholder_recipients": {
+        "message": "Παραλήπτες"
+    },
+    "placeholder_cc_list": {
+        "message": "Λίστα CC"
+    },
+    "placeholder_author": {
+        "message": "Συγγραφέας"
+    },
+    "placeholder_account_email_address": {
+        "message": "Διεύθυνση ηλεκτρονικού ταχυδρομείου λογαριασμού"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Placeholders: χρήση προεπιλεγμένης τιμής"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Εάν είναι επιλεγμένο, τα placeholders θα συμπληρώνονται με τις προεπιλεγμένες τιμές όταν δεν παρέχεται καμία τιμή. Διαφορετικά, τα placeholders θα διατηρούνται στη θέση τους."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Μέγιστο μήκος προτροπής"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Αυτός είναι ο μέγιστος αριθμός χαρακτήρων που μπορούν να χρησιμοποιηθούν σε μια προτροπή. Διαφορετικά, θα εμφανιστεί ένα μήνυμα σφάλματος. Η τιμή δεν είναι επεξεργάσιμη για τη διεπαφή ιστού ChatGPT. Ορίστε την σε μηδέν για να απενεργοποιήσετε τον έλεγχο."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "Μοντέλο ιστού ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Αυτό είναι το μοντέλο που θα επιβληθεί για τη διεπαφή ιστού ChatGPT. Εάν δεν καθοριστεί κάποιο ή δοθεί εσφαλμένο μοντέλο, το προεπιλεγμένο μοντέλο θα οριστεί από το ChatGPT στην ιστοσελίδα. Αυτή η ρύθμιση δεν θα λειτουργήσει με έναν δωρεάν λογαριασμό ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "Προσωρινή συνομιλία ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Εάν είναι επιλεγμένο, η προσωρινή συνομιλία θα χρησιμοποιηθεί στη διεπαφή ιστού ChatGPT."
+    },
+    "chatgpt_btn_model": {
+        "message": "Χρησιμοποιήστε το τρέχον μοντέλο"
+    },
+    "SendingPrompt": {
+        "message": "Αποστολή προτροπής..."
+    },
+    "AllowedValues": {
+        "message": "Επιτρεπόμενες τιμές"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Μπορείτε να χρησιμοποιήσετε πρόσθετα placeholders δεδομένων."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Διατηρήστε τη συμβατότητα \"v1\""
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Εάν επιλεγεί, το τμήμα \"v1\" στη διαδρομή των κλήσεων API θα διατηρηθεί, όπως \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Εδώ μπορείτε επίσης να εισαγάγετε μια διεύθυνση απομακρυσμένου διακομιστή."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Φαίνεται ότι τουλάχιστον ένας από τους λογαριασμούς σας χρησιμοποιεί το πρόσθετο Owl for Exchange. Υπάρχει ένα γνωστό πρόβλημα μεταξύ του Thunderbird και του Owl, το οποίο αντιμετωπίζεται αυτήν τη στιγμή. Προς το παρόν, μπορείτε να χρησιμοποιήσετε το ThunderAI κατά τη σύνταξη email, αλλά όχι κατά την ανάγνωσή τους."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Κάντε κλικ σε μια τιμή για να την ορίσετε."
+    },
+    "prompt_reply_full_text": {
+        "message": "Απαντήστε στο ακόλουθο μήνυμα ηλεκτρονικού ταχυδρομείου. Απαντήστε μόνο με το απαραίτητο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Μην προσθέσετε τη γραμμή θέματος στην απάντηση."
+    },
+    "reply_same_lang": {
+        "message": "Απαντήστε στην ίδια γλώσσα."
+    },
+    "sign_msg_as": {
+        "message": "Υπογράψτε το μήνυμα ως"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Όταν ορίζετε τα μηνύματα προγραμματιστή, δίνετε στο μοντέλο πρόσθετο πλαίσιο για να κατανοήσει την εργασία, παρέχετε πιο προσαρμοσμένες απαντήσεις και τηρείτε συγκεκριμένες οδηγίες σχετικά με την προτροπή που θα σταλεί."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Μπορείτε να χρησιμοποιήσετε το σύμβολο κράτησης θέσης δεδομένων {%tags_full_list%} στην προτροπή για να εμφανίσετε τις διαθέσιμες ετικέτες. Με μια κατάλληλη προτροπή, θα μπορούσατε στη συνέχεια να επιβάλετε την επιλογή των ετικετών μόνο από τη λίστα με αυτές που υπάρχουν ήδη."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Πληκτρολογημένο κείμενο πριν από το σώμα του μηνύματος σε εισαγωγικά"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Παρατιθέμενο κείμενο στο σώμα του μηνύματος"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Προσθήκη νέου συμβάντος ημερολογίου"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Εξαγάγετε όλες τις σχετικές λεπτομέρειες που απαιτούνται για τη δημιουργία ενός συμβάντος ημερολογίου από το ακόλουθο κείμενο. Οι εξαγόμενες πληροφορίες θα πρέπει να περιλαμβάνουν:\n- Τίτλο συμβάντος\n- Ημερομηνία και ώρα έναρξης (συμπεριλαμβανομένης της ζώνης ώρας, εάν καθορίζεται)\n- Ημερομηνία και ώρα λήξης (συμπεριλαμβανομένης της ζώνης ώρας, εάν καθορίζεται)\n- Ολόκληρη ημέρα (εάν αναφέρεται)\n- Συμμετέχοντες\nΒεβαιωθείτε ότι τα δεδομένα έχουν μορφοποιηθεί με σαφήνεια και συνέπεια, ώστε να μπορούν να χρησιμοποιηθούν άμεσα για τη δημιουργία ενός συμβάντος ημερολογίου.\nΕάν υπάρχουν σχετικές χρονικές αναφορές, λάβετε υπόψη ότι η ημερομηνία και η ώρα του email είναι \"{%mail_datetime%}\". Υπολογίστε την ημερομηνία και την ώρα έναρξης με βάση αυτήν την αναφορά. Εάν η υπολογισμένη ημερομηνία και ώρα έναρξης είναι προγενέστερες από το \"{%current_datetime%}\", υπολογίστε ξανά την ημερομηνία και την ώρα έναρξης χρησιμοποιώντας το \"{%current_datetime%}\" ως βάση.\nΕάν η διάρκεια δεν έχει καθοριστεί, ορίστε την σε μία ώρα.\nΑυτοί είναι οι συμμετέχοντες: {%author%}, {%recipients%}, {%cc_list%}. Εάν υπάρχει, εξαιρέστε τη διεύθυνσή μου: {%account_email_address%}.\nΕάν δεν μπορείτε να λάβετε μία ή περισσότερες από τις απαιτούμενες πληροφορίες, απαντήστε με μια κενή συμβολοσειρά.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Μην συμπεριλάβετε κανένα επιπλέον κείμενο ή εξηγήσεις. Δώστε μόνο το JSON. Η μορφή που θα χρησιμοποιηθεί είναι η εξής:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Σύνοψη συμβάντος ημερολογίου εδώ\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nΤο κείμενο είναι: \"{%selected_text%}\""
+    },
+    "prompt_get_task": {
+        "message": "Προσθήκη νέας εργασίας"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Εξαγάγετε όλες τις σχετικές λεπτομέρειες που απαιτούνται για τη δημιουργία μιας εργασίας από το ακόλουθο κείμενο. Οι εξαγόμενες πληροφορίες θα πρέπει να περιλαμβάνουν:\n- Ημερομηνία και ώρα λήξης (συμπεριλαμβανομένης της ζώνης ώρας, εάν καθορίζεται)\n- Σύνοψη εργασίας\n- Αρχική ημερομηνία και ώρα (συμπεριλαμβανομένης της ζώνης ώρας, εάν καθορίζεται)\nΒεβαιωθείτε ότι τα δεδομένα έχουν μορφοποιηθεί με σαφήνεια και συνέπεια, ώστε να μπορούν να χρησιμοποιηθούν απευθείας για τη δημιουργία μιας εργασίας.\nΕάν υπάρχουν σχετικές αναφορές ώρας, λάβετε υπόψη ότι η ημερομηνία και η ώρα του email είναι \"{%mail_datetime%}\". Υπολογίστε την ημερομηνία και την ώρα έναρξης με βάση αυτήν την αναφορά. Εάν η υπολογισμένη ημερομηνία και ώρα έναρξης είναι προγενέστερες από το \"{%current_datetime%}\", υπολογίστε ξανά την ημερομηνία και την ώρα έναρξης χρησιμοποιώντας το \"{%current_datetime%}\" ως βάση.\nΕάν δεν μπορείτε να λάβετε μία ή περισσότερες από τις απαιτούμενες πληροφορίες, απαντήστε με μια κενή συμβολοσειρά.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Μην συμπεριλάβετε επιπλέον κείμενο ή εξηγήσεις. Παρέχετε μόνο το JSON. Ακολουθεί η μορφή που θα χρησιμοποιηθεί:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Σύνοψη εργασίας εδώ\"\n}\nΕάν δεν υπάρχουν πληροφορίες σχετικά με τις ημερομηνίες, καταργήστε τις.\nΑκολουθεί το κείμενο: \"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Προσθήκη νέου συμβάντος ημερολογίου από επιλεγμένο κείμενο"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για τη λήψη πληροφοριών συμβάντων ημερολογίου από επιλεγμένο κείμενο."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Επιλογές Εκδηλώσεων Ημερολογίου"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Προσθήκη νέας εργασίας από επιλεγμένο κείμενο"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για τη λήψη πληροφοριών εργασίας από επιλεγμένο κείμενο."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Επιλογές εργασιών"
+    },
+    "Select_your_timezone": {
+        "message": "Επιλέξτε τη ζώνη ώρας σας"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Επιβολή της καθορισμένης ζώνης ώρας"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Εάν είναι επιλεγμένο, η καθορισμένη ζώνη ώρας θα επιβληθεί για τα συμβάντα ημερολογίου και τις εργασίες."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Διαχείριση ρυθμίσεων συμβάντων ημερολογίου"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων συμβάντων ημερολογίου"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη προτροπή που χρησιμοποιείται για τη λήψη ενός συμβάντος ημερολογίου από επιλεγμένο κείμενο."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Τρέχον κείμενο προτροπής"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "Μπορείτε να αλλάξετε την ερώτηση όπως επιθυμείτε, αλλά η απάντηση που λαμβάνεται από την Τεχνητή Νοημοσύνη πρέπει να είναι σε μορφή JSON όπως καθορίζεται στην προεπιλεγμένη ερώτηση!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Για να χρησιμοποιήσετε τις λειτουργίες συμβάντων και εργασιών ημερολογίου, εγκαταστήστε το πρόσθετο ThunderAI Sparks."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Για να χρησιμοποιήσετε τις λειτουργίες συμβάντων και εργασιών ημερολογίου, εγκαταστήστε μια ενημερωμένη έκδοση του πρόσθετου ThunderAI Sparks."
+    },
+    "GetTask_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων εργασιών"
+    },
+    "GetTask_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη προτροπή που χρησιμοποιείται για τη λήψη μιας εργασίας από επιλεγμένο κείμενο."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Διαχείριση ρυθμίσεων εργασιών"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Κατεβάστε το ThunderAI Sparks τώρα!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Η ημερομηνία και η ώρα του email"
+    },
+    "placeholder_current_datetime": {
+        "message": "Η τρέχουσα ημερομηνία και ώρα"
+    },
+    "calendar_getting_data_error": {
+        "message": "Σφάλμα κατά τη λήψη δεδομένων συμβάντων ημερολογίου"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Σφάλμα κατά το άνοιγμα του παραθύρου διαλόγου συμβάντος ημερολογίου"
+    },
+    "task_getting_data_error": {
+        "message": "Σφάλμα κατά τη λήψη δεδομένων εργασίας"
+    },
+    "task_opening_dialog_error": {
+        "message": "Σφάλμα κατά το άνοιγμα του παραθύρου διαλόγου εργασίας"
+    },
+    "no_valid_data_received": {
+        "message": "Δεν ελήφθησαν έγκυρα δεδομένα από την Τεχνητή Νοημοσύνη."
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Αυτόματη προσθήκη ετικετών"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Εάν είναι επιλεγμένο, το AI θα προσθέτει αυτόματα ετικέτες σε νέα email που λαμβάνονται."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Επιλέξτε για ποιον λογαριασμό θα ενεργοποιήσετε αυτήν τη λειτουργία στο κάτω μέρος αυτής της σελίδας."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Επιβολή υπαρχουσών ετικετών"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Εάν είναι επιλεγμένο, το AI θα προσθέτει μόνο υπάρχουσες ετικέτες και δεν θα δημιουργεί νέες ετικέτες."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Χρησιμοποιήστε μόνο αυτές τις ετικέτες"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Εάν είναι επιλεγμένο, το AI θα προσθέσει μόνο ετικέτες από την παρακάτω λίστα."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "Η λίστα πρέπει να περιέχει τουλάχιστον μία ετικέτα. Προσθέστε μια ετικέτα ανά γραμμή ή διαχωρισμένη με κόμμα."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Χρησιμοποιήστε μόνο τις ετικέτες σε αυτήν τη λίστα διαχωρισμένων με κόμμα"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Προσθήκη ετικετών μόνο σε email στα εισερχόμενα"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Εάν είναι επιλεγμένο, το AI θα προσθέτει ετικέτες μόνο σε email που λαμβάνονται στον φάκελο εισερχομένων."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο και το API που καθορίζονται παρακάτω θα χρησιμοποιηθούν για την προσθήκη ετικετών σε email, ανεξάρτητα από αυτό που έχει επιλεγεί στη σελίδα επιλογών ThunderAI."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Προεπιλεγμένη υπογραφή όπως ορίζεται στις επιλογές ThunderAI."
+    },
+    "thunderai_def_lang": {
+        "message": "Προεπιλεγμένη γλώσσα όπως ορίζεται στις επιλογές ThunderAI."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Πληροφορίες σχετικά με τα συνημμένα στο email"
+    },
+    "empty": {
+        "message": "Αυτό το σύμβολο κράτησης θέσης δεν προσθέτει κείμενο, αλλά αποτρέπει την αυτόματη προσθήκη του σώματος του μηνύματος ηλεκτρονικού ταχυδρομείου στο τέλος της προτροπής."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Αυτόματο φίλτρο ανεπιθύμητης αλληλογραφίας"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Εάν είναι επιλεγμένο, το ThunderAI θα μετακινεί αυτόματα τα ανεπιθύμητα email στον φάκελο ανεπιθύμητης αλληλογραφίας."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Διαχείριση ρυθμίσεων φίλτρου ανεπιθύμητης αλληλογραφίας"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων φίλτρου ανεπιθύμητης αλληλογραφίας"
+    },
+    "SpamFilter_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη ερώτηση που χρησιμοποιείται για την ανίχνευση ανεπιθύμητων μηνυμάτων ηλεκτρονικού ταχυδρομείου."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Τρέχον κείμενο προτροπής"
+    },
+    "prompt_spamfilter": {
+        "message": "Εντοπισμός ανεπιθύμητων μηνυμάτων ηλεκτρονικού ταχυδρομείου"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Αναλύστε το ακόλουθο email και προσδιορίστε εάν είναι spam ή όχι. Λάβετε υπόψη παράγοντες όπως ύποπτες λέξεις-κλειδιά, υπερβολική διαφημιστική γλώσσα, παραπλανητικές γραμμές θέματος, αιτήματα για προσωπικά στοιχεία και ασυνήθιστες διευθύνσεις αποστολέα.\nΔώστε μια τιμή από 0 (όχι spam) έως 100 (spam) και μια εξήγηση που δεν υπερβαίνει τις 10 λέξεις.\nΣε περίπτωση που λείπουν δεδομένα μηνύματος, ορίστε την τιμή σε 0 (όχι spam) και δώστε τον λόγο.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Μην συμπεριλάβετε κανένα επιπλέον κείμενο ή εξήγηση. Δώστε μόνο το JSON. Ακολουθεί η μορφή που θα χρησιμοποιηθεί:\n{\n\"spamValue\": <ακέραιος αριθμός από 0 έως 100>,\n\"explanation\": \"Σύντομη εξήγηση του συλλογισμού σας\"\n}\nΕδώ βρίσκονται οι πληροφορίες του email:\nΑποστολέας: \"{%author%}\"\nΘέμα: \"{%mail_subject%}\"\nΣώμα Html: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Επιλογές φίλτρου ανεπιθύμητης αλληλογραφίας"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Χρησιμοποιήστε συγκεκριμένο μοντέλο και API"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο και το API που καθορίζονται παρακάτω θα χρησιμοποιηθούν για το φίλτρο ανεπιθύμητης αλληλογραφίας, ανεξάρτητα από αυτό που έχει επιλεγεί στη σελίδα επιλογών ThunderAI."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Όριο ανεπιθύμητης αλληλογραφίας"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Εάν η τιμή που επιστρέφεται από την τεχνητή νοημοσύνη είναι πάνω από αυτό το όριο, το email θα μετακινηθεί στον φάκελο ανεπιθύμητης αλληλογραφίας."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Το όριο ανεπιθύμητης αλληλογραφίας είναι πολύ χαμηλό! Πιθανότατα θα επισημάνετε πάρα πολλά μηνύματα ως ανεπιθύμητα!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Το όριο ανεπιθύμητης αλληλογραφίας είναι μηδέν! Θα επισημάνετε όλα τα μηνύματα ως ανεπιθύμητα!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Δεν έχουν ελεγχθεί ακόμη μηνύματα για ανεπιθύμητα. Εδώ θα βρείτε μια λίστα με τις τελευταίες 100 αναφορές ανεπιθύμητων μηνυμάτων μόνο για την τρέχουσα συνεδρία."
+    },
+    "SpamReport_Title": {
+        "message": "Αναφορές φίλτρου ανεπιθύμητης αλληλογραφίας"
+    },
+    "Date": {
+        "message": "Ημερομηνία"
+    },
+    "From": {
+        "message": "Από"
+    },
+    "Subject": {
+        "message": "Θέμα"
+    },
+    "Spam_Value": {
+        "message": "Αξία ανεπιθύμητης αλληλογραφίας"
+    },
+    "Moved_to_Spam": {
+        "message": "Μεταφέρθηκε στα Ανεπιθύμητα"
+    },
+    "Explanation": {
+        "message": "Εξήγηση"
+    },
+    "Report_Date": {
+        "message": "Ημερομηνία αναφοράς"
+    },
+    "spamfilter_moved": {
+        "message": "Ναί"
+    },
+    "spamfilter_not_moved": {
+        "message": "Οχι"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Προσθήκη ετικετών"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Ανάλυση για ανεπιθύμητα μηνύματα"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Εμφάνιση του στοιχείου μενού \"Προσθήκη ετικετών\""
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Εάν είναι επιλεγμένο, το στοιχείο μενού \"Προσθήκη ετικετών\" θα εμφανίζεται όταν κάνετε δεξί κλικ σε ένα μήνυμα ηλεκτρονικού ταχυδρομείου στη λίστα μηνυμάτων."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Εμφάνιση του στοιχείου μενού \"Ανάλυση για ανεπιθύμητα μηνύματα\""
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Εάν είναι επιλεγμένο, το στοιχείο μενού \"Ανάλυση για ανεπιθύμητα μηνύματα\" θα εμφανίζεται όταν κάνετε δεξί κλικ σε ένα μήνυμα ηλεκτρονικού ταχυδρομείου στη λίστα μηνυμάτων."
+    },
+    "noActiveCalendar": {
+        "message": "Δεν βρέθηκε επεξεργάσιμο ημερολόγιο!"
+    },
+    "btn_show_differences": {
+        "message": "Εμφάνιση διαφορών"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Διαφορές μεταξύ του αρχικού και του τροποποιημένου κειμένου"
+    },
+    "apiwebchat_you": {
+        "message": "Εσύ"
+    },
+    "apiwebchat_info": {
+        "message": "Πληροφορίες"
+    },
+    "apiwebchat_error": {
+        "message": "Σφάλμα"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Χρησιμοποιήστε αυτήν την απάντηση"
+    },
+    "apiwebchat_stopping": {
+        "message": "Σταμάτημα"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Λήψη δεδομένων"
+    },
+    "hyprland_warning": {
+        "message": "Εάν αντιμετωπίζετε πρόβλημα με το άνοιγμα του παραθύρου συνομιλίας AI, δοκιμάστε να ορίσετε τις τιμές ύψους και πλάτους σε 0. Αυτό το πρόβλημα μπορεί να προκύψει σε Linux σε ορισμένα περιβάλλοντα, για παράδειγμα, κατά τη χρήση του Hyprland."
+    },
+    "remember_CORS": {
+        "message": "Θυμηθείτε, πρέπει να ορίσετε τις ρυθμίσεις CORS στον διακομιστή!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Η χρήση του API συμβατού με OpenAI ενδέχεται να απαιτεί τη ρύθμιση των ρυθμίσεων CORS στον διακομιστή."
+    },
+    "CORS_alternative_1": {
+        "message": "Προβλήματα με τη ρύθμιση του CORS;"
+    },
+    "CORS_alternative_2": {
+        "message": "Πατήστε το παρακάτω κουμπί για να δώσετε στο <all_urls> την άδεια να αποφύγει οποιοδήποτε πρόβλημα CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Δώστε άδεια σε \"όλες τις διευθύνσεις URL\""
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Σύνταξη σε απλό κείμενο"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Επιλέξτε αυτήν την επιλογή εάν συντάσσετε τα μηνύματα ηλεκτρονικού ταχυδρομείου σε μορφή απλού κειμένου."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Δεν έχει επιλεγεί κείμενο, θέλετε να εισαγάγετε την απάντηση του AI στην αρχή του email;"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Αριθμός tokens"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Ο αριθμός των tokens που θα χρησιμοποιηθούν για το API Ollama. Ορίστε την τιμή σε 0 εάν δεν θέλετε να μεταβιβαστεί ως παράμετρος στον διακομιστή."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Για να χρησιμοποιήσετε την ενσωμάτωση ChatGPT Web, πρέπει να παραχωρήσετε την απαιτούμενη άδεια."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Για να χρησιμοποιήσετε την ενσωμάτωση του Claude API, πρέπει να παραχωρήσετε την απαιτούμενη άδεια."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "Για να χρησιμοποιήσετε την ενσωμάτωση του OpenAI API, πρέπει να παραχωρήσετε την απαιτούμενη άδεια."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Κάντε κλικ εδώ για να ανοίξετε μια νέα καρτέλα και ακολουθήστε τις οδηγίες."
+    },
+    "ask_integration_permission_2": {
+        "message": "Κάντε κλικ εδώ για να συνεχίσετε."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Η άδεια χορηγήθηκε. Μπορείτε να κάνετε κλικ εδώ για να κλείσετε αυτήν την καρτέλα και να επιστρέψετε στο κύριο παράθυρο."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Επιλέξτε τους λογαριασμούς όπου είναι ενεργοποιημένη η αυτόματη προσθήκη ετικετών"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Κάθε αλλαγή αποθηκεύεται αμέσως."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Επιλέξτε τους λογαριασμούς στους οποίους είναι ενεργοποιημένο το φίλτρο ανεπιθύμητης αλληλογραφίας"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Διαδικτυακό έργο ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Αυτό είναι το Έργο που θα εφαρμοστεί για τη Διεπαφή Ιστού ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "Προσαρμοσμένο GPT Ιστού ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Αυτό είναι το προσαρμοσμένο GPT που θα επιβληθεί για τη διεπαφή ιστού ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Αυτό πρέπει να έχει την ακόλουθη μορφή:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Μπορείτε να βρείτε τη σωστή τιμή στο πεδίο URL του προγράμματος περιήγησης όταν ανοίξετε τη σχετική σελίδα ChatGPT."
+    },
+    "customPrompts_Properties": {
+        "message": "Iδιότητα"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Εμφάνιση επιπλέον ιδιοτήτων"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Απόκρυψη πρόσθετων ιδιοτήτων"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Πρόσθετες ιδιότητες"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Εάν ένα Έργο έχει καθοριστεί στις επιλογές ή σε μια προτροπή, θα παρακάμψει τη ρύθμιση του Προσαρμοσμένου GPT."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Εάν ένα Έργο καθορίζεται στις επιλογές ή σε μια προτροπή, η προσωρινή συνομιλία δεν θα χρησιμοποιηθεί."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Κλειδί API Claude"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API Claude"
+    },
+    "Anthropic_Models": {
+        "message": "Claude Μοντέλα"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Ενημέρωση λίστας μοντέλων Claude"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Claude"
+    },
+    "Anthropic_Version": {
+        "message": "Έκδοση API Claude"
+    },
+    "Anthropic_Version_Info": {
+        "message": "ΑΠΑΙΤΕΙΤΑΙ. Μην αλλάξετε αυτήν την τιμή εκτός αν γνωρίζετε τι κάνετε. Περισσότερες πληροφορίες στη διεύθυνση:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Claude Μέγιστα Tokens"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Ο μέγιστος αριθμός διακριτικών που θα δημιουργηθούν κατά την ολοκλήρωση. Ο αριθμός διακριτικών της προτροπής σας συν το max_tokens δεν μπορεί να υπερβαίνει το μήκος περιβάλλοντος του μοντέλου."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Δεν έχετε προσθέσει Κλειδί API για το API Claude. Εισαγάγετε ένα στη σελίδα επιλογών."
+    },
+    "anthropic_empty_model": {
+        "message": "Δεν έχετε επιλέξει μοντέλο για το Claude API. Επιλέξτε ένα από τη σελίδα επιλογών."
+    },
+    "anthropic_empty_version": {
+        "message": "Δεν έχετε προσθέσει έκδοση για το Claude API. Εισαγάγετε μία στη σελίδα επιλογών."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Το αίτημα του Claude API απέτυχε"
+    },
+    "_api_connecting": {
+        "message": "Προσπάθεια σύνδεσης με το $api_string$ χρησιμοποιώντας την ακόλουθη διαμόρφωση...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Μοντέλο"
+    },
+    "_api_connecting_host": {
+        "message": "Πάροχος"
+    },
+    "_api_connecting_version": {
+        "message": "Έκδοση"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Διαθέσιμες υπηρεσίες"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Επιλέξτε μία από τις υπηρεσίες που είναι διαθέσιμες για το API συμβατό με OpenAI ή εισαγάγετε μία χειροκίνητα."
+    },
+    "Custom": {
+        "message": "Προσαρμοσμένο"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Είστε βέβαιοι ότι θέλετε να εφαρμόσετε τη διαμόρφωση \"$config_name$\";",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Αν επιλέξετε κάποιο κείμενο, θα ληφθεί υπόψη μόνο αυτό το τμήμα."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Χρήση αποθηκευτικού χώρου"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Εάν είναι επιλεγμένο, οι συνομιλίες σας θα αποθηκεύονται από το OpenAI."
+    },
+    "prefs_ollama_think": {
+        "message": "Ενεργοποιήστε τη σκέψη"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο θα σκεφτεί πριν απαντήσει. Αυτή η επιλογή λειτουργεί μόνο με μοντέλα που υποστηρίζουν τη λειτουργία «σκέψης»."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Κάντε κλικ για να αλλάξετε τον τύπο απάντησης"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Ακριβής αντιστοίχιση εξαιρέσεων"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Εάν επιλεγεί, οι λέξεις στη λίστα εξαιρέσεων θα αντιστοιχίζονται ακριβώς με τις ετικέτες. Διαφορετικά, θα αντιστοιχούν επίσης εάν περιλαμβάνονται στην ετικέτα."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Διαχείριση placeholders δεδομένων"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Μπορείτε επίσης να χρησιμοποιήσετε τα προεπιλεγμένα placeholders δεδομένων με την αυτόματη συμπλήρωση, όπως ακριβώς όταν γράφετε προσαρμοσμένες προτροπές."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Σε αυτήν τη σελίδα, είναι δυνατό να ορίσετε προσαρμοσμένα placeholders δεδομένων που θα χρησιμοποιηθούν στις προσαρμοσμένες προτροπές σας."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Τα υπάρχοντα placeholders δεδομένων με το ίδιο ID θα αντικατασταθούν. Θα προστεθούν placeholders με νέα ID."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Εξαγωγή όλων των προσαρμοσμένων placeholder δεδομένων"
+    },
+    "customDataPH_Import": {
+        "message": "Εισαγωγή νέων placeholders δεδομένων"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Placeholder Κείμενο"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Αποθήκευση προσαρμοσμένων placeholder δεδομένων..."
+    },
+    "customDataPH_saved": {
+        "message": "Τα προσαρμοσμένα placeholder δεδομένων αποθηκεύτηκαν!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Προσθήκη Placeholder δεδομένων"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Πρόκειται να εισαγάγετε νέα προσαρμοσμένα placeholder δεδομένων."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Έναρξη εισαγωγής προσαρμοσμένων placeholder δεδομένων..."
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων API συμβατών με OpenAI"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Απαντήστε στο ακόλουθο email \"{%selected_text%}\", δεδομένου ότι αυτό είναι το πλήρες νήμα των email \"{%mail_html_body%}\". Απαντήστε μόνο με το απαραίτητο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Απαντήστε στο ακόλουθο μήνυμα ηλεκτρονικού ταχυδρομείου \"{%mail_text_body%}\". {%additional_text%}. Απαντήστε μόνο με το απαραίτητο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Ξαναγράψτε το ακόλουθο κείμενο για να είστε πιο ευγενικοί. Απαντήστε μόνο με το ξαναγραμμένο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Ξαναγράψτε το ακόλουθο κείμενο για να είναι πιο επίσημο. Απαντήστε μόνο με το ξαναγραμμένο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_classify_full_text": {
+        "message": "Ταξινομήστε το ακόλουθο κείμενο με βάση την Ευγένεια, τη Ζεστασιά, την Τυπικότητα, την Επιθετικότητα και την Προσβλητικότητα, δίνοντας ένα ποσοστό για κάθε κατηγορία. Απαντήστε μόνο με την κατηγορία και βαθμολογήστε χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "Συνοψίστε το ακόλουθο μήνυμα ηλεκτρονικού ταχυδρομείου σε μια λίστα με κουκκίδες."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Μεταφράστε το ακόλουθο μήνυμα ηλεκτρονικού ταχυδρομείου στα"
+    },
+    "prompt_this_full_text": {
+        "message": "Απαντήστε μόνο με το απαραίτητο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Προσθήκη ετικετών σε email"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για την εφαρμογή ετικετών σε μηνύματα ηλεκτρονικού ταχυδρομείου."
+    },
+    "prompt_add_tags": {
+        "message": "Προσθήκη ετικετών σε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Αναλύστε το ακόλουθο κείμενο email και δημιουργήστε έναν πίνακα ετικετών JSON που συνοψίζει το περιεχόμενό του. Χρησιμοποιήστε θέματα, βασικά θέματα και σχετικές περιγραφές ως ετικέτες. Βεβαιωθείτε ότι οι ετικέτες είναι συνοπτικές και σχετικές με το περιεχόμενο του email.\nΚείμενο email: {%mail_text_body%}\nΛάβετε υπόψη τις ακόλουθες λεπτομέρειες για το περιεχόμενο:\n- Αποστολέας: {%author%}\n- Παραλήπτες: {%recipients%}\n- Λίστα CC: {%cc_list%}\n- Θέμα email: {%mail_subject%}\nΒασίστε τις ετικέτες σας στο κείμενο και το περιεχόμενο του email, αγνοώντας περιττές πληροφορίες ή ασήμαντες λεπτομέρειες.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Η έξοδος θα πρέπει να είναι μόνο ένας πίνακας ετικετών JSON χωρίς κανένα επιπλέον σχόλιο ή κείμενο. Ακολουθεί ένα παράδειγμα της μορφής JSON που θα χρησιμοποιηθεί:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "Διορθώστε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Διορθώστε τυχόν ορθογραφικά ή γραμματικά λάθη στο ακόλουθο μήνυμα ηλεκτρονικού ταχυδρομείου. Απαντήστε μόνο με το διορθωμένο κείμενο και χωρίς επιπλέον σχόλια ή άλλο κείμενο. \n\n\"{%mail_typed_text%}\""
+    },
+    "placeholder_tags_current_email": {
+        "message": "Ετικέτες αλληλογραφίας"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Υπάρχουσες ετικέτες"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Μέγιστος αριθμός ετικετών"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Ο μέγιστος αριθμός ετικετών που προτείνονται από την Τεχνητή Νοημοσύνη. Ορίστε σε 0 εάν δεν θέλετε να περιορίσετε τον αριθμό των ετικετών."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Περιορίστε τον αριθμό των ετικετών σε"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Απόκρυψη εξαιρούμενων ετικετών"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Εάν είναι επιλεγμένο, οι ετικέτες που υπάρχουν στη λίστα εξαιρέσεων θα αποκρυφθούν στο παράθυρο διαλόγου επιβεβαίωσης."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Διαχείριση ρυθμίσεων ετικετών"
+    },
+    "AddTags_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων ετικετών"
+    },
+    "AddTags_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη προτροπή που χρησιμοποιείται για την προσθήκη ετικετών σε μηνύματα ηλεκτρονικού ταχυδρομείου και τη διαχείριση της λίστας εξαιρέσεων."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Τρέχον κείμενο προτροπής"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Λίστα εξαιρέσεων"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Αυτή είναι μια λίστα με ετικέτες που δεν επιτρέπεται να προστεθούν σε μηνύματα ηλεκτρονικού ταχυδρομείου."
+    },
+    "save": {
+        "message": "Αποθήκευση"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Αυτή η δήλωση θα προστεθεί στο τέλος της προτροπής:"
+    },
+    "reset_default": {
+        "message": "Επαναφορά στις προεπιλογές"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Προσθέστε μία λέξη ανά γραμμή ή διαχωρίστε την με κόμμα."
+    },
+    "addtags_dialog_title": {
+        "message": "Προσθήκη ετικετών στο email"
+    },
+    "addtags_exclude_tag": {
+        "message": "Ετικέτα εξαίρεσης"
+    },
+    "addtags_no_tags_received": {
+        "message": "Δεν ελήφθησαν ετικέτες από την Τεχνητή Νοημοσύνη."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Δεν βρέθηκαν έγκυρες ετικέτες, μετά το φιλτράρισμα με τη λίστα εξαιρέσεων."
+    },
+    "thunderai_error_title": {
+        "message": "Σφάλμα ThunderAI"
+    },
+    "thunderai_warning_title": {
+        "message": "Προειδοποίηση ThunderAI"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Το πρώτο γράμμα να είναι κεφαλαίο"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Εάν επιλεγεί, η ονομασία ετικετών θα οριστεί σε πεζά γράμματα με μόνο το πρώτο γράμμα κεφαλαίο."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Επιλογές προσθήκης ετικετών"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Μοιραστείτε τα σχόλιά σας και βοηθήστε στη βελτίωση του ThunderAI!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Κάντε κλικ εδώ, θα σας πάρει μόνο ένα λεπτό!"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Εισαγωγή μοντέλου με μη αυτόματο τρόπο"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Εισαγάγετε εδώ το όνομα του μοντέλου που θέλετε να χρησιμοποιήσετε."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Επιβολή γλώσσας"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Εάν επιλεγεί, η γλώσσα των ετικετών θα αναγκαστεί να ταιριάζει με τη γλώσσα που ορίζεται στη σελίδα επιλογών ThunderAI, εάν έχει καθοριστεί."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Οι ετικέτες πρέπει να είναι γραμμένες σε"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "API Google Gemini"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "Κλειδί API"
+    },
+    "GoogleGemini_Models": {
+        "message": "Μοντέλα API Google Gemini"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Ενημέρωση λίστας μοντέλων Google Gemini"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Google Gemini"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Το αίτημα του Google Gemini API απέτυχε"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Δεν έχετε προσθέσει Κλειδί API για το Google Gemini. Εισαγάγετε ένα στη σελίδα επιλογών."
+    },
+    "google_gemini_empty_model": {
+        "message": "Δεν έχετε επιλέξει μοντέλο για το Google Gemini API. Επιλέξτε ένα από τη σελίδα επιλογών."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Οδηγίες συστήματος"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Όταν ορίζετε μια εντολή συστήματος, δίνετε στο μοντέλο πρόσθετο πλαίσιο για να κατανοήσει την εργασία, παρέχετε πιο προσαρμοσμένες απαντήσεις και τηρείτε συγκεκριμένες οδηγίες σχετικά με την προτροπή που θα σταλεί."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Μηνύματα προγραμματιστών"
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Η εισαγωγή προσαρμοσμένων placeholder δεδομένων ολοκληρώθηκε! Πρέπει να κάνετε κλικ στο κουμπί «Αποθήκευση όλων» για να αποθηκεύσετε τις αλλαγές σας."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Το αρχείο που προσπαθείτε να εισαγάγετε δεν είναι ένα έγκυρο αρχείο προσαρμοσμένων placeholder δεδομένων."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Το αρχείο που προσπαθείτε να εισαγάγετε δεν περιέχει έγκυρα προσαρμοσμένα placeholder δεδομένων."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Μπορεί να χρησιμοποιηθεί σε προτροπές που προστέθηκαν στο μενού"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Λάβετε υπόψη ότι τυχόν ετικέτες <br> στην απάντηση του AI θα αντικατασταθούν με αλλαγές γραμμής."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Εκκαθάριση λίστας μοντέλων"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Είστε βέβαιοι ότι θέλετε να διαγράψετε τη Λίστα Μοντέλων; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Φαίνεται ότι δεν είναι δυνατό να μάθετε εάν το ChatGPT έχει ολοκληρωθεί. Κάντε κλικ εδώ για να επιβάλετε την ολοκλήρωση της εργασίας."
+    },
+    "warn_API_needed": {
+        "message": "Για να χρησιμοποιήσετε αυτήν τη λειτουργία, χρειάζεστε μια ενσωμάτωση API αντί για την ενσωμάτωση ιστού ChatGPT. Μπορείτε να ορίσετε ένα συγκεκριμένο API στη σελίδα ρυθμίσεων λειτουργίας, επιλέγοντας πρώτα το πλαίσιο ελέγχου παραπάνω και, στη συνέχεια, κάνοντας κλικ στο κουμπί στα αριστερά."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Προϋπολογισμός Σκέψης"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Ορίστε τον αριθμό των tokens που θα χρησιμοποιηθούν για τη σκέψη. Αφήστε αυτό το πεδίο κενό εάν το επιλεγμένο μοντέλο δεν υποστηρίζει τη σκέψη ή εάν θέλετε να χρησιμοποιήσετε την προεπιλεγμένη μέθοδο. Εισαγάγετε 0 για να απενεργοποιήσετε τη σκέψη ή -1 για να ενεργοποιήσετε τη δυναμική σκέψη."
+    },
+    "SelectAll": {
+        "message": "Επιλογή όλων"
+    },
+    "DeselectAll": {
+        "message": "Αποεπιλογή όλων"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Μήνυμά συστήματος"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Μπορείτε να βελτιώσετε την απόδοση του Claude χρησιμοποιώντας μια προτροπή συστήματος για να του δώσετε έναν ρόλο. Αυτή η τεχνική, γνωστή ως προτροπή ρόλων, είναι ο πιο ισχυρός τρόπος χρήσης των προτροπών συστήματος με τον Claude. Ο σωστός ρόλος μπορεί να μετατρέψει τον Claude από γενικό βοηθό σε ειδικό στον εικονικό τομέα σας."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Έχετε αρνηθεί την προαιρετική άδεια που απαιτείται για την τοποθέτηση μοντέλων για αυτήν την ενσωμάτωση."
+    }
+}
