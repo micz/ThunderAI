@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.8 - 18/12/2025</h2>
+      <ul>
+        <li>Greek (el) translation added, thanks to <a href="https://github.com/christoskaterini">ChristosK.</a>.</li>
+      </ul>
 <h2>Version 3.7.7 - 14/12/2025</h2>
       <ul>
         <li><i>[Claude API][OpenAI API]</i> Fix: asking required permissions before fetching models [<a href="https://github.com/micz/ThunderAI/issues/558">#558</a>].</li>
