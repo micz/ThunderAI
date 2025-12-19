@@ -16,12 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../../options/mzta-options-default.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
 import { getPlaceholders } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { isAPIKeyValue } from "../../js/mzta-utils.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-summarize-page", true);
@@ -37,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let specialPrompts = await getSpecialPrompts();
     let summarize_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
-  
+    
     summarize_textarea.addEventListener("input", (event) => {
         summarize_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_full_text'));
         summarize_save_btn.disabled = (event.target.value === summarize_prompt.text);
