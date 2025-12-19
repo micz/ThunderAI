@@ -1003,6 +1003,14 @@
     "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%selected_text%}\"",
     "description": ""
   },
+  "prompt_summarize": {
+    "message": "Summarize this email or these emails",
+    "description": ""
+  },
+  "prompt_summarize_full_text": {
+    "message": "Summarize the following email or emails into a bullet point list. If there are multiple emails, consider the entire thread for the summary.",
+    "description": ""
+  },
   "prompt_get_task": {
     "message": "Add a new task",
     "description": ""
@@ -1231,6 +1239,18 @@
     "message": "Spam Filter Options",
     "description": ""
   },
+  "Summarize_PageTitle": {
+    "message": "Manage Summarize Settings",
+    "description": ""
+  },
+  "Summarize_info_default": {
+    "message": "In this page you can modify the default prompt used to summarize emails.",
+    "description": ""
+  },
+  "Summarize_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
   "prefs_OptionText_use_specific_integration": {
     "message": "Use specific Model and API",
     "description": ""
@@ -1307,7 +1327,7 @@
     "message": "Analyze for spam",
     "description": ""
   },
-  "context_menu_mzta-summary": {
+  "context_menu_mzta-summarize": {
     "message": "Summarize",
     "description": ""
   },

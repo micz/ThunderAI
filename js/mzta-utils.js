@@ -25,11 +25,11 @@ export const getMenuContextDisplay = () => 'message_display_action_menu';
 
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
-export const contextMenuID_Summary = 'mzta-summary';
+export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuIconsPath = {
   [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
   [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
-  // [contextMenuID_Summary]: 'moz-extension:images/summary.png',
+  // [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
 };
 
 export function getLanguageDisplayName(languageCode) {
