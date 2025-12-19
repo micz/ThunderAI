@@ -923,10 +923,10 @@ function setupStorageChangeListener() {
             if (changes.summarize) {
                 if (changes.summarize.newValue){
                     if (prefs_init.summarize_context_menu){
-                        addContextMenu(contextMenuID_Summary);
+                        addContextMenu(contextMenuID_Summarize);
                     }
                 } else {
-                  removeContextMenu(contextMenuID_Summary);
+                  removeContextMenu(contextMenuID_Summarize);
                 }
             }
             reload_pref_init();
@@ -993,7 +993,7 @@ function addContextMenuItems() {
     // Add Context menu: Summarize
     if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
       console.log("adding summarize to context menu")
-        addContextMenu(contextMenuID_Summariz);
+        addContextMenu(contextMenuID_Summarize);
     }
 }
 
