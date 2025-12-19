@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     summarize_save_btn.addEventListener("click", () => {
-        specialPrompts.find(prompt => prompt.id === 'prompt_summarize')
+        specialPrompts.find(prompt => prompt.id === 'prompt_summarize').text = summarize_textarea.value;
         setSpecialPrompts(specialPrompts);
         summarize_save_btn.disabled = true;
         document.getElementById("summarize_prompt_unsaved").classList.add("hidden");
