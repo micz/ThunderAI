@@ -291,6 +291,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
     openTab('/pages/spamfilter/mzta-spamfilter.html');
   });
+  
+  document.getElementById('btnManageSummarizeInfo').addEventListener('click', () => {
+    openTab('/pages/summarize/mzta-summarize.html');
+  });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
     openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');

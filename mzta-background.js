@@ -45,7 +45,7 @@ import {
     extractJsonObject,
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
-    contextMenuID_Summary,
+    contextMenuID_Summarize,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -990,10 +990,10 @@ function addContextMenuItems() {
         addContextMenu(contextMenuID_Spamfilter);
     }
     
-    // Add Context menu: Summary
+    // Add Context menu: Summarize
     if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
-      console.log("adding summary to context menu")
-        addContextMenu(contextMenuID_Summary);
+      console.log("adding summarize to context menu")
+        addContextMenu(contextMenuID_Summariz);
     }
 }
 
