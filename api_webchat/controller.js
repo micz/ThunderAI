@@ -49,7 +49,7 @@ let worker = null;
 
 switch (llm) {
     case "chatgpt_api":
-        worker = new Worker('../js/workers/model-worker-openai.js', { type: 'module' });
+        worker = new Worker('../js/workers/model-worker-openai_responses.js', { type: 'module' });
         break;
     case "google_gemini_api":
         worker = new Worker('../js/workers/model-worker-google_gemini.js', { type: 'module' });

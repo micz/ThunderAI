@@ -27,13 +27,13 @@ export class OpenAI {
   stream = false;
   store = false;
 
-  constructor({
+  constructor(
     apiKey = '',
     model = '',
     developer_messages = '',
     stream = false,
     store = false
-  } = {}) {
+  ) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;
@@ -78,52 +78,46 @@ export class OpenAI {
     }
   }
 
-  fetchResponse = async (messages, maxTokens = 0) => {
+  fetchResponse = async (messages, maxTokens = 0, previous_response_id = null) => {
+
+    const input = messages.map(msg => ({
+      role: msg.role,
+      content: [{ type: "input_text", text: msg.content }]
+    }));
+
+    let request_body = { 
+              model: this.model, 
+              input: input,
+              stream: this.stream,
+              store: this.store,
+              ...(maxTokens > 0 ? { 'max_output_tokens': parseInt(maxTokens) } : {}),
+              ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {})
+          }
 
     if(this.developer_messages !== ''){
-       messages.push({role: "developer", content: [{"type": "text", "text": this.developer_messages}]});
+       request_body.instructions = this.developer_messages;
     }
 
     // console.log(">>>>>>>>>>> OpenAI API request: " + JSON.stringify(messages));
 
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch("https://api.openai.com/v1/responses", {
           method: "POST",
           headers: { 
               "Content-Type": "application/json", 
               Authorization: "Bearer "+ this.apiKey
           },
-          body: JSON.stringify({ 
-              model: this.model, 
-              messages: messages,
-              stream: this.stream,
-              store: this.store,
-              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
-          }),
+          body: JSON.stringify(request_body),
       });
       return response;
     }catch (error) {
-        console.error("[ThunderAI] OpenAI API request failed: " + error);
+        console.error("[ThunderAI] OpenAI Responses API request failed: " + error);
         let output = {};
         output.is_exception = true;
         output.ok = false;
-        output.error = "OpenAI API request failed: " + error;
+        output.error = "OpenAI Responses API request failed: " + error;
         return output;
     }
-  }
-
-  async countTokensUsingAPI(model, text) {
-    const response = await fetch('https://api.openai.com/v1/engines/'+model+'/tokenizer', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.apiKey
-      },
-      body: JSON.stringify({ text })
-    });
-    
-    const data = await response.json();
-    return data.token_count;
   }
 
 }

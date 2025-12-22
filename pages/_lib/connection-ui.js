@@ -17,7 +17,7 @@
  */
 
 import { prefs_default } from '../../options/mzta-options-default.js';
-import { OpenAI } from '../../js/api/openai.js';
+import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
