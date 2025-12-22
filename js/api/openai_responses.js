@@ -27,7 +27,13 @@ export class OpenAI {
   stream = false;
   store = false;
 
-  constructor(apiKey, model, developer_messages, stream, store) {
+  constructor({
+    apiKey = '',
+    model = '',
+    developer_messages = '',
+    stream = false,
+    store = false
+  } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;
@@ -59,7 +65,7 @@ export class OpenAI {
       let output = {};
       output.ok = true;
       let output_response = await response.json();
-      output.response = output_response.data.filter(item => item.id.startsWith('gpt-')).sort((a, b) => b.id.localeCompare(a.id));
+      output.response = output_response.data.filter(item => item.id.startsWith('gpt-') || item.id.startsWith('o1-') || item.id.startsWith('o4-') || item.id.startsWith('o3-')).sort((a, b) => b.id.localeCompare(a.id));
 
       return output;
     }catch (error) {
@@ -79,7 +85,7 @@ export class OpenAI {
               input: messages,
               stream: this.stream,
               store: this.store,
-              ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+              ...(maxTokens > 0 ? { 'max_completion_tokens': parseInt(maxTokens) } : {})
           }
 
     if(this.developer_messages !== ''){
