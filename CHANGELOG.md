@@ -6,6 +6,7 @@
 
 <h2>Version 3.8.0 - ??/??/2025</h2>
       <ul>
+        <li><i>[OpenAI API]</i> Model filtering improved when choosing a model in the options page.</li>
         <li>...</li>
       </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
