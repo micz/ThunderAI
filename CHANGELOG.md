@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.8.0 - ??/??/2025</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
       <ul>
         <li>Greek (el) translation added, thanks to <a href="https://github.com/christoskaterini">ChristosK.</a>.</li>
