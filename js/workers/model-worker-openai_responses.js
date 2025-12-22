@@ -29,11 +29,11 @@ let openai = null;
 let stopStreaming = false;
 let i18nStrings = null;
 let do_debug = false;
-let taLog = null
+let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
-let previous_response_id = -1;
+let previous_response_id = null;
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -43,10 +43,19 @@ self.onmessage = async function(event) {
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_responses', do_debug);
+        previous_response_id = null;
     } else if (event.data.type === 'chatMessage') {
         conversationHistory.push({ role: 'user', content: event.data.message });
 
-    const response = await openai.fetchResponse(conversationHistory); //4096);
+        let messagesToSend = conversationHistory;
+        if (previous_response_id) {
+            messagesToSend = [conversationHistory[conversationHistory.length - 1]];
+            taLog.log("previous_response_id: " + previous_response_id);
+        } else {
+            taLog.log("no previous_response_id");
+        }
+
+        const response = await openai.fetchResponse(messagesToSend, 0, previous_response_id);
         postMessage({ type: 'messageSent' });
 
         if (!response.ok) {
@@ -97,24 +106,33 @@ self.onmessage = async function(event) {
             let parsedLines = [];
             try{
                 parsedLines = lines
+                    .map((line) => line.trim())
+                    .filter((line) => line.startsWith("data:"))
                     .map((line) => line.replace(/^data: /, "").trim()) // Remove the "data: " prefix
                     .filter((line) => line !== "" && line !== "[DONE]") // Remove empty lines and "[DONE]"
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
-                        taLog.log("line: " + JSON.stringify(line));
-                        return JSON.parse(line);
-                    });
+                         try {
+                            taLog.log("line: " + JSON.stringify(line));
+                            return JSON.parse(line);
+                        } catch (e) {
+                            taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
+                            return null;
+                        }
+                    })
+                    .filter((parsed) => parsed !== null);
             }catch(e){
                 taLog.error("Error parsing lines: " + e);
             }
     
             for (const parsedLine of parsedLines) {
-                console.log(">>>>>>>>>> parsedLine: " + JSON.stringify(parsedLine));
-                const { content } = parsedLine;
-                // Update the UI with the new content
-                if (content) {
-                    assistantResponseAccumulator += content;
-                    postMessage({ type: 'newToken', payload: { token: content } });
+                if (parsedLine.type === 'response.created' && parsedLine.response && parsedLine.response.id){
+                    previous_response_id = parsedLine.response.id;
+                } else if (parsedLine.type === 'response.output_text.delta' && parsedLine.delta) {
+                    assistantResponseAccumulator += parsedLine.delta;
+                    postMessage({ type: 'newToken', payload: { token: parsedLine.delta } });
+                // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
+                //     previous_response_id = parsedLine.response.id;
                 }
             }
         }

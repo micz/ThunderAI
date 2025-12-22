@@ -27,13 +27,13 @@ export class OpenAI {
   stream = false;
   store = false;
 
-  constructor({
+  constructor(
     apiKey = '',
     model = '',
     developer_messages = '',
     stream = false,
     store = false
-  } = {}) {
+  ) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;
@@ -78,14 +78,20 @@ export class OpenAI {
     }
   }
 
-  fetchResponse = async (messages, maxTokens = 0) => {
+  fetchResponse = async (messages, maxTokens = 0, previous_response_id = null) => {
+
+    const input = messages.map(msg => ({
+      role: msg.role,
+      content: [{ type: "input_text", text: msg.content }]
+    }));
 
     let request_body = { 
               model: this.model, 
-              input: messages,
+              input: input,
               stream: this.stream,
               store: this.store,
-              ...(maxTokens > 0 ? { 'max_completion_tokens': parseInt(maxTokens) } : {})
+              ...(maxTokens > 0 ? { 'max_output_tokens': parseInt(maxTokens) } : {}),
+              ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {})
           }
 
     if(this.developer_messages !== ''){
