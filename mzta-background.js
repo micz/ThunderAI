@@ -1003,16 +1003,69 @@ addContextMenuItems();
 browser.menus.onClicked.addListener( (info, tab) => {
     let _add_tags = false
     let _spamfilter = false
+    let _summarize = false;
     if(info.menuItemId === contextMenuID_AddTags){
         _add_tags = true;
     }
     if(info.menuItemId === contextMenuID_Spamfilter){
         _spamfilter = true;
     }
+    if(info.menuItemId === contextMenuID_Summarize) {
+        _summarize = true;
+    }
     if(_add_tags || _spamfilter){
         processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
     }
+    if(_summarize) {
+        summarizeEmails(getMessages(info.selectedMessages));
+    }
 });
+
+async function summarizeEmails(messages) {
+    taWorkingStatus.startWorking();
+    // generate the special prompt for summarization
+  
+    // - make a long string of all the emails
+    let emails_content = '';
+    for await (let message of messages) {
+////// TODO: make this customizable through placeholders!
+// plan: make a second option field where placeholders can be used and
+// simply add the result from that tepmlate to the end of the prompt option
+// field
+        emails_content += "\n\n---\n\n";
+        let curr_fullMessage = await browser.messages.getFull(message.id);
+        
+        // from
+        curr_fullMessage
+        
+        // to
+        // cc
+        // bcc
+        // subject
+        // date
+        // attachment info
+         
+        // body
+        let msg_text = getMailBody(curr_fullMessage)
+        let body_text = htmlBodyToPlainText(msg_text.html);
+        
+        if( body_text.length == 0 ){
+            taLog.log("No HTML found in the message body, using plain text...");
+            body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+        };
+        emails_content += body_text;
+      
+    };
+    emails_content += "\n\n---\n\n";
+    
+    // - join prompt and emails 
+  
+    taWorkingStatus.stopWorking();
+    // send to LLM
+  
+    console.log(emails_content);
+  
+}
 
 
 // Listening for new received emails
