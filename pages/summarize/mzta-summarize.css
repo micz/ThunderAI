@@ -3,6 +3,10 @@
     margin: 20px auto;
 }
 
+#summarize_email_template_text {
+    width: 100%;
+}
+
 #summarize_prompt_text {
     width: 100%;
 }
