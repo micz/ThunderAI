@@ -1008,7 +1008,11 @@
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "Summarize the following email or emails into a bullet point list. If there are multiple emails, consider the entire thread for the summary.",
+    "message": "Summarize the following email or emails into a bullet point list. If there are multiple emails, consider the entire thread for the summary.\n------------------\n\n",
+    "description": ""
+  },
+  "prompt_summarize_email_template": {
+    "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\nBody:\n{%mail_text_body%}\n---------------\n\n",
     "description": ""
   },
   "prompt_get_task": {
@@ -1073,6 +1077,10 @@
   },
   "prefs_OptionText_AdvancedPromptResponse_infoline2": {
     "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
+    "description": ""
+  },
+  "prefs_OptionText_Summarize_infoline2": {
+    "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt.",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {

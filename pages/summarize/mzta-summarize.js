@@ -32,41 +32,65 @@ document.addEventListener("DOMContentLoaded", async () => {
     const summarize_textarea = document.getElementById("summarize_prompt_text");
     const summarize_save_btn = document.getElementById("btn_save_prompt");
     const summarize_reset_btn = document.getElementById("btn_reset_prompt");
+    const summarize_textarea_email_template = document.getElementById("summarize_email_template_text");
+    const summarize_reset_email_template_btn = document.getElementById("btn_reset_email_template");
+    const summarize_save_email_template_btn = document.getElementById("btn_save_email_template");
 
     let specialPrompts = await getSpecialPrompts();
     let summarize_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+    let summarize_email_template = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
     
     summarize_textarea.addEventListener("input", (event) => {
         summarize_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_full_text'));
         summarize_save_btn.disabled = (event.target.value === summarize_prompt.text);
-        if (summarize_save_btn.disabled) {
-            document.getElementById("summarize_prompt_unsaved").classList.add("hidden");
-        } else {
-            document.getElementById("summarize_prompt_unsaved").classList.remove("hidden");
-        }
     });
-
+    
+    summarize_textarea_email_template.addEventListener("input", (event) => {
+        summarize_reset_email_template_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_template')); 
+        summarize_save_email_template_btn.disabled = (event.target.value === summarize_email_template.text);
+    });
+    
+    summarize_reset_email_template_btn.addEventListener("click", () => {
+        summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template");
+        summarize_reset_email_template_btn.disabled = true;
+        let event = new Event("input", { bubbles: true, cancelable: true });
+        summarize_textarea_email_template.dispatchEvent(event);
+    });
+    
     summarize_reset_btn.addEventListener("click", () => {
         summarize_textarea.value = browser.i18n.getMessage("prompt_summarize_full_text");
         summarize_reset_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
         summarize_textarea.dispatchEvent(event);
     });
-
+    
+    summarize_save_email_template_btn.addEventListener("click", () => {
+        specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_template').text = summarize_textarea_email_template.value;
+        setSpecialPrompts(specialPrompts);
+        summarize_save_email_template_btn.disabled = true;
+        browser.runtime.sendMessage({ command: "reload_menus" });
+    });
+    
     summarize_save_btn.addEventListener("click", () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize').text = summarize_textarea.value;
         setSpecialPrompts(specialPrompts);
         summarize_save_btn.disabled = true;
-        document.getElementById("summarize_prompt_unsaved").classList.add("hidden");
         browser.runtime.sendMessage({ command: "reload_menus" });
     });
     
     if(summarize_prompt.text === 'prompt_summarize_full_text'){
         summarize_prompt.text = browser.i18n.getMessage(summarize_prompt.text);
     }
+    if(summarize_email_template === 'prompt_summarize_email_template'){
+        summarize_email_template.text = browser.i18n.getMessage(summarize_email_template.text);
+    }
+    
+    summarize_textarea_email_template.value = summarize_email_template.text;
+    summarize_reset_email_template_btn.disabled = (summarize_email_template.value === browser.i18n.getMessage("prompt_summarize_email_template"));
+
     summarize_textarea.value = summarize_prompt.text;
     summarize_reset_btn.disabled = (summarize_textarea.value === browser.i18n.getMessage("prompt_summarize_full_text"));
-
+    
     autocompleteSuggestions = (await getPlaceholders(true))
         .filter((p) => p.id !== "additional_text")
         .map((p) => ({ command: `{%${p.id}%}`, type: p.type }));
