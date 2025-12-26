@@ -1,4 +1,12 @@
 async function showSummaryPane() {
+    // Check if auto-summary is enabled in user preferences
+    const result = await browser.storage.sync.get('auto_summary_enabled');
+
+    // If auto-summary is disabled or not set, don't show anything
+    if (!result.auto_summary_enabled) {
+        return;
+    }
+
     // Create the summary pane element
     const summaryPane = document.createElement("div");
     summaryPane.className = "thunderai-summary-pane";

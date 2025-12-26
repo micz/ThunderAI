@@ -836,5 +836,11 @@
     },
     "SpamFilter_PageTitle": {
         "message": "Gerenciar configurações do filtro de spam"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Mostrar resumo automático na visualização de mensagens"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Se marcado, um resumo gerado por IA será exibido automaticamente acima das mensagens na visualização."
     }
 }

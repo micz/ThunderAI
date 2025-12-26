@@ -1303,4 +1303,29 @@
     "prefs_anthropic_temperature_Info": {
         "message": "Grad der Zufälligkeit in der Antwort. Der Standardwert ist 1,0. Der Bereich liegt zwischen 0,0 und 1,0. Verwenden Sie eine Temperatur näher an 0,0 für analytische Aufgaben oder Multiple-Choice-Fragen und näher an 1,0 für kreative und generative Aufgaben. Beachten Sie, dass die Ergebnisse selbst bei einer Temperatur von 0,0 nicht vollständig deterministisch sind."
     }
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
+        "description": ""
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Enable automatic AI summarization for message previews",
+        "description": ""
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
+        "description": ""
+    },
+    "auto_summary_title": {
+        "message": "AI Summary",
+        "description": ""
+    },
+    "auto_summary_generating": {
+        "message": "Generating summary...",
+        "description": ""
+    },
+    "auto_summary_failed": {
+        "message": "Failed to generate summary",
+        "description": ""
+    }
 }

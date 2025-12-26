@@ -889,5 +889,11 @@
     },
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "当操作设置为“替换文本”时，可以选择差异查看器。"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "在消息预览中显示自动摘要"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "如果选中，AI生成的摘要将自动显示在消息预览上方。"
     }
 }

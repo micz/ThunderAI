@@ -132,5 +132,6 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
     summarize: false,
+    auto_summary_enabled: false,
     ...generated_prefs
 }

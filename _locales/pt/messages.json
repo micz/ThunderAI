@@ -172,5 +172,13 @@
     },
     "chatgpt_win_send": {
         "message": "Enviar"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Ativar resumo automático de IA para pré-visualizações de mensagens",
+        "description": ""
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Se ativado, o ThunderAI gerará e mostrará automaticamente resumos de IA acima das mensagens de e-mail quando forem abertas. Note que isso significa que todas as mensagens que você visualizar serão enviadas imediatamente para o serviço de IA configurado.",
+        "description": ""
     }
 }
