@@ -211,6 +211,19 @@ export async function injectConnectionUI({
   <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_prefs_google_gemini_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="google_gemini_temperature" name="google_gemini_temperature" class="option-input"/>
+        <br>__MSG_prefs_google_gemini_temperature_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_prefs_google_gemini_thinking_budget__</span>
       </label>
     </td>

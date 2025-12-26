@@ -46,6 +46,7 @@ export const prefs_default = {
     google_gemini_model: '',
     google_gemini_system_instruction: '',
     google_gemini_thinking_budget: '',
+    google_gemini_temperature: '',
     anthropic_api_key: '',
     anthropic_model: '',
     anthropic_version: '2023-06-01',

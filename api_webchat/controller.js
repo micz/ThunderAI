@@ -119,6 +119,7 @@ switch (llm) {
             google_gemini_api_key: prefs_default.google_gemini_api_key,
             google_gemini_model: prefs_default.google_gemini_model,
             google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
+            google_gemini_temperature: prefs_default.google_gemini_temperature,
             google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
             do_debug: prefs_default.do_debug,
         });
@@ -131,7 +132,12 @@ switch (llm) {
         if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
         }
-        additional_text_elements.push({label: 'Thinking Budget', value: prefs_api.google_gemini_thinking_budget});
+        if(prefs_api.google_gemini_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_google_gemini_temperature"), value: prefs_api.google_gemini_temperature});
+        }
+        if(prefs_api.google_gemini_thinking_budget.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_google_gemini_thinking_budget"), value: prefs_api.google_gemini_thinking_budget});
+        }
         additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         worker.postMessage({
             type: 'init',
