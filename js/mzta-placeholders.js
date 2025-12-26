@@ -340,9 +340,11 @@ export async function prepareCustomDataPHsForImport(placeholders){
 }
 
 export function mapPlaceholderToSuggestion(p) {
+    // console.log(">>>>>>>>>> mapPlaceholderToSuggestion p" + JSON.stringify(p));
     return {
-        command: '{%' + p.id + '%}',
-        type: p.type
+        command: '{%' + p.id + (p.is_dynamic == 1 ? ':' : '') + '%}',
+        type: p.type,
+        is_dynamic: p.is_dynamic,
     };
 }
 
