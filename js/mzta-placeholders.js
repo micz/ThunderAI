@@ -559,7 +559,7 @@ export const placeholdersUtils = {
                     break;
             }
         }
-
+        console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
         return finalSubs;
     },
 
