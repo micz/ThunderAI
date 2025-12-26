@@ -395,13 +395,17 @@ export const placeholdersUtils = {
             use_default_value = false,
             skip_additional_text = false
         } = args || {};
+        console.log(">>>>>>>>>> replacePlaceholders replacements: " + JSON.stringify(replacements));
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
+            console.log(">>>>>>>>>> replacePlaceholders match: " + JSON.stringify(match));
+            console.log(">>>>>>>>>> replacePlaceholders p1: " + JSON.stringify(p1));
             // p1 contains the key inside {% %}
             if (skip_additional_text && (p1 === 'additional_text')) {
                 return match;
             }
-            const currPlaceholder = defaultPlaceholders.find(ph => ph.id === p1);
+            const currPlaceholder = defaultPlaceholders.find(ph => (ph.id === p1) || (ph.is_dynamic == 1 && p1.startsWith(ph.id + ':')));
+            console.log(">>>>>>>>>> replacePlaceholders currPlaceholder: " + JSON.stringify(currPlaceholder));
             if (!currPlaceholder) {
                 return match;
             }
