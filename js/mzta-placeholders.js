@@ -368,7 +368,7 @@ export const placeholdersUtils = {
       
         // Use exec to find all matches
         while ((match = regex.exec(text)) !== null) {
-            console.log(">>>>>>>>>> extractPlaceholders match: " + JSON.stringify(match));
+            // console.log(">>>>>>>>>> extractPlaceholders match: " + JSON.stringify(match));
           const foundPH = activePHs.find(ph => ph.id === match[1].trim() || (ph.is_dynamic == 1 && match[1].startsWith(ph.id + ':')));
             if (foundPH) {
                 if (foundPH.is_dynamic == 1 && match[1].includes(':')) {
@@ -377,10 +377,10 @@ export const placeholdersUtils = {
                     dynamicPH.id = id.trim();
                     dynamicPH.custom_value = custom_value.trim();
                     matches.push(dynamicPH);
-                    console.log(">>>>>>>>>> extractPlaceholders dynamicPH: " + JSON.stringify(dynamicPH));
+                    // console.log(">>>>>>>>>> extractPlaceholders dynamicPH: " + JSON.stringify(dynamicPH));
                 } else {
                     matches.push(foundPH);
-                    console.log(">>>>>>>>>> extractPlaceholders foundPH: " + JSON.stringify(foundPH));
+                    // console.log(">>>>>>>>>> extractPlaceholders foundPH: " + JSON.stringify(foundPH));
                 }
             }
         }
@@ -395,17 +395,17 @@ export const placeholdersUtils = {
             use_default_value = false,
             skip_additional_text = false
         } = args || {};
-        console.log(">>>>>>>>>> replacePlaceholders replacements: " + JSON.stringify(replacements));
+        // console.log(">>>>>>>>>> replacePlaceholders replacements: " + JSON.stringify(replacements));
         // Regular expression to match patterns like {%...%}
         return text.replace(/{%\s*(.*?)\s*%}/g, function(match, p1) {
-            console.log(">>>>>>>>>> replacePlaceholders match: " + JSON.stringify(match));
-            console.log(">>>>>>>>>> replacePlaceholders p1: " + JSON.stringify(p1));
+            // console.log(">>>>>>>>>> replacePlaceholders match: " + JSON.stringify(match));
+            // console.log(">>>>>>>>>> replacePlaceholders p1: " + JSON.stringify(p1));
             // p1 contains the key inside {% %}
             if (skip_additional_text && (p1 === 'additional_text')) {
                 return match;
             }
             const currPlaceholder = defaultPlaceholders.find(ph => (ph.id === p1) || (ph.is_dynamic == 1 && p1.startsWith(ph.id + ':')));
-            console.log(">>>>>>>>>> replacePlaceholders currPlaceholder: " + JSON.stringify(currPlaceholder));
+            // console.log(">>>>>>>>>> replacePlaceholders currPlaceholder: " + JSON.stringify(currPlaceholder));
             if (!currPlaceholder) {
                 return match;
             }
@@ -477,7 +477,7 @@ export const placeholdersUtils = {
         // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
         for(let currPH of currPHs){
-            console.log(">>>>>>>>>> currPH: " + JSON.stringify(currPH));
+            // console.log(">>>>>>>>>> currPH: " + JSON.stringify(currPH));
             switch(currPH.id){
                 case 'mail_text_body':
                     finalSubs['mail_text_body'] = placeholdersUtils.failSafePlaceholders(body_text);
@@ -563,7 +563,7 @@ export const placeholdersUtils = {
                     break;
             }
         }
-        console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
+        // console.log(">>>>>>>>>> finalSubs: " + JSON.stringify(finalSubs));
         return finalSubs;
     },
 
