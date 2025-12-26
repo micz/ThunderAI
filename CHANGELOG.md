@@ -8,6 +8,7 @@
       <ul>
         <li><i>[OpenAI API]</i> Model filtering improved when choosing a model in the options page.</li>
         <li><i>[OpenAI API]</i> Now using the new Responses API [<a href="https://github.com/micz/ThunderAI/issues/407">#407</a>].</li>
+        <li>It is now possible to define a custom placeholder with dynamic data to retrieve any header present in the current email [<a href="https://github.com/micz/ThunderAI/issues/527">#527</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
