@@ -497,7 +497,7 @@ export const placeholdersUtils = {
                     finalSubs['mail_folder_path'] = placeholdersUtils.failSafePlaceholders(curr_message.folder?.path);
                     break;
                 case 'mail_headers':
-                    finalSubs['mail_headers'] = placeholdersUtils.failSafePlaceholders(getMailHeader(curr_message, currPH.original_value));
+                    finalSubs['mail_headers'] = placeholdersUtils.failSafePlaceholders(getMailHeader(curr_message, currPH.custom_value));
                     break;
                 case 'selected_text':
                     finalSubs['selected_text:'+currPH.original_value] = placeholdersUtils.failSafePlaceholders(selection_text);
