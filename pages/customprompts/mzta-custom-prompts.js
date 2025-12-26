@@ -20,7 +20,11 @@ import { prefs_default } from "../../options/mzta-options-default.js";
 import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
 import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, openTab } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
-import { getPlaceholders, placeholdersUtils } from "../../js/mzta-placeholders.js";
+import {
+    getPlaceholders,
+    placeholdersUtils,
+    mapPlaceholderToSuggestion
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 
 let prefs = null;
@@ -86,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
-    autocompleteSuggestions = (await getPlaceholders(true)).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    autocompleteSuggestions = (await getPlaceholders(true)).map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     

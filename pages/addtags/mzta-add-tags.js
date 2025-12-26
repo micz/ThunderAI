@@ -25,7 +25,10 @@ import {
   savePrompt,
   clearPromptAPI
 } from "../../js/mzta-prompts.js";
-import { getPlaceholders } from "../../js/mzta-placeholders.js";
+import {
+  getPlaceholders,
+  mapPlaceholderToSuggestion
+ } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
   addTags_getExclusionList,
@@ -177,7 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     updateAdditionalPromptStatements();
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     let excl_list_textarea = document.getElementById('addtags_excl_list');

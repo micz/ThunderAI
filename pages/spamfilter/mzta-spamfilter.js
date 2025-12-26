@@ -19,7 +19,10 @@
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import { getSpecialPrompts, setSpecialPrompts, loadPrompt, savePrompt, clearPromptAPI } from "../../js/mzta-prompts.js";
-import { getPlaceholders } from "../../js/mzta-placeholders.js";
+import {
+  getPlaceholders,
+  mapPlaceholderToSuggestion
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
 import { getAccountsList, isAPIKeyValue } from "../../js/mzta-utils.js";
@@ -141,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     spamfilter_textarea.value = spamfilter_prompt.text;
     spamfilter_reset_btn.disabled = (spamfilter_textarea.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
      //Accounts manager
