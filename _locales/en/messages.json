@@ -619,6 +619,10 @@
     "message": "Folder path",
     "description": ""
   },
+  "placeholder_mail_headers": {
+    "message": "Mail headers",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""
