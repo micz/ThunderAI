@@ -500,7 +500,7 @@ export const placeholdersUtils = {
                     finalSubs['mail_headers:' + currPH.custom_value] = placeholdersUtils.failSafePlaceholders(getMailHeader(curr_message, currPH.custom_value));
                     break;
                 case 'selected_text':
-                    finalSubs['selected_text:'+currPH.original_value] = placeholdersUtils.failSafePlaceholders(selection_text);
+                    finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
                     break;
                 case 'selected_html':
                     finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
