@@ -189,6 +189,17 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
+export async function getMailHeader(curr_message, mail_header_id) {
+  let mail_header_value = "";
+  let full_message = await browser.messages.getFull(curr_message.id);
+  console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
+  if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
+    mail_header_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+  }
+  console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
+  return mail_header_value;
+}
+
 export function sanitizeHtml(input) {
   // Keep only <br> tags and remove all other HTML tags
   return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
