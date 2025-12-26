@@ -1311,5 +1311,13 @@
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Vous avez refusé l’autorisation facultative nécessaire pour récupérer les modèles pour cette intégration."
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Activer la synthèse automatique par IA pour les aperçus de messages",
+        "description": ""
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Si cette option est cochée, ThunderAI générera et affichera automatiquement des synthèses par IA au-dessus des messages électroniques lorsqu'ils sont ouverts. Notez que cela signifie que tous les messages que vous prévisualisez seront immédiatement envoyés au service IA configuré.",
+        "description": ""
     }
 }

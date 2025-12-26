@@ -1311,5 +1311,13 @@
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Sie haben die optionale Berechtigung verweigert, die zum Abrufen der Modelle für diese Integration erforderlich ist."
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Automatische KI-Zusammenfassung für Nachrichten-Vorschau aktivieren",
+        "description": ""
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Wenn aktiviert, wird ThunderAI automatisch KI-Zusammenfassungen über E-Mail-Nachrichten generieren und anzeigen, wenn sie geöffnet werden. Beachten Sie, dass dies bedeutet, dass alle Nachrichten, die Sie in der Vorschau anzeigen, sofort an den konfigurierten KI-Dienst gesendet werden.",
+        "description": ""
     }
 }

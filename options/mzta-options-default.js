@@ -90,4 +90,5 @@ export const prefs_default = {
     spamfilter_openai_comp_model: '',
     spamfilter_google_gemini_model: '',
     spamfilter_anthropic_model: '',
+    auto_summary_enabled: false,         // Enable automatic AI summarization for message previews
 }

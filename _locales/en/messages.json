@@ -1700,5 +1700,13 @@
   "Optional_Permission_Denied_Model_Fetching": {
     "message": "You have denied the optional permission needed to fetch models for this integration.",
     "description": ""
+  },
+  "prefs_OptionText_auto_summary": {
+    "message": "Enable automatic AI summarization for message previews",
+    "description": ""
+  },
+  "prefs_OptionText_auto_summary_Info": {
+    "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
+    "description": ""
   }
 }
