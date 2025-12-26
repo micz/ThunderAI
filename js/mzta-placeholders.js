@@ -573,6 +573,13 @@ export const placeholdersUtils = {
             return '';
         }
         return element;
-    }
+    },
+
+    mapPlaceholderToSuggestion(p) {
+        return {
+            command: '{%' + p.id + '%}',
+            type: p.type
+        };
+    },
 
 }
