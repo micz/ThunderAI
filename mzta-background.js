@@ -99,6 +99,13 @@ browser.composeScripts.register({
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }],
+    css: [{ file: "messageDisplay/message-content-styles.css" }]
+});
+
+// Register our new ThunderAI summary script
+messenger.messageDisplayScripts.register({
+    js: [{ file: "messageDisplay/message-content-script.js" }],
+    css: [{ file: "messageDisplay/message-content-styles.css" }]
 });
 
 // Inject script and CSS in all already open message tabs.
@@ -114,6 +121,13 @@ for (let messageTab of messageTabs) {
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
         })
+        // Inject our ThunderAI summary script
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "messageDisplay/message-content-script.js"
+        })
+        await browser.tabs.insertCSS(messageTab.id, {
+            file: "messageDisplay/message-content-styles.css"
+        });
     } catch (error) {
         console.error("[ThunderAI] Error injecting message display script:", error);
         console.error("[ThunderAI] Message tab:", messageTab.url);
@@ -220,6 +234,31 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
+            case 'generate_summary':
+                async function _generate_summary(message) {
+                    try {
+                        // Get user preferences for AI connection
+                        let prefs = await browser.storage.sync.get({
+                            connection_type: prefs_default.connection_type,
+                            chatgpt_model: prefs_default.chatgpt_model,
+                            chatgpt_api_key: prefs_default.chatgpt_api_key,
+                            do_debug: prefs_default.do_debug
+                        });
+
+                        // Use the existing ThunderAI infrastructure
+                        const summary = await generateAISummaryUsingThunderAIInfrastructure(
+                            message.content,
+                            message.prompt,
+                            prefs
+                        );
+
+                        return { summary: summary };
+                    } catch (error) {
+                        console.error("[ThunderAI] Error generating summary:", error);
+                        return { error: "Failed to generate AI summary: " + error.message };
+                    }
+                }
+                return _generate_summary(message);
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
@@ -1176,4 +1215,49 @@ try {
 } catch (e) {
     taLog.log("Using browser.messages.onNewMailReceived.addListener with one agrument for Thunderbird 115.");
     browser.messages.onNewMailReceived.addListener(newEmailListener);
+}
+
+/**
+ * AI summary generation function using ThunderAI infrastructure
+ */
+async function generateAISummaryUsingThunderAIInfrastructure(content, prompt, prefs) {
+    // Import the special command class
+    const { mzta_specialCommand } = await import('./js/mzta-special-commands.js');
+
+    // Determine which LLM to use based on user preferences
+    const llmType = getConnectionType(prefs.connection_type, {}, '');
+
+    // Create a special command instance
+    const summaryCommand = new mzta_specialCommand({
+        prompt: prompt,
+        llm: llmType,
+        custom_model: prefs.chatgpt_model,
+        do_debug: prefs.do_debug
+    });
+
+    // Initialize the worker
+    await summaryCommand.initWorker();
+
+    // Send the prompt and get the AI response
+    const aiResponse = await summaryCommand.sendPrompt();
+
+    // Clean up the response - extract just the summary content
+    const cleanedResponse = cleanAISummaryResponse(aiResponse);
+
+    return cleanedResponse;
+}
+
+/**
+ * Helper function to clean AI response
+ */
+function cleanAISummaryResponse(response) {
+    // Remove any markdown formatting or code blocks
+    let cleaned = response.replace(/```[\s\S]*?```/g, '');
+    cleaned = cleaned.replace(/[\*#_~`]/g, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+    // Remove any "Summary:" prefixes that the AI might add
+    cleaned = cleaned.replace(/^Summary:\s*/i, '');
+
+    return cleaned;
 }
