@@ -44,6 +44,7 @@ self.onmessage = async function(event) {
             version: event.data.anthropic_version,
             model: anthropic_model,
             system_prompt: event.data.anthropic_system_prompt,
+            temperature: event.data.anthropic_temperature,
             max_tokens: event.data.anthropic_max_tokens,
             stream: true
         });

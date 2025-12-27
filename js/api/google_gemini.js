@@ -110,8 +110,8 @@ export class GoogleGemini {
         };
       }
 
-      if(this.temperature !== ''){
-        google_gemini_body.generationConfig.temperature = this.temperature;
+      if(parseFloat(this.temperature) != NaN){
+        google_gemini_body.generationConfig.temperature = parseFloat(this.temperature);
       }
 
       // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));

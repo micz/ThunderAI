@@ -43,6 +43,7 @@ self.onmessage = async function(event) {
             apiKey: chatgpt_api_key,
             model: chatgpt_model,
             developer_messages: event.data.chatgpt_developer_messages,
+            temperature: event.data.chatgpt_api_temperature,
             stream: true,
             store: event.data.chatgpt_api_store
         });

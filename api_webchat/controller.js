@@ -80,7 +80,7 @@ switch (llm) {
             chatgpt_api_key: prefs_default.chatgpt_api_key,
             chatgpt_model: prefs_default.chatgpt_model,
             chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
-            chatgpt_api_store: prefs_default.chatgpt_api_store,
+            chatgpt_api_store: prefs_default.chatgpt_api_store, // Keep as boolean
             chatgpt_api_temperature: prefs_default.chatgpt_api_temperature,
             do_debug: prefs_default.do_debug,
         });
@@ -263,6 +263,7 @@ switch (llm) {
             anthropic_model: prefs_api.anthropic_model,
             anthropic_system_prompt: prefs_api.anthropic_system_prompt,
             anthropic_version: prefs_api.anthropic_version,
+            anthropic_temperature: prefs_api.anthropic_temperature,
             anthropic_max_tokens: prefs_api.anthropic_max_tokens,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
