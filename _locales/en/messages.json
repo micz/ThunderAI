@@ -59,6 +59,10 @@
     "message": "More info",
     "description": ""
   },
+  "prompt_string":{
+    "message": "Prompt",
+    "description": ""
+  },
   "customPrompts_managePrompts_info_default": {
     "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
     "description": ""
@@ -1496,7 +1500,7 @@
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens": {
-    "message": "Claude Max Tokens",
+    "message": "Max Tokens",
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens_Info": {
@@ -1707,6 +1711,14 @@
   },
   "Anthropic_System_Prompt_Info": {
     "message": "You can improve Claude performance by using a System Prompt to give it a role. This technique, known as role prompting, is the most powerful way to use system prompts with Claude. The right role can turn Claude from a general assistant into your virtual domain expert.",
+    "description": ""
+  },
+  "prefs_anthropic_temperature": {
+    "message": "Temperature",
+    "description": ""
+  },
+  "prefs_anthropic_temperature_Info": {
+    "message": "Amount of randomness injected into the response. Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 for analytical / multiple choice, and closer to 1.0 for creative and generative tasks. Note that even with temperature of 0.0, the results will not be fully deterministic.",
     "description": ""
   },
   "Optional_Permission_Denied_Model_Fetching": {

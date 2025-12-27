@@ -413,6 +413,19 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_prefs_anthropic_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="anthropic_temperature" name="anthropic_temperature" class="option-input" />
+        <br>__MSG_prefs_anthropic_temperature_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
       </label>
     </td>

@@ -25,6 +25,7 @@ export class Anthropic {
   version = '';
   model = '';
   system_prompt = '';
+  temperature = '';
   max_tokens = 4096;  
   stream = false;
 
@@ -33,6 +34,7 @@ export class Anthropic {
     version = '',
     model = '',
     system_prompt = '',
+    temperature = '',
     max_tokens = 4096,
     stream = false,
   } = {}) {
@@ -40,6 +42,7 @@ export class Anthropic {
     this.version = version;
     this.model = model;
     this.system_prompt = system_prompt;
+    this.temperature = temperature;
     this.max_tokens = max_tokens > 0 ? max_tokens : 4096;
     this.stream = stream;
   }
@@ -87,6 +90,17 @@ export class Anthropic {
     // console.log(">>>>>>>>>>> Anthropic API request: " + JSON.stringify(messages));
 
     try {
+
+      let claude_body = { 
+              model: this.model,
+              max_tokens: this.max_tokens,
+              system: this.system_prompt,
+              messages: messages,
+              stream: this.stream,
+            };
+
+      if(this.temperature != '') claude_body.temperature = this.temperature;
+
       const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { 
@@ -95,13 +109,7 @@ export class Anthropic {
               "anthropic-version": this.version,
               "anthropic-dangerous-direct-browser-access": "true",
           },
-          body: JSON.stringify({ 
-              model: this.model,
-              max_tokens: this.max_tokens,
-              system: this.system_prompt,
-              messages: messages,
-              stream: this.stream,
-          }),
+          body: JSON.stringify(claude_body),
       });
       return response;
     }catch (error) {

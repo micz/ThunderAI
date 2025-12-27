@@ -102,7 +102,7 @@ switch (llm) {
         if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
         }
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "ChatGPT API",
             model_string: prefs_api.chatgpt_model,
@@ -138,7 +138,7 @@ switch (llm) {
         if(prefs_api.google_gemini_thinking_budget.length > 0){
             additional_text_elements.push({label: browser.i18n.getMessage("prefs_google_gemini_thinking_budget"), value: prefs_api.google_gemini_thinking_budget});
         }
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         worker.postMessage({
             type: 'init',
             google_gemini_api_key: prefs_api.google_gemini_api_key,
@@ -186,7 +186,7 @@ switch (llm) {
             window_id: (await browser.windows.getCurrent()).id
         });
         let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Ollama API",
             model_string: prefs_api.ollama_model,
@@ -219,7 +219,7 @@ switch (llm) {
             i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "OpenAI Compatible API",
             model_string: prefs_api.openai_comp_model,
@@ -237,6 +237,7 @@ switch (llm) {
             anthropic_api_key: prefs_default.anthropic_api_key,
             anthropic_model: prefs_default.anthropic_model,
             anthropic_system_prompt: prefs_default.anthropic_system_prompt,
+            anthropic_temperature: prefs_default.anthropic_temperature,
             anthropic_version: prefs_default.anthropic_version,
             anthropic_max_tokens: prefs_default.anthropic_max_tokens,
             do_debug: prefs_default.do_debug,
@@ -257,8 +258,19 @@ switch (llm) {
             i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        additional_text_elements.push({label: "System Prompt", value: prefs_api.anthropic_system_prompt});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        if(prefs_api.anthropic_system_prompt && prefs_api.anthropic_system_prompt.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("Anthropic_System_Prompt"), value: prefs_api.anthropic_system_prompt});
+        }
+        if(prefs_api.anthropic_version && prefs_api.anthropic_version.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("_api_connecting_version"), value: prefs_api.anthropic_version});
+        }
+        if(prefs_api.anthropic_max_tokens > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_OptionText_anthropic_max_tokens"), value: prefs_api.anthropic_max_tokens});
+        }
+        if(prefs_api.anthropic_temperature && prefs_api.anthropic_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_anthropic_temperature"), value: prefs_api.anthropic_temperature});
+        }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Claude API",
             model_string: prefs_api.anthropic_model,
