@@ -33,6 +33,7 @@ export const prefs_default = {
     chatgpt_api_store: false,
     chatgpt_model: '',
     chatgpt_developer_messages: '',
+    chatgpt_api_temperature: '',
     ollama_host: '',
     ollama_model: '',
     ollama_num_ctx: 0,

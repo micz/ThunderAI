@@ -81,6 +81,7 @@ switch (llm) {
             chatgpt_model: prefs_default.chatgpt_model,
             chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
             chatgpt_api_store: prefs_default.chatgpt_api_store,
+            chatgpt_api_temperature: prefs_default.chatgpt_api_temperature,
             do_debug: prefs_default.do_debug,
         });
         let i18nStrings = {};
@@ -94,6 +95,7 @@ switch (llm) {
             chatgpt_model: prefs_api.chatgpt_model,
             chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
             chatgpt_api_store: prefs_api.chatgpt_api_store,
+            chatgpt_api_temperature: prefs_api.chatgpt_api_temperature,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
         });
@@ -102,6 +104,9 @@ switch (llm) {
         additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
         if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
+        }
+        if(prefs_api.chatgpt_api_temperature && prefs_api.chatgpt_api_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_chatgpt_api_temperature"), value: prefs_api.chatgpt_api_temperature});
         }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "ChatGPT API",
@@ -145,6 +150,7 @@ switch (llm) {
             google_gemini_model: prefs_api.google_gemini_model,
             google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
             google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
+            google_gemini_temperature: prefs_api.google_gemini_temperature,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
         });

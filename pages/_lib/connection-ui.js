@@ -159,6 +159,19 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
+        <span class="opt_title">__MSG_prefs_chatgpt_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="chatgpt_api_temperature" name="chatgpt_api_temperature" class="option-input" />
+        <br>__MSG_prefs_chatgpt_api_temperature_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
         <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
       </label>
     </td>

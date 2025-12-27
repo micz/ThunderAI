@@ -24,6 +24,7 @@ export class OpenAI {
   apiKey = '';
   model = '';
   developer_messages = '';
+  temperature = '';
   stream = false;
   store = false;
 
@@ -31,12 +32,14 @@ export class OpenAI {
     apiKey = '',
     model = '',
     developer_messages = '',
+    temperature = '',
     stream = false,
     store = false
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.developer_messages = developer_messages;
+    this.temperature = temperature;
     this.stream = stream;
     this.store = store;
   }
@@ -90,6 +93,7 @@ export class OpenAI {
               input: input,
               stream: this.stream,
               store: this.store,
+              ...(this.temperature != '' ? { 'temperature': this.temperature } : {}),
               ...(maxTokens > 0 ? { 'max_output_tokens': parseInt(maxTokens) } : {}),
               ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {})
           }
