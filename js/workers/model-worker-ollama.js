@@ -23,9 +23,6 @@
 import { Ollama } from '../api/ollama.js';
 import { taLogger } from '../mzta-logger.js';
 
-let ollama_host = null;
-let ollama_model = '';
-let ollama_num_ctx = 0;
 let ollama = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -38,19 +35,13 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     switch (event.data.type) {
         case 'init':
-            ollama_host = event.data.ollama_host;
-            ollama_model = event.data.ollama_model;
-            ollama_num_ctx = event.data.ollama_num_ctx;
-            ollama_temperature = event.data.ollama_temperature;
-            ollama_think = event.data.ollama_think;
-            //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
             ollama = new Ollama({
-                host: ollama_host,
-                model: ollama_model,
+                host: event.data.ollama_host,
+                model: event.data.ollama_model,
                 stream: true,
-                num_ctx: ollama_num_ctx,
-                temperature: ollama_temperature,
-                think: ollama_think
+                num_ctx: event.data.ollama_num_ctx,
+                temperature: event.data.ollama_temperature,
+                think: event.data.ollama_think
             });
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
