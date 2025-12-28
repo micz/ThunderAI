@@ -16,6 +16,46 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+const special_prompts_with_integration = ['add_tags', 'spamfilter'];
+
+const integration_settings_template = {
+    use_specific_integration: false,
+    connection_type: 'chatgpt_api',
+    chatgpt_model: '',
+    ollama_model: '',
+    openai_comp_model: '',
+    google_gemini_model: '',
+    anthropic_model: '',
+    chatgpt_api_temperature: '',
+    ollama_temperature: '',
+    openai_comp_temperature: '',
+    google_gemini_temperature: '',
+    anthropic_temperature: '',
+};
+
+let generated_prefs = {};
+
+special_prompts_with_integration.forEach(prompt_prefix => {
+    for (const [key, value] of Object.entries(integration_settings_template)) {
+        generated_prefs[`${prompt_prefix}_${key}`] = value;
+    }
+});
+
+export function getDynamicSettingsDefaults(keysFilter = []) {
+    let defaults = {};
+    special_prompts_with_integration.forEach(prefix => {
+        const keys = keysFilter.length > 0 ? keysFilter : Object.keys(integration_settings_template);
+        keys.forEach(key => {
+             defaults[`${prefix}_${key}`] = prefs_default[`${prefix}_${key}`];
+        });
+    });
+    return defaults;
+}
+
+export function getDynamicSettingValue(prefs, prefix, settingName) {
+    return prefs[`${prefix}_${settingName}`];
+}
+
 export const prefs_default = {
     do_debug: false,
     chatgpt_win_height: 800,
@@ -73,18 +113,6 @@ export const prefs_default = {
     add_tags_auto_uselist_list: '',
     add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
-    add_tags_use_specific_integration: false,
-    add_tags_connection_type: 'chatgpt_api',
-    add_tags_chatgpt_model: '',
-    add_tags_ollama_model: '',
-    add_tags_openai_comp_model: '',
-    add_tags_google_gemini_model: '',
-    add_tags_anthropic_model: '',
-    add_tags_chatgpt_api_temperature: '',
-    add_tags_ollama_temperature: '',
-    add_tags_openai_comp_temperature: '',
-    add_tags_google_gemini_temperature: '',
-    add_tags_anthropic_temperature: '',
     get_calendar_event: true,
     get_task: true,
     calendar_enforce_timezone: false,
@@ -93,16 +121,5 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
-    spamfilter_use_specific_integration: false,
-    spamfilter_connection_type: 'chatgpt_api',
-    spamfilter_chatgpt_model: '',
-    spamfilter_ollama_model: '',
-    spamfilter_openai_comp_model: '',
-    spamfilter_google_gemini_model: '',
-    spamfilter_anthropic_model: '',
-    spamfilter_chatgpt_api_temperature: '',
-    spamfilter_ollama_temperature: '',
-    spamfilter_openai_comp_temperature: '',
-    spamfilter_google_gemini_temperature: '',
-    spamfilter_anthropic_temperature: '',
+    ...generated_prefs
 }

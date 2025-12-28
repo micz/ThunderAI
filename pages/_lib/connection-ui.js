@@ -28,6 +28,7 @@ import {
   sanitizeChatGPTWebCustomData
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
+import { loadPrompt, savePrompt, clearPromptAPI } from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
   permission_all_urls: false
@@ -944,6 +945,104 @@ export async function injectConnectionUI({
   };
 }
 
+export async function initializeSpecificIntegrationUI({
+  prefix,
+  promptId,
+  taLog,
+  restoreOptionsCallback
+}) {
+  const conntype_select_id = `${prefix}_connection_type`;
+  const model_prefix = `${prefix}_`;
+  const use_specific_integration_id = `${prefix}_use_specific_integration`;
+
+  // 1. Inject UI
+  try {
+      await injectConnectionUI({
+          afterTrId: 'connection_ui_anchor',
+          tr_class: 'specific_integration_sub',
+          selectId: conntype_select_id,
+          modelId_prefix: model_prefix,
+          no_chatgpt_web: true,
+          taLog: taLog
+      });
+  } catch (e) {
+      console.error(`Failed to inject connection UI (${prefix})`, e);
+  }
+
+  // 2. Restore Options
+  if (restoreOptionsCallback) {
+      await restoreOptionsCallback();
+  }
+
+  // 3. Setup Logic
+  const use_specific_integration_el = document.getElementById(use_specific_integration_id);
+  const conntype_el = document.getElementById(conntype_select_id);
+  const conntype_row = document.getElementById(conntype_select_id + '_tr');
+  const conntype_end_el = document.getElementById('connection_ui_end');
+
+  // Helper to update prompt
+  const _updatePrompt = async () => {
+      let conntype = conntype_el.value;
+      let model_value = conntype.substring(0, conntype.length - 4) + '_model';
+      let temperature_value = conntype.substring(0, conntype.length - 4) + '_temperature';
+      
+      let prompt = await loadPrompt(promptId);
+      if(!prompt) return;
+
+      prompt.api = conntype;
+      prompt.model = document.getElementById(model_prefix + model_value)?.value || '';
+      prompt.temperature = document.getElementById(model_prefix + temperature_value)?.value || '';
+      
+      await savePrompt(prompt);
+  };
+
+  // Helper for visibility
+  const _updateVisibility = (checked) => {
+      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+          tr.style.display = checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
+      if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
+      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+  };
+
+  // Check global connection type
+  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
+  if (globalPrefs.connection_type === 'chatgpt_web') {
+      use_specific_integration_el.checked = true;
+      use_specific_integration_el.disabled = true;
+  }
+
+  // Event Listener for Checkbox
+  use_specific_integration_el.addEventListener('change', async (event) => {
+      _updateVisibility(event.target.checked);
+      if (!event.target.checked) {
+          await clearPromptAPI(promptId);
+      } else {
+          await _updatePrompt();
+      }
+  });
+
+  // Event Listeners for Inputs
+  conntype_el.addEventListener('change', async () => {
+      _updateVisibility(use_specific_integration_el.checked);
+      if (use_specific_integration_el.checked) await _updatePrompt();
+  });
+
+  document.querySelectorAll(".option-input-specific").forEach(element => {
+      element.addEventListener("change", async () => {
+          if (use_specific_integration_el.checked) await _updatePrompt();
+      });
+  });
+
+  // Initial State Apply
+  _updateVisibility(use_specific_integration_el.checked);
+  if (use_specific_integration_el.checked) {
+      await _updatePrompt();
+  }
+  
+  updateWarnings(model_prefix);
+}
 
 // From here there are exported functions
 

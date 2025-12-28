@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../options/mzta-options-default.js';
+import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 
@@ -626,16 +626,31 @@ export function isAPIKeyValue(id){
   return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
 }
 
-export function getConnectionType(conntype, prompt, use_promptspecific_api = true) {
-  if(!use_promptspecific_api) {
-    return conntype;
-  }
-  // console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
-  if (prompt?.api != null && prompt.api !== '') {
-    return prompt.api;
-  } else {
-    return conntype;
-  }
+export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) {
+    let defaultType = '';
+    let specificType = '';
+
+    if (typeof prefsOrType === 'object' && prefsOrType !== null) {
+        // Nuova firma: (prefs, prompt, prefix)
+        defaultType = prefsOrType.connection_type;
+        if (typeof prefixOrSpecific === 'string' && prefixOrSpecific) {
+            const prefix = prefixOrSpecific;
+            const useSpecific = getDynamicSettingValue(prefsOrType, prefix, 'use_specific_integration');
+            if (useSpecific) {
+                specificType = getDynamicSettingValue(prefsOrType, prefix, 'connection_type');
+            }
+        }
+    } else {
+        // Vecchia firma / Uso diretto: (connection_type_string, prompt, [specific_type_string])
+        defaultType = prefsOrType;
+        if (typeof prefixOrSpecific === 'string') {
+            specificType = prefixOrSpecific;
+        }
+    }
+
+    if (specificType && specificType !== '') return specificType;
+    if (prompt && prompt.api && prompt.api !== '') return prompt.api;
+    return defaultType;
 }
 
 export async function checkSparksPresence() {
