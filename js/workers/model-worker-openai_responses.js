@@ -23,8 +23,6 @@
 import { OpenAI } from '../api/openai_responses.js';
 import { taLogger } from '../mzta-logger.js';
 
-let chatgpt_api_key = null;
-let chatgpt_model = '';
 let openai = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -37,11 +35,9 @@ let previous_response_id = null;
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        chatgpt_api_key = event.data.chatgpt_api_key;
-        chatgpt_model = event.data.chatgpt_model;
         openai = new OpenAI({
-            apiKey: chatgpt_api_key,
-            model: chatgpt_model,
+            apiKey: event.data.chatgpt_api_key,
+            model: event.data.chatgpt_model,
             developer_messages: event.data.chatgpt_developer_messages,
             temperature: event.data.chatgpt_api_temperature,
             stream: true,
