@@ -23,8 +23,6 @@
 import { GoogleGemini } from '../api/google_gemini.js';
 import { taLogger } from '../mzta-logger.js';
 
-let google_gemini_api_key = null;
-let google_gemini_model = '';
 let google_gemini = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -36,11 +34,9 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        google_gemini_api_key = event.data.google_gemini_api_key;
-        google_gemini_model = event.data.google_gemini_model;
         google_gemini = new GoogleGemini({
-            apiKey: google_gemini_api_key,
-            model: google_gemini_model,
+            apiKey: event.data.google_gemini_api_key,
+            model: event.data.google_gemini_model,
             system_instruction: event.data.google_gemini_system_instruction,
             temperature: event.data.google_gemini_temperature,
             thinking_budget: event.data.google_gemini_thinking_budget,
