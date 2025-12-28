@@ -10,6 +10,7 @@
         <li><i>[OpenAI API]</i> Now using the new Responses API [<a href="https://github.com/micz/ThunderAI/issues/407">#407</a>].</li>
         <li>It is now possible to define a custom placeholder with dynamic data to retrieve any header present in the current email [<a href="https://github.com/micz/ThunderAI/issues/527">#527</a>].</li>
         <li><i>[All APIs]</i> The configuration information reported in the webchat API has been improved for all integrations.</li>
+        <li>Spanish (es) translation added, thanks to <a href="https://hosted.weblate.org/user/gerardo.sobarzo/">Gerardo Sobarzo</a>, <a href="https://hosted.weblate.org/user/arendon/">Andrés Rendón Hernández</a>, <a href="https://hosted.weblate.org/user/ErickLimonG/">Erick Limon</a>.</li>
         <li>Various fixes.</li>
         <li>...</li>
       </ul>
