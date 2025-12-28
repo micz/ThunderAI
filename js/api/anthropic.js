@@ -99,7 +99,7 @@ export class Anthropic {
               stream: this.stream,
             };
 
-      if(parseFloat(this.temperature) != NaN) claude_body.temperature = parseFloat(this.temperature);
+      if(this.temperature != '' && parseFloat(this.temperature) != NaN) claude_body.temperature = parseFloat(this.temperature);
 
       const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
