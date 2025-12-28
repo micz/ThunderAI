@@ -159,7 +159,7 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_chatgpt_api_temperature__</span>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
       </label>
     </td>
     <td>
@@ -224,7 +224,7 @@ export async function injectConnectionUI({
   <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_google_gemini_temperature__</span>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
       </label>
     </td>
     <td>
@@ -296,7 +296,7 @@ export async function injectConnectionUI({
    <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_ollama_temperature__</span>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
       </label>
     </td>
     <td>
@@ -410,6 +410,19 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="openai_comp_temperature" name="openai_comp_temperature" class="option-input" />
+        <br>__MSG_prefs_openai_comp_temperature_Info__
+      </label>
+    </td>
+  </tr>
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_Anthropic_API_Key__</span>
@@ -439,7 +452,7 @@ export async function injectConnectionUI({
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
-        <span class="opt_title">__MSG_prefs_anthropic_temperature__</span>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
       </label>
     </td>
     <td>

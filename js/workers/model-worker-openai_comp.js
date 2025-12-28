@@ -42,12 +42,14 @@ self.onmessage = async function(event) {
         openai_comp_model = event.data.openai_comp_model;
         openai_comp_api_key = event.data.openai_comp_api_key;
         openai_comp_use_v1 = event.data.openai_comp_use_v1;
+        openai_comp_temperature = event.data.openai_comp_temperature;
         openai_comp = new OpenAIComp({
             host: openai_comp_host,
             model: openai_comp_model,
             apiKey: openai_comp_api_key,
             stream: true,
-            use_v1: openai_comp_use_v1
+            use_v1: openai_comp_use_v1,
+            openai_comp_temperature: openai_comp_temperature
         });
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;

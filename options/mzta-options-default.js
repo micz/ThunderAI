@@ -44,6 +44,7 @@ export const prefs_default = {
     openai_comp_api_key: '',
     openai_comp_use_v1: true,
     openai_comp_chat_name: 'OpenAI Comp',
+    openai_comp_temperature: '',
     google_gemini_api_key: '',
     google_gemini_model: '',
     google_gemini_system_instruction: '',

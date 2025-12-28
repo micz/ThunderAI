@@ -106,7 +106,7 @@ switch (llm) {
             additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
         }
         if(prefs_api.chatgpt_api_temperature && prefs_api.chatgpt_api_temperature.length > 0){
-            additional_text_elements.push({label: browser.i18n.getMessage("prefs_chatgpt_api_temperature"), value: prefs_api.chatgpt_api_temperature});
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.chatgpt_api_temperature});
         }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "ChatGPT API",
@@ -139,7 +139,7 @@ switch (llm) {
             additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
         }
         if(prefs_api.google_gemini_temperature.length > 0){
-            additional_text_elements.push({label: browser.i18n.getMessage("prefs_google_gemini_temperature"), value: prefs_api.google_gemini_temperature});
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.google_gemini_temperature});
         }
         if(prefs_api.google_gemini_thinking_budget.length > 0){
             additional_text_elements.push({label: browser.i18n.getMessage("prefs_google_gemini_thinking_budget"), value: prefs_api.google_gemini_thinking_budget});
@@ -197,7 +197,7 @@ switch (llm) {
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_think"), value: (prefs_api.ollama_think ? 'Yes' : 'No')});
         if(prefs_api.ollama_temperature && prefs_api.ollama_temperature.length > 0){
-            additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_temperature"), value: prefs_api.ollama_temperature});
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.ollama_temperature});
         }
         if(prefs_api.ollama_num_ctx > 0){
             additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_num_ctx"), value: prefs_api.ollama_num_ctx});
@@ -217,6 +217,7 @@ switch (llm) {
             openai_comp_api_key: prefs_default.openai_comp_api_key,
             openai_comp_use_v1: prefs_default.openai_comp_use_v1,
             openai_comp_chat_name: prefs_default.openai_comp_chat_name,
+            openai_comp_temperature: prefs_default.openai_comp_temperature,
             do_debug: prefs_default.do_debug,
         });
         let i18nStrings = {};
@@ -230,11 +231,15 @@ switch (llm) {
             openai_comp_model: prefs_api.openai_comp_model,
             openai_comp_api_key: prefs_api.openai_comp_api_key,
             openai_comp_use_v1: prefs_api.openai_comp_use_v1,
+            openai_comp_temperature: prefs_api.openai_comp_temperature,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        if(prefs_api.openai_comp_temperature && prefs_api.openai_comp_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.openai_comp_temperature});
+        }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "OpenAI Compatible API",
             model_string: prefs_api.openai_comp_model,
@@ -282,7 +287,7 @@ switch (llm) {
             additional_text_elements.push({label: browser.i18n.getMessage("prefs_OptionText_anthropic_max_tokens"), value: prefs_api.anthropic_max_tokens});
         }
         if(prefs_api.anthropic_temperature && prefs_api.anthropic_temperature.length > 0){
-            additional_text_elements.push({label: browser.i18n.getMessage("prefs_anthropic_temperature"), value: prefs_api.anthropic_temperature});
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.anthropic_temperature});
         }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "Claude API",

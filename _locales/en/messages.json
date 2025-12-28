@@ -1577,16 +1577,8 @@
     "message": "If checked, your chats will be stored by OpenAI.",
     "description": ""
   },
-  "prefs_chatgpt_api_temperature": {
-    "message": "Temperature",
-    "description": ""
-  },
   "prefs_chatgpt_api_temperature_Info": {
     "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
-    "description": ""
-  },
-  "ollama_temperature": {
-    "message": "Temperature",
     "description": ""
   },
   "ollama_temperature_Info": {
@@ -1689,6 +1681,14 @@
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
     "description": ""
   },
+  "prefs_api_temperature": {
+    "message": "Temperature",
+    "description": ""
+  },
+  "prefs_openai_comp_temperature_Info": {
+    "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
+    "description": ""
+  },
   "chatgpt_click_force_completion": {
     "message": "It seems that it's not possible to get if ChatGPT has finished. Click here to force the completion of the job.",
     "description": ""
@@ -1703,10 +1703,6 @@
   },
   "prefs_google_gemini_thinking_budget_Info": {
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
-    "description": ""
-  },
-  "prefs_google_gemini_temperature": {
-    "message": "Temperature",
     "description": ""
   },
   "prefs_google_gemini_temperature_Info": {
@@ -1727,10 +1723,6 @@
   },
   "Anthropic_System_Prompt_Info": {
     "message": "You can improve Claude performance by using a System Prompt to give it a role. This technique, known as role prompting, is the most powerful way to use system prompts with Claude. The right role can turn Claude from a general assistant into your virtual domain expert.",
-    "description": ""
-  },
-  "prefs_anthropic_temperature": {
-    "message": "Temperature",
     "description": ""
   },
   "prefs_anthropic_temperature_Info": {

@@ -26,6 +26,7 @@ export class OpenAIComp {
   apiKey = '';
   use_v1 = true;
   stream = false;
+  openai_comp_temperature = '';
 
   constructor({
     host = '',
@@ -33,12 +34,14 @@ export class OpenAIComp {
     apiKey = '',
     stream = false,
     use_v1 = true,
+    openai_comp_temperature = '',
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
+    this.openai_comp_temperature = openai_comp_temperature;
   }
 
 
@@ -91,7 +94,8 @@ export class OpenAIComp {
                 model: this.model, 
                 messages: messages,
                 stream: this.stream,
-                ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+                ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
+                ...(parseFloat(this.openai_comp_temperature) != NaN ? { 'temperature': parseFloat(this.openai_comp_temperature) } : {})
             }),
         });
         return response;
