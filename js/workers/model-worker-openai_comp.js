@@ -23,10 +23,6 @@
 import { OpenAIComp } from '../api/openai_comp.js';
 import { taLogger } from '../mzta-logger.js';
 
-let openai_comp_host = null;
-let openai_comp_model = '';
-let openai_comp_api_key = '';
-let openai_comp_use_v1 = true;
 let openai_comp = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -38,18 +34,13 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openai_comp_host = event.data.openai_comp_host;
-        openai_comp_model = event.data.openai_comp_model;
-        openai_comp_api_key = event.data.openai_comp_api_key;
-        openai_comp_use_v1 = event.data.openai_comp_use_v1;
-        openai_comp_temperature = event.data.openai_comp_temperature;
         openai_comp = new OpenAIComp({
-            host: openai_comp_host,
-            model: openai_comp_model,
-            apiKey: openai_comp_api_key,
+            host: event.data.openai_comp_host,
+            model: event.data.openai_comp_model,
+            apiKey: event.data.openai_comp_api_key,
             stream: true,
-            use_v1: openai_comp_use_v1,
-            openai_comp_temperature: openai_comp_temperature
+            use_v1: event.data.openai_comp_use_v1,
+            openai_comp_temperature: event.data.openai_comp_temperature
         });
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
