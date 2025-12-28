@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     check_spamfilter_threshold({target: document.getElementById("spamfilter_threshold")});
 
     // Bind prompt API updates to connection type and model selects
-    document.querySelectorAll(".option-input-model").forEach(element => {
+    document.querySelectorAll(".option-input-specific").forEach(element => {
       element.addEventListener("change", updatePromptAPIInfo);
     });
     const conntype_el = document.getElementById(conntype_select_id);

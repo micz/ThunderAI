@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         element.addEventListener("change", saveOptions);
       });
 
-    document.querySelectorAll(".option-input-model").forEach(element => {
+    document.querySelectorAll(".option-input-specific").forEach(element => {
         element.addEventListener("change", updatePromptAPIInfo);
       });
 
@@ -296,12 +296,13 @@ async function updateAdditionalPromptStatements(){
 async function updatePromptAPIInfo(){
   let conntype = document.getElementById(conntype_select_id).value;
   let model_value = conntype.substring(0, conntype.length - 4) + '_model';
-  let model = document.getElementById(model_prefix + model_value).value;
+  let temperature_value = conntype.substring(0, conntype.length - 4) + '_temperature';
   // console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
   let add_tags_prompt = await loadPrompt('prompt_add_tags');
   // console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
   add_tags_prompt.api = conntype;
-  add_tags_prompt.model = model;
+  add_tags_prompt.model = document.getElementById(model_prefix + model_value).value;
+  add_tags_prompt.temperature = document.getElementById(model_prefix + temperature_value).value;
   // console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
   await savePrompt(add_tags_prompt);
 }
