@@ -23,8 +23,6 @@
 import { Anthropic } from '../api/anthropic.js';
 import { taLogger } from '../mzta-logger.js';
 
-let anthropic_api_key = null;
-let anthropic_model = '';
 let anthropic = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -37,12 +35,10 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         // console.log(">>>>>>>>>>>>>> event.data: " + JSON.stringify(event.data));
-        anthropic_api_key = event.data.anthropic_api_key;
-        anthropic_model = event.data.anthropic_model;
         anthropic = new Anthropic({
-            apiKey: anthropic_api_key,
+            apiKey: event.data.anthropic_api_key,
             version: event.data.anthropic_version,
-            model: anthropic_model,
+            model: event.data.anthropic_model,
             system_prompt: event.data.anthropic_system_prompt,
             temperature: event.data.anthropic_temperature,
             max_tokens: event.data.anthropic_max_tokens,
