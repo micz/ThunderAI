@@ -170,6 +170,7 @@ switch (llm) {
             ollama_host: prefs_default.ollama_host,
             ollama_model: prefs_default.ollama_model,
             ollama_num_ctx: prefs_default.ollama_num_ctx,
+            ollama_temperature: prefs_default.ollama_temperature,
             ollama_think: prefs_default.ollama_think,
             do_debug: prefs_default.do_debug,
         });
@@ -183,6 +184,7 @@ switch (llm) {
             ollama_host: prefs_api.ollama_host,
             ollama_model: prefs_api.ollama_model,
             ollama_num_ctx: prefs_api.ollama_num_ctx,
+            ollama_temperature: prefs_api.ollama_temperature,
             ollama_think: prefs_api.ollama_think,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings
@@ -194,6 +196,9 @@ switch (llm) {
         let additional_text_elements = [];
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_think"), value: (prefs_api.ollama_think ? 'Yes' : 'No')});
+        if(prefs_api.ollama_temperature && prefs_api.ollama_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_temperature"), value: prefs_api.ollama_temperature});
+        }
         if(prefs_api.ollama_num_ctx > 0){
             additional_text_elements.push({label: browser.i18n.getMessage("prefs_ollama_num_ctx"), value: prefs_api.ollama_num_ctx});
         }

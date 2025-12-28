@@ -41,12 +41,16 @@ self.onmessage = async function(event) {
             ollama_host = event.data.ollama_host;
             ollama_model = event.data.ollama_model;
             ollama_num_ctx = event.data.ollama_num_ctx;
+            ollama_temperature = event.data.ollama_temperature;
+            ollama_think = event.data.ollama_think;
             //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
             ollama = new Ollama({
                 host: ollama_host,
                 model: ollama_model,
                 stream: true,
-                num_ctx: ollama_num_ctx
+                num_ctx: ollama_num_ctx,
+                temperature: ollama_temperature,
+                think: ollama_think
             });
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;

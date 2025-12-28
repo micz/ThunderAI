@@ -37,6 +37,7 @@ export const prefs_default = {
     ollama_host: '',
     ollama_model: '',
     ollama_num_ctx: 0,
+    ollama_temperature: '',
     ollama_think: false,
     openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
     openai_comp_model: '',

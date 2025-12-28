@@ -293,6 +293,19 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_ollama_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="ollama_temperature" name="ollama_temperature" class="option-input" />
+        <br>__MSG_prefs_ollama_temperature_Info__
+      </label>
+    </td>
+  </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_think__</span>

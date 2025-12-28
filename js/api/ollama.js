@@ -22,6 +22,7 @@ export class Ollama {
     model = '';
     stream = false;
     num_ctx = 0;
+    temperature = '';
     think = false;
   
     constructor({
@@ -29,12 +30,14 @@ export class Ollama {
       model = '',
       stream = false,
       num_ctx = 0,
+      temperature = '',
       think = false,
     } = {}) {
       this.host = (host || '').trim().replace(/\/+$/, "");
       this.model = model;
       this.stream = stream;
       this.num_ctx = num_ctx;
+      this.temperature = temperature;
       this.think = think;
     }
 
@@ -90,6 +93,7 @@ export class Ollama {
                 stream: this.stream,
                 think: this.think,
                 ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
+                ...(parseFloat(this.temperature) != NaN ? { options: { temperature: parseFloat(this.temperature) } } : {}),
             }),
         });
         return response;
@@ -103,30 +107,4 @@ export class Ollama {
       }
     }
 
-
-    // fetchResponse = async (messages) => {
-    //   try {
-    //     let sending = messages.join(' ');
-    //     console.log(">>>>>>>>>>  sending: " + sending);
-    //     const response = await fetch(this.host + "/api/generate", {
-    //         method: "POST",
-    //         headers: { 
-    //             "Content-Type": "application/json", 
-    //         },
-    //         body: JSON.stringify({ 
-    //             model: this.model, 
-    //             prompt: sending,
-    //             stream: this.stream,
-    //         }),
-    //     });
-    //     return response;
-    //   }catch (error) {
-    //       console.error("[ThunderAI] Ollama API request failed: " + error);
-    //       let output = {};
-    //       output.is_exception = true;
-    //       output.ok = false;
-    //       output.error = "Ollama API request failed: " + error;
-    //       return output;
-    //   }
-    // }
 }
