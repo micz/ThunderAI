@@ -81,6 +81,7 @@ export class Ollama {
     
     fetchResponse = async (messages) => {
       try {
+        const tempFloat = parseFloat(this.temperature);
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
         const response = await fetch(this.host + "/api/chat", {
             method: "POST",
@@ -93,7 +94,7 @@ export class Ollama {
                 stream: this.stream,
                 think: this.think,
                 ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
-                ...(parseFloat(this.temperature) != NaN ? { options: { temperature: parseFloat(this.temperature) } } : {}),
+                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
             }),
         });
         return response;

@@ -88,12 +88,14 @@ export class OpenAI {
       content: [{ type: "input_text", text: msg.content }]
     }));
 
+    const tempFloat = parseFloat(this.temperature);
+
     let request_body = { 
               model: this.model, 
               input: input,
               stream: this.stream,
               store: this.store,
-              ...(parseFloat(this.temperature) != NaN ? { 'temperature': parseFloat(this.temperature) } : {}),
+              ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {}),
               ...(maxTokens > 0 ? { 'max_output_tokens': parseInt(maxTokens) } : {}),
               ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {})
           }

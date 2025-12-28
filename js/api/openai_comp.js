@@ -26,7 +26,7 @@ export class OpenAIComp {
   apiKey = '';
   use_v1 = true;
   stream = false;
-  openai_comp_temperature = '';
+  temperature = '';
 
   constructor({
     host = '',
@@ -34,14 +34,14 @@ export class OpenAIComp {
     apiKey = '',
     stream = false,
     use_v1 = true,
-    openai_comp_temperature = '',
+    temperature = '',
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
-    this.openai_comp_temperature = openai_comp_temperature;
+    this.temperature = temperature;
   }
 
 
@@ -81,6 +81,7 @@ export class OpenAIComp {
 
   fetchResponse = async (messages, maxTokens = 0) => {
     try{
+      const tempFloat = parseFloat(this.temperature);
       const curr_headers = {
         "Content-Type": "application/json",
       };
@@ -95,7 +96,7 @@ export class OpenAIComp {
                 messages: messages,
                 stream: this.stream,
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
-                ...(parseFloat(this.openai_comp_temperature) != NaN ? { 'temperature': parseFloat(this.openai_comp_temperature) } : {})
+                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),
         });
         return response;
