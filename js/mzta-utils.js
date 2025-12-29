@@ -623,7 +623,7 @@ export function extractJsonObject(inputString) {
 }
 
 export function isAPIKeyValue(id){
-  return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
+  return id.endsWith('_api_key');
 }
 
 export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) {
