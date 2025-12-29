@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
@@ -44,6 +44,25 @@ let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  let specialPrompts = await getSpecialPrompts();
+  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+
+    if (addtags_prompt && addtags_prompt.api && addtags_prompt.api !== '') {
+        let update_prefs = {};
+        update_prefs['add_tags_connection_type'] = addtags_prompt.api;
+        
+        let integration = addtags_prompt.api.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (addtags_prompt[key] !== undefined) {
+                     update_prefs[`add_tags_${integration}_${key}`] = addtags_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
+    }
+
     await initializeSpecificIntegrationUI({
       prefix: 'add_tags',
       promptId: 'prompt_add_tags',
@@ -61,9 +80,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
     let addtags_reset_btn = document.getElementById('btn_reset_prompt');
-
-    let specialPrompts = await getSpecialPrompts();
-    let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
     addtags_textarea.addEventListener('input', (event) => {
         addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
