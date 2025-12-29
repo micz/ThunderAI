@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
@@ -985,15 +985,22 @@ export async function initializeSpecificIntegrationUI({
   // Helper to update prompt
   const _updatePrompt = async () => {
       let conntype = conntype_el.value;
-      let model_value = conntype.substring(0, conntype.length - 4) + '_model';
-      let temperature_value = conntype.substring(0, conntype.length - 4) + '_temperature';
+      let integration = conntype.replace('_api', '');
       
       let prompt = await loadPrompt(promptId);
       if(!prompt) return;
 
       prompt.api = conntype;
-      prompt.model = document.getElementById(model_prefix + model_value)?.value || '';
-      prompt.temperature = document.getElementById(model_prefix + temperature_value)?.value || '';
+
+      if (integration_options_config[integration]) {
+          for (const key of Object.keys(integration_options_config[integration])) {
+              let elementId = `${model_prefix}${integration}_${key}`;
+              let element = document.getElementById(elementId);
+              if (element) {
+                  prompt[key] = (element.type === 'checkbox') ? element.checked : element.value;
+              }
+          }
+      }
       
       await savePrompt(prompt);
   };
@@ -1031,7 +1038,7 @@ export async function initializeSpecificIntegrationUI({
       if (use_specific_integration_el.checked) await _updatePrompt();
   });
 
-  document.querySelectorAll(".option-input-specific").forEach(element => {
+  document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
       element.addEventListener("change", async () => {
           if (use_specific_integration_el.checked) await _updatePrompt();
       });
