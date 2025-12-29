@@ -34,14 +34,15 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        google_gemini = new GoogleGemini({
-            apiKey: event.data.google_gemini_api_key,
-            model: event.data.google_gemini_model,
-            system_instruction: event.data.google_gemini_system_instruction,
-            temperature: event.data.google_gemini_temperature,
-            thinking_budget: event.data.google_gemini_thinking_budget,
-            stream: true
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('google_gemini_')) {
+                let newKey = key.replace('google_gemini_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        google_gemini = new GoogleGemini(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-google_gemini', do_debug);

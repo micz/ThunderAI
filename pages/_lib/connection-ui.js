@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
@@ -28,6 +28,7 @@ import {
   sanitizeChatGPTWebCustomData
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
+import { loadPrompt, savePrompt, clearPromptAPI } from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
   permission_all_urls: false
@@ -137,7 +138,7 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" class="option-input"/>
         </label>
         <span class="toggle-icon" id="toggle_chatgpt_api_key"><img src="/images/pwd-show.png" id="pwd-icon_chatgpt_api_key"></span>
       </div>
@@ -152,7 +153,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="chatgpt_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -164,7 +165,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input" />
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
@@ -177,7 +178,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="checkbox" id="chatgpt_api_store" name="chatgpt_api_store" class="option-input" />
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
         &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
       </label>
     </td>
@@ -190,7 +191,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="chatgpt_developer_messages" name="chatgpt_developer_messages" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" class="option-input option-textarea"></textarea>
         <br>__MSG_ChatGPT_Developer_Messages_Info__
       </label>
     </td>
@@ -202,7 +203,7 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="google_gemini_api_key" name="google_gemini_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" class="option-input"/>
         </label>
         <span class="toggle-icon" id="toggle_google_gemini_api_key"><img src="/images/pwd-show.png" id="pwd-icon_google_gemini_api_key"></span>
       </div>
@@ -217,7 +218,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -229,7 +230,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input option-input-specific"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input"/>
         <br>__MSG_prefs_google_gemini_temperature_Info__
       </label>
     </td>
@@ -242,7 +243,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="google_gemini_thinking_budget" name="google_gemini_thinking_budget" class="option-input"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" class="option-input"/>
         <br>__MSG_prefs_google_gemini_thinking_budget_Info__
         <br><a href="https://ai.google.dev/gemini-api/docs/thinking#set-budget">__MSG_more_info_string__</a>
       </label>
@@ -256,7 +257,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="google_gemini_system_instruction" name="google_gemini_system_instruction" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_system_instruction" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_system_instruction" class="option-input option-textarea"></textarea>
         <br>__MSG_GoogleGemini_SystemInstruction_Info__
       </label>
     </td>
@@ -268,7 +269,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="ollama_host" name="ollama_host" class="option-input"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" class="option-input"/>
       </label>
     </td>
   </tr>
@@ -289,7 +290,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="ollama_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -301,7 +302,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input" />
         <br>__MSG_prefs_ollama_temperature_Info__
       </label>
     </td>
@@ -312,7 +313,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="ollama_think" name="ollama_think" class="option-input"/>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"/>
         __MSG_prefs_ollama_think_Info__
       </label>
     </td>
@@ -323,7 +324,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="number" id="ollama_num_ctx" name="ollama_num_ctx" class="option-input"/>
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" class="option-input"/>
         <br>__MSG_prefs_ollama_num_ctx_Info__
       </label>
     </td>
@@ -346,7 +347,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="openai_comp_host" name="openai_comp_host" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" class="option-input" />
         <br>__MSG_prefs_OptionText_openai_comp_info_remote__
       </label>
     </td>
@@ -365,7 +366,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="openai_comp_use_v1" name="openai_comp_use_v1" class="option-input" />
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_use_v1" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_use_v1" class="option-input" />
         &nbsp;<span>__MSG_prefs_OptionText_openai_comp_use_v1_info__</span>
       </label>
     </td>
@@ -378,7 +379,7 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="openai_comp_api_key" name="openai_comp_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" class="option-input"/>
         </label>
         <span class="toggle-icon" id="toggle_openai_comp_api_key"><img src="/images/pwd-show.png" id="pwd-icon_openai_comp_api_key"></span>
       </div>
@@ -395,7 +396,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="openai_comp_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -405,7 +406,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_name" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_name" class="option-input" />
         <br>__MSG_prefs_OpenAIComp_ChatName_Info__
       </label>
     </td>
@@ -418,7 +419,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input" />
         <br>__MSG_prefs_openai_comp_temperature_Info__
       </label>
     </td>
@@ -430,7 +431,7 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="anthropic_api_key" name="anthropic_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" class="option-input"/>
         </label>
         <span class="toggle-icon" id="toggle_anthropic_api_key"><img src="/images/pwd-show.png" id="pwd-icon_anthropic_api_key"></span>
       </div>
@@ -445,7 +446,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="anthropic_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -457,7 +458,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input" />
         <br>__MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
@@ -470,7 +471,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="anthropic_system_prompt" name="anthropic_system_prompt" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_system_prompt" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_system_prompt" class="option-input option-textarea"></textarea>
         <br>__MSG_Anthropic_System_Prompt_Info__
       </label>
     </td>
@@ -483,7 +484,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="anthropic_version" name="anthropic_version" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" class="option-input" />
         <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
       </label>
     </td>
@@ -492,7 +493,7 @@ export async function injectConnectionUI({
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
       <label>
-        <input type="number" id="anthropic_max_tokens" name="anthropic_max_tokens" class="option-input" />
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" class="option-input" />
         <br>__MSG_prefs_OptionText_anthropic_max_tokens_Info__
       </label>
     </td>
@@ -512,6 +513,8 @@ export async function injectConnectionUI({
       last = node;
     }
   });
+
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
 
   // Bindings
   // const bindClick = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('click', cb); };
@@ -535,15 +538,15 @@ export async function injectConnectionUI({
   conntype_select.addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
   document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
   document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
-  document.getElementById("chatgpt_api_key").addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
-  document.getElementById("ollama_host").addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
-  document.getElementById("openai_comp_host").addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
-  document.getElementById("google_gemini_api_key").addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
-  document.getElementById("anthropic_api_key").addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
-  document.getElementById("anthropic_version").addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
-  document.getElementById("openai_comp_host").addEventListener("input", resetOpenAICompConfigs);
-  document.getElementById("openai_comp_chat_name").addEventListener("input", resetOpenAICompConfigs);
-  document.getElementById("openai_comp_use_v1").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_chat_name")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
 
   showConnectionOptions(conntype_select);
   loadOpenAICompConfigs();
@@ -554,7 +557,7 @@ export async function injectConnectionUI({
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
 
-  const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
+  const passwordField_chatgpt_api_key = document.getElementById(getPrefixedId('chatgpt_api_key'));
   const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
   const icon_img_chatgpt_api_key = document.getElementById('pwd-icon_chatgpt_api_key');
 
@@ -565,7 +568,7 @@ export async function injectConnectionUI({
       icon_img_chatgpt_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_google_gemini_api_key = document.getElementById('google_gemini_api_key');
+  const passwordField_google_gemini_api_key = document.getElementById(getPrefixedId('google_gemini_api_key'));
   const toggleIcon_google_gemini_api_key = document.getElementById('toggle_google_gemini_api_key');
   const icon_img_google_gemini_api_key = document.getElementById('pwd-icon_google_gemini_api_key');
 
@@ -576,7 +579,7 @@ export async function injectConnectionUI({
       icon_img_google_gemini_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_openai_comp_api_key = document.getElementById('openai_comp_api_key');
+  const passwordField_openai_comp_api_key = document.getElementById(getPrefixedId('openai_comp_api_key'));
   const toggleIcon_openai_comp_api_key = document.getElementById('toggle_openai_comp_api_key');
   const icon_img_openai_comp_api_key = document.getElementById('pwd-icon_openai_comp_api_key');
 
@@ -587,7 +590,7 @@ export async function injectConnectionUI({
       icon_img_openai_comp_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_anthropic_api_key = document.getElementById('anthropic_api_key');
+  const passwordField_anthropic_api_key = document.getElementById(getPrefixedId('anthropic_api_key'));
   const toggleIcon_anthropic_api_key = document.getElementById('toggle_anthropic_api_key');
   const icon_img_anthropic_api_key = document.getElementById('pwd-icon_anthropic_api_key');
 
@@ -631,20 +634,20 @@ export async function injectConnectionUI({
       if (!confirm(browser.i18n.getMessage('OpenAIComp_Configs_ConfirmApply', config.name))) {
         return;
       }
-      document.getElementById('openai_comp_host').value = config.host || '';
+      document.getElementById(getPrefixedId('openai_comp_host')).value = config.host || '';
       // Clear all options from the select except the first (placeholder) one
       const openaiCompModelSelect = getModelEl('openai_comp_model', modelId_prefix);
       openaiCompModelSelect.value = '';
       while (openaiCompModelSelect.options.length > 0) {
         openaiCompModelSelect.remove(0);
       }
-      document.getElementById('openai_comp_use_v1').checked = !!config.use_v1;
-      document.getElementById('openai_comp_chat_name').value = config.chat_name || '';
+      document.getElementById(getPrefixedId('openai_comp_use_v1')).checked = !!config.use_v1;
+      document.getElementById(getPrefixedId('openai_comp_chat_name')).value = config.chat_name || '';
       // Trigger change events if needed
-      document.getElementById('openai_comp_host').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_host')).dispatchEvent(new Event('change', { bubbles: true }));
       getModelEl('openai_comp_model', modelId_prefix).dispatchEvent(new Event('change', { bubbles: true }));
-      document.getElementById('openai_comp_use_v1').dispatchEvent(new Event('change', { bubbles: true }));
-      document.getElementById('openai_comp_chat_name').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_use_v1')).dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_chat_name')).dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
 
@@ -661,7 +664,7 @@ export async function injectConnectionUI({
   document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
     document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
     let openai = new OpenAI({
-      apiKey: document.getElementById("chatgpt_api_key").value,
+      apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
     if(!granted){
@@ -710,7 +713,7 @@ export async function injectConnectionUI({
   document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
     document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
     let google_gemini = new GoogleGemini({
-      apiKey: document.getElementById("google_gemini_api_key").value,
+      apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
     });
     google_gemini.fetchModels().then((data) => {
       if(!data.ok){
@@ -752,7 +755,7 @@ export async function injectConnectionUI({
   document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
     document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
     let ollama = new Ollama({
-      host: document.getElementById("ollama_host").value,
+      host: document.getElementById(getPrefixedId("ollama_host")).value,
     });
     try {
       let data = await ollama.fetchModels();
@@ -811,9 +814,9 @@ export async function injectConnectionUI({
   document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
     document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
     let openai_comp = new OpenAIComp({
-      host: document.getElementById("openai_comp_host").value,
-      apiKey: document.getElementById("openai_comp_api_key").value,
-      use_v1: document.getElementById("openai_comp_use_v1").checked,
+      host: document.getElementById(getPrefixedId("openai_comp_host")).value,
+      apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
+      use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
     });
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
@@ -856,8 +859,8 @@ export async function injectConnectionUI({
   document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
     document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
     let anthropic = new Anthropic({
-      apiKey: document.getElementById("anthropic_api_key").value,
-      version: document.getElementById("anthropic_version").value,
+      apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
+      version: document.getElementById(getPrefixedId("anthropic_version")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
     if(!granted){
@@ -944,6 +947,111 @@ export async function injectConnectionUI({
   };
 }
 
+export async function initializeSpecificIntegrationUI({
+  prefix,
+  promptId,
+  taLog,
+  restoreOptionsCallback
+}) {
+  const conntype_select_id = `${prefix}_connection_type`;
+  const model_prefix = `${prefix}_`;
+  const use_specific_integration_id = `${prefix}_use_specific_integration`;
+
+  // 1. Inject UI
+  try {
+      await injectConnectionUI({
+          afterTrId: 'connection_ui_anchor',
+          tr_class: 'specific_integration_sub',
+          selectId: conntype_select_id,
+          modelId_prefix: model_prefix,
+          no_chatgpt_web: true,
+          taLog: taLog
+      });
+  } catch (e) {
+      console.error(`Failed to inject connection UI (${prefix})`, e);
+  }
+
+  // 2. Restore Options
+  if (restoreOptionsCallback) {
+      await restoreOptionsCallback();
+  }
+
+  // 3. Setup Logic
+  const use_specific_integration_el = document.getElementById(use_specific_integration_id);
+  const conntype_el = document.getElementById(conntype_select_id);
+  const conntype_row = document.getElementById(conntype_select_id + '_tr');
+  const conntype_end_el = document.getElementById('connection_ui_end');
+
+  // Helper to update prompt
+  const _updatePrompt = async () => {
+      let conntype = conntype_el.value;
+      let integration = conntype.replace('_api', '');
+      
+      let prompt = await loadPrompt(promptId);
+      if(!prompt) return;
+
+      prompt.api = conntype;
+
+      if (integration_options_config[integration]) {
+          for (const key of Object.keys(integration_options_config[integration])) {
+              let elementId = `${model_prefix}${integration}_${key}`;
+              let element = document.getElementById(elementId);
+              if (element) {
+                  prompt[key] = (element.type === 'checkbox') ? element.checked : element.value;
+              }
+          }
+      }
+      
+      await savePrompt(prompt);
+  };
+
+  // Helper for visibility
+  const _updateVisibility = (checked) => {
+      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+          tr.style.display = checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
+      if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
+      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+  };
+
+  // Check global connection type
+  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
+  if (globalPrefs.connection_type === 'chatgpt_web') {
+      use_specific_integration_el.checked = true;
+      use_specific_integration_el.disabled = true;
+  }
+
+  // Event Listener for Checkbox
+  use_specific_integration_el.addEventListener('change', async (event) => {
+      _updateVisibility(event.target.checked);
+      if (!event.target.checked) {
+          await clearPromptAPI(promptId);
+      } else {
+          await _updatePrompt();
+      }
+  });
+
+  // Event Listeners for Inputs
+  conntype_el.addEventListener('change', async () => {
+      _updateVisibility(use_specific_integration_el.checked);
+      if (use_specific_integration_el.checked) await _updatePrompt();
+  });
+
+  document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
+      element.addEventListener("change", async () => {
+          if (use_specific_integration_el.checked) await _updatePrompt();
+      });
+  });
+
+  // Initial State Apply
+  _updateVisibility(use_specific_integration_el.checked);
+  if (use_specific_integration_el.checked) {
+      await _updatePrompt();
+  }
+  
+  updateWarnings(model_prefix);
+}
 
 // From here there are exported functions
 
@@ -1065,7 +1173,8 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 }
 
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('chatgpt_api_key');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('chatgpt_api_key'));
   let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
   let modelChatGPT = getModelEl('chatgpt_model', modelId_prefix);
   if(apiKeyInput.value === ''){
@@ -1087,7 +1196,8 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('google_gemini_api_key');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('google_gemini_api_key'));
   let btnFetchGoogleGeminiModels = document.getElementById('btnUpdateGoogleGeminiModels');
   let modelGoogleGemini = getModelEl('google_gemini_model', modelId_prefix);
   if(apiKeyInput.value === ''){
@@ -1109,7 +1219,8 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_Ollama_HostEmpty(modelId_prefix) {
-  let hostInput = document.getElementById('ollama_host');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let hostInput = document.getElementById(getPrefixedId('ollama_host'));
   let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
   let modelOllama = getModelEl('ollama_model', modelId_prefix);
   if(hostInput.value === ''){
@@ -1131,7 +1242,8 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
 }
 
 function warn_OpenAIComp_HostEmpty(modelId_prefix) {
-  let hostInput = document.getElementById('openai_comp_host');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let hostInput = document.getElementById(getPrefixedId('openai_comp_host'));
   let btnUpdateOpenAICompModels = document.getElementById('btnUpdateOpenAICompModels');
   let modelOpenAIComp = getModelEl('openai_comp_model', modelId_prefix);
   if(hostInput.value === ''){
@@ -1153,7 +1265,8 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
 }
 
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('anthropic_api_key');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('anthropic_api_key'));
   let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(apiKeyInput.value === ''){
@@ -1175,7 +1288,8 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_Anthropic_VersionEmpty(modelId_prefix) {
-  let versionInput = document.getElementById('anthropic_version');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let versionInput = document.getElementById(getPrefixedId('anthropic_version'));
   let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(versionInput.value === ''){

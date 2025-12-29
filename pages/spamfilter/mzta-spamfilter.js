@@ -16,9 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts, loadPrompt, savePrompt, clearPromptAPI } from "../../js/mzta-prompts.js";
+import {
+  getSpecialPrompts,
+  setSpecialPrompts
+} from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
   mapPlaceholderToSuggestion
@@ -27,35 +30,41 @@ import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js
 import { taSpamReport } from '../../js/mzta-spamreport.js';
 import { getAccountsList, isAPIKeyValue } from "../../js/mzta-utils.js";
 import {
-  injectConnectionUI,
-  updateWarnings,
-  changeConnTypeRowColor
+  initializeSpecificIntegrationUI
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-spamfilter-page",true);
 taSpamReport.logger = taLog;
 
-let conntype_select_id = 'spamfilter_connection_type';
-let model_prefix = 'spamfilter_';
-
 document.addEventListener('DOMContentLoaded', async () => {
 
-    try {
-      await injectConnectionUI({
-        afterTrId: 'connection_ui_anchor',
-        tr_class: 'specific_integration_sub',
-        selectId: conntype_select_id,
-        modelId_prefix: model_prefix,
-        no_chatgpt_web: true,
-        taLog: taLog
-      });
-    } catch (e) {
-      console.error('Failed to inject connection UI (spamfilter)', e);
+    let specialPrompts = await getSpecialPrompts();
+    let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
+
+    if (spamfilter_prompt && spamfilter_prompt.api && spamfilter_prompt.api !== '') {
+        let update_prefs = {};
+        update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api;
+        
+        let integration = spamfilter_prompt.api.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (spamfilter_prompt[key] !== undefined) {
+                     update_prefs[`spamfilter_${integration}_${key}`] = spamfilter_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
     }
 
+    await initializeSpecificIntegrationUI({
+      prefix: 'spamfilter',
+      promptId: 'prompt_spamfilter',
+      taLog: taLog,
+      restoreOptionsCallback: restoreOptions
+    });
+
     i18n.updateDocument();
-    await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
@@ -64,54 +73,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("spamfilter_threshold").addEventListener("input", check_spamfilter_threshold);
     check_spamfilter_threshold({target: document.getElementById("spamfilter_threshold")});
 
-    // Bind prompt API updates to connection type and model selects
-    document.querySelectorAll(".option-input-specific").forEach(element => {
-      element.addEventListener("change", updatePromptAPIInfo);
-    });
-    const conntype_el = document.getElementById(conntype_select_id);
-    if (conntype_el) {
-      conntype_el.addEventListener('change', updatePromptAPIInfo);
-      const conntype_row = document.getElementById(conntype_select_id + '_tr');
-      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
-    }
-
-    // Specific integration toggle behavior
-    const spamfilter_use_specific_integration_el = document.getElementById('spamfilter_use_specific_integration');
-    let prefs_spamfilter_init = await browser.storage.sync.get({ spamfilter_enabled_accounts: [], connection_type: 'chatgpt_web' });
-    if(prefs_spamfilter_init.connection_type == 'chatgpt_web'){
-      spamfilter_use_specific_integration_el.checked = true;
-      spamfilter_use_specific_integration_el.dispatchEvent(new Event('change'));
-      spamfilter_use_specific_integration_el.disabled = true;
-    }
-    const conntype_end_el = document.getElementById('connection_ui_end');
-    const conntype_row = document.getElementById(conntype_select_id + '_tr');
-    spamfilter_use_specific_integration_el.addEventListener('change', async (event) => {
-      document.querySelectorAll('.specific_integration_sub').forEach(tr => {
-        tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
-      });
-      if (conntype_row) conntype_row.style.display = event.target.checked ? 'table-row' : 'none';
-      if (conntype_end_el) conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
-      if(!event.target.checked){
-        await clearPromptAPI('prompt_spamfilter');
-      }else{
-        updatePromptAPIInfo();
-      }
-      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
-    });
-
-    // Initialize visibility per current toggle value
-    document.querySelectorAll('.specific_integration_sub').forEach(tr => {
-      tr.style.display = spamfilter_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
-    });
-    if (conntype_row) conntype_row.style.display = spamfilter_use_specific_integration_el.checked ? 'table-row' : 'none';
-    if (conntype_end_el) conntype_end_el.style.display = spamfilter_use_specific_integration_el.checked ? 'table-row' : 'none';
 
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
     let spamfilter_save_btn = document.getElementById('btn_save_prompt');
     let spamfilter_reset_btn = document.getElementById('btn_reset_prompt');
-
-    let specialPrompts = await getSpecialPrompts();
-    let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
     spamfilter_textarea.addEventListener('input', (event) => {
         spamfilter_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
@@ -202,9 +167,6 @@ document.addEventListener('DOMContentLoaded', async () => {
      });
 
     loadSpamReport();
-    updateWarnings(model_prefix);
-    // Sync prompt API/model once on load
-    updatePromptAPIInfo();
 });
 
 function check_spamfilter_threshold(event) {
@@ -234,20 +196,6 @@ async function loadSpamReport(){
     }
 }
 
-async function updatePromptAPIInfo(){
-  const conntypeEl = document.getElementById(conntype_select_id);
-  if (!conntypeEl || !conntypeEl.value) return;
-  const conntype = conntypeEl.value;
-  const model_value = conntype.substring(0, conntype.length - 4) + '_model';
-  const modelEl = document.getElementById(model_prefix + model_value);
-  if (!modelEl) return;
-  const model = modelEl.value;
-  let spamfilter_prompt = await loadPrompt('prompt_spamfilter');
-  if (!spamfilter_prompt) return;
-  spamfilter_prompt.api = conntype;
-  spamfilter_prompt.model = model;
-  await savePrompt(spamfilter_prompt);
-}
 
  // Function to populate the table
  function populateTable(data) {
