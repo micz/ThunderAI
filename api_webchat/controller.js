@@ -80,8 +80,8 @@ switch (llm) {
             chatgpt_api_key: prefs_default.chatgpt_api_key,
             chatgpt_model: prefs_default.chatgpt_model,
             chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
-            chatgpt_api_store: prefs_default.chatgpt_api_store, // Keep as boolean
-            chatgpt_api_temperature: prefs_default.chatgpt_api_temperature,
+            chatgpt_store: prefs_default.chatgpt_store, // Keep as boolean
+            chatgpt_temperature: prefs_default.chatgpt_temperature,
             do_debug: prefs_default.do_debug,
         });
         let i18nStrings = {};
@@ -94,19 +94,19 @@ switch (llm) {
             chatgpt_api_key: prefs_api.chatgpt_api_key,
             chatgpt_model: prefs_api.chatgpt_model,
             chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
-            chatgpt_api_store: prefs_api.chatgpt_api_store,
-            chatgpt_api_temperature: prefs_api.chatgpt_api_temperature,
+            chatgpt_store: prefs_api.chatgpt_store,
+            chatgpt_temperature: prefs_api.chatgpt_temperature,
             do_debug: prefs_api.do_debug,
             i18nStrings: i18nStrings,
         });
         let additional_text_elements = [];
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
+        additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_store ? 'Yes' : 'No')});
         if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
             additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
         }
-        if(prefs_api.chatgpt_api_temperature && prefs_api.chatgpt_api_temperature.length > 0){
-            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.chatgpt_api_temperature});
+        if(prefs_api.chatgpt_temperature && prefs_api.chatgpt_temperature.length > 0){
+            additional_text_elements.push({label: browser.i18n.getMessage("prefs_api_temperature"), value: prefs_api.chatgpt_temperature});
         }
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: "ChatGPT API",

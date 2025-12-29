@@ -165,7 +165,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input option-input-specific" />
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
@@ -178,7 +178,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_store" class="option-input" />
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
         &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
       </label>
     </td>
