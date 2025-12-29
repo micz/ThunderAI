@@ -23,8 +23,8 @@ export const integration_options_config = {
         api_key: '',
         model: '',
         developer_messages: '',
-        api_temperature: '',
-        api_store: false
+        temperature: '',
+        store: false
     },
     ollama: {
         host: '',
