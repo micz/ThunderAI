@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
@@ -38,6 +38,25 @@ let taLog = new taLogger("mzta-spamfilter-page",true);
 taSpamReport.logger = taLog;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    let specialPrompts = await getSpecialPrompts();
+    let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
+
+    if (spamfilter_prompt && spamfilter_prompt.api && spamfilter_prompt.api !== '') {
+        let update_prefs = {};
+        update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api;
+        
+        let integration = spamfilter_prompt.api.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (spamfilter_prompt[key] !== undefined) {
+                     update_prefs[`spamfilter_${integration}_${key}`] = spamfilter_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
+    }
+
     await initializeSpecificIntegrationUI({
       prefix: 'spamfilter',
       promptId: 'prompt_spamfilter',
@@ -58,9 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
     let spamfilter_save_btn = document.getElementById('btn_save_prompt');
     let spamfilter_reset_btn = document.getElementById('btn_reset_prompt');
-
-    let specialPrompts = await getSpecialPrompts();
-    let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
     spamfilter_textarea.addEventListener('input', (event) => {
         spamfilter_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
