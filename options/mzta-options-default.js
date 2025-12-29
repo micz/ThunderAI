@@ -18,20 +18,56 @@
 
 const special_prompts_with_integration = ['add_tags', 'spamfilter'];
 
+export const integration_options_config = {
+    chatgpt: {
+        api_key: '',
+        model: '',
+        developer_messages: '',
+        api_temperature: '',
+        api_store: false
+    },
+    ollama: {
+        host: '',
+        model: '',
+        num_ctx: 0,
+        temperature: '',
+        think: false
+    },
+    openai_comp: {
+        host: '',
+        model: '',
+        api_key: '',
+        use_v1: true,
+        chat_name: 'OpenAI Comp',
+        temperature: ''
+    },
+    google_gemini: {
+        api_key: '',
+        model: '',
+        system_instruction: '',
+        thinking_budget: '',
+        temperature: ''
+    },
+    anthropic: {
+        api_key: '',
+        model: '',
+        version: '2023-06-01',
+        max_tokens: 4096,
+        system_prompt: '',
+        temperature: ''
+    }
+};
+
 const integration_settings_template = {
     use_specific_integration: false,
     connection_type: 'chatgpt_api',
-    chatgpt_model: '',
-    ollama_model: '',
-    openai_comp_model: '',
-    google_gemini_model: '',
-    anthropic_model: '',
-    chatgpt_api_temperature: '',
-    ollama_temperature: '',
-    openai_comp_temperature: '',
-    google_gemini_temperature: '',
-    anthropic_temperature: '',
 };
+
+for (const [integration, options] of Object.entries(integration_options_config)) {
+    for (const [key, value] of Object.entries(options)) {
+        integration_settings_template[`${integration}_${key}`] = value;
+    }
+}
 
 let generated_prefs = {};
 
@@ -57,6 +93,7 @@ export function getDynamicSettingValue(prefs, prefix, settingName) {
 }
 
 export const prefs_default = {
+    ...integration_settings_template,
     do_debug: false,
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
@@ -69,33 +106,6 @@ export const prefs_default = {
     chatgpt_web_tempchat: false,
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
-    chatgpt_api_key: '',
-    chatgpt_api_store: false,
-    chatgpt_model: '',
-    chatgpt_developer_messages: '',
-    chatgpt_api_temperature: '',
-    ollama_host: '',
-    ollama_model: '',
-    ollama_num_ctx: 0,
-    ollama_temperature: '',
-    ollama_think: false,
-    openai_comp_host: '',   // For OpenAI Compatible API as LM-Studio
-    openai_comp_model: '',
-    openai_comp_api_key: '',
-    openai_comp_use_v1: true,
-    openai_comp_chat_name: 'OpenAI Comp',
-    openai_comp_temperature: '',
-    google_gemini_api_key: '',
-    google_gemini_model: '',
-    google_gemini_system_instruction: '',
-    google_gemini_thinking_budget: '',
-    google_gemini_temperature: '',
-    anthropic_api_key: '',
-    anthropic_model: '',
-    anthropic_version: '2023-06-01',
-    anthropic_max_tokens: 4096,
-    anthropic_system_prompt: '',
-    anthropic_temperature: '',
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
