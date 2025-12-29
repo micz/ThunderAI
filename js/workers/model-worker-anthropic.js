@@ -35,15 +35,15 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         // console.log(">>>>>>>>>>>>>> event.data: " + JSON.stringify(event.data));
-        anthropic = new Anthropic({
-            apiKey: event.data.anthropic_api_key,
-            version: event.data.anthropic_version,
-            model: event.data.anthropic_model,
-            system_prompt: event.data.anthropic_system_prompt,
-            temperature: event.data.anthropic_temperature,
-            max_tokens: event.data.anthropic_max_tokens,
-            stream: true
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('anthropic_')) {
+                let newKey = key.replace('anthropic_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        anthropic = new Anthropic(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-anthropic', do_debug);

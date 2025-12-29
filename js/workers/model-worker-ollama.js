@@ -35,14 +35,14 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     switch (event.data.type) {
         case 'init':
-            ollama = new Ollama({
-                host: event.data.ollama_host,
-                model: event.data.ollama_model,
-                stream: true,
-                num_ctx: event.data.ollama_num_ctx,
-                temperature: event.data.ollama_temperature,
-                think: event.data.ollama_think
-            });
+            let config = { stream: true };
+            for (const key in event.data) {
+                if (key.startsWith('ollama_')) {
+                    let newKey = key.replace('ollama_', '');
+                    config[newKey] = event.data[key];
+                }
+            }
+            ollama = new Ollama(config);
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);

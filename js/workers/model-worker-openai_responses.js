@@ -35,14 +35,16 @@ let previous_response_id = null;
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openai = new OpenAI({
-            apiKey: event.data.chatgpt_api_key,
-            model: event.data.chatgpt_model,
-            developer_messages: event.data.chatgpt_developer_messages,
-            temperature: event.data.chatgpt_api_temperature,
-            stream: true,
-            store: event.data.chatgpt_api_store
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('chatgpt_')) {
+                if (key.startsWith('chatgpt_web_')) continue; // Exclude chatgpt_web_ prefixed keys
+                let newKey = key.replace('chatgpt_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        openai = new OpenAI(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_responses', do_debug);

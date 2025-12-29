@@ -34,14 +34,15 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openai_comp = new OpenAIComp({
-            host: event.data.openai_comp_host,
-            model: event.data.openai_comp_model,
-            apiKey: event.data.openai_comp_api_key,
-            stream: true,
-            use_v1: event.data.openai_comp_use_v1,
-            openai_comp_temperature: event.data.openai_comp_temperature
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('openai_comp_')) {
+                let newKey = key.replace('openai_comp_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        openai_comp = new OpenAIComp(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_comp', do_debug);
