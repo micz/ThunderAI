@@ -153,7 +153,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="chatgpt_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -165,7 +165,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input" />
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
@@ -218,7 +218,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -230,7 +230,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input option-input-specific"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input"/>
         <br>__MSG_prefs_google_gemini_temperature_Info__
       </label>
     </td>
@@ -290,7 +290,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="ollama_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -302,7 +302,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input" />
         <br>__MSG_prefs_ollama_temperature_Info__
       </label>
     </td>
@@ -396,7 +396,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="openai_comp_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -419,7 +419,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input" />
         <br>__MSG_prefs_openai_comp_temperature_Info__
       </label>
     </td>
@@ -446,7 +446,7 @@ export async function injectConnectionUI({
     <td>
       <button id="btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="anthropic_model_fetch_loading">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input option-input-specific"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -458,7 +458,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input option-input-specific" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input" />
         <br>__MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
