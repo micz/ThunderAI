@@ -1,1 +1,71 @@
-{}
+{
+    "extensionDescription": {
+        "message": "Använd ChatGPT, Google Gemini, Claude eller Ollama för att förbättra dina e-postmeddelanden!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Redigera"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Avbryt"
+    },
+    "customPrompts_btnOK": {
+        "message": "Ok"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Ta bort"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Är du säker på att du vill ta bort det här objektet?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Det finns osparade ändringar!"
+    },
+    "btnSaveAll_string": {
+        "message": "Spara alla"
+    },
+    "chatgpt_win_close": {
+        "message": "Stäng"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Alltid"
+    },
+    "Date": {
+        "message": "Datum"
+    },
+    "prompt_selection_needed": {
+        "message": "För att fortsätta måste du markera lite text!"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Namn"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Åtgärd"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Aktiverad"
+    },
+    "btnNew_string": {
+        "message": "Lägg till ny"
+    },
+    "chatgpt_btn_retry": {
+        "message": "Försöka igen"
+    },
+    "placeholder_selected_html": {
+        "message": "Vald HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "Ytterligare text"
+    },
+    "chatgpt_win_send": {
+        "message": "Skicka"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Höjd"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Bredd"
+    }
+}
