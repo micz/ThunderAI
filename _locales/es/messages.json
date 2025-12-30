@@ -153,7 +153,7 @@
         "message": "Botón de cerrar"
     },
     "customPrompts_do_reply": {
-        "message": "Hacer respuesta"
+        "message": "Responder"
     },
     "customPrompts_substitute_text": {
         "message": "Sustituir texto"
@@ -162,7 +162,7 @@
         "message": "Trabajo en progreso..."
     },
     "chatgpt_win_job_completed": {
-        "message": "¡Completo!"
+        "message": "¡Completado!"
     },
     "chatgpt_win_job_completed_select": {
         "message": "Selecciona el texto que deseas utilizar y haz clic en el botón."
@@ -838,5 +838,116 @@
     },
     "prefs_OptionText_add_tags_auto_Info": {
         "message": "Si está marcado, la IA añadirá automáticamente etiquetas a los correos electrónicos recién recibidos."
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Elige qué cuenta activar esta función en la parte inferior de esta página."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Forzar etiquetas existentes"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Si está marcado, la IA solo añadirá etiquetas existentes y no creará nuevas etiquetas."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Usa solo estas etiquetas"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Si está marcado, la IA solo añadirá etiquetas de la lista a continuación."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "La lista debe contener al menos una etiqueta. Añade una etiqueta por línea, o separada por una coma."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Usa solo las etiquetas de esta lista separada por comas"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Solo añadir etiquetas a los correos en la bandeja de entrada"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Si está marcado, la IA solo añadirá etiquetas a los correos recibidos en la carpeta de la bandeja de entrada."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "If checked, the AI will only add tags to emails received in the inbox folder."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Firma predeterminada según lo definido en las opciones de ThunderAI."
+    },
+    "thunderai_def_lang": {
+        "message": "Idioma predeterminado según lo definido en las opciones de ThunderAI."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Información sobre los archivos adjuntos en el correo electrónico"
+    },
+    "empty": {
+        "message": "Este marcador de posición no añade texto, pero evita que el cuerpo del correo se añada automáticamente al final del prompt."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Filtro de spam automático"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Si está marcado, ThunderAI moverá automáticamente los correos spam a la carpeta de spam."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Gestionar la configuración del filtro de spam"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Gestionar la configuración del filtro de spam"
+    },
+    "SpamFilter_info_default": {
+        "message": "En esta página puedes modificar el prompt predeterminado utilizado para detectar correos spam."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Texto actual del prompt"
+    },
+    "prompt_spamfilter": {
+        "message": "Detectar correos spam"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.  \n\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.  \nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.  \nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:  \n{\n\"spamValue\": <entero de 0 a 100>,\n\"explanation\": \"Breve explicación de tu razonamiento\"\n}  \nAquí está la información del correo:  \nRemitente: \"{%author%}\"  \nAsunto: \"{%mail_subject%}\"  \nCuerpo HTML: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Opciones del filtro de spam"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Usar modelo y API específicos"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Si está marcado, el Modelo y la API especificados a continuación se usarán para el filtro de spam, sin importar el que se haya elegido en la página de opciones de ThunderAI."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Umbral de spam"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Si el valor devuelto por la IA supera este umbral, el correo se moverá a la carpeta de spam."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "¡El umbral de spam es demasiado bajo! ¡Probablemente marcarás demasiados correos como spam!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "¡El umbral de spam es cero! ¡Marcarás todos los correos como spam!"
+    },
+    "spamfilter_no_reports": {
+        "message": "No hay mensajes filtrados como spam todavía. Aquí encontrarás una lista de los últimos 100 informes de spam solo para la sesión actual."
+    },
+    "SpamReport_Title": {
+        "message": "Informes del filtro de spam"
+    },
+    "Date": {
+        "message": "Fecha"
+    },
+    "From": {
+        "message": "De"
+    },
+    "Subject": {
+        "message": "Asunto"
+    },
+    "Spam_Value": {
+        "message": "Valor de spam"
+    },
+    "Moved_to_Spam": {
+        "message": "Movido a Spam"
     }
 }
