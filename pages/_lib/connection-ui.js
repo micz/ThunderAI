@@ -165,7 +165,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input check-number" />
         <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
@@ -230,7 +230,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input check-number"/>
         <br>__MSG_prefs_google_gemini_temperature_Info__
       </label>
     </td>
@@ -302,7 +302,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input check-number" />
         <br>__MSG_prefs_ollama_temperature_Info__
       </label>
     </td>
@@ -419,7 +419,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input check-number" />
         <br>__MSG_prefs_openai_comp_temperature_Info__
       </label>
     </td>
@@ -458,7 +458,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input check-number" />
         <br>__MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
@@ -933,6 +933,10 @@ export async function injectConnectionUI({
     document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
       varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
+
+   document.querySelectorAll('.check-number').forEach(input => {
+    input.addEventListener('input', warn_InvalidNumber);
+   });
   
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
@@ -1169,6 +1173,17 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   if (options.some(o => o.value === prevValue)) {
     conntype_select.value = prevValue;
+  }
+}
+
+function warn_InvalidNumber(event){
+  const elementValue = event.target.value;
+  // console.log(">>>>>>>>>>> warn_InvalidNumber: " + event.target.id + ": " + elementValue)
+  if (elementValue != '' && isNaN(parseFloat(elementValue))) {
+    // Handle invalid number case, e.g., set border to red
+    event.target.style.border = '2px solid red';
+  } else {
+    event.target.style.border = '';
   }
 }
 
