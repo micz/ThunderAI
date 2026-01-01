@@ -16,9 +16,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from "../../options/mzta-options-default.js";
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, preparePromptsForExport, preparePromptsForImport } from "../../js/mzta-prompts.js";
-import { ChatGPTWeb_models, isThunderbird128OrGreater, getLocalStorageUsedSpace, sanitizeHtml, validateCustomData_ChatGPTWeb, getChatGPTWebModelsList_HTML, openTab } from "../../js/mzta-utils.js";
+import {
+    prefs_default,
+    integration_options_config
+} from "../../options/mzta-options-default.js";
+import {
+    getPrompts,
+    setDefaultPromptsProperties,
+    setCustomPrompts,
+    preparePromptsForExport,
+    preparePromptsForImport
+} from "../../js/mzta-prompts.js";
+import {
+    injectConnectionUI,
+    showConnectionOptions
+} from "../../pages/_lib/connection-ui.js";
+import {
+    ChatGPTWeb_models,
+    isThunderbird128OrGreater,
+    getLocalStorageUsedSpace,
+    sanitizeHtml,
+    validateCustomData_ChatGPTWeb,
+    getChatGPTWebModelsList_HTML,
+    openTab
+} from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
     getPlaceholders,
@@ -106,6 +127,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
+    // Inject API Configuration UI for New Prompt
+    const webToggle = document.getElementById('chatgpt_web_additional_info_toggle');
+    
+    const apiSettingsToggle = document.createElement('tr');
+    apiSettingsToggle.id = 'api_additional_info_toggle';
+    apiSettingsToggle.className = 'small_info';
+    apiSettingsToggle.style.cursor = 'pointer';
+    apiSettingsToggle.innerHTML = '<td colspan="5"><span>' + browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]</span></td>';
+    
+    const apiSettingsRow = document.createElement('tr');
+    apiSettingsRow.id = 'api_additional_info';
+    apiSettingsRow.style.display = 'none';
+    apiSettingsRow.innerHTML = '<td colspan="5" id="api_ui_container"></td>';
+
+    webToggle.parentNode.insertBefore(apiSettingsToggle, webToggle.nextSibling);
+    webToggle.parentNode.insertBefore(apiSettingsRow, apiSettingsToggle.nextSibling);
+
+    apiSettingsToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (apiSettingsRow.style.display === 'none') {
+            apiSettingsRow.style.display = 'table-row';
+            apiSettingsToggle.querySelector('span').innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+        } else {
+            apiSettingsRow.style.display = 'none';
+            apiSettingsToggle.querySelector('span').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+        }
+    });
+
+    const apiTable = document.createElement('table');
+    apiTable.style.width = "100%";
+    apiTable.innerHTML = '<tr id="api_ui_anchor"><td class="w30">' + browser.i18n.getMessage('prefs_Connection_type') + ':</td><td><select id="new_prompt_api_type" class="input_new"><option value="">-- ' + browser.i18n.getMessage('Custom') + ' --</option></select></td></tr>';
+    document.getElementById('api_ui_container').appendChild(apiTable);
+
+    await injectConnectionUI({
+        afterTrId: 'api_ui_anchor',
+        selectId: 'new_prompt_api_type',
+        no_chatgpt_web: true,
+        taLog: taLog
+    });
+
+    const apiSelect = document.getElementById('new_prompt_api_type');
+    // Remove chatgpt_web
+    // for (let i = 0; i < apiSelect.options.length; i++) {
+    //     if (apiSelect.options[i].value === 'chatgpt_web') {
+    //         apiSelect.remove(i);
+    //         break;
+    //     }
+    // }
+    apiSelect.addEventListener('change', () => {
+        showConnectionOptions(apiSelect);
+    });
+    showConnectionOptions(apiSelect);
+
     switch(prefs.connection_type) {
         case 'chatgpt_web': {
             // for the new item form
@@ -120,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
                     } else {
                         additionalInfoRow.style.display = 'none';
-                        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info');
+                        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
                     }
                 });
             });
@@ -132,6 +206,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             break;
         }
+    }
+
+    // for the edit list items form [API]
+    document.querySelectorAll('.api_additional_info_toggle').forEach(element => {
+        element.addEventListener('click', (e) => {
+            e.preventDefault();
+            let additionalInfoRow = e.target.closest('td').querySelector('.api_additional_info');
+            if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+                additionalInfoRow.style.display = 'block';
+                e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+            } else {
+                additionalInfoRow.style.display = 'none';
+                e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+            }
+        });
+    });
+
+    switch(prefs.connection_type) {
         // case 'chatgpt_api':
         //     document.getElementById('chatgpt_api').style.display = 'block';
         //     break;
@@ -214,6 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
+            api_type: document.getElementById('new_prompt_api_type').value
         };
 
         switch(prefs.connection_type) {
@@ -234,6 +327,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             // case 'google_gemini_api':
             //     document.getElementById('google_gemini_api').style.display = 'block';
             //     break;
+        }
+
+        for (const [integration, options] of Object.entries(integration_options_config)) {
+            for (const key of Object.keys(options)) {
+                const propName = `${integration}_${key}`;
+                const inputEl = document.getElementById(propName);
+                if (inputEl) {
+                    newItemData[propName] = (inputEl.type === 'checkbox') ? inputEl.checked : inputEl.value;
+                }
+            }
         }
 
         let newItem = promptsList.add(newItemData);
@@ -348,6 +451,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.chatgpt_web_additional_info_show').forEach(element => {
         toggleAdditionalPropertiesShow(element.closest('tr'));
     });
+    
+    document.querySelectorAll('.api_additional_info_show').forEach(element => {
+        toggleApiPropertiesShow(element.closest('tr'));
+    });
 
     getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
     let formNewWebModelList = document.getElementById('chatgpt_web_models_list');
@@ -381,6 +488,28 @@ document.getElementById('btnManageCustomDataPH').addEventListener('click', () =>
 function handleEditClick(e) {
     e.preventDefault();
     const tr = e.target.parentNode.parentNode;
+    const id = tr.querySelector('.id_output').value;
+    
+    // Inject Connection UI if needed
+    const anchorId = `api_ui_anchor_${id}`;
+    const selectId = `api_type_${id}`;
+    const prefix = `prompt_${id}_`;
+
+    if (!document.getElementById(selectId)) {
+        injectConnectionUI({
+            afterTrId: anchorId,
+            selectId: selectId,
+            modelId_prefix: prefix,
+            no_chatgpt_web: true,
+            taLog: taLog
+        }).then(() => {
+            populateConnectionUI(tr, id, prefix, selectId);
+        });
+    } else {
+        populateConnectionUI(tr, id, prefix, selectId);
+    }
+
+    // Show/Hide buttons
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     e.target.style.display = 'none';    // Edit btn
     tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
@@ -389,6 +518,29 @@ function handleEditClick(e) {
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
     toggleDiffviewer(e);
+}
+
+function populateConnectionUI(tr, id, prefix, selectId) {
+    const item = promptsList.get('id', id)[0];
+    const itemValues = item.values();
+
+    const selectEl = document.getElementById(selectId);
+    if (selectEl) {
+        selectEl.value = itemValues.api_type || '';
+        showConnectionOptions(selectEl);
+    }
+
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputId = `${prefix}${propName}`;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) {
+                inputEl.type === 'checkbox' ? inputEl.checked = (itemValues[propName] === true || itemValues[propName] === 'true') : inputEl.value = itemValues[propName] || '';
+            }
+        }
+    }
+    i18n.updateDocument();
 }
 
 function showItemRowEditor(tr) {
@@ -402,6 +554,7 @@ function showItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'none';
     toggleAdditionalPropertiesEditor(tr);
     tr.querySelector('.chatgpt_web_additional_info_show').style.display = 'none';
+    tr.querySelector('.api_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
@@ -424,6 +577,8 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
     tr.querySelector('.chatgpt_web_additional_info').style.display = 'none';
+    tr.querySelector('.api_additional_info_toggle').style.display = 'none';
+    tr.querySelector('.api_additional_info').style.display = 'none';
     toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
@@ -486,6 +641,23 @@ function toggleAdditionalPropertiesShow(tr) {
     }
 }
 
+function toggleApiPropertiesShow(tr) {
+    let element = tr.querySelector('.api_additional_info_show');
+    let api_type_show = tr.querySelector('.api_type_show');
+
+    if (api_type_show.innerText !== '' && api_type_show.innerText !== 'undefined') {
+        element.style.display = 'flex';
+    } else {
+        element.style.display = 'none';
+    }
+
+    if(api_type_show.innerText === '' || api_type_show.innerText === 'undefined') {
+        api_type_show.parentNode.style.display = 'none';
+    } else {
+        api_type_show.parentNode.style.display = 'inline';
+    }
+}
+
 function toggleAdditionalPropertiesEditor(tr) {
     switch(prefs.connection_type) {
         case 'chatgpt_web': {
@@ -514,6 +686,14 @@ function toggleAdditionalPropertiesEditor(tr) {
         // case 'google_gemini_api':
         //     document.getElementById('google_gemini_api').style.display = 'block';
         //     break;
+    }
+
+    let api_info_toggle = tr.querySelector('.api_additional_info_toggle');
+    api_info_toggle.style.display = 'block';
+    let api_type_show = tr.querySelector('.api_type_show').innerText;
+
+    if (api_type_show !== '' && api_type_show !== 'undefined') {
+        api_info_toggle.click();
     }
 }
 
@@ -574,6 +754,27 @@ function handleConfirmClick(e) {
     e.preventDefault();
     const tr = e.target.parentNode.parentNode;
     e.target.style.display = 'none';    // Ok btn
+
+    const id = tr.querySelector('.id_output').value;
+    const prefix = `prompt_${id}_`;
+    const selectId = `api_type_${id}`;
+    
+    let newValues = {};
+    const selectEl = document.getElementById(selectId);
+    if(selectEl) newValues.api_type = selectEl.value;
+
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputId = `${prefix}${propName}`;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) {
+                newValues[propName] = (inputEl.type === 'checkbox') ? inputEl.checked : inputEl.value;
+            }
+        }
+    }
+    promptsList.get('id', id)[0].values(newValues);
+
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
@@ -585,6 +786,7 @@ function handleConfirmClick(e) {
     tr.querySelector('.chatgpt_web_model_show').innerText = tr.querySelector('.chatgpt_web_model_output').value;
     tr.querySelector('.chatgpt_web_project_show').innerText = tr.querySelector('.chatgpt_web_project_output').value;
     tr.querySelector('.chatgpt_web_custom_gpt_show').innerText = tr.querySelector('.chatgpt_web_custom_gpt_output').value;
+    tr.querySelector('.api_type_show').innerText = newValues.api_type || '';
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
@@ -617,8 +819,15 @@ function handleInputChange(e) {
 
 function loadPromptsList(values){
     // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
+    let api_fields = [];
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            api_fields.push(`${integration}_${key}`);
+        }
+    }
+
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'} ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -676,6 +885,14 @@ function loadPromptsList(values){
                         <br>__MSG_prefs_OptionText_chatgpt_web_custom_data_info2__
                         <br>__MSG_prefs_OptionText_CustomGPT_Warn__</i>
                     </div>
+                    <div class="api_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__ [API]</div>
+                    <div class="api_additional_info">
+                        <table style="width:100%">
+                            <tbody id="api_ui_container_` + values.id + `">
+                                <tr id="api_ui_anchor_` + values.id + `"><td style="display:none"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </td>
                 <td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
                 <br>
@@ -711,10 +928,13 @@ function loadPromptsList(values){
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
-                        <div class="chatgpt_web_additional_info_show small_info"><span class="chatgpt_web_additional_info_row field_title"><i>__MSG_customPrompts_show_additional_info_show__</i></span>
+                        <div class="chatgpt_web_additional_info_show small_info"><span class="chatgpt_web_additional_info_row field_title"><i>__MSG_customPrompts_show_additional_info_show__ [ChatGPT Web]</i></span>
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_model__:</span><span class="chatgpt_web_model chatgpt_web_model_show">` + values.chatgpt_web_model + `</span></div>
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</span><span class="chatgpt_web_project chatgpt_web_project_show">` + values.chatgpt_web_project + `</span></div>
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span><span class="chatgpt_web_custom_gpt chatgpt_web_custom_gpt_show">` + values.chatgpt_web_custom_gpt + `</span></div>
+                    </div>
+                    <div class="api_additional_info_show small_info"><span class="api_additional_info_row field_title"><i>__MSG_customPrompts_show_additional_info_show__ [API]</i></span>
+                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><span class="api_type api_type_show">` + values.api_type + `</span></div>
                     </div>
                 </td>
                 <td>
