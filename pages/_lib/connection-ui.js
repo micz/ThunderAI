@@ -50,6 +50,19 @@ export async function injectConnectionUI({
     return null;
   }
 
+  // Inject CSS if not present
+  if (!document.getElementById('mzta-connection-ui-style')) {
+    const style = document.createElement('style');
+    style.id = 'mzta-connection-ui-style';
+    style.textContent = `
+      .api_key-container { position: relative; display: flex; align-items: center; }
+      .toggle-icon { cursor: pointer; margin-left: 5px; }
+      .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+      .option-input { flex-grow: 1; }
+    `;
+    document.head.appendChild(style);
+  }
+
   let tpl = `
   <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
     <td>
@@ -140,7 +153,7 @@ export async function injectConnectionUI({
         <label>
           <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_chatgpt_api_key"><img src="/images/pwd-show.png" id="pwd-icon_chatgpt_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_chatgpt_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_chatgpt_api_key"></span>
       </div>
     </td>
   </tr>
@@ -151,7 +164,7 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="chatgpt_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
       </label>
@@ -205,7 +218,7 @@ export async function injectConnectionUI({
         <label>
           <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_google_gemini_api_key"><img src="/images/pwd-show.png" id="pwd-icon_google_gemini_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_google_gemini_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_google_gemini_api_key"></span>
       </div>
     </td>
   </tr>
@@ -216,7 +229,7 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
       </label>
@@ -273,12 +286,12 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="ollama_api_cors_warning">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2__
-        <br><br><button id="btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -288,7 +301,7 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="ollama_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
       </label>
@@ -335,7 +348,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <select id="openai_comp_services_shortcut"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_services_shortcut"></select>
         <br>__MSG_prefs_OpenAIComp_AvailableServices_Info__
       </label>
     </td>
@@ -352,12 +365,12 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="openai_comp_api_cors_warning">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2__
-        <br><br><button id="btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
@@ -381,7 +394,7 @@ export async function injectConnectionUI({
         <label>
           <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_openai_comp_api_key"><img src="/images/pwd-show.png" id="pwd-icon_openai_comp_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_openai_comp_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_openai_comp_api_key"></span>
       </div>
     </td>
   </tr>
@@ -389,12 +402,12 @@ export async function injectConnectionUI({
     <td>
       <label>
         <span class="opt_title">__MSG_OpenAIComp_Models__</span>
-        <br><button id="btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
-      <br><button id="btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
+        <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
+      <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
       </label>
     </td>
     <td>
-      <button id="btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="openai_comp_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
       </label>
@@ -433,7 +446,7 @@ export async function injectConnectionUI({
         <label>
           <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_anthropic_api_key"><img src="/images/pwd-show.png" id="pwd-icon_anthropic_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_anthropic_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_anthropic_api_key"></span>
       </div>
     </td>
   </tr>
@@ -444,7 +457,7 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="anthropic_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
       </label>
@@ -549,7 +562,7 @@ export async function injectConnectionUI({
   document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
 
   showConnectionOptions(conntype_select);
-  loadOpenAICompConfigs();
+  loadOpenAICompConfigs(modelId_prefix);
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
   warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -558,8 +571,8 @@ export async function injectConnectionUI({
   warn_Anthropic_VersionEmpty(modelId_prefix);
 
   const passwordField_chatgpt_api_key = document.getElementById(getPrefixedId('chatgpt_api_key'));
-  const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
-  const icon_img_chatgpt_api_key = document.getElementById('pwd-icon_chatgpt_api_key');
+  const toggleIcon_chatgpt_api_key = document.getElementById(getPrefixedId('toggle_chatgpt_api_key'));
+  const icon_img_chatgpt_api_key = document.getElementById(getPrefixedId('pwd-icon_chatgpt_api_key'));
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -569,8 +582,8 @@ export async function injectConnectionUI({
   });
 
   const passwordField_google_gemini_api_key = document.getElementById(getPrefixedId('google_gemini_api_key'));
-  const toggleIcon_google_gemini_api_key = document.getElementById('toggle_google_gemini_api_key');
-  const icon_img_google_gemini_api_key = document.getElementById('pwd-icon_google_gemini_api_key');
+  const toggleIcon_google_gemini_api_key = document.getElementById(getPrefixedId('toggle_google_gemini_api_key'));
+  const icon_img_google_gemini_api_key = document.getElementById(getPrefixedId('pwd-icon_google_gemini_api_key'));
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -580,8 +593,8 @@ export async function injectConnectionUI({
   });
 
   const passwordField_openai_comp_api_key = document.getElementById(getPrefixedId('openai_comp_api_key'));
-  const toggleIcon_openai_comp_api_key = document.getElementById('toggle_openai_comp_api_key');
-  const icon_img_openai_comp_api_key = document.getElementById('pwd-icon_openai_comp_api_key');
+  const toggleIcon_openai_comp_api_key = document.getElementById(getPrefixedId('toggle_openai_comp_api_key'));
+  const icon_img_openai_comp_api_key = document.getElementById(getPrefixedId('pwd-icon_openai_comp_api_key'));
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -591,8 +604,8 @@ export async function injectConnectionUI({
   });
 
   const passwordField_anthropic_api_key = document.getElementById(getPrefixedId('anthropic_api_key'));
-  const toggleIcon_anthropic_api_key = document.getElementById('toggle_anthropic_api_key');
-  const icon_img_anthropic_api_key = document.getElementById('pwd-icon_anthropic_api_key');
+  const toggleIcon_anthropic_api_key = document.getElementById(getPrefixedId('toggle_anthropic_api_key'));
+  const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -626,7 +639,7 @@ export async function injectConnectionUI({
     browser.tabs.create({ url: base_url + model_opt });
   });
 
-  let select_openai_comp_services_shortcut = document.getElementById('openai_comp_services_shortcut');
+  let select_openai_comp_services_shortcut = document.getElementById(getPrefixedId('openai_comp_services_shortcut'));
   select_openai_comp_services_shortcut.addEventListener("change", () => {
     let selectedOption = select_openai_comp_services_shortcut.options[select_openai_comp_services_shortcut.selectedIndex];
     const config = openAICompConfigs.find(cfg => cfg.id === selectedOption.value);
@@ -661,14 +674,14 @@ export async function injectConnectionUI({
   select_chatgpt_model.appendChild(chatgpt_option);
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
-    document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
     let openai = new OpenAI({
       apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
     if(!granted){
-        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         taLog.log("OpenAI API permission denied");
         alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
@@ -682,7 +695,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -696,7 +709,7 @@ export async function injectConnectionUI({
           select_chatgpt_model.appendChild(option);
         }
       });
-      document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
     warn_ChatGPT_APIKeyEmpty(modelId_prefix);
@@ -710,8 +723,8 @@ export async function injectConnectionUI({
   select_google_gemini_model.appendChild(google_gemini_option);
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
-    document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'inline';
     let google_gemini = new GoogleGemini({
       apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
     });
@@ -724,7 +737,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
         alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -738,7 +751,7 @@ export async function injectConnectionUI({
           select_google_gemini_model.appendChild(option);
         }
       });
-      document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
     warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
@@ -752,15 +765,15 @@ export async function injectConnectionUI({
   select_ollama_model.appendChild(ollama_option);
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
-    document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
     let ollama = new Ollama({
       host: document.getElementById(getPrefixedId("ollama_host")).value,
     });
     try {
       let data = await ollama.fetchModels();
       if(!data){
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         return;
@@ -773,13 +786,13 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       if(data.response.models.length == 0){
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
         return;
@@ -793,9 +806,9 @@ export async function injectConnectionUI({
           select_ollama_model.appendChild(option);
         }
       });
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
       taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
       alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
     }
@@ -811,8 +824,8 @@ export async function injectConnectionUI({
   select_openai_comp_model.appendChild(openai_comp_option);
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
-    document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'inline';
     let openai_comp = new OpenAIComp({
       host: document.getElementById(getPrefixedId("openai_comp_host")).value,
       apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
@@ -827,7 +840,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
         alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -841,7 +854,7 @@ export async function injectConnectionUI({
           select_openai_comp_model.appendChild(option);
         }
       });
-      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
     warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -856,15 +869,15 @@ export async function injectConnectionUI({
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
-    document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
     let anthropic = new Anthropic({
       apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
       version: document.getElementById(getPrefixedId("anthropic_version")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
     if(!granted){
-        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         taLog.warn("Claude API web permission denied");
         alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
@@ -878,7 +891,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Anthropic_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -895,13 +908,13 @@ export async function injectConnectionUI({
           select_anthropic_model.appendChild(option);
         }
       });
-      document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
     warn_Anthropic_APIKeyEmpty(modelId_prefix);
   });
 
-    document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
+    document.getElementById(getPrefixedId('btnOpenAICompForceModel')).addEventListener('click', () => {
       let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
       if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
         let select_openai_comp_model = getModelEl('openai_comp_model', modelId_prefix);
@@ -914,7 +927,7 @@ export async function injectConnectionUI({
       }
     });
   
-    document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
+    document.getElementById(getPrefixedId('btnOpenAICompClearModelsList')).addEventListener('click', () => {
       if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
         return;
       }
@@ -926,11 +939,11 @@ export async function injectConnectionUI({
       select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
     });
   
-    document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api')).addEventListener('click', async () => {
       varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
   
-    document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
       varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
 
@@ -1077,7 +1090,7 @@ export function changeConnTypeRowColor(conntype_row, conntype_select) {
   conntype_row.classList.toggle("conntype_anthropic_api", (conntype_select.value === "anthropic_api"));  
 }
 
-export function showConnectionOptions(conntype_select) {
+export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -1135,8 +1148,10 @@ export function showConnectionOptions(conntype_select) {
     element.style.display = anthropic_api_display;
   });
   if (varConnectionUI.permission_all_urls) {
-    document.getElementById('openai_comp_api_cors_warning').style.display = 'none';
-    document.getElementById('ollama_api_cors_warning').style.display = 'none';
+    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
+    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    if (ollamaWarning) ollamaWarning.style.display = 'none';
   }
 }
 
@@ -1190,7 +1205,7 @@ function warn_InvalidNumber(event){
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let apiKeyInput = document.getElementById(getPrefixedId('chatgpt_api_key'));
-  let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
+  let btnFetchChatGPTModels = document.getElementById(getPrefixedId('btnUpdateChatGPTModels'));
   let modelChatGPT = getModelEl('chatgpt_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1213,7 +1228,7 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
 function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let apiKeyInput = document.getElementById(getPrefixedId('google_gemini_api_key'));
-  let btnFetchGoogleGeminiModels = document.getElementById('btnUpdateGoogleGeminiModels');
+  let btnFetchGoogleGeminiModels = document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels'));
   let modelGoogleGemini = getModelEl('google_gemini_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1236,7 +1251,7 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
 function warn_Ollama_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('ollama_host'));
-  let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
+  let btnFetchOllamaModels = document.getElementById(getPrefixedId('btnUpdateOllamaModels'));
   let modelOllama = getModelEl('ollama_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1259,7 +1274,7 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
 function warn_OpenAIComp_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('openai_comp_host'));
-  let btnUpdateOpenAICompModels = document.getElementById('btnUpdateOpenAICompModels');
+  let btnUpdateOpenAICompModels = document.getElementById(getPrefixedId('btnUpdateOpenAICompModels'));
   let modelOpenAIComp = getModelEl('openai_comp_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1282,7 +1297,7 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let apiKeyInput = document.getElementById(getPrefixedId('anthropic_api_key'));
-  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  let btnFetchAnthropicModels = document.getElementById(getPrefixedId('btnUpdateAnthropicModels'));
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1305,7 +1320,7 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
 function warn_Anthropic_VersionEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let versionInput = document.getElementById(getPrefixedId('anthropic_version'));
-  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  let btnFetchAnthropicModels = document.getElementById(getPrefixedId('btnUpdateAnthropicModels'));
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(versionInput.value === ''){
     versionInput.style.border = '2px solid red';
@@ -1325,13 +1340,13 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
   }
 }
 
-function resetOpenAICompConfigs(){
-  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+function resetOpenAICompConfigs(modelId_prefix = ''){
+  let select_openai_comp_model = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_services_shortcut');
   select_openai_comp_model.value = 'custom';
 }
 
-function loadOpenAICompConfigs(){
-  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+function loadOpenAICompConfigs(modelId_prefix = ''){
+  let select_openai_comp_model = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_services_shortcut');
   openAICompConfigs.forEach(config => {
     const option = document.createElement('option');
     option.value = config.id;
