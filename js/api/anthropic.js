@@ -93,7 +93,7 @@ export class Anthropic {
 
       let claude_body = { 
               model: this.model,
-              max_tokens: this.max_tokens,
+              max_tokens: parseInt(this.max_tokens),
               system: this.system_prompt,
               messages: messages,
               stream: this.stream,
