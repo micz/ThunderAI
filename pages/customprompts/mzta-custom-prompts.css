@@ -302,6 +302,20 @@ input.input_additional[type="text"]{
     cursor: pointer;
 }
 
+.api_additional_info{
+    cursor: pointer;
+    text-align: center;
+    background-color: #409df3;
+}
+
+.api_additional_info_toggle{
+    text-align: center;
+    padding: 5px;
+    background-color: #409df3;
+    cursor: pointer;
+    display: none;;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;
@@ -356,5 +370,15 @@ input.input_additional[type="text"]{
 
     #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
         background-color: rgb(88, 25, 0);
+    }
+
+    .api_additional_info, .api_additional_info_toggle{
+        background-color: #0f2437;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .api_key-container .toggle-icon img {
+            filter: invert(1);
+        }
     }
 }

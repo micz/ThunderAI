@@ -128,18 +128,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     i18n.updateDocument();
 
     // Inject API Configuration UI for New Prompt
-    const webToggle = document.getElementById('chatgpt_web_additional_info_toggle');
-    
+    const webToggle = document.getElementById('chatgpt_web_additional_info_toggle'); // Assuming this exists
+
     const apiSettingsToggle = document.createElement('tr');
     apiSettingsToggle.id = 'api_additional_info_toggle';
-    apiSettingsToggle.className = 'small_info';
+    apiSettingsToggle.className = 'small_info api_additional_info';
     apiSettingsToggle.style.cursor = 'pointer';
-    apiSettingsToggle.innerHTML = '<td colspan="5"><span>' + browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]</span></td>';
-    
+
+    const tdToggle = document.createElement('td');
+    tdToggle.colSpan = '5';
+    const spanToggle = document.createElement('span');
+    spanToggle.textContent = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+    tdToggle.appendChild(spanToggle);
+    apiSettingsToggle.appendChild(tdToggle);
+
     const apiSettingsRow = document.createElement('tr');
     apiSettingsRow.id = 'api_additional_info';
     apiSettingsRow.style.display = 'none';
-    apiSettingsRow.innerHTML = '<td colspan="5" id="api_ui_container"></td>';
+
+    const tdRow = document.createElement('td');
+    tdRow.colSpan = '5';
+    tdRow.id = 'api_ui_container';
+    apiSettingsRow.appendChild(tdRow);
 
     webToggle.parentNode.insertBefore(apiSettingsToggle, webToggle.nextSibling);
     webToggle.parentNode.insertBefore(apiSettingsRow, apiSettingsToggle.nextSibling);
@@ -156,8 +166,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const apiTable = document.createElement('table');
-    apiTable.style.width = "100%";
-    apiTable.innerHTML = '<tr id="api_ui_anchor"><td class="w30">' + browser.i18n.getMessage('prefs_Connection_type') + ':</td><td><select id="new_prompt_api_type" class="input_new"><option value="">-- ' + browser.i18n.getMessage('Custom') + ' --</option></select></td></tr>';
+    apiTable.style.width = '100%';
+    apiTable.style.textAlign = 'left';
+
+    const tr = document.createElement('tr');
+    tr.id = 'api_ui_anchor';
+
+    const td1 = document.createElement('td');
+    td1.classList.add('w30');
+    td1.textContent = browser.i18n.getMessage('prefs_Connection_type') + ':';
+
+    const td2 = document.createElement('td');
+
+    const select = document.createElement('select');
+    select.id = 'new_prompt_api_type';
+    select.classList.add('input_new');
+
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '-- ' + browser.i18n.getMessage('Custom') + ' --';
+    select.appendChild(option);
+
+    td2.appendChild(select);
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    apiTable.appendChild(tr);
     document.getElementById('api_ui_container').appendChild(apiTable);
 
     await injectConnectionUI({
@@ -223,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    switch(prefs.connection_type) {
+    // switch(prefs.connection_type) {
         // case 'chatgpt_api':
         //     document.getElementById('chatgpt_api').style.display = 'block';
         //     break;
@@ -236,7 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // case 'google_gemini_api':
         //     document.getElementById('google_gemini_api').style.display = 'block';
         //     break;
-    }
+    // }
 
     const chatgptWebAdditionalPropToggle = document.getElementById('chatgpt_web_additional_info_toggle');
     chatgptWebAdditionalPropToggle.addEventListener('click', (e) => {
@@ -881,8 +914,8 @@ function loadPromptsList(values){
                         <br>__MSG_prefs_OptionText_CustomGPT_Warn__</i>
                     </div>
                     <div class="api_additional_info_toggle small_info">__MSG_customPrompts_show_additional_info__ [API]</div>
-                    <div class="api_additional_info">
-                        <table style="width:100%">
+                    <div class="api_additional_info" style="display:none">
+                        <table style="width:100%; text-align:left;">
                             <tbody id="api_ui_container_` + values.id + `">
                                 <tr id="api_ui_anchor_` + values.id + `"><td style="display:none"></td></tr>
                             </tbody>
