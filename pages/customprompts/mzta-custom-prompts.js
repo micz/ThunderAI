@@ -329,15 +329,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             //     break;
         }
 
-        for (const [integration, options] of Object.entries(integration_options_config)) {
-            for (const key of Object.keys(options)) {
-                const propName = `${integration}_${key}`;
-                const inputEl = document.getElementById(propName);
-                if (inputEl) {
-                    newItemData[propName] = (inputEl.type === 'checkbox') ? inputEl.checked : inputEl.value;
-                }
-            }
-        }
+        const apiValues = getAPIValuesFromUI();
+        Object.assign(newItemData, apiValues);
 
         let newItem = promptsList.add(newItemData);
         idnumMax++;
@@ -755,38 +748,40 @@ function handleConfirmClick(e) {
     const tr = e.target.parentNode.parentNode;
     e.target.style.display = 'none';    // Ok btn
 
-    const id = tr.querySelector('.id_output').value;
-    const prefix = `prompt_${id}_`;
-    const selectId = `api_type_${id}`;
+    const oldId = tr.querySelector('.id_show').innerText;
+    const prefix = `prompt_${oldId}_`;
+    const selectId = `api_type_${oldId}`;
     
     let newValues = {};
+    
+    // Standard fields
+    newValues.id = tr.querySelector('.id_output').value.trim().toLowerCase();
+    newValues.name = tr.querySelector('.name_output').value.trim();
+    newValues.text = tr.querySelector('.text_output').value;
+    newValues.type = tr.querySelector('.type_output').value;
+    newValues.action = tr.querySelector('.action_output').value;
+    newValues.need_selected = tr.querySelector('.need_selected').checked ? 1 : 0;
+    newValues.need_signature = tr.querySelector('.need_signature').checked ? 1 : 0;
+    newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
+    newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
+    newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
+    newValues.enabled = tr.querySelector('.enabled').checked ? 1 : 0;
+    newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
+    newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
+    newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
+
     const selectEl = document.getElementById(selectId);
     if(selectEl) newValues.api_type = selectEl.value;
 
-    for (const [integration, options] of Object.entries(integration_options_config)) {
-        for (const key of Object.keys(options)) {
-            const propName = `${integration}_${key}`;
-            const inputId = `${prefix}${propName}`;
-            const inputEl = document.getElementById(inputId);
-            if (inputEl) {
-                newValues[propName] = (inputEl.type === 'checkbox') ? inputEl.checked : inputEl.value;
-            }
-        }
-    }
-    promptsList.get('id', id)[0].values(newValues);
+    const apiValues = getAPIValuesFromUI(prefix);
+    Object.assign(newValues, apiValues);
+    promptsList.get('id', oldId)[0].values(newValues);
 
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     // Update item data
-    tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
-    tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
-    tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
-    tr.querySelector('.chatgpt_web_model_show').innerText = tr.querySelector('.chatgpt_web_model_output').value;
-    tr.querySelector('.chatgpt_web_project_show').innerText = tr.querySelector('.chatgpt_web_project_output').value;
-    tr.querySelector('.chatgpt_web_custom_gpt_show').innerText = tr.querySelector('.chatgpt_web_custom_gpt_output').value;
-    tr.querySelector('.api_type_show').innerText = newValues.api_type || '';
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
@@ -1060,6 +1055,21 @@ function clearFields() {
     document.getElementById('formNew').style.display = 'none';
 }
 
+function getAPIValuesFromUI(prefix = '') {
+    let values = {};
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputId = `${prefix}${propName}`;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) {
+                values[propName] = (inputEl.type === 'checkbox') ? inputEl.checked : inputEl.value;
+            }
+        }
+    }
+    return values;
+}
+
 function inputSetError(input) {
     document.getElementById(input).style.borderColor = 'red';
 }
@@ -1117,8 +1127,6 @@ async function saveAll() {
     setMessage(browser.i18n.getMessage('customPrompts_start_saving'));
     setNothingChanged();
     if(promptsList != null) {
-        setMessage(browser.i18n.getMessage('customPrompts_reindexing_list'));
-        promptsList.reIndex();
         let newPrompts = promptsList.items.map(item => {
             // For each item in the array, return only the '_values' part
             // console.log(">>>>>>>>>>>>>>>> item: " + JSON.stringify(item))
