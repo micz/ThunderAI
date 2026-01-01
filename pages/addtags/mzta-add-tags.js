@@ -339,5 +339,23 @@ async function restoreOptions() {
   }
 
   let getting = await browser.storage.sync.get(prefs_default);
+
+  let specialPrompts = await getSpecialPrompts();
+  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+
+  if (addtags_prompt) {
+      if (addtags_prompt.api && addtags_prompt.api !== '') {
+          getting['add_tags_connection_type'] = addtags_prompt.api;
+      }
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              const propName = `${integration}_${key}`;
+              if (addtags_prompt[propName] !== undefined) {
+                  getting[`add_tags_${propName}`] = addtags_prompt[propName];
+              }
+          }
+      }
+  }
+
   setCurrentChoice(getting);
 }

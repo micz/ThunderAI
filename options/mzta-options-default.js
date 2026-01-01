@@ -63,9 +63,11 @@ const integration_settings_template = {
     connection_type: 'chatgpt_api',
 };
 
+const global_integration_settings = { ...integration_settings_template };
+
 for (const [integration, options] of Object.entries(integration_options_config)) {
     for (const [key, value] of Object.entries(options)) {
-        integration_settings_template[`${integration}_${key}`] = value;
+        global_integration_settings[`${integration}_${key}`] = value;
     }
 }
 
@@ -93,7 +95,7 @@ export function getDynamicSettingValue(prefs, prefix, settingName) {
 }
 
 export const prefs_default = {
-    ...integration_settings_template,
+    ...global_integration_settings,
     do_debug: false,
     chatgpt_win_height: 800,
     chatgpt_win_width: 700,
