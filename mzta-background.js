@@ -1084,7 +1084,8 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
                 prompt: specialFullPrompt_add_tags,
                 llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_add_tags
             });
             await cmd_addTags.initWorker();
             let tags_current_email = [];
@@ -1123,7 +1124,8 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
                 prompt: specialFullPrompt_spamfilter,
                 llm: getConnectionType(prefs_aats, curr_prompt_spamfilter, 'spamfilter'),
                 custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_spamfilter
             });
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';

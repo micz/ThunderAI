@@ -29,17 +29,20 @@
     full_message = "";
     logger = null;
     do_debug = false;
+    config = {};
 
     constructor(args = {}) {
         let {
             prompt = '',
             llm = '',
             custom_model = '',
-            do_debug = false
+            do_debug = false,
+            config = {}
         } = args;
         this.prompt = prompt;
         this.llm = llm;
         this.custom_model = custom_model;
+        this.config = config;
         this.logger = new taLogger('mzta_specialCommand', do_debug);
         this.do_debug = do_debug;
         switch (this.llm) {
@@ -73,6 +76,11 @@
                     chatgpt_model: prefs_default.chatgpt_model,
                     chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
                 });
+
+                if (this.config.chatgpt_api_key) prefs_api.chatgpt_api_key = this.config.chatgpt_api_key;
+                if (this.config.chatgpt_model) prefs_api.chatgpt_model = this.config.chatgpt_model;
+                if (this.config.chatgpt_developer_messages) prefs_api.chatgpt_developer_messages = this.config.chatgpt_developer_messages;
+
                 this.worker.postMessage({
                     type: 'init',
                     chatgpt_api_key: prefs_api.chatgpt_api_key,
@@ -90,6 +98,12 @@
                     google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
                     google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
                 });
+
+                if (this.config.google_gemini_api_key) prefs_api.google_gemini_api_key = this.config.google_gemini_api_key;
+                if (this.config.google_gemini_model) prefs_api.google_gemini_model = this.config.google_gemini_model;
+                if (this.config.google_gemini_system_instruction) prefs_api.google_gemini_system_instruction = this.config.google_gemini_system_instruction;
+                if (this.config.google_gemini_thinking_budget) prefs_api.google_gemini_thinking_budget = this.config.google_gemini_thinking_budget;
+
                 this.worker.postMessage({
                     type: 'init',
                     google_gemini_api_key: prefs_api.google_gemini_api_key,
@@ -106,6 +120,10 @@
                     ollama_host: prefs_default.ollama_host,
                     ollama_model: prefs_default.ollama_model,
                 });
+
+                if (this.config.ollama_host) prefs_api.ollama_host = this.config.ollama_host;
+                if (this.config.ollama_model) prefs_api.ollama_model = this.config.ollama_model;
+
                 this.worker.postMessage({
                     type: 'init',
                     ollama_host: prefs_api.ollama_host,
@@ -124,6 +142,13 @@
                     openai_comp_chat_name: prefs_default.openai_comp_chat_name,
                     do_debug: prefs_default.do_debug,
                 });
+
+                if (this.config.openai_comp_host) prefs_api.openai_comp_host = this.config.openai_comp_host;
+                if (this.config.openai_comp_model) prefs_api.openai_comp_model = this.config.openai_comp_model;
+                if (this.config.openai_comp_api_key) prefs_api.openai_comp_api_key = this.config.openai_comp_api_key;
+                if (this.config.openai_comp_use_v1 !== undefined) prefs_api.openai_comp_use_v1 = this.config.openai_comp_use_v1;
+                if (this.config.openai_comp_chat_name) prefs_api.openai_comp_chat_name = this.config.openai_comp_chat_name;
+
                 this.worker.postMessage({
                     type: 'init',
                     openai_comp_host: prefs_api.openai_comp_host,
@@ -142,6 +167,12 @@
                     anthropic_version: prefs_default.anthropic_version,
                     anthropic_max_tokens: prefs_default.anthropic_max_tokens,
                 });
+
+                if (this.config.anthropic_api_key) prefs_api.anthropic_api_key = this.config.anthropic_api_key;
+                if (this.config.anthropic_model) prefs_api.anthropic_model = this.config.anthropic_model;
+                if (this.config.anthropic_version) prefs_api.anthropic_version = this.config.anthropic_version;
+                if (this.config.anthropic_max_tokens) prefs_api.anthropic_max_tokens = this.config.anthropic_max_tokens;
+
                 this.worker.postMessage({
                     type: 'init',
                     anthropic_api_key: prefs_api.anthropic_api_key,

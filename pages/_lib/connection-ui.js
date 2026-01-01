@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
@@ -1002,19 +1005,19 @@ export async function initializeSpecificIntegrationUI({
   // Helper to update prompt
   const _updatePrompt = async () => {
       let conntype = conntype_el.value;
-      let integration = conntype.replace('_api', '');
       
       let prompt = await loadPrompt(promptId);
       if(!prompt) return;
 
       prompt.api = conntype;
 
-      if (integration_options_config[integration]) {
-          for (const key of Object.keys(integration_options_config[integration])) {
-              let elementId = `${model_prefix}${integration}_${key}`;
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              let propName = `${integration}_${key}`;
+              let elementId = `${model_prefix}${propName}`;
               let element = document.getElementById(elementId);
               if (element) {
-                  prompt[key] = (element.type === 'checkbox') ? element.checked : element.value;
+                  prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
               }
           }
       }

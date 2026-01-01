@@ -42,21 +42,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let specialPrompts = await getSpecialPrompts();
     let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
-    if (spamfilter_prompt && spamfilter_prompt.api && spamfilter_prompt.api !== '') {
-        let update_prefs = {};
-        update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api;
-        
-        let integration = spamfilter_prompt.api.replace('_api', '');
-        if (integration_options_config && integration_options_config[integration]) {
-             for (const key of Object.keys(integration_options_config[integration])) {
-                 if (spamfilter_prompt[key] !== undefined) {
-                     update_prefs[`spamfilter_${integration}_${key}`] = spamfilter_prompt[key];
-                 }
-             }
-        }
-        await browser.storage.sync.set(update_prefs);
-    }
-
     await initializeSpecificIntegrationUI({
       prefix: 'spamfilter',
       promptId: 'prompt_spamfilter',
@@ -323,5 +308,23 @@ async function restoreOptions() {
   }
 
   let getting = await browser.storage.sync.get(prefs_default);
+
+  let specialPrompts = await getSpecialPrompts();
+  let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
+
+  if (spamfilter_prompt) {
+      if (spamfilter_prompt.api && spamfilter_prompt.api !== '') {
+          getting['spamfilter_connection_type'] = spamfilter_prompt.api;
+      }
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              const propName = `${integration}_${key}`;
+              if (spamfilter_prompt[propName] !== undefined) {
+                  getting[`spamfilter_${propName}`] = spamfilter_prompt[propName];
+              }
+          }
+      }
+  }
+
   setCurrentChoice(getting);
 }
