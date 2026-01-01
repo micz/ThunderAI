@@ -631,7 +631,7 @@ export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) 
     let specificType = '';
 
     if (typeof prefsOrType === 'object' && prefsOrType !== null) {
-        // Nuova firma: (prefs, prompt, prefix)
+        // New signature: (prefs, prompt, prefix)
         defaultType = prefsOrType.connection_type;
         if (typeof prefixOrSpecific === 'string' && prefixOrSpecific) {
             const prefix = prefixOrSpecific;
@@ -641,8 +641,7 @@ export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) 
             }
         }
     } else {
-        // Vecchia firma / Uso diretto: (connection_type_string, prompt, [specific_type_string])
-        defaultType = prefsOrType;
+        // Old signature / Direct usage: (connection_type_string, prompt, [specific_type_string])
         if (typeof prefixOrSpecific === 'string') {
             specificType = prefixOrSpecific;
         }
