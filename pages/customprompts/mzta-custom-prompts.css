@@ -228,10 +228,6 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
     padding-right: 2px;
 }
 
-#chatgpt_web_additional_info_toggle td{
-    font-style: italic;
-}
-
 #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
     background-color: rgb(255, 209, 183);
     display:none;
@@ -307,17 +303,12 @@ input.input_additional[type="text"]{
     background-color: #409df3;
 }
 
-#api_additional_info_toggle{
-    font-style: italic;
-}
-
 .api_additional_info_toggle{
     text-align: center;
     padding: 5px;
     background-color: #409df3;
     cursor: pointer;
     display: none;
-    font-style: italic;
 }
 
 .api_additional_info_show{
