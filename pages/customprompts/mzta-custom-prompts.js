@@ -490,7 +490,7 @@ function handleEditClick(e) {
             modelId_prefix: prefix,
             no_chatgpt_web: true,
             taLog: taLog,
-            customButtonLabel: "Reset",
+            customButtonLabel: browser.i18n.getMessage("Reset"),
             customButtonCallback: () => {
                 const selectEl = document.getElementById(selectId);
                 if (selectEl) {
