@@ -316,6 +316,16 @@ input.input_additional[type="text"]{
     display: none;;
 }
 
+.api_additional_info_show{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 3px;
+    margin-top: 5px;
+    background-color: #409df3;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;
@@ -372,8 +382,7 @@ input.input_additional[type="text"]{
         background-color: rgb(88, 25, 0);
     }
 
-    .api_additional_info, .api_additional_info_toggle{
+    .api_additional_info, .api_additional_info_toggle, .api_additional_info_show{
         background-color: #0f2437;
     }
-
 }

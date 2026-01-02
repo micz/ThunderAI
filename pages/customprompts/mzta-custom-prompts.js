@@ -753,6 +753,8 @@ function handleCancelClick(e) {
     tr.querySelector('.chatgpt_web_project_output').value = tr.querySelector('.chatgpt_web_project_show').innerText;
     tr.querySelector('.chatgpt_web_custom_gpt_output').value = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
     tr.querySelector('.api_additional_info_toggle').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+    tr.querySelector('.api_additional_info_show').style.display = 'block';
+    
     hideItemRowEditor(tr);
 }
 
@@ -941,8 +943,8 @@ function loadPromptsList(values){
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_project__:</span><span class="chatgpt_web_project chatgpt_web_project_show">` + values.chatgpt_web_project + `</span></div>
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span><span class="chatgpt_web_custom_gpt chatgpt_web_custom_gpt_show">` + values.chatgpt_web_custom_gpt + `</span></div>
                     </div>
-                    <div class="api_additional_info_show small_info"><span class="api_additional_info_row field_title"><i>__MSG_customPrompts_show_additional_info_show__ [API]</i></span>
-                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><span class="api_type api_type_show">` + values.api_type + `</span></div>
+                    <div class="api_additional_info_show small_info">
+                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type api_type_show">` + values.api_type + `</span></div>
                     </div>
                 </td>
                 <td>
