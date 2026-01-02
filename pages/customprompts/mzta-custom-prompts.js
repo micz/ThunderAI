@@ -801,6 +801,12 @@ function handleConfirmClick(e) {
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
+    if (newValues.api_type !== '') {
+        tr.querySelector('.api_type_show').innerText = newValues.api_type;
+        tr.querySelector('.api_additional_info_show').style.display = 'block';
+        tr.querySelector('.api_additional_info_row').style.display = 'block';
+    
+    }
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
     setSomethingChanged();
