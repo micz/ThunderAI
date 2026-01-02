@@ -257,16 +257,23 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         });
 
                         // Use the existing ThunderAI infrastructure
+                        // We need to adapt to the new v3.8.0 settings structure
                         const summary = await generateAISummaryUsingThunderAIInfrastructure(
                             message.content,
                             message.prompt,
-                            prefs
+                            {
+                                ...prefs,
+                                // Add the dynamic settings that the new system expects
+                                connection_type: prefs.connection_type,
+                                // For summary, we don't have specific integration settings yet,
+                                // so we'll use the global connection type
+                            }
                         );
 
                         return { summary: summary };
                     } catch (error) {
                         console.error("[ThunderAI] Error generating summary:", error);
-                        return { error: "Failed to generate AI summary: " + error.message };
+                        return { error: "Failed to generate AI summary. Please confirm your settings and try again." };
                     }
                 }
                 return _generate_summary(message);
@@ -1298,27 +1305,56 @@ async function generateAISummaryUsingThunderAIInfrastructure(content, prompt, pr
     // Import the special command class
     const { mzta_specialCommand } = await import('./js/mzta-special-commands.js');
 
-    // Determine which LLM to use based on user preferences
-    const llmType = getConnectionType(prefs.connection_type, {}, '');
+    // Create a prompt config for summary (similar to how other features do it)
+    // This adapts to the new v3.8.0 dynamic settings system
+    const summaryPromptConfig = {
+        id: 'auto_summary',
+        name: 'Auto Summary',
+        model: '', // Model will be determined by getConnectionType
+        connection_type: prefs.connection_type
+    };
 
-    // Create a special command instance
+    // Determine which LLM to use based on user preferences using the new v3.8.0 pattern
+    const llmType = getConnectionType(prefs, summaryPromptConfig, 'auto_summary');
+
+    // Get the appropriate model based on the connection type using dynamic settings
+    let model = '';
+    if (prefs.connection_type === 'chatgpt_api') {
+        model = prefs.chatgpt_model;
+    } else if (prefs.connection_type === 'ollama_api') {
+        model = prefs.ollama_model;
+    } else if (prefs.connection_type === 'openai_comp_api') {
+        model = prefs.openai_comp_model;
+    } else if (prefs.connection_type === 'google_gemini_api') {
+        model = prefs.google_gemini_model;
+    } else if (prefs.connection_type === 'anthropic_api') {
+        model = prefs.anthropic_model;
+    }
+
+    // Create a special command instance with the correct v3.8.0 pattern
     const summaryCommand = new mzta_specialCommand({
         prompt: prompt,
         llm: llmType,
-        custom_model: prefs.chatgpt_model,
-        do_debug: prefs.do_debug
+        custom_model: model,
+        do_debug: prefs.do_debug,
+        config: summaryPromptConfig
     });
 
-    // Initialize the worker
-    await summaryCommand.initWorker();
+    try {
+        // Initialize the worker
+        await summaryCommand.initWorker();
 
-    // Send the prompt and get the AI response
-    const aiResponse = await summaryCommand.sendPrompt();
+        // Send the prompt and get the AI response
+        const aiResponse = await summaryCommand.sendPrompt();
 
-    // Clean up the response - extract just the summary content
-    const cleanedResponse = cleanAISummaryResponse(aiResponse);
+        // Clean up the response - extract just the summary content
+        const cleanedResponse = cleanAISummaryResponse(aiResponse);
 
-    return cleanedResponse;
+        return cleanedResponse;
+    } catch (error) {
+        console.error("[ThunderAI] Error in AI summary generation:", error);
+        throw error; // Re-throw to be handled by the caller
+    }
 }
 
 /**

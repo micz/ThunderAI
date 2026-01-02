@@ -327,6 +327,9 @@
     "chagpt_api_send_button": {
         "message": "Utilisation du modèle"
     },
+    "chagpt_api_connecting": {
+        "message": "Tentative de connexion à OpenAI ChatGPT en utilisant la clé API fournie"
+    },
     "Debug": {
         "message": "Debug"
     },
@@ -360,6 +363,12 @@
     "ollama_empty_model": {
         "message": "Vous n'avez pas choisi de modèle pour l'API Ollama. Veuillez en choisir un sur la page des options."
     },
+    "ollama_api_connecting": {
+        "message": "Tentative de connexion au serveur local Ollama en utilisant l'hôte"
+    },
+    "andModel": {
+        "message": "et le modèle"
+    },
     "error_connection_interrupted": {
         "message": "La connexion au serveur a été interrompue de manière inattendue"
     },
@@ -389,6 +398,9 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Vous n'avez pas choisi de modèle pour l'API compatible OpenAI. Veuillez en choisir un dans la page des options."
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "Tentative de connexion au serveur local de l'API compatible OpenAI en utilisant l'hôte"
     },
     "OpenAIComp_api_request_failed": {
         "message": "La requête de l'API compatible OpenAI a échoué"
@@ -669,6 +681,9 @@
     "google_gemini_api_request_failed": {
         "message": "La requête API Google Gemini a échoué"
     },
+    "google_gemini_api_connecting": {
+        "message": "Tentative de connexion à Google Gemini en utilisant la clé API fournie"
+    },
     "google_gemini_empty_apikey": {
         "message": "Vous n'avez pas ajouté de clé API pour l'API Google Gemini. Veuillez en insérer une dans la page des options."
     },
@@ -777,7 +792,7 @@
     "Moved_to_Spam": {
         "message": "Déplacé dans le spam"
     },
-    "no_string": {
+    "spamfilter_not_moved": {
         "message": "Non"
     },
     "spamfilter_no_reports": {
@@ -785,6 +800,9 @@
     },
     "SpamFilter_PageTitle": {
         "message": "Gérer les paramètres du filtre anti-spam"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks non installé !"
     },
     "SpamFilter_info_default": {
         "message": "Sur cette page, vous pouvez modifier l'invite par défaut utilisée pour détecter les e-mails indésirables."
@@ -798,7 +816,7 @@
     "SpamReport_Title": {
         "message": "Rapports du filtre anti-spam"
     },
-    "yes_string": {
+    "spamfilter_moved": {
         "message": "Oui"
     },
     "prefs_OptionText_add_tags_auto_Info": {
@@ -840,6 +858,12 @@
     "context_menu_mzta-add-tags": {
         "message": "Ajouter des étiquettes"
     },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Afficher l'option \"Analyser comme spam\" dans le menu contextuel"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Si coché, l'option \"Analyser comme spam\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
+    },
     "noActiveCalendar": {
         "message": "Aucun calendrier modifiable trouvé !"
     },
@@ -855,6 +879,9 @@
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Forcer le fuseau horaire spécifié"
     },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Si coché, l'option \"Ajouter des étiquettes\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
+    },
     "chatgpt_win_diff_title": {
         "message": "Différences entre le texte original et le texte modifié"
     },
@@ -869,6 +896,9 @@
     },
     "apiwebchat_error": {
         "message": "Erreur"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Afficher l'option \"Ajouter des étiquettes\" dans le menu contextuel"
     },
     "apiwebchat_use_this_answer": {
         "message": "Utiliser cette réponse"
@@ -899,6 +929,12 @@
     },
     "CORS_alternative_1": {
         "message": "Des problèmes pour configurer le CORS ?"
+    },
+    "CORS_alternative_2": {
+        "message": "Appuie sur le bouton ci-dessous pour accorder la permission <all_urls> afin d'éviter tout problème lié au CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Accorde la permission \"tous les URLs\""
     },
     "remember_CORS": {
         "message": "N'oublie pas, tu dois configurer les paramètres CORS sur le serveur !"
@@ -1300,32 +1336,27 @@
     "prefs_anthropic_temperature_Info": {
         "message": "Degré d'aléa injecté dans la réponse. La valeur par défaut est 1,0. La plage de valeurs s'étend di 0,0 à 1,0. Utilisez une température proche de 0,0 pour des tâches analytiques ou des choix multiples, et proche de 1,0 pour des tâches créatives et génératives. Notez que même avec une température de 0,0, les résultats ne seront pas totalement déterministes."
     },
-    "reset": {
-        "message": "Réinitialiser"
-    }
-    },
-    "customPrompts_export_include_api_settings": {
-        "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
-        "description": ""
-    },
     "prefs_OptionText_auto_summary": {
-        "message": "Enable automatic AI summarization for message previews",
-        "description": ""
+        "message": "Activer le résumé automatique par IA pour les aperçus de messages"
     },
     "prefs_OptionText_auto_summary_Info": {
-        "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
+        "message": "Si coché, ThunderAI générera et affichera automatiquement des résumés par IA au-dessus des messages lorsque vous les ouvrirez. Notez que cela signifie que tous les messages que vous prévisualisez seront immédiatement envoyés au service IA configuré.",
         "description": ""
     },
     "auto_summary_title": {
-        "message": "AI Summary",
-        "description": ""
+        "message": "Résumé ThunderAI",
+        "description": "Titre du panneau de résumé automatique"
     },
     "auto_summary_generating": {
-        "message": "Generating summary...",
-        "description": ""
+        "message": "Génération du résumé IA...",
+        "description": "Texte de chargement affiché pendant la génération du résumé"
     },
     "auto_summary_failed": {
-        "message": "Failed to generate summary",
-        "description": ""
+        "message": "Échec de la génération du résumé IA. Veuillez vérifier vos paramètres et réessayer.",
+        "description": "Message d'erreur lorsque la génération du résumé échoue"
+    },
+    "auto_summary_prompt": {
+        "message": "Veuillez fournir un résumé concis du message suivant. Le résumé doit comporter au maximum 3 à 5 phrases et capturer les points principaux :\n\n",
+        "description": "Modèle d'invite pour la génération de résumés IA"
     }
 }
