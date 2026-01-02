@@ -67,5 +67,11 @@
     },
     "prefs_OptionText_chatgpt_win_width": {
         "message": "Bredd"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Aktivera automatisk AI-sammanfattning för meddelandeförhandsvisningar"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Om markerad kommer ThunderAI att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar kommer att skickas omedelbart till den konfigurerade AI-tjänsten."
     }
 }

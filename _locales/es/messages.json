@@ -1301,5 +1301,11 @@
     },
     "Anthropic_System_Prompt": {
         "message": "Prompt del sistema"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Habilitar resumen automático de IA para vistas previas de mensajes"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Si está marcado, ThunderAI generará y mostrará automáticamente resúmenes de IA sobre los mensajes de correo electrónico cuando se abran. Tenga en cuenta que esto significa que todos los mensajes que previsualice se enviarán inmediatamente al servicio de IA configurado."
     }
 }
