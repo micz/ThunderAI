@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
                     if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
                         additionalInfoRow.style.display = 'block';
-                        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
+                        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
                     } else {
                         additionalInfoRow.style.display = 'none';
                         e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
