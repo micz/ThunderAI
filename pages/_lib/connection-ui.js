@@ -44,7 +44,9 @@ export async function injectConnectionUI({
     no_chatgpt_web = false,
     defaultType = '',
     tr_class = '',
-    taLog = console
+    taLog = console,
+    customButtonLabel = '',
+    customButtonCallback = null
   } = {}) {
 
   const anchorTr = document.getElementById(afterTrId);
@@ -74,8 +76,9 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <label>
+      <label style="display: flex; align-items: center;">
         <select id="${selectId}" name="${selectId}" class="option-input"></select>
+        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
       </label>
     </td>
   </tr>
@@ -960,6 +963,16 @@ export async function injectConnectionUI({
   warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
+
+  if (customButtonLabel && customButtonCallback) {
+    const btn = document.getElementById(`${modelId_prefix}customButton`);
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        customButtonCallback(e);
+      });
+    }
+  }
 
   return {
     select: conntype_select,

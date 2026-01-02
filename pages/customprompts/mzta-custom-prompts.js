@@ -489,7 +489,15 @@ function handleEditClick(e) {
             selectId: selectId,
             modelId_prefix: prefix,
             no_chatgpt_web: true,
-            taLog: taLog
+            taLog: taLog,
+            customButtonLabel: "Reset",
+            customButtonCallback: () => {
+                const selectEl = document.getElementById(selectId);
+                if (selectEl) {
+                    selectEl.value = '';
+                    selectEl.dispatchEvent(new Event('change'));
+                }
+            }
         }).then(() => {
             populateConnectionUI(tr, id, prefix, selectId);
             updateWarnings(prefix);
