@@ -163,6 +163,10 @@ div#miczTranslate{
     color: #292929;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: rgb(35, 34, 43);
