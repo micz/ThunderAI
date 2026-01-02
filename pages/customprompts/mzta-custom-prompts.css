@@ -376,9 +376,4 @@ input.input_additional[type="text"]{
         background-color: #0f2437;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .api_key-container .toggle-icon img {
-            filter: invert(1);
-        }
-    }
 }

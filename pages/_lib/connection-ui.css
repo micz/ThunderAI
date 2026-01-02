@@ -37,6 +37,10 @@ textarea.option-textarea{
     height: 10em;
 }
 
+label{
+    width: -moz-available;
+}
+
 .api_key-container {
     position: relative;
     width: 100%;
