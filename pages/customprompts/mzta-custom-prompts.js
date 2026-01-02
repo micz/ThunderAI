@@ -241,13 +241,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             additionalInfoRow.style.display = 'table-row';
             let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
             if (subspan) {
-                subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info');
+                subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
             }
         } else {
             additionalInfoRow.style.display = 'none';
             let subspan = chatgptWebAdditionalPropToggle.querySelector('td span');
             if (subspan) {
-                subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info');
+                subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
             }
         }
     });
