@@ -73,21 +73,5 @@
     },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Om markerad kommer ThunderAI att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar kommer att skickas omedelbart till den konfigurerade AI-tjänsten."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Sammanfattning",
-        "description": "Titel för den automatiska sammanfattningspanelen"
-    },
-    "auto_summary_generating": {
-        "message": "Genererar AI-sammanfattning...",
-        "description": "Laddningstext som visas medan sammanfattningen genereras"
-    },
-    "auto_summary_failed": {
-        "message": "Misslyckades med att generera AI-sammanfattning. Kontrollera dina inställningar och försök igen.",
-        "description": "Felmeddelande när sammanfattningsgenereringen misslyckas"
-    },
-    "auto_summary_prompt": {
-        "message": "Ge en koncis sammanfattning av följande e-postmeddelande. Sammanfattningen bör vara max 3-5 meningar och fånga huvudpunkterna:\n\n",
-        "description": "Promptmall för AI-sammanfattningsgenerering"
     }
 }
