@@ -29,7 +29,8 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     injectConnectionUI,
-    showConnectionOptions
+    showConnectionOptions,
+    updateWarnings
 } from "../../pages/_lib/connection-ui.js";
 import {
     ChatGPTWeb_models,
@@ -491,9 +492,11 @@ function handleEditClick(e) {
             taLog: taLog
         }).then(() => {
             populateConnectionUI(tr, id, prefix, selectId);
+            updateWarnings(prefix);
         });
     } else {
         populateConnectionUI(tr, id, prefix, selectId);
+        updateWarnings(prefix);
     }
 
     // Show/Hide buttons
