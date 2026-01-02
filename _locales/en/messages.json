@@ -1742,7 +1742,23 @@
     "description": ""
   },
   "prefs_OptionText_auto_summary_Info": {
-    "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
-    "description": ""
+      "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
+      "description": ""
+  },
+  "auto_summary_title": {
+      "message": "ThunderAI Summary",
+      "description": "Title for the auto-summary pane"
+  },
+  "auto_summary_generating": {
+      "message": "Generating AI summary...",
+      "description": "Loading text shown while generating summary"
+  },
+  "auto_summary_failed": {
+      "message": "Failed to generate AI summary. Please confirm your settings and try again.",
+      "description": "Error message when summary generation fails"
+  },
+  "auto_summary_prompt": {
+      "message": "Please provide a concise summary of the following email message. The summary should be 3-5 sentences maximum and capture the main points:\n\n",
+      "description": "Prompt template for AI summary generation"
   }
 }

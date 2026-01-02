@@ -14,12 +14,12 @@ async function showSummaryPane() {
     // Create the title element
     const summaryTitle = document.createElement("div");
     summaryTitle.className = "thunderai-summary-title";
-    summaryTitle.innerText = "ThunderAI Summary";
+    summaryTitle.innerText = browser.i18n.getMessage("auto_summary_title");
 
     // Create a loading indicator
     const loadingIndicator = document.createElement("div");
     loadingIndicator.className = "thunderai-summary-content";
-    loadingIndicator.innerText = "Generating AI summary...";
+    loadingIndicator.innerText = browser.i18n.getMessage("auto_summary_generating");
 
     // Create the content element (initially hidden)
     const summaryContent = document.createElement("div");
@@ -45,12 +45,9 @@ async function showSummaryPane() {
         summaryContent.style.display = 'block';
     } catch (error) {
         console.error("Error generating AI summary:", error);
-        loadingIndicator.innerText = "Failed to generate AI summary. Showing message preview instead.";
+        loadingIndicator.innerText = browser.i18n.getMessage("auto_summary_failed");
         loadingIndicator.style.color = '#d70022';
 
-        // Fallback to showing truncated message content
-        const messageContent = getMessageContent();
-        loadingIndicator.innerText += "\n\n" + truncateMessageContent(messageContent);
     }
 }
 
@@ -83,12 +80,8 @@ async function generateAISummary(messageContent) {
     // Clean up the message content
     const cleanedContent = messageContent.replace(/\s+/g, ' ').trim();
 
-    // Create a simple summary prompt
-    const summaryPrompt = `Please provide a concise summary of the following email message. The summary should be 3-5 sentences maximum and capture the main points:
-
-${cleanedContent}
-
-Summary:`;
+    // Create a simple summary prompt using localized string
+    const summaryPrompt = browser.i18n.getMessage("auto_summary_prompt") + cleanedContent;
 
     // Request AI summary from the background script
     return new Promise((resolve, reject) => {
@@ -101,9 +94,10 @@ Summary:`;
             if (response && response.summary) {
                 resolve(response.summary);
             } else if (response && response.error) {
-                reject(new Error(response.error));
+                // Use the localized error message
+                reject(new Error(browser.i18n.getMessage("auto_summary_failed")));
             } else {
-                reject(new Error("Failed to get AI summary"));
+                reject(new Error(browser.i18n.getMessage("auto_summary_failed")));
             }
         });
     });

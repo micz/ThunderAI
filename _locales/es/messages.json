@@ -1307,5 +1307,21 @@
     },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Si está marcado, ThunderAI generará y mostrará automáticamente resúmenes de IA sobre los mensajes de correo electrónico cuando se abran. Tenga en cuenta que esto significa que todos los mensajes que previsualice se enviarán inmediatamente al servicio de IA configurado."
+    },
+    "auto_summary_title": {
+        "message": "Resumen de ThunderAI",
+        "description": "Título del panel de resumen automático"
+    },
+    "auto_summary_generating": {
+        "message": "Generando resumen de IA...",
+        "description": "Texto de carga mostrado mientras se genera el resumen"
+    },
+    "auto_summary_failed": {
+        "message": "Error al generar el resumen de IA. Verifica tu configuración e inténtalo de nuevo.",
+        "description": "Mensaje de error cuando falla la generación del resumen"
+    },
+    "auto_summary_prompt": {
+        "message": "Proporciona un resumen conciso del siguiente mensaje de correo electrónico. El resumen debe tener un máximo de 3-5 oraciones y capturar los puntos principales:\n\n",
+        "description": "Plantilla de prompt para la generación de resúmenes de IA"
     }
 }
