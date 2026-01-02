@@ -1301,5 +1301,8 @@
     },
     "Anthropic_System_Prompt": {
         "message": "Prompt del sistema"
+    },
+    "reset": {
+        "message": "Reiniciar"
     }
 }
