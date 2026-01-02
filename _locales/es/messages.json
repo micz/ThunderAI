@@ -375,7 +375,7 @@
         "message": "No has elegido un modelo para la API de Ollama. Por favor, elige uno en la página de opciones."
     },
     "error_connection_interrupted": {
-        "message": "La conexión al servidor se interrumpió inesperadamente."
+        "message": "La conexión al servidor se interrumpió inesperadamente"
     },
     "ollama_api_request_failed": {
         "message": "Solicitud a la API de Ollama fallida"
@@ -906,7 +906,7 @@
         "message": "Detectar correos spam"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.  \n\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.  \nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.  \nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:  \n{\n\"spamValue\": <entero de 0 a 100>,\n\"explanation\": \"Breve explicación de tu razonamiento\"\n}  \nAquí está la información del correo:  \nRemitente: \"{%author%}\"  \nAsunto: \"{%mail_subject%}\"  \nCuerpo HTML: \"{%mail_html_body%}\""
+        "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales. \nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras. \nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.  \nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:  \n{\n\"spamValue\": <entero de 0 a 100>,\n\"explanation\": \"Breve explicación de tu razonamiento\"\n}  \nAquí está la información del correo:  \nRemitente: \"{%author%}\"  \nAsunto: \"{%mail_subject%}\"  \nCuerpo HTML: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Opciones del filtro de spam"
@@ -949,5 +949,357 @@
     },
     "Moved_to_Spam": {
         "message": "Movido a Spam"
+    },
+    "Explanation": {
+        "message": "Explicación"
+    },
+    "Report_Date": {
+        "message": "Fecha del informe"
+    },
+    "spamfilter_moved": {
+        "message": "Si"
+    },
+    "spamfilter_not_moved": {
+        "message": "No"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "Añadir etiquetas"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analizar el spam"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Mostrar el elemento del menú contextual “Añadir etiquetas”"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Si está marcado, el elemento del menú contextual “Añadir etiquetas” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Mostrar el elemento del menú contextual “Analizar el spam”"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Si está marcado, el elemento del menú contextual “Analizar el spam” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
+    },
+    "noActiveCalendar": {
+        "message": "¡No se encontró un calendario editable!"
+    },
+    "btn_show_differences": {
+        "message": "Mostrar diferencias"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Diferencias entre el texto original y el modificado"
+    },
+    "apiwebchat_you": {
+        "message": "Tu"
+    },
+    "apiwebchat_info": {
+        "message": "Información"
+    },
+    "apiwebchat_error": {
+        "message": "Error"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Usa esta respuesta"
+    },
+    "apiwebchat_stopping": {
+        "message": "Deteniendo"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Recibiendo datos"
+    },
+    "hyprland_warning": {
+        "message": "Si tienes problemas para abrir la ventana de chat de IA, intenta establecer los valores de altura y anchura en 0. Este problema puede ocurrir en Linux en ciertos entornos, por ejemplo, al usar Hyprland."
+    },
+    "remember_CORS": {
+        "message": "¡Recuerda, debes configurar los ajustes CORS en el servidor!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Usar la API compatible con OpenAI puede requerir configurar los ajustes CORS en el servidor."
+    },
+    "CORS_alternative_1": {
+        "message": "¿Problemas al configurar CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Presiona el botón a continuación para otorgar el permiso <all_urls> y evitar cualquier problema de CORS."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Otorgar permiso “all URLs”"
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Redactando en texto plano"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Marca esta opción si estás redactando los correos electrónicos en formato de texto plano."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "¿Ningún texto seleccionado, deseas insertar la respuesta de la IA al inicio del correo electrónico?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Número de tokens de contexto"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "El número de tokens de contexto que se usarán para la API de Ollama. Establece 0 si no deseas pasarlo como parámetro al servidor."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Para usar la integración de ChatGPT Web, necesitas otorgar el permiso requerido."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Para usar la integración de la API de Claude, necesitas otorgar el permiso requerido."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "Para usar la integración de la API de OpenAI, necesitas otorgar el permiso requerido."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Haz clic aquí para abrir una nueva pestaña y seguir las instrucciones."
+    },
+    "ask_integration_permission_2": {
+        "message": "Haz clic aquí para continuar."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Permiso concedido. Puedes hacer clic aquí para cerrar esta pestaña y volver a la ventana principal."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Elige las cuentas donde el etiquetado automático está habilitado"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Cada cambio se guarda inmediatamente."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Elige las cuentas donde el filtro de spam está habilitado"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Proyecto ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Este es el proyecto que se aplicará para la interfaz web de ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT Web GPT personalizado"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Este es el GPT personalizado que se aplicará para la interfaz web de ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Esto debe estar en el siguiente formato:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Puedes encontrar el valor correcto en el campo de URL del navegador al abrir la página de ChatGPT correspondiente."
+    },
+    "customPrompts_Properties": {
+        "message": "Propiedades"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Mostrar propiedades adicionales"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Ocultar propiedades adicionales"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Propiedades adicionales"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Si se especifica un proyecto en las opciones o en un prompt, sobrescribirá la configuración del GPT personalizado."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Si se especifica un proyecto en las opciones o en un prompt, no se usará el chat temporal."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Clave API de Claude"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "API de Claude"
+    },
+    "Anthropic_Models": {
+        "message": "Modelos Claude"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Actualizar lista de modelos de Claude"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Error al intentar obtener los modelos de Claude"
+    },
+    "Anthropic_Version": {
+        "message": "Versión de la API de Claude"
+    },
+    "Anthropic_Version_Info": {
+        "message": "REQUERIDO. No cambies este valor a menos que sepas lo que estás haciendo. Más información en:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Tokens máximos"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "El número máximo de tokens a generar en la completación. El recuento de tokens de tu prompt más max_tokens no puede exceder la longitud del contexto del modelo."
+    },
+    "anthropic_empty_apikey": {
+        "message": "No has añadido una clave API para la API de Claude. Por favor, inserta una en la página de opciones."
+    },
+    "anthropic_empty_model": {
+        "message": "No has seleccionado un modelo para la API de Claude. Por favor, elige uno en la página de opciones."
+    },
+    "anthropic_empty_version": {
+        "message": "No has añadido una cadena de versión para la API de Claude. Por favor, insértala en la página de opciones."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Solicitud a la API de Claude falló"
+    },
+    "_api_connecting": {
+        "message": "Intentando conectar a $api_string$ usando la siguiente configuración...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Modelo"
+    },
+    "_api_connecting_host": {
+        "message": "Host"
+    },
+    "_api_connecting_version": {
+        "message": "Versión"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Servicios disponibles"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Elige uno de los servicios disponibles para la API compatible con OpenAI o insértalo manualmente."
+    },
+    "Custom": {
+        "message": "Personalizado"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "¿Estás seguro de que deseas aplicar la configuración \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Si seleccionas texto, solo esa parte será considerada."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Usar almacenamiento"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Si está marcado, tus chats serán almacenados por OpenAI."
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Qué temperatura de muestreo usar, entre 0 y 2. Valores más altos como 0.8 harán que la salida sea más aleatoria, mientras que valores más bajos como 0.2 la harán más enfocada y determinista."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "La temperatura del modelo. Incrementar la temperatura hará que el modelo responda de forma más creativa. El valor predeterminado es 0.8. Se recomienda usar valores entre 0 y 1."
+    },
+    "prefs_ollama_think": {
+        "message": "Activar el pensamiento"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Si está marcado, el modelo pensará antes de responder. Esta opción solo funciona con modelos que admiten la función «think»."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Haz clic para cambiar el tipo de respuesta"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Coincidencia exacta de exclusiones"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Si está marcado, las palabras de la lista de exclusión se compararán exactamente con las etiquetas. De lo contrario, también coincidirán si están incluidas dentro de la etiqueta."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Administrar marcadores de datos"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "También puedes usar los marcadores de datos predeterminados con autocompletar, como cuando se escriben prompts personalizados."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "En esta página, es posible definir marcadores de datos personalizados para usarlos en tus prompts personalizados."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Los marcadores de datos existentes con el mismo ID se sobrescribirán. Los marcadores con IDs nuevos se añadirán."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Exportar todos los marcadores de datos personalizados"
+    },
+    "customDataPH_Import": {
+        "message": "Importar nuevos marcadores de datos"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Texto del marcador de datos"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Guardando marcadores de datos personalizados..."
+    },
+    "customDataPH_saved": {
+        "message": "¡Marcadores de datos personalizados guardados!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Agregar el marcador de datos"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Estás a punto de importar nuevos marcadores de datos personalizados."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Iniciando la importación de marcadores de datos personalizados..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "¡Importación de marcadores de datos personalizados completada! Necesitas hacer clic en el botón 'Guardar todo' para guardar tus cambios."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "El archivo que estás intentando importar no es un archivo válido de marcadores de datos personalizados."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "El archivo que estás intentando importar no contiene ningún marcador de datos personalizado válido."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Utilizable en los prompts añadidos al menú"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Tenga en cuenta que cualquier etiqueta <br> en la respuesta de la IA será reemplazada por saltos de línea."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Borrar lista de modelos"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "¿Estás seguro de que deseas borrar la lista de modelos? Esta acción no se puede deshacer."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperatura"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Qué temperatura de muestreo usar, entre 0 y 2. Valores más altos como 0.8 harán que la salida sea más aleatoria, mientras que valores más bajos como 0.2 la harán más enfocada y determinista."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Parece que no es posible saber si ChatGPT ha terminado. Haz clic aquí para forzar la finalización del trabajo."
+    },
+    "warn_API_needed": {
+        "message": "Para usar esta función, necesitas una integración de API en lugar de la integración de ChatGPT Web. Puedes definir una API específica en la página de configuración de la función marcando primero la casilla de verificación arriba y luego haciendo clic en el botón de la izquierda."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Presupuesto de pensamiento"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Define el número de tokens a usar para pensar. Deja este campo vacío si el modelo seleccionado no admite el pensamiento o si deseas usar el método predeterminado. Introduce 0 para desactivar el pensamiento, o -1 para habilitar el pensamiento dinámico."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Este parámetro debe ser un número entre 0.0 y 2.0. Controla la aleatoriedad de la salida. El valor predeterminado varía según el modelo. Déjalo vacío para evitar establecer el parámetro en la llamada a la API."
+    },
+    "SelectAll": {
+        "message": "Seleccionar todo"
+    },
+    "DeselectAll": {
+        "message": "Deseleccionar todo"
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Has denegado el permiso opcional necesario para obtener los modelos de esta integración."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Cantidad de aleatoriedad inyectada en la respuesta. Por defecto es 1.0. Varía de 0.0 a 1.0. Usa una temperatura más cercana a 0.0 para tareas analíticas / de opción múltiple, y más cercana a 1.0 para tareas creativas y generativas. Ten en cuenta que incluso con una temperatura de 0.0, los resultados no serán completamente determinísticos."
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Puedes mejorar el rendimiento de Claude usando un Prompt del Sistema para asignarle un rol. Esta técnica, conocida como prompting de rol, es la forma más poderosa de usar prompts del sistema con Claude. El rol adecuado puede convertir a Claude de un asistente general en tu experto virtual en el dominio."
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Prompt del sistema"
     }
 }
