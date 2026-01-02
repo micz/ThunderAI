@@ -23,6 +23,7 @@
 import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
+import { loadPrompt } from '../js/mzta-prompts.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -81,6 +82,22 @@ if (worker) {
         }
 
         let prefs_api = await browser.storage.sync.get(prefsToGet);
+
+        if (prompt_id) {
+            try {
+                const prompt = await loadPrompt(prompt_id);
+                if (prompt && prompt.api_type === llm) {
+                    for (const key in options_config) {
+                        const prefKey = `${integration_prefix}_${key}`;
+                        if (prompt[prefKey] !== undefined) {
+                            prefs_api[prefKey] = prompt[prefKey];
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("[ThunderAI] Error loading prompt settings:", e);
+            }
+        }
 
         let i18nStrings = {};
         const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;

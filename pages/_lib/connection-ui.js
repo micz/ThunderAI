@@ -1022,7 +1022,7 @@ export async function initializeSpecificIntegrationUI({
       let prompt = await loadPrompt(promptId);
       if(!prompt) return;
 
-      prompt.api = conntype;
+      prompt.api_type = conntype;
 
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

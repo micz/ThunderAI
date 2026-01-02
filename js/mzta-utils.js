@@ -648,7 +648,9 @@ export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) 
     }
 
     if (specificType && specificType !== '') return specificType;
-    if (prompt && prompt.api && prompt.api !== '') return prompt.api;
+    if (prompt) {
+        if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
+    }
     return defaultType;
 }
 
