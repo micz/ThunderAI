@@ -640,33 +640,18 @@ function toggleApiPropertiesShow(tr) {
 }
 
 function toggleAdditionalPropertiesEditor(tr) {
-    switch(prefs.connection_type) {
-        case 'chatgpt_web': {
-            let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
-            info_toggle.style.display = 'block';
-            let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
-            let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show').innerText;
-            let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
+    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+        let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
+        info_toggle.style.display = 'block';
+        let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
+        let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show').innerText;
+        let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
 
-            if ((chatGPTWebModel_show !== '' && chatGPTWebModel_show !== 'undefined') || 
-                (chatGPTWebProject_show !== '' && chatGPTWebProject_show !== 'undefined') || 
-                (chatGPTWebCustomGPT_show !== '' && chatGPTWebCustomGPT_show !== 'undefined')) {
-                info_toggle.click();
-            }
-            break;
+        if ((chatGPTWebModel_show !== '' && chatGPTWebModel_show !== 'undefined') || 
+            (chatGPTWebProject_show !== '' && chatGPTWebProject_show !== 'undefined') || 
+            (chatGPTWebCustomGPT_show !== '' && chatGPTWebCustomGPT_show !== 'undefined')) {
+            info_toggle.click();
         }
-        // case 'chatgpt_api':
-        //     document.getElementById('chatgpt_api').style.display = 'block';
-        //     break;
-        // case 'ollama_api':
-        //     document.getElementById('ollama_api').style.display = 'block';
-        //     break;
-        // case 'openai_comp_api':
-        //     document.getElementById('openai_comp_api').style.display = 'block';
-        //     break;
-        // case 'google_gemini_api':
-        //     document.getElementById('google_gemini_api').style.display = 'block';
-        //     break;
     }
 
     let api_info_toggle = tr.querySelector('.api_additional_info_toggle');
