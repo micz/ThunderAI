@@ -213,32 +213,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     showConnectionOptions(apiSelect);
 
-    switch(prefs.connection_type) {
-        case 'chatgpt_web': {
-            // for the new item form
-            document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
-            // for the edit list items form
-            document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
-                element.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
-                    if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
-                        additionalInfoRow.style.display = 'block';
-                        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
-                    } else {
-                        additionalInfoRow.style.display = 'none';
-                        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
-                    }
-                });
+    if(prefs.connection_type == 'chatgpt_web') {
+        // for the new item form
+        document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
+        // for the edit list items form
+        document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.preventDefault();
+                let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
+                if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+                    additionalInfoRow.style.display = 'block';
+                    e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
+                } else {
+                    additionalInfoRow.style.display = 'none';
+                    e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
+                }
             });
-            document.querySelectorAll('input.chatgpt_web_project_output').forEach(element => {
-                element.addEventListener("input", validateCustomData_ChatGPTWeb);
-            });
-            document.querySelectorAll('input.chatgpt_web_custom_gpt_output').forEach(element => {
-                element.addEventListener("input", validateCustomData_ChatGPTWeb);
-            });
-            break;
-        }
+        });
+        document.querySelectorAll('input.chatgpt_web_project_output').forEach(element => {
+            element.addEventListener("input", validateCustomData_ChatGPTWeb);
+        });
+        document.querySelectorAll('input.chatgpt_web_custom_gpt_output').forEach(element => {
+            element.addEventListener("input", validateCustomData_ChatGPTWeb);
+        });
     }
 
     // for the edit list items form [API]
