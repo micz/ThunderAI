@@ -753,8 +753,7 @@ function handleCancelClick(e) {
     tr.querySelector('.chatgpt_web_project_output').value = tr.querySelector('.chatgpt_web_project_show').innerText;
     tr.querySelector('.chatgpt_web_custom_gpt_output').value = tr.querySelector('.chatgpt_web_custom_gpt_show').innerText;
     tr.querySelector('.api_additional_info_toggle').innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
-    tr.querySelector('.api_additional_info_show').style.display = 'block';
-    
+    toggleApiPropertiesShow(tr);
     hideItemRowEditor(tr);
 }
 
@@ -803,8 +802,7 @@ function handleConfirmClick(e) {
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
     if (newValues.api_type !== '') {
         tr.querySelector('.api_type_show').innerText = newValues.api_type;
-        tr.querySelector('.api_additional_info_show').style.display = 'block';
-        tr.querySelector('.api_additional_info_row').style.display = 'block';
+        toggleApiPropertiesShow(tr);
     
     }
     // the checkboxes update is handled directly by themselves
