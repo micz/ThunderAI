@@ -218,21 +218,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // switch(prefs.connection_type) {
-        // case 'chatgpt_api':
-        //     document.getElementById('chatgpt_api').style.display = 'block';
-        //     break;
-        // case 'ollama_api':
-        //     document.getElementById('ollama_api').style.display = 'block';
-        //     break;
-        // case 'openai_comp_api':
-        //     document.getElementById('openai_comp_api').style.display = 'block';
-        //     break;
-        // case 'google_gemini_api':
-        //     document.getElementById('google_gemini_api').style.display = 'block';
-        //     break;
-    // }
-
     const chatgptWebAdditionalPropToggle = document.getElementById('chatgpt_web_additional_info_toggle');
     chatgptWebAdditionalPropToggle.addEventListener('click', (e) => {
         e.preventDefault();
@@ -476,7 +461,7 @@ document.getElementById('btnManageCustomDataPH').addEventListener('click', () =>
 function handleEditClick(e) {
     e.preventDefault();
     const tr = e.target.parentNode.parentNode;
-    const id = tr.querySelector('.id_output').value;
+    const id = tr.querySelector('.id_output').value.toLowerCase();
     
     // Inject Connection UI if needed
     const anchorId = `api_ui_anchor_${id}`;
@@ -516,6 +501,7 @@ function handleEditClick(e) {
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
     toggleDiffviewer(e);
+    toggleAdditionalPropertiesShow(tr);
 }
 
 function populateConnectionUI(tr, id, prefix, selectId) {
@@ -599,50 +585,40 @@ function hideItemRowEditor(tr) {
 }
 
 function toggleAdditionalPropertiesShow(tr) {
-    switch(prefs.connection_type) {
-        case 'chatgpt_web': {
-            let element = tr.querySelector('.chatgpt_web_additional_info_show');
-            let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show');
-            let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show');
-            let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show');
-
-            if ((chatGPTWebModel_show.innerText !== '' && chatGPTWebModel_show.innerText !== 'undefined') || 
-                (chatGPTWebProject_show.innerText !== '' && chatGPTWebProject_show.innerText !== 'undefined') || 
-                (chatGPTWebCustomGPT_show.innerText !== '' && chatGPTWebCustomGPT_show.innerText !== 'undefined')) {
-                element.style.display = 'flex';
-            } else {
-                element.style.display = 'none';
-            }
-
-            if(chatGPTWebModel_show.innerText === '' || chatGPTWebModel_show.innerText === 'undefined') {
-                chatGPTWebModel_show.parentNode.style.display = 'none';
-            } else {
-                chatGPTWebModel_show.parentNode.style.display = 'inline';
-            }
-            if(chatGPTWebProject_show.innerText === '' || chatGPTWebProject_show.innerText === 'undefined') {
-                chatGPTWebProject_show.parentNode.style.display = 'none';
-            } else {
-                chatGPTWebProject_show.parentNode.style.display = 'inline';
-            }
-            if(chatGPTWebCustomGPT_show.innerText === '' || chatGPTWebCustomGPT_show.innerText === 'undefined') {
-                chatGPTWebCustomGPT_show.parentNode.style.display = 'none';
-            } else {
-                chatGPTWebCustomGPT_show.parentNode.style.display = 'inline';
-            }
-            break;
+    // console.log(">>>>>>>>>>>>>>>>> toggleAdditionalPropertiesShow tr.querySelector('.api_type_show').innerText: " + tr.querySelector('.api_type_show').innerText);
+    let element = tr.querySelector('.chatgpt_web_additional_info_show');
+    let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show');
+    let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show');
+    let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show');
+    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+        if ((chatGPTWebModel_show.innerText !== '' && chatGPTWebModel_show.innerText !== 'undefined') || 
+            (chatGPTWebProject_show.innerText !== '' && chatGPTWebProject_show.innerText !== 'undefined') || 
+            (chatGPTWebCustomGPT_show.innerText !== '' && chatGPTWebCustomGPT_show.innerText !== 'undefined')) {
+            element.style.display = 'flex';
+        } else {
+            element.style.display = 'none';
         }
-        // case 'chatgpt_api':
-        //     document.getElementById('chatgpt_api').style.display = 'block';
-        //     break;
-        // case 'ollama_api':
-        //     document.getElementById('ollama_api').style.display = 'block';
-        //     break;
-        // case 'openai_comp_api':
-        //     document.getElementById('openai_comp_api').style.display = 'block';
-        //     break;
-        // case 'google_gemini_api':
-        //     document.getElementById('google_gemini_api').style.display = 'block';
-        //     break;
+
+        if(chatGPTWebModel_show.innerText === '' || chatGPTWebModel_show.innerText === 'undefined') {
+            chatGPTWebModel_show.parentNode.style.display = 'none';
+        } else {
+            chatGPTWebModel_show.parentNode.style.display = 'inline';
+        }
+        if(chatGPTWebProject_show.innerText === '' || chatGPTWebProject_show.innerText === 'undefined') {
+            chatGPTWebProject_show.parentNode.style.display = 'none';
+        } else {
+            chatGPTWebProject_show.parentNode.style.display = 'inline';
+        }
+        if(chatGPTWebCustomGPT_show.innerText === '' || chatGPTWebCustomGPT_show.innerText === 'undefined') {
+            chatGPTWebCustomGPT_show.parentNode.style.display = 'none';
+        } else {
+            chatGPTWebCustomGPT_show.parentNode.style.display = 'inline';
+        }
+    }else{
+        element.style.display = 'none';
+        chatGPTWebModel_show.parentNode.style.display = 'none';
+        chatGPTWebProject_show.parentNode.style.display = 'none';
+        chatGPTWebCustomGPT_show.parentNode.style.display = 'none';
     }
 }
 
