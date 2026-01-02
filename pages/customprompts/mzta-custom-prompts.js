@@ -245,13 +245,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.api_additional_info_toggle').forEach(element => {
         element.addEventListener('click', (e) => {
             e.preventDefault();
-            let additionalInfoRow = e.target.closest('td').querySelector('.api_additional_info');
+            let additionalInfoRow = element.nextElementSibling;
             if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
                 additionalInfoRow.style.display = 'block';
-                e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+                element.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
             } else {
                 additionalInfoRow.style.display = 'none';
-                e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+                element.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
             }
         });
     });

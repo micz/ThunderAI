@@ -1132,28 +1132,28 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   }else{
     anthropic_api_display = 'none';
   }
-  document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
   });
-  document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
     element.style.display = chatgpt_api_display;
   });
-  document.querySelectorAll(".conntype_ollama_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_ollama_api").forEach(element => {
     element.style.display = ollama_api_display;
   });
-  document.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
     element.style.display = openai_comp_api_display;
   });
-  document.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
     element.style.display = google_gemini_api_display;
   });
-  document.querySelectorAll(".conntype_anthropic_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_anthropic_api").forEach(element => {
     element.style.display = anthropic_api_display;
   });
   if (varConnectionUI.permission_all_urls) {
-    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    const openaiCompWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
     if (openaiCompWarning) openaiCompWarning.style.display = 'none';
-    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    const ollamaWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
     if (ollamaWarning) ollamaWarning.style.display = 'none';
   }
 }
