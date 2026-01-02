@@ -1327,5 +1327,17 @@
     "auto_summary_failed": {
         "message": "Failed to generate summary",
         "description": ""
+    },
+    "auto_summary_title": {
+        "message": "Riassunto ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Generazione del riassunto AI..."
+    },
+    "auto_summary_failed": {
+        "message": "Impossibile generare il riassunto AI. Verificare le impostazioni e riprovare."
+    },
+    "auto_summary_prompt": {
+        "message": "Fornire un riassunto conciso del seguente messaggio email. Il riassunto dovrebbe essere di massimo 3-5 frasi e catturare i punti principali:\n\n"
     }
 }

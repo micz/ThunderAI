@@ -327,6 +327,9 @@
     "chagpt_api_send_button": {
         "message": "Modell wird verwendet"
     },
+    "chagpt_api_connecting": {
+        "message": "Versuch, eine Verbindung zu OpenAI ChatGPT mit dem bereitgestellten API-Schlüssel herzustellen"
+    },
     "Debug": {
         "message": "Debuggen"
     },
@@ -360,6 +363,12 @@
     "ollama_empty_model": {
         "message": "Sie haben kein Modell für die Ollama API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
+    "ollama_api_connecting": {
+        "message": "Versuch, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen"
+    },
+    "andModel": {
+        "message": "und Modell"
+    },
     "error_connection_interrupted": {
         "message": "Die Verbindung zum Server wurde unerwartet unterbrochen"
     },
@@ -389,6 +398,9 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
+    },
+    "OpenAIComp_api_connecting": {
+        "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen"
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen"
@@ -669,6 +681,9 @@
     "google_gemini_api_request_failed": {
         "message": "Google Gemini API-Anfrage fehlgeschlagen"
     },
+    "google_gemini_api_connecting": {
+        "message": "Versuch, eine Verbindung zu Google Gemini mit dem bereitgestellten API-Schlüssel herzustellen"
+    },
     "google_gemini_empty_apikey": {
         "message": "Sie haben keinen API-Schlüssel für die Google Gemini API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
     },
@@ -810,14 +825,17 @@
     "Report_Date": {
         "message": "Berichtsdatum"
     },
-    "yes_string": {
+    "spamfilter_moved": {
         "message": "Ja"
     },
-    "no_string": {
+    "spamfilter_not_moved": {
         "message": "Nein"
     },
     "spamfilter_threshold_too_low": {
         "message": "Der Spam-Schwellenwert ist zu niedrig! Sie werden wahrscheinlich zu viele E-Mails als Spam markieren!"
+    },
+    "sparks_not_installed": {
+        "message": "ThunderAI Sparks nicht installiert!"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Wenn aktiviert, fügt die KI nur vorhandene Tags hinzu und erstellt keine neuen Tags."
@@ -836,6 +854,12 @@
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Tags hinzufügen\" angezeigt."
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Auf Spam analysieren\" angezeigt."
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Erzwinge die angegebene Zeitzone"
@@ -857,6 +881,12 @@
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalendereinträge und Aufgaben erzwungen."
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "\"Tags hinzufügen\" im Kontextmenü anzeigen"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "\"Auf Spam analysieren\" im Kontextmenü anzeigen"
     },
     "apiwebchat_you": {
         "message": "Du"
@@ -899,6 +929,12 @@
     },
     "CORS_alternative_1": {
         "message": "Probleme beim Einrichten von CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Drücke den Button unten, um die Berechtigung <all_urls> zu erteilen und CORS-Probleme zu vermeiden."
+    },
+    "CORS_give_allurls_perm": {
+        "message": "Gib die Berechtigung für \"alle URLs\""
     },
     "remember_CORS": {
         "message": "Denk daran, du musst die CORS-Einstellungen auf dem Server konfigurieren!"
@@ -1071,7 +1107,7 @@
         "message": "Claude-API-Version"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Maximale Anzahl an Tokens"
+        "message": "Maximale Anzahl an Tokens für Claude"
     },
     "anthropic_empty_apikey": {
         "message": "Sie haben keinen API-Schlüssel für die Claude-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
@@ -1276,56 +1312,22 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Sie haben die optionale Berechtigung verweigert, die zum Abrufen der Modelle für diese Integration erforderlich ist."
     },
-    "prompt_string": {
-        "message": "Prompt"
-    },
-    "placeholder_mail_headers": {
-        "message": "E-Mail-Kopfzeilen"
-    },
-    "reset": {
-        "message": "Reset"
-    },
-    "prefs_chatgpt_api_temperature_Info": {
-        "message": "Welche Sampling-Temperatur soll verwendet werden (zwischen 0 und 2)? Höhere Werte wie 0,8 machen die Ausgabe zufälliger, während niedrigere Werte wie 0,2 sie fokussierter und deterministischer machen."
-    },
-    "prefs_ollama_temperature_Info": {
-        "message": "Die Temperatur des Modells. Eine Erhöhung der Temperatur führt dazu, dass das Modell kreativer antwortet. Der Standardwert ist 0,8. Es wird empfohlen, Werte zwischen 0 und 1 zu verwenden."
-    },
-    "prefs_api_temperature": {
-        "message": "Temperatur"
-    },
-    "prefs_openai_comp_temperature_Info": {
-        "message": "Welche Sampling-Temperatur verwendet werden soll (zwischen 0 und 2). Höhere Werte wie 0,8 machen die Ausgabe zufälliger, während niedrigere Werte wie 0,2 sie fokussierter und deterministischer machen."
-    },
-    "prefs_google_gemini_temperature_Info": {
-        "message": "Dieser Parameter muss eine Zahl zwischen 0,0 und 2,0 sein. Er steuert den Zufallsgrad der Ausgabe. Der Standardwert variiert je nach Modell. Lassen Sie das Feld leer, um den Parameter im API-Aufruf nicht festzulegen."
-    },
-    "prefs_anthropic_temperature_Info": {
-        "message": "Grad der Zufälligkeit in der Antwort. Der Standardwert ist 1,0. Der Bereich liegt zwischen 0,0 und 1,0. Verwenden Sie eine Temperatur näher an 0,0 für analytische Aufgaben oder Multiple-Choice-Fragen und näher an 1,0 für kreative und generative Aufgaben. Beachten Sie, dass die Ergebnisse selbst bei einer Temperatur von 0,0 nicht vollständig deterministisch sind."
-    }
-    },
-    "customPrompts_export_include_api_settings": {
-        "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
-        "description": ""
-    },
     "prefs_OptionText_auto_summary": {
-        "message": "Enable automatic AI summarization for message previews",
-        "description": ""
+        "message": "Automatische KI-Zusammenfassung für Nachrichten-Vorschau aktivieren"
     },
     "prefs_OptionText_auto_summary_Info": {
-        "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
-        "description": ""
+        "message": "Wenn aktiviert, wird ThunderAI automatisch KI-Zusammenfassungen über E-Mail-Nachrichten generieren und anzeigen, wenn sie geöffnet werden. Beachten Sie, dass dies bedeutet, dass alle Nachrichten, die Sie in der Vorschau anzeigen, sofort an den konfigurierten KI-Dienst gesendet werden."
     },
     "auto_summary_title": {
-        "message": "AI Summary",
-        "description": ""
+        "message": "ThunderAI Zusammenfassung"
     },
     "auto_summary_generating": {
-        "message": "Generating summary...",
-        "description": ""
+        "message": "KI-Zusammenfassung wird generiert..."
     },
     "auto_summary_failed": {
-        "message": "Failed to generate summary",
-        "description": ""
+        "message": "Fehler beim Generieren der KI-Zusammenfassung. Bitte überprüfen Sie Ihre Einstellungen und versuchen Sie es erneut."
+    },
+    "auto_summary_prompt": {
+        "message": "Bitte geben Sie eine prägnante Zusammenfassung der folgenden E-Mail-Nachricht. Die Zusammenfassung sollte maximal 3-5 Sätze umfassen und die Hauptpunkte erfassen:\n\n"
     }
 }
