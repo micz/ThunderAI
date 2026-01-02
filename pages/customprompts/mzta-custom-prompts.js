@@ -125,8 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    i18n.updateDocument();
-
     const apiSettingsToggle = document.getElementById('api_additional_info_toggle');
     const apiSettingsRow = document.getElementById('api_additional_info');
 
@@ -141,40 +139,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    const apiTable = document.createElement('table');
-    apiTable.style.width = '100%';
-    apiTable.style.textAlign = 'left';
-
-    const tr = document.createElement('tr');
-    tr.id = 'api_ui_anchor';
-
-    const td1 = document.createElement('td');
-    td1.classList.add('w30');
-    td1.textContent = browser.i18n.getMessage('prefs_Connection_type') + ':';
-
-    const td2 = document.createElement('td');
-
-    const select = document.createElement('select');
-    select.id = 'new_prompt_api_type';
-    select.classList.add('input_new');
-
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '-- ' + browser.i18n.getMessage('Custom') + ' --';
-    select.appendChild(option);
-
-    td2.appendChild(select);
-    tr.appendChild(td1);
-    tr.appendChild(td2);
-    apiTable.appendChild(tr);
-    document.getElementById('api_ui_container').appendChild(apiTable);
-
     await injectConnectionUI({
         afterTrId: 'api_ui_anchor',
         selectId: 'new_prompt_api_type',
         no_chatgpt_web: true,
         taLog: taLog
     });
+
+    i18n.updateDocument();
 
     const apiSelect = document.getElementById('new_prompt_api_type');
     // Remove chatgpt_web
