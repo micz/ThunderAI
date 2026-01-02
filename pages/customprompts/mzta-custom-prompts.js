@@ -127,32 +127,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     i18n.updateDocument();
 
-    // Inject API Configuration UI for New Prompt
-    const webToggle = document.getElementById('chatgpt_web_additional_info_toggle'); // Assuming this exists
-
-    const apiSettingsToggle = document.createElement('tr');
-    apiSettingsToggle.id = 'api_additional_info_toggle';
-    apiSettingsToggle.className = 'small_info api_additional_info';
-    apiSettingsToggle.style.cursor = 'pointer';
-
-    const tdToggle = document.createElement('td');
-    tdToggle.colSpan = '5';
-    const spanToggle = document.createElement('span');
-    spanToggle.textContent = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
-    tdToggle.appendChild(spanToggle);
-    apiSettingsToggle.appendChild(tdToggle);
-
-    const apiSettingsRow = document.createElement('tr');
-    apiSettingsRow.id = 'api_additional_info';
-    apiSettingsRow.style.display = 'none';
-
-    const tdRow = document.createElement('td');
-    tdRow.colSpan = '5';
-    tdRow.id = 'api_ui_container';
-    apiSettingsRow.appendChild(tdRow);
-
-    webToggle.parentNode.insertBefore(apiSettingsToggle, webToggle.nextSibling);
-    webToggle.parentNode.insertBefore(apiSettingsRow, apiSettingsToggle.nextSibling);
+    const apiSettingsToggle = document.getElementById('api_additional_info_toggle');
+    const apiSettingsRow = document.getElementById('api_additional_info');
 
     apiSettingsToggle.addEventListener('click', (e) => {
         e.preventDefault();
