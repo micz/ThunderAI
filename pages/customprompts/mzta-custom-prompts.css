@@ -60,7 +60,7 @@ table.prompts_list th {
 
 table td {
     border: 1px solid #ddd;
-    padding: 8px;
+    padding: 5px;
 }
 
 table td.w08{
@@ -229,7 +229,6 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
 }
 
 #chatgpt_web_additional_info_toggle td{
-    padding:0px 5px;
     font-style: italic;
 }
 
@@ -271,7 +270,7 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
 .chatgpt_web_additional_info_toggle{
     width: -moz-available;
     text-align: center;
-    margin-top: 10px;
+    padding:5px;
 }
 
 .chatgpt_web_additional_info_show{
@@ -308,12 +307,17 @@ input.input_additional[type="text"]{
     background-color: #409df3;
 }
 
+#api_additional_info_toggle{
+    font-style: italic;
+}
+
 .api_additional_info_toggle{
     text-align: center;
     padding: 5px;
     background-color: #409df3;
     cursor: pointer;
-    display: none;;
+    display: none;
+    font-style: italic;
 }
 
 .api_additional_info_show{
@@ -323,7 +327,12 @@ input.input_additional[type="text"]{
     height: 100%;
     padding: 3px;
     margin-top: 5px;
-    background-color: #409df3;
+    background-color: rgb(64, 157, 243);
+}
+
+#api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
+    background-color: rgb(64, 137, 213);
+    text-decoration: underline;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -375,7 +384,6 @@ input.input_additional[type="text"]{
 
     #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
         background-color: rgb(39, 11, 0);
-        color: rgb(182, 182, 182);
     }
 
     #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
@@ -384,5 +392,9 @@ input.input_additional[type="text"]{
 
     .api_additional_info, .api_additional_info_toggle, .api_additional_info_show{
         background-color: #0f2437;
+    }
+
+    #api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
+        background-color: #1b456d
     }
 }
