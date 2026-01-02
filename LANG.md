@@ -2,6 +2,7 @@ cs
 de
 el
 en
+es
 fr
 hr
 it

@@ -16,8 +16,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
-import { OpenAI } from '../../js/api/openai.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
+import { OpenAI } from '../../js/api/openai_responses.js';
 import { Ollama } from '../../js/api/ollama.js';
 import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
@@ -28,6 +31,7 @@ import {
   sanitizeChatGPTWebCustomData
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
+import { loadPrompt, savePrompt, clearPromptAPI } from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
   permission_all_urls: false
@@ -40,13 +44,28 @@ export async function injectConnectionUI({
     no_chatgpt_web = false,
     defaultType = '',
     tr_class = '',
-    taLog = console
+    taLog = console,
+    customButtonLabel = '',
+    customButtonCallback = null
   } = {}) {
 
   const anchorTr = document.getElementById(afterTrId);
   if (!anchorTr) {
     console.error(`[ThuderAI | injectConnectionUI] Can't find tr#${afterTrId}`);
     return null;
+  }
+
+  // Inject CSS if not present
+  if (!document.getElementById('mzta-connection-ui-style')) {
+    const style = document.createElement('style');
+    style.id = 'mzta-connection-ui-style';
+    style.textContent = `
+      .api_key-container { position: relative; display: flex; align-items: center; }
+      .toggle-icon { cursor: pointer; margin-left: 5px; }
+      .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
+      .option-input { flex-grow: 1; }
+    `;
+    document.head.appendChild(style);
   }
 
   let tpl = `
@@ -57,8 +76,9 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <label>
+      <label style="display: flex; align-items: center;">
         <select id="${selectId}" name="${selectId}" class="option-input"></select>
+        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
       </label>
     </td>
   </tr>
@@ -137,9 +157,9 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="chatgpt_api_key" name="chatgpt_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_chatgpt_api_key"><img src="/images/pwd-show.png" id="pwd-icon_chatgpt_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_chatgpt_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_chatgpt_api_key"></span>
       </div>
     </td>
   </tr>
@@ -150,9 +170,22 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="chatgpt_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input option-input-model"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_temperature" class="option-input check-number" />
+        <br>__MSG_prefs_chatgpt_api_temperature_Info__
       </label>
     </td>
   </tr>
@@ -164,7 +197,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="checkbox" id="chatgpt_api_store" name="chatgpt_api_store" class="option-input" />
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
         &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
       </label>
     </td>
@@ -177,7 +210,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="chatgpt_developer_messages" name="chatgpt_developer_messages" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_developer_messages" class="option-input option-textarea"></textarea>
         <br>__MSG_ChatGPT_Developer_Messages_Info__
       </label>
     </td>
@@ -189,9 +222,9 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="google_gemini_api_key" name="google_gemini_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_google_gemini_api_key"><img src="/images/pwd-show.png" id="pwd-icon_google_gemini_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_google_gemini_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_google_gemini_api_key"></span>
       </div>
     </td>
   </tr>
@@ -202,9 +235,22 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="google_gemini_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input option-input-model"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_temperature" class="option-input check-number"/>
+        <br>__MSG_prefs_google_gemini_temperature_Info__
       </label>
     </td>
   </tr>
@@ -216,7 +262,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="google_gemini_thinking_budget" name="google_gemini_thinking_budget" class="option-input"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_thinking_budget" class="option-input"/>
         <br>__MSG_prefs_google_gemini_thinking_budget_Info__
         <br><a href="https://ai.google.dev/gemini-api/docs/thinking#set-budget">__MSG_more_info_string__</a>
       </label>
@@ -230,7 +276,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="google_gemini_system_instruction" name="google_gemini_system_instruction" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_system_instruction" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_system_instruction" class="option-input option-textarea"></textarea>
         <br>__MSG_GoogleGemini_SystemInstruction_Info__
       </label>
     </td>
@@ -242,16 +288,16 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="ollama_host" name="ollama_host" class="option-input"/>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_host" class="option-input"/>
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="ollama_api_cors_warning">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2__
-        <br><br><button id="btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -261,9 +307,22 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="ollama_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input option-input-model"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
+      </label>
+    </td>
+  </tr>
+   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_temperature" class="option-input check-number" />
+        <br>__MSG_prefs_ollama_temperature_Info__
       </label>
     </td>
   </tr>
@@ -273,7 +332,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="ollama_think" name="ollama_think" class="option-input"/>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_think" class="option-input"/>
         __MSG_prefs_ollama_think_Info__
       </label>
     </td>
@@ -284,7 +343,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="number" id="ollama_num_ctx" name="ollama_num_ctx" class="option-input"/>
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_num_ctx" class="option-input"/>
         <br>__MSG_prefs_ollama_num_ctx_Info__
       </label>
     </td>
@@ -295,7 +354,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <select id="openai_comp_services_shortcut"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_services_shortcut"></select>
         <br>__MSG_prefs_OpenAIComp_AvailableServices_Info__
       </label>
     </td>
@@ -307,17 +366,17 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="openai_comp_host" name="openai_comp_host" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_host" class="option-input" />
         <br>__MSG_prefs_OptionText_openai_comp_info_remote__
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="openai_comp_api_cors_warning">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_cors_warning">
     <td colspan="2" style="text-align:center;">
       __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2__
-        <br><br><button id="btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
@@ -326,7 +385,7 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="checkbox" id="openai_comp_use_v1" name="openai_comp_use_v1" class="option-input" />
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_use_v1" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_use_v1" class="option-input" />
         &nbsp;<span>__MSG_prefs_OptionText_openai_comp_use_v1_info__</span>
       </label>
     </td>
@@ -339,9 +398,9 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="openai_comp_api_key" name="openai_comp_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_openai_comp_api_key"><img src="/images/pwd-show.png" id="pwd-icon_openai_comp_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_openai_comp_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_openai_comp_api_key"></span>
       </div>
     </td>
   </tr>
@@ -349,14 +408,14 @@ export async function injectConnectionUI({
     <td>
       <label>
         <span class="opt_title">__MSG_OpenAIComp_Models__</span>
-        <br><button id="btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
-      <br><button id="btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
+        <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompForceModel" class="btn_small">__MSG_prefs_OpenAIComp_ForceModel__</button>
+      <br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnOpenAICompClearModelsList" class="btn_small">__MSG_prefs_OpenAIComp_ClearModelsList__</button></td>
       </label>
     </td>
     <td>
-      <button id="btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="openai_comp_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input option-input-model"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
       </label>
     </td>
   </tr>
@@ -366,8 +425,21 @@ export async function injectConnectionUI({
     </label></td>
     <td>
       <label>
-        <input type="text" id="openai_comp_chat_name" name="openai_comp_chat_name" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_name" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_chat_name" class="option-input" />
         <br>__MSG_prefs_OpenAIComp_ChatName_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input check-number" />
+        <br>__MSG_prefs_openai_comp_temperature_Info__
       </label>
     </td>
   </tr>
@@ -378,9 +450,9 @@ export async function injectConnectionUI({
     <td>
       <div class="api_key-container">
         <label>
-          <input type="password" id="anthropic_api_key" name="anthropic_api_key" class="option-input"/>
+          <input type="password" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_api_key" class="option-input"/>
         </label>
-        <span class="toggle-icon" id="toggle_anthropic_api_key"><img src="/images/pwd-show.png" id="pwd-icon_anthropic_api_key"></span>
+        <span class="toggle-icon" id="${modelId_prefix ? `${modelId_prefix}` : ''}toggle_anthropic_api_key"><img src="/images/pwd-show.png" id="${modelId_prefix ? `${modelId_prefix}` : ''}pwd-icon_anthropic_api_key"></span>
       </div>
     </td>
   </tr>
@@ -391,9 +463,22 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="anthropic_model_fetch_loading">__MSG_Loading__</span><br>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
       <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input option-input-model"></select>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_api_temperature__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input check-number" />
+        <br>__MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
   </tr>
@@ -405,7 +490,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <textarea id="anthropic_system_prompt" name="anthropic_system_prompt" class="option-input option-textarea"></textarea>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_system_prompt" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_system_prompt" class="option-input option-textarea"></textarea>
         <br>__MSG_Anthropic_System_Prompt_Info__
       </label>
     </td>
@@ -418,7 +503,7 @@ export async function injectConnectionUI({
     </td>
     <td>
       <label>
-        <input type="text" id="anthropic_version" name="anthropic_version" class="option-input" />
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" class="option-input" />
         <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
       </label>
     </td>
@@ -427,7 +512,7 @@ export async function injectConnectionUI({
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
       <label>
-        <input type="number" id="anthropic_max_tokens" name="anthropic_max_tokens" class="option-input" />
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_max_tokens" class="option-input" />
         <br>__MSG_prefs_OptionText_anthropic_max_tokens_Info__
       </label>
     </td>
@@ -447,6 +532,8 @@ export async function injectConnectionUI({
       last = node;
     }
   });
+
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
 
   // Bindings
   // const bindClick = (id, cb) => { const el = document.getElementById(id); if (el && typeof cb === 'function') el.addEventListener('click', cb); };
@@ -470,18 +557,18 @@ export async function injectConnectionUI({
   conntype_select.addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
   document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
   document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
-  document.getElementById("chatgpt_api_key").addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
-  document.getElementById("ollama_host").addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
-  document.getElementById("openai_comp_host").addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
-  document.getElementById("google_gemini_api_key").addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
-  document.getElementById("anthropic_api_key").addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
-  document.getElementById("anthropic_version").addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
-  document.getElementById("openai_comp_host").addEventListener("input", resetOpenAICompConfigs);
-  document.getElementById("openai_comp_chat_name").addEventListener("input", resetOpenAICompConfigs);
-  document.getElementById("openai_comp_use_v1").addEventListener("input", resetOpenAICompConfigs);
+  document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_chat_name")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
 
   showConnectionOptions(conntype_select);
-  loadOpenAICompConfigs();
+  loadOpenAICompConfigs(modelId_prefix);
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
   warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -489,9 +576,9 @@ export async function injectConnectionUI({
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
 
-  const passwordField_chatgpt_api_key = document.getElementById('chatgpt_api_key');
-  const toggleIcon_chatgpt_api_key = document.getElementById('toggle_chatgpt_api_key');
-  const icon_img_chatgpt_api_key = document.getElementById('pwd-icon_chatgpt_api_key');
+  const passwordField_chatgpt_api_key = document.getElementById(getPrefixedId('chatgpt_api_key'));
+  const toggleIcon_chatgpt_api_key = document.getElementById(getPrefixedId('toggle_chatgpt_api_key'));
+  const icon_img_chatgpt_api_key = document.getElementById(getPrefixedId('pwd-icon_chatgpt_api_key'));
 
   toggleIcon_chatgpt_api_key.addEventListener('click', () => {
       const type = passwordField_chatgpt_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -500,9 +587,9 @@ export async function injectConnectionUI({
       icon_img_chatgpt_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_google_gemini_api_key = document.getElementById('google_gemini_api_key');
-  const toggleIcon_google_gemini_api_key = document.getElementById('toggle_google_gemini_api_key');
-  const icon_img_google_gemini_api_key = document.getElementById('pwd-icon_google_gemini_api_key');
+  const passwordField_google_gemini_api_key = document.getElementById(getPrefixedId('google_gemini_api_key'));
+  const toggleIcon_google_gemini_api_key = document.getElementById(getPrefixedId('toggle_google_gemini_api_key'));
+  const icon_img_google_gemini_api_key = document.getElementById(getPrefixedId('pwd-icon_google_gemini_api_key'));
 
   toggleIcon_google_gemini_api_key.addEventListener('click', () => {
       const type = passwordField_google_gemini_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -511,9 +598,9 @@ export async function injectConnectionUI({
       icon_img_google_gemini_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_openai_comp_api_key = document.getElementById('openai_comp_api_key');
-  const toggleIcon_openai_comp_api_key = document.getElementById('toggle_openai_comp_api_key');
-  const icon_img_openai_comp_api_key = document.getElementById('pwd-icon_openai_comp_api_key');
+  const passwordField_openai_comp_api_key = document.getElementById(getPrefixedId('openai_comp_api_key'));
+  const toggleIcon_openai_comp_api_key = document.getElementById(getPrefixedId('toggle_openai_comp_api_key'));
+  const icon_img_openai_comp_api_key = document.getElementById(getPrefixedId('pwd-icon_openai_comp_api_key'));
 
   toggleIcon_openai_comp_api_key.addEventListener('click', () => {
       const type = passwordField_openai_comp_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -522,9 +609,9 @@ export async function injectConnectionUI({
       icon_img_openai_comp_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
-  const passwordField_anthropic_api_key = document.getElementById('anthropic_api_key');
-  const toggleIcon_anthropic_api_key = document.getElementById('toggle_anthropic_api_key');
-  const icon_img_anthropic_api_key = document.getElementById('pwd-icon_anthropic_api_key');
+  const passwordField_anthropic_api_key = document.getElementById(getPrefixedId('anthropic_api_key'));
+  const toggleIcon_anthropic_api_key = document.getElementById(getPrefixedId('toggle_anthropic_api_key'));
+  const icon_img_anthropic_api_key = document.getElementById(getPrefixedId('pwd-icon_anthropic_api_key'));
 
   toggleIcon_anthropic_api_key.addEventListener('click', () => {
       const type = passwordField_anthropic_api_key.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -558,7 +645,7 @@ export async function injectConnectionUI({
     browser.tabs.create({ url: base_url + model_opt });
   });
 
-  let select_openai_comp_services_shortcut = document.getElementById('openai_comp_services_shortcut');
+  let select_openai_comp_services_shortcut = document.getElementById(getPrefixedId('openai_comp_services_shortcut'));
   select_openai_comp_services_shortcut.addEventListener("change", () => {
     let selectedOption = select_openai_comp_services_shortcut.options[select_openai_comp_services_shortcut.selectedIndex];
     const config = openAICompConfigs.find(cfg => cfg.id === selectedOption.value);
@@ -566,20 +653,20 @@ export async function injectConnectionUI({
       if (!confirm(browser.i18n.getMessage('OpenAIComp_Configs_ConfirmApply', config.name))) {
         return;
       }
-      document.getElementById('openai_comp_host').value = config.host || '';
+      document.getElementById(getPrefixedId('openai_comp_host')).value = config.host || '';
       // Clear all options from the select except the first (placeholder) one
       const openaiCompModelSelect = getModelEl('openai_comp_model', modelId_prefix);
       openaiCompModelSelect.value = '';
       while (openaiCompModelSelect.options.length > 0) {
         openaiCompModelSelect.remove(0);
       }
-      document.getElementById('openai_comp_use_v1').checked = !!config.use_v1;
-      document.getElementById('openai_comp_chat_name').value = config.chat_name || '';
+      document.getElementById(getPrefixedId('openai_comp_use_v1')).checked = !!config.use_v1;
+      document.getElementById(getPrefixedId('openai_comp_chat_name')).value = config.chat_name || '';
       // Trigger change events if needed
-      document.getElementById('openai_comp_host').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_host')).dispatchEvent(new Event('change', { bubbles: true }));
       getModelEl('openai_comp_model', modelId_prefix).dispatchEvent(new Event('change', { bubbles: true }));
-      document.getElementById('openai_comp_use_v1').dispatchEvent(new Event('change', { bubbles: true }));
-      document.getElementById('openai_comp_chat_name').dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_use_v1')).dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById(getPrefixedId('openai_comp_chat_name')).dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
 
@@ -593,14 +680,14 @@ export async function injectConnectionUI({
   select_chatgpt_model.appendChild(chatgpt_option);
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateChatGPTModels').addEventListener('click', async () => {
-    document.getElementById('chatgpt_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'inline';
     let openai = new OpenAI({
-      apiKey: document.getElementById("chatgpt_api_key").value,
+      apiKey: document.getElementById(getPrefixedId("chatgpt_api_key")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.openai.com/*"] });
     if(!granted){
-        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         taLog.log("OpenAI API permission denied");
         alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
@@ -614,7 +701,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("ChatGPT_Models_Error_fetching"));
         alert(browser.i18n.getMessage("ChatGPT_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -628,7 +715,7 @@ export async function injectConnectionUI({
           select_chatgpt_model.appendChild(option);
         }
       });
-      document.getElementById('chatgpt_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
     warn_ChatGPT_APIKeyEmpty(modelId_prefix);
@@ -642,10 +729,10 @@ export async function injectConnectionUI({
   select_google_gemini_model.appendChild(google_gemini_option);
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateGoogleGeminiModels').addEventListener('click', async () => {
-    document.getElementById('google_gemini_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'inline';
     let google_gemini = new GoogleGemini({
-      apiKey: document.getElementById("google_gemini_api_key").value,
+      apiKey: document.getElementById(getPrefixedId("google_gemini_api_key")).value,
     });
     google_gemini.fetchModels().then((data) => {
       if(!data.ok){
@@ -656,7 +743,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("GoogleGemini_Models_Error_fetching"));
         alert(browser.i18n.getMessage("GoogleGemini_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -670,7 +757,7 @@ export async function injectConnectionUI({
           select_google_gemini_model.appendChild(option);
         }
       });
-      document.getElementById('google_gemini_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
     warn_GoogleGemini_APIKeyEmpty(modelId_prefix);
@@ -684,15 +771,15 @@ export async function injectConnectionUI({
   select_ollama_model.appendChild(ollama_option);
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateOllamaModels').addEventListener('click', async () => {
-    document.getElementById('ollama_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'inline';
     let ollama = new Ollama({
-      host: document.getElementById("ollama_host").value,
+      host: document.getElementById(getPrefixedId("ollama_host")).value,
     });
     try {
       let data = await ollama.fetchModels();
       if(!data){
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         return;
@@ -705,13 +792,13 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + errorDetail);
         return;
       }
       if(data.response.models.length == 0){
-        document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Ollama_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + browser.i18n.getMessage("API_Models_Error_NoModels"));
         return;
@@ -725,9 +812,9 @@ export async function injectConnectionUI({
           select_ollama_model.appendChild(option);
         }
       });
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
-      document.getElementById('ollama_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
       taLog.error(browser.i18n.getMessage("Ollama_Models_Error_fetching"));
       alert(browser.i18n.getMessage("Ollama_Models_Error_fetching")+": " + error.message);
     }
@@ -743,12 +830,12 @@ export async function injectConnectionUI({
   select_openai_comp_model.appendChild(openai_comp_option);
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateOpenAICompModels').addEventListener('click', async () => {
-    document.getElementById('openai_comp_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'inline';
     let openai_comp = new OpenAIComp({
-      host: document.getElementById("openai_comp_host").value,
-      apiKey: document.getElementById("openai_comp_api_key").value,
-      use_v1: document.getElementById("openai_comp_use_v1").checked,
+      host: document.getElementById(getPrefixedId("openai_comp_host")).value,
+      apiKey: document.getElementById(getPrefixedId("openai_comp_api_key")).value,
+      use_v1: document.getElementById(getPrefixedId("openai_comp_use_v1")).checked,
     });
     openai_comp.fetchModels().then((data) => {
       if(!data.ok){
@@ -759,7 +846,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("OpenAIComp_Models_Error_fetching"));
         alert(browser.i18n.getMessage("OpenAIComp_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -773,7 +860,7 @@ export async function injectConnectionUI({
           select_openai_comp_model.appendChild(option);
         }
       });
-      document.getElementById('openai_comp_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
     warn_OpenAIComp_HostEmpty(modelId_prefix);
@@ -788,15 +875,15 @@ export async function injectConnectionUI({
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
 
-  document.getElementById('btnUpdateAnthropicModels').addEventListener('click', async () => {
-    document.getElementById('anthropic_model_fetch_loading').style.display = 'inline';
+  document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
     let anthropic = new Anthropic({
-      apiKey: document.getElementById("anthropic_api_key").value,
-      version: document.getElementById("anthropic_version").value,
+      apiKey: document.getElementById(getPrefixedId("anthropic_api_key")).value,
+      version: document.getElementById(getPrefixedId("anthropic_version")).value,
     });
     let granted = await messenger.permissions.request({ origins: ["https://*.anthropic.com/*"] });
     if(!granted){
-        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         taLog.warn("Claude API web permission denied");
         alert(browser.i18n.getMessage("Optional_Permission_Denied_Model_Fetching"));
         return;
@@ -810,7 +897,7 @@ export async function injectConnectionUI({
         } catch (e) {
           errorDetail = data.error;
         }
-        document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+        document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
         console.error("[ThunderAI] " + browser.i18n.getMessage("Anthropic_Models_Error_fetching"));
         alert(browser.i18n.getMessage("Anthropic_Models_Error_fetching")+": " + errorDetail);
         return;
@@ -827,13 +914,13 @@ export async function injectConnectionUI({
           select_anthropic_model.appendChild(option);
         }
       });
-      document.getElementById('anthropic_model_fetch_loading').style.display = 'none';
+      document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
     warn_Anthropic_APIKeyEmpty(modelId_prefix);
   });
 
-    document.getElementById('btnOpenAICompForceModel').addEventListener('click', () => {
+    document.getElementById(getPrefixedId('btnOpenAICompForceModel')).addEventListener('click', () => {
       let modelName = prompt(browser.i18n.getMessage('OpenAIComp_force_model_ask')).trim();
       if ((modelName !== null) && (modelName !== undefined) && (modelName !== '')) {
         let select_openai_comp_model = getModelEl('openai_comp_model', modelId_prefix);
@@ -846,7 +933,7 @@ export async function injectConnectionUI({
       }
     });
   
-    document.getElementById('btnOpenAICompClearModelsList').addEventListener('click', () => {
+    document.getElementById(getPrefixedId('btnOpenAICompClearModelsList')).addEventListener('click', () => {
       if (!confirm(browser.i18n.getMessage('OpenAIComp_ClearModelsList_Confirm'))) {
         return;
       }
@@ -858,13 +945,17 @@ export async function injectConnectionUI({
       select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
     });
   
-    document.getElementById('btnGiveAllUrlsPermission_ollama_api').addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api')).addEventListener('click', async () => {
       varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
   
-    document.getElementById('btnGiveAllUrlsPermission_openai_comp_api').addEventListener('click', async () => {
+    document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
       varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
     });
+
+   document.querySelectorAll('.check-number').forEach(input => {
+    input.addEventListener('input', warn_InvalidNumber);
+   });
   
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
@@ -873,12 +964,127 @@ export async function injectConnectionUI({
   warn_Anthropic_APIKeyEmpty(modelId_prefix);
   warn_Anthropic_VersionEmpty(modelId_prefix);
 
+  if (customButtonLabel && customButtonCallback) {
+    const btn = document.getElementById(`${modelId_prefix}customButton`);
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        customButtonCallback(e);
+      });
+    }
+  }
+
   return {
     select: conntype_select,
     onTypeChange: (fn) => { onTypeChange = fn; fn(conntype_select.value, { select: conntype_select }); }
   };
 }
 
+export async function initializeSpecificIntegrationUI({
+  prefix,
+  promptId,
+  taLog,
+  restoreOptionsCallback
+}) {
+  const conntype_select_id = `${prefix}_connection_type`;
+  const model_prefix = `${prefix}_`;
+  const use_specific_integration_id = `${prefix}_use_specific_integration`;
+
+  // 1. Inject UI
+  try {
+      await injectConnectionUI({
+          afterTrId: 'connection_ui_anchor',
+          tr_class: 'specific_integration_sub',
+          selectId: conntype_select_id,
+          modelId_prefix: model_prefix,
+          no_chatgpt_web: true,
+          taLog: taLog
+      });
+  } catch (e) {
+      console.error(`Failed to inject connection UI (${prefix})`, e);
+  }
+
+  // 2. Restore Options
+  if (restoreOptionsCallback) {
+      await restoreOptionsCallback();
+  }
+
+  // 3. Setup Logic
+  const use_specific_integration_el = document.getElementById(use_specific_integration_id);
+  const conntype_el = document.getElementById(conntype_select_id);
+  const conntype_row = document.getElementById(conntype_select_id + '_tr');
+  const conntype_end_el = document.getElementById('connection_ui_end');
+
+  // Helper to update prompt
+  const _updatePrompt = async () => {
+      let conntype = conntype_el.value;
+      
+      let prompt = await loadPrompt(promptId);
+      if(!prompt) return;
+
+      prompt.api = conntype;
+
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              let propName = `${integration}_${key}`;
+              let elementId = `${model_prefix}${propName}`;
+              let element = document.getElementById(elementId);
+              if (element) {
+                  prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
+              }
+          }
+      }
+      
+      await savePrompt(prompt);
+  };
+
+  // Helper for visibility
+  const _updateVisibility = (checked) => {
+      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
+          tr.style.display = checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
+      });
+      if (conntype_row) conntype_row.style.display = checked ? 'table-row' : 'none';
+      if (conntype_end_el) conntype_end_el.style.display = checked ? 'table-row' : 'none';
+      if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
+  };
+
+  // Check global connection type
+  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
+  if (globalPrefs.connection_type === 'chatgpt_web') {
+      use_specific_integration_el.checked = true;
+      use_specific_integration_el.disabled = true;
+  }
+
+  // Event Listener for Checkbox
+  use_specific_integration_el.addEventListener('change', async (event) => {
+      _updateVisibility(event.target.checked);
+      if (!event.target.checked) {
+          await clearPromptAPI(promptId);
+      } else {
+          await _updatePrompt();
+      }
+  });
+
+  // Event Listeners for Inputs
+  conntype_el.addEventListener('change', async () => {
+      _updateVisibility(use_specific_integration_el.checked);
+      if (use_specific_integration_el.checked) await _updatePrompt();
+  });
+
+  document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
+      element.addEventListener("change", async () => {
+          if (use_specific_integration_el.checked) await _updatePrompt();
+      });
+  });
+
+  // Initial State Apply
+  _updateVisibility(use_specific_integration_el.checked);
+  if (use_specific_integration_el.checked) {
+      await _updatePrompt();
+  }
+  
+  updateWarnings(model_prefix);
+}
 
 // From here there are exported functions
 
@@ -900,7 +1106,7 @@ export function changeConnTypeRowColor(conntype_row, conntype_select) {
   conntype_row.classList.toggle("conntype_anthropic_api", (conntype_select.value === "anthropic_api"));  
 }
 
-export function showConnectionOptions(conntype_select) {
+export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
@@ -939,27 +1145,29 @@ export function showConnectionOptions(conntype_select) {
   }else{
     anthropic_api_display = 'none';
   }
-  document.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_chatgpt_web").forEach(element => {
     element.style.display = chatgpt_web_display;
   });
-  document.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_chatgpt_api").forEach(element => {
     element.style.display = chatgpt_api_display;
   });
-  document.querySelectorAll(".conntype_ollama_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_ollama_api").forEach(element => {
     element.style.display = ollama_api_display;
   });
-  document.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_openai_comp_api").forEach(element => {
     element.style.display = openai_comp_api_display;
   });
-  document.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_google_gemini_api").forEach(element => {
     element.style.display = google_gemini_api_display;
   });
-  document.querySelectorAll(".conntype_anthropic_api").forEach(element => {
+  parent.parentElement.querySelectorAll(".conntype_anthropic_api").forEach(element => {
     element.style.display = anthropic_api_display;
   });
   if (varConnectionUI.permission_all_urls) {
-    document.getElementById('openai_comp_api_cors_warning').style.display = 'none';
-    document.getElementById('ollama_api_cors_warning').style.display = 'none';
+    const openaiCompWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
+    const ollamaWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    if (ollamaWarning) ollamaWarning.style.display = 'none';
   }
 }
 
@@ -999,9 +1207,21 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
   }
 }
 
+function warn_InvalidNumber(event){
+  const elementValue = event.target.value;
+  // console.log(">>>>>>>>>>> warn_InvalidNumber: " + event.target.id + ": " + elementValue)
+  if (elementValue != '' && isNaN(parseFloat(elementValue))) {
+    // Handle invalid number case, e.g., set border to red
+    event.target.style.border = '2px solid red';
+  } else {
+    event.target.style.border = '';
+  }
+}
+
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('chatgpt_api_key');
-  let btnFetchChatGPTModels = document.getElementById('btnUpdateChatGPTModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('chatgpt_api_key'));
+  let btnFetchChatGPTModels = document.getElementById(getPrefixedId('btnUpdateChatGPTModels'));
   let modelChatGPT = getModelEl('chatgpt_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1022,8 +1242,9 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('google_gemini_api_key');
-  let btnFetchGoogleGeminiModels = document.getElementById('btnUpdateGoogleGeminiModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('google_gemini_api_key'));
+  let btnFetchGoogleGeminiModels = document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels'));
   let modelGoogleGemini = getModelEl('google_gemini_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1044,8 +1265,9 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_Ollama_HostEmpty(modelId_prefix) {
-  let hostInput = document.getElementById('ollama_host');
-  let btnFetchOllamaModels = document.getElementById('btnUpdateOllamaModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let hostInput = document.getElementById(getPrefixedId('ollama_host'));
+  let btnFetchOllamaModels = document.getElementById(getPrefixedId('btnUpdateOllamaModels'));
   let modelOllama = getModelEl('ollama_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1066,8 +1288,9 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
 }
 
 function warn_OpenAIComp_HostEmpty(modelId_prefix) {
-  let hostInput = document.getElementById('openai_comp_host');
-  let btnUpdateOpenAICompModels = document.getElementById('btnUpdateOpenAICompModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let hostInput = document.getElementById(getPrefixedId('openai_comp_host'));
+  let btnUpdateOpenAICompModels = document.getElementById(getPrefixedId('btnUpdateOpenAICompModels'));
   let modelOpenAIComp = getModelEl('openai_comp_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1088,8 +1311,9 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
 }
 
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
-  let apiKeyInput = document.getElementById('anthropic_api_key');
-  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let apiKeyInput = document.getElementById(getPrefixedId('anthropic_api_key'));
+  let btnFetchAnthropicModels = document.getElementById(getPrefixedId('btnUpdateAnthropicModels'));
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
@@ -1110,8 +1334,9 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
 }
 
 function warn_Anthropic_VersionEmpty(modelId_prefix) {
-  let versionInput = document.getElementById('anthropic_version');
-  let btnFetchAnthropicModels = document.getElementById('btnUpdateAnthropicModels');
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  let versionInput = document.getElementById(getPrefixedId('anthropic_version'));
+  let btnFetchAnthropicModels = document.getElementById(getPrefixedId('btnUpdateAnthropicModels'));
   let modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
   if(versionInput.value === ''){
     versionInput.style.border = '2px solid red';
@@ -1131,13 +1356,13 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
   }
 }
 
-function resetOpenAICompConfigs(){
-  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+function resetOpenAICompConfigs(modelId_prefix = ''){
+  let select_openai_comp_model = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_services_shortcut');
   select_openai_comp_model.value = 'custom';
 }
 
-function loadOpenAICompConfigs(){
-  let select_openai_comp_model = document.getElementById('openai_comp_services_shortcut');
+function loadOpenAICompConfigs(modelId_prefix = ''){
+  let select_openai_comp_model = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_services_shortcut');
   openAICompConfigs.forEach(config => {
     const option = document.createElement('option');
     option.value = config.id;

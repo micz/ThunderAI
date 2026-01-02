@@ -59,6 +59,10 @@
     "message": "More info",
     "description": ""
   },
+  "prompt_string":{
+    "message": "Prompt",
+    "description": ""
+  },
   "customPrompts_managePrompts_info_default": {
     "message": "The default prompts are not editable. You can disable them, then copy the prompt text and paste it into a new one to create a modified version.",
     "description": ""
@@ -619,6 +623,10 @@
     "message": "Folder path",
     "description": ""
   },
+  "placeholder_mail_headers": {
+    "message": "Mail headers",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""
@@ -853,6 +861,10 @@
   },
   "reset_default": {
     "message": "Reset to default",
+    "description": ""
+  },
+  "reset": {
+    "message": "Reset",
     "description": ""
   },
   "addtags_excl_list_infoline2": {
@@ -1492,7 +1504,7 @@
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens": {
-    "message": "Claude Max Tokens",
+    "message": "Max Tokens",
     "description": ""
   },
   "prefs_OptionText_anthropic_max_tokens_Info": {
@@ -1567,6 +1579,14 @@
   },
   "ChatGPT_chatgpt_api_store_info": {
     "message": "If checked, your chats will be stored by OpenAI.",
+    "description": ""
+  },
+  "prefs_chatgpt_api_temperature_Info": {
+    "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
+    "description": ""
+  },
+  "prefs_ollama_temperature_Info": {
+    "message": "The temperature of the model. Increasing the temperature will make the model answer more creatively. The default value is 0.8. It is recommended to use values between 0 and 1.",
     "description": ""
   },
   "prefs_ollama_think": {
@@ -1665,6 +1685,14 @@
     "message": "Are you sure you want to clear the Models List? This action cannot be undone.",
     "description": ""
   },
+  "prefs_api_temperature": {
+    "message": "Temperature",
+    "description": ""
+  },
+  "prefs_openai_comp_temperature_Info": {
+    "message": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
+    "description": ""
+  },
   "chatgpt_click_force_completion": {
     "message": "It seems that it's not possible to get if ChatGPT has finished. Click here to force the completion of the job.",
     "description": ""
@@ -1681,6 +1709,10 @@
     "message": "Define the number of tokens to be used for thinking. Leave this field blank if the selected model does not support thinking or if you want to use the default method. Enter 0 to disable thinking, or -1 to enable dynamic thinking.",
     "description": ""
   },
+  "prefs_google_gemini_temperature_Info": {
+    "message": "This parameter must be a number between 0.0 and 2.0. It controls the randomness of the output. The default value varies depending on the model. Leave it empty to avoid setting the parameter in the API call.",
+    "description": ""
+  },
   "SelectAll": {
     "message": "Select All",
     "description": ""
@@ -1695,6 +1727,10 @@
   },
   "Anthropic_System_Prompt_Info": {
     "message": "You can improve Claude performance by using a System Prompt to give it a role. This technique, known as role prompting, is the most powerful way to use system prompts with Claude. The right role can turn Claude from a general assistant into your virtual domain expert.",
+    "description": ""
+  },
+  "prefs_anthropic_temperature_Info": {
+    "message": "Amount of randomness injected into the response. Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 for analytical / multiple choice, and closer to 1.0 for creative and generative tasks. Note that even with temperature of 0.0, the results will not be fully deterministic.",
     "description": ""
   },
   "Optional_Permission_Denied_Model_Fetching": {

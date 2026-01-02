@@ -16,16 +16,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
-  setSpecialPrompts,
-  loadPrompt,
-  savePrompt,
-  clearPromptAPI
+  setSpecialPrompts
 } from "../../js/mzta-prompts.js";
-import { getPlaceholders } from "../../js/mzta-placeholders.js";
+import {
+  getPlaceholders,
+  mapPlaceholderToSuggestion
+ } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
   addTags_getExclusionList,
@@ -37,83 +37,49 @@ import {
   isAPIKeyValue
 } from "../../js/mzta-utils.js";
 import {
-  injectConnectionUI,
-  updateWarnings,
-  changeConnTypeRowColor
+  initializeSpecificIntegrationUI
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-addtags-page",true);
-let conntype_select_id = 'add_tags_connection_type';
-let model_prefix = 'add_tags_';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      await injectConnectionUI({
-        afterTrId: 'connection_ui_anchor',
-        tr_class: 'specific_integration_sub',
-        selectId: conntype_select_id,
-        modelId_prefix: model_prefix,
-        no_chatgpt_web: true,
-        taLog: taLog
-      });
-    } catch (e) {
-      console.error('Failed to inject connection UI (add-tags)', e);
+
+  let specialPrompts = await getSpecialPrompts();
+  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+
+    if (addtags_prompt && addtags_prompt.api && addtags_prompt.api !== '') {
+        let update_prefs = {};
+        update_prefs['add_tags_connection_type'] = addtags_prompt.api;
+        
+        let integration = addtags_prompt.api.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (addtags_prompt[key] !== undefined) {
+                     update_prefs[`add_tags_${integration}_${key}`] = addtags_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
     }
+
+    await initializeSpecificIntegrationUI({
+      prefix: 'add_tags',
+      promptId: 'prompt_add_tags',
+      taLog: taLog,
+      restoreOptionsCallback: restoreOptions
+    });
+
     i18n.updateDocument();
-    await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
-
-    document.querySelectorAll(".option-input-model").forEach(element => {
-        element.addEventListener("change", updatePromptAPIInfo);
-      });
-
-    let conntype_el = document.getElementById(conntype_select_id);
-    let conntype_end_el = document.getElementById('connection_ui_end');
-
-    conntype_el.addEventListener('change', updatePromptAPIInfo);
-
-    let add_tags_use_specific_integration_el = document.getElementById('add_tags_use_specific_integration');
     let prefs_add_tags = await browser.storage.sync.get({ add_tags_enabled_accounts: [], connection_type: 'chatgpt_web' });
-    if(prefs_add_tags.connection_type == 'chatgpt_web'){
-       add_tags_use_specific_integration_el.checked = true;
-       add_tags_use_specific_integration_el.dispatchEvent(new Event('change'));
-       add_tags_use_specific_integration_el.disabled = true;
-    }
-
-    let conntype_row = document.getElementById(conntype_select_id + '_tr');
-    add_tags_use_specific_integration_el.addEventListener('change', (event) => {
-      // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
-      document.querySelectorAll(".specific_integration_sub").forEach(tr => {
-        tr.style.display = event.target.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
-      });
-      conntype_el.style.display = event.target.checked ? 'table-row' : 'none';
-      conntype_end_el.style.display = event.target.checked ? 'table-row' : 'none';
-      changeConnTypeRowColor(conntype_row, conntype_el);
-      if(!event.target.checked){
-        clearPromptAPI('prompt_add_tags');
-      }else{
-        updatePromptAPIInfo();
-      }
-    });
-
-    // console.log(">>>>>>>>>>>>> conntype_el.value: " + conntype_el.value);
-    document.querySelectorAll(".specific_integration_sub").forEach(tr => {
-        tr.style.display = add_tags_use_specific_integration_el.checked && tr.classList.contains('conntype_' + conntype_el.value) ? 'table-row' : 'none';
-      });
-    document.getElementById(conntype_select_id + '_tr').style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
-    conntype_end_el.style.display = add_tags_use_specific_integration_el.checked ? 'table-row' : 'none';
-    changeConnTypeRowColor(conntype_row, conntype_el);
 
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
     let addtags_reset_btn = document.getElementById('btn_reset_prompt');
-
-    let specialPrompts = await getSpecialPrompts();
-    let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
     addtags_textarea.addEventListener('input', (event) => {
         addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
@@ -177,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     updateAdditionalPromptStatements();
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(p => ({command: '{%'+p.id+'%}', type: p.type}));
+    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     let excl_list_textarea = document.getElementById('addtags_excl_list');
@@ -257,8 +223,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       let checkboxes = document.querySelectorAll('.accountCheckbox');
       checkboxes.forEach(checkbox => checkbox.checked = false);
     });
-
-    updateWarnings(model_prefix);
 });
 
 
@@ -290,18 +254,6 @@ async function updateAdditionalPromptStatements(){
     }
 }
 
-async function updatePromptAPIInfo(){
-  let conntype = document.getElementById(conntype_select_id).value;
-  let model_value = conntype.substring(0, conntype.length - 4) + '_model';
-  let model = document.getElementById(model_prefix + model_value).value;
-  // console.log(">>>>>>>>>>> updatePromptAPIInfo: conntype: " + conntype + " - model: " + model + " - model_value: " + model_value);
-  let add_tags_prompt = await loadPrompt('prompt_add_tags');
-  // console.log(">>>>>>>>>>> updatePromptAPIInfo: BEFORE add_tags_prompt: " + JSON.stringify(add_tags_prompt));
-  add_tags_prompt.api = conntype;
-  add_tags_prompt.model = model;
-  // console.log(">>>>>>>>>>> updatePromptAPIInfo: AFTER add_tags_prompt: " + JSON.stringify(add_tags_prompt));
-  await savePrompt(add_tags_prompt);
-}
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
@@ -387,5 +339,23 @@ async function restoreOptions() {
   }
 
   let getting = await browser.storage.sync.get(prefs_default);
+
+  let specialPrompts = await getSpecialPrompts();
+  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+
+  if (addtags_prompt) {
+      if (addtags_prompt.api && addtags_prompt.api !== '') {
+          getting['add_tags_connection_type'] = addtags_prompt.api;
+      }
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              const propName = `${integration}_${key}`;
+              if (addtags_prompt[propName] !== undefined) {
+                  getting[`add_tags_${propName}`] = addtags_prompt[propName];
+              }
+          }
+      }
+  }
+
   setCurrentChoice(getting);
 }

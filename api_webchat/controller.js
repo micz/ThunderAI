@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { prefs_default } from '../options/mzta-options-default.js';
+import { prefs_default, integration_options_config } from '../options/mzta-options-default.js';
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 
@@ -46,224 +46,161 @@ const messagesArea = document.querySelector('messages-area');
 // The controller wires up all the components and workers together,
 // managing the dependencies. A kind of "DI" class.
 let worker = null;
+const integration = llm.replace('_api', '');
+const worker_path_map = {
+    chatgpt: '../js/workers/model-worker-openai_responses.js',
+    google_gemini: '../js/workers/model-worker-google_gemini.js',
+    ollama: '../js/workers/model-worker-ollama.js',
+    openai_comp: '../js/workers/model-worker-openai_comp.js',
+    anthropic: '../js/workers/model-worker-anthropic.js',
+};
 
-switch (llm) {
-    case "chatgpt_api":
-        worker = new Worker('../js/workers/model-worker-openai.js', { type: 'module' });
-        break;
-    case "google_gemini_api":
-        worker = new Worker('../js/workers/model-worker-google_gemini.js', { type: 'module' });
-        break;
-    case "ollama_api":
-        worker = new Worker('../js/workers/model-worker-ollama.js', { type: 'module' });
-        break;
-    case "openai_comp_api":
-        worker = new Worker('../js/workers/model-worker-openai_comp.js', { type: 'module' });
-        break;
-    case "anthropic_api":
-        worker = new Worker('../js/workers/model-worker-anthropic.js', { type: 'module' });
-        break;
-    default:
-        console.error('[ThunderAI] API WebChat Unknown LLM type:', llm);
-        break;
+const worker_path = worker_path_map[integration];
+
+if (worker_path) {
+    worker = new Worker(worker_path, { type: 'module' });
+} else {
+    console.error('[ThunderAI] API WebChat Unknown LLM type:', llm);
 }
 
-messagesArea.init(worker);
+if (worker) {
+    messagesArea.init(worker);
+    messageInput.init(worker);
+    messageInput.setMessagesArea(messagesArea);
 
-// Initialize the messageInput component and pass the worker to it
-messageInput.init(worker);
-messageInput.setMessagesArea(messagesArea);
+    if (integration_options_config[integration]) {
+        const integration_prefix = integration;
+        const options_config = integration_options_config[integration];
+        
+        let prefsToGet = { do_debug: prefs_default.do_debug };
+        for (const key in options_config) {
+            prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
+        }
+        if (integration === 'openai_comp') {
+            prefsToGet.openai_comp_chat_name = prefs_default.openai_comp_chat_name;
+        }
 
-switch (llm) {
-    case "chatgpt_api": {
-        let prefs_api = await browser.storage.sync.get({
-            chatgpt_api_key: prefs_default.chatgpt_api_key,
-            chatgpt_model: prefs_default.chatgpt_model,
-            chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
-            chatgpt_api_store: prefs_default.chatgpt_api_store,
-            do_debug: prefs_default.do_debug,
-        });
+        let prefs_api = await browser.storage.sync.get(prefsToGet);
+
         let i18nStrings = {};
-        i18nStrings["chatgpt_api_request_failed"] = browser.i18n.getMessage('chatgpt_api_request_failed');
+        const i18n_msg_key = integration === 'openai_comp' ? 'OpenAIComp_api_request_failed' : `${integration}_api_request_failed`;
+        i18nStrings[i18n_msg_key] = browser.i18n.getMessage(i18n_msg_key);
         i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        messageInput.setModel(prefs_api.chatgpt_model);
-        messagesArea.setLLMName("ChatGPT");
-        worker.postMessage({
-            type: 'init',
-            chatgpt_api_key: prefs_api.chatgpt_api_key,
-            chatgpt_model: prefs_api.chatgpt_model,
-            chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
-            chatgpt_api_store: prefs_api.chatgpt_api_store,
-            do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings,
-        });
-        let additional_text_elements = [];
-        additional_text_elements.push({label: 'OpenAI Store', value: (prefs_api.chatgpt_api_store ? 'Yes' : 'No')});
-        if(prefs_api.chatgpt_developer_messages && prefs_api.chatgpt_developer_messages.length > 0) {
-            additional_text_elements.push({label: browser.i18n.getMessage("ChatGPT_Developer_Messages"), value: prefs_api.chatgpt_developer_messages});
+
+        messageInput.setModel(prefs_api[`${integration_prefix}_model`]);
+        
+        let llmName = "API";
+        switch(integration) {
+            case 'chatgpt': llmName = "ChatGPT"; break;
+            case 'google_gemini': llmName = "Google Gemini"; break;
+            case 'ollama': llmName = "Ollama Local"; break;
+            case 'openai_comp': llmName = prefs_api.openai_comp_chat_name || "OpenAI Comp"; break;
+            case 'anthropic': llmName = "Claude"; break;
         }
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "ChatGPT API",
-            model_string: prefs_api.chatgpt_model,
-            additional_messages: additional_text_elements
-        }), "info");
-        browser.runtime.sendMessage({
-            command: "openai_api_ready_" + call_id,
-            window_id: (await browser.windows.getCurrent()).id
-        });
-        break;
-    }
-    case "google_gemini_api": {
-        let prefs_api = await browser.storage.sync.get({
-            google_gemini_api_key: prefs_default.google_gemini_api_key,
-            google_gemini_model: prefs_default.google_gemini_model,
-            google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
-            google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
-            do_debug: prefs_default.do_debug,
-        });
-        let i18nStrings = {};
-        i18nStrings["google_gemini_api_request_failed"] = browser.i18n.getMessage('google_gemini_api_request_failed');
-        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        messageInput.setModel(prefs_api.google_gemini_model);
-        messagesArea.setLLMName("Google Gemini");
-        let additional_text_elements = [];
-        if(prefs_api.google_gemini_system_instruction && prefs_api.google_gemini_system_instruction.length > 0) {
-            additional_text_elements.push({label: browser.i18n.getMessage("GoogleGemini_SystemInstruction"), value: prefs_api.google_gemini_system_instruction});
+        messagesArea.setLLMName(llmName);
+
+        let workerInitMessage = {
+            type: 'init',
+            do_debug: prefs_api.do_debug,
+            i18nStrings: i18nStrings,
+        };
+
+        for (const key in options_config) {
+            const prefKey = `${integration_prefix}_${key}`;
+            workerInitMessage[prefKey] = prefs_api[prefKey];
         }
-        additional_text_elements.push({label: 'Thinking Budget', value: prefs_api.google_gemini_thinking_budget});
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        worker.postMessage({
-            type: 'init',
-            google_gemini_api_key: prefs_api.google_gemini_api_key,
-            google_gemini_model: prefs_api.google_gemini_model,
-            google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
-            google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
-            do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings,
-        });
-        messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "Google Gemini API",
-            model_string: prefs_api.google_gemini_model,
-            additional_messages: additional_text_elements
-        }), "info");
-        browser.runtime.sendMessage({
-            command: "google_gemini_api_ready_" + call_id,
-            window_id: (await browser.windows.getCurrent()).id
-        });
-        break;
-    }
-    case "ollama_api": {
-        let prefs_api = await browser.storage.sync.get({
-            ollama_host: prefs_default.ollama_host,
-            ollama_model: prefs_default.ollama_model,
-            ollama_num_ctx: prefs_default.ollama_num_ctx,
-            ollama_think: prefs_default.ollama_think,
-            do_debug: prefs_default.do_debug,
-        });
-        let i18nStrings = {};
-        i18nStrings["ollama_api_request_failed"] = browser.i18n.getMessage('ollama_api_request_failed');
-        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        messageInput.setModel(prefs_api.ollama_model);
-        messagesArea.setLLMName("Ollama Local");
-        worker.postMessage({
-            type: 'init',
-            ollama_host: prefs_api.ollama_host,
-            ollama_model: prefs_api.ollama_model,
-            ollama_num_ctx: prefs_api.ollama_num_ctx,
-            ollama_think: prefs_api.ollama_think,
-            do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings
-        });
-        browser.runtime.sendMessage({
-            command: "ollama_api_ready_" + call_id,
-            window_id: (await browser.windows.getCurrent()).id
-        });
+        
+        worker.postMessage(workerInitMessage);
+
+        const additional_messages_config = {
+            chatgpt: [
+                { key: 'store', labelKey: 'ChatGPT_chatgpt_api_store', type: 'boolean' },
+                { key: 'developer_messages', labelKey: 'ChatGPT_Developer_Messages', type: 'string' },
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' }
+            ],
+            google_gemini: [
+                { key: 'system_instruction', labelKey: 'GoogleGemini_SystemInstruction', type: 'string' },
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'thinking_budget', labelKey: 'prefs_google_gemini_thinking_budget', type: 'string' }
+            ],
+            ollama: [
+                { key: 'think', labelKey: 'prefs_ollama_think', type: 'boolean' },
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' }
+            ],
+            openai_comp: [
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' }
+            ],
+            anthropic: [
+                { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
+                { key: 'max_tokens', labelKey: 'prefs_OptionText_anthropic_max_tokens', type: 'number_gt_zero' },
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' }
+            ]
+        };
+
+        const getAdditionalMessages = (integration, prefs) => {
+            const messages = [];
+            const config = additional_messages_config[integration];
+            if (!config) return messages;
+
+            for (const item of config) {
+                const prefKey = `${integration}_${item.key}`;
+                const value = prefs[prefKey];
+
+                if (value !== undefined && value !== null && value !== '') {
+                    let displayValue;
+                    let shouldAdd = false;
+
+                    switch (item.type) {
+                        case 'boolean':
+                            displayValue = value ? 'Yes' : 'No';
+                            shouldAdd = true;
+                            break;
+                        case 'string':
+                            if (value.length > 0) {
+                                displayValue = value;
+                                shouldAdd = true;
+                            }
+                            break;
+                        case 'number_gt_zero':
+                            if (value > 0) {
+                                displayValue = value;
+                                shouldAdd = true;
+                            }
+                            break;
+                    }
+                    if (shouldAdd) {
+                        messages.push({ label: browser.i18n.getMessage(item.labelKey), value: displayValue });
+                    }
+                }
+            }
+            return messages;
+        };
+
         let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
+        additional_text_elements.push(...getAdditionalMessages(integration, prefs_api));
+
+        const api_strings = {
+            chatgpt: "ChatGPT API",
+            google_gemini: "Google Gemini API",
+            ollama: "Ollama API",
+            openai_comp: "OpenAI Compatible API",
+            anthropic: "Claude API"
+        };
+        
         messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "Ollama API",
-            model_string: prefs_api.ollama_model,
-            host_string: prefs_api.ollama_host,
+            api_string: api_strings[integration],
+            model_string: prefs_api[`${integration_prefix}_model`],
+            host_string: prefs_api[`${integration_prefix}_host`],
+            version_string: prefs_api[`${integration_prefix}_version`],
             additional_messages: additional_text_elements
         }), "info");
-        break;
-    }
-    case "openai_comp_api": {
-        let prefs_api = await browser.storage.sync.get({
-            openai_comp_host: prefs_default.openai_comp_host,
-            openai_comp_model: prefs_default.openai_comp_model,
-            openai_comp_api_key: prefs_default.openai_comp_api_key,
-            openai_comp_use_v1: prefs_default.openai_comp_use_v1,
-            openai_comp_chat_name: prefs_default.openai_comp_chat_name,
-            do_debug: prefs_default.do_debug,
-        });
-        let i18nStrings = {};
-        i18nStrings["OpenAIComp_api_request_failed"] = browser.i18n.getMessage('OpenAIComp_api_request_failed');
-        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        messageInput.setModel(prefs_api.openai_comp_model);
-        messagesArea.setLLMName(prefs_api.openai_comp_chat_name);
-        worker.postMessage({
-            type: 'init',
-            openai_comp_host: prefs_api.openai_comp_host,
-            openai_comp_model: prefs_api.openai_comp_model,
-            openai_comp_api_key: prefs_api.openai_comp_api_key,
-            openai_comp_use_v1: prefs_api.openai_comp_use_v1,
-            do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings,
-        });
-        let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "OpenAI Compatible API",
-            model_string: prefs_api.openai_comp_model,
-            host_string: prefs_api.openai_comp_host,
-            additional_messages: additional_text_elements
-        }), "info");
+
         browser.runtime.sendMessage({
-            command: "openai_comp_api_ready_" + call_id,
+            command: `${llm}_ready_${call_id}`,
             window_id: (await browser.windows.getCurrent()).id
         });
-        break;
-    }
-    case "anthropic_api": {
-        let prefs_api = await browser.storage.sync.get({
-            anthropic_api_key: prefs_default.anthropic_api_key,
-            anthropic_model: prefs_default.anthropic_model,
-            anthropic_system_prompt: prefs_default.anthropic_system_prompt,
-            anthropic_version: prefs_default.anthropic_version,
-            anthropic_max_tokens: prefs_default.anthropic_max_tokens,
-            do_debug: prefs_default.do_debug,
-        });
-        let i18nStrings = {};
-        i18nStrings["anthropic_api_request_failed"] = browser.i18n.getMessage('anthropic_api_request_failed');
-        i18nStrings["error_connection_interrupted"] = browser.i18n.getMessage('error_connection_interrupted');
-        messageInput.setModel(prefs_api.anthropic_model);
-        messagesArea.setLLMName("Claude");
-        worker.postMessage({
-            type: 'init',
-            anthropic_api_key: prefs_api.anthropic_api_key,
-            anthropic_model: prefs_api.anthropic_model,
-            anthropic_system_prompt: prefs_api.anthropic_system_prompt,
-            anthropic_version: prefs_api.anthropic_version,
-            anthropic_max_tokens: prefs_api.anthropic_max_tokens,
-            do_debug: prefs_api.do_debug,
-            i18nStrings: i18nStrings,
-        });
-        let additional_text_elements = [];
-        additional_text_elements.push({label: "Prompt", value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
-        additional_text_elements.push({label: "System Prompt", value: prefs_api.anthropic_system_prompt});
-        messagesArea.appendUserMessage(getAPIsInitMessageString({
-            api_string: "Claude API",
-            model_string: prefs_api.anthropic_model,
-            version_string: prefs_api.anthropic_version,
-            additional_messages: additional_text_elements
-        }), "info");
-        browser.runtime.sendMessage({
-            command: "anthropic_api_ready_" + call_id,
-            window_id: (await browser.windows.getCurrent()).id
-        });
-        break;
     }
 }
 

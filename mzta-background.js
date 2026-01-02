@@ -17,7 +17,11 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
-import { prefs_default } from './options/mzta-options-default.js';
+import {
+    prefs_default,
+    getDynamicSettingValue,
+    getDynamicSettingsDefaults
+} from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
 import {
@@ -838,10 +842,7 @@ async function reload_pref_init(){
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         add_tags_context_menu: prefs_default.add_tags_context_menu,
         spamfilter_context_menu: prefs_default.spamfilter_context_menu,
-        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-        add_tags_connection_type: prefs_default.add_tags_connection_type,
-        spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
-        spamfilter_connection_type: prefs_default.spamfilter_connection_type
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
     _sparks_presence = await checkSparksPresence();
@@ -1073,8 +1074,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
         add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
         spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
-        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-        spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
         do_debug: prefs_default.do_debug,
     });
 
@@ -1121,9 +1121,10 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
             let cmd_addTags = new mzta_specialCommand({
                 prompt: specialFullPrompt_add_tags,
-                llm: getConnectionType(prefs_aats.connection_type, curr_prompt_add_tags, prefs_aats.add_tags_use_specific_integration),
+                llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_add_tags
             });
             await cmd_addTags.initWorker();
             let tags_current_email = [];
@@ -1160,9 +1161,10 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
             let cmd_spamfilter = new mzta_specialCommand({
                 prompt: specialFullPrompt_spamfilter,
-                llm: getConnectionType(prefs_aats.connection_type, curr_prompt_spamfilter, prefs_aats.spamfilter_use_specific_integration),
+                llm: getConnectionType(prefs_aats, curr_prompt_spamfilter, 'spamfilter'),
                 custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_spamfilter
             });
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';
