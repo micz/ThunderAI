@@ -15,7 +15,7 @@ tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
 }
 
 tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
-    background-color: rgb(233, 238, 169);
+    background-color: rgb(233, 238, 169) !important;
 }
 
 tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
@@ -109,7 +109,7 @@ span.opt_title{
     }
 
     tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
-        background-color: rgb(72, 77, 3);
+        background-color: rgb(72, 77, 3) !important;
     }
 
     tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
