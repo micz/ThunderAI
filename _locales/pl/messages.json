@@ -910,11 +910,9 @@
         "message": "Zaznaczony HTML"
     },
     "prefs_OptionText_auto_summary": {
-        "message": "Włącz automatyczne podsumowanie AI dla podglądów wiadomości",
-        "description": ""
+        "message": "Włącz automatyczne podsumowanie AI dla podglądów wiadomości"
     },
     "prefs_OptionText_auto_summary_Info": {
-        "message": "Jeśli zaznaczone, ThunderAI automatycznie wygeneruje i wyświetli podsumowania AI nad wiadomościami e-mail, gdy zostaną otwarte. Pamiętaj, że oznacza to, że wszystkie wiadomości, które przeglądasz, zostaną natychmiast wysłane do skonfigurowanej usługi AI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, ThunderAI automatycznie wygeneruje i wyświetli podsumowania AI nad wiadomościami e-mail, gdy zostaną otwarte. Pamiętaj, że oznacza to, że wszystkie wiadomości, które przeglądasz, zostaną natychmiast wysłane do skonfigurowanej usługi AI."
     }
 }

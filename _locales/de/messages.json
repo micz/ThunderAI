@@ -1313,11 +1313,21 @@
         "message": "Sie haben die optionale Berechtigung verweigert, die zum Abrufen der Modelle für diese Integration erforderlich ist."
     },
     "prefs_OptionText_auto_summary": {
-        "message": "Automatische KI-Zusammenfassung für Nachrichten-Vorschau aktivieren",
-        "description": ""
+        "message": "Automatische KI-Zusammenfassung für Nachrichten-Vorschau aktivieren"
     },
     "prefs_OptionText_auto_summary_Info": {
-        "message": "Wenn aktiviert, wird ThunderAI automatisch KI-Zusammenfassungen über E-Mail-Nachrichten generieren und anzeigen, wenn sie geöffnet werden. Beachten Sie, dass dies bedeutet, dass alle Nachrichten, die Sie in der Vorschau anzeigen, sofort an den konfigurierten KI-Dienst gesendet werden.",
-        "description": ""
+        "message": "Wenn aktiviert, wird ThunderAI automatisch KI-Zusammenfassungen über E-Mail-Nachrichten generieren und anzeigen, wenn sie geöffnet werden. Beachten Sie, dass dies bedeutet, dass alle Nachrichten, die Sie in der Vorschau anzeigen, sofort an den konfigurierten KI-Dienst gesendet werden."
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI Zusammenfassung"
+    },
+    "auto_summary_generating": {
+        "message": "KI-Zusammenfassung wird generiert..."
+    },
+    "auto_summary_failed": {
+        "message": "Fehler beim Generieren der KI-Zusammenfassung. Bitte überprüfen Sie Ihre Einstellungen und versuchen Sie es erneut."
+    },
+    "auto_summary_prompt": {
+        "message": "Bitte geben Sie eine prägnante Zusammenfassung der folgenden E-Mail-Nachricht. Die Zusammenfassung sollte maximal 3-5 Sätze umfassen und die Hauptpunkte erfassen:\n\n"
     }
 }

@@ -860,5 +860,17 @@
     },
     "prefs_OptionText_auto_summary_Info": {
         "message": "Se marcado, um resumo gerado por IA será exibido automaticamente acima das mensagens na visualização."
+    },
+    "auto_summary_title": {
+        "message": "Resumo ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Gerando resumo de IA..."
+    },
+    "auto_summary_failed": {
+        "message": "Falha ao gerar o resumo de IA. Verifique suas configurações e tente novamente."
+    },
+    "auto_summary_prompt": {
+        "message": "Forneça um resumo conciso da seguinte mensagem de e-mail. O resumo deve ter no máximo 3-5 frases e capturar os pontos principais:\n\n"
     }
 }

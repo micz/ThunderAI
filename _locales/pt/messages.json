@@ -174,11 +174,21 @@
         "message": "Enviar"
     },
     "prefs_OptionText_auto_summary": {
-        "message": "Ativar resumo automático de IA para pré-visualizações de mensagens",
-        "description": ""
+        "message": "Ativar resumo automático de IA para pré-visualizações de mensagens"
     },
     "prefs_OptionText_auto_summary_Info": {
-        "message": "Se ativado, o ThunderAI gerará e mostrará automaticamente resumos de IA acima das mensagens de e-mail quando forem abertas. Note que isso significa que todas as mensagens que você visualizar serão enviadas imediatamente para o serviço de IA configurado.",
-        "description": ""
+        "message": "Se ativado, o ThunderAI gerará e mostrará automaticamente resumos de IA acima das mensagens de e-mail quando forem abertas. Note que isso significa que todas as mensagens que você visualizar serão enviadas imediatamente para o serviço de IA configurado."
+    },
+    "auto_summary_title": {
+        "message": "Resumo ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Gerando resumo de IA..."
+    },
+    "auto_summary_failed": {
+        "message": "Falha ao gerar o resumo de IA. Verifique suas configurações e tente novamente."
+    },
+    "auto_summary_prompt": {
+        "message": "Forneça um resumo conciso da seguinte mensagem de e-mail. O resumo deve ter no máximo 3-5 frases e capturar os pontos principais:\n\n"
     }
 }
