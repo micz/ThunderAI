@@ -60,7 +60,8 @@ let autocompleteSuggestions = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    prefs = await browser.storage.sync.get({ connection_type:prefs_default.connection_type, do_debug: prefs_default.do_debug });
+    let storedPrefs = await browser.storage.sync.get(null);
+    prefs = { ...prefs_default, ...storedPrefs };
     taLog = new taLogger("mzta-custom-prompts", prefs.do_debug);
     
     setStorageSpace();
@@ -145,6 +146,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         no_chatgpt_web: true,
         taLog: taLog
     });
+
+    // Fill defaults for new prompt form
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputEl = document.getElementById(propName);
+            if (inputEl && prefs[propName] !== undefined) {
+                 if (inputEl.type === 'checkbox') {
+                     inputEl.checked = (prefs[propName] === true || prefs[propName] === 'true');
+                 } else {
+                     inputEl.value = prefs[propName];
+                 }
+            }
+        }
+    }
 
     i18n.updateDocument();
 
@@ -507,7 +523,14 @@ function populateConnectionUI(tr, id, prefix, selectId) {
             const inputId = `${prefix}${propName}`;
             const inputEl = document.getElementById(inputId);
             if (inputEl) {
-                inputEl.type === 'checkbox' ? inputEl.checked = (itemValues[propName] === true || itemValues[propName] === 'true') : inputEl.value = itemValues[propName] || '';
+                let val = itemValues[propName];
+                // Use default if undefined or empty string (for text inputs)
+                if (val === undefined || (inputEl.type !== 'checkbox' && val === '')) {
+                    if (prefs[propName] !== undefined) {
+                        val = prefs[propName];
+                    }
+                }
+                inputEl.type === 'checkbox' ? inputEl.checked = (val === true || val === 'true') : inputEl.value = val || '';
             }
         }
     }
