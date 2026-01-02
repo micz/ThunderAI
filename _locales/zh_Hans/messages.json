@@ -895,5 +895,17 @@
     },
     "prefs_OptionText_auto_summary_Info": {
         "message": "如果选中，AI生成的摘要将自动显示在消息预览上方。"
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI 摘要"
+    },
+    "auto_summary_generating": {
+        "message": "正在生成AI摘要..."
+    },
+    "auto_summary_failed": {
+        "message": "生成AI摘要失败。请确认您的设置并重试。"
+    },
+    "auto_summary_prompt": {
+        "message": "请提供以下电子邮件消息的简明摘要。摘要应最多包含3-5个句子，并捕捉主要要点：\n\n"
     }
 }
