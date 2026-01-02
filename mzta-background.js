@@ -58,7 +58,10 @@ import {
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
-import { getSpamFilterPrompt } from './js/mzta-prompts.js';
+import { 
+    getSpamFilterPrompt,
+    getSpecialPrompts
+} from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { addTags_getExclusionList, checkExcludedTag } from './js/mzta-addatags-exclusion-list.js';
@@ -1017,54 +1020,63 @@ browser.menus.onClicked.addListener( (info, tab) => {
         processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
     }
     if(_summarize) {
+        // info.selectedMessages is of type MessageList
         summarizeEmails(getMessages(info.selectedMessages));
     }
 });
 
 async function summarizeEmails(messages) {
     taWorkingStatus.startWorking();
-    // generate the special prompt for summarization
-  
-    // - make a long string of all the emails
-    let emails_content = '';
-    for await (let message of messages) {
-////// TODO: make this customizable through placeholders!
-// plan: make a second option field where placeholders can be used and
-// simply add the result from that tepmlate to the end of the prompt option
-// field
-        emails_content += "\n\n---\n\n";
-        let curr_fullMessage = await browser.messages.getFull(message.id);
-        
-        // from
-        curr_fullMessage
-        
-        // to
-        // cc
-        // bcc
-        // subject
-        // date
-        // attachment info
-         
-        // body
-        let msg_text = getMailBody(curr_fullMessage)
-        let body_text = htmlBodyToPlainText(msg_text.html);
-        
-        if( body_text.length == 0 ){
-            taLog.log("No HTML found in the message body, using plain text...");
-            body_text = msg_text.text.replace(/\s+/g, ' ').trim();
-        };
-        emails_content += body_text;
-      
-    };
-    emails_content += "\n\n---\n\n";
     
-    // - join prompt and emails 
+    // we have two prompts, the actual assignment for the LLM and the email
+    // template prompt.
+    const specialPrompts = await getSpecialPrompts();
+    const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+    const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+    
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+    
+    // assemble all email messages into one string and add the assignment prompt
+    let messages_list = [];
+    for await (let curr_message of messages) {
+      
+        // extract body of current message as text
+        let curr_message_full = await browser.messages.getFull(curr_message.id);
+        let curr_body_full_html = getMailBody(curr_message_full);
+        let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+        if( curr_body_full_text.length === 0) {
+            taLog.log("No HTML found in the message body, using plain text...");
+            curr_body_full_text = curr_message_full.text;
+        }
+        
+        messages_list.push(await taPromptUtils.preparePrompt({
+          curr_prompt: prompt_email,
+          curr_message: curr_message,
+          chatgpt_lang: chatgpt_lang,
+          body_text: curr_body_full_text,
+          subject_text: curr_message_full.headers.subject,
+          msg_text: curr_body_full_html,
+        }));
+    };
+    let messages_string = messages_list.join("\n\n--- Next Email ---\n\n");
+    
+    let full_prompt = prompt.text + "\n\n\n" + messages_string;
+    
+    console.log(full_prompt);
+    
+    // send the prompt to the chat interface
+    openChatGPT(
+        full_prompt, 
+        prompt.action,
+        tabs[0].id,
+        prompt.name,
+        prompt.need_custom_text,
+        prompt
+    )
   
     taWorkingStatus.stopWorking();
-    // send to LLM
-  
-    console.log(emails_content);
-  
+    return {ok : '1'};
 }
 
 
