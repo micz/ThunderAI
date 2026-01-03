@@ -613,5 +613,32 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Det verkar som att minst ett av dina konton använder tillägget Owl for Exchange. Det finns ett känt problem mellan Thunderbird och Owl, vilket för närvarande åtgärdas. För närvarande kan du använda ThunderAI när du skriver e-postmeddelanden, men inte när du läser dem."
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "Klicka på ett värde för att ställa in det."
+    },
+    "prompt_reply_full_text": {
+        "message": "Svara på följande e-postmeddelande. Svara endast med den text som behövs och utan extra kommentarer eller annan text."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Lägg inte till ämnesraden i svaret."
+    },
+    "reply_same_lang": {
+        "message": "Svara på samma språk."
+    },
+    "sign_msg_as": {
+        "message": "Signera meddelandet som"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Svara på följande e-postmeddelande \"{%selected_text%}\", med tanke på att detta är hela tråden med e-postmeddelanden \"{%mail_html_body%}\". Svara endast med den text som behövs och utan extra kommentarer eller annan text."
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Svara på följande e-postmeddelande \"{%mail_text_body%}\". {%additional_text%}. Svara endast med den text som behövs och utan extra kommentarer eller annan text."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Skriv om följande text för att vara mer artig. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
     }
 }
