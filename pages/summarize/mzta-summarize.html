@@ -4,13 +4,29 @@
     <meta charset="UTF-8" />
     <title>ThunderAI - __MSG_Summarize_PageTitle__</title>
     <link rel="stylesheet" href="mzta-summarize.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
 <body>
-<div>
-    <h1 class="page_title">__MSG_Summarize_PageTitle__</h1>
-    <p>__MSG_Summarize_info_default__</p>
-</div>
+    <div>
+        <h1 class="page_title">__MSG_Summarize_PageTitle__</h1>
+        <p>__MSG_Summarize_info_default__</p>
+    </div>
+    <div class="summarize_table_title section_title">__MSG_Summarize_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="summarize_tr specific_integration">
+            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="summarize_use_specific_integration" name="summarize_use_specific_integration" class="option-input" />
+                __MSG_prefs_OptionText_summarize_use_specific_integration_Info__
+              </label>
+            </td>
+          </tr>
+          <tr id="connection_ui_anchor"></tr>
+          <tr id="connection_ui_end"><td colspan="2"></td></tr>
+    </table>
     <div id="summarize_prompt_container">
         <!--title and description-->
         <span class="section_title">

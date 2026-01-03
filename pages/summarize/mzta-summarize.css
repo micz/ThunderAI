@@ -16,6 +16,49 @@
     font-style: italic;
 }
 
+#account_selector_container{
+    display: none;
+}
+
+#account_selector_checkboxes{
+    padding: 10px;
+    border: 1px solid gray;
+    width: 24em;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.specific_integration{
+    background-color: #dfeaff;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.group td {
+  border-top: none;
+  border-bottom: none;
+}
+
+.specific_integration_sub td:first-child {
+  border-left: 10px solid #dfeaff;
+}
+
+.specific_integration_sub td:last-child {
+  border-right: 10px solid #dfeaff;
+}
+
+#connection_ui_end td{
+    height: 6px;
+    background-color: #dfeaff;
+}
+
+#connection_ui_end{
+    display: none;
+}
+
 .btn_div {
     width: 100%;
     display: flex;
@@ -28,6 +71,11 @@ table#miczPrefs {
     width: 90%;
     margin: 0px auto 40px auto;
     border: 1px solid #ccc;
+}
+
+.addtags_table_title{
+    width: 90%;
+    margin: auto;
 }
 
 .section_title {
@@ -90,27 +138,21 @@ table#miczPrefs tr:last-child td {
     color: red;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1c1b22;
         color: rgb(251, 251, 254);
     }
 
-    a:link {
-        color: #409eff;
-    }
-    a:visited {
-        color: #409eff;
-    }
-    a:hover {
-        color: #66b1ff;
-    }
-    a:active {
-        color: #66b1ff;
-    }
-    a:active {
-        color: #66b1ff;
-    }
+    a:link { color: #409eff; }
+    a:visited { color: #409eff; }
+    a:hover { color: #66b1ff; }
+    a:active { color: #66b1ff; }
+    a:active { color: #66b1ff; }
 
     .autocomplete-list {
         background-color: #2e2f36;
@@ -123,5 +165,25 @@ table#miczPrefs tr:last-child td {
 
     .autocomplete-list li.active {
         background-color: #4c4e58;
+    }
+
+    .summarize_auto{
+        background-color: #415c35;
+    }
+
+    .specific_integration{
+        background-color: #2E3A4F;
+    }
+
+    .specific_integration_sub td:first-child {
+        border-left: 10px solid #2E3A4F;
+    }
+
+    .specific_integration_sub td:last-child {
+        border-right: 10px solid #2E3A4F;
+    }
+
+    #connection_ui_end td{
+        background-color: #2E3A4F;
     }
 }
