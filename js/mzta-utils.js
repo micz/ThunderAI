@@ -408,10 +408,11 @@ export async function createTag(tag) {
   let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
+    const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
     if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
     }else{
-      return browser.messages.createTag('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.createTag(tagKey, tag, generateHexColorForTag());
     }
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
