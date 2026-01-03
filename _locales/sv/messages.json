@@ -607,5 +607,11 @@
     },
     "prefs_OptionText_openai_comp_use_v1_info": {
         "message": "Om markerat kommer segmentet \"v1\" i sökvägen för API-anrop att behållas, som \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Här kan du även ange en fjärrserveradress."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Det verkar som att minst ett av dina konton använder tillägget Owl for Exchange. Det finns ett känt problem mellan Thunderbird och Owl, vilket för närvarande åtgärdas. För närvarande kan du använda ThunderAI när du skriver e-postmeddelanden, men inte när du läser dem."
     }
 }
