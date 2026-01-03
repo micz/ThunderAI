@@ -127,6 +127,10 @@ table#report_data th {
     background-color: #f4f4f4;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;

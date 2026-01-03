@@ -1107,7 +1107,7 @@
         "message": "Version de l’API Claude"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Nombre maximum de jetons Claude"
+        "message": "Nombre maximum de jetons"
     },
     "anthropic_api_request_failed": {
         "message": "Échec de la requête à l'API Claude"
@@ -1311,5 +1311,32 @@
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Vous avez refusé l’autorisation facultative nécessaire pour récupérer les modèles pour cette intégration."
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "placeholder_mail_headers": {
+        "message": "En-têtes d'e-mail"
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Quelle température d'échantillonnage utiliser, entre 0 et 2. Des valeurs plus élevées comme 0,8 rendront le résultat plus aléatoire, tandis que des valeurs plus basses comme 0,2 le rendront plus ciblé et déterministe."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "La température du modèle. Augmenter la température rendra les réponses du modèle plus créatives. La valeur par défaut est 0,8. Il est recommandé d'utiliser des valeurs comprises entre 0 et 1."
+    },
+    "prefs_api_temperature": {
+        "message": "Température"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Quelle température d'échantillonnage utiliser, entre 0 et 2. Des valeurs plus élevées, comme 0,8, rendront le résultat plus aléatoire, tandis que des valeurs plus basses, comme 0,2, le rendront plus ciblé et déterministe."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Ce paramètre doit être un nombre compris entre 0,0 et 2,0. Il contrôle le caractère aléatoire du résultat. La valeur par défaut varie selon le modèle. Laissez ce champ vide pour ne pas définir le paramètre dans l'appel d'API."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Degré d'aléa injecté dans la réponse. La valeur par défaut est 1,0. La plage de valeurs s'étend di 0,0 à 1,0. Utilisez une température proche de 0,0 pour des tâches analytiques ou des choix multiples, et proche de 1,0 pour des tâches créatives et génératives. Notez que même avec une température de 0,0, les résultats ne seront pas totalement déterministes."
+    },
+    "reset": {
+        "message": "Réinitialiser"
     }
 }

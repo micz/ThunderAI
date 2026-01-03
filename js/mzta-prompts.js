@@ -338,6 +338,38 @@ const specialPrompts = [
         is_default: "1",
         is_special: "1",
     },
+    {
+        id: 'prompt_summarize',
+        name: "__MSG_prompt_summarize__",
+        text: "prompt_summarize_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
+        is_default: "1",
+        is_special: "1",
+    },
+    {
+        id: 'prompt_summarize_email_template',
+        name: "__MSG_prompt_summarize_email_template__",
+        text: "prompt_summarize_email_template_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
+        is_default: "1",
+        is_special: "1",
+    }
 ];
 
 
@@ -440,7 +472,6 @@ async function getDefaultPrompts_withProps() {
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
                 prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
-                prompt.api_model = (prefs._default_prompts_properties[prompt.id]?.api_model || '').trim();
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -475,9 +506,6 @@ async function getCustomPrompts() {
             if(prompt.api_type === undefined){
                 prompt.api_type = "";
             }
-            if(prompt.api_model === undefined){
-                prompt.api_model = "";
-            }
         });
         return prefs._custom_prompt;
     }
@@ -495,7 +523,6 @@ export async function setDefaultPromptsProperties(prompts) {
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
             api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
-            api_model: (prompt.api_model === undefined || prompt.api_model === "undefined") ? "" : prompt.api_model
         };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
@@ -590,7 +617,6 @@ export async function savePrompt(prompt) {
 
 export async function clearPromptAPI(id){
     let _prompt = await loadPrompt(id);
-    _prompt.api = "";
-    _prompt.model = "";
+    _prompt.api_type = "";
     await savePrompt(_prompt);
 }

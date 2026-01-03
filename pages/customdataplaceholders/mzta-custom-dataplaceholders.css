@@ -302,6 +302,10 @@ input.input_additional[type="text"]{
     cursor: pointer;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;

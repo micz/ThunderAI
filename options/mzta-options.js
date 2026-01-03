@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from './mzta-options-default.js';
+import { prefs_default, getDynamicSettingsDefaults } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import {
   ChatGPTWeb_models,
@@ -127,7 +127,11 @@ function disable_MaxPromptLength(){
 function disable_AddTags(prefs_opt){
   let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
-  let add_tags_disabled = (getConnectionType(conntype_select.value, {api: prefs_opt.add_tags_use_specific_integration ? prefs_opt.add_tags_connection_type : ''}) === "chatgpt_web");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let add_tags_disabled = (getConnectionType(tempPrefs, null, 'add_tags') === "chatgpt_web");
   // console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
   add_tags.checked = add_tags_disabled ? false : add_tags.checked;
   let add_tags_checked_original = add_tags.checked;
@@ -145,7 +149,11 @@ function disable_AddTags(prefs_opt){
 function disable_SpamFilter(prefs_opt){
   let spamfilter = document.getElementById('spamfilter');
   let conntype_select = document.getElementById("connection_type");
-  let spamfilter_disabled = (getConnectionType(conntype_select.value, {api: prefs_opt.spamfilter_use_specific_integration ? prefs_opt.spamfilter_connection_type : ''}) === "chatgpt_web");;
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let spamfilter_disabled = (getConnectionType(tempPrefs, null, 'spamfilter') === "chatgpt_web");
   let spamfilter_checked_original = spamfilter.checked;
   spamfilter.checked = spamfilter_disabled ? false : spamfilter.checked;
   if(!spamfilter.checked){
@@ -283,6 +291,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
     openTab('/pages/spamfilter/mzta-spamfilter.html');
   });
+  
+  document.getElementById('btnManageSummarizeInfo').addEventListener('click', () => {
+    openTab('/pages/summarize/mzta-summarize.html');
+  });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
     openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');
@@ -302,10 +314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   let prefs_opt = await browser.storage.sync.get({
-    add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-    add_tags_connection_type: prefs_default.add_tags_connection_type,
-    spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
-    spamfilter_connection_type: prefs_default.spamfilter_connection_type,
+    ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
   });
 
   let conntype_select = document.getElementById("connection_type");

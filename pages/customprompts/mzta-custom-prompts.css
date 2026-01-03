@@ -60,7 +60,7 @@ table.prompts_list th {
 
 table td {
     border: 1px solid #ddd;
-    padding: 8px;
+    padding: 5px;
 }
 
 table td.w08{
@@ -228,11 +228,6 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
     padding-right: 2px;
 }
 
-#chatgpt_web_additional_info_toggle td{
-    padding:0px 5px;
-    font-style: italic;
-}
-
 #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show{
     background-color: rgb(255, 209, 183);
     display:none;
@@ -271,7 +266,7 @@ label, .id_show, .text_show, .name_show, .type_show, .action_show{
 .chatgpt_web_additional_info_toggle{
     width: -moz-available;
     text-align: center;
-    margin-top: 10px;
+    padding:5px;
 }
 
 .chatgpt_web_additional_info_show{
@@ -299,6 +294,39 @@ input.input_additional[type="text"]{
 }
 
 .conntype_chatgpt_web_option{
+    cursor: pointer;
+}
+
+.api_additional_info{
+    cursor: pointer;
+    text-align: center;
+    background-color: #409df3;
+}
+
+.api_additional_info_toggle{
+    text-align: center;
+    padding: 5px;
+    background-color: #409df3;
+    cursor: pointer;
+    display: none;
+}
+
+.api_additional_info_show{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 3px;
+    margin-top: 5px;
+    background-color: rgb(64, 157, 243);
+}
+
+#api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
+    background-color: rgb(64, 137, 213);
+    text-decoration: underline;
+}
+
+label:has(input[type="checkbox"]) {
     cursor: pointer;
 }
 
@@ -351,10 +379,17 @@ input.input_additional[type="text"]{
 
     #chatgpt_web_additional_info, #chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info, .chatgpt_web_additional_info_toggle, .chatgpt_web_additional_info_show, .chatgpt_web_models_list_table{
         background-color: rgb(39, 11, 0);
-        color: rgb(182, 182, 182);
     }
 
     #chatgpt_web_additional_info_toggle:hover, .chatgpt_web_additional_info_toggle:hover{
         background-color: rgb(88, 25, 0);
+    }
+
+    .api_additional_info, .api_additional_info_toggle, .api_additional_info_show{
+        background-color: #0f2437;
+    }
+
+    #api_additional_info_toggle:hover, .api_additional_info_toggle:hover{
+        background-color: #1b456d
     }
 }

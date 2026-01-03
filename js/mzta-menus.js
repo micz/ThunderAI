@@ -19,7 +19,10 @@
 // Some original methods are derived from https://github.com/ali-raheem/Aify/blob/cfadf52f576b7be3720b5b73af7c8d3129c054da/plugin/html/actions.js
 
 import { getPrompts } from './mzta-prompts.js';
-import { prefs_default } from '../options/mzta-options-default.js';
+import {
+    prefs_default,
+    getDynamicSettingsDefaults
+} from '../options/mzta-options-default.js';
 import {
     getLanguageDisplayName,
     getMenuContextCompose,
@@ -222,7 +225,8 @@ export class mzta_Menus {
                             prompt: fullPrompt,
                             llm: def_conntype,
                             custom_model: curr_prompt.model ? curr_prompt.model : '',
-                            do_debug: prefs_at.do_debug
+                            do_debug: prefs_at.do_debug,
+                            config: curr_prompt
                         });
                         await cmd_addTags.initWorker();
                         try{
@@ -258,9 +262,11 @@ export class mzta_Menus {
                             connection_type: prefs_default.connection_type,
                             calendar_enforce_timezone: prefs_default.calendar_enforce_timezone,
                             calendar_timezone: prefs_default.calendar_timezone,
+                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
-                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
-                            console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + prefs_at.connection_type);
+                        let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
+                        if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
+                            console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -277,8 +283,9 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetCalendarEvent = new mzta_specialCommand({
                             prompt: fullPrompt,
-                            llm: prefs_at.connection_type,
-                            do_debug: true
+                            llm: def_conntype,
+                            do_debug: true,
+                            config: curr_prompt
                         });
                         await cmd_GetCalendarEvent.initWorker();
                         try{
@@ -333,9 +340,14 @@ export class mzta_Menus {
                     }
                     case 'prompt_get_task': {  // Get a task info
                         let task_data = '';
-                        let prefs_at = await browser.storage.sync.get({connection_type: '', calendar_enforce_timezone: false, calendar_timezone: '',});
-                        if((prefs_at.connection_type === '')||(prefs_at.connection_type === null)||(prefs_at.connection_type === undefined)||(prefs_at.connection_type === 'chatgpt_web')){
-                            console.error("[ThunderAI | GetTask] Invalid connection type: " + prefs_at.connection_type);
+                        let prefs_at = await browser.storage.sync.get({
+                            connection_type: '', 
+                            calendar_enforce_timezone: false, 
+                            calendar_timezone: '',
+                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
+                        let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
+                        if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
+                            console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
@@ -349,8 +361,9 @@ export class mzta_Menus {
                         this.logger.log("fullPrompt: " + fullPrompt);
                         let cmd_GetTask = new mzta_specialCommand({
                             prompt: fullPrompt,
-                            llm: prefs_at.connection_type,
-                            do_debug: true
+                            llm: def_conntype,
+                            do_debug: true,
+                            config: curr_prompt
                         });
                         await cmd_GetTask.initWorker();
                         try{

@@ -91,6 +91,9 @@ table#miczPrefs  tr:last-child td {
     color: red;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
 
 @media (prefers-color-scheme: dark) {
     body {

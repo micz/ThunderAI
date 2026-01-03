@@ -220,9 +220,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    document.getElementById('btnManagePrompts').addEventListener('click', () => {
-        openTab('/pages/customprompts/mzta-custom-prompts.html');
-    });
+    // document.getElementById('btnManagePrompts').addEventListener('click', () => {
+    //     openTab('/pages/customprompts/mzta-custom-prompts.html');
+    // });
 
 }, { once: true });
 

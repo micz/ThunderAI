@@ -1111,7 +1111,7 @@
         "message": "Scegli uno dei servizi disponibili per l'API compatibile con OpenAI oppure inseriscine uno manualmente."
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Numero massimo di token di Claude"
+        "message": "Numero massimo di token"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
         "message": "Il numero massimo di token da generare nell'elaborazione. Il conteggio dei token del tuo prompt, sommato a max_tokens, non può superare la lunghezza di contesto del modello."
@@ -1314,5 +1314,32 @@
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Hai negato l’autorizzazione necessaria per recuperare i modelli per questa integrazione."
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "placeholder_mail_headers": {
+        "message": "Intestazioni email"
+    },
+    "reset": {
+        "message": "Reset"
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Quale temperatura di campionamento utilizzare, tra 0 e 2. Valori più alti come 0,8 renderanno l'output più casuale, mentre valori più bassi come 0,2 lo renderanno più focalizzato e deterministico."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "La temperatura del modello. Aumentare la temperatura farà sì che il modello risponda in modo più creativo. Il valore predefinito è 0,8. Si consiglia di utilizzare valori compresi tra 0 e 1."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperatura"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Quale temperatura di campionamento utilizzare, tra 0 e 2. Valori più alti come 0,8 renderanno l'output più casuale, mentre valori più bassi come 0,2 lo renderanno più focalizzato e deterministico."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Questo parametro deve essere un numero compreso tra 0.0 e 2.0. Questo valore controlla la casualità dell'output. Il valore predefinito varia a seconda del modello. Lascialo vuoto per evitare di impostare il parametro nella chiamata API."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Quantità di casualità iniettata nella risposta. Il valore predefinito è 1,0. L'intervallo va da 0,0 a 1,0. Utilizza una temperatura più vicina a 0,0 per compiti analitici o a scelta multipla, e più vicina a 1,0 per compiti creativi e generativi. Nota che, anche con una temperatura di 0,0, i risultati non saranno completamente deterministici."
     }
 }

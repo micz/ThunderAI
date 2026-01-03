@@ -4,6 +4,18 @@
 
 
 
+<h2>Version 3.8.0 - ??/??/2025</h2>
+      <ul>
+        <li><i>[All APIs]</i> When using special prompts (like automatically adding tags or the spam filter) with a specific API integration, all the settings for that integration can be specific. In this way you can use different api keys for the same integration, or different system prompt or temperature [<a href="https://github.com/micz/ThunderAI/pull/590">#590</a>].</li>
+        <li><i>[All APIs]</i> Added the temperature parameter [<a href="https://github.com/micz/ThunderAI/issues/561">#561</a>].</li>
+        <li><i>[OpenAI API]</i> Model filtering improved when choosing a model in the options page.</li>
+        <li><i>[OpenAI API]</i> Now using the new Responses API [<a href="https://github.com/micz/ThunderAI/issues/407">#407</a>].</li>
+        <li>It is now possible to define a custom placeholder with dynamic data to retrieve any header present in the current email [<a href="https://github.com/micz/ThunderAI/issues/527">#527</a>].</li>
+        <li><i>[All APIs]</i> The configuration information reported in the webchat API has been improved for all integrations.</li>
+        <li>Spanish (es) translation added, thanks to <a href="https://hosted.weblate.org/user/gerardo.sobarzo/">Gerardo Sobarzo</a>, <a href="https://hosted.weblate.org/user/arendon/">Andrés Rendón Hernández</a>, <a href="https://hosted.weblate.org/user/ErickLimonG/">Erick Limon</a>.</li>
+        <li>Various fixes.</li>
+        <li>...</li>
+      </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
       <ul>
         <li>Greek (el) translation added, thanks to <a href="https://github.com/christoskaterini">ChristosK.</a>.</li>

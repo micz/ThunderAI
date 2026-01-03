@@ -17,7 +17,11 @@
  */
 
 import { mzta_script } from './js/mzta-chatgpt.js';
-import { prefs_default } from './options/mzta-options-default.js';
+import {
+    prefs_default,
+    getDynamicSettingValue,
+    getDynamicSettingsDefaults
+} from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
 import {
@@ -41,6 +45,7 @@ import {
     extractJsonObject,
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
+    contextMenuID_Summarize,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -53,7 +58,10 @@ import {
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
-import { getSpamFilterPrompt } from './js/mzta-prompts.js';
+import { 
+    getSpamFilterPrompt,
+    getSpecialPrompts
+} from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import { addTags_getExclusionList, checkExcludedTag } from './js/mzta-addatags-exclusion-list.js';
@@ -367,6 +375,9 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
     prefs = checkScreenDimensions(prefs);
     //console.log(">>>>>>>>>>>>>>>> prefs: " + JSON.stringify(prefs));
     // console.log(">>>>>>>>>>>>>>>> prompt_info: " + JSON.stringify(prompt_info));
+
+    prefs.connection_type = getConnectionType(prefs, prompt_info);
+
     taLog.log("Prompt length: " + promptText.length);
     let _max_prompt_length = prefs.max_prompt_length;
     if(prefs.connection_type == 'chatgpt_web'){
@@ -795,14 +806,13 @@ async function reload_pref_init(){
         add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
         add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
         spamfilter: prefs_default.spamfilter,
+        summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         add_tags_context_menu: prefs_default.add_tags_context_menu,
         spamfilter_context_menu: prefs_default.spamfilter_context_menu,
-        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-        add_tags_connection_type: prefs_default.add_tags_connection_type,
-        spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
-        spamfilter_connection_type: prefs_default.spamfilter_connection_type
+        summarize_context_menu: prefs_default.summarize_context_menu,
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
     _sparks_presence = await checkSparksPresence();
@@ -913,6 +923,15 @@ function setupStorageChangeListener() {
                     removeContextMenu(contextMenuID_Spamfilter);
                 }
             }
+            if (changes.summarize) {
+                if (changes.summarize.newValue){
+                    if (prefs_init.summarize_context_menu){
+                        addContextMenu(contextMenuID_Summarize);
+                    }
+                } else {
+                  removeContextMenu(contextMenuID_Summarize);
+                }
+            }
             reload_pref_init();
         }
     });
@@ -973,6 +992,12 @@ function addContextMenuItems() {
     if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
         addContextMenu(contextMenuID_Spamfilter);
     }
+    
+    // Add Context menu: Summarize
+    if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
+      console.log("adding summarize to context menu")
+        addContextMenu(contextMenuID_Summarize);
+    }
 }
 
 addContextMenuItems();
@@ -981,16 +1006,78 @@ addContextMenuItems();
 browser.menus.onClicked.addListener( (info, tab) => {
     let _add_tags = false
     let _spamfilter = false
+    let _summarize = false;
     if(info.menuItemId === contextMenuID_AddTags){
         _add_tags = true;
     }
     if(info.menuItemId === contextMenuID_Spamfilter){
         _spamfilter = true;
     }
+    if(info.menuItemId === contextMenuID_Summarize) {
+        _summarize = true;
+    }
     if(_add_tags || _spamfilter){
         processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
     }
+    if(_summarize) {
+        // info.selectedMessages is of type MessageList
+        summarizeEmails(getMessages(info.selectedMessages));
+    }
 });
+
+async function summarizeEmails(messages) {
+    taWorkingStatus.startWorking();
+    
+    // we have two prompts, the actual assignment for the LLM and the email
+    // template prompt.
+    const specialPrompts = await getSpecialPrompts();
+    const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+    const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+    
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+    
+    // assemble all email messages into one string and add the assignment prompt
+    let messages_list = [];
+    for await (let curr_message of messages) {
+      
+        // extract body of current message as text
+        let curr_message_full = await browser.messages.getFull(curr_message.id);
+        let curr_body_full_html = getMailBody(curr_message_full);
+        let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+        if( curr_body_full_text.length === 0) {
+            taLog.log("No HTML found in the message body, using plain text...");
+            curr_body_full_text = curr_message_full.text;
+        }
+        
+        messages_list.push(await taPromptUtils.preparePrompt({
+          curr_prompt: prompt_email,
+          curr_message: curr_message,
+          chatgpt_lang: chatgpt_lang,
+          body_text: curr_body_full_text,
+          subject_text: curr_message_full.headers.subject,
+          msg_text: curr_body_full_html,
+        }));
+    };
+    let messages_string = messages_list.join("\n\n--- Next Email ---\n\n");
+    
+    let full_prompt = prompt.text + "\n\n\n" + messages_string;
+    
+    console.log(full_prompt);
+    
+    // send the prompt to the chat interface
+    openChatGPT(
+        full_prompt, 
+        prompt.action,
+        tabs[0].id,
+        prompt.name,
+        prompt.need_custom_text,
+        prompt
+    )
+  
+    taWorkingStatus.stopWorking();
+    return {ok : '1'};
+}
 
 
 // Listening for new received emails
@@ -1034,8 +1121,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
         add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
         spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
-        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-        spamfilter_use_specific_integration: prefs_default.spamfilter_use_specific_integration,
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
         do_debug: prefs_default.do_debug,
     });
 
@@ -1082,9 +1168,10 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
             let cmd_addTags = new mzta_specialCommand({
                 prompt: specialFullPrompt_add_tags,
-                llm: getConnectionType(prefs_aats.connection_type, curr_prompt_add_tags, prefs_aats.add_tags_use_specific_integration),
+                llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
                 custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_add_tags
             });
             await cmd_addTags.initWorker();
             let tags_current_email = [];
@@ -1121,9 +1208,10 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
             let cmd_spamfilter = new mzta_specialCommand({
                 prompt: specialFullPrompt_spamfilter,
-                llm: getConnectionType(prefs_aats.connection_type, curr_prompt_spamfilter, prefs_aats.spamfilter_use_specific_integration),
+                llm: getConnectionType(prefs_aats, curr_prompt_spamfilter, 'spamfilter'),
                 custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-                do_debug: prefs_aats.do_debug
+                do_debug: prefs_aats.do_debug,
+                config: curr_prompt_spamfilter
             });
             await cmd_spamfilter.initWorker();
             let spamfilter_result = '';
