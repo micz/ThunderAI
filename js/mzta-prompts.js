@@ -75,9 +75,7 @@
     API Connection Type
     <api_type>: api type
 
-    API Model
-    <api_model>: api model
-
+    << All the API settings defined in the default options, with the same IDs. >>
 */
 
 const defaultPrompts = [
