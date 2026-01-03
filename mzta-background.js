@@ -1041,7 +1041,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
         do_debug: prefs_default.do_debug,
     });
-
+    // console.log(">>>>>>>>>>>>>>>> getDynamicSettingsDefaults: " + JSON.stringify(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])));
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
@@ -1083,6 +1083,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
             taLog.log("Special prompt: " + specialFullPrompt_add_tags);
             // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
+            // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
             let cmd_addTags = new mzta_specialCommand({
                 prompt: specialFullPrompt_add_tags,
                 llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
