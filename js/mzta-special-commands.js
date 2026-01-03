@@ -28,7 +28,6 @@
     prompt = "";
     worker = null;
     llm = "";
-    custom_model = "";
     full_message = "";
     logger = null;
     do_debug = false;
@@ -38,16 +37,14 @@
         let {
             prompt = '',
             llm = '',
-            custom_model = '',
             do_debug = false,
             config = {}
         } = args;
         this.prompt = prompt;
         this.llm = llm;
-        this.custom_model = custom_model;
         this.config = config;
-        this.logger = new taLogger('mzta_specialCommand', do_debug);
         this.do_debug = do_debug;
+        this.logger = new taLogger('mzta_specialCommand', do_debug);
 
         const worker_path_map = {
             chatgpt_api: './workers/model-worker-openai_responses.js',
@@ -67,7 +64,17 @@
     }
 
     async initWorker() {
-        const integration = this.llm.replace('_api', '');
+        let integration = this.llm.replace('_api', '');
+        let use_specific_api = false;
+
+        this.logger.log("integration: " + integration);
+
+        if (this.config.api_type && this.config.api_type !== '') {
+            integration = this.config.api_type.replace('_api', '');
+            use_specific_api = true;
+            this.logger.log("use_specific_api: " + use_specific_api);
+            this.logger.log("specific integration: " + integration);
+        }
         const options_config = integration_options_config[integration];
 
         if (!options_config) {
@@ -75,13 +82,15 @@
             throw new Error("Invalid integration type: " + integration);
         }
 
-        let prefsToGet = {};
-        for (const key in options_config) {
+        const prefsToGet = {};
+        const configKeys = Object.keys(options_config);
+
+        for (const key of configKeys) {
             const prefKey = `${integration}_${key}`;
             prefsToGet[prefKey] = prefs_default[prefKey];
         }
 
-        let prefs_api = await browser.storage.sync.get(prefsToGet);
+        const prefs_api = await browser.storage.sync.get(prefsToGet);
 
         let workerInitMessage = {
             type: 'init',
@@ -89,24 +98,23 @@
             i18nStrings: ''
         };
 
-        for (const key in options_config) {
+        for (const key of configKeys) {
             const prefKey = `${integration}_${key}`;
+            let value = prefs_api[prefKey];
             
-            const configValue = this.config[prefKey];
-            
-            if (configValue !== undefined) {
-                 if (typeof options_config[key] === 'boolean') {
-                    prefs_api[prefKey] = (configValue === true || configValue === 'true' || configValue === 1);
-                 } else {
-                    prefs_api[prefKey] = configValue;
-                 }
+            if(use_specific_api){
+                const configValue = this.config[prefKey];
+                
+                if (configValue !== undefined) {
+                    if (typeof options_config[key] === 'boolean') {
+                        value = (configValue === true || configValue === 'true' || configValue === 1);
+                    } else {
+                        value = configValue;
+                    }
+                }
             }
-            
-            if (key === 'model') {
-                 workerInitMessage[prefKey] = this.custom_model !== '' ? this.custom_model : prefs_api[prefKey];
-            } else {
-                 workerInitMessage[prefKey] = prefs_api[prefKey];
-            }
+
+            workerInitMessage[prefKey] = value;
         }
 
         this.worker.postMessage(workerInitMessage);
