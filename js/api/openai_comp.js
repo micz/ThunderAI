@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
