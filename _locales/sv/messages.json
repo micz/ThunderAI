@@ -528,7 +528,7 @@
         "message": "Vid inloggningsproblem i ThunderAI-fönstret, öppna ChatGPT i en ny flik med knappen till höger, logga in, stäng sedan fliken och fortsätt använda ThunderAI."
     },
     "OpenChatGPTTab_Info2": {
-        "message": "Om du öppnar ChatGPT Web härifrån tillämpas alla konfigurerade inställningar för modellen, projektet och den anpassade GPT:n."
+        "message": "Om du öppnar ChatGPT webbgränssnitt härifrån tillämpas alla konfigurerade inställningar för modellen, projektet och den anpassade GPT:n."
     },
     "placeholder_mail_text_body": {
         "message": "Mejltext"
@@ -585,9 +585,27 @@
         "message": "Det här är modellen som kommer att tillämpas för ChatGPT:s webbgränssnitt. Om ingen modell anges eller om en felaktig modell anges, kommer standardmodellen att ställas in av ChatGPT på webbsidan. Den här inställningen fungerar inte med ett gratis ChatGPT-konto."
     },
     "prefs_OptionText_chatgpt_web_tempchat": {
-        "message": "ChatGPT Web tillfällig chatt"
+        "message": "ChatGPT webbgränssnitt tillfällig chatt"
     },
     "prefs_OptionText_chatgpt_web_tempchat_info": {
         "message": "Om markerad kommer den tillfälliga chatten att användas i ChatGPT:s webbgränssnitt."
+    },
+    "chatgpt_btn_model": {
+        "message": "Använd den nuvarande modellen"
+    },
+    "SendingPrompt": {
+        "message": "Skickar prompt..."
+    },
+    "AllowedValues": {
+        "message": "Tillåtna värden"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Du kan använda ytterligare dataplatshållare."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Behåll \"v1\"-kompatibiliteten"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Om markerat kommer segmentet \"v1\" i sökvägen för API-anrop att behållas, som \"http://localhost:1234/v1/chat/completions\"."
     }
 }
