@@ -133,5 +133,7 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
+    summarize: false,
+    summarize_context_menu: true,
     ...generated_prefs
 }

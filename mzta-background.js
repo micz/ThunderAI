@@ -45,6 +45,7 @@ import {
     extractJsonObject,
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
+    contextMenuID_Summary,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -802,10 +803,12 @@ async function reload_pref_init(){
         add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
         add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
         spamfilter: prefs_default.spamfilter,
+        summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         add_tags_context_menu: prefs_default.add_tags_context_menu,
         spamfilter_context_menu: prefs_default.spamfilter_context_menu,
+        summarize_context_menu: prefs_default.summarize_context_menu,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
@@ -917,6 +920,15 @@ function setupStorageChangeListener() {
                     removeContextMenu(contextMenuID_Spamfilter);
                 }
             }
+            if (changes.summarize) {
+                if (changes.summarize.newValue){
+                    if (prefs_init.summarize_context_menu){
+                        addContextMenu(contextMenuID_Summary);
+                    }
+                } else {
+                  removeContextMenu(contextMenuID_Summary);
+                }
+            }
             reload_pref_init();
         }
     });
@@ -976,6 +988,12 @@ function addContextMenuItems() {
     // Add Context menu: Spamfilter
     if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
         addContextMenu(contextMenuID_Spamfilter);
+    }
+    
+    // Add Context menu: Summary
+    if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
+      console.log("adding summary to context menu")
+        addContextMenu(contextMenuID_Summary);
     }
 }
 

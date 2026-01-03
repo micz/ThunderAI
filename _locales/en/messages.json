@@ -1195,6 +1195,18 @@
     "message": "Manage spam filter settings",
     "description": ""
   },
+  "prefs_OptionText_summarize": {
+    "message": "Summarize mail",
+    "description": ""
+  },
+  "prefs_OptionText_summarize_Info": {
+    "message": "If checked, adds an option to context menu to summarize mail.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageSummarizeInfo": {
+    "message": "Manage summarize settings",
+    "description": ""
+  },
   "SpamFilter_PageTitle": {
     "message": "Manage Spam Filter Settings",
     "description": ""
@@ -1293,6 +1305,10 @@
   },
   "context_menu_mzta-spamfilter": {
     "message": "Analyze for spam",
+    "description": ""
+  },
+  "context_menu_mzta-summary": {
+    "message": "Summarize",
     "description": ""
   },
   "prefs_OptionText_add_tags_context_menu": {
