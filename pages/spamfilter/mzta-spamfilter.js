@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let spamfilter_textarea = document.getElementById('spamfilter_prompt_text');
     let spamfilter_save_btn = document.getElementById('btn_save_prompt');
     let spamfilter_reset_btn = document.getElementById('btn_reset_prompt');
+    let spamfilter_use_specific_integration = document.getElementById('spamfilter_use_specific_integration');
 
     spamfilter_textarea.addEventListener('input', (event) => {
         spamfilter_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
@@ -88,6 +89,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('spamfilter_prompt_unsaved').classList.add('hidden');
         } else {
             document.getElementById('spamfilter_prompt_unsaved').classList.remove('hidden');
+        }
+    });
+
+    spamfilter_use_specific_integration.addEventListener('change', (event) => {
+        if (!event.target.checked) {
+          browser.storage.sync.set({ spamfilter_connection_type: '' });
         }
     });
 
