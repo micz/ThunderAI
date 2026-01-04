@@ -1265,5 +1265,20 @@
     },
     "customDataPH_manageDataPH_info_default_2": {
         "message": "Befintliga dataplatshållare med samma ID kommer att skrivas över. Platshållare med nya ID:n kommer att läggas till."
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Tänkande budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Definiera antalet tokens som ska användas för tänkande. Lämna det här fältet tomt om den valda modellen inte stöder tänkande eller om du vill använda standardmetoden. Ange 0 för att inaktivera tänkande eller -1 för att aktivera dynamiskt tänkande."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Denna parameter måste vara ett tal mellan 0,0 och 2,0. Den styr utdatas slumpmässighet. Standardvärdet varierar beroende på modell. Lämna det tomt för att undvika att parametern anges i API-anropet."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Mängd slumpmässighet som injiceras i svaret. Standardvärdet är 1,0. Varierar från 0,0 till 1,0. Använd en temperatur närmare 0,0 för analytiska/flervalsfrågor och närmare 1,0 för kreativa och generativa uppgifter. Observera att även med en temperatur på 0,0 kommer resultaten inte att vara helt deterministiska."
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Analysera följande e-posttext och generera en JSON-matris med taggar som sammanfattar innehållet. Använd teman, nyckelämnen och relevanta beskrivningar som taggar. Se till att taggarna är koncisa och relevanta för e-postmeddelandets innehåll.\nE-posttext: {%mail_text_body%}\nTänk på följande detaljer för kontext:\n- Avsändare: {%author%}\n- Mottagare: {%recipients%}\n- CC-lista: {%cc_list%}\n- E-postämne: {%mail_subject%}\nBasera dina taggar på e-postmeddelandets text och kontext och ignorera onödig information eller triviala detaljer.\nGenerera ett svar endast i JSON-format. Utdata ska endast vara en JSON-matris med taggar utan ytterligare kommentarer eller text. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     }
 }
