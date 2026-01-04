@@ -1262,5 +1262,8 @@
     },
     "customDataPH_manageDataPH_info_default": {
         "message": "På den här sidan är det möjligt att definiera anpassade dataplatshållare som ska användas i dina anpassade promptar."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Befintliga dataplatshållare med samma ID kommer att skrivas över. Platshållare med nya ID:n kommer att läggas till."
     }
 }
