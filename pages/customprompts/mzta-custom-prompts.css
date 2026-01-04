@@ -326,6 +326,10 @@ input.input_additional[type="text"]{
     text-decoration: underline;
 }
 
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;

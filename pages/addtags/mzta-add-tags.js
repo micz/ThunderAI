@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,11 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
-    if (addtags_prompt && addtags_prompt.api && addtags_prompt.api !== '') {
+    if (addtags_prompt && addtags_prompt.api_type && addtags_prompt.api_type !== '') {
         let update_prefs = {};
-        update_prefs['add_tags_connection_type'] = addtags_prompt.api;
+        update_prefs['add_tags_connection_type'] = addtags_prompt.api_type;
         
-        let integration = addtags_prompt.api.replace('_api', '');
+        let integration = addtags_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
                  if (addtags_prompt[key] !== undefined) {
@@ -344,14 +344,18 @@ async function restoreOptions() {
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
 
   if (addtags_prompt) {
-      if (addtags_prompt.api && addtags_prompt.api !== '') {
-          getting['add_tags_connection_type'] = addtags_prompt.api;
+      if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
+          getting['add_tags_connection_type'] = addtags_prompt.api_type;
+      } else {
+          getting['add_tags_connection_type'] = getting['connection_type'];
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {
               const propName = `${integration}_${key}`;
-              if (addtags_prompt[propName] !== undefined) {
+              if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
                   getting[`add_tags_${propName}`] = addtags_prompt[propName];
+              } else {
+                  getting[`add_tags_${propName}`] = getting[propName];
               }
           }
       }

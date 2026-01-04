@@ -1353,5 +1353,8 @@
     },
     "auto_summary_prompt": {
         "message": "Veuillez fournir un résumé concis du message suivant. Le résumé doit comporter au maximum 3 à 5 phrases et capturer les points principaux :\n\n"
+    },
+    "reset": {
+        "message": "Réinitialiser"
     }
 }

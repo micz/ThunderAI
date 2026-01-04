@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
 import {
   getSpecialPrompts,
@@ -41,6 +44,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let specialPrompts = await getSpecialPrompts();
     let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
+
+    if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
+        let update_prefs = {};
+        update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
+        
+        let integration = spamfilter_prompt.api_type.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (spamfilter_prompt[key] !== undefined) {
+                     update_prefs[`spamfilter_${integration}_${key}`] = spamfilter_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
+    }
 
     await initializeSpecificIntegrationUI({
       prefix: 'spamfilter',
@@ -313,14 +331,18 @@ async function restoreOptions() {
   let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
 
   if (spamfilter_prompt) {
-      if (spamfilter_prompt.api && spamfilter_prompt.api !== '') {
-          getting['spamfilter_connection_type'] = spamfilter_prompt.api;
+      if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
+          getting['spamfilter_connection_type'] = spamfilter_prompt.api_type;
+      } else {
+          getting['spamfilter_connection_type'] = getting['connection_type'];
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {
               const propName = `${integration}_${key}`;
-              if (spamfilter_prompt[propName] !== undefined) {
+              if (spamfilter_prompt[propName] !== undefined && spamfilter_prompt[propName] !== '') {
                   getting[`spamfilter_${propName}`] = spamfilter_prompt[propName];
+              } else {
+                  getting[`spamfilter_${propName}`] = getting[propName];
               }
           }
       }

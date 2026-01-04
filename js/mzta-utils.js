@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -408,10 +408,11 @@ export async function createTag(tag) {
   let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
+    const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
     if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
     }else{
-      return browser.messages.createTag('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.createTag(tagKey, tag, generateHexColorForTag());
     }
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
@@ -648,7 +649,9 @@ export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) 
     }
 
     if (specificType && specificType !== '') return specificType;
-    if (prompt && prompt.api && prompt.api !== '') return prompt.api;
+    if (prompt) {
+        if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
+    }
     return defaultType;
 }
 

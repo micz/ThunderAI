@@ -85,5 +85,527 @@
     },
     "auto_summary_prompt": {
         "message": "Ge en koncis sammanfattning av följande e-postmeddelande. Sammanfattningen bör vara max 3-5 meningar och fånga huvudpunkterna:\n\n"
+    },
+    "prompt_summarize_this": {
+        "message": "Sammanfatta detta"
+    },
+    "prompt_translate_this": {
+        "message": "Översätt detta"
+    },
+    "more_info_string": {
+        "message": "Mer information"
+    },
+    "prompt_classify": {
+        "message": "Klassificera"
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Laddar om menyer..."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Obligatoriska fält"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Läser ett e-postmeddelande"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Skriver ett e-postmeddelande"
+    },
+    "chatgpt_win_working": {
+        "message": "Arbete pågår..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Färdigt!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Markera den text du vill använda och klicka på knappen."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Använd det valda svaret"
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Versionsinformation"
+    },
+    "prefsInfoTitle": {
+        "message": "Viktig information"
+    },
+    "placeholder_tags_current_email": {
+        "message": "E-posttaggar"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Befintliga taggar"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Maximalt antal taggar"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Det maximala antalet taggar som föreslås av AI:n. Ställ den på 0 om du inte vill begränsa antalet taggar."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Begränsa antalet taggar till"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Dölj uteslutna taggar"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Om markerad kommer taggarna som finns i undantagslistan att döljas i bekräftelsedialogrutan."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Hantera tagginställningar"
+    },
+    "AddTags_PageTitle": {
+        "message": "Hantera tagginställningar"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Undantagslista"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Detta är en lista över taggar som inte får läggas till i e-postmeddelanden."
+    },
+    "save": {
+        "message": "Spara"
+    },
+    "reset_default": {
+        "message": "Återställ till standard"
+    },
+    "reset": {
+        "message": "Återställ"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Lägg till ett ord per rad, eller separera med kommatecken."
+    },
+    "addtags_dialog_title": {
+        "message": "Lägg till taggar i e-postmeddelandet"
+    },
+    "addtags_exclude_tag": {
+        "message": "Uteslut tagg"
+    },
+    "addtags_no_tags_received": {
+        "message": "Inga taggar mottagna från AI:n."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Inga giltiga taggar hittades efter filtrering med undantagslistan."
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI-fel"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI-varning"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Om markerad kommer taggarna att ställas in på gemener med endast den första bokstaven som versal."
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Första bokstaven som versal"
+    },
+    "prompt_reply": {
+        "message": "Svara på detta e-postmeddelande"
+    },
+    "prompt_reply_advanced": {
+        "message": "Svara på denna tråd"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Svara med kommando"
+    },
+    "prompt_rewrite_polite": {
+        "message": "Skriv om artigt"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Skriv om formellt"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Hantera promptar"
+    },
+    "prompt_lang": {
+        "message": "Svara på"
+    },
+    "customPrompts_start_saving": {
+        "message": "Sparar promptar..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Omindexerar listan..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Filtrerar promptar..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Sparar standardpromptar..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Sparar anpassade promptar..."
+    },
+    "customPrompts_saved": {
+        "message": "Promptar sparade!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "Id"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Måste vara unikt, med gemener och utan mellanslag"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Prompttext"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Textval behövs"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Lägg alltid till signaturen"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Be om ytterligare text"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Aktivera visaren för textjämförelse"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Textjämförelsevisaren kan väljas när åtgärden är inställd på \"Ersätt text\"."
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Lägg till prompten"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Lägg till i meny"
+    },
+    "customPrompts_close_button": {
+        "message": "Stäng-knapp"
+    },
+    "customPrompts_do_reply": {
+        "message": "Svara"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Ersätt text"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Det verkar som att ChatGPT-sidan tar för lång tid att ladda. Om den är klar klickar du på knappen till höger. Om problemet kvarstår kontrollerar du tjänstens status."
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Klicka på skicka-knappen för att skicka in prompten."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Du är inte inloggad på ChatGPT. Logga in med dina inloggningsuppgifter, stäng ChatGPT-fönstret och upprepa sedan åtgärden du försökte göra. Du kommer att förbli inloggad efteråt."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Av någon anledning är det inte möjligt att verifiera om rätt modell är laddad. För tillfället kan du trycka på den blå knappen för att fortsätta."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Infoga här den ytterligare texten för prompten."
+    },
+    "chatgpt_force_completion": {
+        "message": "tvinga slutförande"
+    },
+    "prompt_this": {
+        "message": "Prompt detta"
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Standardpromptar kan inte redigeras. Du kan inaktivera dem och sedan kopiera prompttexten och klistra in den i en ny för att skapa en modifierad version."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Du kan importera och exportera promptar. Befintliga promptar med samma ID kommer att skrivas över. Promptar med nya ID:n kommer att läggas till."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Om allt är korrekt, klicka på knappen \"Spara alla\" efter importen."
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Klicka här för att visa knappen \"Använd senaste svar\" om ChatGPT har slutfört sitt arbete men knappen inte har visats."
+    },
+    "msg_prompt_too_long": {
+        "message": "Texten du angav är för lång. Du måste förkorta den."
+    },
+    "prefs_status_page": {
+        "message": "tjänstestatus"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "AI-chattfönstrets dimensioner"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Standardsignaturnamn"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Standardspråk för svaren"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Svara alla"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Svara till avsändaren"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Svarstyp"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Detta är standardsvarstypen som används när du svarar på ett e-postmeddelande. Du kan välja den andra typen senare i svarsdialogrutan."
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Hantera dina promptar"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Hantera dina dataplatshållare"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Det kan hända att ChatGPT:s webbgränssnitt ändras på ett sätt som stör hur tillägget fungerar. Kontrollera sidan \"Tjänststatus\" som är länkad längst ner på den här sidan. Kom också ihåg att första gången du använder ThunderAI måste du logga in på ChatGPT."
+    },
+    "prefsInfoDesc_2": {
+        "message": "För att använda ChatGPT API behöver du en OpenAI ChatGPT API-nyckel och måste välja en modell."
+    },
+    "prefsInfoDesc_3": {
+        "message": "För att använda integrationen med Ollama måste du konfigurera en lokal Ollama-server. När servern är igång anger du dess adress i det angivna fältet i applikationen. För att säkerställa korrekt kommunikation mellan ThunderAI och Ollama-servern, kom ihåg att ange OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prefsInfoDesc_4": {
+        "message": "För att använda den här integrationen behöver du konfigurera en lokal server som är kompatibel med OpenAI API, som LM Studio. När servern är igång anger du dess adress i det angivna fältet i applikationen. För att säkerställa korrekt kommunikation mellan ThunderAI och den lokala servern, kom ihåg att ställa in CORS-inställningarna korrekt."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Kom ihåg att du kan öppna ThunderAI-menyn med kortkommandot CTRL+ALT+A."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Du kan ändra genvägen genom att klicka på kugghjulsikonen längst upp till höger på den här sidan och välja \"Hantera genväg för tillägg\"."
+    },
+    "prefsDonation_1": {
+        "message": "Gillar du det här tillägget?"
+    },
+    "prefsDonation_2": {
+        "message": "Överväg att göra en donation!"
+    },
+    "backToOptionsText": {
+        "message": "Alternativ"
+    },
+    "TranslateText": {
+        "message": "Vill du hjälpa till att översätta det här tillägget?"
+    },
+    "TranslateLink": {
+        "message": "Ta reda på hur!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Exportera alla promptar"
+    },
+    "customPrompts_Import": {
+        "message": "Importera nya promptar"
+    },
+    "importPrompts_confirmText": {
+        "message": "Du håller på att importera nya promptar."
+    },
+    "customPrompts_start_import": {
+        "message": "Startar import av anpassade promptar..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Import av anpassade promptar är klar! Du måste klicka på knappen \"Spara alla\" för att spara dina ändringar."
+    },
+    "importPrompts_invalidFile": {
+        "message": "Filen du försöker importera är inte en giltig fil med anpassade promptar."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Filen du försöker importera innehåller inga giltiga promptar."
+    },
+    "currently_used_prompt": {
+        "message": "För närvarande använt promptnamn"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Definiera svarsspråket i prompten"
+    },
+    "prefs_Connection_type": {
+        "message": "Anslutningstyp"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT-webbgränssnitt"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API-nyckel"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT-modeller"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Uppdatera listan över ChatGPT-modeller"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Fel vid försök att hämta ChatGPT-modeller"
+    },
+    "Loading": {
+        "message": "Laddar..."
+    },
+    "error": {
+        "message": "ThunderAI-fel!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Du har inte lagt till en API-nyckel för ChatGPT API. Vänligen ange en på alternativsidan."
+    },
+    "chatgpt_empty_model": {
+        "message": "Du har inte valt någon modell för ChatGPT API. Välj en på alternativsidan."
+    },
+    "chagpt_api_send_button": {
+        "message": "Använda modell"
+    },
+    "Debug": {
+        "message": "Felsök"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Aktivera felsökningssystemet"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Lokal LLM)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI-kompatibelt API"
+    },
+    "prefs_API_Host": {
+        "message": "Värdadress"
+    },
+    "Ollama_Models": {
+        "message": "Ollama-modeller"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Uppdatera listan över Ollama-modeller"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Fel vid försök att hämta Ollama-modeller"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Inga modeller hittades"
+    },
+    "ollama_empty_host": {
+        "message": "Du har inte lagt till en värdadress för Ollama API. Vänligen ange en på alternativsidan."
+    },
+    "ollama_empty_model": {
+        "message": "Du har inte valt någon modell för Ollama API. Välj en på alternativsidan."
+    },
+    "error_connection_interrupted": {
+        "message": "Anslutningen till servern avbröts oväntat"
+    },
+    "ollama_api_request_failed": {
+        "message": "Ollama API-begäran misslyckades"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "OpenAI ChatGPT API-begäran misslyckades"
+    },
+    "WaitingServerResponse": {
+        "message": "Väntar på serversvar"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Något liknande"
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI-kompatibla API-modeller"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Uppdatera listan över OpenAI-kompatibla API-modeller"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Fel vid försök att hämta OpenAI-kompatibla API-modeller"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Du har inte lagt till en värdadress för OpenAI-kompatibla API:et. Vänligen ange en på alternativsidan."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Du har inte valt en modell för OpenAI-kompatibelt API. Välj en på alternativsidan."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "OpenAI Comp API-begäran misslyckades"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Chattnamn"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Detta är namnet som kommer att användas i AI-chatten."
+    },
+    "StorageSpace": {
+        "message": "Totalt upptaget lagringsutrymme"
+    },
+    "SearchPrompt": {
+        "message": "Sök promptar"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Om markerat, skickas den markerade prompten från menyn automatiskt genom att använda kortkommandot CTRL+ALT+A. Annars visas promptnamnet för användaren, vilket kräver ytterligare ett tryck på Enter-tangenten för att skicka den."
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Meny: skicka omedelbart prompt"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "Meny: ordna alfabetiskt"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "Om markerat kommer promptar i menyn att ordnas alfabetiskt."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Ställ in värdet till 0 om du inte vill ange fönsterstorleken."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI Comp API-nyckel"
+    },
+    "Optional": {
+        "message": "Valfri"
+    },
+    "OpenChatGPTTab": {
+        "message": "Öppna fliken ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "Vid inloggningsproblem i ThunderAI-fönstret, öppna ChatGPT i en ny flik med knappen till höger, logga in, stäng sedan fliken och fortsätt använda ThunderAI."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Om du öppnar ChatGPT Web härifrån tillämpas alla konfigurerade inställningar för modellen, projektet och den anpassade GPT:n."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Mejltext"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTML-mejltext"
+    },
+    "placeholder_mail_subject": {
+        "message": "Ämne för e-postmeddelande"
+    },
+    "placeholder_folder_name": {
+        "message": "Mappnamn"
+    },
+    "placeholder_folder_path": {
+        "message": "Mappsökväg"
+    },
+    "placeholder_mail_headers": {
+        "message": "E-postrubriker"
+    },
+    "placeholder_selected_text": {
+        "message": "Vald text"
+    },
+    "placeholder_junk_score": {
+        "message": "Skräppoäng"
+    },
+    "placeholder_recipients": {
+        "message": "Mottagare"
+    },
+    "placeholder_cc_list": {
+        "message": "CC-lista"
+    },
+    "placeholder_author": {
+        "message": "Författare"
+    },
+    "placeholder_account_email_address": {
+        "message": "Kontots e-postadress"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Platshållare: använd standardvärde"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Om markerat kommer platshållarna att fyllas med standardvärdena när inget värde anges. Annars kommer platshållarna att behållas."
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Max promptlängd"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Detta är det maximala antalet tecken som kan användas i en prompt. Annars visas ett felmeddelande. Värdet kan inte redigeras för ChatGPT-webbgränssnittet. Ställ in det på 0 för att inaktivera kontrollen."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT webbmodell"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Det här är modellen som kommer att tillämpas för ChatGPT:s webbgränssnitt. Om ingen modell anges eller om en felaktig modell anges, kommer standardmodellen att ställas in av ChatGPT på webbsidan. Den här inställningen fungerar inte med ett gratis ChatGPT-konto."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web tillfällig chatt"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Om markerad kommer den tillfälliga chatten att användas i ChatGPT:s webbgränssnitt."
     }
 }
