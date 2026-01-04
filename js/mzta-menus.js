@@ -206,7 +206,7 @@ export class mzta_Menus {
                             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
                             do_debug: prefs_default.do_debug,
                         });
-                        let def_conntype = getConnectionType(prefs_at.connection_type, curr_prompt);
+                        let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
                         if((def_conntype === '')||(def_conntype === null)||(def_conntype === undefined)||(def_conntype === 'chatgpt_web')){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
