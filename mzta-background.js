@@ -1041,7 +1041,7 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
         do_debug: prefs_default.do_debug,
     });
-    // console.log(">>>>>>>>>>>>>>>> getDynamicSettingsDefaults: " + JSON.stringify(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])));
+    //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
     for await (let message of messages) {
         let curr_fullMessage = null;
         let msg_text = null;
