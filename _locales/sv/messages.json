@@ -1163,5 +1163,104 @@
     },
     "warn_API_needed": {
         "message": "För att använda den här funktionen behöver du en API-integration snarare än ChatGPT-webbintegrationen. Du kan definiera ett specifikt API på sidan med funktionsinställningar genom att först markera kryssrutan ovan och sedan klicka på knappen till vänster."
+    },
+    "prompt_classify_full_text": {
+        "message": "Klassificera följande text i termer av artighet, värme, formalitet, självsäkerhet och anstötlighet. Ange en procentandel för varje kategori. Svara endast med kategorin och poängsätt utan extra kommentarer eller annan text."
+    },
+    "prompt_get_calendar_event": {
+        "message": "Lägg till en ny kalenderhändelse"
+    },
+    "prompt_get_task": {
+        "message": "Lägg till en ny uppgift"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta information om kalenderhändelser från markerad text."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Alternativ för kalenderhändelser"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Lägg till en ny uppgift från markerad text"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta uppgiftsinformation från markerad text."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Uppgiftsalternativ"
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Skriva i oformaterad text"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Markera det här alternativet om du skriver e-postmeddelandena i oformaterad text."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Ingen text vald, vill du infoga AI:ns svar i början av e-postmeddelandet?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Antal kontexttokens"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Antalet kontexttokens som ska användas för Ollama API. Ställ in på 0 om du inte vill skicka den som en parameter till servern."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "För att använda ChatGPT-webbintegrationen måste du ge nödvändig behörighet."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "För att använda Claude API-integrationen måste du ge nödvändig behörighet."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "För att använda OpenAI API-integrationen måste du ge nödvändig behörighet."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Klicka här för att öppna en ny flik och följ instruktionerna."
+    },
+    "ask_integration_permission_2": {
+        "message": "Klicka här för att fortsätta."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Tillstånd beviljat. Du kan klicka här för att stänga den här fliken och återgå till huvudfönstret."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Välj de konton där automatisk taggning är aktiverad"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Varje ändring sparas omedelbart."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Välj de konton där skräppostfiltret är aktiverat"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "ChatGPT webbprojekt"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Detta är projektet som kommer att tillämpas för ChatGPT-webbgränssnittet."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT webbanpassad GPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Detta är den anpassade GPT som kommer att tillämpas för ChatGPT-webbgränssnittet."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Detta måste vara i följande form:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Du hittar rätt värde i webbläsarens URL-fält när du öppnar den relaterade ChatGPT-sidan."
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Om markerat kommer orden i undantagslistan att matchas exakt med taggarna. Annars kommer de också att matcha om de ingår i taggen."
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Exakt matchning för undantag"
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Hantera dataplatshållare"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Du kan också använda standarddataplatshållarna med autokomplettering, precis som när du skriver anpassade promptar."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "På den här sidan är det möjligt att definiera anpassade dataplatshållare som ska användas i dina anpassade promptar."
     }
 }
