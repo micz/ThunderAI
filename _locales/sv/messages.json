@@ -805,5 +805,363 @@
     },
     "context_menu_mzta-add-tags": {
         "message": "Lägg till taggar"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "Analysera för skräppost"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "Visa snabbmenyn \"Lägg till taggar\""
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "Om markerat visas snabbmenyn \"Lägg till taggar\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "Visa snabbmenyalternativet \"Analysera för skräppost\""
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "Om markerat visas snabbmenyn \"Analysera för skräppost\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
+    },
+    "noActiveCalendar": {
+        "message": "Ingen redigerbar kalender hittades!"
+    },
+    "btn_show_differences": {
+        "message": "Visa skillnader"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Skillnader mellan originaltexten och den modifierade texten"
+    },
+    "apiwebchat_you": {
+        "message": "Du"
+    },
+    "apiwebchat_info": {
+        "message": "Information"
+    },
+    "apiwebchat_error": {
+        "message": "Fel"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Använd detta svar"
+    },
+    "apiwebchat_stopping": {
+        "message": "Stoppar"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Mottar data"
+    },
+    "hyprland_warning": {
+        "message": "Om du har problem med att öppna AI-chattfönstret kan du prova att ställa in höjd- och breddvärdena till 0. Det här problemet kan uppstå i vissa Linux-miljöer, till exempel när du använder Hyprland."
+    },
+    "remember_CORS": {
+        "message": "Kom ihåg att du måste konfigurera CORS-inställningarna på servern!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Att använda OpenAI-kompatibelt API kan kräva att CORS-inställningar konfigureras på servern."
+    },
+    "CORS_alternative_1": {
+        "message": "Problem med att ställa in CORS?"
+    },
+    "CORS_alternative_2": {
+        "message": "Tryck på knappen nedan för att ge <all_urls> behörighet för att undvika eventuella CORS-problem."
+    },
+    "customPrompts_Properties": {
+        "message": "Egenskaper"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Visa ytterligare egenskaper"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Dölj ytterligare egenskaper"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Ytterligare egenskaper"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Om ett projekt anges i alternativen eller i en prompt kommer det att åsidosätta inställningen för anpassad GPT."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Om ett projekt anges i alternativen eller i en prompt kommer den tillfälliga chatten inte att användas."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Claude API-nyckel"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Claude API"
+    },
+    "Anthropic_Models": {
+        "message": "Claude-modeller"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Uppdatera listan med Claude-modeller"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Fel vid försök att hämta Claude-modeller"
+    },
+    "Anthropic_Version": {
+        "message": "Claude API-version"
+    },
+    "Anthropic_Version_Info": {
+        "message": "KRÄVS. Ändra inte detta värde om du inte vet vad du gör. Mer information finns på:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Max antal tokens"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Det maximala antalet tokens som ska genereras i slutförandet. Antalet tokens för din prompt plus max_tokens får inte överstiga modellens kontextlängd."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Du har inte lagt till en API-nyckel för Claude API. Vänligen ange en på alternativsidan."
+    },
+    "anthropic_empty_model": {
+        "message": "Du har inte valt någon modell för Claude API. Välj en på alternativsidan."
+    },
+    "anthropic_empty_version": {
+        "message": "Du har inte lagt till en versionssträng för Claude API. Vänligen infoga en på alternativsidan."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Claude API-begäran misslyckades"
+    },
+    "_api_connecting": {
+        "message": "Försöker ansluta till $api_string$ med följande konfiguration...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Modell"
+    },
+    "_api_connecting_host": {
+        "message": "Värd"
+    },
+    "_api_connecting_version": {
+        "message": "Version"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Tillgängliga tjänster"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Välj en av tjänsterna som är tillgängliga för OpenAI Compatible API eller infoga en manuellt."
+    },
+    "Custom": {
+        "message": "Anpassad"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Är du säker på att du vill använda konfigurationen \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Om du väljer text kommer endast den delen att beaktas."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Använd lagring"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Om markerat kommer dina chattar att lagras av OpenAI."
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Vilken samplingstemperatur som ska användas, mellan 0 och 2. Högre värden som 0,8 gör utdata mer slumpmässig, medan lägre värden som 0,2 gör den mer fokuserad och deterministisk."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "Modellens temperatur. Att öka temperaturen gör att modellen svarar mer kreativt. Standardvärdet är 0,8. Det rekommenderas att använda värden mellan 0 och 1."
+    },
+    "prefs_ollama_think": {
+        "message": "Aktivera tänkande"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Om markerat kommer modellen att tänka innan den svarar. Det här alternativet fungerar bara med modeller som stöder funktionen \"tänk\"."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Klicka för att ändra svarstypen"
+    },
+    "SelectAll": {
+        "message": "Markera alla"
+    },
+    "DeselectAll": {
+        "message": "Avmarkera alla"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Systemprompt"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Du kan förbättra Claudes prestanda genom att använda en systemprompt för att ge den en roll. Denna teknik, känd som rollprompt, är det mest kraftfulla sättet att använda systempromptar med Claude. Rätt roll kan förvandla Claude från en allmän assistent till din virtuella domänexpert."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Du har nekat den valfria behörighet som krävs för att hämta modeller för den här integrationen."
+    },
+    "Select_your_timezone": {
+        "message": "Välj din tidszon"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Tvinga fram den angivna tidszonen"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Om markerad kommer den angivna tidszonen att tillämpas för kalenderhändelser och uppgifter."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Hantera inställningar för kalenderhändelser"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Hantera inställningar för kalenderhändelser"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att hämta en kalenderhändelse från markerad text."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Aktuell prompttext"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "Du kan ändra prompten som du vill, men svaret som tas emot från AI:n måste vara i JSON-format enligt standardprompten!"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "För att använda kalenderhändelser och uppgifter, installera ThunderAI Sparks-tillägget."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "För att använda kalenderhändelser och uppgifter, installera en uppdaterad version av ThunderAI Sparks-tillägget."
+    },
+    "GetTask_PageTitle": {
+        "message": "Hantera inställningar för uppgifter"
+    },
+    "GetTask_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att hämta en uppgift från markerad text."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Hantera inställningar för uppgifter"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Ladda ner ThunderAI Sparks nu!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Datum och tid för e-postmeddelandet"
+    },
+    "placeholder_current_datetime": {
+        "message": "Aktuellt datum och tid"
+    },
+    "calendar_getting_data_error": {
+        "message": "Fel vid hämtning av kalenderhändelsedata"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Fel vid öppning av dialogrutan för kalenderhändelse"
+    },
+    "task_getting_data_error": {
+        "message": "Fel vid hämtning av uppgiftsdata"
+    },
+    "task_opening_dialog_error": {
+        "message": "Fel vid öppning av uppgiftsdialogrutan"
+    },
+    "no_valid_data_received": {
+        "message": "Inga giltiga data mottagna från AI:n."
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Lägg till taggar automatiskt"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Om markerat kommer AI:n automatiskt att lägga till taggar till nyligen mottagna e-postmeddelanden."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Välj vilket konto du vill aktivera den här funktionen för längst ner på sidan."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Tvinga fram befintliga taggar"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Om markerat kommer AI:n endast att lägga till befintliga taggar och inte skapa nya taggar."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Använd endast dessa taggar"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Om markerat kommer AI:n endast att lägga till taggar från listan nedan."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "Listan måste innehålla minst en tagg. Lägg till en tagg per rad, eller separera med ett kommatecken."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Använd endast taggarna i den här kommaseparerade listan"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Lägg bara till taggar i e-postmeddelanden i inkorgen"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Om markerat kommer AI:n bara att lägga till taggar till e-postmeddelanden som tas emot i inkorgen."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att lägga till taggar i e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Standardsignatur som definierad i ThunderAI-alternativ."
+    },
+    "empty": {
+        "message": "Den här platshållaren lägger inte till någon text, men den förhindrar att e-postmeddelandets brödtext läggs till automatiskt i slutet av prompten."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Tröskel skräppost"
+    },
+    "spamfilter_no_reports": {
+        "message": "Inga meddelanden har ännu granskats för skräppost. Här hittar du en lista över de senaste 100 skräppostrapporterna för den aktuella sessionen."
+    },
+    "SpamReport_Title": {
+        "message": "Rapporter om skräppostfilter"
+    },
+    "customDataPH_ExportAll": {
+        "message": "Exportera alla anpassade dataplatshållare"
+    },
+    "customDataPH_Import": {
+        "message": "Importera nya dataplatshållare"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Dataplatshållartext"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Sparar anpassade dataplatshållare..."
+    },
+    "customDataPH_saved": {
+        "message": "Anpassade dataplatshållare sparade!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Lägg till dataplatshållaren"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Du håller på att importera nya anpassade dataplatshållare."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Startar import av anpassade dataplatshållare..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Import av anpassade dataplatshållare är klar! Du måste klicka på knappen \"Spara alla\" för att spara dina ändringar."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Filen du försöker importera är inte en giltig anpassad dataplatshållarfil."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Filen du försöker importera innehåller inga giltiga anpassade dataplatshållare."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Kan användas i promptar som lagts till i menyn"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Observera att alla <br>-taggar i AI:ns svar kommer att ersättas med radbrytningar."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Rensa modelllistan"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Är du säker på att du vill rensa modellistan? Den här åtgärden kan inte ångras."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperatur"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Vilken samplingstemperatur som ska användas, mellan 0 och 2. Högre värden som 0,8 gör utdata mer slumpmässig, medan lägre värden som 0,2 gör den mer fokuserad och deterministisk."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Det verkar som att det inte går att få tag på det om inte ChatGPT är klar. Klicka här för att tvinga fram slutförandet av jobbet."
+    },
+    "warn_API_needed": {
+        "message": "För att använda den här funktionen behöver du en API-integration snarare än ChatGPT-webbintegrationen. Du kan definiera ett specifikt API på sidan med funktionsinställningar genom att först markera kryssrutan ovan och sedan klicka på knappen till vänster."
     }
 }
