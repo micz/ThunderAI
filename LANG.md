@@ -9,5 +9,6 @@ it
 pl
 pt-br
 ru
+sv
 zh_Hans
 zh_Hant
