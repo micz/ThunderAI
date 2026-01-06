@@ -482,6 +482,37 @@ function handleEditClick(e) {
                     selectEl.value = '';
                     selectEl.dispatchEvent(new Event('change'));
                 }
+
+                // Clear UI inputs
+                for (const [integration, options] of Object.entries(integration_options_config)) {
+                    for (const key of Object.keys(options)) {
+                        const propName = `${integration}_${key}`;
+                        const inputId = `${prefix}${propName}`;
+                        const inputEl = document.getElementById(inputId);
+                        if (inputEl) {
+                            if (inputEl.type === 'checkbox') {
+                                inputEl.checked = false;
+                            } else {
+                                inputEl.value = '';
+                            }
+                        }
+                    }
+                }
+
+                // Update promptsList
+                const item = promptsList.get('id', id)[0];
+                if (item) {
+                    let newValues = item.values();
+                    newValues.api_type = '';
+                    for (const [integration, options] of Object.entries(integration_options_config)) {
+                        for (const key of Object.keys(options)) {
+                            const propName = `${integration}_${key}`;
+                            newValues[propName] = '';
+                        }
+                    }
+                    item.values(newValues);
+                }
+                setSomethingChanged();
             }
         }).then(() => {
             populateConnectionUI(tr, id, prefix, selectId);

@@ -627,24 +627,17 @@ export function isAPIKeyValue(id){
   return id.endsWith('_api_key');
 }
 
-export function getConnectionType(prefsOrType, prompt, prefixOrSpecific = null) {
+export function getConnectionType(prefs, prompt, prefix = null) {
     let defaultType = '';
     let specificType = '';
 
-    if (typeof prefsOrType === 'object' && prefsOrType !== null) {
-        // New signature: (prefs, prompt, prefix)
-        defaultType = prefsOrType.connection_type;
-        if (typeof prefixOrSpecific === 'string' && prefixOrSpecific) {
-            const prefix = prefixOrSpecific;
-            const useSpecific = getDynamicSettingValue(prefsOrType, prefix, 'use_specific_integration');
+    if (prefs !== null) {
+        defaultType = prefs.connection_type;
+        if (typeof prefix === 'string' && prefix) {
+            const useSpecific = getDynamicSettingValue(prefs, prefix, 'use_specific_integration');
             if (useSpecific) {
-                specificType = getDynamicSettingValue(prefsOrType, prefix, 'connection_type');
+                specificType = getDynamicSettingValue(prefs, prefix, 'connection_type');
             }
-        }
-    } else {
-        // Old signature / Direct usage: (connection_type_string, prompt, [specific_type_string])
-        if (typeof prefixOrSpecific === 'string') {
-            specificType = prefixOrSpecific;
         }
     }
 

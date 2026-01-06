@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let addtags_textarea = document.getElementById('addtags_prompt_text');
     let addtags_save_btn = document.getElementById('btn_save_prompt');
     let addtags_reset_btn = document.getElementById('btn_reset_prompt');
+    let add_tags_use_specific_integration = document.getElementById('add_tags_use_specific_integration');
 
     addtags_textarea.addEventListener('input', (event) => {
         addtags_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_add_tags_full_text'));
@@ -88,6 +89,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('addtags_prompt_unsaved').classList.add('hidden');
         } else {
             document.getElementById('addtags_prompt_unsaved').classList.remove('hidden');
+        }
+    });
+
+    add_tags_use_specific_integration.addEventListener('change', (event) => {
+        if (!event.target.checked) {
+          browser.storage.sync.set({ add_tags_connection_type: '' });
         }
     });
 

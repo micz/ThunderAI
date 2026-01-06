@@ -78,6 +78,8 @@
     << All the API settings defined in the default options, with the same IDs. >>
 */
 
+import { integration_options_config } from "../../options/mzta-options-default.js";
+
 const defaultPrompts = [
     {
         id: 'prompt_reply',
@@ -433,6 +435,7 @@ async function getDefaultPrompts_withProps() {
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     }
+    // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [final] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     return defaultPrompts_prop;
 }
 
@@ -482,6 +485,7 @@ export async function setDefaultPromptsProperties(prompts) {
 }
 
 export async function setCustomPrompts(prompts) {
+    // console.log(">>>>>>>>>>>> setCustomPrompts prompts: " + JSON.stringify(prompts));
     await browser.storage.local.set({_custom_prompt: prompts});
 }
 
@@ -534,7 +538,7 @@ export async function savePrompt(prompt) {
         throw new Error("Invalid prompt: " + JSON.stringify(prompt));
     }
     // Special Prompt
-    if (prompt.is_special === "1") {
+    if ((prompt.is_special === "1")||(prompt.is_special === 1)) {
         let specialPrompts = await getSpecialPrompts();
         let index = specialPrompts.findIndex(p => p.id === prompt.id);
         if (index === -1) {
@@ -546,7 +550,7 @@ export async function savePrompt(prompt) {
         return;
     }
     // Custom Prompt
-    if (prompt.is_default === "0") {
+    if ((prompt.is_default === "0")||(prompt.is_default === 0)) {
         let customPrompts = await getCustomPrompts();
         let index = customPrompts.findIndex(p => p.id === prompt.id);
         if (index === -1) {
@@ -554,9 +558,10 @@ export async function savePrompt(prompt) {
         } else {
             customPrompts[index] = prompt;
         }
+        // console.log(">>>>>>>>>>>> savePrompt customPrompts: " + JSON.stringify(customPrompts));
         await setCustomPrompts(customPrompts);
     } else {       // Default Prompt
-        let defaultPrompts = getDefaultPrompts_withProps();
+        let defaultPrompts = await getDefaultPrompts_withProps();
         let index = defaultPrompts.findIndex(p => p.id === prompt.id);
         if (index === -1) {
             defaultPrompts.push(prompt);
@@ -569,6 +574,17 @@ export async function savePrompt(prompt) {
 
 export async function clearPromptAPI(id){
     let _prompt = await loadPrompt(id);
+    // console.log(">>>>>>>>>>>>> clearPromptAPI _prompt BEFORE: " + JSON.stringify(_prompt));
     _prompt.api_type = "";
+    // Reset all integration-specific settings to their default values
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            if (_prompt.hasOwnProperty(propName)) {
+                _prompt[propName] = '';
+            }
+        }
+    }
+    // console.log(">>>>>>>>>>>>> clearPromptAPI _prompt AFTER: " + JSON.stringify(_prompt));
     await savePrompt(_prompt);
 }

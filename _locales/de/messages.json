@@ -1107,7 +1107,7 @@
         "message": "Claude-API-Version"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Maximale Anzahl an Tokens für Claude"
+        "message": "Maximale Anzahl an Tokens"
     },
     "anthropic_empty_apikey": {
         "message": "Sie haben keinen API-Schlüssel für die Claude-API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
@@ -1329,5 +1329,32 @@
     },
     "auto_summary_prompt": {
         "message": "Bitte geben Sie eine prägnante Zusammenfassung der folgenden E-Mail-Nachricht. Die Zusammenfassung sollte maximal 3-5 Sätze umfassen und die Hauptpunkte erfassen:\n\n"
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "placeholder_mail_headers": {
+        "message": "E-Mail-Kopfzeilen"
+    },
+    "reset": {
+        "message": "Reset"
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Welche Sampling-Temperatur soll verwendet werden (zwischen 0 und 2)? Höhere Werte wie 0,8 machen die Ausgabe zufälliger, während niedrigere Werte wie 0,2 sie fokussierter und deterministischer machen."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "Die Temperatur des Modells. Eine Erhöhung der Temperatur führt dazu, dass das Modell kreativer antwortet. Der Standardwert ist 0,8. Es wird empfohlen, Werte zwischen 0 und 1 zu verwenden."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperatur"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Welche Sampling-Temperatur verwendet werden soll (zwischen 0 und 2). Höhere Werte wie 0,8 machen die Ausgabe zufälliger, während niedrigere Werte wie 0,2 sie fokussierter und deterministischer machen."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Dieser Parameter muss eine Zahl zwischen 0,0 und 2,0 sein. Er steuert den Zufallsgrad der Ausgabe. Der Standardwert variiert je nach Modell. Lassen Sie das Feld leer, um den Parameter im API-Aufruf nicht festzulegen."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Grad der Zufälligkeit in der Antwort. Der Standardwert ist 1,0. Der Bereich liegt zwischen 0,0 und 1,0. Verwenden Sie eine Temperatur näher an 0,0 für analytische Aufgaben oder Multiple-Choice-Fragen und näher an 1,0 für kreative und generative Aufgaben. Beachten Sie, dass die Ergebnisse selbst bei einer Temperatur von 0,0 nicht vollständig deterministisch sind."
     }
 }
