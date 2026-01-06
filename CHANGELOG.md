@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.7.9 - 06/01/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly getting the job completion [<a href="https://github.com/micz/ThunderAI/issues/607">#607</a>].</li>
+      </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
       <ul>
         <li>Greek (el) translation added, thanks to <a href="https://github.com/christoskaterini">ChristosK.</a>.</li>
