@@ -1012,11 +1012,15 @@
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "Summarize the following email or emails into a bullet point list. If there are multiple emails, consider the entire thread for the summary.\n------------------\n\n",
+    "message": "Summarize the following email or emails into a bullet point list. If there are multiple emails, consider the entire thread for the summary.",
     "description": ""
   },
   "prompt_summarize_email_template": {
-    "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\nBody:\n{%mail_text_body%}\n---------------\n\n",
+    "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\nBody:\n{%mail_text_body%}",
+    "description": ""
+  },
+  "prompt_summarize_email_separator": {
+    "message": "\n\n---------- NEXT EMAIL ----------\n\n",
     "description": ""
   },
   "prompt_get_task": {

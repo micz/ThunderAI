@@ -1028,11 +1028,12 @@ browser.menus.onClicked.addListener( (info, tab) => {
 async function summarizeEmails(messages) {
     taWorkingStatus.startWorking();
     
-    // we have two prompts, the actual assignment for the LLM and the email
-    // template prompt.
+    // we have three prompts, the actual assignment for the LLM, the email
+    // template prompt, and the email separator prompt
     const specialPrompts = await getSpecialPrompts();
     const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
     const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+    const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
     
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
@@ -1059,11 +1060,11 @@ async function summarizeEmails(messages) {
           msg_text: curr_body_full_html,
         }));
     };
-    let messages_string = messages_list.join("\n\n--- Next Email ---\n\n");
+    const messages_string = messages_list.join(prompt_email_separator_string);
     
-    let full_prompt = prompt.text + "\n\n\n" + messages_string;
+    const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
     
-    console.log(full_prompt);
+    // console.log(full_prompt);
     
     // send the prompt to the chat interface
     openChatGPT(

@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let specialPrompts = await getSpecialPrompts();
     let summarize_prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
     let summarize_email_template = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+    let summarize_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
 
     if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '') {
         let update_prefs = {};
@@ -80,8 +81,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     let summarize_textarea_email_template = document.getElementById("summarize_email_template_text");
     let summarize_reset_email_template_btn = document.getElementById("btn_reset_email_template");
     let summarize_save_email_template_btn = document.getElementById("btn_save_email_template");
+    let summarize_email_separator_textarea = document.getElementById("summarize_email_separator_text");
+    let summarize_email_separator_save_btn = document.getElementById("btn_save_email_separator");
+    let summarize_email_separator_reset_btn = document.getElementById("btn_reset_email_separator");
 
     
+    // on changing textareas
     summarize_textarea.addEventListener("input", (event) => {
         summarize_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_full_text'));
         summarize_save_btn.disabled = (event.target.value === summarize_prompt.text);
@@ -91,7 +96,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         summarize_reset_email_template_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_template')); 
         summarize_save_email_template_btn.disabled = (event.target.value === summarize_email_template.text);
     });
+
+    summarize_email_separator_textarea.addEventListener("input", (event) => {
+        summarize_email_separator_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_separator')); 
+        summarize_email_separator_save_btn.disabled = (event.target.value === summarize_email_separator.text);
+    });
     
+
+    // on clicking buttons, reset
     summarize_reset_email_template_btn.addEventListener("click", () => {
         summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template");
         summarize_reset_email_template_btn.disabled = true;
@@ -105,7 +117,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         let event = new Event("input", { bubbles: true, cancelable: true });
         summarize_textarea.dispatchEvent(event);
     });
+
+    summarize_email_separator_reset_btn.addEventListener("click", () => {
+        summarize_email_separator_textarea.value = browser.i18n.getMessage("prompt_summarize_email_separator");
+        summarize_email_separator_reset_btn.disabled = true;
+        let event = new Event("input", { bubbles: true, cancelable: true });
+        summarize_email_separator_textarea.dispatchEvent(event);
+    });
     
+    // on clicking buttons, save
     summarize_save_email_template_btn.addEventListener("click", () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_template').text = summarize_textarea_email_template.value;
         setSpecialPrompts(specialPrompts);
@@ -119,6 +139,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         summarize_save_btn.disabled = true;
         browser.runtime.sendMessage({ command: "reload_menus" });
     });
+
+    summarize_email_separator_save_btn.addEventListener("click", () => {
+        specialPrompts.find(prompt => prompt.id === 'prompt_summarize_email_separator').text = summarize_email_separator_textarea.value;
+        setSpecialPrompts(specialPrompts);
+        summarize_email_separator_save_btn.disabled = true;
+        browser.runtime.sendMessage({ command: "reload_menus" });
+    });
+
     
     if(summarize_prompt.text === 'prompt_summarize_full_text'){
         summarize_prompt.text = browser.i18n.getMessage(summarize_prompt.text);
@@ -126,16 +154,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     if(summarize_email_template === 'prompt_summarize_email_template'){
         summarize_email_template.text = browser.i18n.getMessage(summarize_email_template.text);
     }
+    if(summarize_email_separator.text === 'prompt_summarize_email_separator'){
+        summarize_email_separator.text = browser.i18n.getMessage(summarize_email_separator.text);
+    }
+
     summarize_textarea_email_template.value = summarize_email_template.text;
     summarize_reset_email_template_btn.disabled = (summarize_email_template.value === browser.i18n.getMessage("prompt_summarize_email_template"));
     summarize_textarea.value = summarize_prompt.text;
     summarize_reset_btn.disabled = (summarize_textarea.value === browser.i18n.getMessage("prompt_summarize_full_text"));
+    summarize_email_separator_textarea.value = summarize_email_separator.text;
+    summarize_email_separator_reset_btn.disabled = (summarize_email_separator.value === browser.i18n.getMessage("prompt_summarize_email_separator"));
 
     autocompleteSuggestions = (await getPlaceholders(true))
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
+
     textareaAutocomplete(summarize_textarea, autocompleteSuggestions, 1);
     textareaAutocomplete(summarize_textarea_email_template, autocompleteSuggestions, 1);
+    textareaAutocomplete(summarize_email_separator_textarea, autocompleteSuggestions, 1);
     
 });
 

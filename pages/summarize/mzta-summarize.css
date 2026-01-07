@@ -11,6 +11,10 @@
     width: 100%;
 }
 
+#summarize_email_separator_text {
+    width: 100%;
+}
+
 .infoline {
     font-size: 0.8em;
     font-style: italic;
