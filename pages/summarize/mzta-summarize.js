@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if(summarize_prompt.text === 'prompt_summarize_full_text'){
         summarize_prompt.text = browser.i18n.getMessage(summarize_prompt.text);
     }
-    if(summarize_email_template === 'prompt_summarize_email_template'){
+    if(summarize_email_template.text === 'prompt_summarize_email_template'){
         summarize_email_template.text = browser.i18n.getMessage(summarize_email_template.text);
     }
     if(summarize_email_separator.text === 'prompt_summarize_email_separator'){
