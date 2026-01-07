@@ -1037,6 +1037,19 @@ async function summarizeEmails(messages) {
     
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+
+    // replace placeholders in the prompts the assignment prompt and email
+    // separator prompt do not have a message as context, so there is only
+    // limited things to replace
+    const prompt_string = await taPromptUtils.preparePrompt({
+        curr_prompt: prompt,
+        chatgpt_lang: chatgpt_lang,
+    });
+    const prompt_email_separator_string = await taPromptUtils.preparePrompt({
+        curr_prompt: prompt_email_separator,
+        chatgpt_lang: chatgpt_lang,
+    });
+
     
     // assemble all email messages into one string and add the assignment prompt
     const messages_list = [];
