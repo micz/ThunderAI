@@ -1088,7 +1088,7 @@
     "description": ""
   },
   "prefs_OptionText_Summarize_infoline2": {
-    "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt.",
+    "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt. Emails will be separated by the separator specified in the third field.",
     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
