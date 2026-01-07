@@ -1039,13 +1039,13 @@ async function summarizeEmails(messages) {
     const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
     
     // assemble all email messages into one string and add the assignment prompt
-    let messages_list = [];
+    const messages_list = [];
     for await (let curr_message of messages) {
       
         // extract body of current message as text
-        let curr_message_full = await browser.messages.getFull(curr_message.id);
-        let curr_body_full_html = getMailBody(curr_message_full);
-        let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+        const curr_message_full = await browser.messages.getFull(curr_message.id);
+        const curr_body_full_html = getMailBody(curr_message_full);
+        const curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
         if( curr_body_full_text.length === 0) {
             taLog.log("No HTML found in the message body, using plain text...");
             curr_body_full_text = curr_message_full.text;
