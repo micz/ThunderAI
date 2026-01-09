@@ -116,7 +116,7 @@ export class GoogleGemini {
         google_gemini_body.generationConfig.temperature = tempFloat;
       }
 
-      // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
+      //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",
