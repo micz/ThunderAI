@@ -1164,9 +1164,9 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
     element.style.display = anthropic_api_display;
   });
   if (varConnectionUI.permission_all_urls) {
-    const openaiCompWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
     if (openaiCompWarning) openaiCompWarning.style.display = 'none';
-    const ollamaWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
     if (ollamaWarning) ollamaWarning.style.display = 'none';
   }
 }
