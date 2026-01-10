@@ -27,6 +27,8 @@
           <tr id="connection_ui_anchor"></tr>
           <tr id="connection_ui_end"><td colspan="2"></td></tr>
     </table>
+
+    <!-- PROMPTS -->
     <div id="summarize_prompt_container">
         <!--title and description-->
         <span class="section_title">
@@ -47,8 +49,14 @@
         </span>
         
         <br>
-            
+
         <!--main prompt-->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_main_prompt__
+        </span>
+
+        <br>
+
         <div class="autocomplete-container">
             <textarea id="summarize_prompt_text" rows="15"></textarea>
             <ul class="autocomplete-list hidden"></ul>
@@ -65,6 +73,12 @@
         </div>
         
         <!--email template-->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_email_template__
+        </span>
+
+        <br>
+
         <div class="autocomplete-container">
             <textarea id="summarize_email_template_text" rows="15"></textarea>
             <ul class="autocomplete-list hidden"></ul>
@@ -81,6 +95,12 @@
         </div>
 
         <!-- separator -->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_email_separator__
+        </span>
+
+        <br>
+
         <div class="autocomplete-container">
             <textarea id="summarize_email_separator_text" rows="7"></textarea>
             <ul class="autocomplete-list hidden"></ul>

@@ -1091,6 +1091,18 @@
     "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt. Emails will be separated by the separator specified in the third field.",
     "description": ""
   },
+  "prefs_OptionText_Summarize_main_prompt": {
+    "message": "The main prompt describing the task to be performed on all selected emails:",
+    "description": ""
+  },
+  "prefs_OptionText_Summarize_email_template": {
+     "message": "The template for a single email:",
+     "description": ""
+  },
+  "prefs_OptionText_Summarize_email_separator": {
+     "message": "The separator between emails:",
+     "description": ""
+  },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
     "message": "To use the calendar event and task features, please install the ThunderAI Sparks addon.",
     "description": ""
