@@ -1,0 +1,193 @@
+#summarize_prompt_container {
+    width: 90%;
+    margin: 20px auto;
+}
+
+#summarize_email_template_text {
+    width: 100%;
+}
+
+#summarize_prompt_text {
+    width: 100%;
+}
+
+#summarize_email_separator_text {
+    width: 100%;
+}
+
+.infoline {
+    font-size: 0.8em;
+    font-style: italic;
+}
+
+#account_selector_container{
+    display: none;
+}
+
+#account_selector_checkboxes{
+    padding: 10px;
+    border: 1px solid gray;
+    width: 24em;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.specific_integration{
+    background-color: #dfeaff;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.group td {
+  border-top: none;
+  border-bottom: none;
+}
+
+.specific_integration_sub td:first-child {
+  border-left: 10px solid #dfeaff;
+}
+
+.specific_integration_sub td:last-child {
+  border-right: 10px solid #dfeaff;
+}
+
+#connection_ui_end td{
+    height: 6px;
+    background-color: #dfeaff;
+}
+
+#connection_ui_end{
+    display: none;
+}
+
+.btn_div {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+table#miczPrefs {
+    padding: 10px;
+    border-spacing: 0px;
+    width: 90%;
+    margin: 0px auto 40px auto;
+    border: 1px solid #ccc;
+}
+
+.addtags_table_title{
+    width: 90%;
+    margin: auto;
+}
+
+.section_title {
+    font-weight: bold;
+}
+
+table#miczPrefs td {
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    vertical-align: top;
+    padding: 2px;
+}
+
+table#miczPrefs tr:first-child td {
+    border-top: none;
+}
+
+table#miczPrefs tr:last-child td {
+    border-bottom: none;
+}
+
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: small;
+}
+
+.autocomplete-list li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.autocomplete-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.autocomplete-list li.active {
+    background-color: #ddd;
+}
+
+.hidden {
+    display: none;
+}
+
+.unsaved {
+    color: red;
+}
+
+label:has(input[type="checkbox"]) {
+    cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1c1b22;
+        color: rgb(251, 251, 254);
+    }
+
+    a:link { color: #409eff; }
+    a:visited { color: #409eff; }
+    a:hover { color: #66b1ff; }
+    a:active { color: #66b1ff; }
+    a:active { color: #66b1ff; }
+
+    .autocomplete-list {
+        background-color: #2e2f36;
+        border: 1px solid #2e2f36;
+    }
+
+    .autocomplete-list li:hover {
+        background-color: #4c4e58;
+    }
+
+    .autocomplete-list li.active {
+        background-color: #4c4e58;
+    }
+
+    .summarize_auto{
+        background-color: #415c35;
+    }
+
+    .specific_integration{
+        background-color: #2E3A4F;
+    }
+
+    .specific_integration_sub td:first-child {
+        border-left: 10px solid #2E3A4F;
+    }
+
+    .specific_integration_sub td:last-child {
+        border-right: 10px solid #2E3A4F;
+    }
+
+    #connection_ui_end td{
+        background-color: #2E3A4F;
+    }
+}
