@@ -198,9 +198,6 @@ function saveOptions(e) {
         options[element.id] = element.value;
         break;
       case 'textarea':
-        if(element.id === 'add_tags_auto_uselist_list') {
-          element.value = normalizeStringList(element.value, 1);
-        }
         options[element.id] = normalizeStringList(element.value);
         break;
       default:
@@ -229,9 +226,6 @@ async function restoreOptions() {
         case 'password':
           let default_text_value = '';
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
-          if(element.id === 'add_tags_auto_uselist_list') {
-            result[element.id] = normalizeStringList(result[element.id], 1);
-          }
           element.value = result[element.id] || default_text_value;
           break;
         default:
@@ -260,21 +254,21 @@ async function restoreOptions() {
   let getting = await browser.storage.sync.get(prefs_default);
 
   let specialPrompts = await getSpecialPrompts();
-  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
+  let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_summarize');
 
   if (addtags_prompt) {
       if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
-          getting['add_tags_connection_type'] = addtags_prompt.api_type;
+          getting['summarize_connection_type'] = addtags_prompt.api_type;
       } else {
-          getting['add_tags_connection_type'] = getting['connection_type'];
+          getting['summarize_connection_type'] = getting['connection_type'];
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {
               const propName = `${integration}_${key}`;
               if (addtags_prompt[propName] !== undefined && addtags_prompt[propName] !== '') {
-                  getting[`add_tags_${propName}`] = addtags_prompt[propName];
+                  getting[`summarize_${propName}`] = addtags_prompt[propName];
               } else {
-                  getting[`add_tags_${propName}`] = getting[propName];
+                  getting[`summarize_${propName}`] = getting[propName];
               }
           }
       }
