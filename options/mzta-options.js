@@ -286,17 +286,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
   summarize_el.addEventListener('click', (event) => {
-     async function _summarize_el_change() {
-      if (event.target.checked) {
-        let granted = await messenger.permissions.request({ permissions: ["messagesRead"] });
-        if (!granted) {
-          event.target.checked = false;
-          summarize_info_btn.disabled = 'disabled';
-          browser.storage.sync.set({summarize: false});
-        }
-      }
-     }
-    _summarize_el_change();
     summarize_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
   summarize_info_btn.disabled = summarize_el.checked ? '' : 'disabled';
