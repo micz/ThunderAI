@@ -2,11 +2,13 @@ cs
 de
 el
 en
+es
 fr
 hr
 it
 pl
 pt-br
 ru
+sv
 zh_Hans
 zh_Hant

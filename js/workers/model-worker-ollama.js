@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,6 @@
 import { Ollama } from '../api/ollama.js';
 import { taLogger } from '../mzta-logger.js';
 
-let ollama_host = null;
-let ollama_model = '';
-let ollama_num_ctx = 0;
 let ollama = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -38,16 +35,14 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     switch (event.data.type) {
         case 'init':
-            ollama_host = event.data.ollama_host;
-            ollama_model = event.data.ollama_model;
-            ollama_num_ctx = event.data.ollama_num_ctx;
-            //console.log(">>>>>>>>>>> ollama_host: " + ollama_host);
-            ollama = new Ollama({
-                host: ollama_host,
-                model: ollama_model,
-                stream: true,
-                num_ctx: ollama_num_ctx
-            });
+            let config = { stream: true };
+            for (const key in event.data) {
+                if (key.startsWith('ollama_')) {
+                    let newKey = key.replace('ollama_', '');
+                    config[newKey] = event.data[key];
+                }
+            }
+            ollama = new Ollama(config);
             do_debug = event.data.do_debug;
             i18nStrings = event.data.i18nStrings;
             taLog = new taLogger('model-worker-ollama', do_debug);

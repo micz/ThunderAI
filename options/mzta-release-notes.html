@@ -7,6 +7,20 @@
   <body>
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
+      <h2>Version 3.8.0 - ??/??/2026</h2>
+      <ul>
+        <li><i>[All APIs]</i> Now it is possible to define an API and its settings for any custom prompt. This allows anyone to use different AI providers for different prompts [<a href="https://github.com/micz/ThunderAI/pull/102">#102</a>].</li>
+        <li><i>[All APIs]</i> When using special prompts (like automatically adding tags or the spam filter) with a specific API integration, all the settings for that integration can be specific. In this way you can use different api keys for the same integration, or different system prompt or temperature [<a href="https://github.com/micz/ThunderAI/pull/590">#590</a>].</li>
+        <li><i>[All APIs]</i> Added the temperature parameter [<a href="https://github.com/micz/ThunderAI/issues/561">#561</a>].</li>
+        <li><i>[OpenAI API]</i> Model filtering improved when choosing a model in the options page.</li>
+        <li><i>[OpenAI API]</i> Now using the new Responses API [<a href="https://github.com/micz/ThunderAI/issues/407">#407</a>].</li>
+        <li>It is now possible to define a custom placeholder with dynamic data to retrieve any header present in the current email [<a href="https://github.com/micz/ThunderAI/issues/527">#527</a>].</li>
+        <li><i>[All APIs]</i> The configuration information reported in the webchat API has been improved for all integrations.</li>
+        <li>Spanish (es) translation added, thanks to <a href="https://hosted.weblate.org/user/gerardo.sobarzo/">Gerardo Sobarzo</a>, <a href="https://hosted.weblate.org/user/arendon/">Andrés Rendón Hernández</a>, <a href="https://hosted.weblate.org/user/ErickLimonG/">Erick Limon</a>.</li>
+        <li>Swedish (sv) translation added, thanks to <a href="https://hosted.weblate.org/user/Andy_tb/">Andreas Pettersson</a>.</li>
+        <li>Various fixes.</li>
+        <li>...</li>
+      </ul>
       <h2>Version 3.7.9 - 06/01/2026</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly getting the job completion [<a href="https://github.com/micz/ThunderAI/issues/607">#607</a>].</li>
@@ -53,7 +67,7 @@
         <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
         <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
         <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
-        <li><i>[Google Gemini API]</i>Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
+        <li><i>[Google Gemini API]</i> Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added DeepSeek configuration [<a href="https://github.com/micz/ThunderAI/issues/486">#486</a>].</li>
         <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
         <li>Anthropic API renamed to Claude API [<a href="https://github.com/micz/ThunderAI/issues/510">#510</a>].</li>
@@ -387,7 +401,7 @@
         <li><i>[ChatGPT API]</i> Added a better error message when there is an error fetching models.</li>
         <li>When selecting a correct model in the options page, the field is no more highlighted in red [<a href="https://github.com/micz/ThunderAI/issues/100">#100</a>].</li>
         <li><i>[ChatGPT API]</i> The double quotes at the beginning and end of the response are removed [<a href="https://github.com/micz/ThunderAI/issues/99">#99</a>].</li>
-        <li><i>[ChatGPT Web]</i>"Keep formatting" option removed.</li>
+        <li><i>[ChatGPT Web]</i> "Keep formatting" option removed.</li>
       </ul>
       <h2>Version 2.0.1 - 09/08/2024</h2>
       <ul>

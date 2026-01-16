@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ export class GoogleGemini {
   system_instruction = '';
   stream = false;
   thinking_budget = ''; // Model default
+  temperature = ''; // no temperature defined
 
   constructor({
     apiKey = '',
@@ -32,12 +33,14 @@ export class GoogleGemini {
     system_instruction = '',
     stream = false,
     thinking_budget = '',
+    temperature = '',
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
     this.system_instruction = system_instruction;
     this.stream = stream;
     this.thinking_budget = String(thinking_budget ?? '').trim();
+    this.temperature = String(temperature ?? '').trim();
     /* Info from: https://ai.google.dev/gemini-api/docs/thinking?#set-budget
       # Turn on thinking with a specific token limit: "thinking_budget": 1024
       # Thinking off: "thinking_budget": 0
@@ -87,7 +90,8 @@ export class GoogleGemini {
     try {
 
       let google_gemini_body = {
-        contents:messages
+        contents: messages,
+        generationConfig: {},
       };
 
       // console.log("[ThunderAI] Google Gemini API system_instruction: " + JSON.stringify(this.system_instruction));
@@ -101,14 +105,18 @@ export class GoogleGemini {
       }
 
       if(this.thinking_budget !== '') {
-        google_gemini_body.generationConfig = {
-          thinkingConfig: {
+        google_gemini_body.generationConfig.thinkingConfig = {
             thinking_budget: this.thinking_budget,
-          }
         };
       }
 
-      // console.log("[ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
+      const tempFloat = parseFloat(this.temperature);
+
+      if(this.temperature != '' && !Number.isNaN(tempFloat)) {
+        google_gemini_body.generationConfig.temperature = tempFloat;
+      }
+
+      //  console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Google Gemini API request: " + JSON.stringify(google_gemini_body));
 
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":" + (this.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?') + "key=" + this.apiKey, {
           method: "POST",

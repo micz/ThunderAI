@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ export class OpenAIComp {
   apiKey = '';
   use_v1 = true;
   stream = false;
+  temperature = '';
 
   constructor({
     host = '',
@@ -33,12 +34,14 @@ export class OpenAIComp {
     apiKey = '',
     stream = false,
     use_v1 = true,
+    temperature = '',
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
     this.stream = stream;
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
+    this.temperature = temperature;
   }
 
 
@@ -78,6 +81,7 @@ export class OpenAIComp {
 
   fetchResponse = async (messages, maxTokens = 0) => {
     try{
+      const tempFloat = parseFloat(this.temperature);
       const curr_headers = {
         "Content-Type": "application/json",
       };
@@ -91,7 +95,8 @@ export class OpenAIComp {
                 model: this.model, 
                 messages: messages,
                 stream: this.stream,
-                ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {})
+                ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),
+                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {})
             }),
         });
         return response;

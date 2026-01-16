@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ export class Ollama {
     model = '';
     stream = false;
     num_ctx = 0;
+    temperature = '';
     think = false;
   
     constructor({
@@ -29,12 +30,14 @@ export class Ollama {
       model = '',
       stream = false,
       num_ctx = 0,
+      temperature = '',
       think = false,
     } = {}) {
       this.host = (host || '').trim().replace(/\/+$/, "");
       this.model = model;
       this.stream = stream;
       this.num_ctx = num_ctx;
+      this.temperature = temperature;
       this.think = think;
     }
 
@@ -78,6 +81,7 @@ export class Ollama {
     
     fetchResponse = async (messages) => {
       try {
+        const tempFloat = parseFloat(this.temperature);
         //console.log(">>>>>>>>>>  messages: " +JSON.stringify(messages));
         const response = await fetch(this.host + "/api/chat", {
             method: "POST",
@@ -90,6 +94,7 @@ export class Ollama {
                 stream: this.stream,
                 think: this.think,
                 ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
+                ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
             }),
         });
         return response;
@@ -103,30 +108,4 @@ export class Ollama {
       }
     }
 
-
-    // fetchResponse = async (messages) => {
-    //   try {
-    //     let sending = messages.join(' ');
-    //     console.log(">>>>>>>>>>  sending: " + sending);
-    //     const response = await fetch(this.host + "/api/generate", {
-    //         method: "POST",
-    //         headers: { 
-    //             "Content-Type": "application/json", 
-    //         },
-    //         body: JSON.stringify({ 
-    //             model: this.model, 
-    //             prompt: sending,
-    //             stream: this.stream,
-    //         }),
-    //     });
-    //     return response;
-    //   }catch (error) {
-    //       console.error("[ThunderAI] Ollama API request failed: " + error);
-    //       let output = {};
-    //       output.is_exception = true;
-    //       output.ok = false;
-    //       output.error = "Ollama API request failed: " + error;
-    //       return output;
-    //   }
-    // }
 }

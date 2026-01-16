@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../options/mzta-options-default.js';
+import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 
@@ -187,6 +187,17 @@ export async function replaceBody(tabId, replyHtml) {
   let fullBody = insertHtml(replyHtml, originalHtmlBody);
   //console.log('fullBody: ' + fullBody);
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
+}
+
+export async function getMailHeader(curr_message, mail_header_id) {
+  let mail_header_value = "";
+  let full_message = await browser.messages.getFull(curr_message.id);
+  // console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
+  if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
+    mail_header_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+  }
+  // console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
+  return mail_header_value;
 }
 
 export function sanitizeHtml(input) {
@@ -397,10 +408,11 @@ export async function createTag(tag) {
   let prefs_tag = await browser.storage.sync.get({ add_tags_first_uppercase: prefs_default.add_tags_first_uppercase });
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
+    const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
     if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
     }else{
-      return browser.messages.createTag('$ta-'+sanitizeString(tag), tag, generateHexColorForTag());
+      return browser.messages.createTag(tagKey, tag, generateHexColorForTag());
     }
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
@@ -612,19 +624,28 @@ export function extractJsonObject(inputString) {
 }
 
 export function isAPIKeyValue(id){
-  return id=="chatgpt_api_key" || id=="openai_comp_api_key" || id=="google_gemini_api_key" || id=="anthropic_api_key";
+  return id.endsWith('_api_key');
 }
 
-export function getConnectionType(conntype, prompt, use_promptspecific_api = true) {
-  if(!use_promptspecific_api) {
-    return conntype;
-  }
-  // console.log(">>>>>>>>>>> getConnectionType conntype: " + conntype + " prompt: " + JSON.stringify(prompt));
-  if (prompt?.api != null && prompt.api !== '') {
-    return prompt.api;
-  } else {
-    return conntype;
-  }
+export function getConnectionType(prefs, prompt, prefix = null) {
+    let defaultType = '';
+    let specificType = '';
+
+    if (prefs !== null) {
+        defaultType = prefs.connection_type;
+        if (typeof prefix === 'string' && prefix) {
+            const useSpecific = getDynamicSettingValue(prefs, prefix, 'use_specific_integration');
+            if (useSpecific) {
+                specificType = getDynamicSettingValue(prefs, prefix, 'connection_type');
+            }
+        }
+    }
+
+    if (specificType && specificType !== '') return specificType;
+    if (prompt) {
+        if (prompt.api_type && prompt.api_type !== '') return prompt.api_type;
+    }
+    return defaultType;
 }
 
 export async function checkSparksPresence() {

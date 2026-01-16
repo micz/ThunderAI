@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,8 +23,6 @@
 import { Anthropic } from '../api/anthropic.js';
 import { taLogger } from '../mzta-logger.js';
 
-let anthropic_api_key = null;
-let anthropic_model = '';
 let anthropic = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -37,16 +35,15 @@ let assistantResponseAccumulator = '';
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
         // console.log(">>>>>>>>>>>>>> event.data: " + JSON.stringify(event.data));
-        anthropic_api_key = event.data.anthropic_api_key;
-        anthropic_model = event.data.anthropic_model;
-        anthropic = new Anthropic({
-            apiKey: anthropic_api_key,
-            version: event.data.anthropic_version,
-            model: anthropic_model,
-            system_prompt: event.data.anthropic_system_prompt,
-            max_tokens: event.data.anthropic_max_tokens,
-            stream: true
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('anthropic_')) {
+                let newKey = key.replace('anthropic_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        anthropic = new Anthropic(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-anthropic', do_debug);

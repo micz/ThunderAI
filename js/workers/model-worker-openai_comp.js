@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,10 +23,6 @@
 import { OpenAIComp } from '../api/openai_comp.js';
 import { taLogger } from '../mzta-logger.js';
 
-let openai_comp_host = null;
-let openai_comp_model = '';
-let openai_comp_api_key = '';
-let openai_comp_use_v1 = true;
 let openai_comp = null;
 let stopStreaming = false;
 let i18nStrings = null;
@@ -38,17 +34,15 @@ let assistantResponseAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
-        openai_comp_host = event.data.openai_comp_host;
-        openai_comp_model = event.data.openai_comp_model;
-        openai_comp_api_key = event.data.openai_comp_api_key;
-        openai_comp_use_v1 = event.data.openai_comp_use_v1;
-        openai_comp = new OpenAIComp({
-            host: openai_comp_host,
-            model: openai_comp_model,
-            apiKey: openai_comp_api_key,
-            stream: true,
-            use_v1: openai_comp_use_v1
-        });
+        let config = { stream: true };
+        for (const key in event.data) {
+            if (key.startsWith('openai_comp_')) {
+                let newKey = key.replace('openai_comp_', '');
+                if (newKey === 'api_key') newKey = 'apiKey';
+                config[newKey] = event.data[key];
+            }
+        }
+        openai_comp = new OpenAIComp(config);
         do_debug = event.data.do_debug;
         i18nStrings = event.data.i18nStrings;
         taLog = new taLogger('model-worker-openai_comp', do_debug);

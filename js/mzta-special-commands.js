@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,10 @@
  */
  // Call the API to use a special prompt
 
- import { prefs_default } from "../options/mzta-options-default.js";
+ import {
+    prefs_default,
+    integration_options_config
+ } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
  
  export class mzta_specialCommand {
@@ -25,135 +28,96 @@
     prompt = "";
     worker = null;
     llm = "";
-    custom_model = "";
     full_message = "";
     logger = null;
     do_debug = false;
+    config = {};
 
     constructor(args = {}) {
         let {
             prompt = '',
             llm = '',
-            custom_model = '',
-            do_debug = false
+            do_debug = false,
+            config = {}
         } = args;
         this.prompt = prompt;
         this.llm = llm;
-        this.custom_model = custom_model;
-        this.logger = new taLogger('mzta_specialCommand', do_debug);
+        this.config = config;
         this.do_debug = do_debug;
-        switch (this.llm) {
-            case "chatgpt_api":
-                this.worker = new Worker(new URL('./workers/model-worker-openai.js', import.meta.url), { type: 'module' });
-                break;
-            case "google_gemini_api":
-                this.worker = new Worker(new URL('./workers/model-worker-google_gemini.js', import.meta.url), { type: 'module' });
-                break;
-            case "ollama_api":
-                this.worker = new Worker(new URL('./workers/model-worker-ollama.js', import.meta.url), { type: 'module' });
-                break;
-            case "openai_comp_api":
-                this.worker = new Worker(new URL('./workers/model-worker-openai_comp.js', import.meta.url), { type: 'module' });
-                break;
-            case "anthropic_api":
-                this.worker = new Worker(new URL('./workers/model-worker-anthropic.js', import.meta.url), { type: 'module' });
-                break;
-            default:
-                this.logger.log("Invalid LLM type: " + this.llm);
-                throw new Error("Invalid LLM type: " + this.llm);
+        this.logger = new taLogger('mzta_specialCommand', do_debug);
+
+        const worker_path_map = {
+            chatgpt_api: './workers/model-worker-openai_responses.js',
+            google_gemini_api: './workers/model-worker-google_gemini.js',
+            ollama_api: './workers/model-worker-ollama.js',
+            openai_comp_api: './workers/model-worker-openai_comp.js',
+            anthropic_api: './workers/model-worker-anthropic.js',
+        };
+
+        const worker_path = worker_path_map[this.llm];
+        if (worker_path) {
+            this.worker = new Worker(new URL(worker_path, import.meta.url), { type: 'module' });
+        } else {
+            this.logger.log("Invalid LLM type: " + this.llm);
+            throw new Error("Invalid LLM type: " + this.llm);
         }
     }
 
     async initWorker() {
-        // console.log((">>>>>>>>>>>> this.custom_model: " + this.custom_model));
-        switch (this.llm) {
-            case "chatgpt_api": {
-                let prefs_api = await browser.storage.sync.get({
-                    chatgpt_api_key: prefs_default.chatgpt_api_key,
-                    chatgpt_model: prefs_default.chatgpt_model,
-                    chatgpt_developer_messages: prefs_default.chatgpt_developer_messages,
-                });
-                this.worker.postMessage({
-                    type: 'init',
-                    chatgpt_api_key: prefs_api.chatgpt_api_key,
-                    chatgpt_model: this.custom_model != '' ? this.custom_model : prefs_api.chatgpt_model,
-                    chatgpt_developer_messages: prefs_api.chatgpt_developer_messages,
-                    do_debug: this.do_debug,
-                    i18nStrings: ''
-                });
-                break;
-            }
-            case "google_gemini_api": {
-                let prefs_api = await browser.storage.sync.get({
-                    google_gemini_api_key: prefs_default.google_gemini_api_key,
-                    google_gemini_model: prefs_default.google_gemini_model,
-                    google_gemini_system_instruction: prefs_default.google_gemini_system_instruction,
-                    google_gemini_thinking_budget: prefs_default.google_gemini_thinking_budget,
-                });
-                this.worker.postMessage({
-                    type: 'init',
-                    google_gemini_api_key: prefs_api.google_gemini_api_key,
-                    google_gemini_model: this.custom_model != '' ? this.custom_model : prefs_api.google_gemini_model,
-                    google_gemini_system_instruction: prefs_api.google_gemini_system_instruction,
-                    google_gemini_thinking_budget: prefs_api.google_gemini_thinking_budget,
-                    do_debug: this.do_debug,
-                    i18nStrings: ''
-                });
-                break;
-            }
-            case "ollama_api": {
-                let prefs_api = await browser.storage.sync.get({
-                    ollama_host: prefs_default.ollama_host,
-                    ollama_model: prefs_default.ollama_model,
-                });
-                this.worker.postMessage({
-                    type: 'init',
-                    ollama_host: prefs_api.ollama_host,
-                    ollama_model: this.custom_model != '' ? this.custom_model : prefs_api.ollama_model,
-                    do_debug: this.do_debug,
-                    i18nStrings: ''
-                });
-                break;
-            }
-            case "openai_comp_api": {
-                let prefs_api = await browser.storage.sync.get({
-                    openai_comp_host: prefs_default.openai_comp_host,
-                    openai_comp_model: prefs_default.openai_comp_model,
-                    openai_comp_api_key: prefs_default.openai_comp_api_key,
-                    openai_comp_use_v1: prefs_default.openai_comp_use_v1,
-                    openai_comp_chat_name: prefs_default.openai_comp_chat_name,
-                    do_debug: prefs_default.do_debug,
-                });
-                this.worker.postMessage({
-                    type: 'init',
-                    openai_comp_host: prefs_api.openai_comp_host,
-                    openai_comp_model: this.custom_model != '' ? this.custom_model : prefs_api.openai_comp_model,
-                    openai_comp_api_key: prefs_api.openai_comp_api_key,
-                    openai_comp_use_v1: prefs_api.openai_comp_use_v1,
-                    do_debug: this.do_debug,
-                    i18nStrings: ''
-                });
-                break;
-            }
-            case "anthropic_api": {
-                let prefs_api = await browser.storage.sync.get({
-                    anthropic_api_key: prefs_default.anthropic_api_key,
-                    anthropic_model: prefs_default.anthropic_model,
-                    anthropic_version: prefs_default.anthropic_version,
-                    anthropic_max_tokens: prefs_default.anthropic_max_tokens,
-                });
-                this.worker.postMessage({
-                    type: 'init',
-                    anthropic_api_key: prefs_api.anthropic_api_key,
-                    anthropic_model: this.custom_model != '' ? this.custom_model : prefs_api.anthropic_model,
-                    anthropic_version: prefs_api.anthropic_version,
-                    anthropic_max_tokens: prefs_api.anthropic_max_tokens,
-                    do_debug: this.do_debug,
-                    i18nStrings: ''
-                });
-                break;
-            }
+        let integration = this.llm.replace('_api', '');
+        let use_specific_api = false;
+
+        this.logger.log("integration: " + integration);
+
+        if (this.config.api_type && this.config.api_type !== '') {
+            integration = this.config.api_type.replace('_api', '');
+            use_specific_api = true;
+            this.logger.log("use_specific_api: " + use_specific_api);
+            this.logger.log("specific integration: " + integration);
         }
+        const options_config = integration_options_config[integration];
+
+        if (!options_config) {
+            this.logger.error("Invalid integration type: " + integration);
+            throw new Error("Invalid integration type: " + integration);
+        }
+
+        const prefsToGet = {};
+        const configKeys = Object.keys(options_config);
+
+        for (const key of configKeys) {
+            const prefKey = `${integration}_${key}`;
+            prefsToGet[prefKey] = prefs_default[prefKey];
+        }
+
+        const prefs_api = await browser.storage.sync.get(prefsToGet);
+
+        let workerInitMessage = {
+            type: 'init',
+            do_debug: this.do_debug,
+            i18nStrings: ''
+        };
+
+        for (const key of configKeys) {
+            const prefKey = `${integration}_${key}`;
+            let value = prefs_api[prefKey];
+            
+            if(use_specific_api){
+                const configValue = this.config[prefKey];
+                
+                if (configValue !== undefined) {
+                    if (typeof options_config[key] === 'boolean') {
+                        value = (configValue === true || configValue === 'true' || configValue === 1);
+                    } else {
+                        value = configValue;
+                    }
+                }
+            }
+
+            workerInitMessage[prefKey] = value;
+        }
+
+        this.worker.postMessage(workerInitMessage);
     }
 
     sendPrompt(){

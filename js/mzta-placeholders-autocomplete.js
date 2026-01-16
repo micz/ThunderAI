@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
             type = tr.querySelector('.type_output').value
         }
         // console.log(">>>>>>>>> type: " + type);
-        // console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
+        //  console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
         // console.log(">>>>>>>>> lastWord: " + lastWord);
         const matches = suggestions.filter(s => s.command.startsWith(lastWord) && (String(s.type) == String(type) || String(s.type) == '0' )).map(s => s.command);
         // console.log(">>>>>>>>> matches: " + JSON.stringify(matches));
@@ -106,6 +106,7 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
     }
 
     function insertAutocomplete(suggestion, textarea) {
+      // console.log(">>>>>>>>> insertAutocomplete suggestion: " + JSON.stringify(suggestion));
       const cursorPosition = textarea.selectionStart;
       const textBefore = textarea.value.substring(0, cursorPosition);
       const textAfter = textarea.value.substring(cursorPosition);
@@ -115,7 +116,7 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         const completion = suggestion.substring(lastWord.length);
         const newText = textBefore + completion + textAfter;
         textarea.value = newText;
-        const newCursorPosition = cursorPosition + completion.length;
+        const newCursorPosition = cursorPosition + completion.length - (suggestion.endsWith(':%}') ? 2 : 0);
         textarea.setSelectionRange(newCursorPosition, newCursorPosition);
       }
     }
