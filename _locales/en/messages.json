@@ -1016,10 +1016,18 @@
     "description": ""
   },
   "prompt_summarize_email_template": {
+    "message": "Summarize email template",
+    "description": ""
+  },
+  "prompt_summarize_email_template_full_text": {
     "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\nBody:\n{%mail_text_body%}",
     "description": ""
   },
   "prompt_summarize_email_separator": {
+    "message": "Email separator",
+    "description": ""
+  },
+  "prompt_summarize_email_separator_full_text": {
     "message": "\n\n---------- NEXT EMAIL ----------\n\n",
     "description": ""
   },

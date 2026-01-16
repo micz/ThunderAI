@@ -93,19 +93,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     
     summarize_textarea_email_template.addEventListener("input", (event) => {
-        summarize_reset_email_template_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_template')); 
+        summarize_reset_email_template_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_template_full_text'));
         summarize_save_email_template_btn.disabled = (event.target.value === summarize_email_template.text);
     });
 
     summarize_email_separator_textarea.addEventListener("input", (event) => {
-        summarize_email_separator_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_separator')); 
+        summarize_email_separator_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_summarize_email_separator_full_text'));
         summarize_email_separator_save_btn.disabled = (event.target.value === summarize_email_separator.text);
     });
     
 
     // on clicking buttons, reset
     summarize_reset_email_template_btn.addEventListener("click", () => {
-        summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template");
+        summarize_textarea_email_template.value = browser.i18n.getMessage("prompt_summarize_email_template_full_text");
         summarize_reset_email_template_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
         summarize_textarea_email_template.dispatchEvent(event);
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     summarize_email_separator_reset_btn.addEventListener("click", () => {
-        summarize_email_separator_textarea.value = browser.i18n.getMessage("prompt_summarize_email_separator");
+        summarize_email_separator_textarea.value = browser.i18n.getMessage("prompt_summarize_email_separator_full_text");
         summarize_email_separator_reset_btn.disabled = true;
         let event = new Event("input", { bubbles: true, cancelable: true });
         summarize_email_separator_textarea.dispatchEvent(event);
@@ -151,10 +151,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if(summarize_prompt.text === 'prompt_summarize_full_text'){
         summarize_prompt.text = browser.i18n.getMessage(summarize_prompt.text);
     }
-    if(summarize_email_template.text === 'prompt_summarize_email_template'){
+    if(summarize_email_template.text === 'prompt_summarize_email_template_full_text'){
         summarize_email_template.text = browser.i18n.getMessage(summarize_email_template.text);
     }
-    if(summarize_email_separator.text === 'prompt_summarize_email_separator'){
+    if(summarize_email_separator.text === 'prompt_summarize_email_separator_full_text'){
         summarize_email_separator.text = browser.i18n.getMessage(summarize_email_separator.text);
     }
 
