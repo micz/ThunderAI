@@ -17,6 +17,10 @@
         <li>Swedish (sv) translation added, thanks to <a href="https://hosted.weblate.org/user/Andy_tb/">Andreas Pettersson</a>.</li>
         <li>Various fixes.</li>
         <li>...</li>
+  </ul>
+<h2>Version 3.7.9 - 06/01/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly getting the job completion [<a href="https://github.com/micz/ThunderAI/issues/607">#607</a>].</li>
       </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
       <ul>
