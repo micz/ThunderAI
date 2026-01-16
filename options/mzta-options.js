@@ -167,6 +167,27 @@ function disable_SpamFilter(prefs_opt){
   }
 }
 
+function disable_Summarize(prefs_opt){
+  let summarize = document.getElementById('summarize');
+  let conntype_select = document.getElementById("connection_type");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let summarize_disabled = (getConnectionType(tempPrefs, null, 'summarize') === "chatgpt_web");
+  let summarize_checked_original = summarize.checked;
+  summarize.checked = summarize_disabled ? false : summarize.checked;
+  if(!summarize.checked){
+    let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
+    summarize_info_btn.disabled = 'disabled';
+  }
+  let summarize_warn_API_needed = document.getElementById('summarize_warn_API_needed');
+  summarize_warn_API_needed.style.display = (summarize_disabled) ? 'inline-block' : 'none';
+  if(summarize_checked_original != summarize.checked){
+    browser.storage.sync.set({summarize: summarize.checked});
+  }
+}
+
 async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
   let get_task = document.getElementById('get_task');
@@ -262,6 +283,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   spamfilter_info_btn.disabled = spamfilter_el.checked ? '' : 'disabled';
 
+  let summarize_el = document.getElementById('summarize');
+  let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
+  summarize_el.addEventListener('click', (event) => {
+    summarize_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  summarize_info_btn.disabled = summarize_el.checked ? '' : 'disabled';
+
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
@@ -291,6 +319,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnManageSpamFilterInfo').addEventListener('click', () => {
     openTab('/pages/spamfilter/mzta-spamfilter.html');
   });
+  
+  document.getElementById('btnManageSummarizeInfo').addEventListener('click', () => {
+    openTab('/pages/summarize/mzta-summarize.html');
+  });
 
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
     openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');
@@ -317,12 +349,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", disable_MaxPromptLength);
   conntype_select.addEventListener("change", () => disable_AddTags(prefs_opt));
   conntype_select.addEventListener("change", () => disable_SpamFilter(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
   
   showConnectionOptions(conntype_select);
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
+  disable_Summarize(prefs_opt);
   disable_GetCalendarEvent();
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);

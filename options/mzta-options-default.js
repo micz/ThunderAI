@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const special_prompts_with_integration = ['add_tags', 'spamfilter'];
+const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize'];
 
 export const integration_options_config = {
     chatgpt: {
@@ -133,5 +133,6 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
+    summarize: false,
     ...generated_prefs
 }
