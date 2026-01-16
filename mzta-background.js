@@ -995,7 +995,6 @@ function addContextMenuItems() {
     
     // Add Context menu: Summarize
     if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
-      console.log("adding summarize to context menu")
         addContextMenu(contextMenuID_Summarize);
     }
 }
