@@ -4,7 +4,7 @@
 
 
 
-<h2>Version 3.8.0 - ??/??/2026</h2>
+<h2>Version 3.8.0 - 16/01/2026</h2>
       <ul>
         <li><i>[All APIs]</i> Now it is possible to define an API and its settings for any custom prompt. This allows anyone to use different AI providers for different prompts [<a href="https://github.com/micz/ThunderAI/pull/102">#102</a>].</li>
         <li><i>[All APIs]</i> When using special prompts (like automatically adding tags or the spam filter) with a specific API integration, all the settings for that integration can be specific. In this way you can use different api keys for the same integration, or different system prompt or temperature [<a href="https://github.com/micz/ThunderAI/pull/590">#590</a>].</li>
@@ -16,7 +16,6 @@
         <li>Spanish (es) translation added, thanks to <a href="https://hosted.weblate.org/user/gerardo.sobarzo/">Gerardo Sobarzo</a>, <a href="https://hosted.weblate.org/user/arendon/">Andrés Rendón Hernández</a>, <a href="https://hosted.weblate.org/user/ErickLimonG/">Erick Limon</a>.</li>
         <li>Swedish (sv) translation added, thanks to <a href="https://hosted.weblate.org/user/Andy_tb/">Andreas Pettersson</a>.</li>
         <li>Various fixes.</li>
-        <li>...</li>
   </ul>
 <h2>Version 3.7.9 - 06/01/2026</h2>
       <ul>
