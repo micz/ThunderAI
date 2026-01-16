@@ -811,7 +811,6 @@ async function reload_pref_init(){
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         add_tags_context_menu: prefs_default.add_tags_context_menu,
         spamfilter_context_menu: prefs_default.spamfilter_context_menu,
-        summarize_context_menu: prefs_default.summarize_context_menu,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
@@ -925,7 +924,7 @@ function setupStorageChangeListener() {
             }
             if (changes.summarize) {
                 if (changes.summarize.newValue){
-                    if (prefs_init.summarize_context_menu){
+                    if (prefs_init.summarize){
                         addContextMenu(contextMenuID_Summarize);
                     }
                 } else {
@@ -994,7 +993,7 @@ function addContextMenuItems() {
     }
     
     // Add Context menu: Summarize
-    if(prefs_init.summarize && prefs_init.summarize_context_menu && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
+    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
         addContextMenu(contextMenuID_Summarize);
     }
 }
