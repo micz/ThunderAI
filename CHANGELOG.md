@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.8.1 - 20/01/2026</h2>
+      <ul>
+        <li><i>[OpenAI API]</i> Fix: Correctly sending the prompt after opening the chat window [<a href="https://github.com/micz/ThunderAI/issues/620">#620</a>].</li>
+      </ul>
 <h2>Version 3.8.0 - 16/01/2026</h2>
       <ul>
         <li><i>[All APIs]</i> Now it is possible to define an API and its settings for any custom prompt. This allows anyone to use different AI providers for different prompts [<a href="https://github.com/micz/ThunderAI/pull/102">#102</a>].</li>
