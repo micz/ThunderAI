@@ -526,7 +526,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     browser.runtime.onMessage.removeListener(listener2);
                 }
 
-                if (message.command === "openai_api_ready_"+rand_call_id2) {
+                if (message.command === "chatgpt_api_ready_"+rand_call_id2) {
                     return handleChatGptApi(sender.tab);
                 }
                 return false;
