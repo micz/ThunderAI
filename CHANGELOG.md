@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.8.2 - 20/01/2026</h2>
+      <ul>
+        <li>Fix: Correctly saving the enable status in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/621">#621</a>].</li>
+      </ul>
 <h2>Version 3.8.1 - 20/01/2026</h2>
       <ul>
         <li><i>[OpenAI API]</i> Fix: Correctly sending the prompt after opening the chat window [<a href="https://github.com/micz/ThunderAI/issues/620">#620</a>].</li>
