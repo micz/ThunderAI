@@ -807,13 +807,18 @@ async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('enabled')) {
+    if (e.target.classList.contains('enabled') || e.target.classList.contains('need_custom_text')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
             let item = promptsList.get('idnum', idnum);
             if (item && item.length > 0) {
-                item[0]._values.enabled = e.target.checked ? 1 : 0;
+                if (e.target.classList.contains('enabled')) {
+                    item[0]._values.enabled = e.target.checked ? 1 : 0;
+                }
+                if (e.target.classList.contains('need_custom_text')) {
+                    item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
+                }
             }
         }
     }
