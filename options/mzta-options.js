@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   browser.runtime.getPlatformInfo().then(info => {
     taLog.log("OS: " + info.os);
-    if ((info.os === "linux")&&(prefs.chatgpt_win_height!=0)&&(prefs.chatgpt_win_width!=0)){
+    if ((info.os === "linux")&&(prefs_opt.chatgpt_win_height!=0)&&(prefs_opt.chatgpt_win_width!=0)){
       document.getElementById('hyprland_warning').style.display = 'table-row';
     }
   });
