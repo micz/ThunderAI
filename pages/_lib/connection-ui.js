@@ -31,7 +31,11 @@ import {
   sanitizeChatGPTWebCustomData
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
-import { loadPrompt, savePrompt, clearPromptAPI } from '../../js/mzta-prompts.js';
+import {
+  loadPrompt,
+  savePrompt,
+  clearPromptAPI
+} from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
   permission_all_urls: false
@@ -1204,6 +1208,8 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   if (options.some(o => o.value === prevValue)) {
     conntype_select.value = prevValue;
+  } else if (no_chatgpt_web) {
+    conntype_select.value = "";
   }
 }
 
