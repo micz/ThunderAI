@@ -1,1 +1,11 @@
-{}
+{
+    "extensionDescription": {
+        "message": "ChatGPT、Google Gemini、Claude、Ollama を使ってメールを強化しましょう!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "返信する"
+    }
+}
