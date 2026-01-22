@@ -7,5 +7,1302 @@
     },
     "prompt_lang": {
         "message": "返信する"
+    },
+    "prompt_reply": {
+        "message": "このメールに返信"
+    },
+    "prompt_reply_advanced": {
+        "message": "このスレッドに返信"
+    },
+    "prompt_reply_custom_command": {
+        "message": "コマンドで返信"
+    },
+    "prompt_rewrite_polite": {
+        "message": "丁寧に書き直す"
+    },
+    "prompt_rewrite_formal": {
+        "message": "フォーマルに書き直す"
+    },
+    "prompt_classify": {
+        "message": "分類する"
+    },
+    "prompt_summarize_this": {
+        "message": "要約する"
+    },
+    "prompt_translate_this": {
+        "message": "翻訳する"
+    },
+    "prompt_this": {
+        "message": "プロンプトを実行"
+    },
+    "prompt_selection_needed": {
+        "message": "続行するには、テキストを選択してください！"
+    },
+    "customPrompts_managePrompts": {
+        "message": "プロンプトを管理"
+    },
+    "more_info_string": {
+        "message": "詳細情報"
+    },
+    "prompt_string": {
+        "message": "プロンプト"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "デフォルトのプロンプトは編集できません。無効にしてから、プロンプトのテキストをコピーし、新しいプロンプトに貼り付けて変更版を作成できます。"
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "プロンプトのインポートとエクスポートができます。同じIDの既存プロンプトは上書きされます。新しいIDのプロンプトは追加されます。"
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "すべて正しければ、インポート後に「すべて保存」ボタンをクリックしてください。"
+    },
+    "customPrompts_start_saving": {
+        "message": "プロンプトを保存中..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "リストを再インデックス中..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "プロンプトをフィルタリング中..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "デフォルトプロンプトを保存中..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "カスタムプロンプトを保存中..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "メニューを再読み込み中..."
+    },
+    "customPrompts_saved": {
+        "message": "プロンプトを保存しました！"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "一意で、小文字、スペースなしである必要があります"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "名前"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "プロンプトテキスト"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "アクション"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "テキスト選択が必要"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "常に署名を追加する"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "追加テキストを要求する"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "有効"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "テキスト比較ビューアを有効にする"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "テキスト比較ビューアは、アクションが「テキストを置換」に設定されている場合に選択できます。"
+    },
+    "customPrompts_form_required_fields": {
+        "message": "必須フィールド"
+    },
+    "customPrompts_btnEdit": {
+        "message": "編集"
+    },
+    "customPrompts_btnCancel": {
+        "message": "キャンセル"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "削除"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "このアイテムを削除してもよろしいですか？"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "保存されていない変更があります！"
+    },
+    "btnSaveAll_string": {
+        "message": "すべて保存"
+    },
+    "btnNew_string": {
+        "message": "新規追加"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "プロンプトを追加"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "メニューに追加"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "常に"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "メール閲覧時"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "メール作成時"
+    },
+    "customPrompts_close_button": {
+        "message": "閉じるボタン"
+    },
+    "customPrompts_do_reply": {
+        "message": "返信する"
+    },
+    "customPrompts_substitute_text": {
+        "message": "テキストを置換"
+    },
+    "chatgpt_win_working": {
+        "message": "処理中..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "完了！"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "使用するテキストを選択してボタンをクリックしてください。"
+    },
+    "chatgpt_win_get_answer": {
+        "message": "選択した回答を使用"
+    },
+    "chatgpt_win_close": {
+        "message": "閉じる"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "ChatGPTページの読み込みに時間がかかっているようです。読み込みが完了したら、右のボタンをクリックしてください。問題が続く場合は、サービスの状態を確認してください。"
+    },
+    "chatgpt_btn_retry": {
+        "message": "再試行"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "送信ボタンをクリックしてプロンプトを送信してください。"
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "ChatGPTにログインしていません。認証情報でログインし、ChatGPTウィンドウを閉じてから、再度操作を行ってください。その後はログイン状態が維持されます。"
+    },
+    "chatgpt_win_model_warning": {
+        "message": "何らかの理由で、正しいモデルが読み込まれているか確認できません。今のところ、青いボタンを押して続行できます。"
+    },
+    "chatgpt_win_custom_text": {
+        "message": "プロンプト用の追加テキストをここに入力してください。"
+    },
+    "chatgpt_win_send": {
+        "message": "送信"
+    },
+    "chatgpt_force_completion": {
+        "message": "強制完了"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "ChatGPTが処理を完了したのにボタンが表示されない場合は、ここをクリックして「最後の回答を使用」ボタンを表示してください。"
+    },
+    "msg_prompt_too_long": {
+        "message": "入力したテキストが長すぎます。短くしてください。"
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "リリースノート"
+    },
+    "prefs_status_page": {
+        "message": "サービス状態"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "AIチャットウィンドウのサイズ"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "高さ"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "幅"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "デフォルトの署名名"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "返信のデフォルト言語"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "全員に返信"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "送信者に返信"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "返信タイプ"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "これはメールに返信する際に使用されるデフォルトの返信タイプです。返信ダイアログで後から変更できます。"
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "プロンプトを管理する"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "データプレースホルダーを管理する"
+    },
+    "prefsInfoTitle": {
+        "message": "重要な情報"
+    },
+    "prefsInfoDesc_1": {
+        "message": "ChatGPTのWebインターフェースが変更され、アドオンが動作しなくなる可能性があります。このページの下部にある「サービス状態」ページを確認してください。また、ThunderAIを初めて使用する際はChatGPTへのログインが必要です。"
+    },
+    "prefsInfoDesc_2": {
+        "message": "ChatGPT APIを使用するには、OpenAI ChatGPT APIキーが必要で、モデルを選択する必要があります。"
+    },
+    "prefsInfoDesc_3": {
+        "message": "Ollamaとの連携を使用するには、ローカルのOllamaサーバーを設定する必要があります。サーバーが起動したら、アプリケーション内の指定フィールドにアドレスを入力してください。ThunderAIとOllamaサーバー間の適切な通信を確保するため、OLLAMA_ORIGINS=moz-extension://*を設定してください。"
+    },
+    "prefsInfoDesc_4": {
+        "message": "この連携を使用するには、LM StudioなどのOpenAI API互換のローカルサーバーを設定する必要があります。サーバーが起動したら、アプリケーション内の指定フィールドにアドレスを入力してください。ThunderAIとローカルサーバー間の適切な通信を確保するため、CORS設定を正しく行ってください。"
+    },
+    "prefsInfoDesc_5": {
+        "message": "キーボードショートカットCTRL+ALT+AでThunderAIメニューを開けることを覚えておいてください。"
+    },
+    "prefsInfoDesc_6": {
+        "message": "このページの右上にある歯車アイコンをクリックし、「拡張機能のショートカットを管理」を選択してショートカットを変更できます。"
+    },
+    "prefsDonation_1": {
+        "message": "このアドオンは気に入りましたか？"
+    },
+    "prefsDonation_2": {
+        "message": "寄付をご検討ください！"
+    },
+    "backToOptionsText": {
+        "message": "オプション"
+    },
+    "TranslateText": {
+        "message": "このアドオンの翻訳を手伝いませんか？"
+    },
+    "TranslateLink": {
+        "message": "方法を確認！"
+    },
+    "customPrompts_ExportAll": {
+        "message": "すべてのプロンプトをエクスポート"
+    },
+    "customPrompts_Import": {
+        "message": "新しいプロンプトをインポート"
+    },
+    "importPrompts_confirmText": {
+        "message": "新しいプロンプトをインポートしようとしています。"
+    },
+    "customPrompts_start_import": {
+        "message": "カスタムプロンプトのインポートを開始中..."
+    },
+    "customPrompts_import_completed": {
+        "message": "カスタムプロンプトのインポートが完了しました！「すべて保存」ボタンをクリックして変更を保存してください。"
+    },
+    "importPrompts_invalidFile": {
+        "message": "インポートしようとしているファイルは有効なカスタムプロンプトファイルではありません。"
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "インポートしようとしているファイルには有効なプロンプトが含まれていません。"
+    },
+    "currently_used_prompt": {
+        "message": "現在使用中のプロンプト名"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "プロンプトで返信言語を定義する"
+    },
+    "prefs_Connection_type": {
+        "message": "接続タイプ"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT Webインターフェース"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT APIキー"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPTモデル"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "ChatGPTモデルリストを更新"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "ChatGPTモデルの取得中にエラー"
+    },
+    "Loading": {
+        "message": "読み込み中..."
+    },
+    "error": {
+        "message": "ThunderAI エラー！"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "ChatGPT APIのAPIキーが設定されていません。オプションページで設定してください。"
+    },
+    "chatgpt_empty_model": {
+        "message": "ChatGPT APIのモデルが選択されていません。オプションページで選択してください。"
+    },
+    "chagpt_api_send_button": {
+        "message": "使用モデル"
+    },
+    "Debug": {
+        "message": "デバッグ"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "デバッグシステムを有効にする"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API（ローカルLLM）"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI互換API"
+    },
+    "prefs_API_Host": {
+        "message": "ホストアドレス"
+    },
+    "Ollama_Models": {
+        "message": "Ollamaモデル"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Ollamaモデルリストを更新"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Ollamaモデルの取得中にエラー"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "モデルが見つかりません"
+    },
+    "ollama_empty_host": {
+        "message": "Ollama APIのホストアドレスが設定されていません。オプションページで設定してください。"
+    },
+    "ollama_empty_model": {
+        "message": "Ollama APIのモデルが選択されていません。オプションページで選択してください。"
+    },
+    "error_connection_interrupted": {
+        "message": "サーバーへの接続が予期せず中断されました"
+    },
+    "ollama_api_request_failed": {
+        "message": "Ollama APIリクエストが失敗しました"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "OpenAI ChatGPT APIリクエストが失敗しました"
+    },
+    "WaitingServerResponse": {
+        "message": "サーバーの応答を待っています"
+    },
+    "prefs_API_Host_Info": {
+        "message": "例："
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI互換APIモデル"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "OpenAI互換APIモデルリストを更新"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "OpenAI互換APIモデルの取得中にエラー"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "OpenAI互換APIのホストアドレスが設定されていません。オプションページで設定してください。"
+    },
+    "OpenAIComp_empty_model": {
+        "message": "OpenAI互換APIのモデルが選択されていません。オプションページで選択してください。"
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "OpenAI互換APIリクエストが失敗しました"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "チャット名"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "AIチャットで使用される名前です。"
+    },
+    "StorageSpace": {
+        "message": "使用中のストレージ容量"
+    },
+    "SearchPrompt": {
+        "message": "プロンプトを検索"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "メニュー：即時プロンプト送信"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "チェックすると、キーボードショートカットCTRL+ALT+Aでメニューから選択したプロンプトが自動的に送信されます。チェックしない場合、プロンプト名が表示され、送信するにはEnterキーを再度押す必要があります。"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": "メニュー：アルファベット順に並べる"
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": "チェックすると、メニュー内のプロンプトがアルファベット順に並べられます。"
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "ウィンドウサイズを指定しない場合は0を設定してください。"
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI互換APIキー"
+    },
+    "Optional": {
+        "message": "オプション"
+    },
+    "OpenChatGPTTab": {
+        "message": "ChatGPTタブを開く"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "ThunderAIウィンドウでログインの問題が発生した場合は、右のボタンで新しいタブにChatGPTを開き、ログインしてからタブを閉じ、ThunderAIの使用を続けてください。"
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "ここからChatGPT Webを開くと、モデル、プロジェクト、カスタムGPTの設定が適用されます。"
+    },
+    "placeholder_mail_text_body": {
+        "message": "メール本文"
+    },
+    "placeholder_mail_html_body": {
+        "message": "HTMLメール本文"
+    },
+    "placeholder_mail_subject": {
+        "message": "メール件名"
+    },
+    "placeholder_folder_name": {
+        "message": "フォルダー名"
+    },
+    "placeholder_folder_path": {
+        "message": "フォルダーパス"
+    },
+    "placeholder_mail_headers": {
+        "message": "メールヘッダー"
+    },
+    "placeholder_selected_text": {
+        "message": "選択テキスト"
+    },
+    "placeholder_selected_html": {
+        "message": "選択HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "追加テキスト"
+    },
+    "placeholder_junk_score": {
+        "message": "迷惑メールスコア"
+    },
+    "placeholder_recipients": {
+        "message": "宛先"
+    },
+    "placeholder_cc_list": {
+        "message": "CCリスト"
+    },
+    "placeholder_author": {
+        "message": "送信者"
+    },
+    "placeholder_account_email_address": {
+        "message": "アカウントのメールアドレス"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "プレースホルダー：デフォルト値を使用"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "チェックすると、値が指定されていない場合にプレースホルダーにデフォルト値が入力されます。チェックしない場合、プレースホルダーはそのまま残ります。"
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "最大プロンプト長"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "プロンプトで使用できる最大文字数です。超過するとエラーメッセージが表示されます。ChatGPT Webインターフェースでは値を編集できません。チェックを無効にするには0を設定してください。"
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT Webモデル"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "ChatGPT Webインターフェースで強制されるモデルです。指定されていないか不正な場合、Webページ上でChatGPTによりデフォルトモデルが設定されます。この設定はChatGPT無料アカウントでは機能しません。"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web一時チャット"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "チェックすると、ChatGPT Webインターフェースで一時チャットが使用されます。"
+    },
+    "chatgpt_btn_model": {
+        "message": "現在のモデルを使用"
+    },
+    "SendingPrompt": {
+        "message": "プロンプトを送信中..."
+    },
+    "AllowedValues": {
+        "message": "許可される値"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "追加のデータプレースホルダーを使用できます。"
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "「v1」互換性を維持する"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "チェックすると、APIコールのパスに「v1」セグメントが維持されます（例：「http://localhost:1234/v1/chat/completions」）。"
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "ここにリモートサーバーのアドレスも入力できます。"
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "アカウントの少なくとも1つがOwl for Exchangeアドオンを使用しているようです。ThunderbirdとOwlの間には既知の問題があり、現在対処中です。現時点では、メール作成時にはThunderAIを使用できますが、閲覧時には使用できません。"
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": "クリックして値を設定してください。"
+    },
+    "prompt_reply_full_text": {
+        "message": "以下のメールに返信してください。必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_reply_additional_text": {
+        "message": "返信に件名を含めないでください。"
+    },
+    "reply_same_lang": {
+        "message": "同じ言語で返信してください。"
+    },
+    "sign_msg_as": {
+        "message": "署名名："
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "以下のメール「{%selected_text%}」に返信してください。これはメールスレッド全体「{%mail_html_body%}」を考慮しています。必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "以下のメール「{%mail_text_body%}」に返信してください。{%additional_text%}。必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_rewrite_full_text": {
+        "message": "以下のテキストをより丁寧に書き直してください。書き直したテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "以下のテキストをよりフォーマルに書き直してください。書き直したテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_classify_full_text": {
+        "message": "以下のテキストを丁寧さ、温かさ、フォーマルさ、自己主張、攻撃性の観点から分類し、各カテゴリのパーセンテージを示してください。カテゴリとスコアのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prompt_summarize_this_full_text": {
+        "message": "以下のメールを箇条書きリストに要約してください。"
+    },
+    "prompt_translate_this_full_text": {
+        "message": "以下のメールを次の言語に翻訳してください："
+    },
+    "prompt_this_full_text": {
+        "message": "必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "メールにタグを追加"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "チェックすると、メールにタグを適用するアイテムがメニューに追加されます。"
+    },
+    "prompt_add_tags": {
+        "message": "このメールにタグを追加"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "以下のメールテキストを分析し、その内容を要約するタグのJSON配列を生成してください。テーマ、主要なトピック、関連する説明をタグとして使用してください。タグは簡潔でメールの内容に関連するものにしてください。\nメールテキスト：{%mail_text_body%}\nコンテキストのために以下の詳細を考慮してください：\n- 送信者：{%author%}\n- 宛先：{%recipients%}\n- CCリスト：{%cc_list%}\n- メール件名：{%mail_subject%}\nメールのテキストとコンテキストに基づいてタグを作成し、不要な情報や些細な詳細は無視してください。\nJSON形式のみで応答を生成してください。出力は追加のコメントやテキストなしのタグのJSON配列のみにしてください。使用するJSONフォーマットの例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "このメールを校正"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "以下のメールを校正し、スペルや文法の誤りを修正してください。修正したテキストのみで、余分なコメントや他のテキストなしで返信してください。\n\n「{%mail_typed_text%}」"
+    },
+    "placeholder_tags_current_email": {
+        "message": "メールタグ"
+    },
+    "placeholder_tags_full_list": {
+        "message": "既存のタグ"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "最大タグ数"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "AIが提案するタグの最大数。タグ数を制限しない場合は0を設定してください。"
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "タグ数を次に制限："
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "除外タグを非表示"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "チェックすると、除外リストにあるタグが確認ダイアログで非表示になります。"
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "タグ設定を管理"
+    },
+    "AddTags_PageTitle": {
+        "message": "タグ設定の管理"
+    },
+    "AddTags_info_default": {
+        "message": "このページでは、メールにタグを追加するためのデフォルトプロンプトの変更と除外リストの管理ができます。"
+    },
+    "AddTags_prompt_text_title": {
+        "message": "現在のプロンプトテキスト"
+    },
+    "AddTags_excl_list_title": {
+        "message": "除外リスト"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "メールに追加できないタグのリストです。"
+    },
+    "save": {
+        "message": "保存"
+    },
+    "addtags_info_additional_statements": {
+        "message": "この文はプロンプトの最後に追加されます："
+    },
+    "reset_default": {
+        "message": "デフォルトにリセット"
+    },
+    "reset": {
+        "message": "リセット"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "1行に1語、またはカンマ区切りで追加してください。"
+    },
+    "addtags_dialog_title": {
+        "message": "メールにタグを追加"
+    },
+    "addtags_exclude_tag": {
+        "message": "タグを除外"
+    },
+    "addtags_no_tags_received": {
+        "message": "AIからタグを受信できませんでした。"
+    },
+    "addtags_no_valid_tags": {
+        "message": "除外リストでフィルタリング後、有効なタグが見つかりませんでした。"
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI エラー"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI 警告"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "最初の文字を大文字に"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "チェックすると、タグのラベルは最初の文字のみ大文字で、残りは小文字になります。"
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "タグ追加オプション"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "フィードバックを共有してThunderAIの改善にご協力ください！"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "ここをクリック、1分で完了！"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "モデルを手動で入力"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "使用するモデル名をここに入力してください。"
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "言語を強制する"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "チェックすると、タグの言語がThunderAIオプションページで指定された言語に強制されます。"
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "タグは次の言語で書く必要があります："
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "APIキー"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini APIモデル"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Google Geminiモデルリストを更新"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Google Geminiモデルの取得中にエラー"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Google Gemini APIリクエストが失敗しました"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Google Gemini APIのAPIキーが設定されていません。オプションページで設定してください。"
+    },
+    "google_gemini_empty_model": {
+        "message": "Google Gemini APIのモデルが選択されていません。オプションページで選択してください。"
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "システム指示"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "システム指示を設定すると、モデルにタスクを理解するための追加コンテキストを提供し、よりカスタマイズされた応答を提供し、送信されるプロンプトに対して特定のガイドラインに従わせることができます。"
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "開発者メッセージ"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "開発者メッセージを設定すると、モデルにタスクを理解するための追加コンテキストを提供し、よりカスタマイズされた応答を提供し、送信されるプロンプトに対して特定のガイドラインに従わせることができます。"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "プロンプトで{%tags_full_list%}データプレースホルダーを使用して、使用可能なタグをリストできます。適切なプロンプトを使用すると、既存のタグリストからのみタグを選択させることができます。"
+    },
+    "placeholder_mail_typed_text": {
+        "message": "引用メール本文の前に入力されたテキスト"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "メール本文の引用テキスト"
+    },
+    "prompt_get_calendar_event": {
+        "message": "新しいカレンダーイベントを追加"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "以下のテキストからカレンダーイベントを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- イベントタイトル\n- 開始日時（指定されている場合はタイムゾーンを含む）\n- 終了日時（指定されている場合はタイムゾーンを含む）\n- 終日（言及されている場合）\n- 出席者\nデータはカレンダーイベントの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n期間が指定されていない場合は、1時間に設定してください。\n出席者：{%author%}、{%recipients%}、{%cc_list%}。存在する場合、私のアドレス{%account_email_address%}を除外してください。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"カレンダーイベントの概要をここに\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nテキスト：「{%selected_text%}」"
+    },
+    "prompt_get_task": {
+        "message": "新しいタスクを追加"
+    },
+    "prompt_get_task_full_text": {
+        "message": "以下のテキストからタスクを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- 期限日時（指定されている場合はタイムゾーンを含む）\n- タスクの概要\n- 開始日時（指定されている場合はタイムゾーンを含む）\nデータはタスクの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"タスクの概要をここに\"\n}\n日付に関する情報がない場合は、それらを削除してください。\nテキスト：「{%selected_text%}」"
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "選択テキストから新しいカレンダーイベントを追加"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "チェックすると、選択テキストからカレンダーイベント情報を取得するアイテムがメニューに追加されます。"
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "カレンダーイベントオプション"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "選択テキストから新しいタスクを追加"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "チェックすると、選択テキストからタスク情報を取得するアイテムがメニューに追加されます。"
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "タスクオプション"
+    },
+    "Select_your_timezone": {
+        "message": "タイムゾーンを選択"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "指定したタイムゾーンを強制"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "チェックすると、指定したタイムゾーンがカレンダーイベントとタスクに強制されます。"
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "カレンダーイベント設定を管理"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "カレンダーイベント設定の管理"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "このページでは、選択テキストからカレンダーイベントを取得するためのデフォルトプロンプトを変更できます。"
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "現在のプロンプトテキスト"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "プロンプトは自由に変更できますが、AIからの応答はデフォルトプロンプトで指定されたJSON形式である必要があります！"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "カレンダーイベントとタスク機能を使用するには、ThunderAI Sparksアドオンをインストールしてください。"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "カレンダーイベントとタスク機能を使用するには、ThunderAI Sparksアドオンの更新版をインストールしてください。"
+    },
+    "GetTask_PageTitle": {
+        "message": "タスク設定の管理"
+    },
+    "GetTask_info_default": {
+        "message": "このページでは、選択テキストからタスクを取得するためのデフォルトプロンプトを変更できます。"
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "タスク設定を管理"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "今すぐThunderAI Sparksをダウンロード！"
+    },
+    "placeholder_mail_datetime": {
+        "message": "メールの日時"
+    },
+    "placeholder_current_datetime": {
+        "message": "現在の日時"
+    },
+    "calendar_getting_data_error": {
+        "message": "カレンダーイベントデータの取得エラー"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "カレンダーイベントダイアログを開く際のエラー"
+    },
+    "task_getting_data_error": {
+        "message": "タスクデータの取得エラー"
+    },
+    "task_opening_dialog_error": {
+        "message": "タスクダイアログを開く際のエラー"
+    },
+    "no_valid_data_received": {
+        "message": "AIから有効なデータを受信できませんでした。"
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "タグを自動追加"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "チェックすると、AIが新着メールに自動的にタグを追加します。"
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "このページの下部で、この機能を有効にするアカウントを選択してください。"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "既存のタグを強制"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "チェックすると、AIは既存のタグのみを追加し、新しいタグは作成しません。"
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "これらのタグのみを使用"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "チェックすると、AIは以下のリストのタグのみを追加します。"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "リストには少なくとも1つのタグが必要です。1行に1タグ、またはカンマ区切りで追加してください。"
+    },
+    "prompt_add_tags_use_list": {
+        "message": "このカンマ区切りリストのタグのみを使用"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "受信トレイのメールにのみタグを追加"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "チェックすると、AIは受信トレイフォルダーで受信したメールにのみタグを追加します。"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "チェックすると、ThunderAIオプションページで選択されたものに関わらず、以下で指定されたモデルとAPIがメールへのタグ追加に使用されます。"
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "ThunderAIオプションで定義されたデフォルトの署名。"
+    },
+    "thunderai_def_lang": {
+        "message": "ThunderAIオプションで定義されたデフォルト言語。"
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "メール内の添付ファイルに関する情報"
+    },
+    "empty": {
+        "message": "このプレースホルダーはテキストを追加しませんが、メール本文がプロンプトの最後に自動的に追加されるのを防ぎます。"
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "自動スパムフィルター"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "チェックすると、ThunderAIがスパムメールを自動的にスパムフォルダーに移動します。"
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "スパムフィルター設定を管理"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "スパムフィルター設定の管理"
+    },
+    "SpamFilter_info_default": {
+        "message": "このページでは、スパムメールを検出するためのデフォルトプロンプトを変更できます。"
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "現在のプロンプトテキスト"
+    },
+    "prompt_spamfilter": {
+        "message": "スパムメールを検出"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "以下のメールを分析し、スパムかどうかを判断してください。不審なキーワード、過度な宣伝文句、誤解を招く件名、個人情報の要求、不審な送信者アドレスなどの要素を考慮してください。\n0（スパムではない）から100（スパム）までの値と、10語以内の説明を提供してください。\nメッセージデータが欠落している場合は、値を0（スパムではない）に設定し、理由を示してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"spamValue\": <0から100の整数>,\n\"explanation\": \"判断理由の簡単な説明\"\n}\n以下がメール情報です：\n送信者：「{%author%}」\n件名：「{%mail_subject%}」\nHTML本文：「{%mail_html_body%}」"
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "スパムフィルターオプション"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "特定のモデルとAPIを使用"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "チェックすると、ThunderAIオプションページで選択されたものに関わらず、以下で指定されたモデルとAPIがスパムフィルターに使用されます。"
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "スパムしきい値"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "AIが返す値がこのしきい値を超えた場合、メールはスパムフォルダーに移動されます。"
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "スパムしきい値が低すぎます！多くのメールがスパムと判定される可能性があります！"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "スパムしきい値がゼロです！すべてのメールがスパムと判定されます！"
+    },
+    "spamfilter_no_reports": {
+        "message": "まだスパムスクリーニングされたメッセージはありません。ここには現在のセッションの最新100件のスパムレポートが表示されます。"
+    },
+    "SpamReport_Title": {
+        "message": "スパムフィルターレポート"
+    },
+    "Date": {
+        "message": "日付"
+    },
+    "From": {
+        "message": "送信者"
+    },
+    "Subject": {
+        "message": "件名"
+    },
+    "Spam_Value": {
+        "message": "スパム値"
+    },
+    "Moved_to_Spam": {
+        "message": "スパムに移動"
+    },
+    "Explanation": {
+        "message": "説明"
+    },
+    "Report_Date": {
+        "message": "レポート日"
+    },
+    "spamfilter_moved": {
+        "message": "はい"
+    },
+    "spamfilter_not_moved": {
+        "message": "いいえ"
+    },
+    "context_menu_mzta-add-tags": {
+        "message": "タグを追加"
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": "スパムを分析"
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": "「タグを追加」コンテキストメニュー項目を表示"
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": "チェックすると、メッセージリストでメールを右クリックした際に「タグを追加」コンテキストメニュー項目が表示されます。"
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": "「スパムを分析」コンテキストメニュー項目を表示"
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": "チェックすると、メッセージリストでメールを右クリックした際に「スパムを分析」コンテキストメニュー項目が表示されます。"
+    },
+    "noActiveCalendar": {
+        "message": "編集可能なカレンダーが見つかりません！"
+    },
+    "btn_show_differences": {
+        "message": "差分を表示"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "元のテキストと変更後のテキストの差分"
+    },
+    "apiwebchat_you": {
+        "message": "あなた"
+    },
+    "apiwebchat_info": {
+        "message": "情報"
+    },
+    "apiwebchat_error": {
+        "message": "エラー"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "この回答を使用"
+    },
+    "apiwebchat_stopping": {
+        "message": "停止中"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "データ受信中"
+    },
+    "hyprland_warning": {
+        "message": "AIチャットウィンドウを開く際に問題が発生した場合は、高さと幅の値を0に設定してみてください。この問題は、Hyprlandを使用している場合など、特定の環境のLinuxで発生することがあります。"
+    },
+    "remember_CORS": {
+        "message": "サーバーでCORS設定を行う必要があることを忘れないでください！"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "OpenAI互換APIを使用するには、サーバーでCORS設定が必要な場合があります。"
+    },
+    "CORS_alternative_1": {
+        "message": "CORS設定に問題がありますか？"
+    },
+    "CORS_alternative_2": {
+        "message": "下のボタンを押して<all_urls>権限を付与し、CORSの問題を回避してください。"
+    },
+    "CORS_give_allurls_perm": {
+        "message": "「すべてのURL」権限を付与"
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "プレーンテキストで作成"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "メールをプレーンテキスト形式で作成している場合は、このオプションをチェックしてください。"
+    },
+    "Replace_No_Selected_Text": {
+        "message": "テキストが選択されていません。AIの応答をメールの先頭に挿入しますか？"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "コンテキストトークン数"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Ollama APIで使用するコンテキストトークンの数。サーバーにパラメーターとして渡したくない場合は0を設定してください。"
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "ChatGPT Web連携を使用するには、必要な権限を付与する必要があります。"
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Claude API連携を使用するには、必要な権限を付与する必要があります。"
+    },
+    "ask_openai_api_permission_1": {
+        "message": "OpenAI API連携を使用するには、必要な権限を付与する必要があります。"
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "ここをクリックして新しいタブを開き、指示に従ってください。"
+    },
+    "ask_integration_permission_2": {
+        "message": "ここをクリックして続行してください。"
+    },
+    "ask_integration_permission_ok": {
+        "message": "権限が付与されました。ここをクリックしてこのタブを閉じ、メインウィンドウに戻ることができます。"
+    },
+    "AccountSelector_AutoTags": {
+        "message": "自動タグ付けを有効にするアカウントを選択"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "各変更は即座に保存されます。"
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "スパムフィルターを有効にするアカウントを選択"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "ChatGPT Webプロジェクト"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "ChatGPT Webインターフェースで強制されるプロジェクトです。"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT WebカスタムGPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "ChatGPT Webインターフェースで強制されるカスタムGPTです。"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "次の形式である必要があります："
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "関連するChatGPTページを開いたときに、ブラウザのURLフィールドで正しい値を確認できます。"
+    },
+    "customPrompts_Properties": {
+        "message": "プロパティ"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "追加プロパティを表示"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "追加プロパティを非表示"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "追加プロパティ"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "オプションまたはプロンプトでプロジェクトが指定されている場合、カスタムGPT設定が上書きされます。"
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "オプションまたはプロンプトでプロジェクトが指定されている場合、一時チャットは使用されません。"
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Claude APIキー"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Claude API"
+    },
+    "Anthropic_Models": {
+        "message": "Claudeモデル"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Claudeモデルリストを更新"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Claudeモデルの取得中にエラー"
+    },
+    "Anthropic_Version": {
+        "message": "Claude APIバージョン"
+    },
+    "Anthropic_Version_Info": {
+        "message": "必須。何をしているか分からない限り、この値を変更しないでください。詳細："
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "最大トークン数"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "補完で生成するトークンの最大数。プロンプトのトークン数とmax_tokensの合計は、モデルのコンテキスト長を超えることはできません。"
+    },
+    "anthropic_empty_apikey": {
+        "message": "Claude APIのAPIキーが設定されていません。オプションページで設定してください。"
+    },
+    "anthropic_empty_model": {
+        "message": "Claude APIのモデルが選択されていません。オプションページで選択してください。"
+    },
+    "anthropic_empty_version": {
+        "message": "Claude APIのバージョン文字列が設定されていません。オプションページで設定してください。"
+    },
+    "anthropic_api_request_failed": {
+        "message": "Claude APIリクエストが失敗しました"
+    },
+    "_api_connecting": {
+        "message": "$api_string$に以下の設定で接続を試みています...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "モデル"
+    },
+    "_api_connecting_host": {
+        "message": "ホスト"
+    },
+    "_api_connecting_version": {
+        "message": "バージョン"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "利用可能なサービス"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "OpenAI互換APIで利用可能なサービスから1つを選択するか、手動で入力してください。"
+    },
+    "Custom": {
+        "message": "カスタム"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "設定「$config_name$」を適用してもよろしいですか？",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "テキストを選択すると、その部分のみが考慮されます。"
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "ストレージを使用"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "チェックすると、チャットがOpenAIに保存されます。"
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "使用するサンプリング温度（0から2の間）。0.8のような高い値は出力をよりランダムにし、0.2のような低い値はより集中的で決定論的にします。"
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "モデルの温度。温度を上げると、モデルはより創造的に回答します。デフォルト値は0.8です。0から1の間の値を使用することをお勧めします。"
+    },
+    "prefs_ollama_think": {
+        "message": "思考を有効にする"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "チェックすると、モデルは回答前に思考します。このオプションは「think」機能をサポートするモデルでのみ機能します。"
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "クリックして返信タイプを変更"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "除外の完全一致"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "チェックすると、除外リストの単語がタグと完全に一致した場合のみ除外されます。チェックしない場合、タグに含まれている場合も一致します。"
+    },
+    "customDataPH_manageDataPH": {
+        "message": "データプレースホルダーを管理"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "カスタムプロンプトを作成するときと同様に、オートコンプリートでデフォルトのデータプレースホルダーを使用することもできます。"
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "このページでは、カスタムプロンプトで使用するカスタムデータプレースホルダーを定義できます。"
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "同じIDの既存のデータプレースホルダーは上書きされます。新しいIDのプレースホルダーは追加されます。"
+    },
+    "customDataPH_ExportAll": {
+        "message": "すべてのカスタムデータプレースホルダーをエクスポート"
+    },
+    "customDataPH_Import": {
+        "message": "新しいデータプレースホルダーをインポート"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "データプレースホルダーテキスト"
+    },
+    "customDataPH_saving_custom": {
+        "message": "カスタムデータプレースホルダーを保存中..."
+    },
+    "customDataPH_saved": {
+        "message": "カスタムデータプレースホルダーを保存しました！"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "データプレースホルダーを追加"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "新しいカスタムデータプレースホルダーをインポートしようとしています。"
+    },
+    "importCustomDataPH_start_import": {
+        "message": "カスタムデータプレースホルダーのインポートを開始中..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "カスタムデータプレースホルダーのインポートが完了しました！「すべて保存」ボタンをクリックして変更を保存してください。"
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "インポートしようとしているファイルは有効なカスタムデータプレースホルダーファイルではありません。"
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "インポートしようとしているファイルには有効なカスタムデータプレースホルダーが含まれていません。"
+    },
+    "customDataPH_add_to_menu": {
+        "message": "メニューに追加されたプロンプトで使用可能"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "AIの応答に含まれる<br>タグは改行に置換されます。"
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "モデルリストをクリア"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "モデルリストをクリアしてもよろしいですか？この操作は元に戻せません。"
+    },
+    "prefs_api_temperature": {
+        "message": "温度"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "使用するサンプリング温度（0から2の間）。0.8のような高い値は出力をよりランダムにし、0.2のような低い値はより集中的で決定論的にします。"
+    },
+    "chatgpt_click_force_completion": {
+        "message": "ChatGPTが完了したかどうかを確認できないようです。ここをクリックしてジョブの完了を強制してください。"
+    },
+    "warn_API_needed": {
+        "message": "この機能を使用するには、ChatGPT Web連携ではなくAPI連携が必要です。上のチェックボックスをチェックしてから左のボタンをクリックすると、機能設定ページで特定のAPIを定義できます。"
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "思考バジェット"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "思考に使用するトークン数を定義します。選択したモデルが思考をサポートしていない場合、またはデフォルトの方法を使用したい場合は、このフィールドを空白のままにしてください。思考を無効にするには0を、動的思考を有効にするには-1を入力してください。"
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "このパラメーターは0.0から2.0の間の数値である必要があります。出力のランダム性を制御します。デフォルト値はモデルによって異なります。APIコールでパラメーターを設定しない場合は空のままにしてください。"
+    },
+    "SelectAll": {
+        "message": "すべて選択"
+    },
+    "DeselectAll": {
+        "message": "すべて解除"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "システムプロンプト"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "システムプロンプトを使用してClaudeに役割を与えることで、パフォーマンスを向上させることができます。ロールプロンプティングと呼ばれるこの技術は、Claudeでシステムプロンプトを使用する最も強力な方法です。適切な役割により、Claudeを一般的なアシスタントから仮想的な専門家に変えることができます。"
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "応答に注入されるランダム性の量。デフォルトは1.0。0.0から1.0の範囲。分析的/多肢選択には0.0に近い値を、創造的で生成的なタスクには1.0に近い値を使用してください。温度が0.0でも、結果は完全に決定論的にはなりません。"
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "この連携のモデルを取得するために必要なオプション権限が拒否されました。"
     }
 }
