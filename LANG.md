@@ -6,6 +6,7 @@ es
 fr
 hr
 it
+ja
 pl
 pt-br
 ru
