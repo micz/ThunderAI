@@ -7,6 +7,7 @@
 <h2>Version 3.8.3 - 22/01/2026</h2>
       <ul>
         <li>Fix: Correctly saving the API settings in new custom prompts [<a href="https://github.com/micz/ThunderAI/issues/623">#623</a>].</li>
+        <li>Japanese (ja) translation added, thanks to <a href="https://hosted.weblate.org/user/watya1/">Taichi Ito</a>.</li>
       </ul>
 <h2>Version 3.8.2 - 20/01/2026</h2>
       <ul>
