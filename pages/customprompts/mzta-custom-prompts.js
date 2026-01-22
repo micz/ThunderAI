@@ -145,7 +145,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         afterTrId: 'api_ui_anchor',
         selectId: 'new_prompt_api_type',
         no_chatgpt_web: true,
-        taLog: taLog
+        taLog: taLog,
+        customButtonLabel: browser.i18n.getMessage("Reset"),
+        customButtonCallback: () => {
+            resetApiSettings('new_prompt_api_type');
+        }
     });
 
     // Fill defaults for new prompt form
@@ -477,42 +481,7 @@ function handleEditClick(e) {
             taLog: taLog,
             customButtonLabel: browser.i18n.getMessage("Reset"),
             customButtonCallback: () => {
-                const selectEl = document.getElementById(selectId);
-                if (selectEl) {
-                    selectEl.value = '';
-                    selectEl.dispatchEvent(new Event('change'));
-                }
-
-                // Clear UI inputs
-                for (const [integration, options] of Object.entries(integration_options_config)) {
-                    for (const key of Object.keys(options)) {
-                        const propName = `${integration}_${key}`;
-                        const inputId = `${prefix}${propName}`;
-                        const inputEl = document.getElementById(inputId);
-                        if (inputEl) {
-                            if (inputEl.type === 'checkbox') {
-                                inputEl.checked = false;
-                            } else {
-                                inputEl.value = '';
-                            }
-                        }
-                    }
-                }
-
-                // Update promptsList
-                const item = promptsList.get('id', id)[0];
-                if (item) {
-                    let newValues = item.values();
-                    newValues.api_type = '';
-                    for (const [integration, options] of Object.entries(integration_options_config)) {
-                        for (const key of Object.keys(options)) {
-                            const propName = `${integration}_${key}`;
-                            newValues[propName] = '';
-                        }
-                    }
-                    item.values(newValues);
-                }
-                setSomethingChanged();
+                resetApiSettings(selectId, id);
             }
         }).then(() => {
             populateConnectionUI(tr, id, prefix, selectId);
@@ -533,6 +502,47 @@ function handleEditClick(e) {
     showItemRowEditor(tr);
     toggleDiffviewer(e);
     toggleAdditionalPropertiesShow(tr);
+}
+
+function resetApiSettings(selectId, id = null) {
+    let prefix = '';
+    if (id) prefix = `prompt_${id}_`;
+    const selectEl = document.getElementById(selectId);
+    if (selectEl) {
+        selectEl.value = '';
+        selectEl.dispatchEvent(new Event('change'));
+    }
+
+    // Clear UI inputs
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputId = `${prefix}${propName}`;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) {
+                if (inputEl.type === 'checkbox') {
+                    inputEl.checked = false;
+                } else {
+                    inputEl.value = '';
+                }
+            }
+        }
+    }
+
+    // Update promptsList
+    const item = promptsList.get('id', id)[0];
+    if (item) {
+        let newValues = item.values();
+        newValues.api_type = '';
+        for (const [integration, options] of Object.entries(integration_options_config)) {
+            for (const key of Object.keys(options)) {
+                const propName = `${integration}_${key}`;
+                newValues[propName] = '';
+            }
+        }
+        item.values(newValues);
+    }
+    setSomethingChanged();
 }
 
 function populateConnectionUI(tr, id, prefix, selectId) {
