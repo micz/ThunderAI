@@ -1,1 +1,20 @@
-{}
+{
+  "prefs_OptionText_auto_summary": {
+      "message": "Povoliť automatické AI zhrnutie pre náhľady správ"
+  },
+  "prefs_OptionText_auto_summary_Info": {
+      "message": "Ak je zaškrtnuté, ThunderAI automaticky vygeneruje a zobrazí AI zhrnutia nad e-mailovými správami, keď sú otvorené. Mějte na pamäti, že to znamená, že všetky správy, ktoré si prezeráte, budú okamžite odoslané do nakonfigurovanej AI služby."
+  },
+  "auto_summary_title": {
+      "message": "Zhrnutie ThunderAI"
+  },
+  "auto_summary_generating": {
+      "message": "Generovanie AI zhrnutia..."
+  },
+  "auto_summary_failed": {
+      "message": "Zlyhanie generovania AI zhrnutia. Skontrolujte svoje nastavenia a skúste to znova."
+  },
+  "auto_summary_prompt": {
+      "message": "Poskytnite stručné zhrnutie nasledujúcej e-mailovej správy. Zhrnutie by malo mať maximálne 3-5 viet a zachytiť hlavné body:\n\n"
+  }
+}
