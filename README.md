@@ -82,8 +82,9 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
-- Chinese (Simplified): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
-- Chinese (Traditional): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Chinese (Simplified) (zh_Hans): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional) (zh_Hant): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Croatian (hr): Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
 - Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French (fr): Generated automatically, [Noam](https://github.com/noam-sc) <img src="https://micz.it/weblate/thunderai/fr.svg">
 - German (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
