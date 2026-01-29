@@ -29,7 +29,7 @@ export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuIconsPath = {
   [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
   [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
-  // [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
 };
 
 export function getLanguageDisplayName(languageCode) {
