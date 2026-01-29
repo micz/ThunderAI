@@ -1371,22 +1371,6 @@
     "message": "Summarize",
     "description": ""
   },
-  "prefs_OptionText_add_tags_context_menu": {
-    "message": "Show the \"Add tags\" context menu item",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_context_menu_Info": {
-    "message": "If checked, the \"Add tags\" context menu item will be shown when right-clicking on an email in the messages list.",
-    "description": ""
-  },
-  "prefs_OptionText_spamfilter_context_menu": {
-    "message": "Show the \"Analyze for spam\" context menu item",
-    "description": ""
-  },
-  "prefs_OptionText_spamfilter_context_menu_Info": {
-    "message": "If checked, the \"Analyze for spam\" context menu item will be shown when right-clicking on an email in the messages list.",
-    "description": ""
-  },
   "noActiveCalendar": {
     "message": "No editable calendar found!",
     "description": ""

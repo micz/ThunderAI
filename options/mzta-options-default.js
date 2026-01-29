@@ -123,7 +123,6 @@ export const prefs_default = {
     add_tags_auto_only_inbox: true,
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
-    add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
     get_calendar_event: true,
     get_task: true,
@@ -131,7 +130,6 @@ export const prefs_default = {
     calendar_timezone: '',
     spamfilter: false,
     spamfilter_threshold: 70,
-    spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
     summarize: false,
     ...generated_prefs

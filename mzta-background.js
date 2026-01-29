@@ -809,8 +809,6 @@ async function reload_pref_init(){
         summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-        add_tags_context_menu: prefs_default.add_tags_context_menu,
-        spamfilter_context_menu: prefs_default.spamfilter_context_menu,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
@@ -891,34 +889,16 @@ function setupStorageChangeListener() {
             }
 
             // context menu changes for add_tags and spamfilter
-            if (changes.add_tags_context_menu) {
-                if(changes.add_tags_context_menu.newValue){
+            if (changes.add_tags) {
+                if(changes.add_tags.newValue){
                     addContextMenu(contextMenuID_AddTags);
                 }else{
                     removeContextMenu(contextMenuID_AddTags);
                 }
             }
-            if (changes.add_tags) {
-                if(changes.add_tags.newValue){
-                    if(prefs_init.add_tags_context_menu){
-                        addContextMenu(contextMenuID_AddTags);
-                    }
-                }else{
-                    removeContextMenu(contextMenuID_AddTags);
-                }
-            }
-            if (changes.spamfilter_context_menu) {
-                if(changes.spamfilter_context_menu.newValue){
-                    addContextMenu(contextMenuID_Spamfilter);
-                }else{
-                    removeContextMenu(contextMenuID_Spamfilter);
-                }
-            }
             if (changes.spamfilter) {
                 if(changes.spamfilter.newValue){
-                    if(prefs_init.spamfilter_context_menu){
-                        addContextMenu(contextMenuID_Spamfilter);
-                    }
+                    addContextMenu(contextMenuID_Spamfilter);
                 }else{
                     removeContextMenu(contextMenuID_Spamfilter);
                 }
@@ -982,12 +962,12 @@ function removeContextMenu(menu_id) {
 
 function addContextMenuItems() {
     // Add Context menu: Add tags
-    if(prefs_init.add_tags && prefs_init.add_tags_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
+    if(prefs_init.add_tags && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
         addContextMenu(contextMenuID_AddTags);
     }
 
     // Add Context menu: Spamfilter
-    if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
+    if(prefs_init.spamfilter && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
         addContextMenu(contextMenuID_Spamfilter);
     }
     
