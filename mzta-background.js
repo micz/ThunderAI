@@ -885,6 +885,7 @@ function setupStorageChangeListener() {
                 if(newConnectionType === "chatgpt_web"){
                     removeContextMenu(contextMenuID_AddTags);
                     removeContextMenu(contextMenuID_Spamfilter);
+                    removeContextMenu(contextMenuID_Summarize);
                 }
                 addContextMenuItems();
             }
@@ -924,11 +925,9 @@ function setupStorageChangeListener() {
             }
             if (changes.summarize) {
                 if (changes.summarize.newValue){
-                    if (prefs_init.summarize){
-                        addContextMenu(contextMenuID_Summarize);
-                    }
+                    addContextMenu(contextMenuID_Summarize);
                 } else {
-                  removeContextMenu(contextMenuID_Summarize);
+                    removeContextMenu(contextMenuID_Summarize);
                 }
             }
             reload_pref_init();
@@ -993,7 +992,7 @@ function addContextMenuItems() {
     }
     
     // Add Context menu: Summarize
-    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type && prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
+    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type, prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
         addContextMenu(contextMenuID_Summarize);
     }
 }
