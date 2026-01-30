@@ -6,6 +6,7 @@
 
 <h2>Version 4.0.0 - ??/??/2026</h2>
       <ul>
+        <li>ThunderAI is now compatible only with Thunderbird 140 and later [<a href="https://github.com/micz/ThunderAI/issues/616">#616</a>].</li>
         <li><i>[All APIs]</i> Added a special prompt to summarize one or more emails, using a context menu command [<a href="https://github.com/micz/ThunderAI/issues/615">#615</a>]. Thanks to <a href="https://github.com/gdkrmr">Guido Kraemer</a> for his great work on this feature.</li>
         <li><i>[All APIs]</i> "Analyze for spam" and "Add tags" context menu items are always shown when the corresponding feature is enabled [<a href="https://github.com/micz/ThunderAI/issues/609">#609</a>].</li>
         <li>...</li>
