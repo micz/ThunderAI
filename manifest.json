@@ -8,7 +8,7 @@
     "browser_specific_settings": {
         "gecko": {
             "id": "thunderai@micz.it",
-            "strict_min_version": "140.0"
+            "strict_min_version": "140.*"
         }
     },
     "message_display_action": {
