@@ -669,6 +669,29 @@ export function validateCustomData_ChatGPTWeb(event) {
   document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }
 
+// From https://thunderbird.topicbox.com/groups/addons/Tafa58394231a18f8-M3e565a75287313ea4395ff5f
+// Thanks to John Bieling
+export async function requestSitePermission(url) {
+  // Normalize the origin to ensure it ends with /*
+  const origin = url.replace(/\/?\*?$/, '/*');
+
+  const hasPermission = await browser.permissions.contains({
+    origins: [origin],
+  });
+
+  if (hasPermission) {
+    // Permission already granted — safe to save and use the URL.
+    return true;
+  }
+
+  const granted = await browser.permissions.request({
+    origins: [origin],
+  });
+
+  // If not granted, it's not safe to save or use the URL,
+  // since the user explicitly denied access.
+  return granted;
+}
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
