@@ -65,7 +65,7 @@
     "content_scripts": [
         {
             "matches": ["https://*.chatgpt.com/*"],
-            "js": ["js/tb115_segmenter/tb115_loader.js","js/lib/diff.js"],
+            "js": ["js/lib/diff.js"],
             "all_frames": true,
             "run_at": "document_start"
         }
