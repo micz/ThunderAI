@@ -1314,5 +1314,14 @@
     },
     "prefs_OptionText_add_tags_use_specific_integration_Info": {
         "message": ""
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": ""
+    },
+    "chatgpt_win_diff_title": {
+        "message": ""
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": ""
     }
 }
