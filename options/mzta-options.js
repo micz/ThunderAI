@@ -21,7 +21,6 @@ import { taLogger } from '../js/mzta-logger.js';
 import {
   ChatGPTWeb_models,
   checkSparksPresence,
-  isThunderbird128OrGreater,
   openTab,
   getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
@@ -35,7 +34,6 @@ import {
 } from '../pages/_lib/connection-ui.js';
 
 let taLog = new taLogger("mzta-options",true);
-let _isThunderbird128OrGreater = true;
 
 function saveOptions(e) {
   e.preventDefault();
@@ -228,8 +226,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
 
-  _isThunderbird128OrGreater = await isThunderbird128OrGreater();
-
   // show Owl warning
   const accountList = await messenger.accounts.list(false);
   if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
@@ -248,11 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function _addtags_el_change() {
       if (event.target.checked) {
         let granted = false;
-        if(_isThunderbird128OrGreater){
-          granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
-        }else{
-          granted = await messenger.permissions.request({ permissions: ["messagesTags"] });
-        }
+        granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
           addtags_info_btn.disabled = 'disabled';

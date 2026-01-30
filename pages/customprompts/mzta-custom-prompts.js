@@ -34,7 +34,6 @@ import {
 } from "../../pages/_lib/connection-ui.js";
 import {
     ChatGPTWeb_models,
-    isThunderbird128OrGreater,
     getLocalStorageUsedSpace,
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
@@ -1214,14 +1213,11 @@ async function setStorageSpace() {
 }
 
 
-if(await isThunderbird128OrGreater()){
-    window.addEventListener('beforeunload', function (event) {
-        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
-        if (somethingChanged) {
-            event.preventDefault();
-        }
-    });    
-}
+window.addEventListener('beforeunload', function (event) {
+    if (somethingChanged) {
+        event.preventDefault();
+    }
+});
 
 async function checkPromptsConfigForPlaceholders(textarea){
     let curr_text = textarea.value;

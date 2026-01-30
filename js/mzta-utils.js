@@ -349,17 +349,6 @@ export function i18nConditionalGet(str) {
   return str; // Return the original string if the conditions are not met
 }
 
-export async function isThunderbird128OrGreater(){
-  try {
-    const info = await browser.runtime.getBrowserInfo();
-    const version = info.version;
-    return compareThunderbirdVersions(version, '128.0') >= 0;
-  } catch (error) {
-    console.error('[ThunderAI] Error retrieving browser information:', error);
-    return false;
-  }
-}
-
 function compareThunderbirdVersions(v1, v2) {
   const v1parts = v1.split('.').map(Number);
   const v2parts = v2.split('.').map(Number);
@@ -385,12 +374,9 @@ export function generateCallID(length = 10) {
 
 export async function getTagsList(){
   let messageTags = [];
-  if(await isThunderbird128OrGreater()) {
-    // without the tags related permissions, we can't get the tags list
-      messageTags = await browser.messages.tags.list();
-  } else {
-      messageTags = await browser.messages.listTags();
-  }
+  // without the tags related permissions, we can't get the tags list
+  messageTags = await browser.messages.tags.list();
+
   const output = messageTags.map(tag => tag.tag).join(', ');
 
   const output2 = messageTags.reduce((acc, messageTag) => {
@@ -411,11 +397,7 @@ export async function createTag(tag) {
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
-    if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
-    }else{
-      return browser.messages.createTag(tagKey, tag, generateHexColorForTag());
-    }
+    return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
   }
