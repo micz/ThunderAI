@@ -111,6 +111,7 @@ _The language status represents the percentage of translated strings in the late
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
 - [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
 - [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
+- [Roundicons](https://www.flaticon.com/authors/roundicons) for the summarize context menu icon
 
 
 <br>
