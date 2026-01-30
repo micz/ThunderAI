@@ -159,11 +159,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     summarize_textarea_email_template.value = summarize_email_template.text;
-    summarize_reset_email_template_btn.disabled = (summarize_email_template.value === browser.i18n.getMessage("prompt_summarize_email_template"));
+    summarize_reset_email_template_btn.disabled = (summarize_textarea_email_template.value === browser.i18n.getMessage("prompt_summarize_email_template_full_text"));
     summarize_textarea.value = summarize_prompt.text;
     summarize_reset_btn.disabled = (summarize_textarea.value === browser.i18n.getMessage("prompt_summarize_full_text"));
     summarize_email_separator_textarea.value = summarize_email_separator.text;
-    summarize_email_separator_reset_btn.disabled = (summarize_email_separator.value === browser.i18n.getMessage("prompt_summarize_email_separator"));
+    summarize_email_separator_reset_btn.disabled = (summarize_email_separator_textarea.value === browser.i18n.getMessage("prompt_summarize_email_separator_full_text"));
 
     autocompleteSuggestions = (await getPlaceholders(true))
         .filter((p) => p.id !== "additional_text")
