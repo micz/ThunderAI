@@ -13,5 +13,1296 @@
     },
     "prompt_rewrite_formal": {
         "message": "Újraírás formálisan"
+    },
+    "Replace_No_Selected_Text": {
+        "message": ""
+    },
+    "chatgpt_win_job_completed": {
+        "message": ""
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": ""
+    },
+    "chatgpt_win_model_warning": {
+        "message": ""
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": ""
+    },
+    "addtags_exclude_tag": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": ""
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": ""
+    },
+    "prompt_summarize_this_full_text": {
+        "message": ""
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": ""
+    },
+    "chatgpt_win_send": {
+        "message": ""
+    },
+    "customPrompts_form_label_enabled": {
+        "message": ""
+    },
+    "customPrompts_form_label_Text": {
+        "message": ""
+    },
+    "prefs_OptionText_get_task": {
+        "message": ""
+    },
+    "StorageSpace": {
+        "message": ""
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": ""
+    },
+    "customPrompts_do_reply": {
+        "message": ""
+    },
+    "customPrompts_show_additional_info": {
+        "message": ""
+    },
+    "save": {
+        "message": ""
+    },
+    "backToOptionsText": {
+        "message": ""
+    },
+    "customDataPH_form_label_Text": {
+        "message": ""
+    },
+    "Anthropic_System_Prompt": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": ""
+    },
+    "prompt_classify_full_text": {
+        "message": ""
+    },
+    "prefsInfoDesc_3": {
+        "message": ""
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": ""
+    },
+    "customPrompts_btnCancel": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": ""
+    },
+    "prefs_OptionText_download_now": {
+        "message": ""
+    },
+    "placeholder_cc_list": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": ""
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": ""
+    },
+    "OpenChatGPTTab_Info": {
+        "message": ""
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": ""
+    },
+    "prompt_proofread_this": {
+        "message": ""
+    },
+    "reset": {
+        "message": ""
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": ""
+    },
+    "Report_Date": {
+        "message": ""
+    },
+    "customPrompts_substitute_text": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": ""
+    },
+    "chatgpt_win_get_answer": {
+        "message": ""
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": ""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": ""
+    },
+    "customPrompts_start_import": {
+        "message": ""
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": ""
+    },
+    "hyprland_warning": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_context_menu": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": ""
+    },
+    "addtags_no_tags_received": {
+        "message": ""
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": ""
+    },
+    "customDataPH_ExportAll": {
+        "message": ""
+    },
+    "Subject": {
+        "message": ""
+    },
+    "Ollama_Models_Fetch": {
+        "message": ""
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": ""
+    },
+    "TranslateText": {
+        "message": ""
+    },
+    "prefsInfoDesc_2": {
+        "message": ""
+    },
+    "_api_connecting": {
+        "message": "",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": ""
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": ""
+    },
+    "AddTags_excl_list_title": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_model_tooltip": {
+        "message": ""
+    },
+    "task_opening_dialog_error": {
+        "message": ""
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": ""
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": ""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": ""
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": ""
+    },
+    "customPrompts_btnEdit": {
+        "message": ""
+    },
+    "apiwebchat_error": {
+        "message": ""
+    },
+    "GetTask_info_default": {
+        "message": ""
+    },
+    "ollama_api_request_failed": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": ""
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": ""
+    },
+    "placeholder_mail_subject": {
+        "message": ""
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": ""
+    },
+    "chatgpt_empty_model": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": ""
+    },
+    "chatgpt_empty_apikey": {
+        "message": ""
+    },
+    "Explanation": {
+        "message": ""
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": ""
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": ""
+    },
+    "AddTags_excl_list_infoline": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": ""
+    },
+    "placeholder_selected_text": {
+        "message": ""
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": ""
+    },
+    "prefs_ollama_think_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": ""
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": ""
+    },
+    "prefsInfoDesc_1": {
+        "message": ""
+    },
+    "Anthropic_Models_Fetch": {
+        "message": ""
+    },
+    "Optional": {
+        "message": ""
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": ""
+    },
+    "prompt_reply_additional_text": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": ""
+    },
+    "OpenChatGPTTab": {
+        "message": ""
+    },
+    "Spam_Value": {
+        "message": ""
+    },
+    "ask_integration_permission_2": {
+        "message": ""
+    },
+    "btnNew_string": {
+        "message": ""
+    },
+    "thunderai_def_lang": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": ""
+    },
+    "addtags_dialog_title": {
+        "message": ""
+    },
+    "msg_prompt_too_long": {
+        "message": ""
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": ""
+    },
+    "placeholder_account_email_address": {
+        "message": ""
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": ""
+    },
+    "customPrompts_add_to_menu": {
+        "message": ""
+    },
+    "placeholder_mail_attachments_info": {
+        "message": ""
+    },
+    "remember_CORS": {
+        "message": ""
+    },
+    "_api_connecting_version": {
+        "message": ""
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": ""
+    },
+    "prefs_ollama_num_ctx": {
+        "message": ""
+    },
+    "OpenAIComp_empty_model": {
+        "message": ""
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": ""
+    },
+    "btn_show_differences": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_context_menu_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": ""
+    },
+    "placeholder_current_datetime": {
+        "message": ""
+    },
+    "prefs_ollama_think": {
+        "message": ""
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": ""
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": ""
+    },
+    "prompt_spamfilter": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": ""
+    },
+    "placeholder_tags_full_list": {
+        "message": ""
+    },
+    "importPrompts_invalidFile": {
+        "message": ""
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": ""
+    },
+    "customPrompts_btnDelete": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": ""
+    },
+    "addtags_excl_list_infoline2": {
+        "message": ""
+    },
+    "DeselectAll": {
+        "message": ""
+    },
+    "placeholder_additional_text": {
+        "message": ""
+    },
+    "customPrompts_Properties": {
+        "message": ""
+    },
+    "SendingPrompt": {
+        "message": ""
+    },
+    "WaitingServerResponse": {
+        "message": ""
+    },
+    "customDataPH_add_to_menu": {
+        "message": ""
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": ""
+    },
+    "customPrompts_hide_additional_info": {
+        "message": ""
+    },
+    "anthropic_empty_model": {
+        "message": ""
+    },
+    "placeholder_junk_score": {
+        "message": ""
+    },
+    "prefsDonation_1": {
+        "message": ""
+    },
+    "SearchPrompt": {
+        "message": ""
+    },
+    "Loading": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": ""
+    },
+    "placeholder_author": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": ""
+    },
+    "prompt_summarize_this": {
+        "message": ""
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": ""
+    },
+    "customPrompts_close_button": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": ""
+    },
+    "apiwebchat_selection_info": {
+        "message": ""
+    },
+    "placeholder_folder_name": {
+        "message": ""
+    },
+    "prefs_status_page": {
+        "message": ""
+    },
+    "sign_msg_as": {
+        "message": ""
+    },
+    "apiwebchat_stopping": {
+        "message": ""
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": ""
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": ""
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": ""
+    },
+    "customPrompts_btnOK": {
+        "message": ""
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": ""
+    },
+    "get_task_prompt_prefs_title": {
+        "message": ""
+    },
+    "prefs_Connection_type": {
+        "message": ""
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": ""
+    },
+    "Debug": {
+        "message": ""
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": ""
+    },
+    "apiwebchat_you": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": ""
+    },
+    "ask_openai_api_permission_1": {
+        "message": ""
+    },
+    "placeholder_mail_quoted_text": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": ""
+    },
+    "customPrompts_reloading_menus": {
+        "message": ""
+    },
+    "AccountSelector_AutoTags": {
+        "message": ""
+    },
+    "prompt_add_tags_force_lang": {
+        "message": ""
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": ""
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": ""
+    },
+    "prompt_this_full_text": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": ""
+    },
+    "placeholder_mail_html_body": {
+        "message": ""
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": ""
+    },
+    "prompt_reply_full_text": {
+        "message": ""
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": ""
+    },
+    "customPrompts_form_label_Name": {
+        "message": ""
+    },
+    "anthropic_empty_version": {
+        "message": ""
+    },
+    "AllowedValues": {
+        "message": ""
+    },
+    "chatgpt_force_completion_title": {
+        "message": ""
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": ""
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": ""
+    },
+    "prompt_add_tags_maxnum": {
+        "message": ""
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": ""
+    },
+    "placeholder_selected_html": {
+        "message": ""
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": ""
+    },
+    "prompt_rewrite_full_text": {
+        "message": ""
+    },
+    "prefs_API_Host_Info": {
+        "message": ""
+    },
+    "Moved_to_Spam": {
+        "message": ""
+    },
+    "placeholder_mail_datetime": {
+        "message": ""
+    },
+    "customPrompts_ExportAll": {
+        "message": ""
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": ""
+    },
+    "customPrompts_unsaved_changes": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": ""
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": ""
+    },
+    "Custom": {
+        "message": ""
+    },
+    "prefs_api_temperature": {
+        "message": ""
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": ""
+    },
+    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
+        "message": ""
+    },
+    "reply_same_lang": {
+        "message": ""
+    },
+    "placeholder_folder_path": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": ""
+    },
+    "spamfilter_not_moved": {
+        "message": ""
+    },
+    "context_menu_mzta-add-tags": {
+        "message": ""
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": ""
+    },
+    "ask_integration_permission_2_popup": {
+        "message": ""
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": ""
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": ""
+    },
+    "prompt_get_task": {
+        "message": ""
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": ""
+    },
+    "customPrompts_reindexing_list": {
+        "message": ""
+    },
+    "GetCalendarEvent_info_default": {
+        "message": ""
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": ""
+    },
+    "spamfilter_no_reports": {
+        "message": ""
+    },
+    "placeholder_mail_typed_text": {
+        "message": ""
+    },
+    "prompt_spamfilter_full_text": {
+        "message": ""
+    },
+    "chatgpt_click_force_completion": {
+        "message": ""
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": ""
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": ""
+    },
+    "customPrompts_saved": {
+        "message": ""
+    },
+    "_api_connecting_host": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_context_menu_Info": {
+        "message": ""
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": ""
+    },
+    "Ollama_Models": {
+        "message": ""
+    },
+    "chatgpt_win_diff_title": {
+        "message": ""
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": ""
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": ""
+    },
+    "google_gemini_api_request_failed": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH": {
+        "message": ""
+    },
+    "no_valid_data_received": {
+        "message": ""
+    },
+    "error_connection_interrupted": {
+        "message": ""
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": ""
+    },
+    "customPrompts_start_saving": {
+        "message": ""
+    },
+    "AccountSelector_Spamfilter": {
+        "message": ""
+    },
+    "customPrompts_form_required_fields": {
+        "message": ""
+    },
+    "ollama_empty_model": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": ""
+    },
+    "apiwebchat_info": {
+        "message": ""
+    },
+    "apiwebchat_receiving_data": {
+        "message": ""
+    },
+    "prefsInfoTitle": {
+        "message": ""
+    },
+    "btnSaveAll_string": {
+        "message": ""
+    },
+    "customDataPH_Import": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": ""
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": ""
+    },
+    "chatgpt_api_request_failed": {
+        "message": ""
+    },
+    "prefsInfoDesc_4": {
+        "message": ""
+    },
+    "SpamFilter_PageTitle": {
+        "message": ""
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": ""
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": ""
+    },
+    "prompt_translate_this_full_text": {
+        "message": ""
+    },
+    "google_gemini_empty_apikey": {
+        "message": ""
+    },
+    "prompt_add_tags_use_list": {
+        "message": ""
+    },
+    "customPrompts_import_completed": {
+        "message": ""
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": ""
+    },
+    "Select_your_timezone": {
+        "message": ""
+    },
+    "SelectAll": {
+        "message": ""
+    },
+    "prompt_lang": {
+        "message": ""
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": ""
+    },
+    "From": {
+        "message": ""
+    },
+    "SpamFilter_info_default": {
+        "message": ""
+    },
+    "prompt_classify": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": ""
+    },
+    "placeholder_mail_headers": {
+        "message": ""
+    },
+    "prompt_this": {
+        "message": ""
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": ""
+    },
+    "prefs_SurveyLinkText2": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": ""
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": ""
+    },
+    "Anthropic_Version_Info": {
+        "message": ""
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": ""
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": ""
+    },
+    "ollama_empty_host": {
+        "message": ""
+    },
+    "placeholder_tags_current_email": {
+        "message": ""
+    },
+    "chatgpt_win_working": {
+        "message": ""
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": ""
+    },
+    "GoogleGemini_Models": {
+        "message": ""
+    },
+    "prompt_add_tags_full_text": {
+        "message": ""
+    },
+    "reset_default": {
+        "message": ""
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": ""
+    },
+    "currently_used_prompt": {
+        "message": ""
+    },
+    "prefs_OptionText_reply_all": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": ""
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": ""
+    },
+    "google_gemini_empty_model": {
+        "message": ""
+    },
+    "importPrompts_confirmText": {
+        "message": ""
+    },
+    "customPrompts_form_label_Action": {
+        "message": ""
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": ""
+    },
+    "AddTags_PageTitle": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags": {
+        "message": ""
+    },
+    "spamfilter_threshold_too_low": {
+        "message": ""
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": ""
+    },
+    "customPrompts_filtering_prompts": {
+        "message": ""
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": ""
+    },
+    "anthropic_api_request_failed": {
+        "message": ""
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": ""
+    },
+    "importCustomDataPH_import_completed": {
+        "message": ""
+    },
+    "spamfilter_threshold_zero": {
+        "message": ""
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": ""
+    },
+    "warn_API_needed": {
+        "message": ""
+    },
+    "prefs_OptionText_release_notes": {
+        "message": ""
+    },
+    "prompt_selection_needed": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": ""
+    },
+    "importCustomDataPH_start_import": {
+        "message": ""
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": ""
+    },
+    "customDataPH_saving_custom": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": ""
+    },
+    "ask_integration_permission_ok": {
+        "message": ""
+    },
+    "prefs_OptionText_reply_type": {
+        "message": ""
+    },
+    "ChatGPT_Models": {
+        "message": ""
+    },
+    "prefsInfoDesc_6": {
+        "message": ""
+    },
+    "AddTags_info_default": {
+        "message": ""
+    },
+    "prefs_API_Host": {
+        "message": ""
+    },
+    "prompt_get_calendar_event": {
+        "message": ""
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": ""
+    },
+    "GetTask_PageTitle": {
+        "message": ""
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": ""
+    },
+    "thunderai_error_title": {
+        "message": ""
+    },
+    "importCustomDataPH_confirmText": {
+        "message": ""
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": ""
+    },
+    "chatgpt_win_close": {
+        "message": ""
+    },
+    "context_menu_mzta-spamfilter": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": ""
+    },
+    "customDataPH_saved": {
+        "message": ""
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": ""
+    },
+    "error": {
+        "message": ""
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": ""
+    },
+    "task_getting_data_error": {
+        "message": ""
+    },
+    "customPrompts_managePrompts": {
+        "message": ""
+    },
+    "prompt_reply_advanced": {
+        "message": ""
+    },
+    "Anthropic_Version": {
+        "message": ""
+    },
+    "spamfilter_moved": {
+        "message": ""
+    },
+    "API_Models_Error_NoModels": {
+        "message": ""
+    },
+    "prompt_get_task_full_text": {
+        "message": ""
+    },
+    "CORS_alternative_2": {
+        "message": ""
+    },
+    "chatgpt_btn_model": {
+        "message": ""
+    },
+    "TranslateLink": {
+        "message": ""
+    },
+    "prefsInfoDesc_5": {
+        "message": ""
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": ""
+    },
+    "noActiveCalendar": {
+        "message": ""
+    },
+    "SpamReport_Title": {
+        "message": ""
+    },
+    "customPrompts_Import": {
+        "message": ""
+    },
+    "_api_connecting_model": {
+        "message": ""
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": ""
+    },
+    "empty": {
+        "message": ""
+    },
+    "OpenAIComp_empty_host": {
+        "message": ""
+    },
+    "placeholder_mail_text_body": {
+        "message": ""
+    },
+    "maybe_CORS_openai_comp": {
+        "message": ""
+    },
+    "more_info_string": {
+        "message": ""
+    },
+    "chagpt_api_send_button": {
+        "message": ""
+    },
+    "thunderai_warning_title": {
+        "message": ""
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": ""
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": ""
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": ""
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": ""
+    },
+    "apiwebchat_use_this_answer": {
+        "message": ""
+    },
+    "chatgpt_win_custom_text": {
+        "message": ""
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": ""
+    },
+    "prefsDonation_2": {
+        "message": ""
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": ""
+    },
+    "addtags_info_additional_statements": {
+        "message": ""
+    },
+    "CORS_alternative_1": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": ""
+    },
+    "calendar_opening_dialog_error": {
+        "message": ""
+    },
+    "anthropic_empty_apikey": {
+        "message": ""
+    },
+    "prompt_reply_custom_command": {
+        "message": ""
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": ""
+    },
+    "placeholder_recipients": {
+        "message": ""
+    },
+    "addtags_no_valid_tags": {
+        "message": ""
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": ""
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": ""
+    },
+    "Date": {
+        "message": ""
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": ""
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": ""
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": ""
+    },
+    "AddTags_prompt_text_title": {
+        "message": ""
+    },
+    "calendar_getting_data_error": {
+        "message": ""
+    },
+    "CORS_give_allurls_perm": {
+        "message": ""
+    },
+    "chatgpt_btn_retry": {
+        "message": ""
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_context_menu": {
+        "message": ""
+    },
+    "OpenAIComp_Models": {
+        "message": ""
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": ""
+    },
+    "chatgpt_force_completion": {
+        "message": ""
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": ""
+    },
+    "prompt_proofread_this_full_text": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": ""
+    },
+    "Anthropic_Models": {
+        "message": ""
+    },
+    "prefs_SurveyLinkText": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": ""
+    },
+    "importPrompts_invalidPrompts": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": ""
+    },
+    "prompt_string": {
+        "message": ""
+    },
+    "prompt_translate_this": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": ""
+    },
+    "customPrompts_form_label_ID": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": ""
+    },
+    "prompt_add_tags": {
+        "message": ""
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": ""
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": ""
     }
 }
