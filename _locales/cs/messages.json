@@ -1166,5 +1166,176 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Pro používání funkcí událostí v kalendáři a úloh, nainstalujte aktualizovanou verzi doplňku ThunderAI Sparks."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": ""
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": ""
+    },
+    "customDataPH_form_label_Text": {
+        "message": ""
+    },
+    "Anthropic_System_Prompt": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": ""
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": ""
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": ""
+    },
+    "reset": {
+        "message": ""
+    },
+    "customDataPH_ExportAll": {
+        "message": ""
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": ""
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": ""
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": ""
+    },
+    "prefs_ollama_think_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": ""
+    },
+    "placeholder_mail_attachments_info": {
+        "message": ""
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": ""
+    },
+    "prefs_ollama_think": {
+        "message": ""
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": ""
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": ""
+    },
+    "DeselectAll": {
+        "message": ""
+    },
+    "customDataPH_add_to_menu": {
+        "message": ""
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": ""
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": ""
+    },
+    "ask_openai_api_permission_1": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": ""
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": ""
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": ""
+    },
+    "prefs_api_temperature": {
+        "message": ""
+    },
+    "chatgpt_click_force_completion": {
+        "message": ""
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": ""
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH": {
+        "message": ""
+    },
+    "customDataPH_Import": {
+        "message": ""
+    },
+    "prompt_add_tags_use_list": {
+        "message": ""
+    },
+    "SelectAll": {
+        "message": ""
+    },
+    "placeholder_mail_headers": {
+        "message": ""
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": ""
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": ""
+    },
+    "importCustomDataPH_import_completed": {
+        "message": ""
+    },
+    "warn_API_needed": {
+        "message": ""
+    },
+    "importCustomDataPH_start_import": {
+        "message": ""
+    },
+    "customDataPH_saving_custom": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": ""
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": ""
+    },
+    "importCustomDataPH_confirmText": {
+        "message": ""
+    },
+    "customDataPH_saved": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": ""
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": ""
+    },
+    "prompt_reply_custom_command": {
+        "message": ""
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": ""
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": ""
+    },
+    "prompt_string": {
+        "message": ""
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": ""
     }
 }
