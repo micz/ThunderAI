@@ -966,6 +966,7 @@ export async function injectConnectionUI({
       let ollama_host = document.getElementById(getPrefixedId("ollama_host")).value;
       if(ollama_host != ''){
         varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+        updateCORSWarnings(modelId_prefix);
       }
     });
   
@@ -973,6 +974,7 @@ export async function injectConnectionUI({
       let openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
       if(openai_comp_host != ''){
         varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+        updateCORSWarnings(modelId_prefix);
       }
     });
 
