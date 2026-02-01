@@ -970,7 +970,10 @@ export async function injectConnectionUI({
     });
   
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
-      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      let openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
+      if(openai_comp_host != ''){
+        varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+      }
     });
 
    document.querySelectorAll('.check-number').forEach(input => {
@@ -1314,6 +1317,7 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('openai_comp_host'));
   let btnUpdateOpenAICompModels = document.getElementById(getPrefixedId('btnUpdateOpenAICompModels'));
+  let btnGiveAllUrlsPermission_openai_comp_api = document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api'));
   let modelOpenAIComp = getModelEl('openai_comp_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1321,6 +1325,7 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     modelOpenAIComp.disabled = true;
     modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
+    btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnUpdateOpenAICompModels.disabled = false;
@@ -1330,6 +1335,7 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }else{
       modelOpenAIComp.style.border = '';
     }
+    btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
 }
 
@@ -1398,7 +1404,6 @@ async function loadURLsPermissions(modelId_prefix = ''){
   let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host").value;
   if(ollama_host != ''){
     varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [prepareOriginURL(ollama_host)] });
-    console.log(">>>>>>>>>>>>>>>>>> varConnectionUI.permission_ollama_host: " + varConnectionUI.permission_ollama_host);
   }
   let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host").value;
   if(openai_comp_host != ''){
