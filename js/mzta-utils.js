@@ -499,6 +499,10 @@ export function normalizeStringList(list, returnType = 0) {
   }
 }
 
+export function prepareOriginURL(url) {
+  return url.endsWith('/') ? `${url}*` : `${url}/*`;
+}
+
 function generateHexColorForTag() {
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);
