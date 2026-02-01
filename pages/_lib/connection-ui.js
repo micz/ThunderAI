@@ -303,8 +303,8 @@ export async function injectConnectionUI({
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
-      <br>__MSG_CORS_alternative_2__
-        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
+      <br>__MSG_CORS_alternative_2_new__
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_host_perm__</button>
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -382,8 +382,8 @@ export async function injectConnectionUI({
     <td colspan="2" style="text-align:center;">
       __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
-      <br>__MSG_CORS_alternative_2__
-        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
+      <br>__MSG_CORS_alternative_2_new__
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_host_perm__</button>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">

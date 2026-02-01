@@ -1423,12 +1423,12 @@
     "message": "Problems setting CORS?",
     "description": ""
   },
-  "CORS_alternative_2": {
-    "message": "Press the button below to give the <all_urls> permission to avoid any CORS problem.",
+  "CORS_alternative_2_new": {
+    "message": "Press the button below to give the permission to the current host to avoid any CORS problem.",
     "description": ""
   },
-  "CORS_give_allurls_perm": {
-    "message": "Give \"all URLs\" permission",
+  "CORS_give_host_perm": {
+    "message": "Give permission to the current host",
     "description": ""
   },
   "prefs_OptionText_composing_plain_text": {
