@@ -28,7 +28,8 @@ import { Anthropic } from '../../js/api/anthropic.js';
 import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
-  sanitizeChatGPTWebCustomData
+  sanitizeChatGPTWebCustomData,
+  prepareOriginURL
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -38,7 +39,9 @@ import {
 } from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
-  permission_all_urls: false
+  permission_all_urls: false,
+  permission_ollama_host: false,
+  permission_openai_comp_host: false
 }
 
 export async function injectConnectionUI({
@@ -674,7 +677,17 @@ export async function injectConnectionUI({
     }
   });
 
-  let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', anthropic_model: '', anthropic_version: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
+  let prefs = await browser.storage.sync.get({
+    chatgpt_web_model: '',
+    chatgpt_model: '',
+    ollama_model: '',
+    openai_comp_model: '',
+    google_gemini_model: '',
+    anthropic_model: '',
+    anthropic_version: '',
+    chatgpt_win_height: 0,
+    chatgpt_win_width: 0
+  });
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = getModelEl('chatgpt_model', modelId_prefix);
@@ -950,7 +963,10 @@ export async function injectConnectionUI({
     });
   
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api')).addEventListener('click', async () => {
-      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      let ollama_host = document.getElementById(getPrefixedId("ollama_host")).value;
+      if(ollama_host != ''){
+        varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+      }
     });
   
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
@@ -977,6 +993,8 @@ export async function injectConnectionUI({
       });
     }
   }
+
+  updateCORSWarnings(modelId_prefix);
 
   return {
     select: conntype_select,
@@ -1090,6 +1108,7 @@ export async function initializeSpecificIntegrationUI({
   updateWarnings(model_prefix);
 }
 
+
 // From here there are exported functions
 
 export function updateWarnings(modelId_prefix = '') {
@@ -1167,12 +1186,7 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   parent.parentElement.querySelectorAll(".conntype_anthropic_api").forEach(element => {
     element.style.display = anthropic_api_display;
   });
-  if (varConnectionUI.permission_all_urls) {
-    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
-    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
-    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
-    if (ollamaWarning) ollamaWarning.style.display = 'none';
-  }
+  updateCORSWarnings(modelId_prefix);
 }
 
 
@@ -1274,6 +1288,7 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('ollama_host'));
   let btnFetchOllamaModels = document.getElementById(getPrefixedId('btnUpdateOllamaModels'));
+  let btnGiveAllUrlsPermission_ollama_api = document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api'));
   let modelOllama = getModelEl('ollama_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
@@ -1281,6 +1296,7 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     modelOllama.disabled = true;
     modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
+    btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnFetchOllamaModels.disabled = false;
@@ -1290,6 +1306,7 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
     }else{
       modelOllama.style.border = '';
     }
+    btnGiveAllUrlsPermission_ollama_api.disabled = false;
   }
 }
 
@@ -1375,4 +1392,29 @@ function loadOpenAICompConfigs(modelId_prefix = ''){
     option.text = config.name;
     select_openai_comp_model.appendChild(option);
   });
+}
+
+async function loadURLsPermissions(modelId_prefix = ''){
+  let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host").value;
+  if(ollama_host != ''){
+    varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [prepareOriginURL(ollama_host)] });
+    console.log(">>>>>>>>>>>>>>>>>> varConnectionUI.permission_ollama_host: " + varConnectionUI.permission_ollama_host);
+  }
+  let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host").value;
+  if(openai_comp_host != ''){
+    varConnectionUI.permission_openai_comp_host = await messenger.permissions.contains({ origins: [prepareOriginURL(openai_comp_host)] });
+  }
+  varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] });
+}
+
+async function updateCORSWarnings(modelId_prefix = ''){
+  await loadURLsPermissions(modelId_prefix);
+  if (varConnectionUI.permission_all_urls || varConnectionUI.permission_ollama_host) {
+    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    if (ollamaWarning) ollamaWarning.style.display = 'none';
+  }
+  if (varConnectionUI.permission_all_urls || varConnectionUI.permission_openai_comp_host) {
+    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
+  }
 }
