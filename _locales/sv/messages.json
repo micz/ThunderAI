@@ -809,18 +809,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "Analysera för skräppost"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Visa snabbmenyn \"Lägg till taggar\""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Lägg till taggar\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Visa snabbmenyalternativet \"Analysera för skräppost\""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Analysera för skräppost\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
-    },
     "noActiveCalendar": {
         "message": "Ingen redigerbar kalender hittades!"
     },
@@ -859,9 +847,6 @@
     },
     "CORS_alternative_1": {
         "message": "Problem med att ställa in CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Tryck på knappen nedan för att ge <all_urls> behörighet för att undvika eventuella CORS-problem."
     },
     "customPrompts_Properties": {
         "message": "Egenskaper"
@@ -1302,7 +1287,70 @@
     "prompt_spamfilter_full_text": {
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"spamValue\": <heltal från 0 till 100>,\n\"explanation\": \"Kort förklaring av ditt resonemang\"\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
     },
-    "CORS_give_allurls_perm": {
-        "message": "Ge behörighet för \"alla webbadresser\""
+    "Summarize_prompt_prefs_title": {
+        "message": "Lägg till sammanfattningsalternativ"
+    },
+    "prompt_summarize": {
+        "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Du är en assistent som sammanfattar e-postkonversationer.\n\nMed tanke på en e-posttråd, skapa en kortfattad och korrekt sammanfattning som fångar:\n\n- Konversationens huvudämne eller syfte\n- Viktiga beslut, slutsatser eller överenskommelser\n- Viktiga frågor, förfrågningar eller åtgärdspunkter\n- Vem som är ansvarig för varje åtgärdspunkt (om det anges)\n\nUteslut hälsningar, signaturer, citat och överflödig fram-och-tillbaka-text.\nLägg inte till antaganden eller information som inte finns i e-postmeddelandena.\n\nSkriv sammanfattningen på ett tydligt och neutralt språk som passar en upptagen yrkesperson."
+    },
+    "prompt_summarize_email_template": {
+        "message": "Sammanfattningsmall för e-post"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Från: {%author%}\nTill: {%recipients%}\nCC: {%cc_list%}\nÄmne: {%mail_subject%}\nDatum: {%mail_datetime%}\nBilagor:\n{%mail_attachments_info%}\n\nBrödtext:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "E-postavgränsare"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- NÄSTA E-POST ----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Du kan ändra prompten som du vill, det första fältet är huvudprompten, det andra fältet är mallen för ett enskilt e-postmeddelande. Listan över e-postmeddelanden kommer att läggas till i huvudprompten. E-postmeddelanden kommer att separeras med avgränsaren som anges i det tredje fältet."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Huvudprompten som beskriver uppgiften som ska utföras på alla valda e-postmeddelanden:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Mallen för ett enda e-postmeddelande:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Avgränsaren mellan e-postmeddelanden:"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Sammanfatta e-postmeddelande"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att sammanfatta e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Om markerad läggs ett alternativ till i snabbmenyn för att sammanfatta e-post."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Hantera sammanfattningsinställningar"
+    },
+    "Summarize_PageTitle": {
+        "message": "Hantera sammanfattningsinställningar"
+    },
+    "Summarize_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att sammanfatta e-postmeddelanden."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Aktuell prompttext"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Sammanfatta"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Tryck på knappen nedan för att ge den aktuella värden behörighet att undvika CORS-problem."
+    },
+    "CORS_give_host_perm": {
+        "message": "Ge behörighet till den nuvarande värden"
+    },
+    "CORS_localhost_warn": {
+        "message": "Om du använder localhost eller 127.0.0.1 eftersom AI-servern finns på din dator krävs behörigheten <all_urls>."
     }
 }

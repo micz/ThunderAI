@@ -932,18 +932,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "Анализ на предмет спама"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Показать пункт меню \"Добавить теги\""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Если флажок установлен, пункт контекстного меню \"Добавить теги\" будет отображаться при щелчке ПКМ на письме в списке сообщений."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Показать пункт контекстного меню \"Анализировать на предмет спама\""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Если флажок установлен, пункт контекстного меню \"Анализировать на спам\" будет отображаться при щелчке ПКМ на письме в списке сообщений."
-    },
     "noActiveCalendar": {
         "message": "Редактируемый календарь не найден!"
     },
@@ -982,12 +970,6 @@
     },
     "CORS_alternative_1": {
         "message": "Проблемы с настройкой CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Нажмите кнопку ниже, чтобы дать разрешение <all_urls> во избежание проблем с CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Дайте разрешение на \"все URL-адреса\""
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Сочинение обычного текста"

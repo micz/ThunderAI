@@ -785,18 +785,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "Ανάλυση για ανεπιθύμητα μηνύματα"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Εμφάνιση του στοιχείου μενού \"Προσθήκη ετικετών\""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Εάν είναι επιλεγμένο, το στοιχείο μενού \"Προσθήκη ετικετών\" θα εμφανίζεται όταν κάνετε δεξί κλικ σε ένα μήνυμα ηλεκτρονικού ταχυδρομείου στη λίστα μηνυμάτων."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Εμφάνιση του στοιχείου μενού \"Ανάλυση για ανεπιθύμητα μηνύματα\""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Εάν είναι επιλεγμένο, το στοιχείο μενού \"Ανάλυση για ανεπιθύμητα μηνύματα\" θα εμφανίζεται όταν κάνετε δεξί κλικ σε ένα μήνυμα ηλεκτρονικού ταχυδρομείου στη λίστα μηνυμάτων."
-    },
     "noActiveCalendar": {
         "message": "Δεν βρέθηκε επεξεργάσιμο ημερολόγιο!"
     },
@@ -835,12 +823,6 @@
     },
     "CORS_alternative_1": {
         "message": "Προβλήματα με τη ρύθμιση του CORS;"
-    },
-    "CORS_alternative_2": {
-        "message": "Πατήστε το παρακάτω κουμπί για να δώσετε στο <all_urls> την άδεια να αποφύγει οποιοδήποτε πρόβλημα CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Δώστε άδεια σε \"όλες τις διευθύνσεις URL\""
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Σύνταξη σε απλό κείμενο"

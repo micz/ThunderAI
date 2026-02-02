@@ -296,9 +296,6 @@
     "chatgpt_empty_model": {
         "message": "Nevybrali jste model pro ChatGPT API. Vyberte jej prosím na stránce s možnostmi."
     },
-    "chagpt_api_connecting": {
-        "message": "Pokouším se připojit k OpenAI ChatGPT pomocí poskytnutého klíče API"
-    },
     "chagpt_api_send_button": {
         "message": "Používám model"
     },
@@ -335,12 +332,6 @@
     "ollama_empty_model": {
         "message": "Nevybrali jste model pro Ollama API. Prosím, vyberte jej na stránce s nastavením."
     },
-    "ollama_api_connecting": {
-        "message": "Pokouším se připojit k lokálnímu serveru Ollama pomocí hostitele"
-    },
-    "andModel": {
-        "message": "a model"
-    },
     "error_connection_interrupted": {
         "message": "Spojení se serverem bylo neočekávaně přerušeno"
     },
@@ -367,9 +358,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Nevybrali jste model pro API kompatibilní s OpenAI. Prosím, vyberte jej na stránce s nastavením."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Pokouším se připojit k lokálnímu serveru API kompatibilního s OpenAI pomocí hostitele"
     },
     "OpenAIComp_api_request_failed": {
         "message": "Požadavek na OpenAI Comp API selhal"
@@ -589,9 +577,6 @@
     },
     "GoogleGemini_Models_Fetch": {
         "message": "Aktualizovat seznam modelů Google Gemini"
-    },
-    "google_gemini_api_connecting": {
-        "message": "Probíhá pokus o připojení ke Google Gemini pomocí zadaného API klíče"
     },
     "google_gemini_empty_apikey": {
         "message": "Nezadali jste API klíč pro Google Gemini API. Vložte jej na stránce možností."
@@ -848,9 +833,6 @@
     "calendar_opening_dialog_error": {
         "message": "Chyba při otevírání dialogu události kalendáře"
     },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks není nainstalován!"
-    },
     "prefs_OptionText_add_tags_auto": {
         "message": "Přidávat štítky automaticky"
     },
@@ -868,18 +850,6 @@
     },
     "context_menu_mzta-spamfilter": {
         "message": "Analýza spamu"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Zobrazit v nabídce položku „Přidat štítky“"
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Zobrazit v nabídce položku „Analýza spamu“"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Po zaškrtnutí bude po kliknutí pravým tlačítkem na e-mail v seznamu zpráv v kontextové nabídce zobrazena položka „Analýza spamu“."
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Po zaškrtnutí bude po kliknutí pravým tlačítkem na e-mail v seznamu zpráv v kontextové nabídce zobrazena položka „Přidat štítky“."
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "Možnosti události kalendáře"
@@ -1124,12 +1094,6 @@
     },
     "CORS_alternative_1": {
         "message": "Problémy s nastavením CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Stiskněte tlačítko níže a udělte oprávnění <all_urls>, abyste se vyhnuli jakýmkoli problémům s CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Udělit oprávnění \"všechny URL\""
     },
     "maybe_CORS_openai_comp": {
         "message": "Používání API kompatibilního s OpenAI může vyžadovat nastavení CORS na serveru."
