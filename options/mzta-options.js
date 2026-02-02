@@ -101,6 +101,9 @@ async function restoreOptions() {
           if (element.value === '') {
             element.selectedIndex = -1;
           }
+          if (element.tomselect) {
+            element.tomselect.setValue(element.value, true);
+          }
           break;
         case 'textarea':
           element.value = result[element.id];

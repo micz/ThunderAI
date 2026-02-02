@@ -699,6 +699,7 @@ export async function injectConnectionUI({
   chatgpt_option.value = prefs.chatgpt_model;
   chatgpt_option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(chatgpt_option);
+  select_chatgpt_model.value = prefs.chatgpt_model;
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
@@ -749,6 +750,7 @@ export async function injectConnectionUI({
   google_gemini_option.value = prefs.google_gemini_model;
   google_gemini_option.text = prefs.google_gemini_model;
   select_google_gemini_model.appendChild(google_gemini_option);
+  select_google_gemini_model.value = prefs.google_gemini_model;
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
@@ -792,6 +794,7 @@ export async function injectConnectionUI({
   ollama_option.value = prefs.ollama_model;
   ollama_option.text = prefs.ollama_model;
   select_ollama_model.appendChild(ollama_option);
+  select_ollama_model.value = prefs.ollama_model;
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
@@ -852,6 +855,7 @@ export async function injectConnectionUI({
   openai_comp_option.value = prefs.openai_comp_model;
   openai_comp_option.text = prefs.openai_comp_model;
   select_openai_comp_model.appendChild(openai_comp_option);
+  select_openai_comp_model.value = prefs.openai_comp_model;
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
@@ -897,6 +901,7 @@ export async function injectConnectionUI({
   anthropic_option.value = prefs.anthropic_model;
   anthropic_option.text = prefs.anthropic_model;
   select_anthropic_model.appendChild(anthropic_option);
+  select_anthropic_model.value = prefs.anthropic_model;
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
 
@@ -1023,7 +1028,7 @@ export async function injectConnectionUI({
   ['chatgpt_model', 'google_gemini_model', 'ollama_model', 'openai_comp_model', 'anthropic_model'].forEach(id => {
     const el = document.getElementById(getPrefixedId(id));
     if (el && !el.tomselect) {
-      new TomSelect(el, {
+      let ts = new TomSelect(el, {
         create: false,
         maxOptions: null,
         maxItems: 1,
@@ -1032,6 +1037,9 @@ export async function injectConnectionUI({
           direction: "asc"
         }
       });
+      if (el.value) {
+        ts.setValue(el.value);
+      }
     }
   });
 
