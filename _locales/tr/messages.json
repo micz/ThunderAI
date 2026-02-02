@@ -1,1 +1,20 @@
-{}
+{
+    "extensionDescription": {
+        "message": "E-postalarınızı geliştirmek için ChatGPT, Google Gemini, Claude veya Ollama’yı kullanın!"
+    },
+    "menu_title": {
+        "message": "YZ"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Varsayılan promptlar düzenlenemez. Bunları devre dışı bırakabilir, ardından prompt metnini kopyalayıp yeni bir prompta yapıştırarak düzenlenmiş bir sürüm oluşturabilirsiniz."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Promptları içe ve dışa aktarabilirsiniz. Aynı kimliğe (ID) sahip mevcut istemlerin üzerine yazılır. Yeni kimliklere (ID) sahip promptlar eklenir."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Her şey doğruysa, içe aktarma işleminden sonra ‘Tümünü Kaydet’ düğmesine tıklayın."
+    },
+    "customPrompts_start_saving": {
+        "message": "Promptlar kaydediliyor…"
+    }
+}
