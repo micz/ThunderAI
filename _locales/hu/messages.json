@@ -158,9 +158,6 @@
     "hyprland_warning": {
         "message": ""
     },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": ""
-    },
     "prefs_OpenAIComp_AvailableServices": {
         "message": ""
     },
@@ -380,9 +377,6 @@
         "message": ""
     },
     "btn_show_differences": {
-        "message": ""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
         "message": ""
     },
     "prefs_OptionText_openai_comp_use_v1": {
@@ -741,9 +735,6 @@
     "_api_connecting_host": {
         "message": ""
     },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": ""
-    },
     "OpenAIComp_Models_Error_fetching": {
         "message": ""
     },
@@ -1095,9 +1086,6 @@
     "prompt_get_task_full_text": {
         "message": ""
     },
-    "CORS_alternative_2": {
-        "message": ""
-    },
     "chatgpt_btn_model": {
         "message": ""
     },
@@ -1227,9 +1215,6 @@
     "calendar_getting_data_error": {
         "message": ""
     },
-    "CORS_give_allurls_perm": {
-        "message": ""
-    },
     "chatgpt_btn_retry": {
         "message": ""
     },
@@ -1237,9 +1222,6 @@
         "message": ""
     },
     "prefs_OptionText_dynamic_menu_force_enter": {
-        "message": ""
-    },
-    "prefs_OptionText_add_tags_context_menu": {
         "message": ""
     },
     "OpenAIComp_Models": {

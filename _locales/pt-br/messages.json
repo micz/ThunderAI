@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Usando modelo"
     },
-    "chagpt_api_connecting": {
-        "message": "Tentando conectar ao OpenAI ChatGPT usando a chave de API fornecida"
-    },
     "Debug": {
         "message": "Depurar"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Você não escolheu um modelo para a API do Ollama. Por favor, escolha um na página de opções."
     },
-    "ollama_api_connecting": {
-        "message": "Tentando conectar ao servidor local do Ollama usando o host"
-    },
-    "andModel": {
-        "message": "e modelo"
-    },
     "error_connection_interrupted": {
         "message": "A conexão com o servidor foi interrompida inesperadamente"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Você não escolheu um modelo para a API Compatível com OpenAI. Por favor, escolha um na página de opções."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Tentando conectar ao Servidor Local da API Compatível com OpenAI usando o host"
     },
     "OpenAIComp_api_request_failed": {
         "message": "Solicitação da API Comp do OpenAI falhou"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "A solicitação para a API Google Gemini falhou"
     },
-    "google_gemini_api_connecting": {
-        "message": "Tentando conectar ao Google Gemini usando a chave API fornecida"
-    },
     "google_gemini_empty_apikey": {
         "message": "Você não adicionou uma chave API para a API Google Gemini. Por favor, insira uma na página de opções."
     },
@@ -798,9 +783,6 @@
     "spamfilter_not_moved": {
         "message": "Não"
     },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks não instalado!"
-    },
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Gerenciar configurações do filtro de spam"
     },
@@ -906,9 +888,6 @@
     "hyprland_warning": {
         "message": ""
     },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": ""
-    },
     "prefs_OpenAIComp_AvailableServices": {
         "message": ""
     },
@@ -1002,9 +981,6 @@
         "message": ""
     },
     "btn_show_differences": {
-        "message": ""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
         "message": ""
     },
     "prefs_ollama_think": {
@@ -1121,9 +1097,6 @@
         "message": ""
     },
     "_api_connecting_host": {
-        "message": ""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
         "message": ""
     },
     "chatgpt_win_diff_title": {
@@ -1252,9 +1225,6 @@
     "prompt_get_task_full_text": {
         "message": ""
     },
-    "CORS_alternative_2": {
-        "message": ""
-    },
     "noActiveCalendar": {
         "message": ""
     },
@@ -1294,13 +1264,7 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": ""
     },
-    "CORS_give_allurls_perm": {
-        "message": ""
-    },
     "prefs_OptionText_composing_plain_text_Info": {
-        "message": ""
-    },
-    "prefs_OptionText_add_tags_context_menu": {
         "message": ""
     },
     "prefs_OptionText_composing_plain_text": {

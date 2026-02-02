@@ -968,18 +968,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "Analizar el spam"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Mostrar el elemento del menú contextual “Añadir etiquetas”"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Si está marcado, el elemento del menú contextual “Añadir etiquetas” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Mostrar el elemento del menú contextual “Analizar el spam”"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Si está marcado, el elemento del menú contextual “Analizar el spam” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
-    },
     "noActiveCalendar": {
         "message": "¡No se encontró un calendario editable!"
     },
@@ -1018,12 +1006,6 @@
     },
     "CORS_alternative_1": {
         "message": "¿Problemas al configurar CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Presiona el botón a continuación para otorgar el permiso <all_urls> y evitar cualquier problema de CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Otorgar permiso “all URLs”"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Redactando en texto plano"

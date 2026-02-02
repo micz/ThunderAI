@@ -809,18 +809,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "Analysera för skräppost"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Visa snabbmenyn \"Lägg till taggar\""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Lägg till taggar\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Visa snabbmenyalternativet \"Analysera för skräppost\""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Analysera för skräppost\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
-    },
     "noActiveCalendar": {
         "message": "Ingen redigerbar kalender hittades!"
     },
@@ -859,9 +847,6 @@
     },
     "CORS_alternative_1": {
         "message": "Problem med att ställa in CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Tryck på knappen nedan för att ge <all_urls> behörighet för att undvika eventuella CORS-problem."
     },
     "customPrompts_Properties": {
         "message": "Egenskaper"
@@ -1301,9 +1286,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"spamValue\": <heltal från 0 till 100>,\n\"explanation\": \"Kort förklaring av ditt resonemang\"\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Ge behörighet för \"alla webbadresser\""
     },
     "Summarize_prompt_prefs_title": {
         "message": "Lägg till sammanfattningsalternativ"

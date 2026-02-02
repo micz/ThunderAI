@@ -971,18 +971,6 @@
     "context_menu_mzta-spamfilter": {
         "message": "スパムを分析"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "「タグを追加」コンテキストメニュー項目を表示"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "チェックすると、メッセージリストでメールを右クリックした際に「タグを追加」コンテキストメニュー項目が表示されます。"
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "「スパムを分析」コンテキストメニュー項目を表示"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "チェックすると、メッセージリストでメールを右クリックした際に「スパムを分析」コンテキストメニュー項目が表示されます。"
-    },
     "noActiveCalendar": {
         "message": "編集可能なカレンダーが見つかりません！"
     },
@@ -1021,12 +1009,6 @@
     },
     "CORS_alternative_1": {
         "message": "CORS設定に問題がありますか？"
-    },
-    "CORS_alternative_2": {
-        "message": "下のボタンを押して<all_urls>権限を付与し、CORSの問題を回避してください。"
-    },
-    "CORS_give_allurls_perm": {
-        "message": "「すべてのURL」権限を付与"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "プレーンテキストで作成"
