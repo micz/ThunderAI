@@ -1343,5 +1343,14 @@
     },
     "context_menu_mzta-summarize": {
         "message": "Sammanfatta"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Tryck på knappen nedan för att ge den aktuella värden behörighet att undvika CORS-problem."
+    },
+    "CORS_give_host_perm": {
+        "message": "Ge behörighet till den nuvarande värden"
+    },
+    "CORS_localhost_warn": {
+        "message": "Om du använder localhost eller 127.0.0.1 eftersom AI-servern finns på din dator krävs behörigheten <all_urls>."
     }
 }
