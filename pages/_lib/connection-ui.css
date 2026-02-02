@@ -1,3 +1,5 @@
+@import url("tom-select.default.min.css");
+
 tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
     background-color: rgb(185, 220, 252) !important;
 }
