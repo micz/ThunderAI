@@ -1431,6 +1431,10 @@
     "message": "Give permission to the current host",
     "description": ""
   },
+  "CORS_localhost_warn": {
+    "message": "If you are using localhost or 127.0.0.1 because the AI server is hosted on your PC, the <all_urls> permission is required.",
+    "description": ""
+  },
   "prefs_OptionText_composing_plain_text": {
     "message": "Composing in plain text",
     "description": ""

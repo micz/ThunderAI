@@ -305,6 +305,7 @@ export async function injectConnectionUI({
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2_new__
         <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_host_perm__</button>
+        <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -384,6 +385,7 @@ export async function injectConnectionUI({
       <br><br><b>__MSG_CORS_alternative_1__</b>
       <br>__MSG_CORS_alternative_2_new__
         <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_host_perm__</button>
+        <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
@@ -965,7 +967,11 @@ export async function injectConnectionUI({
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api')).addEventListener('click', async () => {
       let ollama_host = document.getElementById(getPrefixedId("ollama_host")).value;
       if(ollama_host != ''){
-        varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+        if (ollama_host.includes("localhost") || ollama_host.includes("127.0.0.1")) {
+          varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
+        }else{
+          varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+        }
         updateCORSWarnings(modelId_prefix);
       }
     });
@@ -973,7 +979,11 @@ export async function injectConnectionUI({
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
       let openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
       if(openai_comp_host != ''){
-        varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+        if (openai_comp_host.includes("localhost") || openai_comp_host.includes("127.0.0.1")) {
+          varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
+        }else{
+          varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+        }
         updateCORSWarnings(modelId_prefix);
       }
     });
