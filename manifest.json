@@ -41,7 +41,8 @@
         "https://*.openai.com/*",
         "https://*.anthropic.com/*",
         "https://*/*",
-        "http://*/*"
+        "http://*/*",
+        "<all_urls>"
     ],
     "background": {
         "page": "mzta-background.html"
