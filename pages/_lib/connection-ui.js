@@ -1037,9 +1037,13 @@ export async function injectConnectionUI({
           direction: "asc"
         }
       });
+      ts.on('change', function() {
+        setTomSelectBorder(this);
+      });
       if (el.value) {
         ts.setValue(el.value);
       }
+      setTomSelectBorder(ts);
     }
   });
 
@@ -1254,6 +1258,14 @@ function toggleTomSelectDisabled(element, disabled) {
     } else {
       element.tomselect.enable();
     }
+  }
+}
+
+function setTomSelectBorder(el){
+  if (el.getValue() === "") {
+      el.control.style.border = '2px solid red';
+  } else {
+      el.control.style.border = '1px solid #d0d0d0';
   }
 }
 
