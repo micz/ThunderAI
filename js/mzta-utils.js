@@ -94,6 +94,17 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
     }
   }
 
+  // Check the account that the folder of the message belongs to
+  if (msgHeader.folder && msgHeader.folder.accountId) {
+    const account = accounts.find(a => a.id === msgHeader.folder.accountId);
+    if (account && account.identities && account.identities.length > 0) {
+      // Just return the first identity of the account.
+      const identity = account.identities[0];
+      console.log(">>>>>>>>>> got from folder");
+      return getFull ? { id: identity.id, email: identity.email } : identity.id;
+    }
+  }
+
   // Fallback
   return getFull ? fallbackIdentity : fallbackIdentity?.id || null;
 }
