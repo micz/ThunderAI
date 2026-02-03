@@ -34,7 +34,8 @@ import {
 import {
   getAccountsList,
   normalizeStringList,
-  isAPIKeyValue
+  isAPIKeyValue,
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
@@ -341,6 +342,7 @@ async function restoreOptions() {
             }
             if (element.tomselect) {
               element.tomselect.setValue(element.value, true);
+              setTomSelectBorder(element.tomselect);
             }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);

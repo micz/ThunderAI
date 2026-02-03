@@ -38,7 +38,8 @@ import {
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     getChatGPTWebModelsList_HTML,
-    openTab
+    openTab,
+    setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -580,6 +581,7 @@ function populateConnectionUI(tr, id, prefix, selectId) {
                         inputEl.value = restoreValue;
                         inputEl.tomselect.sync();
                         inputEl.tomselect.setValue(restoreValue, true);
+                        setTomSelectBorder(inputEl.tomselect);
                     } else {
                         inputEl.value = val || '';
                     }

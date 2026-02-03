@@ -31,7 +31,11 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
-import { getAccountsList, isAPIKeyValue } from "../../js/mzta-utils.js";
+import {
+  getAccountsList,
+  isAPIKeyValue,
+  setTomSelectBorder
+} from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
 } from "../_lib/connection-ui.js";
@@ -328,6 +332,7 @@ async function restoreOptions() {
           }
           if (element.tomselect) {
             element.tomselect.setValue(element.value, true);
+            setTomSelectBorder(element.tomselect);
           }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
