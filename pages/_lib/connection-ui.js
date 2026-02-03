@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import './tom-select.base.js';
 import {
   prefs_default,
   integration_options_config
@@ -29,7 +30,8 @@ import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
-  prepareOriginURL
+  prepareOriginURL,
+  setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -669,6 +671,7 @@ export async function injectConnectionUI({
       while (openaiCompModelSelect.options.length > 0) {
         openaiCompModelSelect.remove(0);
       }
+      syncTomSelect(openaiCompModelSelect);
       document.getElementById(getPrefixedId('openai_comp_use_v1')).checked = !!config.use_v1;
       document.getElementById(getPrefixedId('openai_comp_chat_name')).value = config.chat_name || '';
       // Trigger change events if needed
@@ -697,6 +700,7 @@ export async function injectConnectionUI({
   chatgpt_option.value = prefs.chatgpt_model;
   chatgpt_option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(chatgpt_option);
+  select_chatgpt_model.value = prefs.chatgpt_model;
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
@@ -734,6 +738,7 @@ export async function injectConnectionUI({
           select_chatgpt_model.appendChild(option);
         }
       });
+      syncTomSelect(select_chatgpt_model);
       document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
@@ -746,6 +751,7 @@ export async function injectConnectionUI({
   google_gemini_option.value = prefs.google_gemini_model;
   google_gemini_option.text = prefs.google_gemini_model;
   select_google_gemini_model.appendChild(google_gemini_option);
+  select_google_gemini_model.value = prefs.google_gemini_model;
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
@@ -776,6 +782,7 @@ export async function injectConnectionUI({
           select_google_gemini_model.appendChild(option);
         }
       });
+      syncTomSelect(select_google_gemini_model);
       document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
@@ -788,6 +795,7 @@ export async function injectConnectionUI({
   ollama_option.value = prefs.ollama_model;
   ollama_option.text = prefs.ollama_model;
   select_ollama_model.appendChild(ollama_option);
+  select_ollama_model.value = prefs.ollama_model;
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
@@ -831,6 +839,7 @@ export async function injectConnectionUI({
           select_ollama_model.appendChild(option);
         }
       });
+      syncTomSelect(select_ollama_model);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -847,6 +856,7 @@ export async function injectConnectionUI({
   openai_comp_option.value = prefs.openai_comp_model;
   openai_comp_option.text = prefs.openai_comp_model;
   select_openai_comp_model.appendChild(openai_comp_option);
+  select_openai_comp_model.value = prefs.openai_comp_model;
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
@@ -879,6 +889,7 @@ export async function injectConnectionUI({
           select_openai_comp_model.appendChild(option);
         }
       });
+      syncTomSelect(select_openai_comp_model);
       document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
@@ -891,6 +902,7 @@ export async function injectConnectionUI({
   anthropic_option.value = prefs.anthropic_model;
   anthropic_option.text = prefs.anthropic_model;
   select_anthropic_model.appendChild(anthropic_option);
+  select_anthropic_model.value = prefs.anthropic_model;
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
 
@@ -933,6 +945,7 @@ export async function injectConnectionUI({
           select_anthropic_model.appendChild(option);
         }
       });
+      syncTomSelect(select_anthropic_model);
       document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
@@ -948,6 +961,7 @@ export async function injectConnectionUI({
         option.text = modelName;
         select_openai_comp_model.appendChild(option);
         select_openai_comp_model.value = modelName;
+        syncTomSelect(select_openai_comp_model);
         select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
@@ -961,6 +975,7 @@ export async function injectConnectionUI({
         select_openai_comp_model.remove(0);
       }
       select_openai_comp_model.value = '';
+      syncTomSelect(select_openai_comp_model);
       select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
     });
   
@@ -1010,6 +1025,29 @@ export async function injectConnectionUI({
   }
 
   updateCORSWarnings(modelId_prefix);
+
+  ['chatgpt_model', 'google_gemini_model', 'ollama_model', 'openai_comp_model', 'anthropic_model'].forEach(id => {
+    const el = document.getElementById(getPrefixedId(id));
+    if (el && !el.tomselect) {
+      let ts = new TomSelect(el, {
+        create: false,
+        maxOptions: null,
+        maxItems: 1,
+        sortField: {
+          field: "text",
+          direction: "asc"
+        }
+      });
+      ts.on('change', function() {
+        setTomSelectBorder(this);
+      });
+      if (el.value) {
+        ts.setValue(el.value);
+      }
+      console.log(">>>>>>>>>>>>>>> el.value: " + el.value);
+      setTomSelectBorder(ts);
+    }
+  });
 
   return {
     select: conntype_select,
@@ -1207,6 +1245,24 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
 
 // From here there are internal functions
 
+function syncTomSelect(element) {
+  if (element && element.tomselect) {
+    element.tomselect.sync();
+  }
+}
+
+function toggleTomSelectDisabled(element, disabled) {
+  element.disabled = disabled;
+  if (element.tomselect) {
+    if (disabled) {
+      element.tomselect.disable();
+      element.tomselect.clear();
+    } else {
+      element.tomselect.enable();
+    }
+  }
+}
+
 function getModelEl(model, modelId_prefix) {
   return document.getElementById((modelId_prefix ? modelId_prefix : '') + model);
 }
@@ -1261,13 +1317,13 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
-    modelChatGPT.disabled = true;
+    toggleTomSelectDisabled(modelChatGPT, true);
     modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchChatGPTModels.disabled = false;
-    modelChatGPT.disabled = false;
+    toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
     }else{
@@ -1284,13 +1340,13 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
-    modelGoogleGemini.disabled = true;
+    toggleTomSelectDisabled(modelGoogleGemini, true);
     modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchGoogleGeminiModels.disabled = false;
-    modelGoogleGemini.disabled = false;
+    toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
     }else{
@@ -1308,14 +1364,14 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
-    modelOllama.disabled = true;
+    toggleTomSelectDisabled(modelOllama, true);
     modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
     btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnFetchOllamaModels.disabled = false;
-    modelOllama.disabled = false;
+    toggleTomSelectDisabled(modelOllama, false);
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
     }else{
@@ -1334,14 +1390,14 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
-    modelOpenAIComp.disabled = true;
+    toggleTomSelectDisabled(modelOpenAIComp, true);
     modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
     btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnUpdateOpenAICompModels.disabled = false;
-    modelOpenAIComp.disabled = false;
+    toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
     }else{
@@ -1359,13 +1415,13 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
-    modelAnthropic.disabled = true;
+    toggleTomSelectDisabled(modelAnthropic, true);
     modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchAnthropicModels.disabled = false;
-    modelAnthropic.disabled = false;
+    toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
     }else{
@@ -1382,13 +1438,13 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
   if(versionInput.value === ''){
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
-    modelAnthropic.disabled = true;
+    toggleTomSelectDisabled(modelAnthropic, true);
     modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
     btnFetchAnthropicModels.disabled = false;
-    modelAnthropic.disabled = false;
+    toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
     }else{

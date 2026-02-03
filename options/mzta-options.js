@@ -25,6 +25,7 @@ import {
   getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
+  setTomSelectBorder
 } from '../js/mzta-utils.js';
 import {
   injectConnectionUI,
@@ -75,6 +76,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      if(!element.id) return;
       taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
@@ -99,6 +101,10 @@ async function restoreOptions() {
           element.value = result[element.id] || default_select_value;
           if (element.value === '') {
             element.selectedIndex = -1;
+          }
+          if (element.tomselect) {
+            element.tomselect.setValue(element.value, true);
+            setTomSelectBorder(element.tomselect);
           }
           break;
         case 'textarea':

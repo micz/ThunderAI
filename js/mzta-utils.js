@@ -523,6 +523,14 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
+export function setTomSelectBorder(el){
+  if (el.getValue() === "") {
+      el.control.style.border = '2px solid red';
+  } else {
+      el.control.style.border = '1px solid #d0d0d0';
+  }
+}
+
 export function getAPIsInitMessageString(args = {}) {
   const {
     api_string = '',

@@ -210,6 +210,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      if(!element.id) return;
       taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
@@ -243,6 +244,9 @@ async function restoreOptions() {
             element.value = restoreValue;
             if (element.value === '') {
               element.selectedIndex = -1;
+            }
+            if (element.tomselect) {
+              element.tomselect.setValue(element.value, true);
             }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);

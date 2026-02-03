@@ -34,7 +34,8 @@ import {
 import {
   getAccountsList,
   normalizeStringList,
-  isAPIKeyValue
+  isAPIKeyValue,
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
@@ -301,6 +302,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      if(!element.id) return;
       taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
@@ -337,6 +339,10 @@ async function restoreOptions() {
             element.value = restoreValue;
             if (element.value === '') {
               element.selectedIndex = -1;
+            }
+            if (element.tomselect) {
+              element.tomselect.setValue(element.value, true);
+              setTomSelectBorder(element.tomselect);
             }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);

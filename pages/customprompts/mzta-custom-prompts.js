@@ -38,7 +38,8 @@ import {
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     getChatGPTWebModelsList_HTML,
-    openTab
+    openTab,
+    setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -567,7 +568,24 @@ function populateConnectionUI(tr, id, prefix, selectId) {
                         val = prefs[propName];
                     }
                 }
-                inputEl.type === 'checkbox' ? inputEl.checked = (val === true || val === 'true') : inputEl.value = val || '';
+                if (inputEl.type === 'checkbox') {
+                    inputEl.checked = (val === true || val === 'true');
+                } else {
+                    if (inputEl.tomselect) {
+                        const restoreValue = val || '';
+                        let optionExists = Array.from(inputEl.options).some(opt => opt.value === restoreValue);
+                        if (!optionExists && restoreValue !== '') {
+                            let newOption = new Option(restoreValue, restoreValue);
+                            inputEl.add(newOption);
+                        }
+                        inputEl.value = restoreValue;
+                        inputEl.tomselect.sync();
+                        inputEl.tomselect.setValue(restoreValue, true);
+                        setTomSelectBorder(inputEl.tomselect);
+                    } else {
+                        inputEl.value = val || '';
+                    }
+                }
             }
         }
     }
