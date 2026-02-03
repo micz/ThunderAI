@@ -25,6 +25,7 @@ import {
   getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
+  setTomSelectBorder
 } from '../js/mzta-utils.js';
 import {
   injectConnectionUI,
@@ -103,6 +104,7 @@ async function restoreOptions() {
           }
           if (element.tomselect) {
             element.tomselect.setValue(element.value, true);
+            setTomSelectBorder(element.tomselect);
           }
           break;
         case 'textarea':

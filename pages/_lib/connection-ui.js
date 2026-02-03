@@ -30,7 +30,8 @@ import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
-  prepareOriginURL
+  prepareOriginURL,
+  setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -1043,6 +1044,7 @@ export async function injectConnectionUI({
       if (el.value) {
         ts.setValue(el.value);
       }
+      console.log(">>>>>>>>>>>>>>> el.value: " + el.value);
       setTomSelectBorder(ts);
     }
   });
@@ -1258,14 +1260,6 @@ function toggleTomSelectDisabled(element, disabled) {
     } else {
       element.tomselect.enable();
     }
-  }
-}
-
-function setTomSelectBorder(el){
-  if (el.getValue() === "") {
-      el.control.style.border = '2px solid red';
-  } else {
-      el.control.style.border = '1px solid #d0d0d0';
   }
 }
 
