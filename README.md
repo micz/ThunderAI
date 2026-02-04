@@ -56,7 +56,7 @@ Using an API integration, you can activate some automatic features:
 >     - Grok API
 >     - Mistral API
 >     - OpenRouter API
->     - Perpelxity API
+>     - Perplexity API
 
 
 
