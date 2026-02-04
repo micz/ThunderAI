@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event']; //, 'get_task'];
+const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task'];
 
 export const integration_options_config = {
     chatgpt: {
