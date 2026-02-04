@@ -1211,6 +1211,10 @@
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""
   },
+  "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for creating calendar events, regardless the one choosen in the ThunderAI options page.",
+    "description": ""
+  },
   "placeholder_thunderai_def_sign": {
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""
