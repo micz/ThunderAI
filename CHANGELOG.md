@@ -7,6 +7,7 @@
 <h2>Version 4.0.0 - ??/??/2026</h2>
       <ul>
         <li>ThunderAI is now compatible only with Thunderbird 140 and later [<a href="https://github.com/micz/ThunderAI/issues/616">#616</a>].</li>
+        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for calendar and task recognition [<a href="https://github.com/micz/ThunderAI/issues/498">#498</a>].</li>
         <li>Added a new model selector with a search functionality to dynamically filter the list [<a href="https://github.com/micz/ThunderAI/issues/603">#603</a>].</li>
         <li><i>[All APIs]</i> Added a special prompt to summarize one or more emails, using a context menu command [<a href="https://github.com/micz/ThunderAI/issues/615">#615</a>]. Thanks to <a href="https://github.com/gdkrmr">Guido Kraemer</a> for his great work on this feature.</li>
         <li><i>[All APIs]</i> "Analyze for spam" and "Add tags" context menu items are always shown when the corresponding feature is enabled [<a href="https://github.com/micz/ThunderAI/issues/609">#609</a>].</li>
@@ -85,6 +86,7 @@
       <ul>
         <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
         <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
+        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for spamfilter and auto tagging [<a href="https://github.com/micz/ThunderAI/issues/438">#438</a>].</li>
         <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
         <li><i>[Google Gemini API]</i> Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added DeepSeek configuration [<a href="https://github.com/micz/ThunderAI/issues/486">#486</a>].</li>
