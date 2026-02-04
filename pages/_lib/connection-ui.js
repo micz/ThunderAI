@@ -1044,7 +1044,6 @@ export async function injectConnectionUI({
       if (el.value) {
         ts.setValue(el.value);
       }
-      console.log(">>>>>>>>>>>>>>> el.value: " + el.value);
       setTomSelectBorder(ts);
     }
   });
@@ -1469,12 +1468,12 @@ function loadOpenAICompConfigs(modelId_prefix = ''){
 }
 
 async function loadURLsPermissions(modelId_prefix = ''){
-  let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host").value;
-  if(ollama_host != ''){
+  let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host")?.value;
+  if((ollama_host) && (ollama_host != '')){
     varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [prepareOriginURL(ollama_host)] });
   }
-  let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host").value;
-  if(openai_comp_host != ''){
+  let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host")?.value;
+  if((openai_comp_host) && (openai_comp_host != '')){
     varConnectionUI.permission_openai_comp_host = await messenger.permissions.contains({ origins: [prepareOriginURL(openai_comp_host)] });
   }
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] });
