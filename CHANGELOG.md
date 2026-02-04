@@ -13,6 +13,7 @@
         <li><i>[All APIs]</i> "Analyze for spam" and "Add tags" context menu items are always shown when the corresponding feature is enabled [<a href="https://github.com/micz/ThunderAI/issues/609">#609</a>].</li>
         <li><i>[OpenAI Comp API][Ollama API]</i> Asking for the single host for permission to avoid CORS errors, instead of <i>all_urls</i>, as requested by the Thunderbird Review Team [<a href="https://github.com/micz/ThunderAI/issues/524">#524</a>].</li>
         <li>Fix: Using also the mail folder owner to search for the right identity to use when composing a reply [<a href="https://github.com/micz/ThunderAI/issues/627">#627</a>].</li>
+        <li>Context menu items are always ordered alfabetically [<a href="https://github.com/micz/ThunderAI/issues/630">#630</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.8.3 - 22/01/2026</h2>
