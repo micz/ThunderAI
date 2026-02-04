@@ -64,7 +64,10 @@ import {
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
-import { addTags_getExclusionList, checkExcludedTag } from './js/mzta-addatags-exclusion-list.js';
+import {
+    addTags_getExclusionList,
+    checkExcludedTag
+} from './js/mzta-addatags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -879,38 +882,11 @@ function setupStorageChangeListener() {
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
                   });                  
                 menus.reload(special_prompts_ids);
+            }
 
-                if(newConnectionType === "chatgpt_web"){
-                    removeContextMenu(contextMenuID_AddTags);
-                    removeContextMenu(contextMenuID_Spamfilter);
-                    removeContextMenu(contextMenuID_Summarize);
-                }
+            reload_pref_init().then(() => {
                 addContextMenuItems();
-            }
-
-            // context menu changes for add_tags and spamfilter
-            if (changes.add_tags) {
-                if(changes.add_tags.newValue){
-                    addContextMenu(contextMenuID_AddTags);
-                }else{
-                    removeContextMenu(contextMenuID_AddTags);
-                }
-            }
-            if (changes.spamfilter) {
-                if(changes.spamfilter.newValue){
-                    addContextMenu(contextMenuID_Spamfilter);
-                }else{
-                    removeContextMenu(contextMenuID_Spamfilter);
-                }
-            }
-            if (changes.summarize) {
-                if (changes.summarize.newValue){
-                    addContextMenu(contextMenuID_Summarize);
-                } else {
-                    removeContextMenu(contextMenuID_Summarize);
-                }
-            }
-            reload_pref_init();
+            });
         }
     });
 }
@@ -961,20 +937,38 @@ function removeContextMenu(menu_id) {
 }
 
 function addContextMenuItems() {
+    let itemsToAdd = [];
+
     // Add Context menu: Add tags
     if(prefs_init.add_tags && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
-        addContextMenu(contextMenuID_AddTags);
+        itemsToAdd.push(contextMenuID_AddTags);
+    } else {
+        removeContextMenu(contextMenuID_AddTags);
     }
 
     // Add Context menu: Spamfilter
     if(prefs_init.spamfilter && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
-        addContextMenu(contextMenuID_Spamfilter);
+        itemsToAdd.push(contextMenuID_Spamfilter);
+    } else {
+        removeContextMenu(contextMenuID_Spamfilter);
     }
     
     // Add Context menu: Summarize
     if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type, prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
-        addContextMenu(contextMenuID_Summarize);
+        itemsToAdd.push(contextMenuID_Summarize);
+    } else {
+        removeContextMenu(contextMenuID_Summarize);
     }
+
+    itemsToAdd.sort((a, b) => {
+        let titleA = browser.i18n.getMessage("context_menu_" + a);
+        let titleB = browser.i18n.getMessage("context_menu_" + b);
+        return titleA.localeCompare(titleB);
+    });
+
+    itemsToAdd.forEach(menu_id => {
+        addContextMenu(menu_id);
+    });
 }
 
 addContextMenuItems();
