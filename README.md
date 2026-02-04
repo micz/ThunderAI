@@ -51,6 +51,12 @@ Using an API integration, you can activate some automatic features:
 > - **OpenAI Compatible API**
 >   - You can also use a local OpenAI Compatible API server, like LM Studio or Mistral AI!
 >   - There is also an option to remove the "v1" segment from the API url, if needed, and to manually set the model name if the server doesn't have a models list endpoint.
+>   - You can also use one of these predefined configurations:
+>     - DeepSeek API
+>     - Grok API
+>     - Mistral API
+>     - OpenRouter API
+>     - Perpelxity API
 
 
 
