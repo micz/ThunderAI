@@ -1279,7 +1279,7 @@ async function saveAll() {
         setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));
         await setCustomPrompts(newCustomPrompts);
         setMessage(browser.i18n.getMessage('customPrompts_reloading_menus'));
-        browser.runtime.sendMessage({command: "reload_menus"});
+        await browser.runtime.sendMessage({command: "reload_menus"});
         setMessage(browser.i18n.getMessage('customPrompts_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();
