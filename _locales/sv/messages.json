@@ -1352,5 +1352,8 @@
     },
     "CORS_localhost_warn": {
         "message": "Om du använder localhost eller 127.0.0.1 eftersom AI-servern finns på din dator krävs behörigheten <all_urls>."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att skapa kalenderhändelser, oavsett vilket som valts på ThunderAI-alternativsidan."
     }
 }
