@@ -120,6 +120,7 @@ export class mzta_Menus {
                         return {ok:'0'};
                    }
                    msg_text.selection = clipboardText;
+                   msg_text.text = clipboardText;
                 } catch (e) {
                    console.error("Clipboard read error:", e);
                    browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
