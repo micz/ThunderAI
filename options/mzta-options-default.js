@@ -125,6 +125,7 @@ export const prefs_default = {
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
     get_calendar_event: true,
+    get_calendar_event_from_clipboard: false,  // Enable calendar event from clipboard menu item
     get_task: true,
     calendar_enforce_timezone: false,
     calendar_timezone: '',

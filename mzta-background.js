@@ -99,6 +99,7 @@ let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
     get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
+    get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
     get_task: doGetSparkFeature(prefs_init.get_task),
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
   });
@@ -183,13 +184,15 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
     let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
     let getTask = doGetSparkFeature(prefs_reload.get_task);
     const special_prompts_ids = getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
         addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
         get_calendar_event: getCalendarEvent,
+        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
         get_task: getTask,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
       });
@@ -803,6 +806,7 @@ async function reload_pref_init(){
         do_debug: prefs_default.do_debug,
         add_tags: prefs_default.add_tags,
         get_calendar_event: prefs_default.get_calendar_event,
+        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
         get_task: prefs_default.get_task,
         connection_type: prefs_default.connection_type,
         add_tags_auto: prefs_default.add_tags_auto,
@@ -828,11 +832,13 @@ function setupStorageChangeListener() {
             if (changes.add_tags) {
                 const newTags = changes.add_tags.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: newTags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });
@@ -843,11 +849,30 @@ function setupStorageChangeListener() {
             if (changes.get_calendar_event) {
                 const newCalendarEvent = changes.get_calendar_event.newValue;
                 let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'get_calendar_event_from_clipboard' changes
+            if (changes.get_calendar_event_from_clipboard) {
+                const newCalendarEventFromClipboard = changes.get_calendar_event_from_clipboard.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(newCalendarEventFromClipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });                  
@@ -858,11 +883,13 @@ function setupStorageChangeListener() {
             if (changes.get_task) {
                 const newTask = changes.get_task.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(newTask);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });                  
@@ -873,11 +900,13 @@ function setupStorageChangeListener() {
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
                   });                  

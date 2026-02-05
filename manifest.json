@@ -34,6 +34,7 @@
         "messagesTagsList"
     ],
     "optional_permissions": [
+        "clipboardRead",
         "messagesTags",
         "messagesUpdate",
         "messagesMove",

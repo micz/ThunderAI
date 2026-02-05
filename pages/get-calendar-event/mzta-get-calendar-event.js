@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let get_calendar_event_reset_btn = document.getElementById('btn_reset_prompt');
     let get_calendar_event_use_specific_integration = document.getElementById('get_calendar_event_use_specific_integration');
     let get_calendar_event_no_selection = document.getElementById('calendar_no_selection');
+    let get_calendar_event_from_clipboard = document.getElementById('get_calendar_event_from_clipboard');
 
     get_calendar_event_textarea.addEventListener('input', (event) => {
         get_calendar_event_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
@@ -100,6 +101,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').need_selected = event.target.checked ? '0' : '1';
         await setSpecialPrompts(specialPrompts);
         browser.runtime.sendMessage({command: "reload_menus"});
+    });
+
+    get_calendar_event_from_clipboard.addEventListener('change', async (event) => {
+        if (event.target.checked) {
+            // Request clipboardRead permission when enabling the feature
+            try {
+                const granted = await browser.permissions.request({
+                    permissions: ["clipboardRead"]
+                });
+
+                if (granted) {
+                    // Permission granted, enable the feature
+                    await browser.storage.sync.set({ get_calendar_event_from_clipboard: true });
+                    browser.runtime.sendMessage({command: "reload_menus"});
+                } else {
+                    // Permission denied, uncheck the checkbox
+                    event.target.checked = false;
+                    alert(browser.i18n.getMessage("clipboard_permission_denied"));
+                }
+            } catch (err) {
+                taLog.error("Error requesting clipboard permission:", err);
+                event.target.checked = false;
+                alert(browser.i18n.getMessage("clipboard_permission_error"));
+            }
+        } else {
+            // Disabling the feature
+            await browser.storage.sync.set({ get_calendar_event_from_clipboard: false });
+            browser.runtime.sendMessage({command: "reload_menus"});
+        }
     });
 
     get_calendar_event_reset_btn.addEventListener('click', () => {

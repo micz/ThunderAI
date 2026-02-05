@@ -1011,6 +1011,34 @@
     "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
     "description": ""
   },
+  "prompt_get_calendar_event_from_clipboard": {
+    "message": "Add calendar event from clipboard",
+    "description": ""
+  },
+  "clipboard_read_error": {
+    "message": "Could not read clipboard. Please check permissions.",
+    "description": ""
+  },
+  "clipboard_empty_error": {
+    "message": "Clipboard is empty. Please copy some text first.",
+    "description": ""
+  },
+  "clipboard_permission_denied": {
+    "message": "Clipboard permission was denied. Please enable the feature again in settings to grant permission.",
+    "description": ""
+  },
+  "clipboard_permission_error": {
+    "message": "Error requesting clipboard permission. Please try again.",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_from_clipboard": {
+    "message": "Get calendar event from clipboard",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+    "message": "Show an additional menu item to create calendar events from clipboard text content.",
+    "description": ""
+  },
   "Summarize_prompt_prefs_title": {
     "message": "Add Summarization Options",
     "description": ""
