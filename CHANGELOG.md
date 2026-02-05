@@ -18,6 +18,7 @@
         <li>Added the <i>{%mail_text_body_or_selected%}</i> placeholder to retrieve the selected text or the full text body of the email if no selection is present [<a href="https://github.com/micz/ThunderAI/issues/641">#641</a>].</li>
         <li>Added the <i>{%mail_html_body_or_selected%}</i> placeholder to retrieve the selected HTML or the full HTML body of the email if no selection is present [<a href="https://github.com/micz/ThunderAI/issues/641">#641</a>].</li>
         <li><i>[All APIs]</i> Added an option to get a calendar event without selecting some text, but using the full text body of the email [<a href="https://github.com/micz/ThunderAI/issues/518">#518</a>].</li>
+        <li><i>[All APIs]</i> Added a new menu item to create a calendar event from the text saved in the clipboard [<a href="https://github.com/micz/ThunderAI/issues/362">#362</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.8.3 - 22/01/2026</h2>
