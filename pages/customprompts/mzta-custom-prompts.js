@@ -354,7 +354,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function exportPrompts() {
         const manifest = browser.runtime.getManifest();
         const addonVersion = manifest.version;
-        const outputPrompts = preparePromptsForExport(await getPrompts());
+        const include_api_settings = await showYesNoDialog(browser.i18n.getMessage("customPrompts_export_include_api_settings"));
+        if (include_api_settings === null) return;
+        const outputPrompts = preparePromptsForExport(await getPrompts(), include_api_settings);
         let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
         const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
             type: "application/json",
@@ -365,6 +367,82 @@ document.addEventListener('DOMContentLoaded', async () => {
             url: URL.createObjectURL(blob),
             filename: `thunderai-prompts-${time_stamp}.json`,
             saveAs: true,
+        });
+    }
+
+    async function showYesNoDialog(message) {
+        return new Promise((resolve) => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'export';
+            // dialog.style.cssText = `
+            //     padding: 20px;
+            //     border: none;
+            //     border-radius: 8px;
+            //     background-color: var(--dialog-bg-color, #fff);
+            //     color: var(--dialog-text-color, #000);
+            //     max-width: 400px;
+            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            //     font-family: system-ui, -apple-system, sans-serif;
+            // `;
+            
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                 dialog.style.backgroundColor = '#2e2e2e';
+                 dialog.style.color = '#ffffff';
+            }
+
+            const text = document.createElement('p');
+            text.textContent = message;
+            text.style.marginBottom = '20px';
+            text.style.fontSize = '14px';
+            text.style.lineHeight = '1.5';
+            dialog.appendChild(text);
+            
+            const btnContainer = document.createElement('div');
+            btnContainer.style.display = 'flex';
+            btnContainer.style.justifyContent = 'flex-end';
+            btnContainer.style.gap = '10px';
+            
+            const createBtn = (text, bgColor) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.style.padding = '8px 16px';
+                btn.style.borderRadius = '4px';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '14px';
+                btn.style.color = 'white';
+                btn.style.backgroundColor = bgColor;
+                return btn;
+            };
+
+            const cancelBtn = createBtn(browser.i18n.getMessage("customPrompts_btnCancel"), '#6c757d');
+            cancelBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(null);
+            };
+
+            const noBtn = createBtn(browser.i18n.getMessage("no_string"), '#007bff');
+            noBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(false);
+            };
+            
+            const yesBtn = createBtn(browser.i18n.getMessage("yes_string"), '#6c757d');
+            yesBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(true);
+            };
+            
+            btnContainer.appendChild(cancelBtn);
+            btnContainer.appendChild(noBtn);
+            btnContainer.appendChild(yesBtn);
+            dialog.appendChild(btnContainer);
+            
+            document.body.appendChild(dialog);
+            dialog.showModal();
         });
     }
 
