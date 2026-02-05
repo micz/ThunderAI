@@ -1808,5 +1808,13 @@
   "customPrompts_export_include_api_settings": {
     "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
     "description": ""
+  },
+  "prefs_OptionText_calendar_no_selection": {
+    "message": "Do not ask to select text",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_no_selection_Info": {
+    "message": "If checked there is no need to select some text. The full message body will be used to get the calendar event.",
+    "description": ""
   }
 }

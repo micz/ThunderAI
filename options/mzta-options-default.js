@@ -128,6 +128,7 @@ export const prefs_default = {
     get_task: true,
     calendar_enforce_timezone: false,
     calendar_timezone: '',
+    calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
