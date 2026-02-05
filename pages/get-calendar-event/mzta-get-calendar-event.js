@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     get_calendar_event_save_btn.addEventListener('click', async () => {
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').text = get_calendar_event_textarea.value;
+        specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event_from_clipboard').text = get_calendar_event_textarea.value;
         await setSpecialPrompts(specialPrompts);
         get_calendar_event_save_btn.disabled = true;
         document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
