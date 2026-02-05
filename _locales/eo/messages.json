@@ -38,7 +38,7 @@
     "From": {
         "message": "De"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Ne"
     },
     "apiwebchat_stopping": {
@@ -122,7 +122,7 @@
     "Explanation": {
         "message": "Klarigo"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Jes"
     },
     "apiwebchat_you": {

@@ -771,7 +771,7 @@
     "Moved_to_Spam": {
         "message": "Spostato nello spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "No"
     },
     "From": {
@@ -780,7 +780,7 @@
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Gestisci le impostazioni del filtro antispam"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Sì"
     },
     "SpamReport_Title": {

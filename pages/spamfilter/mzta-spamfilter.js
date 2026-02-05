@@ -244,7 +244,7 @@ async function loadSpamReport(){
       row.appendChild(tdSpamValue);
 
       const tdMoved = document.createElement("td");
-      tdMoved.textContent = (report.moved ? browser.i18n.getMessage("spamfilter_moved") : browser.i18n.getMessage("spamfilter_not_moved")) + ` (${report.SpamThreshold})`;
+      tdMoved.textContent = (report.moved ? browser.i18n.getMessage("yes_string") : browser.i18n.getMessage("no_string")) + ` (${report.SpamThreshold})`;
       row.appendChild(tdMoved);
 
       const tdExplanation = document.createElement("td");

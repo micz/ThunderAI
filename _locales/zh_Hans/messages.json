@@ -134,10 +134,10 @@
     "SpamReport_Title": {
         "message": "垃圾邮件过滤报告"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "否"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "是"
     },
     "prompt_rewrite_polite": {

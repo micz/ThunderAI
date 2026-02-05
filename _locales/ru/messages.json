@@ -920,10 +920,10 @@
     "Report_Date": {
         "message": "Дата отчета"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Да"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Нет"
     },
     "context_menu_mzta-add-tags": {

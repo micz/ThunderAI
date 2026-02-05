@@ -284,7 +284,7 @@
     "Spam_Value": {
         "message": "垃圾訊息評分"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "否"
     },
     "Report_Date": {
@@ -387,7 +387,7 @@
     "Date": {
         "message": "日期"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "是"
     },
     "Custom": {

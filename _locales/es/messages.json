@@ -956,10 +956,10 @@
     "Report_Date": {
         "message": "Fecha del informe"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Si"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "No"
     },
     "context_menu_mzta-add-tags": {

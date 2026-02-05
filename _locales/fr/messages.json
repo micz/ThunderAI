@@ -777,7 +777,7 @@
     "Moved_to_Spam": {
         "message": "Déplacé dans le spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Non"
     },
     "spamfilter_no_reports": {
@@ -798,7 +798,7 @@
     "SpamReport_Title": {
         "message": "Rapports du filtre anti-spam"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Oui"
     },
     "prefs_OptionText_add_tags_auto_Info": {

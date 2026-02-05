@@ -773,10 +773,10 @@
     "Report_Date": {
         "message": "Ημερομηνία αναφοράς"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ναί"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Οχι"
     },
     "context_menu_mzta-add-tags": {

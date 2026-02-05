@@ -777,7 +777,7 @@
     "Moved_to_Spam": {
         "message": "Przeniesiono do spamu"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nie"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
@@ -795,7 +795,7 @@
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Zarządzaj ustawieniami filtra spamu"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Tak"
     },
     "prefs_OptionText_spamfilter": {

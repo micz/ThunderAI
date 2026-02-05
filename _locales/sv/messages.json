@@ -797,10 +797,10 @@
     "Report_Date": {
         "message": "Rapportdatum"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ja"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nej"
     },
     "context_menu_mzta-add-tags": {

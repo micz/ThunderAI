@@ -959,10 +959,10 @@
     "Report_Date": {
         "message": "レポート日"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "はい"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "いいえ"
     },
     "context_menu_mzta-add-tags": {

@@ -1355,11 +1355,11 @@
     "message": "Report Date",
     "description": ""
   },
-  "spamfilter_moved": {
+  "yes_string": {
     "message": "Yes",
     "description": ""
   },
-  "spamfilter_not_moved": {
+  "no_string": {
     "message": "No",
     "description": ""
   },
@@ -1803,6 +1803,10 @@
   },
   "Optional_Permission_Denied_Model_Fetching": {
     "message": "You have denied the optional permission needed to fetch models for this integration.",
+    "description": ""
+  },
+  "customPrompts_export_include_api_settings": {
+    "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
     "description": ""
   }
 }

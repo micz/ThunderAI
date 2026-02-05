@@ -780,7 +780,7 @@
     "Moved_to_Spam": {
         "message": "Movido para spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Não"
     },
     "prefs_OptionText_btnManageSpamFilterInfo": {
@@ -792,7 +792,7 @@
     "prefs_OptionText_spamfilter_Info": {
         "message": "Se marcado, o ThunderAI moverá automaticamente e-mails de spam para a pasta de spam."
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Sim"
     },
     "SpamReport_Title": {

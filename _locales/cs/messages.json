@@ -467,7 +467,7 @@
     "Spam_Value": {
         "message": "Hodnota spamu"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Ne"
     },
     "prefsInfoDesc_4": {
@@ -527,7 +527,7 @@
     "Date": {
         "message": "Datum"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ano"
     },
     "Report_Date": {

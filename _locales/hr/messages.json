@@ -828,10 +828,10 @@
     "Report_Date": {
         "message": "Datum izvješća"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Da"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Ne"
     },
     "prefs_OptionText_openai_comp_info_remote": {

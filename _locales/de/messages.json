@@ -810,10 +810,10 @@
     "Report_Date": {
         "message": "Berichtsdatum"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ja"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nein"
     },
     "spamfilter_threshold_too_low": {
