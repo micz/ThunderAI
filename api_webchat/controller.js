@@ -213,6 +213,8 @@ if (worker) {
             version_string: prefs_api[`${integration_prefix}_version`],
             additional_messages: additional_text_elements
         }), "info");
+        
+        //console.log(`>>>>>>>>>>>>> command: ${llm}_ready_${call_id}`,)
 
         browser.runtime.sendMessage({
             command: `${llm}_ready_${call_id}`,

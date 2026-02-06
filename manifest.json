@@ -2,13 +2,13 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "3.8.0pre4",
+    "version": "4.0.0",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
         "gecko": {
             "id": "thunderai@micz.it",
-            "strict_min_version": "115.0"
+            "strict_min_version": "140.0"
         }
     },
     "message_display_action": {
@@ -40,6 +40,8 @@
         "https://*.chatgpt.com/*",
         "https://*.openai.com/*",
         "https://*.anthropic.com/*",
+        "https://*/*",
+        "http://*/*",
         "<all_urls>"
     ],
     "background": {
@@ -65,7 +67,7 @@
     "content_scripts": [
         {
             "matches": ["https://*.chatgpt.com/*"],
-            "js": ["js/tb115_segmenter/tb115_loader.js","js/lib/diff.js"],
+            "js": ["js/lib/diff.js"],
             "all_frames": true,
             "run_at": "document_start"
         }

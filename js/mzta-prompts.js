@@ -324,6 +324,54 @@ const specialPrompts = [
         is_default: "1",
         is_special: "1",
     },
+    {
+        id: 'prompt_summarize',
+        name: "__MSG_prompt_summarize__",
+        text: "prompt_summarize_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
+        is_default: "1",
+        is_special: "1",
+    },
+    {
+        id: 'prompt_summarize_email_template',
+        name: "__MSG_prompt_summarize_email_template__",
+        text: "prompt_summarize_email_template_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
+        is_default: "1",
+        is_special: "1",
+    },
+    {
+        id: 'prompt_summarize_email_separator',
+        name: "__MSG_prompt_summarize_email_separator__",
+        text: "prompt_summarize_email_separator_full_text",
+        type: "1",
+        action: "0",
+        need_selected: "0",
+        need_signature: "0",
+        need_custom_text: "0",
+        define_response_lang: "0",
+        use_diff_viewer: "0",
+        api_type: '',
+        api_model: '',
+        is_default: "1",
+        is_special: "1",
+    }
 ];
 
 
@@ -362,18 +410,55 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSp
     return output;
 }
 
-export function preparePromptsForExport(prompts){
-    let output = [...prompts];
+export function preparePromptsForExport(prompts, include_api_settings = false){
+    let output = JSON.parse(JSON.stringify(prompts));
     output.forEach(prompt => {
+
+        if(!include_api_settings){
+            delete prompt.api_type;
+            for (const [integration, options] of Object.entries(integration_options_config)) {
+                for (const key of Object.keys(options)) {
+                    delete prompt[`${integration}_${key}`];
+                }
+            }
+        } else {
+            if(prompt.api_type && prompt.api_type !== ''){
+                const activeIntegration = prompt.api_type.replace('_api', '');
+                for (const [integration, options] of Object.entries(integration_options_config)) {
+                    if(integration !== activeIntegration){
+                        for (const key of Object.keys(options)) {
+                            delete prompt[`${integration}_${key}`];
+                        }
+                    }
+                }
+            } else {
+                for (const [integration, options] of Object.entries(integration_options_config)) {
+                    for (const key of Object.keys(options)) {
+                        delete prompt[`${integration}_${key}`];
+                    }
+                }
+            }
+        }
+
         if(prompt.is_default == 1){
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'];
+            if(include_api_settings){
+                allowedKeys.push('api_type');
+                for (const [integration, options] of Object.entries(integration_options_config)) {
+                    for (const key of Object.keys(options)) {
+                        allowedKeys.push(`${integration}_${key}`);
+                    }
+                }
+            }
             Object.keys(prompt).forEach(key => {
-                if(!['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'].includes(key)){
+                if(!allowedKeys.includes(key)){
                     delete prompt[key];
                 }
             })
         }else{
             delete prompt['idnum'];
         }
+        
     });
     return output;
 }

@@ -87,8 +87,6 @@ export class Anthropic {
 
   fetchResponse = async (messages) => {
 
-    // console.log(">>>>>>>>>>> Anthropic API request: " + JSON.stringify(messages));
-
     try {
 
       let claude_body = { 
@@ -102,6 +100,8 @@ export class Anthropic {
       const tempFloat = parseFloat(this.temperature);
 
       if(this.temperature != '' && !Number.isNaN(tempFloat)) claude_body.temperature = tempFloat;
+
+      // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 
       const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",

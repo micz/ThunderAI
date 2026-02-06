@@ -45,6 +45,7 @@ import {
     extractJsonObject,
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
+    contextMenuID_Summarize,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -57,10 +58,16 @@ import {
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
-import { getSpamFilterPrompt } from './js/mzta-prompts.js';
+import { 
+    getSpamFilterPrompt,
+    getSpecialPrompts
+} from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
-import { addTags_getExclusionList, checkExcludedTag } from './js/mzta-addatags-exclusion-list.js';
+import {
+    addTags_getExclusionList,
+    checkExcludedTag
+} from './js/mzta-addatags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -572,7 +579,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     browser.runtime.onMessage.removeListener(listener2);
                 }
 
-                if (message.command === "openai_api_ready_"+rand_call_id2) {
+                if (message.command === "chatgpt_api_ready_"+rand_call_id2) {
                     return handleChatGptApi(sender.tab);
                 }
                 return false;
@@ -848,10 +855,9 @@ async function reload_pref_init(){
         add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
         add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
         spamfilter: prefs_default.spamfilter,
+        summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-        add_tags_context_menu: prefs_default.add_tags_context_menu,
-        spamfilter_context_menu: prefs_default.spamfilter_context_menu,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
@@ -922,48 +928,11 @@ function setupStorageChangeListener() {
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
                   });                  
                 menus.reload(special_prompts_ids);
+            }
 
-                if(newConnectionType === "chatgpt_web"){
-                    removeContextMenu(contextMenuID_AddTags);
-                    removeContextMenu(contextMenuID_Spamfilter);
-                }
+            reload_pref_init().then(() => {
                 addContextMenuItems();
-            }
-
-            // context menu changes for add_tags and spamfilter
-            if (changes.add_tags_context_menu) {
-                if(changes.add_tags_context_menu.newValue){
-                    addContextMenu(contextMenuID_AddTags);
-                }else{
-                    removeContextMenu(contextMenuID_AddTags);
-                }
-            }
-            if (changes.add_tags) {
-                if(changes.add_tags.newValue){
-                    if(prefs_init.add_tags_context_menu){
-                        addContextMenu(contextMenuID_AddTags);
-                    }
-                }else{
-                    removeContextMenu(contextMenuID_AddTags);
-                }
-            }
-            if (changes.spamfilter_context_menu) {
-                if(changes.spamfilter_context_menu.newValue){
-                    addContextMenu(contextMenuID_Spamfilter);
-                }else{
-                    removeContextMenu(contextMenuID_Spamfilter);
-                }
-            }
-            if (changes.spamfilter) {
-                if(changes.spamfilter.newValue){
-                    if(prefs_init.spamfilter_context_menu){
-                        addContextMenu(contextMenuID_Spamfilter);
-                    }
-                }else{
-                    removeContextMenu(contextMenuID_Spamfilter);
-                }
-            }
-            reload_pref_init();
+            });
         }
     });
 }
@@ -1014,15 +983,38 @@ function removeContextMenu(menu_id) {
 }
 
 function addContextMenuItems() {
+    let itemsToAdd = [];
+
     // Add Context menu: Add tags
-    if(prefs_init.add_tags && prefs_init.add_tags_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
-        addContextMenu(contextMenuID_AddTags);
+    if(prefs_init.add_tags && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
+        itemsToAdd.push(contextMenuID_AddTags);
+    } else {
+        removeContextMenu(contextMenuID_AddTags);
     }
 
     // Add Context menu: Spamfilter
-    if(prefs_init.spamfilter && prefs_init.spamfilter_context_menu && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
-        addContextMenu(contextMenuID_Spamfilter);
+    if(prefs_init.spamfilter && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
+        itemsToAdd.push(contextMenuID_Spamfilter);
+    } else {
+        removeContextMenu(contextMenuID_Spamfilter);
     }
+    
+    // Add Context menu: Summarize
+    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type, prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
+        itemsToAdd.push(contextMenuID_Summarize);
+    } else {
+        removeContextMenu(contextMenuID_Summarize);
+    }
+
+    itemsToAdd.sort((a, b) => {
+        let titleA = browser.i18n.getMessage("context_menu_" + a);
+        let titleB = browser.i18n.getMessage("context_menu_" + b);
+        return titleA.localeCompare(titleB);
+    });
+
+    itemsToAdd.forEach(menu_id => {
+        addContextMenu(menu_id);
+    });
 }
 
 addContextMenuItems();
@@ -1031,16 +1023,92 @@ addContextMenuItems();
 browser.menus.onClicked.addListener( (info, tab) => {
     let _add_tags = false
     let _spamfilter = false
+    let _summarize = false;
     if(info.menuItemId === contextMenuID_AddTags){
         _add_tags = true;
     }
     if(info.menuItemId === contextMenuID_Spamfilter){
         _spamfilter = true;
     }
+    if(info.menuItemId === contextMenuID_Summarize) {
+        _summarize = true;
+    }
     if(_add_tags || _spamfilter){
         processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
     }
+    if(_summarize) {
+        // info.selectedMessages is of type MessageList
+        summarizeEmails(getMessages(info.selectedMessages));
+    }
 });
+
+async function summarizeEmails(messages) {
+    taWorkingStatus.startWorking();
+    
+    // we have three prompts, the actual assignment for the LLM, the email
+    // template prompt, and the email separator prompt
+    const specialPrompts = await getSpecialPrompts();
+    const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+    const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+    const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
+    
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+
+    // replace placeholders in the prompts the assignment prompt and email
+    // separator prompt do not have a message as context, so there is only
+    // limited things to replace
+    const prompt_string = await taPromptUtils.preparePrompt({
+        curr_prompt: prompt,
+        chatgpt_lang: chatgpt_lang,
+    });
+    const prompt_email_separator_string = await taPromptUtils.preparePrompt({
+        curr_prompt: prompt_email_separator,
+        chatgpt_lang: chatgpt_lang,
+    });
+
+    
+    // assemble all email messages into one string and add the assignment prompt
+    const messages_list = [];
+    for await (let curr_message of messages) {
+      
+        // extract body of current message as text
+        const curr_message_full = await browser.messages.getFull(curr_message.id);
+        const curr_body_full_html = getMailBody(curr_message_full);
+        const curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+        if( curr_body_full_text.length === 0) {
+            taLog.log("No HTML found in the message body, using plain text...");
+            curr_body_full_text = curr_message_full.text;
+        }
+        
+        messages_list.push(await taPromptUtils.preparePrompt({
+          curr_prompt: prompt_email,
+          curr_message: curr_message,
+          chatgpt_lang: chatgpt_lang,
+          body_text: curr_body_full_text,
+          subject_text: curr_message_full.headers.subject,
+          msg_text: curr_body_full_html,
+        }));
+    };
+    const messages_string = messages_list.join(prompt_email_separator_string);
+    
+    const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
+    
+    // console.log(full_prompt);
+    
+    // send the prompt to the chat interface
+    openChatGPT(
+        full_prompt, 
+        prompt.action,
+        tabs[0].id,
+        prompt.name,
+        prompt.need_custom_text,
+        prompt
+    )
+  
+    taWorkingStatus.stopWorking();
+    return {ok : '1'};
+}
 
 
 // Listening for new received emails

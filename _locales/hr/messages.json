@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Korištenje modela"
     },
-    "chagpt_api_connecting": {
-        "message": "Pokušaj povezivanja na OpenAI ChatGPT pomoću dostavljenog API ključa"
-    },
     "Debug": {
         "message": "Otklanjanje pogrešaka"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Niste odabrali model za Ollama API. Odaberite jedan na stranici s mogućnostima."
     },
-    "ollama_api_connecting": {
-        "message": "Pokušaj povezivanja na Ollama lokalni poslužitelj pomoću glavnog računala"
-    },
-    "andModel": {
-        "message": "i model"
-    },
     "error_connection_interrupted": {
         "message": "Veza s poslužiteljem je neočekivano prekinuta"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Niste odabrali model za OpenAI kompatibilan API. Odaberite jedan na stranici s opcijama."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Pokušaj povezivanja s OpenAI kompatibilnim API lokalnim poslužiteljem pomoću glavnog računala"
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI Comp API zahtjev nije uspio"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "Google Gemini API zahtjev nije uspio"
     },
-    "google_gemini_api_connecting": {
-        "message": "Pokušaj povezivanja na Google Gemini pomoću dostavljenog API ključa"
-    },
     "google_gemini_empty_apikey": {
         "message": "Niste dodali API ključ za Google Gemini API. Unesite jedan na stranicu s mogućnostima."
     },
@@ -752,9 +737,6 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Pogreška pri otvaranju dijaloškog okvira kalendarskog događaja"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks nije instaliran!"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Dodajte oznake automatski"
@@ -846,10 +828,10 @@
     "Report_Date": {
         "message": "Datum izvješća"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Da"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Ne"
     },
     "prefs_OptionText_openai_comp_info_remote": {

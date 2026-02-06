@@ -4,13 +4,17 @@ on:
   release:
     types: [published, edited]
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   issues: write
 
 jobs:
   comment-milestone-issues:
-    # consenti il run manuale per test; in produzione resta solo prerelease
+    # allow manual run for testing; in production, only prerelease
     if: ${{ github.event.release.prerelease == true }}
     runs-on: ubuntu-latest
     steps:

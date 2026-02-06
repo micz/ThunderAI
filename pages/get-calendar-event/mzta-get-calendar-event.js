@@ -16,23 +16,59 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { getSpecialPrompts, setSpecialPrompts } from "../../js/mzta-prompts.js";
+import {
+  getSpecialPrompts,
+  setSpecialPrompts
+} from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
   mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { isAPIKeyValue } from "../../js/mzta-utils.js";
+import {
+  isAPIKeyValue,
+  setTomSelectBorder
+} from "../../js/mzta-utils.js";
+import {
+  initializeSpecificIntegrationUI
+} from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    let specialPrompts = await getSpecialPrompts();
+    let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
+
+    if (get_calendar_event_prompt && get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
+        let update_prefs = {};
+        update_prefs['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
+        
+        let integration = get_calendar_event_prompt.api_type.replace('_api', '');
+        if (integration_options_config && integration_options_config[integration]) {
+             for (const key of Object.keys(integration_options_config[integration])) {
+                 if (get_calendar_event_prompt[key] !== undefined) {
+                     update_prefs[`get_calendar_event_${integration}_${key}`] = get_calendar_event_prompt[key];
+                 }
+             }
+        }
+        await browser.storage.sync.set(update_prefs);
+    }
+
+    await initializeSpecificIntegrationUI({
+      prefix: 'get_calendar_event',
+      promptId: 'prompt_get_calendar_event',
+      taLog: taLog,
+      restoreOptionsCallback: restoreOptions
+    });
+
     i18n.updateDocument();
-    await restoreOptions();
 
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
@@ -41,9 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let get_calendar_event_textarea = document.getElementById('get_calendar_event_prompt_text');
     let get_calendar_event_save_btn = document.getElementById('btn_save_prompt');
     let get_calendar_event_reset_btn = document.getElementById('btn_reset_prompt');
-
-    let specialPrompts = await getSpecialPrompts();
-    let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
+    let get_calendar_event_use_specific_integration = document.getElementById('get_calendar_event_use_specific_integration');
 
     get_calendar_event_textarea.addEventListener('input', (event) => {
         get_calendar_event_reset_btn.disabled = (event.target.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
@@ -52,6 +86,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('get_calendar_event_prompt_unsaved').classList.add('hidden');
         } else {
             document.getElementById('get_calendar_event_prompt_unsaved').classList.remove('hidden');
+        }
+    });
+
+    get_calendar_event_use_specific_integration.addEventListener('change', (event) => {
+        if (!event.target.checked) {
+          browser.storage.sync.set({ get_calendar_event_connection_type: '' });
         }
     });
 
@@ -97,8 +137,8 @@ function saveOptions(e) {
       case 'number':
         options[element.id] = element.valueAsNumber;
         break;
-        case 'text':
-        case 'password':
+      case 'text':
+      case 'password':
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
@@ -114,6 +154,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      if(!element.id) return;
       taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
@@ -131,15 +172,28 @@ async function restoreOptions() {
           if(element.id == 'default_chatgpt_lang') default_text_value = prefs_default.default_chatgpt_lang;
           element.value = result[element.id] || default_text_value;
           break;
+        case 'textarea':
+          break;
         default:
         if (element.tagName === 'SELECT') {
-          let default_select_value = '';
-          if(element.id == 'reply_type') default_select_value = 'reply_all';
-          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          element.value = result[element.id] || default_select_value;
-          if (element.value === '') {
-            element.selectedIndex = -1;
-          }
+            let default_select_value = '';
+            const restoreValue = result[element.id] || default_select_value;
+            // Check if option exists
+            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // If it doesn't exist and restoreValue is not empty, create it
+            if (!optionExists && restoreValue !== '') {
+              let newOption = new Option(restoreValue, restoreValue);
+              element.add(newOption);
+            }
+            // Set value
+            element.value = restoreValue;
+            if (element.value === '') {
+              element.selectedIndex = -1;
+            }
+            if (element.tomselect) {
+              element.tomselect.setValue(element.value, true);
+              setTomSelectBorder(element.tomselect);
+            }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
         }
@@ -148,5 +202,27 @@ async function restoreOptions() {
   }
 
   let getting = await browser.storage.sync.get(prefs_default);
+
+  let specialPrompts = await getSpecialPrompts();
+  let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');
+
+  if (get_calendar_event_prompt) {
+      if (get_calendar_event_prompt.api_type && get_calendar_event_prompt.api_type !== '') {
+          getting['get_calendar_event_connection_type'] = get_calendar_event_prompt.api_type;
+      } else {
+          getting['get_calendar_event_connection_type'] = getting['connection_type'];
+      }
+      for (const [integration, options] of Object.entries(integration_options_config)) {
+          for (const key of Object.keys(options)) {
+              const propName = `${integration}_${key}`;
+              if (get_calendar_event_prompt[propName] !== undefined && get_calendar_event_prompt[propName] !== '') {
+                  getting[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
+              } else {
+                  getting[`get_calendar_event_${propName}`] = getting[propName];
+              }
+          }
+      }
+  }
+
   setCurrentChoice(getting);
 }

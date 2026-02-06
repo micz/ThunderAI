@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import './tom-select.base.js';
 import {
   prefs_default,
   integration_options_config
@@ -28,13 +29,21 @@ import { Anthropic } from '../../js/api/anthropic.js';
 import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
-  sanitizeChatGPTWebCustomData
+  sanitizeChatGPTWebCustomData,
+  prepareOriginURL,
+  setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
-import { loadPrompt, savePrompt, clearPromptAPI } from '../../js/mzta-prompts.js';
+import {
+  loadPrompt,
+  savePrompt,
+  clearPromptAPI
+} from '../../js/mzta-prompts.js';
 
 export const varConnectionUI = {
-  permission_all_urls: false
+  permission_all_urls: false,
+  permission_ollama_host: false,
+  permission_openai_comp_host: false
 }
 
 export async function injectConnectionUI({
@@ -296,8 +305,9 @@ export async function injectConnectionUI({
     <td colspan="2" style="text-align:center;">
       __MSG_remember_CORS__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
-      <br>__MSG_CORS_alternative_2__
-        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_allurls_perm__</button>
+      <br>__MSG_CORS_alternative_2_new__
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_ollama_api">__MSG_CORS_give_host_perm__</button>
+        <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -375,8 +385,9 @@ export async function injectConnectionUI({
     <td colspan="2" style="text-align:center;">
       __MSG_maybe_CORS_openai_comp__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]
       <br><br><b>__MSG_CORS_alternative_1__</b>
-      <br>__MSG_CORS_alternative_2__
-        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_allurls_perm__</button>
+      <br>__MSG_CORS_alternative_2_new__
+        <br><br><button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnGiveAllUrlsPermission_openai_comp_api">__MSG_CORS_give_host_perm__</button>
+        <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
@@ -660,6 +671,7 @@ export async function injectConnectionUI({
       while (openaiCompModelSelect.options.length > 0) {
         openaiCompModelSelect.remove(0);
       }
+      syncTomSelect(openaiCompModelSelect);
       document.getElementById(getPrefixedId('openai_comp_use_v1')).checked = !!config.use_v1;
       document.getElementById(getPrefixedId('openai_comp_chat_name')).value = config.chat_name || '';
       // Trigger change events if needed
@@ -670,7 +682,17 @@ export async function injectConnectionUI({
     }
   });
 
-  let prefs = await browser.storage.sync.get({chatgpt_web_model: '', chatgpt_model: '', ollama_model: '', openai_comp_model: '', google_gemini_model: '', anthropic_model: '', anthropic_version: '', chatgpt_win_height: 0, chatgpt_win_width: 0 });
+  let prefs = await browser.storage.sync.get({
+    chatgpt_web_model: '',
+    chatgpt_model: '',
+    ollama_model: '',
+    openai_comp_model: '',
+    google_gemini_model: '',
+    anthropic_model: '',
+    anthropic_version: '',
+    chatgpt_win_height: 0,
+    chatgpt_win_width: 0
+  });
   
   // OpenAI API ChatGPT model fetching
   let select_chatgpt_model = getModelEl('chatgpt_model', modelId_prefix);
@@ -678,6 +700,7 @@ export async function injectConnectionUI({
   chatgpt_option.value = prefs.chatgpt_model;
   chatgpt_option.text = prefs.chatgpt_model;
   select_chatgpt_model.appendChild(chatgpt_option);
+  select_chatgpt_model.value = prefs.chatgpt_model;
   select_chatgpt_model.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateChatGPTModels')).addEventListener('click', async () => {
@@ -715,6 +738,7 @@ export async function injectConnectionUI({
           select_chatgpt_model.appendChild(option);
         }
       });
+      syncTomSelect(select_chatgpt_model);
       document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
@@ -727,6 +751,7 @@ export async function injectConnectionUI({
   google_gemini_option.value = prefs.google_gemini_model;
   google_gemini_option.text = prefs.google_gemini_model;
   select_google_gemini_model.appendChild(google_gemini_option);
+  select_google_gemini_model.value = prefs.google_gemini_model;
   select_google_gemini_model.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateGoogleGeminiModels')).addEventListener('click', async () => {
@@ -757,6 +782,7 @@ export async function injectConnectionUI({
           select_google_gemini_model.appendChild(option);
         }
       });
+      syncTomSelect(select_google_gemini_model);
       document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
@@ -769,6 +795,7 @@ export async function injectConnectionUI({
   ollama_option.value = prefs.ollama_model;
   ollama_option.text = prefs.ollama_model;
   select_ollama_model.appendChild(ollama_option);
+  select_ollama_model.value = prefs.ollama_model;
   select_ollama_model.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOllamaModels')).addEventListener('click', async () => {
@@ -812,6 +839,7 @@ export async function injectConnectionUI({
           select_ollama_model.appendChild(option);
         }
       });
+      syncTomSelect(select_ollama_model);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -828,6 +856,7 @@ export async function injectConnectionUI({
   openai_comp_option.value = prefs.openai_comp_model;
   openai_comp_option.text = prefs.openai_comp_model;
   select_openai_comp_model.appendChild(openai_comp_option);
+  select_openai_comp_model.value = prefs.openai_comp_model;
   select_openai_comp_model.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
 
   document.getElementById(getPrefixedId('btnUpdateOpenAICompModels')).addEventListener('click', async () => {
@@ -860,6 +889,7 @@ export async function injectConnectionUI({
           select_openai_comp_model.appendChild(option);
         }
       });
+      syncTomSelect(select_openai_comp_model);
       document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
@@ -872,6 +902,7 @@ export async function injectConnectionUI({
   anthropic_option.value = prefs.anthropic_model;
   anthropic_option.text = prefs.anthropic_model;
   select_anthropic_model.appendChild(anthropic_option);
+  select_anthropic_model.value = prefs.anthropic_model;
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
 
@@ -914,6 +945,7 @@ export async function injectConnectionUI({
           select_anthropic_model.appendChild(option);
         }
       });
+      syncTomSelect(select_anthropic_model);
       document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
@@ -929,6 +961,7 @@ export async function injectConnectionUI({
         option.text = modelName;
         select_openai_comp_model.appendChild(option);
         select_openai_comp_model.value = modelName;
+        syncTomSelect(select_openai_comp_model);
         select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
@@ -942,15 +975,32 @@ export async function injectConnectionUI({
         select_openai_comp_model.remove(0);
       }
       select_openai_comp_model.value = '';
+      syncTomSelect(select_openai_comp_model);
       select_openai_comp_model.dispatchEvent(new Event('change', { bubbles: true }));
     });
   
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api')).addEventListener('click', async () => {
-      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      let ollama_host = document.getElementById(getPrefixedId("ollama_host")).value;
+      if(ollama_host != ''){
+        if (ollama_host.includes("localhost") || ollama_host.includes("127.0.0.1")) {
+          varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
+        }else{
+          varConnectionUI.permission_ollama_host = await messenger.permissions.request({ origins: [prepareOriginURL(ollama_host)] });
+        }
+        updateCORSWarnings(modelId_prefix);
+      }
     });
   
     document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api')).addEventListener('click', async () => {
-      varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });
+      let openai_comp_host = document.getElementById(getPrefixedId("openai_comp_host")).value;
+      if(openai_comp_host != ''){
+        if (openai_comp_host.includes("localhost") || openai_comp_host.includes("127.0.0.1")) {
+          varConnectionUI.permission_all_urls = await messenger.permissions.request({ origins: ["<all_urls>"] });  
+        }else{
+          varConnectionUI.permission_openai_comp_host = await messenger.permissions.request({ origins: [prepareOriginURL(openai_comp_host)] });
+        }
+        updateCORSWarnings(modelId_prefix);
+      }
     });
 
    document.querySelectorAll('.check-number').forEach(input => {
@@ -973,6 +1023,30 @@ export async function injectConnectionUI({
       });
     }
   }
+
+  updateCORSWarnings(modelId_prefix);
+
+  ['chatgpt_model', 'google_gemini_model', 'ollama_model', 'openai_comp_model', 'anthropic_model'].forEach(id => {
+    const el = document.getElementById(getPrefixedId(id));
+    if (el && !el.tomselect) {
+      let ts = new TomSelect(el, {
+        create: false,
+        maxOptions: null,
+        maxItems: 1,
+        sortField: {
+          field: "text",
+          direction: "asc"
+        }
+      });
+      ts.on('change', function() {
+        setTomSelectBorder(this);
+      });
+      if (el.value) {
+        ts.setValue(el.value);
+      }
+      setTomSelectBorder(ts);
+    }
+  });
 
   return {
     select: conntype_select,
@@ -1086,6 +1160,7 @@ export async function initializeSpecificIntegrationUI({
   updateWarnings(model_prefix);
 }
 
+
 // From here there are exported functions
 
 export function updateWarnings(modelId_prefix = '') {
@@ -1163,16 +1238,29 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   parent.parentElement.querySelectorAll(".conntype_anthropic_api").forEach(element => {
     element.style.display = anthropic_api_display;
   });
-  if (varConnectionUI.permission_all_urls) {
-    const openaiCompWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
-    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
-    const ollamaWarning = parent.parentElement.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
-    if (ollamaWarning) ollamaWarning.style.display = 'none';
-  }
+  updateCORSWarnings(modelId_prefix);
 }
 
 
 // From here there are internal functions
+
+function syncTomSelect(element) {
+  if (element && element.tomselect) {
+    element.tomselect.sync();
+  }
+}
+
+function toggleTomSelectDisabled(element, disabled) {
+  element.disabled = disabled;
+  if (element.tomselect) {
+    if (disabled) {
+      element.tomselect.disable();
+      element.tomselect.clear();
+    } else {
+      element.tomselect.enable();
+    }
+  }
+}
 
 function getModelEl(model, modelId_prefix) {
   return document.getElementById((modelId_prefix ? modelId_prefix : '') + model);
@@ -1204,6 +1292,8 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   if (options.some(o => o.value === prevValue)) {
     conntype_select.value = prevValue;
+  } else if (no_chatgpt_web) {
+    conntype_select.value = "";
   }
 }
 
@@ -1226,13 +1316,13 @@ function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchChatGPTModels.disabled = true;
-    modelChatGPT.disabled = true;
+    toggleTomSelectDisabled(modelChatGPT, true);
     modelChatGPT.selectedIndex = -1;
     modelChatGPT.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchChatGPTModels.disabled = false;
-    modelChatGPT.disabled = false;
+    toggleTomSelectDisabled(modelChatGPT, false);
     if((modelChatGPT.selectedIndex === -1)||(modelChatGPT.value === '')){
       modelChatGPT.style.border = '2px solid red';
     }else{
@@ -1249,13 +1339,13 @@ function warn_GoogleGemini_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchGoogleGeminiModels.disabled = true;
-    modelGoogleGemini.disabled = true;
+    toggleTomSelectDisabled(modelGoogleGemini, true);
     modelGoogleGemini.selectedIndex = -1;
     modelGoogleGemini.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchGoogleGeminiModels.disabled = false;
-    modelGoogleGemini.disabled = false;
+    toggleTomSelectDisabled(modelGoogleGemini, false);
     if((modelGoogleGemini.selectedIndex === -1)||(modelGoogleGemini.value === '')){
       modelGoogleGemini.style.border = '2px solid red';
     }else{
@@ -1268,22 +1358,25 @@ function warn_Ollama_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('ollama_host'));
   let btnFetchOllamaModels = document.getElementById(getPrefixedId('btnUpdateOllamaModels'));
+  let btnGiveAllUrlsPermission_ollama_api = document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_ollama_api'));
   let modelOllama = getModelEl('ollama_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
     btnFetchOllamaModels.disabled = true;
-    modelOllama.disabled = true;
+    toggleTomSelectDisabled(modelOllama, true);
     modelOllama.selectedIndex = -1;
     modelOllama.style.border = '';
+    btnGiveAllUrlsPermission_ollama_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnFetchOllamaModels.disabled = false;
-    modelOllama.disabled = false;
+    toggleTomSelectDisabled(modelOllama, false);
     if((modelOllama.selectedIndex === -1)||(modelOllama.value === '')){
       modelOllama.style.border = '2px solid red';
     }else{
       modelOllama.style.border = '';
     }
+    btnGiveAllUrlsPermission_ollama_api.disabled = false;
   }
 }
 
@@ -1291,22 +1384,25 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
   let hostInput = document.getElementById(getPrefixedId('openai_comp_host'));
   let btnUpdateOpenAICompModels = document.getElementById(getPrefixedId('btnUpdateOpenAICompModels'));
+  let btnGiveAllUrlsPermission_openai_comp_api = document.getElementById(getPrefixedId('btnGiveAllUrlsPermission_openai_comp_api'));
   let modelOpenAIComp = getModelEl('openai_comp_model', modelId_prefix);
   if(hostInput.value === ''){
     hostInput.style.border = '2px solid red';
     btnUpdateOpenAICompModels.disabled = true;
-    modelOpenAIComp.disabled = true;
+    toggleTomSelectDisabled(modelOpenAIComp, true);
     modelOpenAIComp.selectedIndex = -1;
     modelOpenAIComp.style.border = '';
+    btnGiveAllUrlsPermission_openai_comp_api.disabled = true;
   }else{
     hostInput.style.border = '';
     btnUpdateOpenAICompModels.disabled = false;
-    modelOpenAIComp.disabled = false;
+    toggleTomSelectDisabled(modelOpenAIComp, false);
     if((modelOpenAIComp.selectedIndex === -1)||(modelOpenAIComp.value === '')){
       modelOpenAIComp.style.border = '2px solid red';
     }else{
       modelOpenAIComp.style.border = '';
     }
+    btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
 }
 
@@ -1318,13 +1414,13 @@ function warn_Anthropic_APIKeyEmpty(modelId_prefix) {
   if(apiKeyInput.value === ''){
     apiKeyInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
-    modelAnthropic.disabled = true;
+    toggleTomSelectDisabled(modelAnthropic, true);
     modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     apiKeyInput.style.border = '';
     btnFetchAnthropicModels.disabled = false;
-    modelAnthropic.disabled = false;
+    toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
     }else{
@@ -1341,13 +1437,13 @@ function warn_Anthropic_VersionEmpty(modelId_prefix) {
   if(versionInput.value === ''){
     versionInput.style.border = '2px solid red';
     btnFetchAnthropicModels.disabled = true;
-    modelAnthropic.disabled = true;
+    toggleTomSelectDisabled(modelAnthropic, true);
     modelAnthropic.selectedIndex = -1;
     modelAnthropic.style.border = '';
   }else{
     versionInput.style.border = '';
     btnFetchAnthropicModels.disabled = false;
-    modelAnthropic.disabled = false;
+    toggleTomSelectDisabled(modelAnthropic, false);
     if((modelAnthropic.selectedIndex === -1)||(modelAnthropic.value === '')){
       modelAnthropic.style.border = '2px solid red';
     }else{
@@ -1369,4 +1465,28 @@ function loadOpenAICompConfigs(modelId_prefix = ''){
     option.text = config.name;
     select_openai_comp_model.appendChild(option);
   });
+}
+
+async function loadURLsPermissions(modelId_prefix = ''){
+  let ollama_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "ollama_host")?.value;
+  if((ollama_host) && (ollama_host != '')){
+    varConnectionUI.permission_ollama_host = await messenger.permissions.contains({ origins: [prepareOriginURL(ollama_host)] });
+  }
+  let openai_comp_host = document.getElementById((modelId_prefix ? modelId_prefix : '') + "openai_comp_host")?.value;
+  if((openai_comp_host) && (openai_comp_host != '')){
+    varConnectionUI.permission_openai_comp_host = await messenger.permissions.contains({ origins: [prepareOriginURL(openai_comp_host)] });
+  }
+  varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] });
+}
+
+async function updateCORSWarnings(modelId_prefix = ''){
+  await loadURLsPermissions(modelId_prefix);
+  if (varConnectionUI.permission_all_urls || varConnectionUI.permission_ollama_host) {
+    const ollamaWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'ollama_api_cors_warning');
+    if (ollamaWarning) ollamaWarning.style.display = 'none';
+  }
+  if (varConnectionUI.permission_all_urls || varConnectionUI.permission_openai_comp_host) {
+    const openaiCompWarning = document.getElementById((modelId_prefix ? modelId_prefix : '') + 'openai_comp_api_cors_warning');
+    if (openaiCompWarning) openaiCompWarning.style.display = 'none';
+  }
 }

@@ -284,7 +284,7 @@
     "Spam_Value": {
         "message": "垃圾訊息評分"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "否"
     },
     "Report_Date": {
@@ -387,7 +387,7 @@
     "Date": {
         "message": "日期"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "是"
     },
     "Custom": {
@@ -533,9 +533,6 @@
     "chatgpt_api_request_failed": {
         "message": "OpenAI ChatGPT API 請求失敗"
     },
-    "WaitingServerReponse": {
-        "message": "等待伺服器回應"
-    },
     "error_connection_interrupted": {
         "message": "與伺服器的連線意外中斷"
     },
@@ -634,9 +631,6 @@
     },
     "context_menu_mzta-spamfilter": {
         "message": "檢測垃圾郵件"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "如果勾選，則在訊息清單中點右鍵時，會出現「分析垃圾郵件」快顯功能選單項目。"
     },
     "apiwebchat_use_this_answer": {
         "message": "使用這個答案"
@@ -801,9 +795,6 @@
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "如果 AI 傳回的值高於此閾值，則電子郵件將被移至垃圾郵件資料夾。"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "顯示「新增標籤」在快顯功能選單"
     },
     "remember_CORS": {
         "message": "記住，您需要在伺服器上設定 CORS 設定！"
@@ -1005,9 +996,6 @@
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "管理垃圾郵件設定"
     },
-    "CORS_give_allurls_perm": {
-        "message": "授予「所有網址」權限"
-    },
     "prefs_ollama_num_ctx": {
         "message": "情境 Token 數量"
     },
@@ -1095,9 +1083,6 @@
     "prompt_get_task_full_text": {
         "message": "從以下文字中提取所有需要生成任務的相關資訊。 提取的資訊應包含：\n- 截止日期和時間（包括時區，如果指定）\n- 任務總結\n- 初始日期和時間（包括時區，如果指定）\n確保數據以清晰一致的方式格式化，以便直接用於建立任務。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。如果計算出的起日期和時間早於「{%current_datetime%}」，則使用 「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"任務總結在此\"\n}\n如果沒有日期資訊，請刪除這些資訊。\n以下是文字：「{%selected_text%}」"
     },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "顯示「分析垃圾郵件」在快顯功能選單"
-    },
     "sign_msg_as": {
         "message": "簽署訊息為"
     },
@@ -1137,14 +1122,8 @@
     "prompt_rewrite_formal_full_text": {
         "message": "請將以下文字重寫得更正式一些。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
     },
-    "CORS_alternative_2": {
-        "message": "點擊下方按鈕，授予「所有網址」權限，以避免任何 CORS 問題。"
-    },
     "GoogleGemini_SystemInstruction_Info": {
         "message": "當您設定系統指示時，您會為模型提供額外情境來理解任務，提供更客製化的回應，並遵守將要發送的提示的特定指南。"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "如果勾選，則右鍵單擊訊息清單中的電子郵件時將顯示「新增標籤」在快顯功能選單。"
     },
     "prefs_OptionText_chatgpt_web_custom_gpt_info": {
         "message": "這是將針對 ChatGPT 網頁介面強制執行的自訂 GPT。"

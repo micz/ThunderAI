@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const special_prompts_with_integration = ['add_tags', 'spamfilter'];
+const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task'];
 
 export const integration_options_config = {
     chatgpt: {
@@ -123,7 +123,6 @@ export const prefs_default = {
     add_tags_auto_only_inbox: true,
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
-    add_tags_context_menu: true,
     add_tags_enabled_accounts: [],
     get_calendar_event: true,
     get_task: true,
@@ -131,8 +130,8 @@ export const prefs_default = {
     calendar_timezone: '',
     spamfilter: false,
     spamfilter_threshold: 70,
-    spamfilter_context_menu: true,
     spamfilter_enabled_accounts: [],
     auto_summary_enabled: false,         // Enable automatic AI summarization for message previews
+    summarize: false,
     ...generated_prefs
 }

@@ -1,3 +1,5 @@
+@import url("tom-select.default.min.css");
+
 tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
     background-color: rgb(185, 220, 252) !important;
 }
@@ -89,6 +91,10 @@ input.option-input[type="text"]{
 
 span.opt_title{
     font-weight: bold;
+}
+
+.ts-control, .ts-dropdown{
+    font-size: 14.4px;
 }
 
 @media (prefers-color-scheme: dark) {

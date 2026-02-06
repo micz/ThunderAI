@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Utilisation du modèle"
     },
-    "chagpt_api_connecting": {
-        "message": "Tentative de connexion à OpenAI ChatGPT en utilisant la clé API fournie"
-    },
     "Debug": {
         "message": "Debug"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Vous n'avez pas choisi de modèle pour l'API Ollama. Veuillez en choisir un sur la page des options."
     },
-    "ollama_api_connecting": {
-        "message": "Tentative de connexion au serveur local Ollama en utilisant l'hôte"
-    },
-    "andModel": {
-        "message": "et le modèle"
-    },
     "error_connection_interrupted": {
         "message": "La connexion au serveur a été interrompue de manière inattendue"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Vous n'avez pas choisi de modèle pour l'API compatible OpenAI. Veuillez en choisir un dans la page des options."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Tentative de connexion au serveur local de l'API compatible OpenAI en utilisant l'hôte"
     },
     "OpenAIComp_api_request_failed": {
         "message": "La requête de l'API compatible OpenAI a échoué"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "La requête API Google Gemini a échoué"
     },
-    "google_gemini_api_connecting": {
-        "message": "Tentative de connexion à Google Gemini en utilisant la clé API fournie"
-    },
     "google_gemini_empty_apikey": {
         "message": "Vous n'avez pas ajouté de clé API pour l'API Google Gemini. Veuillez en insérer une dans la page des options."
     },
@@ -792,7 +777,7 @@
     "Moved_to_Spam": {
         "message": "Déplacé dans le spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Non"
     },
     "spamfilter_no_reports": {
@@ -800,9 +785,6 @@
     },
     "SpamFilter_PageTitle": {
         "message": "Gérer les paramètres du filtre anti-spam"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks non installé !"
     },
     "SpamFilter_info_default": {
         "message": "Sur cette page, vous pouvez modifier l'invite par défaut utilisée pour détecter les e-mails indésirables."
@@ -816,7 +798,7 @@
     "SpamReport_Title": {
         "message": "Rapports du filtre anti-spam"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Oui"
     },
     "prefs_OptionText_add_tags_auto_Info": {
@@ -858,12 +840,6 @@
     "context_menu_mzta-add-tags": {
         "message": "Ajouter des étiquettes"
     },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Afficher l'option \"Analyser comme spam\" dans le menu contextuel"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Si coché, l'option \"Analyser comme spam\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
-    },
     "noActiveCalendar": {
         "message": "Aucun calendrier modifiable trouvé !"
     },
@@ -879,9 +855,6 @@
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Forcer le fuseau horaire spécifié"
     },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Si coché, l'option \"Ajouter des étiquettes\" apparaîtra lors d’un clic droit sur un e-mail dans la liste des messages."
-    },
     "chatgpt_win_diff_title": {
         "message": "Différences entre le texte original et le texte modifié"
     },
@@ -896,9 +869,6 @@
     },
     "apiwebchat_error": {
         "message": "Erreur"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Afficher l'option \"Ajouter des étiquettes\" dans le menu contextuel"
     },
     "apiwebchat_use_this_answer": {
         "message": "Utiliser cette réponse"
@@ -929,12 +899,6 @@
     },
     "CORS_alternative_1": {
         "message": "Des problèmes pour configurer le CORS ?"
-    },
-    "CORS_alternative_2": {
-        "message": "Appuie sur le bouton ci-dessous pour accorder la permission <all_urls> afin d'éviter tout problème lié au CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Accorde la permission \"tous les URLs\""
     },
     "remember_CORS": {
         "message": "N'oublie pas, tu dois configurer les paramètres CORS sur le serveur !"

@@ -82,13 +82,15 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
-- Chinese (Simplified): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
-- Chinese (Traditional): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Chinese (Simplified) (zh_Hans): [jeklau](https://github.com/jeklau) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
+- Chinese (Traditional) (zh_Hant): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
+- Croatian (hr): Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
 - Czech (cs): [Fjuro](https://hosted.weblate.org/user/Fjuro/), [Jaroslav Staněk](https://hosted.weblate.org/user/jaroush/) <img src="https://micz.it/weblate/thunderai/cs.svg">
 - French (fr): Generated automatically, [Noam](https://github.com/noam-sc) <img src="https://micz.it/weblate/thunderai/fr.svg">
 - German (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
 - Greek (el): [ChristosK.](https://github.com/christoskaterini) <img src="https://micz.it/weblate/thunderai/el.svg">
 - Italian (it): [Mic](https://github.com/micz) <img src="https://micz.it/weblate/thunderai/it.svg">
+- Japanese (ja): [Taichi Ito](https://github.com/watya1) <img src="https://micz.it/weblate/thunderai/ja.svg">
 - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
 - Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
 - Russian (ru): [Maksim](https://hosted.weblate.org/user/law820314/) <img src="https://micz.it/weblate/thunderai/ru.svg">
@@ -109,6 +111,7 @@ _The language status represents the percentage of translated strings in the late
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
 - [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
 - [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
+- [Roundicons](https://www.flaticon.com/authors/roundicons) for the summarize context menu icon
 
 
 <br>

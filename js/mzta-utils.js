@@ -25,9 +25,11 @@ export const getMenuContextDisplay = () => 'message_display_action_menu';
 
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
+export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuIconsPath = {
   [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
   [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
 };
 
 export function getLanguageDisplayName(languageCode) {
@@ -89,6 +91,17 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
     const identity = identities.find(id => id.email === email);
     if (identity) {
       return getFull ? identity : identity.id;
+    }
+  }
+
+  // Check the account that the folder of the message belongs to
+  if (msgHeader.folder && msgHeader.folder.accountId) {
+    const account = accounts.find(a => a.id === msgHeader.folder.accountId);
+    if (account && account.identities && account.identities.length > 0) {
+      // Just return the first identity of the account.
+      const identity = account.identities[0];
+      console.log(">>>>>>>>>> got from folder");
+      return getFull ? { id: identity.id, email: identity.email } : identity.id;
     }
   }
 
@@ -347,17 +360,6 @@ export function i18nConditionalGet(str) {
   return str; // Return the original string if the conditions are not met
 }
 
-export async function isThunderbird128OrGreater(){
-  try {
-    const info = await browser.runtime.getBrowserInfo();
-    const version = info.version;
-    return compareThunderbirdVersions(version, '128.0') >= 0;
-  } catch (error) {
-    console.error('[ThunderAI] Error retrieving browser information:', error);
-    return false;
-  }
-}
-
 function compareThunderbirdVersions(v1, v2) {
   const v1parts = v1.split('.').map(Number);
   const v2parts = v2.split('.').map(Number);
@@ -383,12 +385,9 @@ export function generateCallID(length = 10) {
 
 export async function getTagsList(){
   let messageTags = [];
-  if(await isThunderbird128OrGreater()) {
-    // without the tags related permissions, we can't get the tags list
-      messageTags = await browser.messages.tags.list();
-  } else {
-      messageTags = await browser.messages.listTags();
-  }
+  // without the tags related permissions, we can't get the tags list
+  messageTags = await browser.messages.tags.list();
+
   const output = messageTags.map(tag => tag.tag).join(', ');
 
   const output2 = messageTags.reduce((acc, messageTag) => {
@@ -409,11 +408,7 @@ export async function createTag(tag) {
   if(prefs_tag.add_tags_first_uppercase) tag = tag.toLowerCase().charAt(0).toUpperCase() + tag.toLowerCase().slice(1);
   try {
     const tagKey = '$ta-' + generateCallID(16) + '-' + sanitizeString(tag); // Ensure uniqueness with a longer random ID
-    if(await isThunderbird128OrGreater()) {
-      return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
-    }else{
-      return browser.messages.createTag(tagKey, tag, generateHexColorForTag());
-    }
+    return browser.messages.tags.create(tagKey, tag, generateHexColorForTag());
   } catch (error) {
     console.error('[ThunderAI] Error creating tag:', error);
   }
@@ -515,6 +510,10 @@ export function normalizeStringList(list, returnType = 0) {
   }
 }
 
+export function prepareOriginURL(url) {
+  return url.endsWith('/') ? `${url}*` : `${url}/*`;
+}
+
 function generateHexColorForTag() {
   const red = Math.floor(Math.random() * 256);
   const green = Math.floor(Math.random() * 256);
@@ -533,6 +532,14 @@ export async function transformTagsLabels(labels, tags_list) {
       output.push(tags_list[label].tag);
   }
   return output;
+}
+
+export function setTomSelectBorder(el){
+  if (el.getValue() === "") {
+      el.control.style.border = '2px solid red';
+  } else {
+      el.control.style.border = '1px solid #d0d0d0';
+  }
 }
 
 export function getAPIsInitMessageString(args = {}) {
@@ -685,6 +692,29 @@ export function validateCustomData_ChatGPTWeb(event) {
   document.getElementById(event.target.id + '_info').style.color = is_valid ? '' : 'red';
 }
 
+// From https://thunderbird.topicbox.com/groups/addons/Tafa58394231a18f8-M3e565a75287313ea4395ff5f
+// Thanks to John Bieling
+export async function requestSitePermission(url) {
+  // Normalize the origin to ensure it ends with /*
+  const origin = url.replace(/\/?\*?$/, '/*');
+
+  const hasPermission = await browser.permissions.contains({
+    origins: [origin],
+  });
+
+  if (hasPermission) {
+    // Permission already granted — safe to save and use the URL.
+    return true;
+  }
+
+  const granted = await browser.permissions.request({
+    origins: [origin],
+  });
+
+  // If not granted, it's not safe to save or use the URL,
+  // since the user explicitly denied access.
+  return granted;
+}
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 

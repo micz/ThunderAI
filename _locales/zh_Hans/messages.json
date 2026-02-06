@@ -134,10 +134,10 @@
     "SpamReport_Title": {
         "message": "垃圾邮件过滤报告"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "否"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "是"
     },
     "prompt_rewrite_polite": {
@@ -235,9 +235,6 @@
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "如果选中，ThunderAI将自动将垃圾邮件移至垃圾邮件文件夹。"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks 未安装！"
     },
     "chatgpt_textarea_not_found_error": {
         "message": "看起来 ChatGPT 页面加载时间太长。如果加载完成，请点击右边的按钮。如果问题仍然存在，请检查服务状态。"
@@ -341,9 +338,6 @@
     "prefs_ChatGPT_API_Key": {
         "message": "ChatGPT API 密钥"
     },
-    "chagpt_api_connecting": {
-        "message": "尝试使用提供的 API 密钥连接到 OpenAI ChatGPT"
-    },
     "prefs_OptionText_release_notes": {
         "message": "发行说明"
     },
@@ -370,9 +364,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "您尚未选择 OpenAI Compatible API 的模型。请在选项页面中选择一个。"
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "尝试使用主机连接到 OpenAI 兼容 API 本地服务器"
     },
     "prefs_OpenAIComp_ChatName": {
         "message": "对话名称"
@@ -415,9 +406,6 @@
     },
     "importPrompts_invalidPrompts": {
         "message": "您尝试导入的文件不包含任何有效提示词。"
-    },
-    "andModel": {
-        "message": "和模型"
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "尝试获取 ChatGPT 模型时出错"
@@ -581,9 +569,6 @@
     "OpenAIComp_force_model_ask": {
         "message": "在此处填入您想要使用的模型名称。"
     },
-    "ollama_api_connecting": {
-        "message": "尝试使用主机连接到 Ollama 本地服务器"
-    },
     "ollama_api_request_failed": {
         "message": "Ollama API 请求失败"
     },
@@ -634,9 +619,6 @@
     },
     "thunderai_warning_title": {
         "message": "ThunderAI 警告"
-    },
-    "google_gemini_api_connecting": {
-        "message": "尝试使用提供的 API 密钥连接到 Google Gemini"
     },
     "prefs_SurveyLinkText2": {
         "message": "单击此处，只需一分钟！"
@@ -854,20 +836,8 @@
     "context_menu_mzta-add-tags": {
         "message": "添加标签"
     },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "显示“添加标签”上下文菜单项"
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "显示“分析垃圾邮件”上下文菜单项"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "如果选中，则在邮件列表中右键单击电子邮件时，将显示“分析垃圾邮件”上下文菜单项。"
-    },
     "context_menu_mzta-spamfilter": {
         "message": "分析垃圾邮件"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "如果选中，“添加标签”上下文菜单项将在消息列表中右键单击电子邮件时显示。"
     },
     "noActiveCalendar": {
         "message": "未找到可编辑的日历！"

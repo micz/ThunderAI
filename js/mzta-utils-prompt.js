@@ -50,7 +50,9 @@ export const taPromptUtils = {
         
         if(!placeholdersUtils.hasPlaceholder(curr_prompt.text)){
             // no placeholders, do as usual
-            fullPrompt = curr_prompt.text + (String(curr_prompt.need_signature) == "1" ? " " + await taPromptUtils.getDefaultSignature():"") + " " + chatgpt_lang + " \"" + (selection_text=='' ? body_text : selection_text) + "\" ";
+            const signature = String(curr_prompt.need_signature) === "1" ? await taPromptUtils.getDefaultSignature() : "";
+            const content = selection_text || body_text;
+            fullPrompt = [curr_prompt.text, signature, chatgpt_lang, content ? `"${content}"` : ""].filter(Boolean).join(" ");
         }else{
             // we have at least a placeholder, do the magic!
             // check if we have custom placeholders

@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Używając modelu"
     },
-    "chagpt_api_connecting": {
-        "message": "Próba połączenia z OpenAI ChatGPT przy użyciu podanego klucza API"
-    },
     "Debug": {
         "message": "Debugowanie"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Nie wybrałeś modelu dla API Ollama. Proszę wybierz jeden na stronie opcji."
     },
-    "ollama_api_connecting": {
-        "message": "Próba połączenia z lokalnym serwerem Ollama używając hosta"
-    },
-    "andModel": {
-        "message": "i modelu"
-    },
     "error_connection_interrupted": {
         "message": "Połączenie z serwerem zostało nieoczekiwanie przerwane"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Nie wybrałeś modelu dla API kompatybilnego z OpenAI. Proszę wybierz jeden na stronie opcji."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Próba połączenia z lokalnym serwerem API kompatybilnym z OpenAI używając hosta"
     },
     "OpenAIComp_api_request_failed": {
         "message": "Zapytanie do API kompatybilnego z OpenAI nie powiodło się"
@@ -672,9 +660,6 @@
     "google_gemini_api_request_failed": {
         "message": "Połączenie do interfejsu API Google Gemini nie powiodło się"
     },
-    "google_gemini_api_connecting": {
-        "message": "Próba połączenia z Google Gemini przy użyciu dostarczonego klucza API"
-    },
     "google_gemini_empty_apikey": {
         "message": "Nie dodałeś klucza API dla API Google Gemini. Wstaw go na stronie opcji."
     },
@@ -792,14 +777,11 @@
     "Moved_to_Spam": {
         "message": "Przeniesiono do spamu"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nie"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Jeśli zaznaczone, AI doda tylko istniejące tagi do nowo odebranych e-maili i nie utworzy nowych."
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks nie zainstalowany!"
     },
     "SpamFilter_info_default": {
         "message": "Na tej stronie możesz edytować domyślny prompt używany do wykrywania e-maili spamowych."
@@ -813,7 +795,7 @@
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Zarządzaj ustawieniami filtra spamu"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Tak"
     },
     "prefs_OptionText_spamfilter": {

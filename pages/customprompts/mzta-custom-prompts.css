@@ -330,6 +330,17 @@ label:has(input[type="checkbox"]) {
     cursor: pointer;
 }
 
+dialog.export{
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--dialog-bg-color, #fff);
+    color: var(--dialog-text-color, #000);
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;

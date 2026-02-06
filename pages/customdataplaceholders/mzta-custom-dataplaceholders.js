@@ -17,9 +17,20 @@
  */
 
 import { prefs_default } from "../../options/mzta-options-default.js";
-import { getLocalStorageUsedSpace, sanitizeHtml, isThunderbird128OrGreater, openTab } from "../../js/mzta-utils.js";
+import {
+    getLocalStorageUsedSpace,
+    sanitizeHtml,
+    openTab
+} from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
-import { getPlaceholders, setCustomPlaceholders, getCustomPlaceholders, prepareCustomDataPHsForExport, prepareCustomDataPHsForImport, placeholdersUtils } from "../../js/mzta-placeholders.js";
+import {
+    getPlaceholders,
+    setCustomPlaceholders,
+    getCustomPlaceholders,
+    prepareCustomDataPHsForExport,
+    prepareCustomDataPHsForImport,
+    placeholdersUtils
+} from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 
 let prefs = null;
@@ -550,12 +561,8 @@ async function setStorageSpace() {
     document.getElementById('storage_space').textContent = storage_space;
 }
 
-
-if(await isThunderbird128OrGreater()){
-    window.addEventListener('beforeunload', function (event) {
-        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
-        if (somethingChanged) {
-            event.preventDefault();
-        }
-    });    
-}
+window.addEventListener('beforeunload', function (event) {
+    if (somethingChanged) {
+        event.preventDefault();
+    }
+});    

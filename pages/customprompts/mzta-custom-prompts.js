@@ -34,12 +34,12 @@ import {
 } from "../../pages/_lib/connection-ui.js";
 import {
     ChatGPTWeb_models,
-    isThunderbird128OrGreater,
     getLocalStorageUsedSpace,
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     getChatGPTWebModelsList_HTML,
-    openTab
+    openTab,
+    setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -145,7 +145,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         afterTrId: 'api_ui_anchor',
         selectId: 'new_prompt_api_type',
         no_chatgpt_web: true,
-        taLog: taLog
+        taLog: taLog,
+        customButtonLabel: browser.i18n.getMessage("Reset"),
+        customButtonCallback: () => {
+            resetApiSettings('new_prompt_api_type');
+        }
     });
 
     // Fill defaults for new prompt form
@@ -350,7 +354,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function exportPrompts() {
         const manifest = browser.runtime.getManifest();
         const addonVersion = manifest.version;
-        const outputPrompts = preparePromptsForExport(await getPrompts());
+        const include_api_settings = await showYesNoDialog(browser.i18n.getMessage("customPrompts_export_include_api_settings"));
+        if (include_api_settings === null) return;
+        const outputPrompts = preparePromptsForExport(await getPrompts(), include_api_settings);
         let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
         const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
             type: "application/json",
@@ -361,6 +367,82 @@ document.addEventListener('DOMContentLoaded', async () => {
             url: URL.createObjectURL(blob),
             filename: `thunderai-prompts-${time_stamp}.json`,
             saveAs: true,
+        });
+    }
+
+    async function showYesNoDialog(message) {
+        return new Promise((resolve) => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'export';
+            // dialog.style.cssText = `
+            //     padding: 20px;
+            //     border: none;
+            //     border-radius: 8px;
+            //     background-color: var(--dialog-bg-color, #fff);
+            //     color: var(--dialog-text-color, #000);
+            //     max-width: 400px;
+            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            //     font-family: system-ui, -apple-system, sans-serif;
+            // `;
+            
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                 dialog.style.backgroundColor = '#2e2e2e';
+                 dialog.style.color = '#ffffff';
+            }
+
+            const text = document.createElement('p');
+            text.textContent = message;
+            text.style.marginBottom = '20px';
+            text.style.fontSize = '14px';
+            text.style.lineHeight = '1.5';
+            dialog.appendChild(text);
+            
+            const btnContainer = document.createElement('div');
+            btnContainer.style.display = 'flex';
+            btnContainer.style.justifyContent = 'flex-end';
+            btnContainer.style.gap = '10px';
+            
+            const createBtn = (text, bgColor) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.style.padding = '8px 16px';
+                btn.style.borderRadius = '4px';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '14px';
+                btn.style.color = 'white';
+                btn.style.backgroundColor = bgColor;
+                return btn;
+            };
+
+            const cancelBtn = createBtn(browser.i18n.getMessage("customPrompts_btnCancel"), '#6c757d');
+            cancelBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(null);
+            };
+
+            const noBtn = createBtn(browser.i18n.getMessage("no_string"), '#007bff');
+            noBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(false);
+            };
+            
+            const yesBtn = createBtn(browser.i18n.getMessage("yes_string"), '#6c757d');
+            yesBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(true);
+            };
+            
+            btnContainer.appendChild(cancelBtn);
+            btnContainer.appendChild(noBtn);
+            btnContainer.appendChild(yesBtn);
+            dialog.appendChild(btnContainer);
+            
+            document.body.appendChild(dialog);
+            dialog.showModal();
         });
     }
 
@@ -477,42 +559,7 @@ function handleEditClick(e) {
             taLog: taLog,
             customButtonLabel: browser.i18n.getMessage("Reset"),
             customButtonCallback: () => {
-                const selectEl = document.getElementById(selectId);
-                if (selectEl) {
-                    selectEl.value = '';
-                    selectEl.dispatchEvent(new Event('change'));
-                }
-
-                // Clear UI inputs
-                for (const [integration, options] of Object.entries(integration_options_config)) {
-                    for (const key of Object.keys(options)) {
-                        const propName = `${integration}_${key}`;
-                        const inputId = `${prefix}${propName}`;
-                        const inputEl = document.getElementById(inputId);
-                        if (inputEl) {
-                            if (inputEl.type === 'checkbox') {
-                                inputEl.checked = false;
-                            } else {
-                                inputEl.value = '';
-                            }
-                        }
-                    }
-                }
-
-                // Update promptsList
-                const item = promptsList.get('id', id)[0];
-                if (item) {
-                    let newValues = item.values();
-                    newValues.api_type = '';
-                    for (const [integration, options] of Object.entries(integration_options_config)) {
-                        for (const key of Object.keys(options)) {
-                            const propName = `${integration}_${key}`;
-                            newValues[propName] = '';
-                        }
-                    }
-                    item.values(newValues);
-                }
-                setSomethingChanged();
+                resetApiSettings(selectId, id);
             }
         }).then(() => {
             populateConnectionUI(tr, id, prefix, selectId);
@@ -533,6 +580,47 @@ function handleEditClick(e) {
     showItemRowEditor(tr);
     toggleDiffviewer(e);
     toggleAdditionalPropertiesShow(tr);
+}
+
+function resetApiSettings(selectId, id = null) {
+    let prefix = '';
+    if (id) prefix = `prompt_${id}_`;
+    const selectEl = document.getElementById(selectId);
+    if (selectEl) {
+        selectEl.value = '';
+        selectEl.dispatchEvent(new Event('change'));
+    }
+
+    // Clear UI inputs
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const propName = `${integration}_${key}`;
+            const inputId = `${prefix}${propName}`;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) {
+                if (inputEl.type === 'checkbox') {
+                    inputEl.checked = false;
+                } else {
+                    inputEl.value = '';
+                }
+            }
+        }
+    }
+
+    // Update promptsList
+    const item = promptsList.get('id', id)[0];
+    if (item) {
+        let newValues = item.values();
+        newValues.api_type = '';
+        for (const [integration, options] of Object.entries(integration_options_config)) {
+            for (const key of Object.keys(options)) {
+                const propName = `${integration}_${key}`;
+                newValues[propName] = '';
+            }
+        }
+        item.values(newValues);
+    }
+    setSomethingChanged();
 }
 
 function populateConnectionUI(tr, id, prefix, selectId) {
@@ -558,7 +646,24 @@ function populateConnectionUI(tr, id, prefix, selectId) {
                         val = prefs[propName];
                     }
                 }
-                inputEl.type === 'checkbox' ? inputEl.checked = (val === true || val === 'true') : inputEl.value = val || '';
+                if (inputEl.type === 'checkbox') {
+                    inputEl.checked = (val === true || val === 'true');
+                } else {
+                    if (inputEl.tomselect) {
+                        const restoreValue = val || '';
+                        let optionExists = Array.from(inputEl.options).some(opt => opt.value === restoreValue);
+                        if (!optionExists && restoreValue !== '') {
+                            let newOption = new Option(restoreValue, restoreValue);
+                            inputEl.add(newOption);
+                        }
+                        inputEl.value = restoreValue;
+                        inputEl.tomselect.sync();
+                        inputEl.tomselect.setValue(restoreValue, true);
+                        setTomSelectBorder(inputEl.tomselect);
+                    } else {
+                        inputEl.value = val || '';
+                    }
+                }
             }
         }
     }
@@ -806,6 +911,23 @@ function handleConfirmClick(e) {
 async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
+
+    if (e.target.classList.contains('enabled') || e.target.classList.contains('need_custom_text')) {
+        let tr = e.target.closest('tr');
+        if (tr) {
+            let idnum = tr.getAttribute('data-idnum');
+            let item = promptsList.get('idnum', idnum);
+            if (item && item.length > 0) {
+                if (e.target.classList.contains('enabled')) {
+                    item[0]._values.enabled = e.target.checked ? 1 : 0;
+                }
+                if (e.target.classList.contains('need_custom_text')) {
+                    item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
+                }
+            }
+        }
+    }
+
     //console.log('>>>>>>>> checked_val: ' + e.target.getAttribute('checked_val'));
     if (e.target.classList.contains('need_selected') || e.target.classList.contains('need_custom_text') || e.target.classList.contains('need_selected_new') || e.target.classList.contains('need_custom_text_new')) {
         let textarea = e.target.closest('tr').querySelector('.text_output');
@@ -1187,14 +1309,11 @@ async function setStorageSpace() {
 }
 
 
-if(await isThunderbird128OrGreater()){
-    window.addEventListener('beforeunload', function (event) {
-        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
-        if (somethingChanged) {
-            event.preventDefault();
-        }
-    });    
-}
+window.addEventListener('beforeunload', function (event) {
+    if (somethingChanged) {
+        event.preventDefault();
+    }
+});
 
 async function checkPromptsConfigForPlaceholders(textarea){
     let curr_text = textarea.value;

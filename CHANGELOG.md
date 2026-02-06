@@ -4,7 +4,32 @@
 
 
 
-<h2>Version 3.8.0 - ??/??/2026</h2>
+<h2>Version 4.0.0 - ??/??/2026</h2>
+      <ul>
+        <li>ThunderAI is now compatible only with Thunderbird 140 and later [<a href="https://github.com/micz/ThunderAI/issues/616">#616</a>].</li>
+        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for calendar and task recognition [<a href="https://github.com/micz/ThunderAI/issues/498">#498</a>].</li>
+        <li>Added a new model selector with a search functionality to dynamically filter the list [<a href="https://github.com/micz/ThunderAI/issues/603">#603</a>].</li>
+        <li><i>[All APIs]</i> Added a special prompt to summarize one or more emails, using a context menu command [<a href="https://github.com/micz/ThunderAI/issues/615">#615</a>]. Thanks to <a href="https://github.com/gdkrmr">Guido Kraemer</a> for his great work on this feature.</li>
+        <li><i>[All APIs]</i> "Analyze for spam" and "Add tags" context menu items are always shown when the corresponding feature is enabled [<a href="https://github.com/micz/ThunderAI/issues/609">#609</a>].</li>
+        <li><i>[OpenAI Comp API][Ollama API]</i> Asking for the single host for permission to avoid CORS errors, instead of <i>all_urls</i>, as requested by the Thunderbird Review Team [<a href="https://github.com/micz/ThunderAI/issues/524">#524</a>].</li>
+        <li>Fix: Using also the mail folder owner to search for the right identity to use when composing a reply [<a href="https://github.com/micz/ThunderAI/issues/627">#627</a>].</li>
+        <li>Context menu items are always ordered alfabetically [<a href="https://github.com/micz/ThunderAI/issues/630">#630</a>].</li>
+        <li>...</li>
+      </ul>
+<h2>Version 3.8.3 - 22/01/2026</h2>
+      <ul>
+        <li>Fix: Correctly saving the API settings in new custom prompts [<a href="https://github.com/micz/ThunderAI/issues/623">#623</a>].</li>
+        <li>Japanese (ja) translation added, thanks to <a href="https://hosted.weblate.org/user/watya1/">Taichi Ito</a>.</li>
+      </ul>
+<h2>Version 3.8.2 - 20/01/2026</h2>
+      <ul>
+        <li>Fix: Correctly saving the enabled status in custom prompts [<a href="https://github.com/micz/ThunderAI/issues/621">#621</a>].</li>
+      </ul>
+<h2>Version 3.8.1 - 20/01/2026</h2>
+      <ul>
+        <li><i>[OpenAI API]</i> Fix: Correctly sending the prompt after opening the chat window [<a href="https://github.com/micz/ThunderAI/issues/620">#620</a>].</li>
+      </ul>
+<h2>Version 3.8.0 - 16/01/2026</h2>
       <ul>
         <li><i>[All APIs]</i> Now it is possible to define an API and its settings for any custom prompt. This allows anyone to use different AI providers for different prompts [<a href="https://github.com/micz/ThunderAI/pull/102">#102</a>].</li>
         <li><i>[All APIs]</i> When using special prompts (like automatically adding tags or the spam filter) with a specific API integration, all the settings for that integration can be specific. In this way you can use different api keys for the same integration, or different system prompt or temperature [<a href="https://github.com/micz/ThunderAI/pull/590">#590</a>].</li>
@@ -16,7 +41,10 @@
         <li>Spanish (es) translation added, thanks to <a href="https://hosted.weblate.org/user/gerardo.sobarzo/">Gerardo Sobarzo</a>, <a href="https://hosted.weblate.org/user/arendon/">Andrés Rendón Hernández</a>, <a href="https://hosted.weblate.org/user/ErickLimonG/">Erick Limon</a>.</li>
         <li>Swedish (sv) translation added, thanks to <a href="https://hosted.weblate.org/user/Andy_tb/">Andreas Pettersson</a>.</li>
         <li>Various fixes.</li>
-        <li>...</li>
+  </ul>
+<h2>Version 3.7.9 - 06/01/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly getting the job completion [<a href="https://github.com/micz/ThunderAI/issues/607">#607</a>].</li>
       </ul>
 <h2>Version 3.7.8 - 18/12/2025</h2>
       <ul>
@@ -59,8 +87,9 @@
       <ul>
         <li><i>[All APIs]</i> It's now possibile to define a list of tags to be used when autotagging received emails [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>]. The tags are are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/289">#289</a>].</li>
         <li><i>[All APIs]</i> The prompt id and name are now shown in the information header in the AI API chat [<a href="https://github.com/micz/ThunderAI/issues/436">#436</a>].</li>
+        <li><i>[All APIs]</i> It's now possibile to define a specific API integration for spamfilter and auto tagging [<a href="https://github.com/micz/ThunderAI/issues/438">#438</a>].</li>
         <li>Added the <i>{%mail_attachments_info%}</i> placeholder to retrieve the name, type and file size of the mail attachments [<a href="https://github.com/micz/ThunderAI/issues/446">#446</a>].</li>
-        <li><i>[Google Gemini API]</i>Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
+        <li><i>[Google Gemini API]</i> Support for the thinkingBudget parameter has been added [<a href="https://github.com/micz/ThunderAI/issues/494">#494</a>].</li>
         <li><i>[OpenAI Comp API]</i> Added DeepSeek configuration [<a href="https://github.com/micz/ThunderAI/issues/486">#486</a>].</li>
         <li><i>[ChatGPT Web]</i> Added a message to explain to click on "Force completion" if the ChatGPT job is not done after 7 seconds [<a href="https://github.com/micz/ThunderAI/issues/419">#419</a>].</li>
         <li>Anthropic API renamed to Claude API [<a href="https://github.com/micz/ThunderAI/issues/510">#510</a>].</li>
@@ -394,7 +423,7 @@
   <li>Added a better error message when there is an error fetching models.</li>
   <li>When selecting a correct model in the options page, the field is no more highlighted in red [<a href="https://github.com/micz/ThunderAI/issues/100">#100</a>].</li>
   <li>When using the ChatGPT API, the double quotes at the beginning and end of the response are removed [<a href="https://github.com/micz/ThunderAI/issues/99">#99</a>].</li>
-  <li><i>[ChatGPT Web]</i>"Keep formatting" option removed.</li>
+  <li><i>[ChatGPT Web]</i> "Keep formatting" option removed.</li>
 </ul>
 <h2>Version 2.0.1 - 09/08/2024</h2>
       <ul>
