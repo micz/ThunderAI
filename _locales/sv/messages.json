@@ -1355,5 +1355,8 @@
     },
     "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
         "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att skapa kalenderhändelser, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Vill du inkludera API-inställningar i exporten? Tänk på att även API-nyckeln kommer att sparas i filen!"
     }
 }
