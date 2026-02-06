@@ -1852,5 +1852,13 @@
   "prefs_OptionText_calendar_no_selection_Info": {
     "message": "If checked there is no need to select some text. The full message body will be used to get the calendar event.",
     "description": ""
+  },
+  "customPrompts_btnCopy": {
+    "message": "Copy",
+    "description": ""
+  },
+  "copy_text": {
+    "message": "copy",
+    "description": ""
   }
 }
