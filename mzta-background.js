@@ -358,6 +358,22 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'api_send_custom_text':
                 browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
                 break;
+            case 'checkSpamReport':
+                async function _checkSpamReport(tabId) {
+                    try {
+                        if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+                        let report = await taSpamReport.loadReportData(message.headerMessageId);
+                        if (report) {
+                            browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
+                        }
+                    } catch (e) {
+                        taLog.error("Error in checkSpamReport: " + e);
+                    }
+                }
+                _checkSpamReport(sender.tab.id);
+                break;
             default:
                 break;
         }

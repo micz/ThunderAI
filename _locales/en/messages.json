@@ -1379,6 +1379,14 @@
     "message": "Spam Value",
     "description": ""
   },
+  "Spam": {
+    "message": "Spam",
+    "description": ""
+  },
+  "Valid": {
+    "message": "Valid",
+    "description": ""
+  },
   "Moved_to_Spam": {
     "message": "Moved to Spam",
     "description": ""
