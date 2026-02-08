@@ -1283,11 +1283,19 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             }
 
             taSpamReport.saveReportData(report_data, message.headerMessageId);
+
+            // Check if the message is currently displayed and update the banner
+            let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            if (tabs.length > 0) {
+                let activeTab = tabs[0];
+                let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+                if (displayedMessage && displayedMessage.id === message.id) {
+                    browser.tabs.sendMessage(activeTab.id, { command: "showSpamReport", data: report_data });
+                }
+            }
         }
     }
     taWorkingStatus.stopWorking();
 }
-
-
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
