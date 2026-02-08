@@ -1363,6 +1363,10 @@
     "message": "Spam Filter Reports",
     "description": ""
   },
+  "SpamReport_infoline": {
+    "message": "This information is saved only for the current session.",
+    "description": ""
+  },
   "Date": {
     "message": "Date",
     "description": ""
