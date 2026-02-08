@@ -1347,6 +1347,14 @@
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
     "description": ""
   },
+  "prefs_OptionText_spamfilter_show_msg_panel": {
+    "message": "Show spam report panel",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+    "message": "If checked, a panel with the spam report will be shown on top of the message.",
+    "description": ""
+  },
   "spamfilter_threshold_too_low": {
     "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
     "description": ""

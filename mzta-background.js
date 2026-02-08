@@ -359,6 +359,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
                 break;
             case 'checkSpamReport':
+                if(!prefs_init.spamfilter_show_msg_panel){
+                    return;
+                }
+
                 async function _checkSpamReport(tabId) {
                     try {
                         if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
@@ -834,6 +838,7 @@ async function reload_pref_init(){
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
+        spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
@@ -1288,12 +1293,14 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             taSpamReport.saveReportData(report_data, message.headerMessageId);
 
             // Check if the message is currently displayed and update the banner
-            let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            if (tabs.length > 0) {
-                let activeTab = tabs[0];
-                let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
-                if (displayedMessage && displayedMessage.id === message.id) {
-                    browser.tabs.sendMessage(activeTab.id, { command: "showSpamReport", data: report_data });
+            if (prefs_init.spamfilter_show_msg_panel) {
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if (tabs.length > 0) {
+                    let activeTab = tabs[0];
+                    let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+                    if (displayedMessage && displayedMessage.id === message.id) {
+                        browser.tabs.sendMessage(activeTab.id, { command: "showSpamReport", data: report_data });
+                    }
                 }
             }
         }
