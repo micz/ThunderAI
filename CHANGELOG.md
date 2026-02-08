@@ -20,6 +20,7 @@
         <li><i>[All APIs]</i> Added an option to get a calendar event without selecting some text, but using the full text body of the email [<a href="https://github.com/micz/ThunderAI/issues/518">#518</a>].</li>
         <li><i>[All APIs]</i> Added a new menu item to create a calendar event from the text saved in the clipboard [<a href="https://github.com/micz/ThunderAI/issues/362">#362</a>].</li>
         <li>Added a button to copy a prompt in the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/598">#598</a>].</li>
+        <li><i>[All APIs]</i> Showing the spam filter info at the top of the message. The data is saved only for the session in which the message has been checked for spam [<a href="https://github.com/micz/ThunderAI/issues/506">#506</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.8.3 - 22/01/2026</h2>
