@@ -1397,5 +1397,11 @@
     },
     "placeholder_mail_html_body_or_selected": {
         "message": "Mejltext eller vald HTML"
+    },
+    "Spam": {
+        "message": "Skräppost"
+    },
+    "Valid": {
+        "message": "Giltig"
     }
 }
