@@ -1358,5 +1358,44 @@
     },
     "customPrompts_export_include_api_settings": {
         "message": "Vill du inkludera API-inställningar i exporten? Tänk på att även API-nyckeln kommer att sparas i filen!"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Lägg till kalenderhändelse från urklipp"
+    },
+    "clipboard_read_error": {
+        "message": "Kunde inte läsa urklipp. Kontrollera behörigheterna."
+    },
+    "clipboard_empty_error": {
+        "message": "Urklipp är tom. Kopiera lite text först."
+    },
+    "clipboard_permission_denied": {
+        "message": "Åtkomst till urklipp nekades. Aktivera funktionen igen i inställningarna för att ge behörighet."
+    },
+    "clipboard_permission_error": {
+        "message": "Fel vid begäran om behörighet för urklipp. Försök igen."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Hämta kalenderhändelse från urklipp"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Visa ytterligare ett menyalternativ för att skapa kalenderhändelser från textinnehåll i urklipp."
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Fråga inte om att markera text"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Om markerad behöver du inte markera någon text. Hela meddelandets innehåll kommer att användas för att hämta kalenderhändelsen."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Kopiera"
+    },
+    "copy_text": {
+        "message": "kopiera"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Mejltext eller markerad text"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Mejltext eller vald HTML"
     }
 }
