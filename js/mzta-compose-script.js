@@ -648,8 +648,17 @@ switch (message.command) {
     const reasonText = document.createElement('span');
     reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
 
+    const closeBtn = document.createElement('span');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = 'margin-left: auto; cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
+    closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
+    closeBtn.onclick = function() {
+        container.remove();
+    };
+
     container.appendChild(scoreText);
     container.appendChild(reasonText);
+    container.appendChild(closeBtn);
 
     document.body.insertBefore(container, document.body.firstChild);
     return Promise.resolve(true);
