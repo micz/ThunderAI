@@ -654,6 +654,7 @@ switch (message.command) {
     closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
     closeBtn.onclick = function() {
         container.remove();
+        browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
     };
 
     container.appendChild(scoreText);

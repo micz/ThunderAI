@@ -374,6 +374,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
                 _checkSpamReport(sender.tab.id);
                 break;
+            case 'removeSpamReport':
+                taSpamReport.removeReportData(message.headerMessageId);
+                break;
             default:
                 break;
         }
