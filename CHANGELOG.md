@@ -4,6 +4,10 @@
 
 
 
+<h2>Version 3.8.4 - 10/02/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly importing the selected text into the compose windows also when ChatGPT shows the advanced mail editor in the response [<a href="https://github.com/micz/ThunderAI/issues/646">#646</a>].</li>
+      </ul>
 <h2>Version 3.8.3 - 22/01/2026</h2>
       <ul>
         <li>Fix: Correctly saving the API settings in new custom prompts [<a href="https://github.com/micz/ThunderAI/issues/623">#623</a>].</li>
