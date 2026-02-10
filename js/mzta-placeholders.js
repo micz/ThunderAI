@@ -436,7 +436,7 @@ export const placeholdersUtils = {
                 return match;
             }
             // Replace if found, otherwise keep the original or substitute with default value
-            return replacements[p1] || (use_default_value ? currPlaceholder.default_value : match);
+            return replacements[p1] || replacements[currPlaceholder.id] || (use_default_value ? currPlaceholder.default_value : match);
         });
     },
 
@@ -459,7 +459,7 @@ export const placeholdersUtils = {
         // If a specific placeholder is provided, we search for it
         if (placeholder !== "") {
           // Dynamically build the regex for the specific placeholder
-          regex = new RegExp(`{%\s*${placeholder}\s*%}`);
+          regex = new RegExp(`{%\s*${placeholder}(:.*?)?\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {% ... %}
           regex = /{%\s*(.*?)\s*%}/;
