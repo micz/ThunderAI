@@ -148,7 +148,7 @@ const defaultPlaceholders = [
         default_value: "",
         type: 0,
         is_default: "1",
-        is_dynamic: "0",
+        is_dynamic: "1",
         enabled: 1,
     },
     {
@@ -427,7 +427,7 @@ export const placeholdersUtils = {
             // console.log(">>>>>>>>>> replacePlaceholders match: " + JSON.stringify(match));
             // console.log(">>>>>>>>>> replacePlaceholders p1: " + JSON.stringify(p1));
             // p1 contains the key inside {% %}
-            if (skip_additional_text && (p1 === 'additional_text')) {
+            if (skip_additional_text && ((p1 === 'additional_text') || (p1.startsWith('additional_text:')))) {
                 return match;
             }
             const currPlaceholder = defaultPlaceholders.find(ph => (ph.id === p1) || (ph.is_dynamic == 1 && p1.startsWith(ph.id + ':')));
