@@ -485,6 +485,19 @@ export const placeholdersUtils = {
         return regex.test(text);
     },
 
+    getPlaceholdersAdditionalTextArray(prompt_text){
+        const regex = /{%\s*additional_text(?::(.*?))?\s*%}/g;
+        let matches = [];
+        let match;
+        while ((match = regex.exec(prompt_text)) !== null) {
+            matches.push({
+                placeholder: match[0],
+                info: match[1] ? match[1].trim() : ""
+            });
+        }
+        return matches;
+    },
+
     async getPlaceholdersValues(args) {
         const {
             prompt_text = "",
