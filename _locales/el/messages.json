@@ -1286,5 +1286,131 @@
     },
     "prefs_anthropic_temperature_Info": {
         "message": "Ποσότητα τυχαιότητας που εισάγεται στην απόκριση. Προεπιλογή 1,0. Εύρος από 0,0 έως 1,0. Χρησιμοποιήστε θερμοκρασία πιο κοντά στο 0,0 για αναλυτική ανάλυση."
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Σώμα μηνύματος ή επιλεγμένο κείμενο"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Σώμα μηνύματος ή επιλεγμένη HTML"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Προσθήκη συμβάντος ημερολογίου από το πρόχειρο"
+    },
+    "clipboard_read_error": {
+        "message": "Δεν ήταν δυνατή η ανάγνωση του προχείρου. Ελέγξτε τα δικαιώματα."
+    },
+    "clipboard_empty_error": {
+        "message": "Το πρόχειρο είναι άδειο. Παρακαλώ αντιγράψτε πρώτα κάποιο κείμενο."
+    },
+    "clipboard_permission_denied": {
+        "message": "Η άδεια χρήσης του πρόχειρου απορρίφθηκε. Ενεργοποιήστε ξανά τη λειτουργία στις ρυθμίσεις για να παραχωρήσετε άδεια."
+    },
+    "clipboard_permission_error": {
+        "message": "Σφάλμα κατά την αίτηση άδειας στο πρόχειρο. Δοκιμάστε ξανά."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Λήψη συμβάντος ημερολογίου από το πρόχειρο"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Εμφάνιση ενός επιπλέον στοιχείου μενού για τη δημιουργία συμβάντων ημερολογίου από περιεχόμενο κειμένου στο πρόχειρο."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Προσθήκη επιλογών σύνοψης"
+    },
+    "prompt_summarize": {
+        "message": "Συνοψίστε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου ή αυτά τα μηνύματα ηλεκτρονικού ταχυδρομείου"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Είστε βοηθός που συνοψίζει συνομιλίες μέσω email. \nΔεδομένου ενός νήματος email, δημιουργήστε μια συνοπτική και ακριβή περίληψη που να καταγράφει: \n- Το κύριο θέμα ή τον σκοπό της συζήτησης \n- Βασικές αποφάσεις, συμπεράσματα ή συμφωνίες \n- Σημαντικές ερωτήσεις, αιτήματα ή ενέργειες \n- Ποιος είναι υπεύθυνος για κάθε ενέργεια (εάν αναφέρεται) \nΠαραλείψτε χαιρετισμούς, υπογραφές, παρατιθέμενο κείμενο και περιττές ανταλλαγές απόψεων. Μην προσθέτετε υποθέσεις ή πληροφορίες που δεν υπάρχουν στα email. \nΓράψτε την περίληψη σε σαφή, ουδέτερη γλώσσα, κατάλληλη για έναν πολυάσχολο επαγγελματία."
+    },
+    "prompt_summarize_email_template": {
+        "message": "Σύνοψη προτύπου email"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Από: {%author%} \nΠρος: {%recipients%} \nΚοινοποίηση: {%cc_list%} \nΘέμα: {%mail_subject%} \nΗμερομηνία: {%mail_datetime%} \nΣυνημμένα: {%mail_attachments_info%} \nΚύριο κείμενο: \n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Διαχωριστής email"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- ΕΠΟΜΕΝΟ EMAIL -----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Μπορείτε να αλλάξετε την προτροπή όπως επιθυμείτε. Το πρώτο πεδίο είναι η κύρια προτροπή, το δεύτερο πεδίο είναι το πρότυπο για ένα μόνο μήνυμα ηλεκτρονικού ταχυδρομείου. Η λίστα των email θα προσαρτηθεί στην κύρια προτροπή. Τα email θα διαχωρίζονται με το διαχωριστικό που καθορίζεται στο τρίτο πεδίο."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Η κύρια προτροπή που περιγράφει την εργασία που θα εκτελεστεί σε όλα τα επιλεγμένα email:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Το πρότυπο για ένα μόνο email:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Το διαχωριστικό μεταξύ των email:"
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο και το API που καθορίζονται παρακάτω θα χρησιμοποιηθούν για τη δημιουργία συμβάντων ημερολογίου, ανεξάρτητα από αυτό που έχει επιλεγεί στη σελίδα επιλογών ThunderAI."
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Σύνοψη αλληλογραφίας"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο και το API που καθορίζονται παρακάτω θα χρησιμοποιηθούν για τη σύνοψη email(s), ανεξάρτητα από αυτό που έχει επιλεγεί στη σελίδα επιλογών ThunderAI."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Εάν είναι επιλεγμένο, προσθέτει μια επιλογή στο μενού περιβάλλοντος για τη σύνοψη της αλληλογραφίας."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Διαχείριση ρυθμίσεων σύνοψης"
+    },
+    "Summarize_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων σύνοψης"
+    },
+    "Summarize_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη προτροπή που χρησιμοποιείται για τη σύνοψη των μηνυμάτων ηλεκτρονικού ταχυδρομείου."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Τρέχον κείμενο προτροπής"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Εμφάνιση πλαισίου αναφοράς ανεπιθύμητων μηνυμάτων"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Εάν είναι επιλεγμένο, θα εμφανίζεται ένα πλαίσιο με την αναφορά ανεπιθύμητης αλληλογραφίας στο επάνω μέρος του μηνύματος."
+    },
+    "SpamReport_infoline": {
+        "message": "Αυτές οι πληροφορίες αποθηκεύονται μόνο για την τρέχουσα συνεδρία."
+    },
+    "Spam": {
+        "message": "Ανεπιθύμητα μηνύματα"
+    },
+    "Valid": {
+        "message": "Έγκυρα Μηνύματα"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Σύνοψη"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Πατήστε το παρακάτω κουμπί για να δώσετε άδεια στον τρέχοντα κεντρικό υπολογιστή να αποφύγει οποιοδήποτε πρόβλημα με το CORS."
+    },
+    "CORS_give_host_perm": {
+        "message": "Δώστε άδεια στον τρέχοντα κεντρικό υπολογιστή"
+    },
+    "CORS_localhost_warn": {
+        "message": "Εάν χρησιμοποιείτε localhost ή 127.0.0.1 επειδή ο διακομιστής AI φιλοξενείται στον υπολογιστή σας, απαιτείται το δικαίωμα <all_urls>."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Θέλετε να συμπεριλάβετε τις ρυθμίσεις API στην εξαγωγή; Λάβετε υπόψη ότι και το Κλειδί API θα αποθηκευτεί στο αρχείο!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Μην ζητάτε να επιλέξετε κείμενο"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Εάν είναι επιλεγμένο, δεν χρειάζεται να επιλέξετε κάποιο κείμενο. Το πλήρες σώμα του μηνύματος θα χρησιμοποιηθεί για τη λήψη του συμβάντος ημερολογίου."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Αντιγραφή"
+    },
+    "copy_text": {
+        "message": "αντιγραφή"
     }
 }
