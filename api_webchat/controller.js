@@ -256,7 +256,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             promptData = message;
             //send the received prompt to the llm api
             if(message.do_custom_text=="1") {
-                messageInput._showCustomTextField();
+                messageInput._showCustomTextField(message.prompt_info?.custom_text_array);
             }else{
                 sendPrompt(message);
             }

@@ -193,6 +193,8 @@ messageInputTemplate.content.appendChild(customDiv);
 class MessageInput extends HTMLElement {
 
     model = '';
+    _customTextArray = [];
+    _currentCustomTextIndex = 0;
 
     constructor() {
         super();
@@ -306,21 +308,55 @@ class MessageInput extends HTMLElement {
         this._messageInputField.value = msg;
     }
 
-    _showCustomTextField(){
+    _showCustomTextField(custom_text_array){
+        this._customTextArray = custom_text_array || [];
+        if (this._customTextArray.length === 0) {
+             this._customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
+        }
+        this._currentCustomTextIndex = 0;
+        this._renderCustomTextStep();
         this._customText.style.display = 'block';
+    }
+
+    _renderCustomTextStep() {
+        const currentItem = this._customTextArray[this._currentCustomTextIndex];
+        const infoDiv = this.shadowRoot.querySelector('#mzta-custom_info');
+        
+        this._customTextArea.value = "";
+        
+        if (currentItem.info && currentItem.info.trim() !== "") {
+            infoDiv.textContent = currentItem.info;
+        } else {
+            infoDiv.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
+        }
+        
         this._customTextArea.focus();
     }
 
     async _customTextBtnClick(args) {
         const customText = this._customTextArea.value;
-        // console.log(">>>>>>>>>>>>>>>> customText: " + customText);
-        args.customBtn.disabled = true;
-        args.customBtn.classList.add('disabled');
-        args.customLoading.style.display = 'inline-block';
-        args.customLoading.style.display = 'none';
-        let tab = await browser.tabs.query({ active: true, currentWindow: true });
-        browser.runtime.sendMessage({ command: "api_send_custom_text", custom_text: customText, tabId: tab[0].id });
-        args.customDiv.style.display = 'none';
+        
+        if (this._customTextArray[this._currentCustomTextIndex]) {
+            this._customTextArray[this._currentCustomTextIndex].custom_text = customText;
+        }
+
+        this._currentCustomTextIndex++;
+
+        if (this._currentCustomTextIndex < this._customTextArray.length) {
+            this._renderCustomTextStep();
+        } else {
+            args.customBtn.disabled = true;
+            args.customBtn.classList.add('disabled');
+            args.customLoading.style.display = 'inline-block';
+            
+            let tab = await browser.tabs.query({ active: true, currentWindow: true });
+            browser.runtime.sendMessage({ command: "api_send_custom_text", custom_text: this._customTextArray, tabId: tab[0].id });
+            args.customDiv.style.display = 'none';
+            
+            args.customBtn.disabled = false;
+            args.customBtn.classList.remove('disabled');
+            args.customLoading.style.display = 'none';
+        }
     }
 }
 
