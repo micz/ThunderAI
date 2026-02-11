@@ -22,7 +22,7 @@
         <li>Added a button to copy a prompt in the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/598">#598</a>].</li>
         <li><i>[All APIs]</i> Showing the spam filter info at the top of the message. The data is saved only for the session in which the message has been checked for spam [<a href="https://github.com/micz/ThunderAI/issues/506">#506</a>].</li>
         <li>...</li>
-  </ul>
+      </ul>
 <h2>Version 3.8.4 - 10/02/2026</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly importing the selected text into the compose windows also when ChatGPT shows the advanced mail editor in the response [<a href="https://github.com/micz/ThunderAI/issues/646">#646</a>].</li>
