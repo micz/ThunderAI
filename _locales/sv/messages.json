@@ -1403,5 +1403,14 @@
     },
     "Valid": {
         "message": "Giltig"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Visa panelen för skräppostrapportering"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Om markerat visas en panel med skräppostrapportering högst upp av meddelandet."
+    },
+    "SpamReport_infoline": {
+        "message": "Denna information sparas endast för den aktuella sessionen."
     }
 }
