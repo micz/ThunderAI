@@ -659,6 +659,14 @@
     "message": "Account email address",
     "description": ""
   },
+  "placeholder_mail_text_body_or_selected": {
+    "message": "Mail body or selected text",
+    "description": ""
+  },
+  "placeholder_mail_html_body_or_selected": {
+    "message": "Mail body or selected HTML",
+    "description": ""
+  },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
     "description": ""
@@ -1000,7 +1008,63 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%selected_text%}\"",
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
+    "description": ""
+  },
+  "prompt_get_calendar_event_from_clipboard": {
+    "message": "Add calendar event from clipboard",
+    "description": ""
+  },
+  "clipboard_read_error": {
+    "message": "Could not read clipboard. Please check permissions.",
+    "description": ""
+  },
+  "clipboard_empty_error": {
+    "message": "Clipboard is empty. Please copy some text first.",
+    "description": ""
+  },
+  "clipboard_permission_denied": {
+    "message": "Clipboard permission was denied. Please enable the feature again in settings to grant permission.",
+    "description": ""
+  },
+  "clipboard_permission_error": {
+    "message": "Error requesting clipboard permission. Please try again.",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_from_clipboard": {
+    "message": "Get calendar event from clipboard",
+    "description": ""
+  },
+  "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+    "message": "Show an additional menu item to create calendar events from clipboard text content.",
+    "description": ""
+  },
+  "Summarize_prompt_prefs_title": {
+    "message": "Add Summarization Options",
+    "description": ""
+  },
+  "prompt_summarize": {
+    "message": "Summarize this email or these emails",
+    "description": ""
+  },
+  "prompt_summarize_full_text": {
+    "message": "You are an assistant that summarizes email conversations.\n\nGiven an email thread, produce a concise, accurate summary that captures:\n\n- The main topic or purpose of the conversation\n- Key decisions, conclusions, or agreements\n- Important questions, requests, or action items\n- Who is responsible for each action item (if stated)\n\nOmit greetings, signatures, quoted text, and redundant back-and-forth.\nDo not add assumptions or information not present in the emails.\n\nWrite the summary in clear, neutral language suitable for a busy professional.",
+    "description": ""
+  },
+  "prompt_summarize_email_template": {
+    "message": "Summarize email template",
+    "description": ""
+  },
+  "prompt_summarize_email_template_full_text": {
+    "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\n\nBody:\n{%mail_text_body%}",
+    "description": ""
+  },
+  "prompt_summarize_email_separator": {
+    "message": "Email separator",
+    "description": ""
+  },
+  "prompt_summarize_email_separator_full_text": {
+    "message": "\n\n---------- NEXT EMAIL ----------\n\n",
     "description": ""
   },
   "prompt_get_task": {
@@ -1066,6 +1130,22 @@
   "prefs_OptionText_AdvancedPromptResponse_infoline2": {
     "message": "You can change the prompt as you wish, but the response received from the AI must be in JSON format as specified in the default prompt!",
     "description": ""
+  },
+  "prefs_OptionText_Summarize_infoline2": {
+    "message": "You can change the prompt as you wish, the first field is the main prompt, the second field is the template for a single mail. The list of emails will be appended to the main prompt. Emails will be separated by the separator specified in the third field.",
+    "description": ""
+  },
+  "prefs_OptionText_Summarize_main_prompt": {
+    "message": "The main prompt describing the task to be performed on all selected emails:",
+    "description": ""
+  },
+  "prefs_OptionText_Summarize_email_template": {
+     "message": "The template for a single email:",
+     "description": ""
+  },
+  "prefs_OptionText_Summarize_email_separator": {
+     "message": "The separator between emails:",
+     "description": ""
   },
   "prefs_OptionText_get_calendar_event_Sparks_not_present": {
     "message": "To use the calendar event and task features, please install the ThunderAI Sparks addon.",
@@ -1167,6 +1247,10 @@
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""
   },
+  "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for creating calendar events, regardless the one choosen in the ThunderAI options page.",
+    "description": ""
+  },
   "placeholder_thunderai_def_sign": {
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""
@@ -1195,6 +1279,22 @@
     "message": "Manage spam filter settings",
     "description": ""
   },
+  "prefs_OptionText_summarize": {
+    "message": "Summarize mail",
+    "description": ""
+  },
+  "prefs_OptionText_summarize_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for summarizing email(s), regardless the one choosen in the ThunderAI options page.",
+    "description": ""
+  },
+  "prefs_OptionText_summarize_Info": {
+    "message": "If checked, adds an option to context menu to summarize mail.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageSummarizeInfo": {
+    "message": "Manage summarize settings",
+    "description": ""
+  },
   "SpamFilter_PageTitle": {
     "message": "Manage Spam Filter Settings",
     "description": ""
@@ -1219,6 +1319,18 @@
     "message": "Spam Filter Options",
     "description": ""
   },
+  "Summarize_PageTitle": {
+    "message": "Manage Summarize Settings",
+    "description": ""
+  },
+  "Summarize_info_default": {
+    "message": "In this page you can modify the default prompt used to summarize emails.",
+    "description": ""
+  },
+  "Summarize_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
   "prefs_OptionText_use_specific_integration": {
     "message": "Use specific Model and API",
     "description": ""
@@ -1233,6 +1345,14 @@
   },
   "prefs_OptionText_spamfilter_threshold_Info": {
     "message": "If the value returned by the AI is above this threshold, the email will be moved to the spam folder.",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_show_msg_panel": {
+    "message": "Show spam report panel",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+    "message": "If checked, a panel with the spam report will be shown on top of the message.",
     "description": ""
   },
   "spamfilter_threshold_too_low": {
@@ -1251,6 +1371,10 @@
     "message": "Spam Filter Reports",
     "description": ""
   },
+  "SpamReport_infoline": {
+    "message": "This information is saved only for the current session.",
+    "description": ""
+  },
   "Date": {
     "message": "Date",
     "description": ""
@@ -1267,6 +1391,14 @@
     "message": "Spam Value",
     "description": ""
   },
+  "Spam": {
+    "message": "Spam",
+    "description": ""
+  },
+  "Valid": {
+    "message": "Valid",
+    "description": ""
+  },
   "Moved_to_Spam": {
     "message": "Moved to Spam",
     "description": ""
@@ -1279,11 +1411,11 @@
     "message": "Report Date",
     "description": ""
   },
-  "spamfilter_moved": {
+  "yes_string": {
     "message": "Yes",
     "description": ""
   },
-  "spamfilter_not_moved": {
+  "no_string": {
     "message": "No",
     "description": ""
   },
@@ -1295,20 +1427,8 @@
     "message": "Analyze for spam",
     "description": ""
   },
-  "prefs_OptionText_add_tags_context_menu": {
-    "message": "Show the \"Add tags\" context menu item",
-    "description": ""
-  },
-  "prefs_OptionText_add_tags_context_menu_Info": {
-    "message": "If checked, the \"Add tags\" context menu item will be shown when right-clicking on an email in the messages list.",
-    "description": ""
-  },
-  "prefs_OptionText_spamfilter_context_menu": {
-    "message": "Show the \"Analyze for spam\" context menu item",
-    "description": ""
-  },
-  "prefs_OptionText_spamfilter_context_menu_Info": {
-    "message": "If checked, the \"Analyze for spam\" context menu item will be shown when right-clicking on an email in the messages list.",
+  "context_menu_mzta-summarize": {
+    "message": "Summarize",
     "description": ""
   },
   "noActiveCalendar": {
@@ -1363,12 +1483,16 @@
     "message": "Problems setting CORS?",
     "description": ""
   },
-  "CORS_alternative_2": {
-    "message": "Press the button below to give the <all_urls> permission to avoid any CORS problem.",
+  "CORS_alternative_2_new": {
+    "message": "Press the button below to give the permission to the current host to avoid any CORS problem.",
     "description": ""
   },
-  "CORS_give_allurls_perm": {
-    "message": "Give \"all URLs\" permission",
+  "CORS_give_host_perm": {
+    "message": "Give permission to the current host",
+    "description": ""
+  },
+  "CORS_localhost_warn": {
+    "message": "If you are using localhost or 127.0.0.1 because the AI server is hosted on your PC, the <all_urls> permission is required.",
     "description": ""
   },
   "prefs_OptionText_composing_plain_text": {
@@ -1735,6 +1859,26 @@
   },
   "Optional_Permission_Denied_Model_Fetching": {
     "message": "You have denied the optional permission needed to fetch models for this integration.",
+    "description": ""
+  },
+  "customPrompts_export_include_api_settings": {
+    "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_no_selection": {
+    "message": "Do not ask to select text",
+    "description": ""
+  },
+  "prefs_OptionText_calendar_no_selection_Info": {
+    "message": "If checked there is no need to select some text. The full message body will be used to get the calendar event.",
+    "description": ""
+  },
+  "customPrompts_btnCopy": {
+    "message": "Copy",
+    "description": ""
+  },
+  "copy_text": {
+    "message": "copy",
     "description": ""
   }
 }

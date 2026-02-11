@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Modell wird verwendet"
     },
-    "chagpt_api_connecting": {
-        "message": "Versuch, eine Verbindung zu OpenAI ChatGPT mit dem bereitgestellten API-Schlüssel herzustellen"
-    },
     "Debug": {
         "message": "Debuggen"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Sie haben kein Modell für die Ollama API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
-    "ollama_api_connecting": {
-        "message": "Versuch, eine Verbindung zum Ollama-Lokalserver über den Host herzustellen"
-    },
-    "andModel": {
-        "message": "und Modell"
-    },
     "error_connection_interrupted": {
         "message": "Die Verbindung zum Server wurde unerwartet unterbrochen"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Sie haben kein Modell für die OpenAI-kompatible API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Versuche, eine Verbindung zum OpenAI-kompatiblen lokalen API-Server über den Host herzustellen"
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI-kompatible API-Anfrage fehlgeschlagen"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "Google Gemini API-Anfrage fehlgeschlagen"
     },
-    "google_gemini_api_connecting": {
-        "message": "Versuch, eine Verbindung zu Google Gemini mit dem bereitgestellten API-Schlüssel herzustellen"
-    },
     "google_gemini_empty_apikey": {
         "message": "Sie haben keinen API-Schlüssel für die Google Gemini API hinzugefügt. Bitte fügen Sie einen auf der Optionsseite ein."
     },
@@ -712,7 +697,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%selected_text%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -825,17 +810,14 @@
     "Report_Date": {
         "message": "Berichtsdatum"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ja"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nein"
     },
     "spamfilter_threshold_too_low": {
         "message": "Der Spam-Schwellenwert ist zu niedrig! Sie werden wahrscheinlich zu viele E-Mails als Spam markieren!"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks nicht installiert!"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Wenn aktiviert, fügt die KI nur vorhandene Tags hinzu und erstellt keine neuen Tags."
@@ -854,12 +836,6 @@
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Tags hinzufügen\" angezeigt."
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Wenn aktiviert, wird beim Rechtsklick auf eine E-Mail in der Nachrichtenliste der Eintrag \"Auf Spam analysieren\" angezeigt."
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Erzwinge die angegebene Zeitzone"
@@ -881,12 +857,6 @@
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Wenn aktiviert, wird die angegebene Zeitzone für die Kalendereinträge und Aufgaben erzwungen."
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "\"Tags hinzufügen\" im Kontextmenü anzeigen"
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "\"Auf Spam analysieren\" im Kontextmenü anzeigen"
     },
     "apiwebchat_you": {
         "message": "Du"
@@ -929,12 +899,6 @@
     },
     "CORS_alternative_1": {
         "message": "Probleme beim Einrichten von CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Drücke den Button unten, um die Berechtigung <all_urls> zu erteilen und CORS-Probleme zu vermeiden."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Gib die Berechtigung für \"alle URLs\""
     },
     "remember_CORS": {
         "message": "Denk daran, du musst die CORS-Einstellungen auf dem Server konfigurieren!"

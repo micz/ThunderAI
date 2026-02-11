@@ -36,14 +36,15 @@
             </td>
           </tr>
           <tr class="spamfilter_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter_context_menu__</span></td>
+            <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter_show_msg_panel__</span></td>
             <td>
               <label>
-                <input type="checkbox" id="spamfilter_context_menu" name="spamfilter_context_menu" class="option-input" />
-                __MSG_prefs_OptionText_spamfilter_context_menu_Info__
+                <input type="checkbox" id="spamfilter_show_msg_panel" name="spamfilter_show_msg_panel" class="option-input" />
+                __MSG_prefs_OptionText_spamfilter_show_msg_panel_Info__
               </label>
             </td>
           </tr>
+
     </table>
     <div id="spamfilter_container">
         <span class="section_title">__MSG_SpamFilter_prompt_text_title__</span><span id="spamfilter_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
@@ -65,7 +66,8 @@
     <button type="button" id="accounts_deselect_all">__MSG_DeselectAll__</button>
     </div>
     <div id="spamfitler_reports_container">
-      <h2>__MSG_SpamReport_Title__</h2>
+      <div><span  class="section_title">__MSG_SpamReport_Title__</span>
+      <br><span class="infoline">__MSG_SpamReport_infoline__</span></div>
       <table id="report_data">
           <thead>
               <tr>

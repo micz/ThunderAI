@@ -744,7 +744,7 @@
         "message": "Agregar un nuevo evento de calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Asistentes\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEste es el texto:\"{%selected_text%}\""
+        "message": "Extrae todos los detalles relevantes necesarios para generar un evento de calendario a partir del siguiente texto. La información extraída debe incluir:\n- Título del evento\n- Fecha y hora de inicio (incluyendo zona horaria, si se especifica)\n- Fecha y hora de fin (incluyendo zona horaria, si se especifica)\n- Día completo (si se menciona)\n- Asistentes\nAsegúrate de que los datos estén formateados de manera clara y consistente para que puedan usarse directamente en la creación de un evento de calendario.\nSi hay referencias de tiempo relativas, considera que la fecha y hora del correo son \"{%mail_datetime%}\". Calcula la fecha y hora de inicio basándote en esta referencia. Si la fecha y hora de inicio calculadas son anteriores a \"{%current_datetime%}\", recalcula la fecha y hora de inicio usando \"{%current_datetime%}\" como base.\nSi la duración no se especifica, establécela en una hora.\nEstos son los asistentes: {%author%}, {%recipients%}, {%cc_list%}. Si están presentes, excluye mi dirección: {%account_email_address%}.\nSi no puedes obtener uno o más de los datos requeridos, responde con una cadena vacía.\nGenera una respuesta solo en formato JSON. No incluyas texto adicional ni explicaciones; proporciona únicamente el JSON. El formato a usar es:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumen del evento de calendario aquí\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEste es el texto:\"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task": {
         "message": "Agregar una nueva tarea"
@@ -956,10 +956,10 @@
     "Report_Date": {
         "message": "Fecha del informe"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Si"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "No"
     },
     "context_menu_mzta-add-tags": {
@@ -967,18 +967,6 @@
     },
     "context_menu_mzta-spamfilter": {
         "message": "Analizar el spam"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Mostrar el elemento del menú contextual “Añadir etiquetas”"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Si está marcado, el elemento del menú contextual “Añadir etiquetas” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Mostrar el elemento del menú contextual “Analizar el spam”"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Si está marcado, el elemento del menú contextual “Analizar el spam” se mostrará al hacer clic derecho en un correo electrónico de la lista de mensajes."
     },
     "noActiveCalendar": {
         "message": "¡No se encontró un calendario editable!"
@@ -1018,12 +1006,6 @@
     },
     "CORS_alternative_1": {
         "message": "¿Problemas al configurar CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Presiona el botón a continuación para otorgar el permiso <all_urls> y evitar cualquier problema de CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Otorgar permiso “all URLs”"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Redactando en texto plano"

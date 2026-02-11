@@ -617,9 +617,58 @@ switch (message.command) {
 
     break;
 
+  case "showSpamReport":
+    const data = message.data;
+    if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
+
+    const container = document.createElement('div');
+    container.id = 'mzta-spam-report-banner';
+    
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColor = '#f8f9fa';
+    let textColor = '#333';
+    let borderColor = '#ccc';
+    
+    if (data.spamValue >= (data.SpamThreshold || 50)) {
+        bgColor = isDark ? '#5a1a1a' : '#ffe6e6';
+        textColor = isDark ? '#ffcccc' : '#cc0000';
+        borderColor = '#cc0000';
+    } else {
+        bgColor = isDark ? '#1a401a' : '#e6ffe6';
+        textColor = isDark ? '#ccffcc' : '#006600';
+        borderColor = '#006600';
+    }
+
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+
+    const scoreText = document.createElement('strong');
+    scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? browser.i18n.getMessage("Spam") : browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+    
+    const reasonText = document.createElement('span');
+    reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+
+    const closeBtn = document.createElement('span');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = 'margin-left: auto; cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
+    closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
+    closeBtn.onclick = function() {
+        container.remove();
+        browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
+    };
+
+    container.appendChild(scoreText);
+    container.appendChild(reasonText);
+    container.appendChild(closeBtn);
+
+    document.body.insertBefore(container, document.body.firstChild);
+    return Promise.resolve(true);
+
   default:
     // do nothing
     return Promise.resolve(false);
     break;
 }
 });
+
+browser.runtime.sendMessage({ command: "checkSpamReport" });

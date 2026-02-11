@@ -797,10 +797,10 @@
     "Report_Date": {
         "message": "Rapportdatum"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Ja"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Nej"
     },
     "context_menu_mzta-add-tags": {
@@ -808,18 +808,6 @@
     },
     "context_menu_mzta-spamfilter": {
         "message": "Analysera för skräppost"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Visa snabbmenyn \"Lägg till taggar\""
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Lägg till taggar\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Visa snabbmenyalternativet \"Analysera för skräppost\""
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Om markerat visas snabbmenyn \"Analysera för skräppost\" när du högerklickar på ett e-postmeddelande i meddelandelistan."
     },
     "noActiveCalendar": {
         "message": "Ingen redigerbar kalender hittades!"
@@ -859,9 +847,6 @@
     },
     "CORS_alternative_1": {
         "message": "Problem med att ställa in CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Tryck på knappen nedan för att ge <all_urls> behörighet för att undvika eventuella CORS-problem."
     },
     "customPrompts_Properties": {
         "message": "Egenskaper"
@@ -1294,7 +1279,7 @@
         "message": "Citerad text i meddelandets brödtext"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%selected_text%}\""
+        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task_full_text": {
         "message": "Extrahera alla relevanta detaljer som krävs för att generera en uppgift från följande text. Den extraherade informationen bör innehålla:\n- Förfallodatum och tid (inklusive tidszon, om angiven)\n- Uppgiftssammanfattning\n- Initialt datum och tid (inklusive tidszon, om angiven)\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en uppgift.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"InitialDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"dueDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Uppgiftssammanfattning här\"\n}\nOm det inte finns någon information om datumen, ta bort dem.\nHär är texten: \"{%selected_text%}\""
@@ -1302,7 +1287,130 @@
     "prompt_spamfilter_full_text": {
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"spamValue\": <heltal från 0 till 100>,\n\"explanation\": \"Kort förklaring av ditt resonemang\"\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
     },
-    "CORS_give_allurls_perm": {
-        "message": "Ge behörighet för \"alla webbadresser\""
+    "Summarize_prompt_prefs_title": {
+        "message": "Lägg till sammanfattningsalternativ"
+    },
+    "prompt_summarize": {
+        "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Du är en assistent som sammanfattar e-postkonversationer.\n\nMed tanke på en e-posttråd, skapa en kortfattad och korrekt sammanfattning som fångar:\n\n- Konversationens huvudämne eller syfte\n- Viktiga beslut, slutsatser eller överenskommelser\n- Viktiga frågor, förfrågningar eller åtgärdspunkter\n- Vem som är ansvarig för varje åtgärdspunkt (om det anges)\n\nUteslut hälsningar, signaturer, citat och överflödig fram-och-tillbaka-text.\nLägg inte till antaganden eller information som inte finns i e-postmeddelandena.\n\nSkriv sammanfattningen på ett tydligt och neutralt språk som passar en upptagen yrkesperson."
+    },
+    "prompt_summarize_email_template": {
+        "message": "Sammanfattningsmall för e-post"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Från: {%author%}\nTill: {%recipients%}\nCC: {%cc_list%}\nÄmne: {%mail_subject%}\nDatum: {%mail_datetime%}\nBilagor:\n{%mail_attachments_info%}\n\nBrödtext:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "E-postavgränsare"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- NÄSTA E-POST ----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Du kan ändra prompten som du vill, det första fältet är huvudprompten, det andra fältet är mallen för ett enskilt e-postmeddelande. Listan över e-postmeddelanden kommer att läggas till i huvudprompten. E-postmeddelanden kommer att separeras med avgränsaren som anges i det tredje fältet."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Huvudprompten som beskriver uppgiften som ska utföras på alla valda e-postmeddelanden:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Mallen för ett enda e-postmeddelande:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Avgränsaren mellan e-postmeddelanden:"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Sammanfatta e-postmeddelande"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att sammanfatta e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Om markerad läggs ett alternativ till i snabbmenyn för att sammanfatta e-post."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Hantera sammanfattningsinställningar"
+    },
+    "Summarize_PageTitle": {
+        "message": "Hantera sammanfattningsinställningar"
+    },
+    "Summarize_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att sammanfatta e-postmeddelanden."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Aktuell prompttext"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Sammanfatta"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Tryck på knappen nedan för att ge den aktuella värden behörighet att undvika CORS-problem."
+    },
+    "CORS_give_host_perm": {
+        "message": "Ge behörighet till den nuvarande värden"
+    },
+    "CORS_localhost_warn": {
+        "message": "Om du använder localhost eller 127.0.0.1 eftersom AI-servern finns på din dator krävs behörigheten <all_urls>."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att skapa kalenderhändelser, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Vill du inkludera API-inställningar i exporten? Tänk på att även API-nyckeln kommer att sparas i filen!"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Lägg till kalenderhändelse från urklipp"
+    },
+    "clipboard_read_error": {
+        "message": "Kunde inte läsa urklipp. Kontrollera behörigheterna."
+    },
+    "clipboard_empty_error": {
+        "message": "Urklipp är tom. Kopiera lite text först."
+    },
+    "clipboard_permission_denied": {
+        "message": "Åtkomst till urklipp nekades. Aktivera funktionen igen i inställningarna för att ge behörighet."
+    },
+    "clipboard_permission_error": {
+        "message": "Fel vid begäran om behörighet för urklipp. Försök igen."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Hämta kalenderhändelse från urklipp"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Visa ytterligare ett menyalternativ för att skapa kalenderhändelser från textinnehåll i urklipp."
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Fråga inte om att markera text"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Om markerad behöver du inte markera någon text. Hela meddelandets innehåll kommer att användas för att hämta kalenderhändelsen."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Kopiera"
+    },
+    "copy_text": {
+        "message": "kopiera"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Mejltext eller markerad text"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Mejltext eller vald HTML"
+    },
+    "Spam": {
+        "message": "Skräppost"
+    },
+    "Valid": {
+        "message": "Giltig"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Visa panelen för skräppostrapportering"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Om markerat visas en panel med skräppostrapportering högst upp av meddelandet."
+    },
+    "SpamReport_infoline": {
+        "message": "Denna information sparas endast för den aktuella sessionen."
     }
 }

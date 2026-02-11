@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Modello utilizzato"
     },
-    "chagpt_api_connecting": {
-        "message": "Tentativo di connessione a OpenAI ChatGPT utilizzando la chiave API fornita"
-    },
     "Debug": {
         "message": "Debug"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Non hai scelto un modello per l'API Ollama. Per favore, scegline uno nella pagina delle opzioni."
     },
-    "ollama_api_connecting": {
-        "message": "Tentativo di connettersi al server locale Ollama usando l'host"
-    },
-    "andModel": {
-        "message": "e il modello"
-    },
     "error_connection_interrupted": {
         "message": "La connessione al server è stata interrotta inaspettatamente"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Non hai scelto un modello per l'API compatibile con OpenAI. Scegline uno nella pagina delle opzioni."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Tentativo di connessione al server locale dell'API compatibile con OpenAI utilizzando l'host"
     },
     "OpenAIComp_api_request_failed": {
         "message": "Richiesta all'API compatibile con OpenAI fallita"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "La richiesta all'API Google Gemini è fallita"
     },
-    "google_gemini_api_connecting": {
-        "message": "Tentativo di connessione a Google Gemini utilizzando la chiave API fornita"
-    },
     "google_gemini_empty_apikey": {
         "message": "Non hai aggiunto una chiave API per l'API Google Gemini. Inseriscine una nella pagina delle opzioni."
     },
@@ -712,7 +697,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%selected_text%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -753,9 +738,6 @@
     "calendar_opening_dialog_error": {
         "message": "Errore durante l'apertura della finestra di dialogo dell'evento del calendario"
     },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks non installato!"
-    },
     "Subject": {
         "message": "Oggetto"
     },
@@ -789,7 +771,7 @@
     "Moved_to_Spam": {
         "message": "Spostato nello spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "No"
     },
     "From": {
@@ -798,7 +780,7 @@
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Gestisci le impostazioni del filtro antispam"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Sì"
     },
     "SpamReport_Title": {
@@ -879,9 +861,6 @@
     "btn_show_differences": {
         "message": "Mostra le differenze"
     },
-    "apiwebchat_show_differences": {
-        "message": "Mostra le differenze"
-    },
     "apiwebchat_error": {
         "message": "Errore"
     },
@@ -894,20 +873,8 @@
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Forza il fuso orario specificato"
     },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "Se selezionato, la voce \"Aggiungi etichette\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
-    },
     "apiwebchat_use_this_answer": {
         "message": "Usa questa risposta"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "Se selezionato, la voce \"Analizza come spam\" verrà mostrata facendo clic con il pulsante destro del mouse su un'email nell'elenco dei messaggi."
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "Mostra la voce \"Analizza come spam\" nel menu contestuale"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "Mostra la voce \"Aggiungi etichette\" nel menu contestuale"
     },
     "apiwebchat_info": {
         "message": "Informazioni"
@@ -932,12 +899,6 @@
     },
     "CORS_alternative_1": {
         "message": "Problemi con la configurazione di CORS?"
-    },
-    "CORS_alternative_2": {
-        "message": "Premi il pulsante qui sotto per concedere il permesso <all_urls> ed evitare qualsiasi problema legato a CORS."
-    },
-    "CORS_give_allurls_perm": {
-        "message": "Concedi il permesso \"tutti gli URL\""
     },
     "remember_CORS": {
         "message": "Ricorda, devi configurare le impostazioni CORS sul server!"

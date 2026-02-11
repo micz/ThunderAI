@@ -110,6 +110,25 @@ export class mzta_Menus {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
+
+            if (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard') {
+                try {
+                   const clipboardText = await navigator.clipboard.readText();
+                   if (!clipboardText) {
+                        browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_empty_error') });
+                        taWorkingStatus.stopWorking();
+                        return {ok:'0'};
+                   }
+                   msg_text.selection = clipboardText;
+                   msg_text.text = clipboardText;
+                } catch (e) {
+                   console.error("Clipboard read error:", e);
+                   browser.tabs.sendMessage(tabs[0].id, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('clipboard_read_error') });
+                   taWorkingStatus.stopWorking();
+                   return {ok:'0'};
+                }
+           }
+
             // console.log(">>>>>>>>>>>>> msg_text: " + JSON.stringify(msg_text));
             //check if a selection is needed
             if(String(curr_prompt.need_selected) == "1" && (msg_text.selection==='')){
@@ -256,7 +275,8 @@ export class mzta_Menus {
                         return {ok:'1'};
                         break;  // Add tags to the email - END
                     }
-                    case 'prompt_get_calendar_event': {  // Get a calendar event info
+                    case 'prompt_get_calendar_event':                   // Get a calendar event info
+                    case 'prompt_get_calendar_event_from_clipboard': {  // here from clipboard
                         let calendar_event_data = '';
                         let prefs_at = await browser.storage.sync.get({
                             connection_type: prefs_default.connection_type,

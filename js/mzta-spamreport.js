@@ -32,6 +32,11 @@ export const taSpamReport = {
         return output[key] || null;
     },
 
+    async removeReportData(data_id) {
+        const key = this._data_prefix + data_id;
+        await browser.storage.session.remove(key);
+    },
+
     async getAllReportData() {
         let allData = await browser.storage.session.get(null);
         let reportData = {};

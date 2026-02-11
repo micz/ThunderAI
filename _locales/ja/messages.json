@@ -750,7 +750,7 @@
         "message": "新しいカレンダーイベントを追加"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "以下のテキストからカレンダーイベントを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- イベントタイトル\n- 開始日時（指定されている場合はタイムゾーンを含む）\n- 終了日時（指定されている場合はタイムゾーンを含む）\n- 終日（言及されている場合）\n- 出席者\nデータはカレンダーイベントの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n期間が指定されていない場合は、1時間に設定してください。\n出席者：{%author%}、{%recipients%}、{%cc_list%}。存在する場合、私のアドレス{%account_email_address%}を除外してください。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"カレンダーイベントの概要をここに\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nテキスト：「{%selected_text%}」"
+        "message": "以下のテキストからカレンダーイベントを生成するために必要なすべての関連詳細を抽出してください。抽出情報には以下を含めてください：\n- イベントタイトル\n- 開始日時（指定されている場合はタイムゾーンを含む）\n- 終了日時（指定されている場合はタイムゾーンを含む）\n- 終日（言及されている場合）\n- 出席者\nデータはカレンダーイベントの作成に直接使用できるよう、明確かつ一貫した形式にしてください。\n相対的な時間参照がある場合、メールの日時は「{%mail_datetime%}」であることを考慮してください。この参照に基づいて開始日時を計算してください。計算された開始日時が「{%current_datetime%}」より前の場合、「{%current_datetime%}」を基準として開始日時を再計算してください。\n期間が指定されていない場合は、1時間に設定してください。\n出席者：{%author%}、{%recipients%}、{%cc_list%}。存在する場合、私のアドレス{%account_email_address%}を除外してください。\n必要な情報の1つ以上を取得できない場合は、空の文字列で応答してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"カレンダーイベントの概要をここに\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nテキスト：「{%mail_text_body_or_selected%}」"
     },
     "prompt_get_task": {
         "message": "新しいタスクを追加"
@@ -959,10 +959,10 @@
     "Report_Date": {
         "message": "レポート日"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "はい"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "いいえ"
     },
     "context_menu_mzta-add-tags": {
@@ -970,18 +970,6 @@
     },
     "context_menu_mzta-spamfilter": {
         "message": "スパムを分析"
-    },
-    "prefs_OptionText_add_tags_context_menu": {
-        "message": "「タグを追加」コンテキストメニュー項目を表示"
-    },
-    "prefs_OptionText_add_tags_context_menu_Info": {
-        "message": "チェックすると、メッセージリストでメールを右クリックした際に「タグを追加」コンテキストメニュー項目が表示されます。"
-    },
-    "prefs_OptionText_spamfilter_context_menu": {
-        "message": "「スパムを分析」コンテキストメニュー項目を表示"
-    },
-    "prefs_OptionText_spamfilter_context_menu_Info": {
-        "message": "チェックすると、メッセージリストでメールを右クリックした際に「スパムを分析」コンテキストメニュー項目が表示されます。"
     },
     "noActiveCalendar": {
         "message": "編集可能なカレンダーが見つかりません！"
@@ -1021,12 +1009,6 @@
     },
     "CORS_alternative_1": {
         "message": "CORS設定に問題がありますか？"
-    },
-    "CORS_alternative_2": {
-        "message": "下のボタンを押して<all_urls>権限を付与し、CORSの問題を回避してください。"
-    },
-    "CORS_give_allurls_perm": {
-        "message": "「すべてのURL」権限を付与"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "プレーンテキストで作成"

@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Usando modelo"
     },
-    "chagpt_api_connecting": {
-        "message": "Tentando conectar ao OpenAI ChatGPT usando a chave de API fornecida"
-    },
     "Debug": {
         "message": "Depurar"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Você não escolheu um modelo para a API do Ollama. Por favor, escolha um na página de opções."
     },
-    "ollama_api_connecting": {
-        "message": "Tentando conectar ao servidor local do Ollama usando o host"
-    },
-    "andModel": {
-        "message": "e modelo"
-    },
     "error_connection_interrupted": {
         "message": "A conexão com o servidor foi interrompida inesperadamente"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Você não escolheu um modelo para a API Compatível com OpenAI. Por favor, escolha um na página de opções."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Tentando conectar ao Servidor Local da API Compatível com OpenAI usando o host"
     },
     "OpenAIComp_api_request_failed": {
         "message": "Solicitação da API Comp do OpenAI falhou"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "A solicitação para a API Google Gemini falhou"
     },
-    "google_gemini_api_connecting": {
-        "message": "Tentando conectar ao Google Gemini usando a chave API fornecida"
-    },
     "google_gemini_empty_apikey": {
         "message": "Você não adicionou uma chave API para a API Google Gemini. Por favor, insira uma na página de opções."
     },
@@ -712,7 +697,7 @@
         "message": "Adicionar um novo evento ao calendário"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%selected_text%}\""
+        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Adicionar um novo evento ao calendário a partir do texto selecionado"
@@ -795,11 +780,8 @@
     "Moved_to_Spam": {
         "message": "Movido para spam"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Não"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks não instalado!"
     },
     "prefs_OptionText_btnManageSpamFilterInfo": {
         "message": "Gerenciar configurações do filtro de spam"
@@ -810,7 +792,7 @@
     "prefs_OptionText_spamfilter_Info": {
         "message": "Se marcado, o ThunderAI moverá automaticamente e-mails de spam para a pasta de spam."
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Sim"
     },
     "SpamReport_Title": {

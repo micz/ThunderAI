@@ -34,12 +34,12 @@ import {
 } from "../../pages/_lib/connection-ui.js";
 import {
     ChatGPTWeb_models,
-    isThunderbird128OrGreater,
     getLocalStorageUsedSpace,
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     getChatGPTWebModelsList_HTML,
-    openTab
+    openTab,
+    setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -324,6 +324,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
         //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
         editBtn.addEventListener('click', handleEditClick);
+        let copyBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCopyItem`);
+        copyBtn.addEventListener('click', handleCopyClick);
         //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
         let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
         //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
@@ -354,7 +356,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function exportPrompts() {
         const manifest = browser.runtime.getManifest();
         const addonVersion = manifest.version;
-        const outputPrompts = preparePromptsForExport(await getPrompts());
+        const include_api_settings = await showYesNoDialog(browser.i18n.getMessage("customPrompts_export_include_api_settings"));
+        if (include_api_settings === null) return;
+        const outputPrompts = preparePromptsForExport(await getPrompts(), include_api_settings);
         let outputObj = {id: 'thunderai-prompts', addon_version: addonVersion, prompts: outputPrompts};
         const blob = new Blob([JSON.stringify(outputObj, null, 2)], {
             type: "application/json",
@@ -365,6 +369,82 @@ document.addEventListener('DOMContentLoaded', async () => {
             url: URL.createObjectURL(blob),
             filename: `thunderai-prompts-${time_stamp}.json`,
             saveAs: true,
+        });
+    }
+
+    async function showYesNoDialog(message) {
+        return new Promise((resolve) => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'export';
+            // dialog.style.cssText = `
+            //     padding: 20px;
+            //     border: none;
+            //     border-radius: 8px;
+            //     background-color: var(--dialog-bg-color, #fff);
+            //     color: var(--dialog-text-color, #000);
+            //     max-width: 400px;
+            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            //     font-family: system-ui, -apple-system, sans-serif;
+            // `;
+            
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                 dialog.style.backgroundColor = '#2e2e2e';
+                 dialog.style.color = '#ffffff';
+            }
+
+            const text = document.createElement('p');
+            text.textContent = message;
+            text.style.marginBottom = '20px';
+            text.style.fontSize = '14px';
+            text.style.lineHeight = '1.5';
+            dialog.appendChild(text);
+            
+            const btnContainer = document.createElement('div');
+            btnContainer.style.display = 'flex';
+            btnContainer.style.justifyContent = 'flex-end';
+            btnContainer.style.gap = '10px';
+            
+            const createBtn = (text, bgColor) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.style.padding = '8px 16px';
+                btn.style.borderRadius = '4px';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '14px';
+                btn.style.color = 'white';
+                btn.style.backgroundColor = bgColor;
+                return btn;
+            };
+
+            const cancelBtn = createBtn(browser.i18n.getMessage("customPrompts_btnCancel"), '#6c757d');
+            cancelBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(null);
+            };
+
+            const noBtn = createBtn(browser.i18n.getMessage("no_string"), '#007bff');
+            noBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(false);
+            };
+            
+            const yesBtn = createBtn(browser.i18n.getMessage("yes_string"), '#6c757d');
+            yesBtn.onclick = () => {
+                dialog.close();
+                dialog.remove();
+                resolve(true);
+            };
+            
+            btnContainer.appendChild(cancelBtn);
+            btnContainer.appendChild(noBtn);
+            btnContainer.appendChild(yesBtn);
+            dialog.appendChild(btnContainer);
+            
+            document.body.appendChild(dialog);
+            dialog.showModal();
         });
     }
 
@@ -498,6 +578,7 @@ function handleEditClick(e) {
     tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
     tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'none';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
     toggleDiffviewer(e);
@@ -568,7 +649,24 @@ function populateConnectionUI(tr, id, prefix, selectId) {
                         val = prefs[propName];
                     }
                 }
-                inputEl.type === 'checkbox' ? inputEl.checked = (val === true || val === 'true') : inputEl.value = val || '';
+                if (inputEl.type === 'checkbox') {
+                    inputEl.checked = (val === true || val === 'true');
+                } else {
+                    if (inputEl.tomselect) {
+                        const restoreValue = val || '';
+                        let optionExists = Array.from(inputEl.options).some(opt => opt.value === restoreValue);
+                        if (!optionExists && restoreValue !== '') {
+                            let newOption = new Option(restoreValue, restoreValue);
+                            inputEl.add(newOption);
+                        }
+                        inputEl.value = restoreValue;
+                        inputEl.tomselect.sync();
+                        inputEl.tomselect.setValue(restoreValue, true);
+                        setTomSelectBorder(inputEl.tomselect);
+                    } else {
+                        inputEl.value = val || '';
+                    }
+                }
             }
         }
     }
@@ -743,6 +841,7 @@ function handleCancelClick(e) {
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
@@ -796,6 +895,7 @@ function handleConfirmClick(e) {
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
@@ -845,6 +945,88 @@ async function handleCheckboxChange(e) {
 function handleInputChange(e) {
     e.preventDefault();
     setSomethingChanged();
+}
+
+function handleCopyClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    
+    let id = tr.querySelector('.id_output').value;
+    let name = tr.querySelector('.name_output').value;
+    let text = tr.querySelector('.text_output').value;
+    let type = tr.querySelector('.type_output').value;
+    let action = tr.querySelector('.action_output').value;
+    
+    let need_selected = tr.querySelector('.need_selected').checked;
+    let need_signature = tr.querySelector('.need_signature').checked;
+    let need_custom_text = tr.querySelector('.need_custom_text').checked;
+    let define_response_lang = tr.querySelector('.define_response_lang').checked;
+    let use_diff_viewer = tr.querySelector('.use_diff_viewer').checked;
+    
+    let chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value;
+    let chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value;
+    let chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value;
+
+    const item = promptsList.get('id', id.toLowerCase())[0];
+    const itemValues = item.values();
+
+    // Populate new form
+    document.getElementById('txtIdNew').value = id + '_' + browser.i18n.getMessage("copy_text");
+    document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
+    document.getElementById('txtTextNew').value = text;
+    document.getElementById('selectTypeNew').value = type;
+    document.getElementById('selectActionNew').value = action;
+    
+    document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
+    document.getElementById('checkboxNeedSignatureNew').checked = need_signature;
+    document.getElementById('checkboxNeedCustomTextNew').checked = need_custom_text;
+    document.getElementById('checkboxDefineResponseLangNew').checked = define_response_lang;
+    
+    let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+    checkboxUseDiffViewerNew.checked = use_diff_viewer;
+    checkboxUseDiffViewerNew.disabled = (action !== "2");
+
+    document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
+    document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
+    document.getElementById('chatGPTWebCustomGPTNew').value = chatgpt_web_custom_gpt;
+
+    const apiSelect = document.getElementById('new_prompt_api_type');
+    if (apiSelect) {
+        apiSelect.value = itemValues.api_type || '';
+        apiSelect.dispatchEvent(new Event('change'));
+        
+        for (const [integration, options] of Object.entries(integration_options_config)) {
+            for (const key of Object.keys(options)) {
+                const propName = `${integration}_${key}`;
+                const inputEl = document.getElementById(propName);
+                if (inputEl) {
+                    let val = itemValues[propName];
+                    if (val === undefined) val = '';
+                    
+                    if (inputEl.type === 'checkbox') {
+                        inputEl.checked = (val === true || val === 'true');
+                    } else {
+                        if (inputEl.tomselect) {
+                            inputEl.tomselect.setValue(val, true);
+                            setTomSelectBorder(inputEl.tomselect);
+                        } else {
+                            inputEl.value = val;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Show form
+    document.getElementById('formNew').style.display = 'block';
+    
+    // Scroll to top
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    checkFields();
 }
 
 //========= handling an item in a row - END
@@ -976,6 +1158,8 @@ function loadPromptsList(values){
                 <br><br>
                 <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
                 <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+                <br><br>
+                <button class="btnCopyItem">__MSG_customPrompts_btnCopy__</button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -1014,6 +1198,11 @@ function loadPromptsList(values){
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
         element.addEventListener('click', handleEditClick);
+    });
+
+    let btnCopyItem_elements = document.querySelectorAll(".btnCopyItem");
+    btnCopyItem_elements.forEach(element => {
+        element.addEventListener('click', handleCopyClick);
     });
 
     let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
@@ -1184,7 +1373,7 @@ async function saveAll() {
         setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));
         await setCustomPrompts(newCustomPrompts);
         setMessage(browser.i18n.getMessage('customPrompts_reloading_menus'));
-        browser.runtime.sendMessage({command: "reload_menus"});
+        await browser.runtime.sendMessage({command: "reload_menus"});
         setMessage(browser.i18n.getMessage('customPrompts_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();
@@ -1214,14 +1403,11 @@ async function setStorageSpace() {
 }
 
 
-if(await isThunderbird128OrGreater()){
-    window.addEventListener('beforeunload', function (event) {
-        // Check if any changes have been made (Only for Thunderbird 128+ see https://github.com/micz/ThunderAI/issues/88)
-        if (somethingChanged) {
-            event.preventDefault();
-        }
-    });    
-}
+window.addEventListener('beforeunload', function (event) {
+    if (somethingChanged) {
+        event.preventDefault();
+    }
+});
 
 async function checkPromptsConfigForPlaceholders(textarea){
     let curr_text = textarea.value;

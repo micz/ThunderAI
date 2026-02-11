@@ -36,7 +36,7 @@ body:
     attributes:
       label: Which version of Thunderbird are you using?
       description: >
-        Thunderbird version like 115.14.0 or 128.1.
+        Thunderbird version like 140.0 or 147.0.1.
   - type: input
     id: version
     validations:

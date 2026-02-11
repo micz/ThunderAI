@@ -267,6 +267,24 @@ const defaultPlaceholders = [
         is_default: "1",
         is_dynamic: "0",
         enabled: 1,
+    },
+    {
+        id: 'mail_text_body_or_selected',
+        name: "__MSG_placeholder_mail_text_body_or_selected__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'mail_html_body_or_selected',
+        name: "__MSG_placeholder_mail_html_body_or_selected__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
     }
 ];
 
@@ -516,6 +534,12 @@ export const placeholdersUtils = {
                     break;
                 case 'selected_html':
                     finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
+                    break;
+                case 'mail_text_body_or_selected':
+                    finalSubs['mail_text_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_text || body_text);
+                    break;
+                case 'mail_html_body_or_selected':
+                    finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
                     break;
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(curr_message.author);

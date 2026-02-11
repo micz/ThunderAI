@@ -327,9 +327,6 @@
     "chagpt_api_send_button": {
         "message": "Korištenje modela"
     },
-    "chagpt_api_connecting": {
-        "message": "Pokušaj povezivanja na OpenAI ChatGPT pomoću dostavljenog API ključa"
-    },
     "Debug": {
         "message": "Otklanjanje pogrešaka"
     },
@@ -363,12 +360,6 @@
     "ollama_empty_model": {
         "message": "Niste odabrali model za Ollama API. Odaberite jedan na stranici s mogućnostima."
     },
-    "ollama_api_connecting": {
-        "message": "Pokušaj povezivanja na Ollama lokalni poslužitelj pomoću glavnog računala"
-    },
-    "andModel": {
-        "message": "i model"
-    },
     "error_connection_interrupted": {
         "message": "Veza s poslužiteljem je neočekivano prekinuta"
     },
@@ -398,9 +389,6 @@
     },
     "OpenAIComp_empty_model": {
         "message": "Niste odabrali model za OpenAI kompatibilan API. Odaberite jedan na stranici s opcijama."
-    },
-    "OpenAIComp_api_connecting": {
-        "message": "Pokušaj povezivanja s OpenAI kompatibilnim API lokalnim poslužiteljem pomoću glavnog računala"
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI Comp API zahtjev nije uspio"
@@ -681,9 +669,6 @@
     "google_gemini_api_request_failed": {
         "message": "Google Gemini API zahtjev nije uspio"
     },
-    "google_gemini_api_connecting": {
-        "message": "Pokušaj povezivanja na Google Gemini pomoću dostavljenog API ključa"
-    },
     "google_gemini_empty_apikey": {
         "message": "Niste dodali API ključ za Google Gemini API. Unesite jedan na stranicu s mogućnostima."
     },
@@ -712,7 +697,7 @@
         "message": "Dodaj novi kalendarski događaj"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\n- Sudionici\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nOvo su sudionici: {%author%}, {%recipients%}, {%cc_list%}. Ako je prisutna, isključi moju adresu: {%account_email_address%}.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOvo je tekst:\"{%selected_text%}\""
+        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\n- Sudionici\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nOvo su sudionici: {%author%}, {%recipients%}, {%cc_list%}. Ako je prisutna, isključi moju adresu: {%account_email_address%}.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOvo je tekst:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Dodaj novi kalendarski događaj iz odabranog teksta"
@@ -752,9 +737,6 @@
     },
     "calendar_opening_dialog_error": {
         "message": "Pogreška pri otvaranju dijaloškog okvira kalendarskog događaja"
-    },
-    "sparks_not_installed": {
-        "message": "ThunderAI Sparks nije instaliran!"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Dodajte oznake automatski"
@@ -846,10 +828,10 @@
     "Report_Date": {
         "message": "Datum izvješća"
     },
-    "spamfilter_moved": {
+    "yes_string": {
         "message": "Da"
     },
-    "spamfilter_not_moved": {
+    "no_string": {
         "message": "Ne"
     },
     "prefs_OptionText_openai_comp_info_remote": {

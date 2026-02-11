@@ -31,7 +31,11 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
-import { getAccountsList, isAPIKeyValue } from "../../js/mzta-utils.js";
+import {
+  getAccountsList,
+  isAPIKeyValue,
+  setTomSelectBorder
+} from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
 } from "../_lib/connection-ui.js";
@@ -240,7 +244,7 @@ async function loadSpamReport(){
       row.appendChild(tdSpamValue);
 
       const tdMoved = document.createElement("td");
-      tdMoved.textContent = (report.moved ? browser.i18n.getMessage("spamfilter_moved") : browser.i18n.getMessage("spamfilter_not_moved")) + ` (${report.SpamThreshold})`;
+      tdMoved.textContent = (report.moved ? browser.i18n.getMessage("yes_string") : browser.i18n.getMessage("no_string")) + ` (${report.SpamThreshold})`;
       row.appendChild(tdMoved);
 
       const tdExplanation = document.createElement("td");
@@ -290,6 +294,7 @@ function saveOptions(e) {
 async function restoreOptions() {
   function setCurrentChoice(result) {
     document.querySelectorAll(".option-input").forEach(element => {
+      if(!element.id) return;
       taLog.log("Options restoring " + element.id + " = " + (isAPIKeyValue(element.id) ? "****************" : result[element.id]));
       switch (element.type) {
         case 'checkbox':
@@ -324,6 +329,10 @@ async function restoreOptions() {
           element.value = restoreValue;
           if (element.value === '') {
             element.selectedIndex = -1;
+          }
+          if (element.tomselect) {
+            element.tomselect.setValue(element.value, true);
+            setTomSelectBorder(element.tomselect);
           }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);

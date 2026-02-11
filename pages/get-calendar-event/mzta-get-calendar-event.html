@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>ThunderAI - __MSG_GetCalendarEvent_PageTitle__</title>
     <link rel="stylesheet" href="mzta-get-calendar-event.css">
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
     <link rel="icon" href="../../images/icon-16px.png">
 </head>
 <body>
@@ -13,8 +14,40 @@
     </div>
     <div class="get_calendar_event_table_title section_title">__MSG_get_calendar_event_prompt_prefs_title__</div>
     <table id="miczPrefs">
+          <tr class="get_calendar_event_tr specific_integration">
+            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="get_calendar_event_use_specific_integration" name="get_calendar_event_use_specific_integration" class="option-input" />
+                __MSG_prefs_OptionText_get_calendar_event_use_specific_integration_Info__
+              </label>
+            </td>
+          </tr>
+          <tr id="connection_ui_anchor"></tr>
+          <tr id="connection_ui_end"><td colspan="2"></td></tr>
           <tr class="get_calendar_event_tr">
-            <td><span>__MSG_prefs_OptionText_calendar_enforce_timezone__</span></td>
+            <td><span class="opt_title">__MSG_prefs_OptionText_calendar_no_selection__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="calendar_no_selection" name="calendar_no_selection" class="option-input" />
+                __MSG_prefs_OptionText_calendar_no_selection_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="get_calendar_event_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_get_calendar_event_from_clipboard__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="get_calendar_event_from_clipboard" name="get_calendar_event_from_clipboard" class="option-input" />
+                __MSG_prefs_OptionText_get_calendar_event_from_clipboard_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="get_calendar_event_tr">
+            <td><span  class="opt_title">__MSG_prefs_OptionText_calendar_enforce_timezone__</span></td>
             <td>
               <label>
                 <input type="checkbox" id="calendar_enforce_timezone" name="calendar_enforce_timezone" class="option-input" /> __MSG_prefs_OptionText_calendar_enforce_timezone_Info__
