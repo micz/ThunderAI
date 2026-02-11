@@ -262,7 +262,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
             break;
         case 'api_send_custom_text':
-            let userInput = message.custom_text;
+            let userInput = message.custom_text;    // From version 4.0.0 this is an array
                 if(userInput !== null) {
                     if(!placeholdersUtils.hasPlaceholder(promptData.prompt, 'additional_text')){
                         // no additional_text placeholder, do as usual
@@ -270,7 +270,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }else{
                         // we have the additional_text placeholder, do the magic!
                         let finalSubs = {};
-                        finalSubs["additional_text"] = userInput;
+                        
+                        if (Array.isArray(userInput)) {
+                            userInput.forEach(obj => {
+                                finalSubs[obj.placeholder.replace(/^{%|%}$/g, '').trim()] = obj.custom_text;
+                            });
+                        } else {
+                            finalSubs["additional_text"] = userInput;
+                        }
                         promptData.prompt = placeholdersUtils.replacePlaceholders({
                             text: promptData.prompt,
                             replacements: finalSubs,
