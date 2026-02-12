@@ -1075,7 +1075,7 @@
         "message": "您尚未選擇 ChatGPT API 的模型。請在選項頁面中選擇一個。"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "從以下文字中提取所有需要生成日曆事件的相關資訊。 提取的資訊應包含：\n- 事件名稱\n- 起始日期和時間（包含時區，如果指定）\n- 結束日期和時間（包含時間區，如果指定）\n- 整天事件（如果提及\n- 參與者\n確保數據以清晰一致的方式格式化，以便直接用於創建日曆事件。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。 如果計算出的起日期和時間早於「{%current_datetime%}」，則使用「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果持續時間沒有指定，則設定為一小時。\n參與者：{%author%}, {%recipients%}, {%cc_list%}。如果存在，請排除我的地址：{%account_email_address%}。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不要包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日曆事件摘要在此\",\n\"forceAllDay\": false,\n\"attendees\": [\"attendee1@example.com \",\"attendee2@example.com \",\"attendee3@example.com \"]\n}\n這裡是文字：「{%selected_text%}」"
+        "message": "從以下文字中提取所有需要生成日曆事件的相關資訊。 提取的資訊應包含：\n- 事件名稱\n- 起始日期和時間（包含時區，如果指定）\n- 結束日期和時間（包含時間區，如果指定）\n- 整天事件（如果提及\n- 參與者\n確保數據以清晰一致的方式格式化，以便直接用於創建日曆事件。\n如果有相對時間參考，請考慮電子郵件的日期和時間是 「{%mail_datetime%}」。 計算基於此參考的起日期和時間。 如果計算出的起日期和時間早於「{%current_datetime%}」，則使用「{%current_datetime%}」作為基準重新計算起日期和時間。\n如果持續時間沒有指定，則設定為一小時。\n參與者：{%author%}, {%recipients%}, {%cc_list%}。如果存在，請排除我的地址：{%account_email_address%}。\n如果無法獲得其中一個或多個所需的資訊，請回覆一個空字串。\n請以 JSON 格式回覆，不要包含任何額外的文字或說明，提供僅 JSON。 以下是將要使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日曆事件摘要在此\",\n\"forceAllDay\": false,\n\"attendees\": [\"attendee1@example.com \",\"attendee2@example.com \",\"attendee3@example.com \"]\n}\n這裡是文字：「{%mail_text_body_or_selected%}」"
     },
     "TranslateText": {
         "message": "您願意幫忙翻譯這個附加元件嗎？"

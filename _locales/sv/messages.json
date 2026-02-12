@@ -1297,7 +1297,7 @@
         "message": "Citerad text i meddelandets brödtext"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%selected_text%}\""
+        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task_full_text": {
         "message": "Extrahera alla relevanta detaljer som krävs för att generera en uppgift från följande text. Den extraherade informationen bör innehålla:\n- Förfallodatum och tid (inklusive tidszon, om angiven)\n- Uppgiftssammanfattning\n- Initialt datum och tid (inklusive tidszon, om angiven)\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en uppgift.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"InitialDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"dueDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Uppgiftssammanfattning här\"\n}\nOm det inte finns någon information om datumen, ta bort dem.\nHär är texten: \"{%selected_text%}\""
@@ -1370,5 +1370,65 @@
     },
     "CORS_localhost_warn": {
         "message": "Om du använder localhost eller 127.0.0.1 eftersom AI-servern finns på din dator krävs behörigheten <all_urls>."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att skapa kalenderhändelser, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Vill du inkludera API-inställningar i exporten? Tänk på att även API-nyckeln kommer att sparas i filen!"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Lägg till kalenderhändelse från urklipp"
+    },
+    "clipboard_read_error": {
+        "message": "Kunde inte läsa urklipp. Kontrollera behörigheterna."
+    },
+    "clipboard_empty_error": {
+        "message": "Urklipp är tom. Kopiera lite text först."
+    },
+    "clipboard_permission_denied": {
+        "message": "Åtkomst till urklipp nekades. Aktivera funktionen igen i inställningarna för att ge behörighet."
+    },
+    "clipboard_permission_error": {
+        "message": "Fel vid begäran om behörighet för urklipp. Försök igen."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Hämta kalenderhändelse från urklipp"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Visa ytterligare ett menyalternativ för att skapa kalenderhändelser från textinnehåll i urklipp."
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Fråga inte om att markera text"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Om markerad behöver du inte markera någon text. Hela meddelandets innehåll kommer att användas för att hämta kalenderhändelsen."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Kopiera"
+    },
+    "copy_text": {
+        "message": "kopiera"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Mejltext eller markerad text"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Mejltext eller vald HTML"
+    },
+    "Spam": {
+        "message": "Skräppost"
+    },
+    "Valid": {
+        "message": "Giltig"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Visa panelen för skräppostrapportering"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Om markerat visas en panel med skräppostrapporten högst upp i meddelandet."
+    },
+    "SpamReport_infoline": {
+        "message": "Denna information sparas endast för den aktuella sessionen."
     }
 }

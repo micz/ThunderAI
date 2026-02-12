@@ -324,6 +324,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let editBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
         //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnEditItem`);
         editBtn.addEventListener('click', handleEditClick);
+        let copyBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCopyItem`);
+        copyBtn.addEventListener('click', handleCopyClick);
         //console.log('>>>>>>>>>>>>> editBtn: ' + JSON.stringify(editBtn));
         let deleteBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
         //console.log(`>>>>>>>>>>>> tr[data-idnum="${curr_idnum}"] button.btnDeleteItem`);
@@ -576,6 +578,7 @@ function handleEditClick(e) {
     tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
     tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'none';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
     toggleDiffviewer(e);
@@ -838,6 +841,7 @@ function handleCancelClick(e) {
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
@@ -891,6 +895,7 @@ function handleConfirmClick(e) {
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
     tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
@@ -940,6 +945,88 @@ async function handleCheckboxChange(e) {
 function handleInputChange(e) {
     e.preventDefault();
     setSomethingChanged();
+}
+
+function handleCopyClick(e) {
+    e.preventDefault();
+    const tr = e.target.parentNode.parentNode;
+    
+    let id = tr.querySelector('.id_output').value;
+    let name = tr.querySelector('.name_output').value;
+    let text = tr.querySelector('.text_output').value;
+    let type = tr.querySelector('.type_output').value;
+    let action = tr.querySelector('.action_output').value;
+    
+    let need_selected = tr.querySelector('.need_selected').checked;
+    let need_signature = tr.querySelector('.need_signature').checked;
+    let need_custom_text = tr.querySelector('.need_custom_text').checked;
+    let define_response_lang = tr.querySelector('.define_response_lang').checked;
+    let use_diff_viewer = tr.querySelector('.use_diff_viewer').checked;
+    
+    let chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value;
+    let chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value;
+    let chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value;
+
+    const item = promptsList.get('id', id.toLowerCase())[0];
+    const itemValues = item.values();
+
+    // Populate new form
+    document.getElementById('txtIdNew').value = id + '_' + browser.i18n.getMessage("copy_text");
+    document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
+    document.getElementById('txtTextNew').value = text;
+    document.getElementById('selectTypeNew').value = type;
+    document.getElementById('selectActionNew').value = action;
+    
+    document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
+    document.getElementById('checkboxNeedSignatureNew').checked = need_signature;
+    document.getElementById('checkboxNeedCustomTextNew').checked = need_custom_text;
+    document.getElementById('checkboxDefineResponseLangNew').checked = define_response_lang;
+    
+    let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
+    checkboxUseDiffViewerNew.checked = use_diff_viewer;
+    checkboxUseDiffViewerNew.disabled = (action !== "2");
+
+    document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
+    document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
+    document.getElementById('chatGPTWebCustomGPTNew').value = chatgpt_web_custom_gpt;
+
+    const apiSelect = document.getElementById('new_prompt_api_type');
+    if (apiSelect) {
+        apiSelect.value = itemValues.api_type || '';
+        apiSelect.dispatchEvent(new Event('change'));
+        
+        for (const [integration, options] of Object.entries(integration_options_config)) {
+            for (const key of Object.keys(options)) {
+                const propName = `${integration}_${key}`;
+                const inputEl = document.getElementById(propName);
+                if (inputEl) {
+                    let val = itemValues[propName];
+                    if (val === undefined) val = '';
+                    
+                    if (inputEl.type === 'checkbox') {
+                        inputEl.checked = (val === true || val === 'true');
+                    } else {
+                        if (inputEl.tomselect) {
+                            inputEl.tomselect.setValue(val, true);
+                            setTomSelectBorder(inputEl.tomselect);
+                        } else {
+                            inputEl.value = val;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Show form
+    document.getElementById('formNew').style.display = 'block';
+    
+    // Scroll to top
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    checkFields();
 }
 
 //========= handling an item in a row - END
@@ -1071,6 +1158,8 @@ function loadPromptsList(values){
                 <br><br>
                 <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
                 <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+                <br><br>
+                <button class="btnCopyItem">__MSG_customPrompts_btnCopy__</button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -1109,6 +1198,11 @@ function loadPromptsList(values){
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
         element.addEventListener('click', handleEditClick);
+    });
+
+    let btnCopyItem_elements = document.querySelectorAll(".btnCopyItem");
+    btnCopyItem_elements.forEach(element => {
+        element.addEventListener('click', handleCopyClick);
     });
 
     let btnDeleteItem_elements = document.querySelectorAll(".btnDeleteItem");
@@ -1279,7 +1373,7 @@ async function saveAll() {
         setMessage(browser.i18n.getMessage('customPrompts_saving_custom_prompts'));
         await setCustomPrompts(newCustomPrompts);
         setMessage(browser.i18n.getMessage('customPrompts_reloading_menus'));
-        browser.runtime.sendMessage({command: "reload_menus"});
+        await browser.runtime.sendMessage({command: "reload_menus"});
         setMessage(browser.i18n.getMessage('customPrompts_saved'),'green');
         msgTimeout = setTimeout(() => {
             clearMessage();

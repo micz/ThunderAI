@@ -18,6 +18,9 @@ ThunderAI is a Mozilla Thunderbird add-on that integrates Large Language Models 
 - **i18n:** 
     - The project supports multiple languages via `_locales/`. When adding UI strings, always use `messenger.i18n.getMessage()`.
     - When you need to modify language file, modify only the english version.
+- **Logging:**
+    - When possibile use the taLog object to log errors, otherwise use the console.error(<msg>) method.
+    - If it's useful to log add debug logs using taLog.log(<msg>) method.
 
 ## Files & Directories Structure
 - `manifest.json`: Extension entry point and permission definitions.

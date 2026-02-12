@@ -99,6 +99,7 @@ let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
     get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
+    get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
     get_task: doGetSparkFeature(prefs_init.get_task),
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
   });
@@ -197,13 +198,15 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
     let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
     let getTask = doGetSparkFeature(prefs_reload.get_task);
     const special_prompts_ids = getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
         addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
         get_calendar_event: getCalendarEvent,
+        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
         get_task: getTask,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
       });
@@ -400,6 +403,29 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'api_send_custom_text':
                 browser.tabs.sendMessage(message.tabId, { command: "api_send_custom_text", custom_text: message.custom_text });
+                break;
+            case 'checkSpamReport':
+                if(!prefs_init.spamfilter_show_msg_panel){
+                    return;
+                }
+
+                async function _checkSpamReport(tabId) {
+                    try {
+                        if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+                        let report = await taSpamReport.loadReportData(message.headerMessageId);
+                        if (report) {
+                            browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
+                        }
+                    } catch (e) {
+                        taLog.error("Error in checkSpamReport: " + e);
+                    }
+                }
+                _checkSpamReport(sender.tab.id);
+                break;
+            case 'removeSpamReport':
+                taSpamReport.removeReportData(message.headerMessageId);
                 break;
             default:
                 break;
@@ -849,6 +875,7 @@ async function reload_pref_init(){
         do_debug: prefs_default.do_debug,
         add_tags: prefs_default.add_tags,
         get_calendar_event: prefs_default.get_calendar_event,
+        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
         get_task: prefs_default.get_task,
         connection_type: prefs_default.connection_type,
         add_tags_auto: prefs_default.add_tags_auto,
@@ -857,6 +884,7 @@ async function reload_pref_init(){
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
+        spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
@@ -874,11 +902,13 @@ function setupStorageChangeListener() {
             if (changes.add_tags) {
                 const newTags = changes.add_tags.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: newTags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });
@@ -889,11 +919,30 @@ function setupStorageChangeListener() {
             if (changes.get_calendar_event) {
                 const newCalendarEvent = changes.get_calendar_event.newValue;
                 let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });                  
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'get_calendar_event_from_clipboard' changes
+            if (changes.get_calendar_event_from_clipboard) {
+                const newCalendarEventFromClipboard = changes.get_calendar_event_from_clipboard.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(newCalendarEventFromClipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });                  
@@ -904,11 +953,13 @@ function setupStorageChangeListener() {
             if (changes.get_task) {
                 const newTask = changes.get_task.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(newTask);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });                  
@@ -919,11 +970,13 @@ function setupStorageChangeListener() {
             if (changes.connection_type) {
                 const newConnectionType = changes.connection_type.newValue;
                 let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
                 let getTask = doGetSparkFeature(prefs_init.get_task);
                 const special_prompts_ids = getActiveSpecialPromptsIDs({
                     addtags: prefs_init.add_tags,
                     addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
                     get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
                   });                  
@@ -1284,6 +1337,18 @@ async function processEmails(messages, addTagsAuto, spamFilter) {
             }
 
             taSpamReport.saveReportData(report_data, message.headerMessageId);
+
+            // Check if the message is currently displayed and update the banner
+            if (prefs_init.spamfilter_show_msg_panel) {
+                let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if (tabs.length > 0) {
+                    let activeTab = tabs[0];
+                    let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+                    if (displayedMessage && displayedMessage.id === message.id) {
+                        browser.tabs.sendMessage(activeTab.id, { command: "showSpamReport", data: report_data });
+                    }
+                }
+            }
         }
     }
     taWorkingStatus.stopWorking();

@@ -30,6 +30,7 @@ let add_tags = false;
 let add_tags_use_specific_integration = false;
 let add_tags_connection_type = '';
 let get_calendar_event = false;
+let get_calendar_event_from_clipboard = false;
 let get_task = false;
 let _ok_sparks = false;
 let tabType;
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
       add_tags_connection_type: prefs_default.add_tags_connection_type,
       get_calendar_event: prefs_default.get_calendar_event,
+      get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
       get_task: prefs_default.get_task,
       connection_type: prefs_default.connection_type
     });
@@ -66,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     add_tags_use_specific_integration = prefs.add_tags_use_specific_integration;
     add_tags_connection_type = prefs.add_tags_connection_type;
     get_calendar_event = prefs.get_calendar_event;
+    get_calendar_event_from_clipboard = prefs.get_calendar_event_from_clipboard;
     get_task = prefs.get_task;
     _ok_sparks = await checkSparksPresence() == 1;
     // console.log(">>>>>>>>>>>>>>>>> add_tags: " + add_tags);
@@ -164,6 +167,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
    let do_add_tags = checkDoAddTags();
    let do_get_calendar_event = checkDoCalendarEvent();
+   let do_get_calendar_event_from_clipboard = checkDoCalendarEventFromClipboard();
    let do_get_task = checkDoTask();
 
   //  console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
@@ -171,7 +175,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
   //  console.log(">>>>>>>>>>> do_get_task: " + do_get_task);
   //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
 
-   num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_task ? 1 : 0);
+   num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0) + (do_get_task ? 1 : 0);
    //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
    if(num_special_menu_items > 0){
      max_num_el -= num_special_menu_items;
@@ -193,9 +197,17 @@ async function searchPrompt(allPrompts, tabId, tabType){
         filteredData[gce_curr_pos].label = gce_curr_pos + '. ' + filteredData[gce_curr_pos].label;
        }
      }
+     if(do_get_calendar_event_from_clipboard){
+      filteredData = ensurePromptGetCalendarEventFromClipboardFirst(filteredData, do_add_tags, do_get_calendar_event);
+      let gcefc_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
+      if (!filteredData[gcefc_curr_pos].numberPrepended) {
+        filteredData[gcefc_curr_pos].numberPrepended = 'true';
+        filteredData[gcefc_curr_pos].label = gcefc_curr_pos + '. ' + filteredData[gcefc_curr_pos].label;
+       }
+     }
       if(do_get_task){
-        filteredData = ensurePromptGetTaskFirst(filteredData, do_add_tags, do_get_calendar_event);
-        let gtask_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
+        filteredData = ensurePromptGetTaskFirst(filteredData, do_add_tags, do_get_calendar_event, do_get_calendar_event_from_clipboard);
+        let gtask_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0);
         if (!filteredData[gtask_curr_pos].numberPrepended) {
           filteredData[gtask_curr_pos].numberPrepended = 'true';
           filteredData[gtask_curr_pos].label = gtask_curr_pos + '. ' + filteredData[gtask_curr_pos].label;
@@ -222,7 +234,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
-       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_task')){
+       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_calendar_event_from_clipboard')||(item.id === 'prompt_get_task')){
          itemDiv.className += ' special_prompt';
        }
 
@@ -388,6 +400,10 @@ function checkDoCalendarEvent(){
   return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
 }
 
+function checkDoCalendarEventFromClipboard(){
+  return get_calendar_event_from_clipboard && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
+}
+
 function checkDoTask(){
   return get_task && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
 }
@@ -424,18 +440,36 @@ function ensurePromptGetCalendarEventFirst(arr, do_add_tags) {
   return arr;
 }
 
-function ensurePromptGetTaskFirst(arr, do_add_tags, do_get_calendar_event) {
+function ensurePromptGetCalendarEventFromClipboardFirst(arr, do_add_tags, do_get_calendar_event) {
+  // Find the index of the object with id "prompt_get_calendar_event_from_clipboard"
+  const index = arr.findIndex(item => item.id === "prompt_get_calendar_event_from_clipboard");
+
+  const targetPosition = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
+
+  // If found and needs repositioning
+  if (index !== -1 && index !== targetPosition) {
+    // Remove it from its current position
+    const [promptAddTags] = arr.splice(index, 1);
+
+    // Add it to the specified position
+    arr.splice(targetPosition, 0, promptAddTags);
+  }
+
+  return arr;
+}
+
+function ensurePromptGetTaskFirst(arr, do_add_tags, do_get_calendar_event, do_get_calendar_event_from_clipboard) {
   // Find the index of the object with id "prompt_get_task"
   const index = arr.findIndex(item => item.id === "prompt_get_task");
 
+  // Determine the target position to insert "prompt_get_task" after calendar
+  const targetPosition = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0);
+
   // If found and needs repositioning
-  if (index !== -1 && ((do_get_calendar_event && do_add_tags) ? index !== 2 : (do_get_calendar_event ? index !== 1 : index !== 0))) {
+  if (index !== -1 && index !== targetPosition) {
     // Remove it from its current position
     const [promptGetTask] = arr.splice(index, 1);
 
-    // Determine the target position to insert "prompt_get_task" after calendar
-    const targetPosition = do_add_tags && do_get_calendar_event ? 2 : (do_get_calendar_event ? 1 : 0);
-    
     // Add it to the specified position
     arr.splice(targetPosition, 0, promptGetTask);
   }

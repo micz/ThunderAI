@@ -14,7 +14,18 @@
         <li><i>[OpenAI Comp API][Ollama API]</i> Asking for the single host for permission to avoid CORS errors, instead of <i>all_urls</i>, as requested by the Thunderbird Review Team [<a href="https://github.com/micz/ThunderAI/issues/524">#524</a>].</li>
         <li>Fix: Using also the mail folder owner to search for the right identity to use when composing a reply [<a href="https://github.com/micz/ThunderAI/issues/627">#627</a>].</li>
         <li>Context menu items are always ordered alfabetically [<a href="https://github.com/micz/ThunderAI/issues/630">#630</a>].</li>
+        <li>The prompt export now includes an option to incorporate specific API settings, when present [<a href="https://github.com/micz/ThunderAI/issues/624">#624</a>].</li>
+        <li>Added the <i>{%mail_text_body_or_selected%}</i> placeholder to retrieve the selected text or the full text body of the email if no selection is present [<a href="https://github.com/micz/ThunderAI/issues/641">#641</a>].</li>
+        <li>Added the <i>{%mail_html_body_or_selected%}</i> placeholder to retrieve the selected HTML or the full HTML body of the email if no selection is present [<a href="https://github.com/micz/ThunderAI/issues/641">#641</a>].</li>
+        <li><i>[All APIs]</i> Added an option to get a calendar event without selecting some text, but using the full text body of the email [<a href="https://github.com/micz/ThunderAI/issues/518">#518</a>].</li>
+        <li><i>[All APIs]</i> Added a new menu item to create a calendar event from the text saved in the clipboard [<a href="https://github.com/micz/ThunderAI/issues/362">#362</a>].</li>
+        <li>Added a button to copy a prompt in the Custom Prompts page [<a href="https://github.com/micz/ThunderAI/issues/598">#598</a>].</li>
+        <li><i>[All APIs]</i> Showing the spam filter info at the top of the message. The data is saved only for the session in which the message has been checked for spam [<a href="https://github.com/micz/ThunderAI/issues/506">#506</a>].</li>
         <li>...</li>
+      </ul>
+<h2>Version 3.8.4 - 10/02/2026</h2>
+      <ul>
+        <li><i>[ChatGPT Web]</i> Fix: Correctly importing the selected text into the compose windows also when ChatGPT shows the advanced mail editor in the response [<a href="https://github.com/micz/ThunderAI/issues/646">#646</a>].</li>
       </ul>
 <h2>Version 3.8.3 - 22/01/2026</h2>
       <ul>

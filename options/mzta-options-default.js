@@ -125,13 +125,16 @@ export const prefs_default = {
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],
     get_calendar_event: true,
+    get_calendar_event_from_clipboard: false,  // Enable calendar event from clipboard menu item
     get_task: true,
     calendar_enforce_timezone: false,
     calendar_timezone: '',
+    calendar_no_selection: false,   // If true do not ask for selection, but use the full prompt
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
     auto_summary_enabled: false,         // Enable automatic AI summarization for message previews
+    spamfilter_show_msg_panel: true,
     summarize: false,
     ...generated_prefs
 }

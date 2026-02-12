@@ -30,6 +30,7 @@ let current_mailMessageId = null;
 let selectionChangeTimeout = null;
 let isDragging = false;
 let delay_wait_completion = 7000; // milliseconds
+let lastSelectedHtml = "";
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     let textArea = document.getElementById('prompt-textarea')
@@ -205,6 +206,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     var btn_ok = document.createElement('button');
     btn_ok.id="mzta-btn_ok";
     btn_ok.classList.add('mzta-btn');
+    // Prevent the button from stealing focus and clearing the selection
+    btn_ok.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+    });
     //console.log('>>>>>>>>>>>>>>> default: '+prompt_action)
     switch(String(prompt_action)){ 
         default:
@@ -247,6 +252,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
             var btn_change_reply_type = document.createElement('button');
             disableButton(btn_change_reply_type);
             btn_change_reply_type.id = 'mzta-btn_change_reply_type';
+            // Prevent the button from stealing focus and clearing the selection
+            btn_change_reply_type.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+            });
             btn_change_reply_type.classList.add('mzta-btn');
             btn_change_reply_type.title = browser.i18n.getMessage("chatgpt_win_change_reply_type");
             // Create SVG element
@@ -320,6 +329,10 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         var btn_diff = document.createElement('button');
         btn_diff.id='mzta-btn_diff';
         btn_diff.classList.add('mzta-btn');
+        // Prevent the button from stealing focus and clearing the selection
+        btn_diff.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+        });
         btn_diff.textContent = browser.i18n.getMessage('btn_show_differences');
         btn_diff.style.display = 'none';
         disableButton(btn_diff);
@@ -672,7 +685,7 @@ function replaceNewlinesWithBr(node) {
 function getSelectedHtml() {
     // Get the Selection object
     var selection = window.getSelection();
-    
+    // console.log(">>>>>>>>>>>>> getSelectedHtml selection.rangeCount: " + selection.rangeCount);
     if (selection.rangeCount > 0) {
         // Get the first selected range
         var range = selection.getRangeAt(0);
@@ -682,9 +695,13 @@ function getSelectedHtml() {
         
         // Clone the contents of the range into the temporary div
         tempDiv.appendChild(range.cloneContents());
-        
+        // console.log(">>>>>>>>>>>>>>>>>> tempDiv.innerHTML: " + tempDiv.innerHTML);
         // Return the HTML of the selected content
         return tempDiv.innerHTML.replace(/^<p>&quot;/, '<p>').replace(/&quot;<\\/p>$/, '</p>'); // strip quotation marks;
+    }
+    if (lastSelectedHtml) {
+        // console.log(">>>>>>>>>>>>> getSelectedHtml using cached selection lastSelectedHtml: "+ lastSelectedHtml);
+        return lastSelectedHtml;
     }
     return "";
 }
@@ -708,6 +725,14 @@ document.addEventListener("selectionchange", function() {
         let btn_ok = document.getElementById('mzta-btn_ok');
         let btn_diff = document.getElementById('mzta-btn_diff');
         if (isSomethingSelected()) {
+            // Cache the selection
+            var selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                var range = selection.getRangeAt(0);
+                var tempDiv = document.createElement("div");
+                tempDiv.appendChild(range.cloneContents());
+                lastSelectedHtml = tempDiv.innerHTML.replace(/^<p>&quot;/, '<p>').replace(/&quot;<\\/p>$/, '</p>');
+            }
             enableButton(btn_ok);
             if(current_action == '1'){
                 let btn_reply_type = document.getElementById('mzta-btn_change_reply_type');
@@ -756,7 +781,8 @@ function selectContentOnMouseUp(event) {
         // If the click was inside the excluded area, do nothing
         return;
     }
-
+    // console.log(">>>>>>>>>>>>> selectContentOnMouseUp isDragging: " + isDragging);
+    // Reset the dragging flag when the mouse is released")
     if ((!isDragging)&&(!isSomethingSelected())) {
         // If no dragging has occurred, execute the selection code
         selectContentOnClick(event);
@@ -781,6 +807,8 @@ function selectContentOnClick(event) {
     // Traverse the DOM upwards to find the nearest parent div
     var parentDiv = clickedElement.closest('div');
 
+    // console.log(">>>>>>>>>>>>> parentDiv: " + parentDiv.classList);
+
     if (parentDiv) {
         // Create a range object
         var range = document.createRange();
@@ -796,6 +824,7 @@ function selectContentOnClick(event) {
 
         // Add the new range to the selection
         selection.addRange(range);
+        // console.log(">>>>>>>>>>>>> selectContentOnClick selection.rangeCount: " + selection.rangeCount);
     }
 }
 
