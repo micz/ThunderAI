@@ -342,8 +342,8 @@ class MessageInput extends HTMLElement {
              this._customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
         }
         this._currentCustomTextIndex = 0;
-        this._renderCustomTextStep();
         this._customText.style.display = 'block';
+        this._renderCustomTextStep();
     }
 
     _renderCustomTextStep() {
