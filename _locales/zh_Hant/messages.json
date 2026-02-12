@@ -1220,5 +1220,23 @@
     },
     "OpenAIComp_ClearModelsList_Confirm": {
         "message": "確定要清除模型清單嗎？這個動作無法復原。"
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "啟用郵件預覽的自動 AI 摘要"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "如果勾選，ThunderAI 將自動生成並顯示 AI 摘要在電子郵件訊息上方。請注意，這意味著您預覽的所有訊息將立即被發送到已配置的 AI 服務。"
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI 摘要"
+    },
+    "auto_summary_generating": {
+        "message": "正在產生 AI 摘要..."
+    },
+    "auto_summary_failed": {
+        "message": "產生 AI 摘要失敗。請確認您的設定並重試。"
+    },
+    "auto_summary_prompt": {
+        "message": "請提供以下電子郵件訊息的簡明摘要。摘要應最多包含3-5個句子，並捕捉主要要點：\n\n"
     }
 }
