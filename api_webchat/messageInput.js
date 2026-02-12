@@ -100,6 +100,9 @@ messagesInputStyle.textContent = `
         padding-bottom:10px;
         font-size:15px;
     }
+    #mzta-custom_info span{
+        font-size:0.8em;
+    }
     @media (prefers-color-scheme: dark) {
         #messageInputField {
             background-color: #303030;
@@ -323,11 +326,13 @@ class MessageInput extends HTMLElement {
         const infoDiv = this.shadowRoot.querySelector('#mzta-custom_info');
         
         this._customTextArea.value = "";
+        infoDiv.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
         
         if (currentItem.info && currentItem.info.trim() !== "") {
-            infoDiv.textContent = currentItem.info;
-        } else {
-            infoDiv.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
+            infoDiv.appendChild(document.createElement("br"));
+            const infoSpan = document.createElement("span");
+            infoSpan.textContent = "[" + browser.i18n.getMessage("customPrompts_form_label_ID") + ": " + currentItem.info + "]";
+            infoDiv.appendChild(infoSpan);
         }
         
         this._customTextArea.focus();
