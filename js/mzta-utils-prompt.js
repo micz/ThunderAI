@@ -63,7 +63,7 @@ export const taPromptUtils = {
             // Replace all {%additional_text%} with {%additional_text:N%}
             let additionalTextCounter = 1;
             curr_prompt.text = curr_prompt.text.replace(/{%\s*additional_text\s*%}/g, () => {
-                return `{%additional_text:${additionalTextCounter++}%}`;
+                return `{%additional_text:#${additionalTextCounter++}%}`;
             });
 
             let finalSubs = await placeholdersUtils.getPlaceholdersValues({
