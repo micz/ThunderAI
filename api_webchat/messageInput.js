@@ -69,12 +69,14 @@ messagesInputStyle.textContent = `
     }
     #mzta-custom_text{
         padding:10px;
-        width:auto;
+        width:50%;
+        min-width:300px;
         max-width:80%;
         height:auto;
         max-height:80%;
         border-radius:5px;
-        overflow:auto;
+        overflow-y:auto;
+        overflow-x:hidden;
         position:fixed;
         top:50%;
         left:50%;
@@ -84,15 +86,18 @@ messagesInputStyle.textContent = `
         background:#333;
         color:white;
         border:3px solid white;
+        box-sizing: border-box;
     }
     #mzta-custom_loading{
         height:50px;display:none;
     }
     #mzta-custom_textarea{
         color:black;
-        padding:1px;
+        padding:5px;
         font-size:15px;
         width:100%;
+        box-sizing: border-box;
+        resize: vertical;
     }
     #mzta-custom_info{
         text-align:center;
@@ -181,6 +186,7 @@ customInfo.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
 customDiv.appendChild(customInfo);
 const customTextArea = document.createElement('textarea');
 customTextArea.id = 'mzta-custom_textarea';
+customTextArea.rows = 5;
 customDiv.appendChild(customTextArea);
 const customLoading = document.createElement('img');
 customLoading.src = browser.runtime.getURL("/images/loading.gif");
