@@ -238,7 +238,12 @@ class MessageInput extends HTMLElement {
         this._customBtn = shadowRoot.querySelector('#mzta-custom_btn');
         this._customStep = shadowRoot.querySelector('#mzta-custom_step');
         this._customBtn.addEventListener("click", () => { this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
-        this._customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
+        this._customTextArea.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText});
+            }
+        });
     }
 
     connectedCallback() {
