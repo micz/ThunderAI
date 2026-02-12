@@ -115,6 +115,9 @@ messagesInputStyle.textContent = `
         font-size: 12px;
         color: #ccc;
     }
+    #mzta-custom_btn{
+        margin-top:7px;
+    }
     @media (prefers-color-scheme: dark) {
         #messageInputField {
             background-color: #303030;
