@@ -108,6 +108,13 @@ messagesInputStyle.textContent = `
     #mzta-custom_info span{
         font-size:0.8em;
     }
+    #mzta-custom_step{
+        position: absolute;
+        bottom: 5px;
+        right: 10px;
+        font-size: 12px;
+        color: #ccc;
+    }
     @media (prefers-color-scheme: dark) {
         #messageInputField {
             background-color: #303030;
@@ -197,6 +204,9 @@ customBtn.id = 'mzta-custom_btn';
 customBtn.textContent = browser.i18n.getMessage("chatgpt_win_send");
 customBtn.classList.add('mzta-btn');
 customDiv.appendChild(customBtn);
+const customStep = document.createElement('div');
+customStep.id = 'mzta-custom_step';
+customDiv.appendChild(customStep);
 messageInputTemplate.content.appendChild(customDiv);
 
 class MessageInput extends HTMLElement {
@@ -223,6 +233,7 @@ class MessageInput extends HTMLElement {
         this._customTextArea = shadowRoot.querySelector('#mzta-custom_textarea');
         this._customLoading = shadowRoot.querySelector('#mzta-custom_loading');
         this._customBtn = shadowRoot.querySelector('#mzta-custom_btn');
+        this._customStep = shadowRoot.querySelector('#mzta-custom_step');
         this._customBtn.addEventListener("click", () => { this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
         this._customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
     }
@@ -339,6 +350,13 @@ class MessageInput extends HTMLElement {
             const infoSpan = document.createElement("span");
             infoSpan.textContent = "[" + browser.i18n.getMessage("customPrompts_form_label_ID") + ": " + currentItem.info + "]";
             infoDiv.appendChild(infoSpan);
+        }
+
+        if(this._customTextArray.length > 1) {
+            this._customStep.textContent = (this._currentCustomTextIndex + 1) + "/" + this._customTextArray.length;
+            this._customStep.style.display = 'block';
+        } else {
+            this._customStep.style.display = 'none';
         }
         
         this._customTextArea.focus();
