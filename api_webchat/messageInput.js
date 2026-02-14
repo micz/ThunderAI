@@ -69,12 +69,14 @@ messagesInputStyle.textContent = `
     }
     #mzta-custom_text{
         padding:10px;
-        width:auto;
+        width:50%;
+        min-width:300px;
         max-width:80%;
         height:auto;
         max-height:80%;
         border-radius:5px;
-        overflow:auto;
+        overflow-y:auto;
+        overflow-x:hidden;
         position:fixed;
         top:50%;
         left:50%;
@@ -84,21 +86,37 @@ messagesInputStyle.textContent = `
         background:#333;
         color:white;
         border:3px solid white;
+        box-sizing: border-box;
     }
     #mzta-custom_loading{
         height:50px;display:none;
     }
     #mzta-custom_textarea{
         color:black;
-        padding:1px;
+        padding:5px;
         font-size:15px;
         width:100%;
+        box-sizing: border-box;
+        resize: vertical;
     }
     #mzta-custom_info{
         text-align:center;
         width:100%;
         padding-bottom:10px;
         font-size:15px;
+    }
+    #mzta-custom_info span{
+        font-size:0.8em;
+    }
+    #mzta-custom_step{
+        position: absolute;
+        bottom: 5px;
+        right: 10px;
+        font-size: 12px;
+        color: #ccc;
+    }
+    #mzta-custom_btn{
+        margin-top:7px;
     }
     @media (prefers-color-scheme: dark) {
         #messageInputField {
@@ -178,6 +196,7 @@ customInfo.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
 customDiv.appendChild(customInfo);
 const customTextArea = document.createElement('textarea');
 customTextArea.id = 'mzta-custom_textarea';
+customTextArea.rows = 5;
 customDiv.appendChild(customTextArea);
 const customLoading = document.createElement('img');
 customLoading.src = browser.runtime.getURL("/images/loading.gif");
@@ -188,11 +207,16 @@ customBtn.id = 'mzta-custom_btn';
 customBtn.textContent = browser.i18n.getMessage("chatgpt_win_send");
 customBtn.classList.add('mzta-btn');
 customDiv.appendChild(customBtn);
+const customStep = document.createElement('div');
+customStep.id = 'mzta-custom_step';
+customDiv.appendChild(customStep);
 messageInputTemplate.content.appendChild(customDiv);
 
 class MessageInput extends HTMLElement {
 
     model = '';
+    _customTextArray = [];
+    _currentCustomTextIndex = 0;
 
     constructor() {
         super();
@@ -212,8 +236,14 @@ class MessageInput extends HTMLElement {
         this._customTextArea = shadowRoot.querySelector('#mzta-custom_textarea');
         this._customLoading = shadowRoot.querySelector('#mzta-custom_loading');
         this._customBtn = shadowRoot.querySelector('#mzta-custom_btn');
+        this._customStep = shadowRoot.querySelector('#mzta-custom_step');
         this._customBtn.addEventListener("click", () => { this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
-        this._customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText}) });
+        this._customTextArea.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                this._customTextBtnClick({customBtn:this._customBtn,customLoading:this._customLoading,customDiv:this._customText});
+            }
+        });
     }
 
     connectedCallback() {
@@ -306,21 +336,64 @@ class MessageInput extends HTMLElement {
         this._messageInputField.value = msg;
     }
 
-    _showCustomTextField(){
+    _showCustomTextField(custom_text_array){
+        this._customTextArray = custom_text_array || [];
+        if (this._customTextArray.length === 0) {
+             this._customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
+        }
+        this._currentCustomTextIndex = 0;
         this._customText.style.display = 'block';
+        this._renderCustomTextStep();
+    }
+
+    _renderCustomTextStep() {
+        const currentItem = this._customTextArray[this._currentCustomTextIndex];
+        const infoDiv = this.shadowRoot.querySelector('#mzta-custom_info');
+        
+        this._customTextArea.value = "";
+        infoDiv.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
+        
+        if (currentItem.info && currentItem.info.trim() !== "") {
+            infoDiv.appendChild(document.createElement("br"));
+            const infoSpan = document.createElement("span");
+            infoSpan.textContent = "[" + browser.i18n.getMessage("customPrompts_form_label_ID") + ": " + currentItem.info + "]";
+            infoDiv.appendChild(infoSpan);
+        }
+
+        if(this._customTextArray.length > 1) {
+            this._customStep.textContent = (this._currentCustomTextIndex + 1) + "/" + this._customTextArray.length;
+            this._customStep.style.display = 'block';
+        } else {
+            this._customStep.style.display = 'none';
+        }
+        
         this._customTextArea.focus();
     }
 
     async _customTextBtnClick(args) {
         const customText = this._customTextArea.value;
-        // console.log(">>>>>>>>>>>>>>>> customText: " + customText);
-        args.customBtn.disabled = true;
-        args.customBtn.classList.add('disabled');
-        args.customLoading.style.display = 'inline-block';
-        args.customLoading.style.display = 'none';
-        let tab = await browser.tabs.query({ active: true, currentWindow: true });
-        browser.runtime.sendMessage({ command: "api_send_custom_text", custom_text: customText, tabId: tab[0].id });
-        args.customDiv.style.display = 'none';
+        
+        if (this._customTextArray[this._currentCustomTextIndex]) {
+            this._customTextArray[this._currentCustomTextIndex].custom_text = customText;
+        }
+
+        this._currentCustomTextIndex++;
+
+        if (this._currentCustomTextIndex < this._customTextArray.length) {
+            this._renderCustomTextStep();
+        } else {
+            args.customBtn.disabled = true;
+            args.customBtn.classList.add('disabled');
+            args.customLoading.style.display = 'inline-block';
+            
+            let tab = await browser.tabs.query({ active: true, currentWindow: true });
+            browser.runtime.sendMessage({ command: "api_send_custom_text", custom_text: this._customTextArray, tabId: tab[0].id });
+            args.customDiv.style.display = 'none';
+            
+            args.customBtn.disabled = false;
+            args.customBtn.classList.remove('disabled');
+            args.customLoading.style.display = 'none';
+        }
     }
 }
 
