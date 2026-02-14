@@ -193,7 +193,7 @@ export class mzta_Menus {
                 tags_full_list: tags_full_list
             });
 
-            curr_prompt.custom_text_array = {};
+            curr_prompt.custom_text_array = [];
 
             if(placeholdersUtils.hasPlaceholder(curr_prompt.text, 'additional_text')){
                 curr_prompt.custom_text_array = placeholdersUtils.getPlaceholdersAdditionalTextArray(curr_prompt.text);
