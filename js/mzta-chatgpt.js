@@ -30,6 +30,8 @@ let current_mailMessageId = null;
 let selectionChangeTimeout = null;
 let isDragging = false;
 let delay_wait_completion = 7000; // milliseconds
+let _customTextArray = [];
+let _currentCustomTextIndex = 0;
 
 async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button not found, -2 textarea not found
     let textArea = document.getElementById('prompt-textarea')
@@ -125,6 +127,8 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     style.textContent += "#mzta-custom_loading{height:50px;display:none;}";
     style.textContent += "#mzta-custom_textarea{color:black;padding:1px;font-size:15px;width:100%;}";
     style.textContent += "#mzta-custom_info{text-align:center;width:100%;padding-bottom:10px;font-size:15px;}";
+    style.textContent += "#mzta-custom_info span{font-size:0.8em;}";
+    style.textContent += "#mzta-custom_step{position: absolute;bottom: 5px;right: 10px;font-size: 12px;color: #ccc;}";
     style.textContent += "#mzta-prompt-name{font-size:13px;font-style:italic;color:#919191;position:fixed;bottom:75px;;left:0;padding-left:5px;}";
     style.textContent += "#mzta-diff-overlay{position: fixed;top:0;left:0;width:100vw;height:100vh;background: rgba(0, 0, 0, 0.5);display:flex;justify-content:center;align-items:center;z-index:999;}";
     style.textContent += "#mzta-diff{padding:10px;border:2px solid white;border-radius:1em;position:fixed;top:50%;left:50%;width:80%;height:30em;transform:translate(-50%,-50%);z-index:9999;background-color: #333;color: white;}";
@@ -365,6 +369,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     customDiv.appendChild(customInfo);
     let customTextArea = document.createElement('textarea');
     customTextArea.id = 'mzta-custom_textarea';
+    customTextArea.rows = 5;
     customDiv.appendChild(customTextArea);
     let customLoading = document.createElement('img');
     customLoading.src = browser.runtime.getURL("/images/loading.gif");
@@ -377,6 +382,9 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
     customBtn.addEventListener("click", () => { customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
     customTextArea.addEventListener("keydown", (event) => { if(event.code == "Enter" && event.ctrlKey) customTextBtnClick({customBtn:customBtn,customLoading:customLoading,customDiv:customDiv}) });
     customDiv.appendChild(customBtn);
+    let customStep = document.createElement('div');
+    customStep.id = 'mzta-custom_step';
+    customDiv.appendChild(customStep);
     fixedDiv.appendChild(customDiv);
 
     // light background hint with diagonal thick arrow
@@ -453,14 +461,54 @@ function createReplyToAllIcon() {
   return svg;
 }
 
+function renderCustomTextStep() {
+    const currentItem = _customTextArray[_currentCustomTextIndex];
+    const infoDiv = document.getElementById('mzta-custom_info');
+    const customTextArea = document.getElementById('mzta-custom_textarea');
+    const customStep = document.getElementById('mzta-custom_step');
+    
+    customTextArea.value = "";
+    infoDiv.textContent = browser.i18n.getMessage("chatgpt_win_custom_text");
+    
+    if (currentItem.info && currentItem.info.trim() !== "") {
+        infoDiv.appendChild(document.createElement("br"));
+        const infoSpan = document.createElement("span");
+        infoSpan.textContent = "[" + browser.i18n.getMessage("customPrompts_form_label_ID") + ": " + currentItem.info + "]";
+        infoDiv.appendChild(infoSpan);
+    }
+
+    if(_customTextArray.length > 1) {
+        customStep.textContent = (_currentCustomTextIndex + 1) + "/" + _customTextArray.length;
+        customStep.style.display = 'block';
+    } else {
+        customStep.style.display = 'none';
+    }
+    
+    customTextArea.focus();
+}
+
 function customTextBtnClick(args) {
     const customText = document.getElementById('mzta-custom_textarea').value;
-    args.customBtn.disabled = true;
-    args.customBtn.classList.add('disabled');
-    args.customLoading.style.display = 'inline-block';
-    args.customLoading.style.display = 'none';
-    doProceed(current_message,customText);
-    args.customDiv.style.display = 'none';
+    
+    if (_customTextArray[_currentCustomTextIndex]) {
+        _customTextArray[_currentCustomTextIndex].custom_text = customText;
+    }
+
+    _currentCustomTextIndex++;
+
+    if (_currentCustomTextIndex < _customTextArray.length) {
+        renderCustomTextStep();
+    } else {
+        args.customBtn.disabled = true;
+        args.customBtn.classList.add('disabled');
+        args.customLoading.style.display = 'inline-block';
+        args.customLoading.style.display = 'none';
+        doProceed(current_message, _customTextArray);
+        args.customDiv.style.display = 'none';
+        
+        args.customBtn.disabled = false;
+        args.customBtn.classList.remove('disabled');
+    }
 }
 
 function checkGPTModel(model) {
@@ -534,8 +582,14 @@ function checkLoggedIn(){
 }
 
 function showCustomTextField(){
+    let rawArray = current_message.prompt_info?.custom_text_array;
+    _customTextArray = Array.isArray(rawArray) ? rawArray : [];
+    if (_customTextArray.length === 0) {
+            _customTextArray.push({ placeholder: "{%additional_text%}", info: "" });
+    }
+    _currentCustomTextIndex = 0;
     document.getElementById('mzta-custom_text').style.display = 'block';
-    document.getElementById('mzta-custom_textarea').focus();
+    renderCustomTextStep();
 }
 
 async function doProceed(message, customText = ''){
@@ -545,16 +599,21 @@ async function doProceed(message, customText = ''){
         await checkGPTModel(_gpt_model);
     }
     let final_prompt = message.prompt;
-// console.log(">>>>>>>>>>>> doProceed customText: " + customText);
-// console.log(">>>>>>>>>>>> doProceed final_prompt: " + final_prompt);
-// console.log(">>>>>>>>>>>> doProceed mztaPhDefVal: " + JSON.stringify(mztaPhDefVal));
-    //check if there is the additional_text placeholder
-    if(final_prompt.includes('{%additional_text%}')){
-        // console.log(">>>>>>>>>>>> found ph customText: " + customText);
-        final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
-    }else{
-        if(customText != ''){
-            final_prompt += ' '+customText;
+
+    if (Array.isArray(customText)) {
+        customText.forEach(obj => {
+            let escapedPH = obj.placeholder.replace(/[.*+?^{$}()|[\\]\\\\]/g, '\\\\$&');
+            let regex = new RegExp(escapedPH, 'g');
+            final_prompt = final_prompt.replace(regex, obj.custom_text);
+        });
+    } else {
+        //check if there is the additional_text placeholder
+        if(final_prompt.includes('{%additional_text%}')){
+            final_prompt = final_prompt.replace('{%additional_text%}', customText || (mztaPhDefVal == '1'?'':'{%additional_text%}'));
+        }else{
+            if(customText != ''){
+                final_prompt += ' '+customText;
+            }
         }
     }
 

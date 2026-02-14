@@ -515,7 +515,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                     let mailMessageId = -1;
                     if(mailMessage) mailMessageId = mailMessage.id;
                     promptText = convertNewlinesToParagraphs(promptText);
-                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId});
+                    browser.tabs.sendMessage(createdTab.id, { command: "chatgpt_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId, prompt_info: prompt_info});
                     taLog.log('[ChatGPT Web] Connection succeded!');
                     taLog.log("[ThunderAI] ChatGPT Web script injected successfully");
                     browser.runtime.onMessage.removeListener(listener);
