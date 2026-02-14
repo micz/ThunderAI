@@ -198,7 +198,7 @@ export class mzta_Menus {
             if(placeholdersUtils.hasPlaceholder(curr_prompt.text, 'additional_text')){
                 curr_prompt.custom_text_array = placeholdersUtils.getPlaceholdersAdditionalTextArray(curr_prompt.text);
             }
-            console.log(">>>>>>>>>>>>>>>>>>> curr_prompt.custom_text_array: " + JSON.stringify(curr_prompt.custom_text_array));
+            // console.log(">>>>>>>>>>>>>>>>>>> curr_prompt.custom_text_array: " + JSON.stringify(curr_prompt.custom_text_array));
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
