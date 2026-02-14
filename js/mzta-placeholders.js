@@ -489,11 +489,16 @@ export const placeholdersUtils = {
         const regex = /{%\s*additional_text(?::(.*?))?\s*%}/g;
         let matches = [];
         let match;
+        let foundIds = new Set();
         while ((match = regex.exec(prompt_text)) !== null) {
-            matches.push({
-                placeholder: match[0],
-                info: match[1] ? match[1].trim() : ""
-            });
+            let info = match[1] ? match[1].trim() : "";
+            if (!foundIds.has(info)) {
+                foundIds.add(info);
+                matches.push({
+                    placeholder: match[0],
+                    info: info
+                });
+            }
         }
         return matches;
     },
