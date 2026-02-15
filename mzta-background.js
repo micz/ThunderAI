@@ -1041,7 +1041,11 @@ browser.menus.onClicked.addListener( (info, tab) => {
         _summarize = true;
     }
     if(_add_tags || _spamfilter){
-        processEmails(getMessages(info.selectedMessages), _add_tags, _spamfilter);
+        processEmails({
+            messages: getMessages(info.selectedMessages),
+            addTagsAuto: _add_tags,
+            spamFilter: _spamfilter
+        });
     }
     if(_summarize) {
         // info.selectedMessages is of type MessageList
@@ -1135,7 +1139,11 @@ const newEmailListener = (folder, messagesList) => {
 
         let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
 
-        await processEmails(messages, add_tags_auto_enabled, prefs_init.spamfilter);
+        await processEmails({
+            messages: messages,
+            addTagsAuto: add_tags_auto_enabled,
+            spamFilter: prefs_init.spamfilter
+        });
 
         if(prefs_init.spamfilter){
             taSpamReport.truncReportData();
@@ -1145,7 +1153,13 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
-async function processEmails(messages, addTagsAuto, spamFilter) {
+async function processEmails(args) {
+    const {
+        messages,
+        addTagsAuto = false,
+        spamFilter = false
+    } = args;
+
     taWorkingStatus.startWorking();
     
     let prefs_aats = await browser.storage.sync.get({
