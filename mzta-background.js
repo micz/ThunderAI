@@ -1092,6 +1092,9 @@ async function processEmails(args) {
 
     taWorkingStatus.startWorking();
 
+    // We keep two different loops, one for addTagsAuto and spamFilter and one for summarize
+    // because summarize is never called when an email is received, but only when using the context menu item
+
     if (addTagsAuto || spamFilter) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
