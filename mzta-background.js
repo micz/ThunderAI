@@ -429,7 +429,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             let rand_call_id = '_chatgptweb_' + generateCallID();
             let call_opt = '';
 
-            let _wait_time = 1000;
+            let _wait_time = prefs.chatgpt_web_load_wait_time;
             let _base_url = "https://chatgpt.com";
             let _webproject_set = false;
             let _custom_gpt_set = false;
@@ -457,7 +457,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
             if(!_use_prompt_info_custom_gpt && ((prompt_info.chatgpt_web_project != '') || (prefs.chatgpt_web_project != ''))){
                 _base_url += _web_project;
                 _webproject_set = true;
-                _wait_time = 2000;
+                _wait_time += 1000;
             }
             if(!_webproject_set && ((prompt_info.chatgpt_web_custom_gpt != '') || (prefs.chatgpt_web_custom_gpt != ''))){
                 _base_url += _custom_gpt;

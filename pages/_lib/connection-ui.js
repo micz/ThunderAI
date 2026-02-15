@@ -154,6 +154,17 @@ export async function injectConnectionUI({
     </td>
   </tr>
   <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
+      <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_load_wait_time__</span>
+    </label></td>
+    <td>
+      <label>
+        <input type="number" id="chatgpt_web_load_wait_time" name="chatgpt_web_load_wait_time" class="option-input" />
+        <br>__MSG_prefs_OptionText_chatgpt_web_load_wait_time_info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td colspan="2" style="padding:0px 2em;text-align:center;"><span>__MSG_OpenChatGPTTab_Info__</span>
         <br><br><button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
         <br><br>__MSG_OpenChatGPTTab_Info2__

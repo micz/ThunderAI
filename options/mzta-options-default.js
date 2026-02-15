@@ -108,6 +108,7 @@ export const prefs_default = {
     chatgpt_web_tempchat: false,
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
+    chatgpt_web_load_wait_time: 1000,
     dynamic_menu_force_enter: false,
     dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
