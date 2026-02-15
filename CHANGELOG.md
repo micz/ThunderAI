@@ -23,6 +23,7 @@
         <li><i>[All APIs]</i> Showing the spam filter info at the top of the message. The data is saved only for the session in which the message has been checked for spam [<a href="https://github.com/micz/ThunderAI/issues/506">#506</a>].</li>
         <li>Fix: Now it's possibile to use multiple <i>additional_text</i> placeholders in a single prompt, also using custom placeholders [<a href="https://github.com/micz/ThunderAI/issues/554">#554</a>].</li>
         <li>When using the <i>additional_text</i> placeholder is now possibile to specify an ID that will be shown in the form asking for the text [<a href="https://github.com/micz/ThunderAI/issues/525">#525</a>].</li>
+        <li><i>[ChatGPT Web]</i> Added an option to define a custom time to wait for the page load. Sometimes, on slow PCs, the ChatGPT page loads slowly and ThunderAI inject its content too early. With this option you can adjust the waiting time [<a href="https://github.com/micz/ThunderAI/issues/634">#634</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 3.8.4 - 10/02/2026</h2>
