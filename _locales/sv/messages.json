@@ -1412,5 +1412,11 @@
     },
     "SpamReport_infoline": {
         "message": "Denna information sparas endast för den aktuella sessionen."
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Väntetid för sidinläsning"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Tid i millisekunder att vänta på att ChatGPT-sidan ska laddas innan ytterligare innehåll laddas. Standardvärdet är 1000 ms. Om en anpassad GPT eller ett anpassat projekt definieras läggs ytterligare 1000 ms till detta värde."
     }
 }
