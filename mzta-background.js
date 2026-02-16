@@ -1084,6 +1084,23 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
+async function updateSpamPanel(messageId, command, data = null) {
+    if (prefs_init.spamfilter_show_msg_panel) {
+        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length > 0) {
+            let activeTab = tabs[0];
+            let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+            if (displayedMessage && displayedMessage.headerMessageId === messageId) {
+                let msg = { command: command };
+                if (data) {
+                    msg.data = data;
+                }
+                browser.tabs.sendMessage(activeTab.id, msg);
+            }
+        }
+    }
+}
+
 async function processEmails(args) {
     const {
         messages,
@@ -1185,16 +1202,7 @@ async function processEmails(args) {
 
                 await taSpamReport.setProcessing(message.headerMessageId);
                 
-                if (prefs_init.spamfilter_show_msg_panel) {
-                    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if (tabs.length > 0) {
-                        let activeTab = tabs[0];
-                        let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
-                        if (displayedMessage && displayedMessage.id === message.id) {
-                            browser.tabs.sendMessage(activeTab.id, { command: "showSpamCheckInProgress" });
-                        }
-                    }
-                }
+                await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
 
                 let curr_prompt_spamfilter = await getSpamFilterPrompt();
                 // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
@@ -1223,6 +1231,9 @@ async function processEmails(args) {
                     spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
                 } catch (err) {
                     console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
+                    let err_data = await taSpamReport.saveError(message.headerMessageId, err.message || String(err));
+                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
+                    continue;
                 }
                 taLog.log("spamfilter_result: " + spamfilter_result);
                 let jsonObj = {};
@@ -1231,6 +1242,9 @@ async function processEmails(args) {
                     jsonObj = extractJsonObject(spamfilter_result);
                 } catch (e) {
                     console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
+                    let err_data = await taSpamReport.saveError(message.headerMessageId, e.message || String(e));
+                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
+                    continue;
                 }
                 taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
     
@@ -1257,16 +1271,7 @@ async function processEmails(args) {
                 taSpamReport.saveReportData(report_data, message.headerMessageId);
     
                 // Check if the message is currently displayed and update the banner
-                if (prefs_init.spamfilter_show_msg_panel) {
-                    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if (tabs.length > 0) {
-                        let activeTab = tabs[0];
-                        let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
-                        if (displayedMessage && displayedMessage.id === message.id) {
-                            browser.tabs.sendMessage(activeTab.id, { command: "showSpamReport", data: report_data });
-                        }
-                    }
-                }
+                await updateSpamPanel(message.headerMessageId, "showSpamReport", report_data);
             }
         }
     }
