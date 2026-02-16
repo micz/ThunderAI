@@ -618,7 +618,9 @@ switch (message.command) {
     break;
 
     case "showSpamCheckInProgress":
-      if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
+      const oldBanner = document.getElementById('mzta-spam-report-banner');
+      if(oldBanner) oldBanner.remove();
+
       if(document.getElementById('mzta-spam-check-progress')) return Promise.resolve(true);
 
       const containerProgress = document.createElement('div');

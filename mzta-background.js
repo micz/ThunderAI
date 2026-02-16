@@ -1200,6 +1200,7 @@ async function processEmails(args) {
                     }
                 }
 
+                await taSpamReport.removeReportData(message.headerMessageId);
                 await taSpamReport.setProcessing(message.headerMessageId);
                 
                 await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
