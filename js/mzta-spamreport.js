@@ -47,6 +47,7 @@ export const taSpamReport = {
             headerMessageId: data_id
         };
         await this.saveReportData(data, data_id);
+        return data;
     },
 
     async loadReportData(data_id) {
