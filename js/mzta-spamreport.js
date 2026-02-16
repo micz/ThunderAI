@@ -39,6 +39,16 @@ export const taSpamReport = {
         await browser.storage.session.remove(this._processing_prefix + data_id);
     },
 
+    async saveError(data_id, error_message) {
+        let data = {
+            spamValue: -999,
+            explanation: error_message,
+            report_date: new Date(),
+            headerMessageId: data_id
+        };
+        await this.saveReportData(data, data_id);
+    },
+
     async loadReportData(data_id) {
         const key = this._data_prefix + data_id;
         let output = await browser.storage.session.get(key);
