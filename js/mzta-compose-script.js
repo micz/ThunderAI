@@ -661,7 +661,11 @@ switch (message.command) {
     let textColor = '#333';
     let borderColor = '#ccc';
     
-    if (data.spamValue >= (data.SpamThreshold || 50)) {
+    if (data.spamValue == -999) {
+        bgColor = isDark ? '#332701' : '#fff3cd';
+        textColor = isDark ? '#ffeb80' : '#856404';
+        borderColor = isDark ? '#664d03' : '#ffeeba';
+    } else if (data.spamValue >= (data.SpamThreshold || 50)) {
         bgColor = isDark ? '#5a1a1a' : '#ffe6e6';
         textColor = isDark ? '#ffcccc' : '#cc0000';
         borderColor = '#cc0000';
@@ -671,13 +675,21 @@ switch (message.command) {
         borderColor = '#006600';
     }
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: start; gap: 15px; width: 100%; box-sizing: border-box;`;
 
     const scoreText = document.createElement('strong');
-    scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? browser.i18n.getMessage("Spam") : browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+    if (data.spamValue == -999) {
+        scoreText.textContent = browser.i18n.getMessage("apiwebchat_error");
+    } else {
+        scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? browser.i18n.getMessage("Spam") : browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+    }
     
     const reasonText = document.createElement('span');
-    reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+    if (data.spamValue == -999) {
+        reasonText.textContent = data.explanation;
+    } else {
+        reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+    }
 
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
