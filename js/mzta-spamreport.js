@@ -19,11 +19,24 @@
 export const taSpamReport = {
     logger: console,
     _data_prefix: 'mzta-spam-report-',
+    _processing_prefix: 'mzta-spam-processing-',
     _max_reports: 100,
+
+    async setProcessing(data_id) {
+        const key = this._processing_prefix + data_id;
+        await browser.storage.session.set({ [key]: true });
+    },
+
+    async isProcessing(data_id) {
+        const key = this._processing_prefix + data_id;
+        let output = await browser.storage.session.get(key);
+        return output[key] || false;
+    },
 
     async saveReportData(data, data_id) {
         const key = this._data_prefix + data_id;
         await browser.storage.session.set({ [key]: data });
+        await browser.storage.session.remove(this._processing_prefix + data_id);
     },
 
     async loadReportData(data_id) {
@@ -35,6 +48,7 @@ export const taSpamReport = {
     async removeReportData(data_id) {
         const key = this._data_prefix + data_id;
         await browser.storage.session.remove(key);
+        await browser.storage.session.remove(this._processing_prefix + data_id);
     },
 
     async getAllReportData() {
@@ -52,7 +66,7 @@ export const taSpamReport = {
 
     async clearReportData() {
         let allData = await browser.storage.session.get(null);
-        let keysToDelete = Object.keys(allData).filter(key => key.startsWith(this._data_prefix));
+        let keysToDelete = Object.keys(allData).filter(key => key.startsWith(this._data_prefix) || key.startsWith(this._processing_prefix));
 
         for (let key of keysToDelete) {
             await browser.storage.session.remove(key);
