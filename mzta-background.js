@@ -371,6 +371,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let report = await taSpamReport.loadReportData(message.headerMessageId);
                         if (report) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
+                        } else if (await taSpamReport.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
                     } catch (e) {
                         taLog.error("Error in checkSpamReport: " + e);
@@ -1180,6 +1182,20 @@ async function processEmails(args) {
                         continue;
                     }
                 }
+
+                await taSpamReport.setProcessing(message.headerMessageId);
+                
+                if (prefs_init.spamfilter_show_msg_panel) {
+                    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    if (tabs.length > 0) {
+                        let activeTab = tabs[0];
+                        let displayedMessage = await browser.messageDisplay.getDisplayedMessage(activeTab.id);
+                        if (displayedMessage && displayedMessage.id === message.id) {
+                            browser.tabs.sendMessage(activeTab.id, { command: "showSpamCheckInProgress" });
+                        }
+                    }
+                }
+
                 let curr_prompt_spamfilter = await getSpamFilterPrompt();
                 // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
                 let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);

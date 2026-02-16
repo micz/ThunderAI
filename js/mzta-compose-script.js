@@ -617,7 +617,38 @@ switch (message.command) {
 
     break;
 
+    case "showSpamCheckInProgress":
+      if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
+      if(document.getElementById('mzta-spam-check-progress')) return Promise.resolve(true);
+
+      const containerProgress = document.createElement('div');
+      containerProgress.id = 'mzta-spam-check-progress';
+      
+      const isDarkProgress = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      let bgColorProgress = isDarkProgress ? '#003366' : '#e6f2ff';
+      let textColorProgress = isDarkProgress ? '#cce5ff' : '#004085';
+      let borderColorProgress = isDarkProgress ? '#004085' : '#b8daff';
+
+      containerProgress.style.cssText = `background-color: ${bgColorProgress}; color: ${textColorProgress}; border-bottom: 1px solid ${borderColorProgress}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+
+      const textProgress = document.createElement('strong');
+      textProgress.textContent = browser.i18n.getMessage("spam_check_in_progress");
+      
+      const loadingImg = document.createElement('img');
+      loadingImg.src = browser.runtime.getURL("/images/loading.gif");
+      loadingImg.style.cssText = "height: 16px; width: 16px;";
+
+      containerProgress.appendChild(loadingImg);
+      containerProgress.appendChild(textProgress);
+
+      document.body.insertBefore(containerProgress, document.body.firstChild);
+      return Promise.resolve(true);
+
   case "showSpamReport":
+    const progressBanner = document.getElementById('mzta-spam-check-progress');
+    if(progressBanner) progressBanner.remove();
+
     const data = message.data;
     if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 

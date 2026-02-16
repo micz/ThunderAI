@@ -1888,5 +1888,9 @@
   "copy_text": {
     "message": "copy",
     "description": ""
+  },
+   "spam_check_in_progress": {
+      "message": "Spam check in progress...",
+      "description": ""
   }
 }
