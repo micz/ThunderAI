@@ -1417,7 +1417,7 @@ async function checkPromptsConfigForPlaceholders(textarea){
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(String(curr_text).indexOf('{%additional_text%}') != -1){
+    if(/{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text))){
         if(!need_custom_text_element.checked){
             need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
         }else{

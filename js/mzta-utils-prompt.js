@@ -59,6 +59,13 @@ export const taPromptUtils = {
             if(placeholdersUtils.hasCustomPlaceholder(curr_prompt.text)){
                 curr_prompt.text = await placeholdersUtils.replaceCustomPlaceholders(curr_prompt.text);
             }
+            
+            // Replace all {%additional_text%} with {%additional_text:N%}
+            let additionalTextCounter = 1;
+            curr_prompt.text = curr_prompt.text.replace(/{%\s*additional_text\s*%}/g, () => {
+                return `{%additional_text:#${additionalTextCounter++}%}`;
+            });
+
             let finalSubs = await placeholdersUtils.getPlaceholdersValues({
                 prompt_text: curr_prompt.text,
                 curr_message: curr_message,

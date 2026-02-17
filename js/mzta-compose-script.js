@@ -617,7 +617,40 @@ switch (message.command) {
 
     break;
 
+    case "showSpamCheckInProgress":
+      const oldBanner = document.getElementById('mzta-spam-report-banner');
+      if(oldBanner) oldBanner.remove();
+
+      if(document.getElementById('mzta-spam-check-progress')) return Promise.resolve(true);
+
+      const containerProgress = document.createElement('div');
+      containerProgress.id = 'mzta-spam-check-progress';
+      
+      const isDarkProgress = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      let bgColorProgress = isDarkProgress ? '#003366' : '#e6f2ff';
+      let textColorProgress = isDarkProgress ? '#cce5ff' : '#004085';
+      let borderColorProgress = isDarkProgress ? '#004085' : '#b8daff';
+
+      containerProgress.style.cssText = `background-color: ${bgColorProgress}; color: ${textColorProgress}; border-bottom: 1px solid ${borderColorProgress}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+
+      const textProgress = document.createElement('strong');
+      textProgress.textContent = browser.i18n.getMessage("spam_check_in_progress");
+      
+      const loadingImg = document.createElement('img');
+      loadingImg.src = browser.runtime.getURL("/images/loading.gif");
+      loadingImg.style.cssText = "height: 16px; width: 16px;";
+
+      containerProgress.appendChild(loadingImg);
+      containerProgress.appendChild(textProgress);
+
+      document.body.insertBefore(containerProgress, document.body.firstChild);
+      return Promise.resolve(true);
+
   case "showSpamReport":
+    const progressBanner = document.getElementById('mzta-spam-check-progress');
+    if(progressBanner) progressBanner.remove();
+
     const data = message.data;
     if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 
@@ -630,7 +663,11 @@ switch (message.command) {
     let textColor = '#333';
     let borderColor = '#ccc';
     
-    if (data.spamValue >= (data.SpamThreshold || 50)) {
+    if (data.spamValue == -999) {
+        bgColor = isDark ? '#332701' : '#fff3cd';
+        textColor = isDark ? '#ffeb80' : '#856404';
+        borderColor = isDark ? '#664d03' : '#ffeeba';
+    } else if (data.spamValue >= (data.SpamThreshold || 50)) {
         bgColor = isDark ? '#5a1a1a' : '#ffe6e6';
         textColor = isDark ? '#ffcccc' : '#cc0000';
         borderColor = '#cc0000';
@@ -640,13 +677,21 @@ switch (message.command) {
         borderColor = '#006600';
     }
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: start; gap: 15px; width: 100%; box-sizing: border-box;`;
 
     const scoreText = document.createElement('strong');
-    scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? browser.i18n.getMessage("Spam") : browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+    if (data.spamValue == -999) {
+        scoreText.textContent = browser.i18n.getMessage("apiwebchat_error");
+    } else {
+        scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? browser.i18n.getMessage("Spam") : browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+    }
     
     const reasonText = document.createElement('span');
-    reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+    if (data.spamValue == -999) {
+        reasonText.textContent = data.explanation;
+    } else {
+        reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+    }
 
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
