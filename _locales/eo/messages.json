@@ -172,23 +172,5 @@
     },
     "customPrompts_substitute_text": {
         "message": "Anstataŭigi tekston"
-    },
-    "prefs_OptionText_auto_summary": {
-        "message": "Aŭtomata AI resumo por mesaĝaj antaŭrigardoj"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Se markita, ThunderAI aŭtomate generos kaj montros AI resumojn super retpoŝtaj mesaĝoj kiam ili estas malfermitaj. Bonvolu noti ke tio signifas ke ĉiuj mesaĝoj kiun vi antaŭrigardas estos tuj senditaj al la agordita AI servo."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Resumo"
-    },
-    "auto_summary_generating": {
-        "message": "Generante AI resumon..."
-    },
-    "auto_summary_failed": {
-        "message": "Malsukcesis generi AI resumon. Bonvolu kontroli viajn agordojn kaj reprovu."
-    },
-    "auto_summary_prompt": {
-        "message": "Bonvolu provizi koncizan resumon de la sekva retpoŝta mesaĝo. La resumo devus esti maksimume 3-5 frazoj kaj kapti la ĉefajn punktojn:\n\n"
     }
 }

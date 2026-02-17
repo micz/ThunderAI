@@ -836,23 +836,5 @@
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Ovdje možete unijeti i adresu udaljenog poslužitelja."
-    },
-    "prefs_OptionText_auto_summary": {
-        "message": "Omogući automatsko AI sažimanje za pregled poruka"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Ako je označeno, ThunderAI će automatski generirati i prikazivati AI sažetke iznad e-poruka kada se otvore. Imajte na umu da će to značiti da će sve poruke koje pregledavate biti odmah poslane na konfiguriranu AI uslugu."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Sažetak"
-    },
-    "auto_summary_generating": {
-        "message": "Generiranje AI sažetka..."
-    },
-    "auto_summary_failed": {
-        "message": "Neuspjelo generiranje AI sažetka. Molimo provjerite svoje postavke i pokušajte ponovno."
-    },
-    "auto_summary_prompt": {
-        "message": "Molimo pružite sažetak sljedeće e-poruke. Sažetak bi trebao biti maksimalno 3-5 rečenica i sadržavati glavne točke:\n\n"
     }
-  }
+}

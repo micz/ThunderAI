@@ -13,23 +13,5 @@
     },
     "prompt_rewrite_formal": {
         "message": "Újraírás formálisan"
-    },
-    "prefs_OptionText_auto_summary": {
-        "message": "Automatikus AI összefoglaló engedélyezése az üzenetelőnézetekhez"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Ha be van jelölve, a ThunderAI automatikusan generál és megjelenít AI összefoglalókat az e-mail üzenetek felett, amikor megnyitják őket. Vegye figyelembe, hogy ez azt jelenti, hogy az összes üzenet, amelyet előnézetben megtekint, azonnal elküldésre kerül a konfigurált AI szolgáltatáshoz."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Összefoglaló"
-    },
-    "auto_summary_generating": {
-        "message": "AI összefoglaló generálása..."
-    },
-    "auto_summary_failed": {
-        "message": "Nem sikerült generálni az AI összefoglalót. Kérjük, ellenőrizze a beállításait, és próbálja újra."
-    },
-    "auto_summary_prompt": {
-        "message": "Kérjük, adjon egy rövid összefoglalót a következő e-mail üzenetről. Az összefoglaló maximum 3-5 mondatból állhat, és tartalmazza a fő pontokat:\n\n"
     }
-  }
+}

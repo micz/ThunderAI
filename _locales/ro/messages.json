@@ -229,23 +229,5 @@
     },
     "prefsInfoDesc_1": {
         "message": "S-ar putea ca interfața web ChatGPT să se modifice într-un mod care să perturbe funcționarea addon-ului. Verificați pagina \"Starea serviciului\" accesibilă prin legătura din partea de jos a acestei pagini. De asemenea, rețineți că prima dată când utilizați ThunderAI, trebuie să vă conectați la ChatGPT."
-    },
-    "prefs_OptionText_auto_summary": {
-        "message": "Activează rezumatul automat AI pentru previzualizările mesajelor"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Dacă este bifată, ThunderAI va genera și afișa automat rezumate AI deasupra mesajelor de e-mail atunci când sunt deschise. Rețineți că acest lucru înseamnă că toate mesajele pe care le previzualizați vor fi trimise imediat către serviciul AI configurat."
-    },
-    "auto_summary_title": {
-        "message": "Rezumat ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generare rezumat AI..."
-    },
-    "auto_summary_failed": {
-        "message": "Nu s-a putut genera rezumatul AI. Vă rugăm să verificați setările și să încercați din nou."
-    },
-    "auto_summary_prompt": {
-        "message": "Vă rugăm să furnizați un rezumat concis al următorului mesaj de e-mail. Rezumatul ar trebui să aibă maximum 3-5 propoziții și să cuprindă punctele principale:\n\n"
     }
-  }
+}

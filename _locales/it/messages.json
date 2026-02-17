@@ -1276,26 +1276,6 @@
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Hai negato l’autorizzazione necessaria per recuperare i modelli per questa integrazione."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Abilita il riassunto automatico AI per le anteprime dei messaggi",
-        "description": ""
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Se abilitata, ThunderAI genererà e mostrerà automaticamente i riassunti AI sopra le email quando vengono aperte. Nota che questo significa che tutte le email che visualizzi in anteprima verranno immediatamente inviate al servizio AI configurato.",
-        "description": ""
-    },
-    "auto_summary_title": {
-        "message": "Riassunto ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Generazione del riassunto AI..."
-    },
-    "auto_summary_failed": {
-        "message": "Impossibile generare il riassunto AI. Verificare le impostazioni e riprovare."
-    },
-    "auto_summary_prompt": {
-        "message": "Fornire un riassunto conciso del seguente messaggio email. Il riassunto dovrebbe essere di massimo 3-5 frasi e catturare i punti principali:\n\n"
-    },
     "prompt_string": {
         "message": "Prompt"
     },

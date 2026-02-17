@@ -68,24 +68,6 @@
     "prefs_OptionText_chatgpt_win_width": {
         "message": "Bredd"
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Aktivera automatisk AI-sammanfattning för meddelandeförhandsvisningar"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Om markerad kommer ThunderAI att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar kommer att skickas omedelbart till den konfigurerade AI-tjänsten."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Sammanfattning"
-    },
-    "auto_summary_generating": {
-        "message": "Genererar AI-sammanfattning..."
-    },
-    "auto_summary_failed": {
-        "message": "Misslyckades med att generera AI-sammanfattning. Kontrollera dina inställningar och försök igen."
-    },
-    "auto_summary_prompt": {
-        "message": "Ge en koncis sammanfattning av följande e-postmeddelande. Sammanfattningen bör vara max 3-5 meningar och fånga huvudpunkterna:\n\n"
-    },
     "prompt_summarize_this": {
         "message": "Sammanfatta detta"
     },

@@ -1300,24 +1300,6 @@
     "prefs_anthropic_temperature_Info": {
         "message": "Degré d'aléa injecté dans la réponse. La valeur par défaut est 1,0. La plage de valeurs s'étend di 0,0 à 1,0. Utilisez une température proche de 0,0 pour des tâches analytiques ou des choix multiples, et proche de 1,0 pour des tâches créatives et génératives. Notez que même avec une température de 0,0, les résultats ne seront pas totalement déterministes."
     },
-    "prefs_OptionText_auto_summary": {
-        "message": "Activer le résumé automatique par IA pour les aperçus de messages"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Si coché, ThunderAI générera et affichera automatiquement des résumés par IA au-dessus des messages lorsque vous les ouvrirez. Notez que cela signifie que tous les messages que vous prévisualisez seront immédiatement envoyés au service IA configuré."
-    },
-    "auto_summary_title": {
-        "message": "Résumé ThunderAI"
-    },
-    "auto_summary_generating": {
-        "message": "Génération du résumé IA..."
-    },
-    "auto_summary_failed": {
-        "message": "Échec de la génération du résumé IA. Veuillez vérifier vos paramètres et réessayer."
-    },
-    "auto_summary_prompt": {
-        "message": "Veuillez fournir un résumé concis du message suivant. Le résumé doit comporter au maximum 3 à 5 phrases et capturer les points principaux :\n\n"
-    },
     "reset": {
         "message": "Réinitialiser"
     }

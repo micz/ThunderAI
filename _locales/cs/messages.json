@@ -1130,23 +1130,5 @@
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Pro používání funkcí událostí v kalendáři a úloh, nainstalujte aktualizovanou verzi doplňku ThunderAI Sparks."
-    },
-    "prefs_OptionText_auto_summary": {
-        "message": "Povolit automatické AI shrnutí pro náhledy zpráv"
-    },
-    "prefs_OptionText_auto_summary_Info": {
-        "message": "Pokud je zaškrtnuto, ThunderAI automaticky vygeneruje a zobrazí AI shrnutí nad e-mailovými zprávami, když jsou otevřeny. Mějte na paměti, že to znamená, že všechny zprávy, které si prohlížíte, budou okamžitě odeslány do nakonfigurované AI služby."
-    },
-    "auto_summary_title": {
-        "message": "ThunderAI Souhrn"
-    },
-    "auto_summary_generating": {
-        "message": "Generování AI souhrnu..."
-    },
-    "auto_summary_failed": {
-        "message": "Nepodařilo se vygenerovat AI souhrn. Zkontrolujte prosím nastavení a zkuste to znovu."
-    },
-    "auto_summary_prompt": {
-        "message": "Poskytněte stručný souhrn následující e-mailové zprávy. Souhrn by měl obsahovat maximálně 3-5 vět a zachytit hlavní body:\n\n"
     }
 }
