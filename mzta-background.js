@@ -1391,12 +1391,7 @@ async function processEmails(args) {
 
 
 
-try {
-    browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
-} catch (e) {
-    taLog.log("Using browser.messages.onNewMailReceived.addListener with one agrument for Thunderbird 115.");
-    browser.messages.onNewMailReceived.addListener(newEmailListener);
-}
+browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
 
 /**
  * AI summary generation function using ThunderAI infrastructure
