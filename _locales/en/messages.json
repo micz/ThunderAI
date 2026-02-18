@@ -1296,7 +1296,7 @@
     "description": ""
   },
   "prefs_OptionText_summarize_Info": {
-    "message": "If checked, adds an option to context menu to summarize email.",
+    "message": "If checked, adds an option to context menu to summarize email(s).",
     "description": ""
   },
   "prefs_OptionText_btnManageSummarizeInfo": {
