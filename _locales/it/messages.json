@@ -1302,5 +1302,38 @@
     },
     "prefs_anthropic_temperature_Info": {
         "message": "Quantità di casualità iniettata nella risposta. Il valore predefinito è 1,0. L'intervallo va da 0,0 a 1,0. Utilizza una temperatura più vicina a 0,0 per compiti analitici o a scelta multipla, e più vicina a 1,0 per compiti creativi e generativi. Nota che, anche con una temperatura di 0,0, i risultati non saranno completamente deterministici."
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Corpo dell'email o testo selezionato"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Corpo dell'email o HTML selezionato"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Tempo di attesa caricamento pagina"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Tempo di attesa in millisecondi per il caricamento della pagina di ChatGPT prima di caricare i contenuti aggiuntivi. Il valore predefinito è 1000ms. Se viene definito un Custom GPT o un Progetto, verranno aggiunti ulteriori 1000ms a questo valore."
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Aggiungi un evento a calendario dagli appunti"
+    },
+    "clipboard_read_error": {
+        "message": "Impossibile leggere il contenuto copiato negli appunti. Verifica i permessi."
+    },
+    "clipboard_empty_error": {
+        "message": "Gli appunti sono vuoti. Copia prima del testo."
+    },
+    "clipboard_permission_denied": {
+        "message": "Accesso agli appunti negato. Riattiva la funzione nelle impostazioni per concedere il permesso."
+    },
+    "clipboard_permission_error": {
+        "message": "Errore durante la richiesta dei permessi per gli appunti. Riprova."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Ottieni un evento del calendario dagli appunti"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Mostra una voce di menu aggiuntiva per creare eventi di calendario dal contenuto di testo negli appunti."
     }
 }
