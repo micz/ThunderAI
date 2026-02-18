@@ -1374,5 +1374,11 @@
     },
     "prefs_OptionText_summarize": {
         "message": "Riassumi email"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Se selezionato, il Modello e l'API specificati di seguito verranno utilizzati per riassumere le email, indipendentemente da quelli scelti nella pagina delle opzioni di ThunderAI."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Se selezionato, aggiunge un'opzione al menu contestuale per riassumere le email."
     }
 }
