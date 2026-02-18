@@ -1335,5 +1335,44 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Mostra una voce di menu aggiuntiva per creare eventi di calendario dal contenuto di testo negli appunti."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Impostazioni riassunto"
+    },
+    "prompt_summarize": {
+        "message": "Riassumi email"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Sei un assistente che riassume conversazioni via email.\n\nDato un thread di email, produci un riassunto conciso e accurato che includa:\n\n- L'argomento principale o lo scopo della conversazione\n- Decisioni chiave, conclusioni o accordi\n- Domande importanti, richieste o punti d'azione\n- Il responsabile per ogni punto d'azione (se indicato)\n\nOmetti saluti, firme, testo citato e scambi ridondanti.\nNon aggiungere supposizioni o informazioni non presenti nelle email.\n\nScrivi il riassunto con un linguaggio chiaro e neutro, adatto a un professionista impegnato."
+    },
+    "prompt_summarize_email_template": {
+        "message": "Template riassunto email"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Da: {%author%}\nA: {%recipients%}\nCC: {%cc_list%}\nOggetto: {%mail_subject%}\nData: {%mail_datetime%}\nAllegati:\n{%mail_attachments_info%}\n\nCorpo del messaggio:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Separatore email"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- PROSSIMA EMAIL ----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Puoi modificare il prompt come desideri: il primo campo è il prompt principale, il secondo è il modello per la singola email. L'elenco delle email sarà aggiunto al prompt principale. Le email saranno divise dal separatore specificato nel terzo campo."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Il prompt principale che descrive l'attività da eseguire su tutte le email selezionate:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Il modello per la singola email:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Il separatore tra le email:"
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Se selezionato, il Modello e l'API specificati di seguito verranno utilizzati per creare gli eventi di calendario, indipendentemente da quelli scelti nella pagina delle opzioni di ThunderAI."
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Riassumi email"
     }
 }
