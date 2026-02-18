@@ -31,7 +31,7 @@
         "message": "Traduci"
     },
     "prompt_this": {
-        "message": "Chedi a ChatGPT"
+        "message": "Invia il testo come prompt"
     },
     "prompt_selection_needed": {
         "message": "Per procedere è necessario che selezioni del testo!"
@@ -172,7 +172,7 @@
         "message": "Riprova"
     },
     "chatgpt_sendbutton_not_found_error": {
-        "message": "Premi il pulsante per inviare il prompt a ChatGPT."
+        "message": "Premi il pulsante per inviare il prompt."
     },
     "chatgpt_user_not_logged_in": {
         "message": "Non sei connesso a ChatGPT. Effettua l'accesso con le tue credenziali, chiudi la finestra di ChatGPT e poi ripeti l'azione che avevi tentato. Rimarrai connesso in seguito."
@@ -1380,5 +1380,62 @@
     },
     "prefs_OptionText_summarize_Info": {
         "message": "Se selezionato, aggiunge un'opzione al menu contestuale per riassumere le email."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Gestisci le impostazioni di riassunto"
+    },
+    "Summarize_PageTitle": {
+        "message": "Gestisci Impostazioni di Riassunto"
+    },
+    "Summarize_info_default": {
+        "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per riassumere le email."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Testo del prompt attuale"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Mostra pannello segnalazione spam"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Se selezionato, verrà mostrato un pannello con il report spam sopra il messaggio."
+    },
+    "SpamReport_infoline": {
+        "message": "Queste informazioni sono salvate solo per la sessione corrente."
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Valido"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Riassumi"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Premi il pulsante qui sotto per concedere le autorizzazioni all'host corrente ed evitare problemi di CORS."
+    },
+    "CORS_give_host_perm": {
+        "message": "Concedi l'autorizzazione all'host corrente"
+    },
+    "CORS_localhost_warn": {
+        "message": "Se stai utilizzando localhost o 127.0.0.1 perché il server IA è ospitato sul tuo PC, è necessaria l'autorizzazione <all_urls>."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Vuoi includere le impostazioni API nell'esportazione? Attenzione: anche la Chiave API verrà salvata nel file!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Non chiedere di selezionare del testo"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Se questa opzione viene attivata, non sarà necessario selezionare del testo. Verrà utilizzato l'intero corpo del messaggio per creare l'evento di calendario."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Copia"
+    },
+    "copy_text": {
+        "message": "copia"
+    },
+    "spam_check_in_progress": {
+        "message": "Controllo spam in corso..."
     }
 }
