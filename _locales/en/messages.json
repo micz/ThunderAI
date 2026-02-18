@@ -1288,7 +1288,7 @@
     "description": ""
   },
   "prefs_OptionText_summarize": {
-    "message": "Summarize mail",
+    "message": "Summarize email",
     "description": ""
   },
   "prefs_OptionText_summarize_use_specific_integration_Info": {
@@ -1296,7 +1296,7 @@
     "description": ""
   },
   "prefs_OptionText_summarize_Info": {
-    "message": "If checked, adds an option to context menu to summarize mail.",
+    "message": "If checked, adds an option to context menu to summarize email.",
     "description": ""
   },
   "prefs_OptionText_btnManageSummarizeInfo": {
