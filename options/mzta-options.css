@@ -142,7 +142,6 @@ div#miczTranslate{
     border-radius: 4px;
     padding: 15px;
     font-weight: bold;
-    margin-bottom: 5px;
     text-align: center;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
@@ -155,6 +154,10 @@ div#miczTranslate{
     color: #FF6600;
 }
 
+#mzta_top_msg td{
+    border:0 !important;
+}
+
 .btn_small{
     font-size: 0.8em;
 }
@@ -165,6 +168,20 @@ div#miczTranslate{
 
 label:has(input[type="checkbox"]) {
     cursor: pointer;
+}
+
+#thstats div{
+    text-align: center;
+    padding: 10px !important;
+    border: 0 !important;
+    background: rgb(185, 238, 238);
+    font-weight: bold;
+    font-style: italic;
+    border-radius: 4px;
+}
+
+#thstats td{
+    border-top:0 !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -225,5 +242,9 @@ label:has(input[type="checkbox"]) {
 
     .lightbold{
         color: #f3f3f3;
+    }
+
+    #thstats div{
+        background: rgb(41, 70, 70);
     }
 }

@@ -1892,5 +1892,13 @@
    "spam_check_in_progress": {
       "message": "Spam check in progress...",
       "description": ""
+  },
+  "prefs_THStats_1": {
+    "message": "Do you want beautiful statistics about your emails?",
+    "description": ""
+  },
+  "prefs_THStats_2": {
+    "message": "Click here! Try ThunderStats!",
+    "description": ""
   }
 }
