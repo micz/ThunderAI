@@ -1437,5 +1437,11 @@
     },
     "spam_check_in_progress": {
         "message": "Controllo spam in corso..."
+    },
+    "prefs_THStats_1": {
+        "message": "Desideri delle belle statistiche sulle tue email?"
+    },
+    "prefs_THStats_2": {
+        "message": "Clicca qui! Prova ThunderStats!"
     }
 }
