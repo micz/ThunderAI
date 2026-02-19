@@ -1,0 +1,54 @@
+name: Check External Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Check every day at midnight
+  workflow_dispatch: # Allows manual triggering for testing purposes
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest release from external repo
+        id: get_release
+        run: |
+          REPO_TARGET="orchidjs/tom-select"
+          LATEST_TAG=$(curl -s https://api.github.com/repos/$REPO_TARGET/releases/latest | jq -r .tag_name)
+          
+          if [ "$LATEST_TAG" == "null" ] || [ -z "$LATEST_TAG" ]; then
+            echo "Error: unable to fetch tag or no release found."
+            exit 1
+          fi
+          
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "target=$REPO_TARGET" >> $GITHUB_OUTPUT
+
+      - name: Check if Issue already exists and create it
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const latestTag = "${{ steps.get_release.outputs.tag }}";
+            const targetRepo = "${{ steps.get_release.outputs.target }}";
+            const { owner, repo } = context.repo;
+            const issueTitle = `Update Tom Select to version ${latestTag}`;
+
+            // Search through issues (both open and closed for safety)
+            const response = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue "${issueTitle}"`,
+            });
+
+            if (response.data.total_count > 0) {
+              core.info(`The issue for version ${latestTag} already exists. No action taken.`);
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: issueTitle,
+                body: `Update Tom Select to version  **${latestTag}**. https://github.com/orchidjs/tom-select/releases`
+              });
+              core.info(`New issue created for version ${latestTag}.`);
+            }
