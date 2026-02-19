@@ -1288,7 +1288,7 @@
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"spamValue\": <heltal från 0 till 100>,\n\"explanation\": \"Kort förklaring av ditt resonemang\"\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
     },
     "Summarize_prompt_prefs_title": {
-        "message": "Lägg till sammanfattningsalternativ"
+        "message": "Sammanfattningsalternativ"
     },
     "prompt_summarize": {
         "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
@@ -1321,13 +1321,13 @@
         "message": "Avgränsaren mellan e-postmeddelanden:"
     },
     "prefs_OptionText_summarize": {
-        "message": "Sammanfatta e-postmeddelande"
+        "message": "Sammanfatta epostmeddelande"
     },
     "prefs_OptionText_summarize_use_specific_integration_Info": {
         "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att sammanfatta e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
     },
     "prefs_OptionText_summarize_Info": {
-        "message": "Om markerad läggs ett alternativ till i snabbmenyn för att sammanfatta e-post."
+        "message": "Om markerad läggs ett alternativ till i snabbmenyn för att sammanfatta epost(meddelanden)."
     },
     "prefs_OptionText_btnManageSummarizeInfo": {
         "message": "Hantera sammanfattningsinställningar"
