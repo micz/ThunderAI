@@ -52,7 +52,9 @@ jobs:
 
                 https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/js/tom-select.base.js
                 
-                https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/css/tom-select.default.min.css`
+                https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/css/tom-select.default.min.css
+                
+                Remeber also to update the VENDORS.md file.`
               });
               core.info(`New issue created for version ${latestTag}.`);
             }
