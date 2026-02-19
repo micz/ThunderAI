@@ -1437,5 +1437,11 @@
     },
     "copy_text": {
         "message": "copie"
+    },
+    "prefs_THStats_1": {
+        "message": "Voulez-vous de belles statistiques sur vos e-mails ?"
+    },
+    "prefs_THStats_2": {
+        "message": "Cliquez ici ! Essayez ThunderStats !"
     }
 }
