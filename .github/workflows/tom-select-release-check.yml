@@ -1,4 +1,4 @@
-name: Check External Release
+name: Check Tom-Select Latest Release
 
 on:
   schedule:
