@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.4.6
+* Tom Select v2.5.1
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -1502,6 +1502,7 @@
 	  create: null,
 	  createOnBlur: false,
 	  createFilter: null,
+	  clearAfterSelect: false,
 	  highlight: true,
 	  openOnFocus: true,
 	  shouldOpen: null,
@@ -2444,6 +2445,8 @@
 	      self.createItem(null, () => {
 	        if (self.settings.closeAfterSelect) {
 	          self.close();
+	        } else if (self.settings.clearAfterSelect) {
+	          self.setTextboxValue();
 	        }
 	      });
 	    } else {
@@ -2453,6 +2456,8 @@
 	        self.addItem(value);
 	        if (self.settings.closeAfterSelect) {
 	          self.close();
+	        } else if (self.settings.clearAfterSelect) {
+	          self.setTextboxValue();
 	        }
 	        if (!self.settings.hideSelected && evt.type && /click/.test(evt.type)) {
 	          self.setActiveOption(option);
@@ -2884,6 +2889,11 @@
 	    // perform search
 	    if (query !== self.lastQuery) {
 	      self.lastQuery = query;
+	      // temp fix for https://github.com/orchidjs/tom-select/issues/987
+	      // UI crashed when more than 30 same chars in a row, prevent search and return empt result
+	      if (/(.)\1{15,}/.test(query)) {
+	        query = '';
+	      }
 	      result = self.sifter.search(query, Object.assign(options, {
 	        score: calculateScore
 	      }));
@@ -3445,6 +3455,11 @@
 	          self.close();
 	        } else if (!self.isPending) {
 	          self.positionDropdown();
+	        }
+
+	        //remove input value when enabled
+	        if (self.settings.clearAfterSelect) {
+	          self.setTextboxValue();
 	        }
 	        self.trigger('item_add', hashed, item);
 	        if (!self.isPending) {
