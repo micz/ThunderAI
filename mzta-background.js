@@ -111,6 +111,13 @@ browser.composeScripts.register({
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }],
+    css: [{ file: "messageDisplay/message-content-styles.css" }]
+});
+
+// Register our new ThunderAI summary script
+messenger.messageDisplayScripts.register({
+    js: [{ file: "messageDisplay/message-content-script.js" }],
+    css: [{ file: "messageDisplay/message-content-styles.css" }]
 });
 
 // Inject script and CSS in all already open message tabs.
@@ -126,6 +133,13 @@ for (let messageTab of messageTabs) {
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
         })
+        // Inject our ThunderAI summary script
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "messageDisplay/message-content-script.js"
+        })
+        await browser.tabs.insertCSS(messageTab.id, {
+            file: "messageDisplay/message-content-styles.css"
+        });
     } catch (error) {
         console.error("[ThunderAI] Error injecting message display script:", error);
         console.error("[ThunderAI] Message tab:", messageTab.url);
@@ -234,6 +248,38 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
+            case 'generate_summary':
+                async function _generate_summary(message) {
+                    try {
+                        // Get user preferences for AI connection
+                        let prefs = await browser.storage.sync.get({
+                            connection_type: prefs_default.connection_type,
+                            chatgpt_model: prefs_default.chatgpt_model,
+                            chatgpt_api_key: prefs_default.chatgpt_api_key,
+                            do_debug: prefs_default.do_debug
+                        });
+
+                        // Use the existing ThunderAI infrastructure
+                        // We need to adapt to the new v3.8.0 settings structure
+                        const summary = await generateAISummaryUsingThunderAIInfrastructure(
+                            message.content,
+                            message.prompt,
+                            {
+                                ...prefs,
+                                // Add the dynamic settings that the new system expects
+                                connection_type: prefs.connection_type,
+                                // For summary, we don't have specific integration settings yet,
+                                // so we'll use the global connection type
+                            }
+                        );
+
+                        return { summary: summary };
+                    } catch (error) {
+                        console.error("[ThunderAI] Error generating summary:", error);
+                        return { error: "Failed to generate AI summary. Please confirm your settings and try again." };
+                    }
+                }
+                return _generate_summary(message);
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
@@ -1343,4 +1389,80 @@ async function processEmails(args) {
     taWorkingStatus.stopWorking();
 }
 
+
+
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+
+/**
+ * AI summary generation function using ThunderAI infrastructure
+ */
+async function generateAISummaryUsingThunderAIInfrastructure(content, prompt, prefs) {
+    // Import the special command class
+    const { mzta_specialCommand } = await import('./js/mzta-special-commands.js');
+
+    // Create a prompt config for summary (similar to how other features do it)
+    // This adapts to the new v3.8.0 dynamic settings system
+    const summaryPromptConfig = {
+        id: 'auto_summary',
+        name: 'Auto Summary',
+        model: '', // Model will be determined by getConnectionType
+        connection_type: prefs.connection_type
+    };
+
+    // Determine which LLM to use based on user preferences using the new v3.8.0 pattern
+    const llmType = getConnectionType(prefs, summaryPromptConfig, 'auto_summary');
+
+    // Get the appropriate model based on the connection type using dynamic settings
+    let model = '';
+    if (prefs.connection_type === 'chatgpt_api') {
+        model = prefs.chatgpt_model;
+    } else if (prefs.connection_type === 'ollama_api') {
+        model = prefs.ollama_model;
+    } else if (prefs.connection_type === 'openai_comp_api') {
+        model = prefs.openai_comp_model;
+    } else if (prefs.connection_type === 'google_gemini_api') {
+        model = prefs.google_gemini_model;
+    } else if (prefs.connection_type === 'anthropic_api') {
+        model = prefs.anthropic_model;
+    }
+
+    // Create a special command instance with the correct v3.8.0 pattern
+    const summaryCommand = new mzta_specialCommand({
+        prompt: prompt,
+        llm: llmType,
+        custom_model: model,
+        do_debug: prefs.do_debug,
+        config: summaryPromptConfig
+    });
+
+    try {
+        // Initialize the worker
+        await summaryCommand.initWorker();
+
+        // Send the prompt and get the AI response
+        const aiResponse = await summaryCommand.sendPrompt();
+
+        // Clean up the response - extract just the summary content
+        const cleanedResponse = cleanAISummaryResponse(aiResponse);
+
+        return cleanedResponse;
+    } catch (error) {
+        console.error("[ThunderAI] Error in AI summary generation:", error);
+        throw error; // Re-throw to be handled by the caller
+    }
+}
+
+/**
+ * Helper function to clean AI response
+ */
+function cleanAISummaryResponse(response) {
+    // Remove any markdown formatting or code blocks
+    let cleaned = response.replace(/```[\s\S]*?```/g, '');
+    cleaned = cleaned.replace(/[\*#_~`]/g, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+    // Remove any "Summary:" prefixes that the AI might add
+    cleaned = cleaned.replace(/^Summary:\s*/i, '');
+
+    return cleaned;
+}

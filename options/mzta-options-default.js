@@ -134,6 +134,7 @@ export const prefs_default = {
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    auto_summary_enabled: false,         // Enable automatic AI summarization for message previews
     spamfilter_show_msg_panel: true,
     summarize: false,
     ...generated_prefs
