@@ -48,7 +48,11 @@ jobs:
                 owner,
                 repo,
                 title: issueTitle,
-                body: `Update Tom Select to version  **${latestTag}**. https://github.com/orchidjs/tom-select/releases`
+                body: `Update Tom Select to version  **${latestTag}**.
+
+                https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/js/tom-select.base.js
+                
+                https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/css/tom-select.default.min.css`
               });
               core.info(`New issue created for version ${latestTag}.`);
             }
