@@ -1421,5 +1421,11 @@
     },
     "spam_check_in_progress": {
         "message": "Skräppostkontroll pågår..."
+    },
+    "prefs_THStats_1": {
+        "message": "Vill du ha snygg statistik om dina e-postmeddelanden?"
+    },
+    "prefs_THStats_2": {
+        "message": "Klicka här! Testa ThunderStats!"
     }
 }
