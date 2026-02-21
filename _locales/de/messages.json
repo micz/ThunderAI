@@ -1302,5 +1302,146 @@
     },
     "prefs_anthropic_temperature_Info": {
         "message": "Grad der Zufälligkeit in der Antwort. Der Standardwert ist 1,0. Der Bereich liegt zwischen 0,0 und 1,0. Verwenden Sie eine Temperatur näher an 0,0 für analytische Aufgaben oder Multiple-Choice-Fragen und näher an 1,0 für kreative und generative Aufgaben. Beachten Sie, dass die Ergebnisse selbst bei einer Temperatur von 0,0 nicht vollständig deterministisch sind."
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "E-Mail-Inhalt oder markierter Text"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "E-Mail-Inhalt oder markiertes HTML"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Wartezeit für das Laden der Seite"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Wartezeit in Millisekunden, bis die ChatGPT-Seite geladen ist, bevor zusätzliche Inhalte geladen werden. Der Standardwert beträgt 1000 ms. Falls un Custom GPT oder ein Project definiert ist, werden diesem Wert zusätzliche 1000 ms hinzugefügt."
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Termin aus Zwischenablage erstellen"
+    },
+    "clipboard_read_error": {
+        "message": "Zwischenablage konnte nicht gelesen werden. Bitte Berechtigungen prüfen."
+    },
+    "clipboard_empty_error": {
+        "message": "Zwischenablage leer. Bitte kopieren Sie zuerst einen Text."
+    },
+    "clipboard_permission_denied": {
+        "message": "Zugriff auf die Zwischenablage wurde verweigert. Bitte aktiviere die Funktion in den Einstellungen erneut, um die Berechtigung zu erteilen."
+    },
+    "clipboard_permission_error": {
+        "message": "Fehler bei der Berechtigungsanfrage. Bitte erneut versuchen."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Termin aus Zwischenablage abrufen"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Zusätzlichen Menüpunkt einblenden: Kalendertermine aus Zwischenablagen-Text erstellen."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Zusammenfassungseinstellungen"
+    },
+    "prompt_summarize": {
+        "message": "Diese E-Mail o. E-Mails zusammenfassen"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Du bist ein Assistent, der E-Mail-Konversationen zusammenfasst.\n\nErstelle aus einem E-Mail-Verlauf eine prägnante und präzise Zusammenfassung, die Folgendes enthält:\n\n- Das Hauptthema oder den Zweck der Konversation\n- Wichtige Entscheidungen, Schlussfolgerungen oder Vereinbarungen\n- Wichtige Fragen, Anfragen oder Aufgaben (Action Items)\n- Die verantwortliche Person für jede Aufgabe (falls angegeben)\n\nLasse Begrüßungen, Signaturen, zitierten Text und redundantes Hin- und Her weg.\nFüge keine Annahmen oder Informationen hinzu, die nicht in den E-Mails enthalten sind.\n\nVerfasse die Zusammenfassung in einer klaren, neutralen Sprache, die für vielbeschäftigte Fachkräfte geeignet ist."
+    },
+    "prompt_summarize_email_template": {
+        "message": "Vorlage für E-Mail-Zusammenfassung"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Von: {%author%}\nAn: {%recipients%}\nCC: {%cc_list%}\nBetreff: {%mail_subject%}\nDatum: {%mail_datetime%}\nAnhänge:\n{%mail_attachments_info%}\n\nInhalt:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "E-Mail-Separator"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- NÄCHSTE E-MAIL ----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Sie können den Prompt nach Belieben anpassen: Das erste Feld ist der Haupt-Prompt, das zweite Feld ist die Vorlage für eine einzelne E-Mail. Die Liste der E-Mails wird an den Haupt-Prompt angehängt. Die E-Mails werden durch das im dritten Feld angegebene Trennzeichen voneinander getrennt."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Der Haupt-Prompt, der die Aufgabe für alle ausgewählten E-Mails beschreibt:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Die Vorlage für eine einzelne E-Mail:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Das Trennzeichen zwischen E-Mails:"
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Wenn aktiviert, werden das unten angegebene Modell und die API zum Erstellen von Kalenderereignissen verwendet, unabhängig von der Auswahl auf der ThunderAI-Optionsseite."
+    },
+    "prefs_OptionText_summarize": {
+        "message": "E-Mail zusammenfassen"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Wenn aktiviert, werden das unten angegebene Modell und die API zum Zusammenfassen von E-Mails verwendet, unabhängig von der Auswahl auf der ThunderAI-Optionsseite."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Wenn aktiviert, wird dem Kontextmenü eine Option zum Zusammenfassen von E-Mails hinzugefügt."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Zusammenfassung verwalten"
+    },
+    "Summarize_PageTitle": {
+        "message": "Zusammenfassungseinstellungen verwalten"
+    },
+    "Summarize_info_default": {
+        "message": "Auf dieser Seite können Sie den Standard-Prompt für die Zusammenfassung von E-Mails bearbeiten."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Aktueller Prompt-Text"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Spam-Bericht-Panel anzeigen"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Wenn aktiviert, wird oben über der Nachricht ein Panel mit dem Spam-Bericht angezeigt."
+    },
+    "SpamReport_infoline": {
+        "message": "Diese Informationen werden nur für die aktuelle Sitzung gespeichert."
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Zulässig"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Zusammenfassen"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Klicken Sie auf die untenstehende Schaltfläche, um dem aktuellen Host die Berechtigung zu erteilen und CORS-Probleme zu vermeiden."
+    },
+    "CORS_give_host_perm": {
+        "message": "Berechtigung für den aktuellen Host erteilen"
+    },
+    "CORS_localhost_warn": {
+        "message": "Wenn Sie localhost oder 127.0.0.1 verwenden, da der KI-Server auf Ihrem PC gehostet wird, ist die Berechtigung <all_urls> erforderlich."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Möchten Sie die API-Einstellungen in den Export einbeziehen? Bitte beachten Sie, dass auch der API-Schlüssel in der Datei gespeichert wird!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Nicht zur Textauswahl auffordern"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Wenn aktiviert, ist keine Textauswahl erforderlich. Der gesamte Nachrichtentext wird verwendet, um das Kalenderereignis zu erstellen."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Kopieren"
+    },
+    "copy_text": {
+        "message": "kopie"
+    },
+    "spam_check_in_progress": {
+        "message": "Spam-Prüfung läuft..."
+    },
+    "prefs_THStats_1": {
+        "message": "Möchtest du schöne Statistiken zu deinen E-Mails erhalten?"
+    },
+    "prefs_THStats_2": {
+        "message": "Hier klicken! Probiere ThunderStats aus!"
     }
 }
