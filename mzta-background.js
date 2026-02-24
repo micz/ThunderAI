@@ -63,6 +63,7 @@ import {
     getSpecialPrompts
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
+import { taSummaryCache } from './js/mzta-summary-cache.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
@@ -110,17 +111,10 @@ browser.composeScripts.register({
 
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/mzta-compose-script.js" }],
-    css: [{ file: "messageDisplay/message-content-styles.css" }]
+    js: [{ file: "js/mzta-compose-script.js" }]
 });
 
-// Register our new ThunderAI summary script
-messenger.messageDisplayScripts.register({
-    js: [{ file: "messageDisplay/message-content-script.js" }],
-    css: [{ file: "messageDisplay/message-content-styles.css" }]
-});
-
-// Inject script and CSS in all already open message tabs.
+// Inject script in all already open message tabs.
 let openTabs = await messenger.tabs.query();
 let messageTabs = openTabs.filter(
     tab => ["mail", "messageDisplay"].includes(tab.type)
@@ -133,13 +127,6 @@ for (let messageTab of messageTabs) {
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
         })
-        // Inject our ThunderAI summary script
-        await browser.tabs.executeScript(messageTab.id, {
-            file: "messageDisplay/message-content-script.js"
-        })
-        await browser.tabs.insertCSS(messageTab.id, {
-            file: "messageDisplay/message-content-styles.css"
-        });
     } catch (error) {
         console.error("[ThunderAI] Error injecting message display script:", error);
         console.error("[ThunderAI] Message tab:", messageTab.url);
@@ -248,38 +235,60 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
-            case 'generate_summary':
-                async function _generate_summary(message) {
+            case 'initSummary':
+                async function _initSummary() {
                     try {
-                        // Get user preferences for AI connection
-                        let prefs = await browser.storage.sync.get({
-                            connection_type: prefs_default.connection_type,
-                            chatgpt_model: prefs_default.chatgpt_model,
-                            chatgpt_api_key: prefs_default.chatgpt_api_key,
-                            do_debug: prefs_default.do_debug
-                        });
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ summarize_auto: 0 });
+                        if (prefs.summarize_auto === 0) return;
 
-                        // Use the existing ThunderAI infrastructure
-                        // We need to adapt to the new v3.8.0 settings structure
-                        const summary = await generateAISummaryUsingThunderAIInfrastructure(
-                            message.content,
-                            message.prompt,
-                            {
-                                ...prefs,
-                                // Add the dynamic settings that the new system expects
-                                connection_type: prefs.connection_type,
-                                // For summary, we don't have specific integration settings yet,
-                                // so we'll use the global connection type
-                            }
-                        );
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
 
-                        return { summary: summary };
-                    } catch (error) {
-                        console.error("[ThunderAI] Error generating summary:", error);
-                        return { error: "Failed to generate AI summary. Please confirm your settings and try again." };
+                        let cachedSummary = await taSummaryCache.loadSummary(message.headerMessageId);
+                        if (cachedSummary && !cachedSummary.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                            return;
+                        }
+
+                        if (await taSummaryCache.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                            return;
+                        }
+
+                        if (prefs.summarize_auto === 1) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
+                        } else if (prefs.summarize_auto === 2) {
+                            _generateSummaryForMessage(message.headerMessageId, tabId);
+                        }
+                    } catch (e) {
+                        taLog.error("Error in initSummary: " + e);
                     }
                 }
-                return _generate_summary(message);
+                _initSummary();
+                break;
+            case 'triggerSummaryGeneration':
+                async function _triggerSummaryGeneration(message) {
+                    let tabId = sender.tab.id;
+                    browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                }
+                _triggerSummaryGeneration(message);
+                break;
+            case 'generate_summary':
+                async function _generate_summary(message) {
+                    await _generateSummaryForMessage(message.headerMessageId, message.tabId);
+                }
+                _generate_summary(message);
+                break;
+            case 'refreshSummary':
+                async function _refreshSummary(message) {
+                    let tabId = sender.tab.id;
+                    await taSummaryCache.removeSummary(message.headerMessageId);
+                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                }
+                _refreshSummary(message);
+                break;
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
@@ -433,9 +442,82 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
         }
     }
-    // Return false if the message was not handled by this listener.
     return false;
 });
+
+async function _generateSummaryForMessage(headerMessageId, tabId) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedSummary = await taSummaryCache.loadSummary(headerMessageId);
+        if (cachedSummary && !cachedSummary.error) {
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+            return;
+        }
+
+        if (await taSummaryCache.isProcessing(headerMessageId)) {
+            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+            return;
+        }
+
+        await taSummaryCache.setProcessing(headerMessageId);
+        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            await taSummaryCache.saveError(headerMessageId, "Message not found");
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+            return;
+        }
+
+        const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+        const mailBody = getMailBody(fullMessage);
+        let bodyText = htmlBodyToPlainText(mailBody.html);
+        if (bodyText.length === 0) {
+            bodyText = mailBody.text.replace(/\s+/g, ' ').trim();
+        }
+
+        const promptText = browser.i18n.getMessage('auto_summary_prompt') + bodyText;
+
+        const connectionType = getConnectionType(prefs, {}, 'summarize');
+        
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
+            await taSummaryCache.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            return;
+        }
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+        const cleanedSummary = aiResponse.replace(/\s+/g, ' ').trim();
+
+        const summaryData = {
+            summary: cleanedSummary,
+            summary_date: new Date(),
+            headerMessageId: headerMessageId
+        };
+        await taSummaryCache.saveSummary(summaryData, headerMessageId);
+        browser.tabs.sendMessage(tabId, { command: "showSummary", data: summaryData });
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating summary:", error);
+        await taSummaryCache.saveError(headerMessageId, error.message || String(error));
+        browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+    }
+}
 
 // Listen for messages from ThunderAI-Sparks
 browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
@@ -1392,77 +1474,3 @@ async function processEmails(args) {
 
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
-
-/**
- * AI summary generation function using ThunderAI infrastructure
- */
-async function generateAISummaryUsingThunderAIInfrastructure(content, prompt, prefs) {
-    // Import the special command class
-    const { mzta_specialCommand } = await import('./js/mzta-special-commands.js');
-
-    // Create a prompt config for summary (similar to how other features do it)
-    // This adapts to the new v3.8.0 dynamic settings system
-    const summaryPromptConfig = {
-        id: 'auto_summary',
-        name: 'Auto Summary',
-        model: '', // Model will be determined by getConnectionType
-        connection_type: prefs.connection_type
-    };
-
-    // Determine which LLM to use based on user preferences using the new v3.8.0 pattern
-    const llmType = getConnectionType(prefs, summaryPromptConfig, 'auto_summary');
-
-    // Get the appropriate model based on the connection type using dynamic settings
-    let model = '';
-    if (prefs.connection_type === 'chatgpt_api') {
-        model = prefs.chatgpt_model;
-    } else if (prefs.connection_type === 'ollama_api') {
-        model = prefs.ollama_model;
-    } else if (prefs.connection_type === 'openai_comp_api') {
-        model = prefs.openai_comp_model;
-    } else if (prefs.connection_type === 'google_gemini_api') {
-        model = prefs.google_gemini_model;
-    } else if (prefs.connection_type === 'anthropic_api') {
-        model = prefs.anthropic_model;
-    }
-
-    // Create a special command instance with the correct v3.8.0 pattern
-    const summaryCommand = new mzta_specialCommand({
-        prompt: prompt,
-        llm: llmType,
-        custom_model: model,
-        do_debug: prefs.do_debug,
-        config: summaryPromptConfig
-    });
-
-    try {
-        // Initialize the worker
-        await summaryCommand.initWorker();
-
-        // Send the prompt and get the AI response
-        const aiResponse = await summaryCommand.sendPrompt();
-
-        // Clean up the response - extract just the summary content
-        const cleanedResponse = cleanAISummaryResponse(aiResponse);
-
-        return cleanedResponse;
-    } catch (error) {
-        console.error("[ThunderAI] Error in AI summary generation:", error);
-        throw error; // Re-throw to be handled by the caller
-    }
-}
-
-/**
- * Helper function to clean AI response
- */
-function cleanAISummaryResponse(response) {
-    // Remove any markdown formatting or code blocks
-    let cleaned = response.replace(/```[\s\S]*?```/g, '');
-    cleaned = cleaned.replace(/[\*#_~`]/g, '');
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-
-    // Remove any "Summary:" prefixes that the AI might add
-    cleaned = cleaned.replace(/^Summary:\s*/i, '');
-
-    return cleaned;
-}

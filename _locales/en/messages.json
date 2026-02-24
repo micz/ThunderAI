@@ -1910,5 +1910,49 @@
    "spam_check_in_progress": {
       "message": "Spam check in progress...",
       "description": ""
-  }
-}
+  },
+  "prefs_OptionText_summarize_auto": {
+      "message": "Auto-summarize messages",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_disabled": {
+      "message": "Disabled",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_manual": {
+      "message": "Show summary button",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_automatic": {
+      "message": "Generate automatically",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_Info": {
+      "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
+      "description": ""
+  },
+  "summarize_title": {
+      "message": "Summary",
+      "description": ""
+  },
+  "summarize_generating": {
+      "message": "Generating summary...",
+      "description": ""
+  },
+  "summarize_error": {
+      "message": "Failed to generate summary",
+      "description": ""
+  },
+  "summarize_click_to_generate": {
+      "message": "Click here to generate a summary",
+      "description": ""
+  },
+   "summarize_chatgpt_web_not_supported": {
+       "message": "Auto-summary requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+       "description": ""
+   },
+   "summarize_refresh": {
+       "message": "Refresh summary",
+       "description": ""
+   }
+ }
