@@ -98,6 +98,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     get_calendar_event_no_selection.addEventListener('change', async (event) => {
+        if (event.target.checked) {
+            const currentPromptText = get_calendar_event_textarea.value;
+            const hasBodyOrSelected = currentPromptText.includes('{%mail_text_body_or_selected%}') || currentPromptText.includes('{%mail_html_body_or_selected%}');
+            if (!hasBodyOrSelected) {
+                alert(browser.i18n.getMessage('prefs_OptionText_calendar_no_selection_missing_placeholder'));
+                event.target.checked = false;
+                return;
+            }
+        }
         specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event').need_selected = event.target.checked ? '0' : '1';
         await setSpecialPrompts(specialPrompts);
         browser.runtime.sendMessage({command: "reload_menus"});

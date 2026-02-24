@@ -26,6 +26,10 @@
         <li><i>[ChatGPT Web]</i> Added an option to define a custom time to wait for the page load. Sometimes, on slow PCs, the ChatGPT page loads slowly and ThunderAI inject its content too early. With this option you can adjust the waiting time [<a href="https://github.com/micz/ThunderAI/issues/634">#634</a>].</li>
         <li>...</li>
       </ul>
+<h2>Version 3.8.5 - 22/02/2026</h2>
+      <ul>
+        <li>Fix: Correctly showing email addresses when using mail headers in data placeholders [<a href="https://github.com/micz/ThunderAI/issues/672">#672</a>].</li>
+      </ul>
 <h2>Version 3.8.4 - 10/02/2026</h2>
       <ul>
         <li><i>[ChatGPT Web]</i> Fix: Correctly importing the selected text into the compose windows also when ChatGPT shows the advanced mail editor in the response [<a href="https://github.com/micz/ThunderAI/issues/646">#646</a>].</li>

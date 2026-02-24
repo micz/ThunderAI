@@ -207,7 +207,8 @@ export async function getMailHeader(curr_message, mail_header_id) {
   let full_message = await browser.messages.getFull(curr_message.id);
   // console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
   if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
-    mail_header_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+    const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+    mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
   }
   // console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
   return mail_header_value;
@@ -216,6 +217,12 @@ export async function getMailHeader(curr_message, mail_header_id) {
 export function sanitizeHtml(input) {
   // Keep only <br> tags and remove all other HTML tags
   return input.replace(/<(?!br\s*\/?)[^>]+>/gi, '');
+}
+
+export function sanitizeMailHeaders(input){
+  console.log(">>>>>>>>>>>> sanitizeMailHeaders input: " + JSON.stringify(input));
+  if(!input) return '';
+  return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export function stripHtmlKeepLines(htmlString) {

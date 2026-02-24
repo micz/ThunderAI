@@ -66,6 +66,13 @@ messagesInputStyle.textContent = `
         border-radius: 5px;
         padding: 5px;
         background: #F2F2F2;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    #statusLoggerImg{
+        display: none;
+        vertical-align: middle;
     }
     #mzta-custom_text{
         padding:10px;
@@ -183,8 +190,14 @@ messageInputTemplate.content.appendChild(stopButton);
 
 const statusLogger = document.createElement('div');
 statusLogger.id = 'statusLogger';
-statusLogger.textContent = '';
 statusLogger.style.display = 'none';
+const statusLoggerImg = document.createElement('img');
+statusLoggerImg.id = 'statusLoggerImg';
+statusLoggerImg.src = browser.runtime.getURL('/images/mzta-loading.svg');
+statusLogger.appendChild(statusLoggerImg);
+const statusLoggerText = document.createElement('span');
+statusLoggerText.id = 'statusLoggerText';
+statusLogger.appendChild(statusLoggerText);
 messageInputTemplate.content.appendChild(statusLogger);
 
 //div per custom text
@@ -227,6 +240,8 @@ class MessageInput extends HTMLElement {
         this._sendButton = shadowRoot.querySelector('#sendButton');
         this._stopButton = shadowRoot.querySelector('#stopButton');
         this._statusLogger = shadowRoot.querySelector('#statusLogger');
+        this._statusLoggerImg = shadowRoot.querySelector('#statusLoggerImg');
+        this._statusLoggerText = shadowRoot.querySelector('#statusLoggerText');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
@@ -284,15 +299,16 @@ class MessageInput extends HTMLElement {
     }
 
     setStatusMessage(message) {
-        this._statusLogger.textContent = message;
+        this._statusLoggerText.textContent = message;
     }
 
     showStatusMessage() {
-        this._statusLogger.style.display = 'block';
+        this._statusLogger.style.display = 'flex';
     }
 
     hideStatusMessage() {
         this._statusLogger.style.display = 'none';
+        this._statusLoggerImg.style.display = 'none';
     }
 
     _handleKeyDown(event) {
@@ -328,6 +344,7 @@ class MessageInput extends HTMLElement {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
         this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
+        this._statusLoggerImg.style.display = 'inline';
         this.showStatusMessage();
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }

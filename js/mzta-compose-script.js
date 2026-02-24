@@ -641,8 +641,13 @@ switch (message.command) {
       loadingImg.src = browser.runtime.getURL("/images/loading.gif");
       loadingImg.style.cssText = "height: 16px; width: 16px;";
 
+      const brandingProgress = document.createElement('span');
+      brandingProgress.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+      brandingProgress.style.cssText = 'margin-left: auto; font-style: italic; font-size: 11px; opacity: 0.7;';
+
       containerProgress.appendChild(loadingImg);
       containerProgress.appendChild(textProgress);
+      containerProgress.appendChild(brandingProgress);
 
       document.body.insertBefore(containerProgress, document.body.firstChild);
       return Promise.resolve(true);
@@ -693,9 +698,13 @@ switch (message.command) {
         reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
     }
 
+    const branding = document.createElement('span');
+    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 11px; opacity: 0.7;';
+
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
-    closeBtn.style.cssText = 'margin-left: auto; cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
+    closeBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
     closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
     closeBtn.onclick = function() {
         container.remove();
@@ -704,6 +713,7 @@ switch (message.command) {
 
     container.appendChild(scoreText);
     container.appendChild(reasonText);
+    container.appendChild(branding);
     container.appendChild(closeBtn);
 
     document.body.insertBefore(container, document.body.firstChild);

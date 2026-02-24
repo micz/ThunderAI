@@ -1020,7 +1020,8 @@ function handleCopyClick(e) {
 
     // Show form
     document.getElementById('formNew').style.display = 'block';
-    
+    document.getElementById('btnNew').disabled = true;
+
     // Scroll to top
     window.scrollTo({
         top: 0,
