@@ -798,6 +798,9 @@ switch (message.command) {
     const existingSummary = document.getElementById('mzta-summary-banner');
     if(existingSummary) existingSummary.remove();
 
+    const existingTrigger = document.getElementById('mzta-summary-trigger');
+    if(existingTrigger) existingTrigger.remove();
+
     const isDarkGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     let bgColorGen = isDarkGen ? '#2a2a2a' : '#f0f0f0';
@@ -844,6 +847,8 @@ switch (message.command) {
     triggerContainer.appendChild(triggerText);
     triggerContainer.onclick = async () => {
         triggerContainer.onclick = null;
+        triggerContainer.id = 'mzta-summary-generating';
+        triggerContainer.style.cursor = 'default';
         triggerText.textContent = browser.i18n.getMessage("summarize_generating");
         browser.runtime.sendMessage({ 
             command: "triggerSummaryGeneration", 

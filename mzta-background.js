@@ -270,7 +270,6 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerSummaryGeneration':
                 async function _triggerSummaryGeneration(message) {
                     let tabId = sender.tab.id;
-                    browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
                 _triggerSummaryGeneration(message);
