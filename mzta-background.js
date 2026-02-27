@@ -501,7 +501,10 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
 
         await cmd.initWorker();
         const aiResponse = await cmd.sendPrompt();
-        const cleanedSummary = aiResponse.replace(/\s+/g, ' ').trim();
+        let cleanedSummary = aiResponse.replace(/```[\s\S]*?```/g, '');
+        cleanedSummary = cleanedSummary.replace(/[\*#_~`]/g, '');
+        cleanedSummary = cleanedSummary.replace(/\s+/g, ' ').trim();
+        cleanedSummary = cleanedSummary.replace(/^Summary:\s*/i, '');
 
         const summaryData = {
             summary: cleanedSummary,
