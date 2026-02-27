@@ -63,6 +63,7 @@ import {
     getSpecialPrompts
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
+import { taSummaryCache } from './js/mzta-summary-cache.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
@@ -110,10 +111,10 @@ browser.composeScripts.register({
 
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/mzta-compose-script.js" }],
+    js: [{ file: "js/mzta-compose-script.js" }]
 });
 
-// Inject script and CSS in all already open message tabs.
+// Inject script in all already open message tabs.
 let openTabs = await messenger.tabs.query();
 let messageTabs = openTabs.filter(
     tab => ["mail", "messageDisplay"].includes(tab.type)
@@ -234,6 +235,59 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
+            case 'initSummary':
+                async function _initSummary() {
+                    try {
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ summarize_auto: 0 });
+                        if (prefs.summarize_auto === 0) return;
+
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+
+                        let cachedSummary = await taSummaryCache.loadSummary(message.headerMessageId);
+                        if (cachedSummary && !cachedSummary.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                            return;
+                        }
+
+                        if (await taSummaryCache.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                            return;
+                        }
+
+                        if (prefs.summarize_auto === 1) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
+                        } else if (prefs.summarize_auto === 2) {
+                            _generateSummaryForMessage(message.headerMessageId, tabId);
+                        }
+                    } catch (e) {
+                        taLog.error("Error in initSummary: " + e);
+                    }
+                }
+                _initSummary();
+                break;
+            case 'triggerSummaryGeneration':
+                async function _triggerSummaryGeneration(message) {
+                    let tabId = sender.tab.id;
+                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                }
+                _triggerSummaryGeneration(message);
+                break;
+            case 'generate_summary':
+                async function _generate_summary(message) {
+                    await _generateSummaryForMessage(message.headerMessageId, message.tabId);
+                }
+                _generate_summary(message);
+                break;
+            case 'refreshSummary':
+                async function _refreshSummary(message) {
+                    let tabId = sender.tab.id;
+                    await taSummaryCache.removeSummary(message.headerMessageId);
+                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                }
+                _refreshSummary(message);
+                break;
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
@@ -387,9 +441,85 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
         }
     }
-    // Return false if the message was not handled by this listener.
     return false;
 });
+
+async function _generateSummaryForMessage(headerMessageId, tabId) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedSummary = await taSummaryCache.loadSummary(headerMessageId);
+        if (cachedSummary && !cachedSummary.error) {
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+            return;
+        }
+
+        if (await taSummaryCache.isProcessing(headerMessageId)) {
+            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+            return;
+        }
+
+        await taSummaryCache.setProcessing(headerMessageId);
+        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            await taSummaryCache.saveError(headerMessageId, "Message not found");
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+            return;
+        }
+
+        const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+        const mailBody = getMailBody(fullMessage);
+        let bodyText = htmlBodyToPlainText(mailBody.html);
+        if (bodyText.length === 0) {
+            bodyText = mailBody.text.replace(/\s+/g, ' ').trim();
+        }
+
+        const promptText = browser.i18n.getMessage('auto_summary_prompt') + bodyText;
+
+        const connectionType = getConnectionType(prefs, {}, 'summarize');
+        
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
+            await taSummaryCache.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            return;
+        }
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+        let cleanedSummary = aiResponse.replace(/```[\s\S]*?```/g, '');
+        cleanedSummary = cleanedSummary.replace(/[\*#_~`]/g, '');
+        cleanedSummary = cleanedSummary.replace(/\s+/g, ' ').trim();
+        cleanedSummary = cleanedSummary.replace(/^Summary:\s*/i, '');
+
+        const summaryData = {
+            summary: cleanedSummary,
+            summary_date: new Date(),
+            headerMessageId: headerMessageId
+        };
+        await taSummaryCache.saveSummary(summaryData, headerMessageId);
+        browser.tabs.sendMessage(tabId, { command: "showSummary", data: summaryData });
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating summary:", error);
+        await taSummaryCache.saveError(headerMessageId, error.message || String(error));
+        browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+    }
+}
 
 // Listen for messages from ThunderAI-Sparks
 browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
@@ -1342,5 +1472,7 @@ async function processEmails(args) {
 
     taWorkingStatus.stopWorking();
 }
+
+
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);

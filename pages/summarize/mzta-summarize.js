@@ -194,8 +194,11 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
-        // console.log(">>>>>>>>>> Saving option [select-one]: " + element.id + " = " + element.value);
-        options[element.id] = element.value;
+        if (element.id === 'summarize_auto') {
+          options[element.id] = parseInt(element.value, 10);
+        } else {
+          options[element.id] = element.value;
+        }
         break;
       case 'textarea':
         options[element.id] = normalizeStringList(element.value);
@@ -231,10 +234,13 @@ async function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-            let default_select_value = '';
-            const restoreValue = result[element.id] || default_select_value;
+            let default_select_value = 0;
+            if (element.id === 'summarize_auto') {
+              default_select_value = prefs_default.summarize_auto;
+            }
+            const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
-            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
             // If it doesn't exist and restoreValue is not empty, create it
             if (!optionExists && restoreValue !== '') {
               let newOption = new Option(restoreValue, restoreValue);
@@ -243,7 +249,7 @@ async function restoreOptions() {
             // Set value
             element.value = restoreValue;
             if (element.value === '') {
-              element.selectedIndex = -1;
+              element.selectedIndex = 0;
             }
             if (element.tomselect) {
               element.tomselect.setValue(element.value, true);
