@@ -238,14 +238,24 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
             case 'chatgpt_close':
-                    browser.windows.remove(message.window_id).then(() => {
-                        taLog.log("ChatGPT window closed successfully.");
-                        return true;
-                    }).catch((error) => {
-                        taLog.error("Error closing ChatGPT window:", error);
-                        return false;
-                    });
-                    break;
+                    async function _closeChatGptWindow(window_id) {
+                        let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
+                        if(prefs_close.chatgpt_win_save_position){
+                            try {
+                                let winInfo = await browser.windows.get(window_id);
+                                await browser.storage.sync.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
+                            } catch(e) {
+                                taLog.error("Error saving window position: " + e);
+                            }
+                        }
+                        return browser.windows.remove(window_id).then(() => {
+                            taLog.log("ChatGPT window closed successfully.");
+                        }).catch((error) => {
+                            taLog.error("Error closing ChatGPT window:", error);
+                        });
+                    }
+                    return _closeChatGptWindow(message.window_id);
             case 'chatgpt_replaceSelectedText':
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
@@ -477,6 +487,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options.width = prefs.chatgpt_win_width,
                 win_options.height = prefs.chatgpt_win_height
             }
+            applyWindowPosition(win_options, prefs);
 
             const listener = (message, sender, sendResponse) => {
                 async function handleChatGptWeb(createdTab) {
@@ -580,6 +591,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options2.width = prefs.chatgpt_win_width,
                 win_options2.height = prefs.chatgpt_win_height
             }
+            applyWindowPosition(win_options2, prefs);
 
             await browser.windows.create(win_options2);
         }
@@ -631,6 +643,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options5.width = prefs.chatgpt_win_width,
                 win_options5.height = prefs.chatgpt_win_height
             }
+            applyWindowPosition(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -689,6 +702,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options3.width = prefs.chatgpt_win_width,
                 win_options3.height = prefs.chatgpt_win_height
             }
+            applyWindowPosition(win_options3, prefs);
 
             await browser.windows.create(win_options3);
 
@@ -742,7 +756,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options4.width = prefs.chatgpt_win_width,
                 win_options4.height = prefs.chatgpt_win_height
             }
-    
+            applyWindowPosition(win_options4, prefs);
+
             await browser.windows.create(win_options4);
         }
         break;  // openai_comp_api - END
@@ -797,6 +812,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 win_options5.width = prefs.chatgpt_win_width,
                 win_options5.height = prefs.chatgpt_win_height
             }
+            applyWindowPosition(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -814,8 +830,17 @@ function checkScreenDimensions(prefs){
 
     if(prefs.chatgpt_win_height > height) prefs.chatgpt_win_height = height - 50;
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
-    
+
     return prefs;
+}
+
+function applyWindowPosition(win_options, prefs){
+    if(prefs.chatgpt_win_save_position && (prefs.chatgpt_win_top != 0) && (prefs.chatgpt_win_left != 0)){
+        win_options.top = prefs.chatgpt_win_top;
+        win_options.left = prefs.chatgpt_win_left;
+        taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
+    }
+    return win_options;
 }
 
 function doGetSparkFeature(spark_feature_active) {
