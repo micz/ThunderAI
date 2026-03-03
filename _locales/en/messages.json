@@ -1908,5 +1908,25 @@
   "prefs_THStats_2": {
     "message": "Click here! Try ThunderStats!",
     "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_pos_text":{
+    "message": "AI chat window position",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_top":{
+    "message": "Top",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_left":{
+    "message": "Left",
+    "description": ""
+  },
+  "prefs_chatgpt_win_save_position": {
+    "message": "Automatically save the window position when using the close button.",
+    "description": ""
+  },
+  "prefs_chatgpt_win_position_info":{
+    "message": "Leave empty to use the default position.",
+    "description": ""
   }
 }

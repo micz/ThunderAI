@@ -69,11 +69,7 @@ div#miczDescription p{
     margin-top: 0px;
 }
 
-input#chatgpt_win_width{
-    width: 100px;
-}
-
-input#chatgpt_win_height{
+input.win_prop{
     width: 100px;
 }
 
