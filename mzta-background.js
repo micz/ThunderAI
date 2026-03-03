@@ -804,7 +804,7 @@ function applyWindowPositionAndSize(win_options, prefs){
         win_options.height = prefs.chatgpt_win_height;
         taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
     }
-    if(prefs.chatgpt_win_save_position && (prefs.chatgpt_win_top != 0) && (prefs.chatgpt_win_left != 0)){
+    if(prefs.chatgpt_win_save_position && (prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
         win_options.top = prefs.chatgpt_win_top;
         win_options.left = prefs.chatgpt_win_left;
         taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
