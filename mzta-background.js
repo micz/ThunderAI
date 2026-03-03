@@ -481,13 +481,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
             
-            taLog.log("[chatgpt_web] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options.width = prefs.chatgpt_win_width,
-                win_options.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options, prefs);
+            applyWindowPositionAndSize(win_options, prefs);
 
             const listener = (message, sender, sendResponse) => {
                 async function handleChatGptWeb(createdTab) {
@@ -585,13 +579,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options2.width = prefs.chatgpt_win_width,
-                win_options2.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options2, prefs);
+            applyWindowPositionAndSize(win_options2, prefs);
 
             await browser.windows.create(win_options2);
         }
@@ -637,13 +625,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[google_gemini_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options5, prefs);
+            applyWindowPositionAndSize(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -696,13 +678,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[ollama_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options3.width = prefs.chatgpt_win_width,
-                win_options3.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options3, prefs);
+            applyWindowPositionAndSize(win_options3, prefs);
 
             await browser.windows.create(win_options3);
 
@@ -750,13 +726,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[openai_comp_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options4.width = prefs.chatgpt_win_width,
-                win_options4.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options4, prefs);
+            applyWindowPositionAndSize(win_options4, prefs);
 
             await browser.windows.create(win_options4);
         }
@@ -806,13 +776,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
-            }
-            applyWindowPosition(win_options5, prefs);
+            applyWindowPositionAndSize(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -834,7 +798,12 @@ function checkScreenDimensions(prefs){
     return prefs;
 }
 
-function applyWindowPosition(win_options, prefs){
+function applyWindowPositionAndSize(win_options, prefs){
+    if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+        win_options.width = prefs.chatgpt_win_width;
+        win_options.height = prefs.chatgpt_win_height;
+        taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
+    }
     if(prefs.chatgpt_win_save_position && (prefs.chatgpt_win_top != 0) && (prefs.chatgpt_win_left != 0)){
         win_options.top = prefs.chatgpt_win_top;
         win_options.left = prefs.chatgpt_win_left;
