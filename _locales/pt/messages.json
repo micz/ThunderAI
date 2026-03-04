@@ -156,7 +156,7 @@
         "message": "Responder"
     },
     "prompt_reply_custom_command": {
-        "message": "Responder com o comando"
+        "message": "Responder com o comando..."
     },
     "chatgpt_win_close": {
         "message": "Fechar"

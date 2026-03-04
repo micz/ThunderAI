@@ -1214,7 +1214,7 @@
         "message": "Antworten Sie auf die folgende E-Mail „{%mail_text_body%}“. {%additional_text%}. Antworten Sie nur mit dem erforderlichen Text und ohne zusätzliche Kommentare oder anderen Text."
     },
     "prompt_reply_custom_command": {
-        "message": "Mit Befehl antworten"
+        "message": "Mit Befehl antworten..."
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Bitte beachten Sie, dass alle <br>-Tags in der Antwort der KI durch Zeilenumbrüche ersetzt werden."
@@ -1449,5 +1449,32 @@
     },
     "antispam_by": {
         "message": "Antispam von"
+    },
+    "prefs_doc_title": {
+        "message": "Dokumentation"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Einrichtungsleitfäden"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutorial für benutzerdefinierte Prompts"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Die Willkommensseite öffnen"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Position des KI-Chatfensters"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Oben"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Links"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Fensterposition beim Schließen automatisch speichern."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Leer lassen, um die Standardposition zu verwenden."
     }
 }

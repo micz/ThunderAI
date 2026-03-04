@@ -30,7 +30,7 @@
         "message": "Clasificar"
     },
     "prompt_reply_custom_command": {
-        "message": "Responder con comando"
+        "message": "Responder con comando..."
     },
     "prompt_this": {
         "message": "Crea un prompt de esto"
