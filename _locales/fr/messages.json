@@ -1449,5 +1449,32 @@
     },
     "antispam_by": {
         "message": "Antispam par"
+    },
+    "prefs_doc_title": {
+        "message": "Documentation"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Guides de configuration"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutoriel sur les prompts personnalisés"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Ouvrir la page d'accueil"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Position de la fenêtre de chat IA"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Haut"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Gauche"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Enregistrer automatiquement la position de la fenêtre lors de la fermeture."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Laisser vide pour utiliser la position par défaut."
     }
 }
