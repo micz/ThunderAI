@@ -1211,7 +1211,7 @@
         "message": "I segnaposto di dati esistenti con lo stesso ID verranno sovrascritti. I segnaposto con ID nuovi verranno aggiunti."
     },
     "prompt_reply_custom_command": {
-        "message": "Rispondi con istruzioni aggiuntive"
+        "message": "Rispondi con istruzioni aggiuntive..."
     },
     "prompt_reply_custom_command_full_text": {
         "message": "Rispondi alla seguente email \"{%mail_text_body%}\". {%additional_text%}. Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo."
@@ -1449,5 +1449,32 @@
     },
     "antispam_by": {
         "message": "Antispam di"
+    },
+    "prefs_doc_title": {
+        "message": "Documentazione"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Guide di configurazione"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutorial Prompt Personalizzato"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Apri la Pagina di Benvenuto"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Posizione finestra della chat AI"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Alto"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Sinistra"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Salva automaticamente la posizione della finestra quando si usa il pulsante chiudi."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Lascia vuoto per usare la posizione di default."
     }
 }
