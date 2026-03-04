@@ -113,25 +113,6 @@ messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }],
 });
 
-// Inject script and CSS in all already open message tabs.
-let openTabs = await messenger.tabs.query();
-let messageTabs = openTabs.filter(
-    tab => ["mail", "messageDisplay"].includes(tab.type)
-);
-for (let messageTab of messageTabs) {
-    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
-        continue;
-    }
-    try {
-        await browser.tabs.executeScript(messageTab.id, {
-            file: "js/mzta-compose-script.js"
-        })
-    } catch (error) {
-        console.error("[ThunderAI] Error injecting message display script:", error);
-        console.error("[ThunderAI] Message tab:", messageTab.url);
-    }
-}
-
 browser.contentScripts.register({
     matches: ["https://*.chatgpt.com/*"],
     js: [{file: "js/mzta-chatgpt-loader.js"}],
@@ -1344,3 +1325,22 @@ async function processEmails(args) {
 }
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+
+// Inject script and CSS in all already open message tabs.
+let openTabs = await messenger.tabs.query();
+let messageTabs = openTabs.filter(
+    tab => ["mail", "messageDisplay"].includes(tab.type)
+);
+for (let messageTab of messageTabs) {
+    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
+        continue;
+    }
+    try {
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/mzta-compose-script.js"
+        })
+    } catch (error) {
+        console.error("[ThunderAI] Error injecting message display script:", error);
+        console.error("[ThunderAI] Message tab:", messageTab.url);
+    }
+}
