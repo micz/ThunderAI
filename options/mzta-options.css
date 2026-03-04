@@ -131,7 +131,7 @@ div#miczTranslate{
     border-radius: 4px;
 }
 
-#mzta_top_msg div{
+#mzta_top_msg > td > div{
     color: #212529;
     font-style: italic;
     background-color: #e0e0e0;
@@ -152,6 +152,40 @@ div#miczTranslate{
 
 #mzta_top_msg td{
     border:0 !important;
+}
+
+#mzta_top_msg > td:first-child{
+    position: relative;
+}
+
+#mzta_top_msg > td:first-child > div{
+    position: absolute;
+    inset: 2px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#mzta_doc_block{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.doc_links{
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.doc_welcome{
+    border-top: 1px solid rgba(0,0,0,0.15);
+    padding-top: 6px;
+    width: 100%;
+    text-align: center;
 }
 
 .btn_small{
@@ -219,7 +253,7 @@ label:has(input[type="checkbox"]) {
         filter: invert(1);
     }
 
-    #mzta_top_msg div{
+    #mzta_top_msg > td > div{
         color:#EEEEEE;
         background-color: #313131;
     }
@@ -227,9 +261,13 @@ label:has(input[type="checkbox"]) {
     #mzta_top_msg div a{
         color: #00ADB5;
     }
-    
+
     #mzta_top_msg div a:hover{
         color: #FF5722;
+    }
+
+    .doc_welcome{
+        border-top-color: rgba(255,255,255,0.15);
     }
 
     #no_sparks td{

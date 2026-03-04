@@ -359,6 +359,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
 
+  document.getElementById('btn_welcome').addEventListener('click', async () => {
+      await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+  });
+
   browser.runtime.getPlatformInfo().then(info => {
     taLog.log("OS: " + info.os);
     if ((info.os === "linux")&&(prefs_opt.chatgpt_win_height!=0)&&(prefs_opt.chatgpt_win_width!=0)){

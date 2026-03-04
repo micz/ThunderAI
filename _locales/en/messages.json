@@ -931,6 +931,22 @@
     "message": "Click here, it only takes a minute!",
     "description": ""
   },
+  "prefs_doc_title": {
+    "message": "Documentation",
+    "description": ""
+  },
+  "prefs_doc_setup_guide": {
+    "message": "Setup Guides",
+    "description": ""
+  },
+  "prefs_doc_custom_prompt_tutorial": {
+    "message": "Custom Prompt Tutorial",
+    "description": ""
+  },
+  "prefs_doc_open_welcome": {
+    "message": "Open the Welcome Page",
+    "description": ""
+  },
   "prefs_OpenAIComp_ForceModel": {
     "message": "Manually insert model",
     "description": ""
