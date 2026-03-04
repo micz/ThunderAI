@@ -219,14 +219,24 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
             case 'chatgpt_close':
-                    browser.windows.remove(message.window_id).then(() => {
-                        taLog.log("ChatGPT window closed successfully.");
-                        return true;
-                    }).catch((error) => {
-                        taLog.error("Error closing ChatGPT window:", error);
-                        return false;
-                    });
-                    break;
+                    async function _closeChatGptWindow(window_id) {
+                        let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
+                        if(prefs_close.chatgpt_win_save_position){
+                            try {
+                                let winInfo = await browser.windows.get(window_id);
+                                await browser.storage.sync.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
+                            } catch(e) {
+                                taLog.error("Error saving window position: " + e);
+                            }
+                        }
+                        return browser.windows.remove(window_id).then(() => {
+                            taLog.log("ChatGPT window closed successfully.");
+                        }).catch((error) => {
+                            taLog.error("Error closing ChatGPT window:", error);
+                        });
+                    }
+                    return _closeChatGptWindow(message.window_id);
             case 'chatgpt_replaceSelectedText':
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
@@ -452,12 +462,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
             
-            taLog.log("[chatgpt_web] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options.width = prefs.chatgpt_win_width,
-                win_options.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options, prefs);
 
             const listener = (message, sender, sendResponse) => {
                 async function handleChatGptWeb(createdTab) {
@@ -555,12 +560,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options2.width = prefs.chatgpt_win_width,
-                win_options2.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options2, prefs);
 
             await browser.windows.create(win_options2);
         }
@@ -606,12 +606,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[google_gemini_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -664,12 +659,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[ollama_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options3.width = prefs.chatgpt_win_width,
-                win_options3.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options3, prefs);
 
             await browser.windows.create(win_options3);
 
@@ -717,13 +707,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[openai_comp_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+            applyWindowPositionAndSize(win_options4, prefs);
 
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options4.width = prefs.chatgpt_win_width,
-                win_options4.height = prefs.chatgpt_win_height
-            }
-    
             await browser.windows.create(win_options4);
         }
         break;  // openai_comp_api - END
@@ -772,12 +757,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options6.width = prefs.chatgpt_win_width,
-                win_options6.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options6, prefs);
 
             await browser.windows.create(win_options6);
         }
@@ -795,8 +775,32 @@ function checkScreenDimensions(prefs){
 
     if(prefs.chatgpt_win_height > height) prefs.chatgpt_win_height = height - 50;
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
-    
+
     return prefs;
+}
+
+function applyWindowPositionAndSize(win_options, prefs){
+    if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+        win_options.width = prefs.chatgpt_win_width;
+        win_options.height = prefs.chatgpt_win_height;
+        taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
+    }
+    if((prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
+        // Check if the saved position is within the current screen bounds (supports multiple monitors)
+        let isWithinBounds = (
+            prefs.chatgpt_win_left >= window.screen.availLeft &&
+            prefs.chatgpt_win_top >= window.screen.availTop &&
+            prefs.chatgpt_win_left < (window.screen.availLeft + window.screen.availWidth) &&
+            prefs.chatgpt_win_top < (window.screen.availTop + window.screen.availHeight)
+        );
+
+        if (isWithinBounds) {
+            win_options.top = prefs.chatgpt_win_top;
+            win_options.left = prefs.chatgpt_win_left;
+        }
+        taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
+    }
+    return win_options;
 }
 
 function doGetSparkFeature(spark_feature_active) {
@@ -823,6 +827,7 @@ async function reload_pref_init(){
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+        chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
