@@ -47,6 +47,7 @@ h2 {
   background: light-dark(#fff, #27272a);
   box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
+  position: relative;
 }
 
 .section {
@@ -216,4 +217,40 @@ h2 {
 #integration_permission_ok:hover {
   background-color: darkgreen;
   transform: scale(1.05);
+}
+
+#onboarding_doc_panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+  background: light-dark(#fff, #303036);
+  border-radius: 10px;
+  box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.18);
+  font-size: 15px;
+  min-width: 170px;
+}
+
+#onboarding_doc_panel .doc_panel_title {
+  font-weight: bold;
+  color: light-dark(#333, #fff);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+  border-bottom: 1px solid light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.1));
+  padding-bottom: 6px;
+}
+
+#onboarding_doc_panel a {
+  color: #0a84ff;
+  text-decoration: none;
+}
+
+#onboarding_doc_panel a:hover {
+  text-decoration: underline;
 }
