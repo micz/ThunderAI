@@ -805,8 +805,18 @@ function applyWindowPositionAndSize(win_options, prefs){
         taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
     }
     if((prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
-        win_options.top = prefs.chatgpt_win_top;
-        win_options.left = prefs.chatgpt_win_left;
+        // Check if the saved position is within the current screen bounds (supports multiple monitors)
+        let isWithinBounds = (
+            prefs.chatgpt_win_left >= window.screen.availLeft &&
+            prefs.chatgpt_win_top >= window.screen.availTop &&
+            prefs.chatgpt_win_left < (window.screen.availLeft + window.screen.availWidth) &&
+            prefs.chatgpt_win_top < (window.screen.availTop + window.screen.availHeight)
+        );
+
+        if (isWithinBounds) {
+            win_options.top = prefs.chatgpt_win_top;
+            win_options.left = prefs.chatgpt_win_left;
+        }
         taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
     }
     return win_options;
