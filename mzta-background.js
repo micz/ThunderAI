@@ -732,13 +732,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         {
             // We are using the Anthropic API
 
-            let rand_call_id5 = '_anthropic_' + generateCallID();
+            let rand_call_id6 = '_anthropic_' + generateCallID();
 
-            const listener5 = (message, sender, sendResponse) => {
+            const listener6 = (message, sender, sendResponse) => {
 
                 function handleAnthropicApi(createdTab) {
-                    let mailMessageId5 = -1;
-                    if(mailMessage) mailMessageId5 = mailMessage.id;
+                    let mailMessageId6 = -1;
+                    if(mailMessage) mailMessageId6 = mailMessage.id;
 
                     // check if the config is present, or give a message error
                     if (prefs.anthropic_api_key == '') {
@@ -754,32 +754,32 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         return;
                     }
                     //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
                     taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener5);
+                    browser.runtime.onMessage.removeListener(listener6);
                 }
 
-                if (message.command === "anthropic_api_ready_"+rand_call_id5) {
+                if (message.command === "anthropic_api_ready_"+rand_call_id6) {
                     return handleAnthropicApi(sender.tab);
                 }
                 return false;
             }
 
-            browser.runtime.onMessage.addListener(listener5);
+            browser.runtime.onMessage.addListener(listener6);
 
-            let win_options5 = {
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
+            let win_options6 = {
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id6+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
                 type: "popup",
             }
 
             taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
 
             if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
+                win_options6.width = prefs.chatgpt_win_width,
+                win_options6.height = prefs.chatgpt_win_height
             }
 
-            await browser.windows.create(win_options5);
+            await browser.windows.create(win_options6);
         }
         break;  // anthropic_api - END
 
