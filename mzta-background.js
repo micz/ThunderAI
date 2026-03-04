@@ -804,7 +804,7 @@ function applyWindowPositionAndSize(win_options, prefs){
         win_options.height = prefs.chatgpt_win_height;
         taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
     }
-    if(prefs.chatgpt_win_save_position && (prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
+    if((prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
         win_options.top = prefs.chatgpt_win_top;
         win_options.left = prefs.chatgpt_win_left;
         taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
@@ -836,6 +836,7 @@ async function reload_pref_init(){
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+        chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
