@@ -24,7 +24,7 @@
         "message": "Răspunde la această conversație"
     },
     "prompt_reply_custom_command": {
-        "message": "Răspunde cu instrucțiuni suplimentare"
+        "message": "Răspunde cu instrucțiuni suplimentare..."
     },
     "prompt_rewrite_polite": {
         "message": "Rescrie politicos"
