@@ -186,7 +186,7 @@
         "message": "Svara på denna tråd"
     },
     "prompt_reply_custom_command": {
-        "message": "Svara med kommando"
+        "message": "Svara med kommando..."
     },
     "prompt_rewrite_polite": {
         "message": "Skriv om artigt"
