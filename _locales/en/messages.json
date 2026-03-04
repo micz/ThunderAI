@@ -20,7 +20,7 @@
     "description": ""
   },
   "prompt_reply_custom_command": {
-    "message": "Reply with command",
+    "message": "Reply with command...",
     "description": ""
   },
   "prompt_rewrite_polite": {

@@ -113,25 +113,6 @@ messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }],
 });
 
-// Inject script and CSS in all already open message tabs.
-let openTabs = await messenger.tabs.query();
-let messageTabs = openTabs.filter(
-    tab => ["mail", "messageDisplay"].includes(tab.type)
-);
-for (let messageTab of messageTabs) {
-    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
-        continue;
-    }
-    try {
-        await browser.tabs.executeScript(messageTab.id, {
-            file: "js/mzta-compose-script.js"
-        })
-    } catch (error) {
-        console.error("[ThunderAI] Error injecting message display script:", error);
-        console.error("[ThunderAI] Message tab:", messageTab.url);
-    }
-}
-
 browser.contentScripts.register({
     matches: ["https://*.chatgpt.com/*"],
     js: [{file: "js/mzta-chatgpt-loader.js"}],
@@ -736,13 +717,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         {
             // We are using the Anthropic API
 
-            let rand_call_id5 = '_anthropic_' + generateCallID();
+            let rand_call_id6 = '_anthropic_' + generateCallID();
 
-            const listener5 = (message, sender, sendResponse) => {
+            const listener6 = (message, sender, sendResponse) => {
 
                 function handleAnthropicApi(createdTab) {
-                    let mailMessageId5 = -1;
-                    if(mailMessage) mailMessageId5 = mailMessage.id;
+                    let mailMessageId6 = -1;
+                    if(mailMessage) mailMessageId6 = mailMessage.id;
 
                     // check if the config is present, or give a message error
                     if (prefs.anthropic_api_key == '') {
@@ -758,27 +739,27 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         return;
                     }
                     //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
                     taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener5);
+                    browser.runtime.onMessage.removeListener(listener6);
                 }
 
-                if (message.command === "anthropic_api_ready_"+rand_call_id5) {
+                if (message.command === "anthropic_api_ready_"+rand_call_id6) {
                     return handleAnthropicApi(sender.tab);
                 }
                 return false;
             }
 
-            browser.runtime.onMessage.addListener(listener5);
+            browser.runtime.onMessage.addListener(listener6);
 
-            let win_options5 = {
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
+            let win_options6 = {
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id6+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
                 type: "popup",
             }
 
-            applyWindowPositionAndSize(win_options5, prefs);
+            applyWindowPositionAndSize(win_options6, prefs);
 
-            await browser.windows.create(win_options5);
+            await browser.windows.create(win_options6);
         }
         break;  // anthropic_api - END
 
@@ -1349,3 +1330,22 @@ async function processEmails(args) {
 }
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+
+// Inject script and CSS in all already open message tabs.
+let openTabs = await messenger.tabs.query();
+let messageTabs = openTabs.filter(
+    tab => ["mail", "messageDisplay"].includes(tab.type)
+);
+for (let messageTab of messageTabs) {
+    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
+        continue;
+    }
+    try {
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/mzta-compose-script.js"
+        })
+    } catch (error) {
+        console.error("[ThunderAI] Error injecting message display script:", error);
+        console.error("[ThunderAI] Message tab:", messageTab.url);
+    }
+}
