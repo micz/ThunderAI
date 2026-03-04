@@ -5,6 +5,8 @@
 
 <h2>Version 4.0.2 - ??/??/2026</h2>
       <ul>
+        <li>Now it's possible to automatically save the AI window position [<a href="https://github.com/micz/ThunderAI/issues/685">#685</a>].</li>
+        <li>Some minor improvments.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.1 - 27/02/2026</h2>
