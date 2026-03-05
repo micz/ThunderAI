@@ -85,7 +85,8 @@ self.onmessage = async function(event) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = '';
-    
+        let streamError = false;
+
         while (true) {
             if (stopStreaming) {
                 stopStreaming = false;
@@ -139,8 +140,18 @@ self.onmessage = async function(event) {
                     postMessage({ type: 'newToken', payload: { token: parsedLine.delta } });
                 // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
                 //     previous_response_id = parsedLine.response.id;
+                } else if (parsedLine.type === 'response.failed' && parsedLine.response && parsedLine.response.error) {
+                    const error = parsedLine.response.error;
+                    const errorMessage = error.message || JSON.stringify(error);
+                    taLog.error("response.failed: " + JSON.stringify(error));
+                    postMessage({ type: 'error', payload: i18nStrings["chatgpt_api_request_failed"] + ": " + errorMessage });
+                    reader.cancel();
+                    assistantResponseAccumulator = '';
+                    streamError = true;
+                    break;
                 }
             }
+            if (streamError) break;
         }
     } else if (event.data.type === 'stop') {
         stopStreaming = true;
