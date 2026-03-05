@@ -534,7 +534,7 @@ class MessagesArea extends HTMLElement {
     
             // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
-            const html = convertNewlinesToBr(md.render(fullText));
+            const html = md.render(fullText);
 
             this.fullTextHTML += html;
 
@@ -543,6 +543,7 @@ class MessagesArea extends HTMLElement {
             // Create a new DOM parser
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
+            convertTextNodeNewlinesToBr(doc.body);
     
             // Remove existing tokens
             while (this.accumulatingMessageEl.firstChild) {
@@ -586,8 +587,23 @@ function htmlStringToFragment(htmlString) {
   return fragment;
 }
 
-function convertNewlinesToBr(text) {
-  return text.replace(/\n/g, '<br>');
+function convertTextNodeNewlinesToBr(element) {
+    element.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent.includes('\n') && node.textContent.trim() !== '') {
+                const fragment = document.createDocumentFragment();
+                node.textContent.split('\n').forEach((part, idx, arr) => {
+                    fragment.appendChild(document.createTextNode(part));
+                    if (idx < arr.length - 1) {
+                        fragment.appendChild(document.createElement('br'));
+                    }
+                });
+                node.parentNode.replaceChild(fragment, node);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            convertTextNodeNewlinesToBr(node);
+        }
+    });
 }
 
 function removeAloneBRs(htmlString) {
