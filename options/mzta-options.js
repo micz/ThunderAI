@@ -25,7 +25,8 @@ import {
   getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
-  setTomSelectBorder
+  setTomSelectBorder,
+  getMiczItUrl
 } from '../js/mzta-utils.js';
 import {
   injectConnectionUI,
@@ -240,6 +241,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   i18n.updateDocument();
+
+  document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
+  document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });

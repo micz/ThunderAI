@@ -19,6 +19,7 @@
 import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
+const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
@@ -36,6 +37,13 @@ export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
    let lang_string = languageDisplay.of(languageCode);
    return lang_string.charAt(0).toUpperCase() + lang_string.slice(1);
+}
+
+export function getMiczItUrl(path) {
+  const lang = browser.i18n.getUILanguage().split('-')[0];
+  console.log(">>>>>>>>>>>>>>>> lang: " + lang);
+  const prefix = MICZ_IT_LOCALIZED_LANGS.includes(lang) ? `${lang}/` : '';
+  return `https://micz.it/${prefix}${path}`;
 }
 
 function fixMsgHeader(msgHeader) {
