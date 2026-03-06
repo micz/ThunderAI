@@ -482,7 +482,6 @@ function getTagsKeyFromLabel(tag_names, all_tags_list) {
 }
 
 function sanitizeString(input) {
-  input = input.toLowerCase();
   // Define the regex to match valid characters
   const validChar = /^[^ ()/{%*<>"]+$/;
   // Filter out invalid characters from the string
@@ -492,14 +491,16 @@ function sanitizeString(input) {
     if (cp > 0x7F) {
       // Encode non-ASCII characters (e.g. Chinese, emoji) as uXXXX
       sanitized += 'u' + cp.toString(16);
-    } else if (validChar.test(char)) {
-      sanitized += char;
+    } else {
+      if (validChar.test(lower)) {
+        sanitized += lower;
+      }
+      // else: discard blacklisted ASCII chars
     }
-    // else: discard blacklisted ASCII chars
   }
   // Truncate to fit the 50-char total key limit:
   // $ta- (4) + callID (16) + - (1) + sanitized (max 29) = 50
-  return sanitized.slice(0, 29);
+  return sanitized.toLowerCase().slice(0, 29);
 }
 
 /* returnType:
