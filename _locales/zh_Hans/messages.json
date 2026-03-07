@@ -843,7 +843,7 @@
         "message": "未找到可编辑的日历！"
     },
     "customPrompts_form_label_use_diff_viewer": {
-        "message": "启用差异查看器"
+        "message": "启用文本差异查看器"
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "日历事件选项"
@@ -888,6 +888,27 @@
         "message": "说明"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "当操作设置为“替换文本”时，可以选择差异查看器。"
+        "message": "当操作设置为“替换文本”时，可以选择文本差异查看器。"
+    },
+    "prompt_reply_custom_command": {
+        "message": "使用附加的提示词指令..."
+    },
+    "prompt_string": {
+        "message": "提示词"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "此即回复电子邮件时默认采用的回复类型。您可在后续的回信对话框中另行选择其他选项。"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "管理您的数据占位符"
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "从此处打开 ChatGPT Web 版将应用已配置好的模型、项目及自定义 GPT 相关设置。"
+    },
+    "placeholder_mail_headers": {
+        "message": "邮件头"
+    },
+    "placeholder_selected_html": {
+        "message": "已选中的 HTML"
     }
 }
