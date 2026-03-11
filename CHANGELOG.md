@@ -3,7 +3,7 @@
 
 
 
-<h2>Version 4.0.2 - ??/??/2026</h2>
+<h2>Version 4.0.2 - 11/03/2026</h2>
       <ul>
         <li>Now it's possible to automatically save the AI window position [<a href="https://github.com/micz/ThunderAI/issues/685">#685</a>].</li>
         <li><i>[OpenAI API]</i> Fix: Correctly showing failed response errors during streaming [<a href="https://github.com/micz/ThunderAI/issues/690">#690</a>].</li>
