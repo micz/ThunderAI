@@ -3,6 +3,10 @@
 
 
 
+<h2>Version 4.1.0 - ??/??/2026</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>
       <ul>
         <li>Fixed a bug in creating new tags [<a href="https://github.com/micz/ThunderAI/issues/698">#698</a>].</li>
