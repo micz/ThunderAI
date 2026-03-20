@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { taLogger } from "../../js/mzta-logger.js";
 import {
     getSpecialPrompts,
@@ -28,7 +31,6 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
-  getAccountsList,
   normalizeStringList,
   isAPIKeyValue
 } from "../../js/mzta-utils.js";
