@@ -115,6 +115,8 @@ if (worker) {
             case 'anthropic': llmName = "Claude"; break;
         }
         messagesArea.setLLMName(llmName);
+        
+        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
         let workerInitMessage = {
             type: 'init',
