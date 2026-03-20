@@ -499,8 +499,8 @@ function sanitizeString(input) {
       // Encode non-ASCII characters (e.g. Chinese, emoji) as uXXXX
       sanitized += 'u' + cp.toString(16);
     } else {
-      if (validChar.test(lower)) {
-        sanitized += lower;
+      if (validChar.test(char)) {
+        sanitized += char;
       }
       // else: discard blacklisted ASCII chars
     }
