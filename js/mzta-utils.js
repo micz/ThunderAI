@@ -45,7 +45,7 @@ export function getMiczItUrl(path) {
   return `https://micz.it/${prefix}${path}`;
 }
 
-function fixMsgHeader(msgHeader) {
+export function fixMsgHeader(msgHeader) {
   if (!msgHeader.bccList) {
     msgHeader.bccList = [];
   }
@@ -117,7 +117,7 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-function extractEmail(text) {
+export function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const match = text.match(emailRegex);
@@ -278,7 +278,7 @@ export function convertNewlinesToBr(text) {
   return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
 }
 
-function convertBrToNewlines(html) {
+export function convertBrToNewlines(html) {
   return html.replace(/<br\s*\/?>/gi, '\n');
 }
 
@@ -374,7 +374,7 @@ export function i18nConditionalGet(str) {
   return str; // Return the original string if the conditions are not met
 }
 
-function compareThunderbirdVersions(v1, v2) {
+export function compareThunderbirdVersions(v1, v2) {
   const v1parts = v1.split('.').map(Number);
   const v2parts = v2.split('.').map(Number);
 
@@ -472,7 +472,7 @@ export async function assignTagsToMessage(messageId, tags) {
   }
 }
 
-function getTagsKeyFromLabel(tag_names, all_tags_list) {
+export function getTagsKeyFromLabel(tag_names, all_tags_list) {
   const result = [];
 
   tag_names.forEach(name => {
@@ -488,7 +488,7 @@ function getTagsKeyFromLabel(tag_names, all_tags_list) {
   return result;
 }
 
-function sanitizeString(input) {
+export function sanitizeString(input) {
   // Define the regex to match valid characters
   const validChar = /^[^ ()/{%*<>"]+$/;
   // Filter out invalid characters from the string
@@ -799,7 +799,7 @@ export async function getLocalStorageUsedSpace(){
   return formatBytes(customprompts_space);
 }
 
-function formatBytes(bytes, decimals = 2) {
+export function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const step = 1024;
   const suffixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
