@@ -74,7 +74,7 @@ export class taStorage {
      * @param {string} messageId - The Message-ID header string.
      * @param {number} score - Spam score (float 0-1).
      * @param {string} reason - Textual motivation for the score.
-     * @param {boolean} [force=false] - If true, overwrite existing spam data.
+     * @param {boolean} [force=true] - If true, overwrite existing spam data.
      */
     async writeSpam(messageId, score, reason, force = true) {
         try {
@@ -96,8 +96,7 @@ export class taStorage {
      * Write the summary field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
      * @param {string} text - The summary text.
-     * @param {string} lang - The language of the summary.
-     * @param {boolean} [force=false] - If true, overwrite existing summary data.
+     * @param {boolean} [force=true] - If true, overwrite existing summary data.
      */
     async writeSummary(messageId, text, force = true) {
         try {
@@ -118,10 +117,9 @@ export class taStorage {
     /**
      * Write the translation field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
-     * @param {string} from - Source language code.
-     * @param {string} to - Target language code.
-     * @param {string} text - The translated text.
-     * @param {boolean} [force=false] - If true, overwrite existing translation data.
+     * @param {string} translated_text - The translated text.
+     * @param {string} lang - Target language code.
+     * @param {boolean} [force=true] - If true, overwrite existing translation data.
      */
     async writeTranslation(messageId, translated_text, lang, force = true) {
         try {
