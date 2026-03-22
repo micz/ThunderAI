@@ -17,35 +17,35 @@
  */
 
 import { taStorage } from './mzta-storage.js';
+import { taLogger } from './mzta-logger.js';
 
-export const taSpamReport = {
-    logger: console,
-    do_debug: false,
-    _data_prefix: 'mzta-spam-report-',
-    _processing_prefix: 'mzta-spam-processing-',
-    _max_reports: 100,
-    _storage: null,
+export class taSpamReport {
 
-    _getStorage() {
-        if (!this._storage) this._storage = new taStorage(this.do_debug);
-        return this._storage;
-    },
+    _processing_prefix = 'mzta-spam-processing-';
+    _max_reports = 100;
+    _storage = null;
+    taLog = null;
+
+    constructor(do_debug = false) {
+        this._storage = new taStorage(do_debug);
+        this.taLog = new taLogger('mzta-spamreport', do_debug);
+    }
 
     async setProcessing(data_id) {
         const key = this._processing_prefix + data_id;
         await browser.storage.session.set({ [key]: true });
-    },
+    }
 
     async isProcessing(data_id) {
         const key = this._processing_prefix + data_id;
         let output = await browser.storage.session.get(key);
         return output[key] || false;
-    },
+    }
 
     async saveReportData(data, data_id) {
-        await this._getStorage().writeSpam(data_id, data, true);
+        await this._storage.writeSpam(data_id, data, true);
         await browser.storage.session.remove(this._processing_prefix + data_id);
-    },
+    }
 
     async saveError(data_id, error_message) {
         let data = {
@@ -56,11 +56,11 @@ export const taSpamReport = {
         };
         await this.saveReportData(data, data_id);
         return data;
-    },
+    }
 
     async loadReportData(data_id) {
-        let record = await this._getStorage().getRecord(data_id);
-        if (!record || !this._getStorage().hasField(record, 'spam')) return null;
+        let record = await this._storage.getRecord(data_id);
+        if (!record || !this._storage.hasField(record, 'spam')) return null;
         let spam = record.spam;
         return {
             headerMessageId: data_id,
@@ -73,42 +73,40 @@ export const taSpamReport = {
             moved: spam.moved,
             SpamThreshold: spam.SpamThreshold,
         };
-    },
+    }
 
     async removeReportData(data_id) {
-        await this._getStorage().deleteSpamField(data_id);
+        await this._storage.deleteSpamField(data_id);
         await browser.storage.session.remove(this._processing_prefix + data_id);
-    },
+    }
 
     async getAllReportData() {
-        return await this._getStorage().getAllSpamRecords();
-    },
+        return await this._storage.getAllSpamRecords();
+    }
 
     async clearReportData() {
-        let storage = this._getStorage();
-        let allSpam = await storage.getAllSpamRecords();
+        let allSpam = await this._storage.getAllSpamRecords();
         for (let messageId of Object.keys(allSpam)) {
-            await storage.deleteSpamField(messageId);
+            await this._storage.deleteSpamField(messageId);
         }
         let allSession = await browser.storage.session.get(null);
         let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
         for (let key of keysToDelete) {
             await browser.storage.session.remove(key);
         }
-    },
+    }
 
     async truncReportData() {
-        let data = await this._getStorage().getAllSpamRecords();
+        let data = await this._storage.getAllSpamRecords();
         let sortedData = this.sortReportsByDate(data);
         let keys = Object.keys(sortedData);
 
         if (keys.length > this._max_reports) {
-            let storage = this._getStorage();
             for (let i = this._max_reports; i < keys.length; i++) {
-                await storage.deleteSpamField(keys[i]);
+                await this._storage.deleteSpamField(keys[i]);
             }
         }
-    },
+    }
 
     sortReportsByDate(data) {
         if (!data) return {};
@@ -126,4 +124,4 @@ export const taSpamReport = {
 
         return sortedReports;
     }
-};
+}

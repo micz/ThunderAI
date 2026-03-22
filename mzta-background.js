@@ -94,6 +94,7 @@ await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
+let spamReport = new taSpamReport(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -359,10 +360,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
-                        let report = await taSpamReport.loadReportData(message.headerMessageId);
+                        let report = await spamReport.loadReportData(message.headerMessageId);
                         if (report) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
-                        } else if (await taSpamReport.isProcessing(message.headerMessageId)) {
+                        } else if (await spamReport.isProcessing(message.headerMessageId)) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
                     } catch (e) {
@@ -372,7 +373,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _checkSpamReport(sender.tab.id);
                 break;
             case 'removeSpamReport':
-                taSpamReport.removeReportData(message.headerMessageId);
+                spamReport.removeReportData(message.headerMessageId);
                 break;
             default:
                 break;
@@ -1042,9 +1043,6 @@ const newEmailListener = (folder, messagesList) => {
     async function _newEmailListener(){
         let messages = getMessages(messagesList);
 
-        taSpamReport.logger = taLog;
-        taSpamReport.do_debug = prefs_init.do_debug;
-
         let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
 
         await processEmails({
@@ -1054,7 +1052,7 @@ const newEmailListener = (folder, messagesList) => {
         });
 
         if(prefs_init.spamfilter){
-            taSpamReport.truncReportData();
+            spamReport.truncReportData();
         }
     }
 
@@ -1177,8 +1175,8 @@ async function processEmails(args) {
                     }
                 }
 
-                await taSpamReport.removeReportData(message.headerMessageId);
-                await taSpamReport.setProcessing(message.headerMessageId);
+                await spamReport.removeReportData(message.headerMessageId);
+                await spamReport.setProcessing(message.headerMessageId);
                 
                 await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
 
@@ -1209,7 +1207,7 @@ async function processEmails(args) {
                     spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
                 } catch (err) {
                     console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, err.message || String(err));
+                    let err_data = await spamReport.saveError(message.headerMessageId, err.message || String(err));
                     await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
                     continue;
                 }
@@ -1220,7 +1218,7 @@ async function processEmails(args) {
                     jsonObj = extractJsonObject(spamfilter_result);
                 } catch (e) {
                     console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, e.message || String(e));
+                    let err_data = await spamReport.saveError(message.headerMessageId, e.message || String(e));
                     await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
                     continue;
                 }
@@ -1246,7 +1244,7 @@ async function processEmails(args) {
                     taLog.log("Marked as spam [" + message.headerMessageId + "]");
                 }
     
-                taSpamReport.saveReportData(report_data, message.headerMessageId);
+                spamReport.saveReportData(report_data, message.headerMessageId);
     
                 // Check if the message is currently displayed and update the banner
                 await updateSpamPanel(message.headerMessageId, "showSpamReport", report_data);
