@@ -22,6 +22,9 @@ export class taStorage {
 
     static STORAGE_KEY_PREFIX = 'msg:';
     static SCHEMA_VERSION = 1;
+    static FIELD_SPAM = 'spam';
+    static FIELD_SUMMARY = 'summary';
+    static FIELD_TRANSLATION = 'translation';
 
     taLog = null;
 
@@ -87,12 +90,12 @@ export class taStorage {
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
-            if ('spam' in record && !force) {
+            if (taStorage.FIELD_SPAM in record && !force) {
                 this.taLog.log('[writeSpam] spam field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
-            record.spam = {
+            record[taStorage.FIELD_SPAM] = {
                 spamValue: report_data.spamValue,
                 explanation: report_data.explanation,
                 subject: report_data.subject,
@@ -122,9 +125,9 @@ export class taStorage {
             let result = {};
             for (let [key, record] of Object.entries(all)) {
                 if (!key.startsWith(taStorage.STORAGE_KEY_PREFIX)) continue;
-                if (!this.hasField(record, 'spam')) continue;
+                if (!this.hasField(record, taStorage.FIELD_SPAM)) continue;
                 let messageId = key.slice(taStorage.STORAGE_KEY_PREFIX.length);
-                let spam = record.spam;
+                let spam = record[taStorage.FIELD_SPAM];
                 result[messageId] = {
                     headerMessageId: messageId,
                     spamValue: spam.spamValue,
@@ -155,11 +158,11 @@ export class taStorage {
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId);
-            if (!record || !('spam' in record)) {
+            if (!record || !(taStorage.FIELD_SPAM in record)) {
                 this.taLog.log('[deleteSpamField] no spam field found for messageId: ' + messageId);
                 return;
             }
-            delete record.spam;
+            delete record[taStorage.FIELD_SPAM];
             const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
             if (remainingFields.length === 0) {
                 this.taLog.log('[deleteSpamField] no remaining fields, deleting entire record');
@@ -184,12 +187,12 @@ export class taStorage {
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
-            if ('summary' in record && !force) {
+            if (taStorage.FIELD_SUMMARY in record && !force) {
                 this.taLog.log('[writeSummary] summary field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
-            record.summary = { text: text, ts: now };
+            record[taStorage.FIELD_SUMMARY] = { text: text, ts: now };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {
@@ -209,12 +212,12 @@ export class taStorage {
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
-            if ('translation' in record && !force) {
+            if (taStorage.FIELD_TRANSLATION in record && !force) {
                 this.taLog.log('[writeTranslation] translation field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
-            record.translation = { translated_text: translated_text, lang: lang, ts: now };
+            record[taStorage.FIELD_TRANSLATION] = { translated_text: translated_text, lang: lang, ts: now };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {

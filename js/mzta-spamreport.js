@@ -72,7 +72,7 @@ export class taSpamReport {
     async loadReportData(data_id) {
         this.taLog.log("[loadReportData] data_id: " + data_id);
         let record = await this._storage.getRecord(data_id);
-        if (!record || !this._storage.hasField(record, 'spam')) {
+        if (!record || !this._storage.hasField(record, taStorage.FIELD_SPAM)) {
             this.taLog.log("[loadReportData] no record found for data_id: " + data_id);
             return null;
         }
