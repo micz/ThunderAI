@@ -16,11 +16,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { taStorage } from './mzta-storage.js';
+
 export const taSpamReport = {
     logger: console,
+    do_debug: false,
     _data_prefix: 'mzta-spam-report-',
     _processing_prefix: 'mzta-spam-processing-',
     _max_reports: 100,
+    _storage: null,
+
+    _getStorage() {
+        if (!this._storage) this._storage = new taStorage(this.do_debug);
+        return this._storage;
+    },
 
     async setProcessing(data_id) {
         const key = this._processing_prefix + data_id;
@@ -34,8 +43,7 @@ export const taSpamReport = {
     },
 
     async saveReportData(data, data_id) {
-        const key = this._data_prefix + data_id;
-        await browser.storage.session.set({ [key]: data });
+        await this._getStorage().writeSpam(data_id, data, true);
         await browser.storage.session.remove(this._processing_prefix + data_id);
     },
 
@@ -51,47 +59,53 @@ export const taSpamReport = {
     },
 
     async loadReportData(data_id) {
-        const key = this._data_prefix + data_id;
-        let output = await browser.storage.session.get(key);
-        return output[key] || null;
+        let record = await this._getStorage().getRecord(data_id);
+        if (!record || !this._getStorage().hasField(record, 'spam')) return null;
+        let spam = record.spam;
+        return {
+            headerMessageId: data_id,
+            spamValue: spam.spamValue,
+            explanation: spam.explanation,
+            report_date: new Date(spam.ts),
+            subject: spam.subject,
+            from: spam.from,
+            message_date: spam.message_date,
+            moved: spam.moved,
+            SpamThreshold: spam.SpamThreshold,
+        };
     },
 
     async removeReportData(data_id) {
-        const key = this._data_prefix + data_id;
-        await browser.storage.session.remove(key);
+        await this._getStorage().deleteSpamField(data_id);
         await browser.storage.session.remove(this._processing_prefix + data_id);
     },
 
     async getAllReportData() {
-        let allData = await browser.storage.session.get(null);
-        let reportData = {};
-
-        for (const [key, value] of Object.entries(allData)) {
-            if (key.startsWith(this._data_prefix)) {
-                reportData[key.replace(this._data_prefix, '')] = value;
-            }
-        }
-
-        return reportData;
+        return await this._getStorage().getAllSpamRecords();
     },
 
     async clearReportData() {
-        let allData = await browser.storage.session.get(null);
-        let keysToDelete = Object.keys(allData).filter(key => key.startsWith(this._data_prefix) || key.startsWith(this._processing_prefix));
-
+        let storage = this._getStorage();
+        let allSpam = await storage.getAllSpamRecords();
+        for (let messageId of Object.keys(allSpam)) {
+            await storage.deleteSpamField(messageId);
+        }
+        let allSession = await browser.storage.session.get(null);
+        let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
         for (let key of keysToDelete) {
             await browser.storage.session.remove(key);
         }
     },
 
     async truncReportData() {
-        let data = await this.getAllReportData();
+        let data = await this._getStorage().getAllSpamRecords();
         let sortedData = this.sortReportsByDate(data);
         let keys = Object.keys(sortedData);
 
         if (keys.length > this._max_reports) {
+            let storage = this._getStorage();
             for (let i = this._max_reports; i < keys.length; i++) {
-                await browser.storage.session.remove(this._data_prefix + keys[i]);
+                await storage.deleteSpamField(keys[i]);
             }
         }
     },

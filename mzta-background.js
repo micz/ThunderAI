@@ -1043,6 +1043,7 @@ const newEmailListener = (folder, messagesList) => {
         let messages = getMessages(messagesList);
 
         taSpamReport.logger = taLog;
+        taSpamReport.do_debug = prefs_init.do_debug;
 
         let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
 

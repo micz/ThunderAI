@@ -72,11 +72,11 @@ export class taStorage {
     /**
      * Write the spam field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
-     * @param {number} score - Spam score (float 0-1).
-     * @param {string} reason - Textual motivation for the score.
+     * @param {object} report_data - The full spam report object with fields:
+     *   spamValue, explanation, subject, from, message_date, moved, SpamThreshold.
      * @param {boolean} [force=true] - If true, overwrite existing spam data.
      */
-    async writeSpam(messageId, score, reason, force = true) {
+    async writeSpam(messageId, report_data, force = true) {
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
@@ -84,11 +84,76 @@ export class taStorage {
                 return;
             }
             let now = Date.now();
-            record.spam = { score: score, reason: reason, ts: now };
+            record.spam = {
+                spamValue: report_data.spamValue,
+                explanation: report_data.explanation,
+                subject: report_data.subject,
+                from: report_data.from,
+                message_date: report_data.message_date instanceof Date
+                    ? report_data.message_date.toISOString()
+                    : report_data.message_date,
+                moved: report_data.moved,
+                SpamThreshold: report_data.SpamThreshold,
+                ts: now,
+            };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {
             this.taLog.error('writeSpam error: ' + e);
+        }
+    }
+
+    /**
+     * Get all records that contain a spam field.
+     * @returns {Promise<object>} Map of messageId -> spam data object (legacy shape).
+     */
+    async getAllSpamRecords() {
+        try {
+            let all = await messenger.storage.local.get(null);
+            let result = {};
+            for (let [key, record] of Object.entries(all)) {
+                if (!key.startsWith(taStorage.STORAGE_KEY_PREFIX)) continue;
+                if (!this.hasField(record, 'spam')) continue;
+                let messageId = key.slice(taStorage.STORAGE_KEY_PREFIX.length);
+                let spam = record.spam;
+                result[messageId] = {
+                    headerMessageId: messageId,
+                    spamValue: spam.spamValue,
+                    explanation: spam.explanation,
+                    report_date: new Date(spam.ts),
+                    subject: spam.subject,
+                    from: spam.from,
+                    message_date: spam.message_date,
+                    moved: spam.moved,
+                    SpamThreshold: spam.SpamThreshold,
+                };
+            }
+            return result;
+        } catch (e) {
+            this.taLog.error('getAllSpamRecords error: ' + e);
+            return {};
+        }
+    }
+
+    /**
+     * Delete only the spam field from a record.
+     * Deletes the entire record if no other data fields remain.
+     * @param {string} messageId - The Message-ID header string.
+     */
+    async deleteSpamField(messageId) {
+        try {
+            let key = this._buildKey(messageId);
+            let record = await this.getRecord(messageId);
+            if (!record || !('spam' in record)) return;
+            delete record.spam;
+            const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
+            if (remainingFields.length === 0) {
+                await messenger.storage.local.remove(key);
+            } else {
+                await messenger.storage.local.set({ [key]: record });
+            }
+        } catch (e) {
+            this.taLog.error('deleteSpamField error: ' + e);
         }
     }
 
