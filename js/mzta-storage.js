@@ -55,15 +55,14 @@ export class taStorage {
     }
 
     /**
-     * Check if a record exists and contains the specified field.
-     * @param {string} messageId - The Message-ID header string.
+     * Check if a record contains the specified field.
+     * @param {object|null} record - The record object (from getRecord).
      * @param {string} field - The field name to check ("spam", "summary", or "translation").
-     * @returns {Promise<boolean>} True if the record exists and the field is present.
+     * @returns {boolean} True if the record exists and the field is present.
      */
-    async hasField(messageId, field) {
+    hasField(record, field) {
         try {
-            let record = await this.getRecord(messageId);
-            return record !== null && field in record;
+            return record !== null && record !== undefined && field in record;
         } catch (e) {
             this.taLog.error('hasField error: ' + e);
             return false;
