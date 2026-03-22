@@ -682,7 +682,7 @@ switch (message.command) {
         borderColor = '#006600';
     }
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: start; gap: 15px; width: 100%; box-sizing: border-box;`;
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
 
     const scoreText = document.createElement('strong');
     if (data.spamValue == -999) {
@@ -700,7 +700,7 @@ switch (message.command) {
 
     const branding = document.createElement('span');
     branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
-    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 11px; opacity: 0.7;';
+    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5;';
 
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
