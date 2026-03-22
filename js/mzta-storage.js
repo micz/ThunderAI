@@ -23,7 +23,7 @@ export class taStorage {
     static STORAGE_KEY_PREFIX = 'msg:';
     static SCHEMA_VERSION = 1;
 
-    logger = null;
+    taLog = null;
 
     constructor(do_debug = false) {
         this.taLog = new taLogger("mzta-storage", do_debug);
