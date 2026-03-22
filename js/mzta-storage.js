@@ -44,10 +44,13 @@ export class taStorage {
      * @returns {Promise<object|null>} The record object or null if not found.
      */
     async getRecord(messageId) {
+        this.taLog.log('[getRecord] messageId: ' + messageId);
         try {
             let key = this._buildKey(messageId);
             let result = await messenger.storage.local.get(key);
-            return result[key] || null;
+            let record = result[key] || null;
+            this.taLog.log('[getRecord] record found: ' + (record !== null));
+            return record;
         } catch (e) {
             this.taLog.error('getRecord error: ' + e);
             return null;
@@ -61,8 +64,11 @@ export class taStorage {
      * @returns {boolean} True if the record exists and the field is present.
      */
     hasField(record, field) {
+        this.taLog.log('[hasField] field: ' + field);
         try {
-            return record !== null && record !== undefined && field in record;
+            let result = record !== null && record !== undefined && field in record;
+            this.taLog.log('[hasField] result: ' + result);
+            return result;
         } catch (e) {
             this.taLog.error('hasField error: ' + e);
             return false;
@@ -77,10 +83,12 @@ export class taStorage {
      * @param {boolean} [force=true] - If true, overwrite existing spam data.
      */
     async writeSpam(messageId, report_data, force = true) {
+        this.taLog.log('[writeSpam] messageId: ' + messageId + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
             if ('spam' in record && !force) {
+                this.taLog.log('[writeSpam] spam field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
@@ -108,6 +116,7 @@ export class taStorage {
      * @returns {Promise<object>} Map of messageId -> spam data object (legacy shape).
      */
     async getAllSpamRecords() {
+        this.taLog.log('[getAllSpamRecords] loading all spam records');
         try {
             let all = await messenger.storage.local.get(null);
             let result = {};
@@ -128,6 +137,7 @@ export class taStorage {
                     SpamThreshold: spam.SpamThreshold,
                 };
             }
+            this.taLog.log('[getAllSpamRecords] found ' + Object.keys(result).length + ' spam records');
             return result;
         } catch (e) {
             this.taLog.error('getAllSpamRecords error: ' + e);
@@ -141,15 +151,21 @@ export class taStorage {
      * @param {string} messageId - The Message-ID header string.
      */
     async deleteSpamField(messageId) {
+        this.taLog.log('[deleteSpamField] messageId: ' + messageId);
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId);
-            if (!record || !('spam' in record)) return;
+            if (!record || !('spam' in record)) {
+                this.taLog.log('[deleteSpamField] no spam field found for messageId: ' + messageId);
+                return;
+            }
             delete record.spam;
             const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
             if (remainingFields.length === 0) {
+                this.taLog.log('[deleteSpamField] no remaining fields, deleting entire record');
                 await messenger.storage.local.remove(key);
             } else {
+                this.taLog.log('[deleteSpamField] remaining fields: ' + remainingFields.join(', '));
                 await messenger.storage.local.set({ [key]: record });
             }
         } catch (e) {
@@ -164,10 +180,12 @@ export class taStorage {
      * @param {boolean} [force=true] - If true, overwrite existing summary data.
      */
     async writeSummary(messageId, text, force = true) {
+        this.taLog.log('[writeSummary] messageId: ' + messageId + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
             if ('summary' in record && !force) {
+                this.taLog.log('[writeSummary] summary field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
@@ -187,10 +205,12 @@ export class taStorage {
      * @param {boolean} [force=true] - If true, overwrite existing translation data.
      */
     async writeTranslation(messageId, translated_text, lang, force = true) {
+        this.taLog.log('[writeTranslation] messageId: ' + messageId + ', lang: ' + lang + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
             let record = await this.getRecord(messageId) || { v: taStorage.SCHEMA_VERSION };
             if ('translation' in record && !force) {
+                this.taLog.log('[writeTranslation] translation field already exists, skipping (force=false)');
                 return;
             }
             let now = Date.now();
@@ -207,6 +227,7 @@ export class taStorage {
      * @param {string} messageId - The Message-ID header string.
      */
     async deleteRecord(messageId) {
+        this.taLog.log('[deleteRecord] messageId: ' + messageId);
         try {
             let key = this._buildKey(messageId);
             await messenger.storage.local.remove(key);
@@ -221,7 +242,9 @@ export class taStorage {
      * @returns {Promise<number>} The number of deleted records.
      */
     async cleanup(maxAgeDays) {
+        this.taLog.log('[cleanup] maxAgeDays: ' + maxAgeDays);
         if (maxAgeDays === 0) {
+            this.taLog.log('[cleanup] maxAgeDays is 0, skipping cleanup');
             return 0;
         }
         try {
@@ -237,6 +260,7 @@ export class taStorage {
                     keysToDelete.push(key);
                 }
             }
+            this.taLog.log('[cleanup] found ' + keysToDelete.length + ' records older than ' + maxAgeDays + ' days');
             if (keysToDelete.length > 0) {
                 await messenger.storage.local.remove(keysToDelete);
             }

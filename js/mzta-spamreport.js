@@ -32,22 +32,33 @@ export class taSpamReport {
     }
 
     async setProcessing(data_id) {
+        this.taLog.log("[setProcessing] data_id: " + data_id);
         const key = this._processing_prefix + data_id;
         await browser.storage.session.set({ [key]: true });
     }
 
     async isProcessing(data_id) {
+        this.taLog.log("[isProcessing] data_id: " + data_id);
         const key = this._processing_prefix + data_id;
         let output = await browser.storage.session.get(key);
-        return output[key] || false;
+        let result = output[key] || false;
+        this.taLog.log("[isProcessing] result: " + result);
+        return result;
     }
 
     async saveReportData(data, data_id) {
-        await this._storage.writeSpam(data_id, data, true);
-        await browser.storage.session.remove(this._processing_prefix + data_id);
+        this.taLog.log("[saveReportData] data_id: " + data_id);
+        try {
+            await this._storage.writeSpam(data_id, data, true);
+            await browser.storage.session.remove(this._processing_prefix + data_id);
+        } catch (e) {
+            this.taLog.error("[saveReportData] error: " + e);
+            throw e;
+        }
     }
 
     async saveError(data_id, error_message) {
+        this.taLog.log("[saveError] data_id: " + data_id + ", error_message: " + error_message);
         let data = {
             spamValue: -999,
             explanation: error_message,
@@ -59,8 +70,12 @@ export class taSpamReport {
     }
 
     async loadReportData(data_id) {
+        this.taLog.log("[loadReportData] data_id: " + data_id);
         let record = await this._storage.getRecord(data_id);
-        if (!record || !this._storage.hasField(record, 'spam')) return null;
+        if (!record || !this._storage.hasField(record, 'spam')) {
+            this.taLog.log("[loadReportData] no record found for data_id: " + data_id);
+            return null;
+        }
         let spam = record.spam;
         return {
             headerMessageId: data_id,
@@ -76,32 +91,42 @@ export class taSpamReport {
     }
 
     async removeReportData(data_id) {
+        this.taLog.log("[removeReportData] data_id: " + data_id);
         await this._storage.deleteSpamField(data_id);
         await browser.storage.session.remove(this._processing_prefix + data_id);
     }
 
     async getAllReportData() {
+        this.taLog.log("[getAllReportData] loading all reports");
         return await this._storage.getAllSpamRecords();
     }
 
     async clearReportData() {
+        this.taLog.log("[clearReportData] clearing all report data");
         let allSpam = await this._storage.getAllSpamRecords();
-        for (let messageId of Object.keys(allSpam)) {
+        let spamKeys = Object.keys(allSpam);
+        this.taLog.log("[clearReportData] deleting " + spamKeys.length + " spam records");
+        for (let messageId of spamKeys) {
             await this._storage.deleteSpamField(messageId);
         }
         let allSession = await browser.storage.session.get(null);
         let keysToDelete = Object.keys(allSession).filter(k => k.startsWith(this._processing_prefix));
+        this.taLog.log("[clearReportData] deleting " + keysToDelete.length + " session keys");
         for (let key of keysToDelete) {
             await browser.storage.session.remove(key);
         }
     }
 
     async truncReportData() {
+        this.taLog.log("[truncReportData] checking report count");
         let data = await this._storage.getAllSpamRecords();
         let sortedData = this.sortReportsByDate(data);
         let keys = Object.keys(sortedData);
+        this.taLog.log("[truncReportData] total reports: " + keys.length + ", max: " + this._max_reports);
 
         if (keys.length > this._max_reports) {
+            let toDelete = keys.length - this._max_reports;
+            this.taLog.log("[truncReportData] truncating " + toDelete + " oldest reports");
             for (let i = this._max_reports; i < keys.length; i++) {
                 await this._storage.deleteSpamField(keys[i]);
             }
