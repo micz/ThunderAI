@@ -58,6 +58,29 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Summarize: Dual-Mode Prompt System
+
+The summarize feature uses two distinct prompt pathways:
+
+**Context Menu Summarize** (right-click on messages in message list):
+- Activated via the `summarize` context menu item, controlled by the `summarize` feature flag
+- Uses 3 special prompts stored in `specialPrompts`:
+  - `prompt_summarize` — the main instruction prompt for the LLM
+  - `prompt_summarize_email_template` — template for formatting each email's content
+  - `prompt_summarize_email_separator` — separator text between multiple emails
+- Supports multi-email summarization: each selected message is formatted with the email template, joined by the separator, then prepended with the instruction prompt
+- All 3 prompts support placeholder autocomplete (`{%placeholder%}` syntax)
+- Result is displayed via `openChatGPT()` in the standard chat output window (not inline)
+- Default prompt texts are stored as i18n keys: `prompt_summarize_full_text`, `prompt_summarize_email_template_full_text`, `prompt_summarize_email_separator_full_text`
+
+**Inline Summary on Message Display** (automatic or manual per `summarize_auto` pref):
+- Uses a single i18n string `auto_summary_prompt` concatenated with the message body text
+- Does **not** use the 3 special prompts above
+- Does **not** support `chatgpt_web` connection type (shows error if configured)
+- Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
+- Banner includes a refresh button (↻) to regenerate the summary
+- Cached per-message via `taSummaryStore` / `taStorage` (max 100 entries)
+
 ## Prompt Types Reference
 
 ```
