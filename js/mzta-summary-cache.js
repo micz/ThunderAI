@@ -1,0 +1,115 @@
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+export const taSummaryCache = {
+    logger: console,
+    _data_prefix: 'mzta-summary-',
+    _processing_prefix: 'mzta-summary-processing-',
+    _max_summaries: 100,
+
+    async setProcessing(data_id) {
+        const key = this._processing_prefix + data_id;
+        await browser.storage.session.set({ [key]: true });
+    },
+
+    async isProcessing(data_id) {
+        const key = this._processing_prefix + data_id;
+        let output = await browser.storage.session.get(key);
+        return output[key] || false;
+    },
+
+    async saveSummary(data, data_id) {
+        const key = this._data_prefix + data_id;
+        await browser.storage.session.set({ [key]: data });
+        await browser.storage.session.remove(this._processing_prefix + data_id);
+    },
+
+    async saveError(data_id, error_message) {
+        let data = {
+            error: true,
+            message: error_message,
+            summary_date: new Date(),
+            headerMessageId: data_id
+        };
+        await this.saveSummary(data, data_id);
+        return data;
+    },
+
+    async loadSummary(data_id) {
+        const key = this._data_prefix + data_id;
+        let output = await browser.storage.session.get(key);
+        return output[key] || null;
+    },
+
+    async removeSummary(data_id) {
+        const key = this._data_prefix + data_id;
+        await browser.storage.session.remove(key);
+        await browser.storage.session.remove(this._processing_prefix + data_id);
+    },
+
+    async getAllSummaries() {
+        let allData = await browser.storage.session.get(null);
+        let summaryData = {};
+
+        for (const [key, value] of Object.entries(allData)) {
+            if (key.startsWith(this._data_prefix)) {
+                summaryData[key.replace(this._data_prefix, '')] = value;
+            }
+        }
+
+        return summaryData;
+    },
+
+    async clearSummaries() {
+        let allData = await browser.storage.session.get(null);
+        let keysToDelete = Object.keys(allData).filter(key => key.startsWith(this._data_prefix) || key.startsWith(this._processing_prefix));
+
+        for (let key of keysToDelete) {
+            await browser.storage.session.remove(key);
+        }
+    },
+
+    async truncSummaries() {
+        let data = await this.getAllSummaries();
+        let sortedData = this.sortSummariesByDate(data);
+        let keys = Object.keys(sortedData);
+
+        if (keys.length > this._max_summaries) {
+            for (let i = this._max_summaries; i < keys.length; i++) {
+                await browser.storage.session.remove(this._data_prefix + keys[i]);
+            }
+        }
+    },
+
+    sortSummariesByDate(data) {
+        if (!data) return {};
+        const summaryKeys = Object.keys(data);
+        summaryKeys.sort((a, b) => {
+            const dateA = new Date(data[a].summary_date);
+            const dateB = new Date(data[b].summary_date);
+            return dateB - dateA;
+        });
+
+        let sortedSummaries = {};
+        summaryKeys.forEach((key) => {
+            sortedSummaries[key] = data[key];
+        });
+
+        return sortedSummaries;
+    }
+};

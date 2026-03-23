@@ -719,6 +719,146 @@ switch (message.command) {
     document.body.insertBefore(container, document.body.firstChild);
     return Promise.resolve(true);
 
+  case "showSummary":
+    const generatingBanner = document.getElementById('mzta-summary-generating');
+    if(generatingBanner) generatingBanner.remove();
+    
+    const triggerBtn = document.getElementById('mzta-summary-trigger');
+    if(triggerBtn) triggerBtn.remove();
+
+    const summaryBanner = document.getElementById('mzta-summary-banner');
+    if(summaryBanner) summaryBanner.remove();
+
+    const summaryData = message.data;
+    const summaryContainer = document.createElement('div');
+    summaryContainer.id = 'mzta-summary-banner';
+    
+    const isDarkSummary = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColorSummary = isDarkSummary ? '#2a2a2a' : '#f0f0f0';
+    let textColorSummary = isDarkSummary ? '#e0e0e0' : '#333';
+    let borderColorSummary = isDarkSummary ? '#444' : '#ddd';
+    let titleColor = isDarkSummary ? '#ff6b6b' : '#d70022';
+
+    if (summaryData.error) {
+        bgColorSummary = isDarkSummary ? '#3a1a1a' : '#f7e6e6';
+        textColorSummary = isDarkSummary ? '#ffcccc' : '#660000';
+        borderColorSummary = '#660000';
+        titleColor = isDarkSummary ? '#ffcccc' : '#660000';
+    }
+
+    summaryContainer.className = 'thunderai-summary-pane';
+    summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+
+    const summaryHeader = document.createElement('div');
+    summaryHeader.style.cssText = `display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;`;
+
+    const summaryTitle = document.createElement('div');
+    summaryTitle.className = 'thunderai-summary-title';
+    summaryTitle.textContent = browser.i18n.getMessage("summarize_title");
+    summaryTitle.style.cssText = `font-weight: bold; font-size: 14px; color: ${titleColor};`;
+
+    const refreshBtn = document.createElement('span');
+    refreshBtn.textContent = '↻';
+    refreshBtn.title = browser.i18n.getMessage("summarize_refresh") || 'Refresh summary';
+    refreshBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s;`;
+    refreshBtn.onmouseover = () => refreshBtn.style.opacity = '1';
+    refreshBtn.onmouseout = () => refreshBtn.style.opacity = '0.6';
+    refreshBtn.onclick = async () => {
+        refreshBtn.onclick = null;
+        refreshBtn.style.opacity = '0.6';
+        browser.runtime.sendMessage({ 
+            command: "refreshSummary", 
+            headerMessageId: summaryData.headerMessageId 
+        });
+    };
+
+    summaryHeader.appendChild(summaryTitle);
+    summaryHeader.appendChild(refreshBtn);
+    summaryContainer.appendChild(summaryHeader);
+
+    const summaryText = document.createElement('div');
+    summaryText.className = 'thunderai-summary-content';
+    if (summaryData.error) {
+        summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
+    } else {
+        summaryText.textContent = summaryData.summary;
+    }
+    summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
+
+    summaryContainer.appendChild(summaryText);
+
+    document.body.insertBefore(summaryContainer, document.body.firstChild);
+    return Promise.resolve(true);
+
+  case "showSummaryGenerating":
+    const existingGenerating = document.getElementById('mzta-summary-generating');
+    if(existingGenerating) return Promise.resolve(true);
+
+    const existingSummary = document.getElementById('mzta-summary-banner');
+    if(existingSummary) existingSummary.remove();
+
+    const existingTrigger = document.getElementById('mzta-summary-trigger');
+    if(existingTrigger) existingTrigger.remove();
+
+    const isDarkGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColorGen = isDarkGen ? '#2a2a2a' : '#f0f0f0';
+    let textColorGen = isDarkGen ? '#e0e0e0' : '#333';
+    let borderColorGen = isDarkGen ? '#444' : '#ddd';
+    let titleColorGen = isDarkGen ? '#ff6b6b' : '#d70022';
+
+    const generatingContainer = document.createElement('div');
+    generatingContainer.id = 'mzta-summary-generating';
+    generatingContainer.className = 'thunderai-summary-pane';
+    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+
+    const generatingTitle = document.createElement('div');
+    generatingTitle.className = 'thunderai-summary-title';
+    generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
+    generatingTitle.style.cssText = `font-weight: bold; font-size: 14px; margin-bottom: 0.5rem; color: ${titleColorGen};`;
+
+    generatingContainer.appendChild(generatingTitle);
+
+    document.body.insertBefore(generatingContainer, document.body.firstChild);
+    return Promise.resolve(true);
+
+  case "showSummaryButton":
+    const existingButton = document.getElementById('mzta-summary-trigger');
+    if(existingButton) return Promise.resolve(true);
+
+    const isDarkBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColorBtn = isDarkBtn ? '#2a2a2a' : '#f0f0f0';
+    let textColorBtn = isDarkBtn ? '#e0e0e0' : '#333';
+    let borderColorBtn = isDarkBtn ? '#444' : '#ddd';
+    let titleColorBtn = isDarkBtn ? '#ff6b6b' : '#d70022';
+    
+    const triggerContainer = document.createElement('div');
+    triggerContainer.id = 'mzta-summary-trigger';
+    triggerContainer.className = 'thunderai-summary-pane';
+    triggerContainer.style.cssText = `background-color: ${bgColorBtn}; color: ${textColorBtn}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorBtn}; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+
+    const triggerText = document.createElement('div');
+    triggerText.className = 'thunderai-summary-title';
+    triggerText.textContent = browser.i18n.getMessage("summarize_click_to_generate");
+    triggerText.style.cssText = `font-weight: bold; font-size: 14px; margin-bottom: 0; color: ${titleColorBtn};`;
+
+    triggerContainer.appendChild(triggerText);
+    triggerContainer.onclick = async () => {
+        triggerContainer.onclick = null;
+        triggerContainer.id = 'mzta-summary-generating';
+        triggerContainer.style.cursor = 'default';
+        triggerText.textContent = browser.i18n.getMessage("summarize_generating");
+        browser.runtime.sendMessage({ 
+            command: "triggerSummaryGeneration", 
+            headerMessageId: message.headerMessageId 
+        });
+    };
+
+    document.body.insertBefore(triggerContainer, document.body.firstChild);
+    return Promise.resolve(true);
+
   default:
     // do nothing
     return Promise.resolve(false);
@@ -727,3 +867,4 @@ switch (message.command) {
 });
 
 browser.runtime.sendMessage({ command: "checkSpamReport" });
+browser.runtime.sendMessage({ command: "initSummary" });
