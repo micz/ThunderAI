@@ -286,6 +286,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
                 _refreshSummary(message);
                 break;
+            case 'removeSummary':
+                summaryStore.removeSummary(message.headerMessageId);
+                break;
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
@@ -445,6 +448,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'removeSpamReport':
                 spamReport.removeReportData(message.headerMessageId);
                 break;
+            case 'refreshSpamReport':
+                _generateSpamReportForMessage(message.headerMessageId);
+                break;
             default:
                 break;
         }
@@ -521,6 +527,124 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+    }
+}
+
+// options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
+// options.prefs: pass pre-fetched prefs to avoid re-querying
+// options.autoMove: if true, move spam messages to junk folder (default: false)
+async function _generateSpamReportForMessage(headerMessageId, options = {}) {
+    try {
+        let prefs = options.prefs || await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            spamfilter_threshold: prefs_default.spamfilter_threshold,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
+        });
+
+        await spamReport.removeReportData(headerMessageId);
+        await spamReport.setProcessing(headerMessageId);
+
+        await updateSpamPanel(headerMessageId, "showSpamCheckInProgress");
+
+        let message, curr_fullMessage, msg_text, body_text;
+
+        if (options.messageData) {
+            message = options.messageData.message;
+            curr_fullMessage = options.messageData.fullMessage;
+            msg_text = options.messageData.msg_text;
+            body_text = options.messageData.body_text;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                let err_data = await spamReport.saveError(headerMessageId, "Message not found");
+                await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+                return { success: false };
+            }
+            message = messageResult.messages[0];
+            curr_fullMessage = await browser.messages.getFull(message.id);
+            msg_text = getMailBody(curr_fullMessage);
+            body_text = htmlBodyToPlainText(msg_text.html);
+            if (body_text.length == 0) {
+                body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        let curr_prompt_spamfilter = await getSpamFilterPrompt();
+        let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
+        let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
+            curr_prompt: curr_prompt_spamfilter,
+            curr_message: message,
+            chatgpt_lang: chatgpt_lang,
+            body_text: body_text,
+            subject_text: curr_fullMessage.headers.subject,
+            msg_text: msg_text
+        });
+        taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
+
+        let cmd_spamfilter = new mzta_specialCommand({
+            prompt: specialFullPrompt_spamfilter,
+            llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
+            custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
+            do_debug: prefs.do_debug,
+            config: curr_prompt_spamfilter
+        });
+        await cmd_spamfilter.initWorker();
+
+        let spamfilter_result = '';
+        taLog.log("Sending the prompt...");
+        try {
+            spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
+        } catch (err) {
+            console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
+            let err_data = await spamReport.saveError(headerMessageId, err.message || String(err));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
+        taLog.log("spamfilter_result: " + spamfilter_result);
+
+        let jsonObj = {};
+        taLog.log("Decoding the AI response...");
+        try {
+            jsonObj = extractJsonObject(spamfilter_result);
+        } catch (e) {
+            console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
+            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
+        taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
+
+        let report_data = {};
+        report_data.report_date = new Date();
+        report_data.headerMessageId = headerMessageId;
+        report_data.spamValue = jsonObj.spamValue;
+        report_data.explanation = jsonObj.explanation;
+        report_data.subject = curr_fullMessage.headers.subject;
+        report_data.from = curr_fullMessage.headers.from;
+        report_data.message_date = new Date(message.date);
+        report_data.moved = false;
+        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+
+        if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
+            taLog.log("Marking as spam [" + headerMessageId + "]");
+            messenger.messages.update(message.id, { junk: true });
+            let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
+            messenger.messages.move([message.id], spamFolder[0].id);
+            report_data.moved = true;
+            taLog.log("Marked as spam [" + headerMessageId + "]");
+        }
+
+        spamReport.saveReportData(report_data, headerMessageId);
+        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+        return { success: true };
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating spam report:", error);
+        let err_data = await spamReport.saveError(headerMessageId, error.message || String(error));
+        await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        return { success: false };
     }
 }
 
@@ -1335,79 +1459,14 @@ async function processEmails(args) {
                     }
                 }
 
-                await spamReport.removeReportData(message.headerMessageId);
-                await spamReport.setProcessing(message.headerMessageId);
-                
-                await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
-
-                let curr_prompt_spamfilter = await getSpamFilterPrompt();
-                // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
-                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
-                let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
-                    curr_prompt: curr_prompt_spamfilter,
-                    curr_message: message,
-                    chatgpt_lang: chatgpt_lang,
-                    body_text: body_text,
-                    subject_text: curr_fullMessage.headers.subject,
-                    msg_text: msg_text
-                });
-                taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
-                // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
-                let cmd_spamfilter = new mzta_specialCommand({
-                    prompt: specialFullPrompt_spamfilter,
-                    llm: getConnectionType(prefs_aats, curr_prompt_spamfilter, 'spamfilter'),
-                    custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-                    do_debug: prefs_aats.do_debug,
-                    config: curr_prompt_spamfilter
-                });
-                await cmd_spamfilter.initWorker();
-                let spamfilter_result = '';
-                taLog.log("Sending the prompt...");
-                try {
-                    spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
-                } catch (err) {
-                    console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                    let err_data = await spamReport.saveError(message.headerMessageId, err.message || String(err));
-                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
-                    continue;
-                }
-                taLog.log("spamfilter_result: " + spamfilter_result);
-                let jsonObj = {};
-                taLog.log("Decoding the AI response...");
-                try {
-                    jsonObj = extractJsonObject(spamfilter_result);
-                } catch (e) {
-                    console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-                    let err_data = await spamReport.saveError(message.headerMessageId, e.message || String(e));
-                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
-                    continue;
-                }
-                taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
-    
-                let report_data = {};
-                report_data.report_date = new Date();
-                report_data.headerMessageId = message.headerMessageId;
-                report_data.spamValue = jsonObj.spamValue;
-                report_data.explanation = jsonObj.explanation;
-                report_data.subject = curr_fullMessage.headers.subject;
-                report_data.from = curr_fullMessage.headers.from;
-                report_data.message_date = new Date(message.date);
-                report_data.moved = false;
-                report_data.SpamThreshold = prefs_init.spamfilter_threshold;
-    
-                if (jsonObj.spamValue >= prefs_init.spamfilter_threshold) {
-                    taLog.log("Marking as spam [" + message.headerMessageId + "]");
-                    messenger.messages.update(message.id, { junk: true });
-                    let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
-                    messenger.messages.move([message.id], spamFolder[0].id);
-                    report_data.moved = true;
-                    taLog.log("Marked as spam [" + message.headerMessageId + "]");
-                }
-    
-                spamReport.saveReportData(report_data, message.headerMessageId);
-    
-                // Check if the message is currently displayed and update the banner
-                await updateSpamPanel(message.headerMessageId, "showSpamReport", report_data);
+                let result = await _generateSpamReportForMessage(
+                    message.headerMessageId,
+                    {
+                        messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
+                        prefs: prefs_aats,
+                        autoMove: true
+                    });
+                if (!result.success) continue;
             }
         }
     }

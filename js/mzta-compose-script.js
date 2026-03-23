@@ -702,6 +702,18 @@ switch (message.command) {
     branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
     branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5;';
 
+    const spamRefreshBtn = document.createElement('span');
+    spamRefreshBtn.textContent = '↻';
+    spamRefreshBtn.title = browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report';
+    spamRefreshBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
+    spamRefreshBtn.onmouseover = () => spamRefreshBtn.style.opacity = '1';
+    spamRefreshBtn.onmouseout = () => spamRefreshBtn.style.opacity = '0.6';
+    spamRefreshBtn.onclick = function() {
+        spamRefreshBtn.onclick = null;
+        spamRefreshBtn.style.opacity = '0.6';
+        browser.runtime.sendMessage({ command: "refreshSpamReport", headerMessageId: data.headerMessageId });
+    };
+
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
     closeBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
@@ -714,6 +726,7 @@ switch (message.command) {
     container.appendChild(scoreText);
     container.appendChild(reasonText);
     container.appendChild(branding);
+    container.appendChild(spamRefreshBtn);
     container.appendChild(closeBtn);
 
     document.body.insertBefore(container, document.body.firstChild);
@@ -773,8 +786,22 @@ switch (message.command) {
         });
     };
 
+    const summaryCloseBtn = document.createElement('span');
+    summaryCloseBtn.textContent = '×';
+    summaryCloseBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
+    summaryCloseBtn.title = browser.i18n.getMessage("chatgpt_win_close");
+    summaryCloseBtn.onclick = function() {
+        summaryContainer.remove();
+        browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
+    };
+
+    const summaryBtnGroup = document.createElement('span');
+    summaryBtnGroup.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+    summaryBtnGroup.appendChild(refreshBtn);
+    summaryBtnGroup.appendChild(summaryCloseBtn);
+
     summaryHeader.appendChild(summaryTitle);
-    summaryHeader.appendChild(refreshBtn);
+    summaryHeader.appendChild(summaryBtnGroup);
     summaryContainer.appendChild(summaryHeader);
 
     const summaryText = document.createElement('div');

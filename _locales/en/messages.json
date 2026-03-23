@@ -1988,6 +1988,10 @@
        "message": "Refresh summary",
        "description": ""
    },
+   "spamfilter_refresh": {
+       "message": "Refresh spam report",
+       "description": ""
+   },
   "antispam_by": {
     "message": "Antispam by",
     "description": ""
