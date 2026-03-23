@@ -776,9 +776,9 @@ switch (message.command) {
     const refreshBtn = document.createElement('span');
     refreshBtn.textContent = '↻';
     refreshBtn.title = browser.i18n.getMessage("summarize_refresh") || 'Refresh summary';
-    refreshBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s;`;
-    refreshBtn.onmouseover = () => refreshBtn.style.opacity = '1';
-    refreshBtn.onmouseout = () => refreshBtn.style.opacity = '0.6';
+    refreshBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s, color 0.2s;`;
+    refreshBtn.onmouseover = () => { refreshBtn.style.opacity = '1'; refreshBtn.style.color = isDarkSummary ? '#4d9de0' : '#1a5fa8'; };
+    refreshBtn.onmouseout = () => { refreshBtn.style.opacity = '0.6'; refreshBtn.style.color = ''; };
     refreshBtn.onclick = async () => {
         refreshBtn.onclick = null;
         refreshBtn.style.opacity = '0.6';
@@ -790,10 +790,10 @@ switch (message.command) {
 
     const summaryCloseBtn = document.createElement('span');
     summaryCloseBtn.textContent = '×';
-    summaryCloseBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
+    summaryCloseBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
     summaryCloseBtn.title = browser.i18n.getMessage("summarize_delete");
-    summaryCloseBtn.onmouseover = () => summaryCloseBtn.style.opacity = '1';
-    summaryCloseBtn.onmouseout = () => summaryCloseBtn.style.opacity = '0.6';
+    summaryCloseBtn.onmouseover = () => { summaryCloseBtn.style.opacity = '1'; summaryCloseBtn.style.color = '#cc0000'; };
+    summaryCloseBtn.onmouseout = () => { summaryCloseBtn.style.opacity = '0.6'; summaryCloseBtn.style.color = ''; };
     summaryCloseBtn.onclick = function() {
         summaryContainer.remove();
         browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
