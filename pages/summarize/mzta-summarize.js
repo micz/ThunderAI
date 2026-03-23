@@ -240,6 +240,9 @@ async function restoreOptions() {
             if (element.id === 'summarize_auto') {
               default_select_value = prefs_default.summarize_auto;
             }
+            if (element.id === 'summarize_display_mode') {
+              default_select_value = prefs_default.summarize_display_mode;
+            }
             const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));

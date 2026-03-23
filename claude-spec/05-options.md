@@ -96,6 +96,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `0` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open) |
+| `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` always uses inline regardless of this setting. |
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -106,7 +107,11 @@ The summarize settings page provides:
    - `0` (Disabled) — no inline summaries
    - `1` (Manual) — shows a "Click to generate summary" button in message display
    - `2` (Automatic) — generates summary immediately when message is opened
-3. **Three editable prompts** (used by context menu summarize, not inline):
+3. **Display mode dropdown** (`summarize_display_mode`) — controls where summaries are shown:
+   - `'inline'` — summary banner in the message pane (default)
+   - `'webchat'` — opens the AI chat window
+   - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
+4. **Three editable prompts** (used by context menu summarize and webchat mode):
    - Summarize instruction prompt (`prompt_summarize`)
    - Email template prompt (`prompt_summarize_email_template`)
    - Email separator prompt (`prompt_summarize_email_separator`)

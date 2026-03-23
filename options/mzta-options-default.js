@@ -138,6 +138,7 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
     summarize_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic
+    summarize_display_mode: 'inline',    // 'inline' or 'webchat'
     spamfilter_show_msg_panel: true,
     summarize: false,
     ...generated_prefs

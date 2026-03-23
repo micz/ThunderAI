@@ -1951,6 +1951,22 @@
       "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
       "description": ""
   },
+  "prefs_OptionText_summarize_display_mode": {
+      "message": "Display summary in",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_inline": {
+      "message": "Message pane (inline)",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_webchat": {
+      "message": "Chat window",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_Info": {
+      "message": "Choose where the summary result is displayed. Inline mode shows a summary banner directly in the message pane. Chat window mode opens the AI chat window.",
+      "description": ""
+  },
   "summarize_title": {
       "message": "Summary",
       "description": ""

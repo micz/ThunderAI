@@ -222,27 +222,41 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize_auto: 0 });
+                        let prefs = await browser.storage.sync.get({ summarize_auto: 0, summarize_display_mode: prefs_default.summarize_display_mode });
                         if (prefs.summarize_auto === 0) return;
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
-                        let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
-                        if (cachedSummary && !cachedSummary.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
-                            return;
-                        }
-
-                        if (await summaryStore.isProcessing(message.headerMessageId)) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
-                            return;
-                        }
-
-                        if (prefs.summarize_auto === 1) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
-                        } else if (prefs.summarize_auto === 2) {
+                        // Auto mode (summarize_auto === 2) always generates inline
+                        if (prefs.summarize_auto === 2) {
+                            let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
+                            if (cachedSummary && !cachedSummary.error) {
+                                browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                                return;
+                            }
+                            if (await summaryStore.isProcessing(message.headerMessageId)) {
+                                browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                                return;
+                            }
                             _generateSummaryForMessage(message.headerMessageId, tabId);
+                            return;
+                        }
+
+                        // Manual button mode (summarize_auto === 1)
+                        if (prefs.summarize_display_mode === 'inline') {
+                            let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
+                            if (cachedSummary && !cachedSummary.error) {
+                                browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                                return;
+                            }
+                            if (await summaryStore.isProcessing(message.headerMessageId)) {
+                                browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                                return;
+                            }
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
+                        } else {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId, webchat: true });
                         }
                     } catch (e) {
                         taLog.error("Error in initSummary: " + e);
@@ -256,6 +270,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
                 _triggerSummaryGeneration(message);
+                break;
+            case 'triggerSummaryWebchat':
+                async function _triggerSummaryWebchat(message) {
+                    let tabId = sender.tab.id;
+                    await _openSummaryWebchat(message.headerMessageId, tabId);
+                }
+                _triggerSummaryWebchat(message);
                 break;
             case 'generate_summary':
                 async function _generate_summary(message) {
@@ -511,6 +532,55 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+    }
+}
+
+async function _openSummaryWebchat(headerMessageId, tabId) {
+    try {
+        const specialPrompts = await getSpecialPrompts();
+        const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
+        const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
+        const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
+
+        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+
+        const prompt_string = await taPromptUtils.preparePrompt({
+            curr_prompt: prompt,
+            chatgpt_lang: chatgpt_lang,
+        });
+        const prompt_email_separator_string = await taPromptUtils.preparePrompt({
+            curr_prompt: prompt_email_separator,
+            chatgpt_lang: chatgpt_lang,
+        });
+
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            console.error("[ThunderAI] _openSummaryWebchat: Message not found for headerMessageId:", headerMessageId);
+            return;
+        }
+
+        const curr_message = messageResult.messages[0];
+        const curr_message_full = await browser.messages.getFull(curr_message.id);
+        const curr_body_full_html = getMailBody(curr_message_full);
+        let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+        if (curr_body_full_text.length === 0) {
+            curr_body_full_text = curr_body_full_html.text;
+        }
+
+        const email_text = await taPromptUtils.preparePrompt({
+            curr_prompt: prompt_email,
+            curr_message: curr_message,
+            chatgpt_lang: chatgpt_lang,
+            body_text: curr_body_full_text,
+            subject_text: curr_message_full.headers.subject,
+            msg_text: curr_body_full_html,
+        });
+
+        const full_prompt = prompt_string + prompt_email_separator_string + email_text;
+
+        openChatGPT(full_prompt, prompt.action, tabId, prompt.name, prompt.need_custom_text, prompt);
+    } catch (error) {
+        console.error("[ThunderAI] Error opening summary webchat:", error);
     }
 }
 
@@ -1384,66 +1454,79 @@ async function processEmails(args) {
     }
 
     if (summarize) {
-        // we have three prompts, the actual assignment for the LLM, the email
-        // template prompt, and the email separator prompt
-        const specialPrompts = await getSpecialPrompts();
-        const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
-        const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
-        const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
-        
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
-    
-        // replace placeholders in the prompts the assignment prompt and email
-        // separator prompt do not have a message as context, so there is only
-        // limited things to replace
-        const prompt_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt,
-            chatgpt_lang: chatgpt_lang,
-        });
-        const prompt_email_separator_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt_email_separator,
-            chatgpt_lang: chatgpt_lang,
-        });
-    
-        
-        // assemble all email messages into one string and add the assignment prompt
-        const messages_list = [];
-        for await (let curr_message of messages) {
-          
-            // extract body of current message as text
-            const curr_message_full = await browser.messages.getFull(curr_message.id);
-            const curr_body_full_html = getMailBody(curr_message_full);
-            let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
-            if( curr_body_full_text.length === 0) {
-                taLog.log("No HTML found in the message body, using plain text...");
-                curr_body_full_text = curr_message_full.text;
-            }
-            
-            messages_list.push(await taPromptUtils.preparePrompt({
-              curr_prompt: prompt_email,
-              curr_message: curr_message,
-              chatgpt_lang: chatgpt_lang,
-              body_text: curr_body_full_text,
-              subject_text: curr_message_full.headers.subject,
-              msg_text: curr_body_full_html,
-            }));
-        };
-        const messages_string = messages_list.join(prompt_email_separator_string);
-        
-        const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
-        
-        // console.log(full_prompt);
-        
-        // send the prompt to the chat interface
-        openChatGPT(
-            full_prompt, 
-            prompt.action,
-            tabs[0].id,
-            prompt.name,
-            prompt.need_custom_text,
-            prompt
-        );
+        const tabId = tabs[0].id;
+        let summarize_prefs = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+
+        // Collect messages into array to check count
+        const messageArray = [];
+        for await (let msg of messages) {
+            messageArray.push(msg);
+        }
+
+        // Inline mode for single message: generate inline summary in the message pane
+        if (summarize_prefs.summarize_display_mode === 'inline' && messageArray.length === 1) {
+            await _generateSummaryForMessage(messageArray[0].headerMessageId, tabId);
+        } else {
+            // Webchat mode, or inline with multiple messages (fallback to webchat)
+            // we have three prompts, the actual assignment for the LLM, the email
+            // template prompt, and the email separator prompt
+            const specialPrompts = await getSpecialPrompts();
+            const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
+            const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
+            const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
+
+            const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+
+            // replace placeholders in the prompts the assignment prompt and email
+            // separator prompt do not have a message as context, so there is only
+            // limited things to replace
+            const prompt_string = await taPromptUtils.preparePrompt({
+                curr_prompt: prompt,
+                chatgpt_lang: chatgpt_lang,
+            });
+            const prompt_email_separator_string = await taPromptUtils.preparePrompt({
+                curr_prompt: prompt_email_separator,
+                chatgpt_lang: chatgpt_lang,
+            });
+
+
+            // assemble all email messages into one string and add the assignment prompt
+            const messages_list = [];
+            for (let curr_message of messageArray) {
+
+                // extract body of current message as text
+                const curr_message_full = await browser.messages.getFull(curr_message.id);
+                const curr_body_full_html = getMailBody(curr_message_full);
+                let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
+                if( curr_body_full_text.length === 0) {
+                    taLog.log("No HTML found in the message body, using plain text...");
+                    curr_body_full_text = curr_message_full.text;
+                }
+
+                messages_list.push(await taPromptUtils.preparePrompt({
+                  curr_prompt: prompt_email,
+                  curr_message: curr_message,
+                  chatgpt_lang: chatgpt_lang,
+                  body_text: curr_body_full_text,
+                  subject_text: curr_message_full.headers.subject,
+                  msg_text: curr_body_full_html,
+                }));
+            };
+            const messages_string = messages_list.join(prompt_email_separator_string);
+
+            const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
+
+            // send the prompt to the chat interface
+            openChatGPT(
+                full_prompt,
+                prompt.action,
+                tabId,
+                prompt.name,
+                prompt.need_custom_text,
+                prompt
+            );
+        }
     }
 
     taWorkingStatus.stopWorking();

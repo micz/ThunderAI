@@ -43,19 +43,32 @@ js/mzta-compose-script.js  (inserts text into Thunderbird compose window)
 
 ### Data Flow: Inline Summary on Message Display
 
+The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls where
+the summary is displayed. The `summarize_auto` preference controls when it is triggered.
+
+- `summarize_auto = 2` (automatic) always generates inline, regardless of `summarize_display_mode`.
+- `summarize_auto = 1` (manual button) respects `summarize_display_mode`:
+  - `'inline'` → button click triggers inline generation
+  - `'webchat'` → button click opens the AI chat window via `_openSummaryWebchat()`
+- Context menu summarize also respects `summarize_display_mode`:
+  - `'inline'` with a single message → generates inline via `_generateSummaryForMessage()`
+  - `'webchat'` or multiple messages → opens the AI chat window via `openChatGPT()`
+
 ```
 User opens/selects a message in Thunderbird
        ↓
 mzta-compose-script.js  (sends "initSummary" to background)
        ↓
-mzta-background.js      (checks summarize_auto pref)
+mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
        ↓
-  ┌────────────────────────────────────────────────┐
-  │ summarize_auto = 0 → do nothing                │
-  │ summarize_auto = 1 → show "click to generate"  │
-  │ summarize_auto = 2 → generate immediately       │
-  └────────────────────────────────────────────────┘
-       ↓  (if generating)
+  ┌──────────────────────────────────────────────────────────┐
+  │ summarize_auto = 0 → do nothing                          │
+  │ summarize_auto = 1 → show "click to generate" button     │
+  │   display_mode = inline  → click triggers inline gen     │
+  │   display_mode = webchat → click opens chat window       │
+  │ summarize_auto = 2 → generate immediately (always inline)│
+  └──────────────────────────────────────────────────────────┘
+       ↓  (if generating inline)
   taSummaryStore         (check cache / set processing)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)

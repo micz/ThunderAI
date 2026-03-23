@@ -850,9 +850,9 @@ switch (message.command) {
         triggerContainer.id = 'mzta-summary-generating';
         triggerContainer.style.cursor = 'default';
         triggerText.textContent = browser.i18n.getMessage("summarize_generating");
-        browser.runtime.sendMessage({ 
-            command: "triggerSummaryGeneration", 
-            headerMessageId: message.headerMessageId 
+        browser.runtime.sendMessage({
+            command: message.webchat ? "triggerSummaryWebchat" : "triggerSummaryGeneration",
+            headerMessageId: message.headerMessageId
         });
     };
 
