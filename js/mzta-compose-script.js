@@ -862,13 +862,18 @@ switch (message.command) {
     const generatingContainer = document.createElement('div');
     generatingContainer.id = 'mzta-summary-generating';
     generatingContainer.className = 'thunderai-summary-pane';
-    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
-    const generatingTitle = document.createElement('div');
+    const generatingLoadingImg = document.createElement('img');
+    generatingLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
+    generatingLoadingImg.style.cssText = "height: 16px; width: 16px;";
+
+    const generatingTitle = document.createElement('strong');
     generatingTitle.className = 'thunderai-summary-title';
     generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
-    generatingTitle.style.cssText = `font-weight: bold; font-size: 14px; margin-bottom: 0.5rem; color: ${titleColorGen};`;
+    generatingTitle.style.cssText = `font-size: 14px; color: ${titleColorGen};`;
 
+    generatingContainer.appendChild(generatingLoadingImg);
     generatingContainer.appendChild(generatingTitle);
 
     document.body.insertBefore(generatingContainer, document.body.firstChild);
