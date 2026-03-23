@@ -19,7 +19,6 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import {
     prefs_default,
-    getDynamicSettingValue,
     getDynamicSettingsDefaults
 } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
@@ -222,7 +221,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize_auto: 0, summarize_display_mode: prefs_default.summarize_display_mode });
+                        let prefs = await browser.storage.sync.get({ summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode });
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
