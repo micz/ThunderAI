@@ -28,6 +28,9 @@ export class taStorage {
 
     taLog = null;
 
+    /**
+     * @param {boolean} [do_debug=false] - Enable debug logging.
+     */
     constructor(do_debug = false) {
         this.taLog = new taLogger("mzta-storage", do_debug);
     }
@@ -179,10 +182,11 @@ export class taStorage {
     /**
      * Write the summary field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
-     * @param {string} text - The summary text.
+     * @param {object} summary_data - The summary data object with fields:
+     *   summary, error, message, summary_date.
      * @param {boolean} [force=true] - If true, overwrite existing summary data.
      */
-    async writeSummary(messageId, text, force = true) {
+    async writeSummary(messageId, summary_data, force = true) {
         this.taLog.log('[writeSummary] messageId: ' + messageId + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
@@ -192,11 +196,77 @@ export class taStorage {
                 return;
             }
             let now = Date.now();
-            record[taStorage.FIELD_SUMMARY] = { text: text, ts: now };
+            record[taStorage.FIELD_SUMMARY] = {
+                summary: summary_data.summary,
+                error: summary_data.error || false,
+                message: summary_data.message || '',
+                summary_date: summary_data.summary_date instanceof Date
+                    ? summary_data.summary_date.toISOString()
+                    : summary_data.summary_date,
+                ts: now,
+            };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {
             this.taLog.error('writeSummary error: ' + e);
+        }
+    }
+
+    /**
+     * Get all records that contain a summary field.
+     * @returns {Promise<object>} Map of messageId -> summary data object.
+     */
+    async getAllSummaryRecords() {
+        this.taLog.log('[getAllSummaryRecords] loading all summary records');
+        try {
+            let all = await messenger.storage.local.get(null);
+            let result = {};
+            for (let [key, record] of Object.entries(all)) {
+                if (!key.startsWith(taStorage.STORAGE_KEY_PREFIX)) continue;
+                if (!this.hasField(record, taStorage.FIELD_SUMMARY)) continue;
+                let messageId = key.slice(taStorage.STORAGE_KEY_PREFIX.length);
+                let summary = record[taStorage.FIELD_SUMMARY];
+                result[messageId] = {
+                    headerMessageId: messageId,
+                    summary: summary.summary,
+                    error: summary.error || false,
+                    message: summary.message || '',
+                    summary_date: new Date(summary.summary_date || summary.ts),
+                };
+            }
+            this.taLog.log('[getAllSummaryRecords] found ' + Object.keys(result).length + ' summary records');
+            return result;
+        } catch (e) {
+            this.taLog.error('getAllSummaryRecords error: ' + e);
+            return {};
+        }
+    }
+
+    /**
+     * Delete only the summary field from a record.
+     * Deletes the entire record if no other data fields remain.
+     * @param {string} messageId - The Message-ID header string.
+     */
+    async deleteSummaryField(messageId) {
+        this.taLog.log('[deleteSummaryField] messageId: ' + messageId);
+        try {
+            let key = this._buildKey(messageId);
+            let record = await this.getRecord(messageId);
+            if (!record || !(taStorage.FIELD_SUMMARY in record)) {
+                this.taLog.log('[deleteSummaryField] no summary field found for messageId: ' + messageId);
+                return;
+            }
+            delete record[taStorage.FIELD_SUMMARY];
+            const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
+            if (remainingFields.length === 0) {
+                this.taLog.log('[deleteSummaryField] no remaining fields, deleting entire record');
+                await messenger.storage.local.remove(key);
+            } else {
+                this.taLog.log('[deleteSummaryField] remaining fields: ' + remainingFields.join(', '));
+                await messenger.storage.local.set({ [key]: record });
+            }
+        } catch (e) {
+            this.taLog.error('deleteSummaryField error: ' + e);
         }
     }
 

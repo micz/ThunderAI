@@ -96,6 +96,7 @@ await reload_pref_init();
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
+let summaryStore = new taSummaryStore(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -227,13 +228,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
-                        let cachedSummary = await taSummaryStore.loadSummary(message.headerMessageId);
+                        let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
                         if (cachedSummary && !cachedSummary.error) {
                             browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
                             return;
                         }
 
-                        if (await taSummaryStore.isProcessing(message.headerMessageId)) {
+                        if (await summaryStore.isProcessing(message.headerMessageId)) {
                             browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
                             return;
                         }
@@ -265,7 +266,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSummary':
                 async function _refreshSummary(message) {
                     let tabId = sender.tab.id;
-                    await taSummaryStore.removeSummary(message.headerMessageId);
+                    await summaryStore.removeSummary(message.headerMessageId);
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
                 _refreshSummary(message);
@@ -445,23 +446,23 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
-        let cachedSummary = await taSummaryStore.loadSummary(headerMessageId);
+        let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
             return;
         }
 
-        if (await taSummaryStore.isProcessing(headerMessageId)) {
+        if (await summaryStore.isProcessing(headerMessageId)) {
             browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
             return;
         }
 
-        await taSummaryStore.setProcessing(headerMessageId);
+        await summaryStore.setProcessing(headerMessageId);
         browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
 
         const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
         if (!messageResult || messageResult.messages.length === 0) {
-            await taSummaryStore.saveError(headerMessageId, "Message not found");
+            await summaryStore.saveError(headerMessageId, "Message not found");
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
             return;
         }
@@ -479,7 +480,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
-            await taSummaryStore.saveError(headerMessageId, errorMsg);
+            await summaryStore.saveError(headerMessageId, errorMsg);
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
             return;
         }
@@ -503,12 +504,12 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
-        await taSummaryStore.saveSummary(summaryData, headerMessageId);
+        await summaryStore.saveSummary(summaryData, headerMessageId);
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: summaryData });
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
-        await taSummaryStore.saveError(headerMessageId, error.message || String(error));
+        await summaryStore.saveError(headerMessageId, error.message || String(error));
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
     }
 }
