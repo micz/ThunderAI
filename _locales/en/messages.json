@@ -1965,7 +1965,11 @@
       "description": ""
   },
   "summarize_title": {
-      "message": "Summary",
+      "message": "ThunderAI Overview",
+      "description": ""
+  },
+  "summarize_collapse": {
+      "message": "Collapse summary",
       "description": ""
   },
   "summarize_generating": {

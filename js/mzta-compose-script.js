@@ -799,10 +799,18 @@ switch (message.command) {
         browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
     };
 
+    const collapseBtn = document.createElement('span');
+    collapseBtn.textContent = '∧';
+    collapseBtn.title = browser.i18n.getMessage("summarize_collapse") || 'Collapse summary';
+    collapseBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s;`;
+    collapseBtn.onmouseover = () => collapseBtn.style.opacity = '1';
+    collapseBtn.onmouseout = () => collapseBtn.style.opacity = '0.6';
+
     const summaryBtnGroup = document.createElement('span');
     summaryBtnGroup.style.cssText = 'display: flex; align-items: center; gap: 5px;';
     summaryBtnGroup.appendChild(refreshBtn);
     summaryBtnGroup.appendChild(summaryCloseBtn);
+    summaryBtnGroup.appendChild(collapseBtn);
 
     summaryHeader.appendChild(summaryTitle);
     summaryHeader.appendChild(summaryBtnGroup);
@@ -816,6 +824,18 @@ switch (message.command) {
         summaryText.textContent = summaryData.summary;
     }
     summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
+
+    collapseBtn.onclick = () => {
+        if (summaryText.style.display === 'none') {
+            summaryText.style.display = '';
+            summaryHeader.style.marginBottom = '0.5rem';
+            collapseBtn.textContent = '∧';
+        } else {
+            summaryText.style.display = 'none';
+            summaryHeader.style.marginBottom = '0';
+            collapseBtn.textContent = '∨';
+        }
+    };
 
     summaryContainer.appendChild(summaryText);
 
