@@ -1992,6 +1992,14 @@
        "message": "Refresh spam report",
        "description": ""
    },
+   "spamfilter_delete": {
+       "message": "Delete spam report",
+       "description": ""
+   },
+   "summarize_delete": {
+       "message": "Delete summary",
+       "description": ""
+   },
   "antispam_by": {
     "message": "Antispam by",
     "description": ""

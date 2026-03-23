@@ -716,8 +716,10 @@ switch (message.command) {
 
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
-    closeBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
-    closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
+    closeBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
+    closeBtn.title = browser.i18n.getMessage("spamfilter_delete");
+    closeBtn.onmouseover = () => closeBtn.style.opacity = '1';
+    closeBtn.onmouseout = () => closeBtn.style.opacity = '0.6';
     closeBtn.onclick = function() {
         container.remove();
         browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
@@ -788,8 +790,10 @@ switch (message.command) {
 
     const summaryCloseBtn = document.createElement('span');
     summaryCloseBtn.textContent = '×';
-    summaryCloseBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
-    summaryCloseBtn.title = browser.i18n.getMessage("chatgpt_win_close");
+    summaryCloseBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
+    summaryCloseBtn.title = browser.i18n.getMessage("summarize_delete");
+    summaryCloseBtn.onmouseover = () => summaryCloseBtn.style.opacity = '1';
+    summaryCloseBtn.onmouseout = () => summaryCloseBtn.style.opacity = '0.6';
     summaryCloseBtn.onclick = function() {
         summaryContainer.remove();
         browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
