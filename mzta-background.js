@@ -223,37 +223,33 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     try {
                         let tabId = sender.tab.id;
                         let prefs = await browser.storage.sync.get({ summarize_auto: 0, summarize_display_mode: prefs_default.summarize_display_mode });
-                        if (prefs.summarize_auto === 0) return;
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
+                        // Always show cached summary if available, regardless of summarize_auto
+                        let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
+                        if (cachedSummary && !cachedSummary.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                            return;
+                        }
+
+                        if (await summaryStore.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                            return;
+                        }
+
+                        // If summarize_auto is disabled, don't show button or auto-generate
+                        if (prefs.summarize_auto === 0) return;
+
                         // Auto mode (summarize_auto === 2) always generates inline
                         if (prefs.summarize_auto === 2) {
-                            let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
-                            if (cachedSummary && !cachedSummary.error) {
-                                browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
-                                return;
-                            }
-                            if (await summaryStore.isProcessing(message.headerMessageId)) {
-                                browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
-                                return;
-                            }
                             _generateSummaryForMessage(message.headerMessageId, tabId);
                             return;
                         }
 
                         // Manual button mode (summarize_auto === 1)
                         if (prefs.summarize_display_mode === 'inline') {
-                            let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
-                            if (cachedSummary && !cachedSummary.error) {
-                                browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
-                                return;
-                            }
-                            if (await summaryStore.isProcessing(message.headerMessageId)) {
-                                browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
-                                return;
-                            }
                             browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
                         } else {
                             browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId, webchat: true });
