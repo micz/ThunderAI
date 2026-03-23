@@ -87,7 +87,7 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.) |
-| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection) |
+| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders summary/spam banners in message display |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |

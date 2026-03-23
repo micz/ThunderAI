@@ -17,7 +17,12 @@
  */
 
 import { placeholdersUtils } from './mzta-placeholders.js';
-import { extractJsonObject } from './mzta-utils.js';
+import {
+    extractJsonObject,
+    getMailBody,
+    htmlBodyToPlainText
+} from './mzta-utils.js';
+import { getSpecialPrompts } from './mzta-prompts.js';
 import { prefs_default } from '../options/mzta-options-default.js';
 
 export const taPromptUtils = {
@@ -124,6 +129,48 @@ export const taPromptUtils = {
         }
 
         return chatgpt_lang;
+    },
+
+    
+    async buildSummaryPrompt(messageDataArray) {
+        const specialPrompts = await getSpecialPrompts();
+        const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
+        const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
+        const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
+
+        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
+
+        const prompt_string = await taPromptUtils.preparePrompt({
+            curr_prompt: prompt,
+            chatgpt_lang: chatgpt_lang,
+        });
+        const prompt_email_separator_string = await taPromptUtils.preparePrompt({
+            curr_prompt: prompt_email_separator,
+            chatgpt_lang: chatgpt_lang,
+        });
+
+        const messages_list = [];
+        for (let entry of messageDataArray) {
+            const bodyHtml = getMailBody(entry.fullMessage);
+            let bodyText = htmlBodyToPlainText(bodyHtml.html);
+            if (bodyText.length === 0) {
+                bodyText = bodyHtml.text || '';
+            }
+
+            messages_list.push(await taPromptUtils.preparePrompt({
+                curr_prompt: prompt_email,
+                curr_message: entry.message,
+                chatgpt_lang: chatgpt_lang,
+                body_text: bodyText,
+                subject_text: entry.fullMessage.headers.subject,
+                msg_text: bodyHtml,
+            }));
+        }
+
+        const messages_string = messages_list.join(prompt_email_separator_string);
+        const promptText = prompt_string + prompt_email_separator_string + messages_string;
+
+        return { promptText, promptInfo: prompt };
     },
 
     /**

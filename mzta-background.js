@@ -57,9 +57,8 @@ import {
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
-import { 
-    getSpamFilterPrompt,
-    getSpecialPrompts
+import {
+    getSpamFilterPrompt
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -484,13 +483,6 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         }
 
         const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
-        const mailBody = getMailBody(fullMessage);
-        let bodyText = htmlBodyToPlainText(mailBody.html);
-        if (bodyText.length === 0) {
-            bodyText = mailBody.text.replace(/\s+/g, ' ').trim();
-        }
-
-        const promptText = browser.i18n.getMessage('auto_summary_prompt') + bodyText;
 
         const connectionType = getConnectionType(prefs, {}, 'summarize');
         
@@ -500,6 +492,8 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
             return;
         }
+
+        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message: messageResult.messages[0], fullMessage }]);
 
         const cmd = new mzta_specialCommand({
             prompt: promptText,
@@ -532,22 +526,6 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
 
 async function _openSummaryWebchat(headerMessageId, tabId) {
     try {
-        const specialPrompts = await getSpecialPrompts();
-        const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
-        const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
-        const prompt_email_separator = specialPrompts.find(p => p.id === 'prompt_summarize_email_separator');
-
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
-
-        const prompt_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt,
-            chatgpt_lang: chatgpt_lang,
-        });
-        const prompt_email_separator_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt_email_separator,
-            chatgpt_lang: chatgpt_lang,
-        });
-
         const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
         if (!messageResult || messageResult.messages.length === 0) {
             console.error("[ThunderAI] _openSummaryWebchat: Message not found for headerMessageId:", headerMessageId);
@@ -556,24 +534,10 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
 
         const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
-        const curr_body_full_html = getMailBody(curr_message_full);
-        let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
-        if (curr_body_full_text.length === 0) {
-            curr_body_full_text = curr_body_full_html.text;
-        }
 
-        const email_text = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt_email,
-            curr_message: curr_message,
-            chatgpt_lang: chatgpt_lang,
-            body_text: curr_body_full_text,
-            subject_text: curr_message_full.headers.subject,
-            msg_text: curr_body_full_html,
-        });
+        const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }]);
 
-        const full_prompt = prompt_string + prompt_email_separator_string + email_text;
-
-        openChatGPT(full_prompt, prompt.action, tabId, prompt.name, prompt.need_custom_text, prompt);
+        openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
     } catch (error) {
         console.error("[ThunderAI] Error opening summary webchat:", error);
     }
@@ -1464,63 +1428,14 @@ async function processEmails(args) {
             await _generateSummaryForMessage(messageArray[0].headerMessageId, tabId);
         } else {
             // Webchat mode, or inline with multiple messages (fallback to webchat)
-            // we have three prompts, the actual assignment for the LLM, the email
-            // template prompt, and the email separator prompt
-            const specialPrompts = await getSpecialPrompts();
-            const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
-            const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
-            const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
-
-            const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
-
-            // replace placeholders in the prompts the assignment prompt and email
-            // separator prompt do not have a message as context, so there is only
-            // limited things to replace
-            const prompt_string = await taPromptUtils.preparePrompt({
-                curr_prompt: prompt,
-                chatgpt_lang: chatgpt_lang,
-            });
-            const prompt_email_separator_string = await taPromptUtils.preparePrompt({
-                curr_prompt: prompt_email_separator,
-                chatgpt_lang: chatgpt_lang,
-            });
-
-
-            // assemble all email messages into one string and add the assignment prompt
-            const messages_list = [];
+            const messageDataArray = [];
             for (let curr_message of messageArray) {
+                const fullMessage = await browser.messages.getFull(curr_message.id);
+                messageDataArray.push({ message: curr_message, fullMessage });
+            }
+            const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt(messageDataArray);
 
-                // extract body of current message as text
-                const curr_message_full = await browser.messages.getFull(curr_message.id);
-                const curr_body_full_html = getMailBody(curr_message_full);
-                let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
-                if( curr_body_full_text.length === 0) {
-                    taLog.log("No HTML found in the message body, using plain text...");
-                    curr_body_full_text = curr_message_full.text;
-                }
-
-                messages_list.push(await taPromptUtils.preparePrompt({
-                  curr_prompt: prompt_email,
-                  curr_message: curr_message,
-                  chatgpt_lang: chatgpt_lang,
-                  body_text: curr_body_full_text,
-                  subject_text: curr_message_full.headers.subject,
-                  msg_text: curr_body_full_html,
-                }));
-            };
-            const messages_string = messages_list.join(prompt_email_separator_string);
-
-            const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
-
-            // send the prompt to the chat interface
-            openChatGPT(
-                full_prompt,
-                prompt.action,
-                tabId,
-                prompt.name,
-                prompt.need_custom_text,
-                prompt
-            );
+            openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
         }
     }
 

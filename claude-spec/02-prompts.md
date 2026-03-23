@@ -74,12 +74,16 @@ The summarize feature uses two distinct prompt pathways:
 - Default prompt texts are stored as i18n keys: `prompt_summarize_full_text`, `prompt_summarize_email_template_full_text`, `prompt_summarize_email_separator_full_text`
 
 **Inline Summary on Message Display** (automatic or manual per `summarize_auto` pref):
-- Uses a single i18n string `auto_summary_prompt` concatenated with the message body text
-- Does **not** use the 3 special prompts above
+- Uses the same 3 special prompts as webchat mode, via `taPromptUtils.buildSummaryPrompt()` in `js/mzta-utils-prompt.js`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
 - Result is rendered as a styled banner at the top of the message body via `mzta-compose-script.js`
 - Banner includes a refresh button (↻) to regenerate the summary
 - Cached per-message via `taSummaryStore` / `taStorage` (max 100 entries)
+
+**Unified Prompt Building** — `taPromptUtils.buildSummaryPrompt(messageDataArray)`:
+- All summary paths (inline, webchat single, webchat multi) use this single method
+- Accepts an array of `{ message, fullMessage }` entries
+- Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
 
 ## Prompt Types Reference
 
