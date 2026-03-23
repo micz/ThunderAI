@@ -41,10 +41,14 @@ import {
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
-let taLog = new taLogger("mzta-spamfilter-page",true);
-taSpamReport.logger = taLog;
+let taLog = null;
+let spamReport = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    let prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
+    taLog = new taLogger("mzta-spamfilter-page", prefs.do_debug);
+    spamReport = new taSpamReport(prefs.do_debug);
 
     let specialPrompts = await getSpecialPrompts();
     let spamfilter_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_spamfilter');
@@ -162,10 +166,10 @@ document.addEventListener('DOMContentLoaded', async () => {
        }
        if (selectedAccounts.length === document.querySelectorAll('.accountCheckbox').length) {
          browser.storage.sync.set({ spamfilter_enabled_accounts: [] });
-         taSpamReport.logger.log("All accounts selected, saving spamfilter_enabled_accounts = [].");
+         taLog.log("All accounts selected, saving spamfilter_enabled_accounts = [].");
        } else {
          browser.storage.sync.set({ spamfilter_enabled_accounts: selectedAccounts });
-         taSpamReport.logger.log("Saving spamfilter_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
+         taLog.log("Saving spamfilter_enabled_accounts = " + JSON.stringify(selectedAccounts) + ".");
        }
        });
      });
@@ -200,7 +204,7 @@ function check_spamfilter_threshold(event) {
 }
 
 async function loadSpamReport(){
-    let report_data = await taSpamReport.getAllReportData();
+    let report_data = await spamReport.getAllReportData();
     //console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
     //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
     if(report_data == undefined){

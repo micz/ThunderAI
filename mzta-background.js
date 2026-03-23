@@ -95,6 +95,7 @@ await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
+let spamReport = new taSpamReport(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -113,25 +114,6 @@ browser.composeScripts.register({
 messenger.messageDisplayScripts.register({
     js: [{ file: "js/mzta-compose-script.js" }]
 });
-
-// Inject script in all already open message tabs.
-let openTabs = await messenger.tabs.query();
-let messageTabs = openTabs.filter(
-    tab => ["mail", "messageDisplay"].includes(tab.type)
-);
-for (let messageTab of messageTabs) {
-    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
-        continue;
-    }
-    try {
-        await browser.tabs.executeScript(messageTab.id, {
-            file: "js/mzta-compose-script.js"
-        })
-    } catch (error) {
-        console.error("[ThunderAI] Error injecting message display script:", error);
-        console.error("[ThunderAI] Message tab:", messageTab.url);
-    }
-}
 
 browser.contentScripts.register({
     matches: ["https://*.chatgpt.com/*"],
@@ -292,14 +274,24 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
             case 'chatgpt_close':
-                    browser.windows.remove(message.window_id).then(() => {
-                        taLog.log("ChatGPT window closed successfully.");
-                        return true;
-                    }).catch((error) => {
-                        taLog.error("Error closing ChatGPT window:", error);
-                        return false;
-                    });
-                    break;
+                    async function _closeChatGptWindow(window_id) {
+                        let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
+                        if(prefs_close.chatgpt_win_save_position){
+                            try {
+                                let winInfo = await browser.windows.get(window_id);
+                                await browser.storage.sync.set({chatgpt_win_top: winInfo.top, chatgpt_win_left: winInfo.left});
+                                taLog.log("Window position saved: top=" + winInfo.top + ", left=" + winInfo.left);
+                            } catch(e) {
+                                taLog.error("Error saving window position: " + e);
+                            }
+                        }
+                        return browser.windows.remove(window_id).then(() => {
+                            taLog.log("ChatGPT window closed successfully.");
+                        }).catch((error) => {
+                            taLog.error("Error closing ChatGPT window:", error);
+                        });
+                    }
+                    return _closeChatGptWindow(message.window_id);
             case 'chatgpt_replaceSelectedText':
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
@@ -422,10 +414,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
-                        let report = await taSpamReport.loadReportData(message.headerMessageId);
+                        let report = await spamReport.loadReportData(message.headerMessageId);
                         if (report) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
-                        } else if (await taSpamReport.isProcessing(message.headerMessageId)) {
+                        } else if (await spamReport.isProcessing(message.headerMessageId)) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
                     } catch (e) {
@@ -435,7 +427,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _checkSpamReport(sender.tab.id);
                 break;
             case 'removeSpamReport':
-                taSpamReport.removeReportData(message.headerMessageId);
+                spamReport.removeReportData(message.headerMessageId);
                 break;
             default:
                 break;
@@ -601,12 +593,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
             
-            taLog.log("[chatgpt_web] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options.width = prefs.chatgpt_win_width,
-                win_options.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options, prefs);
 
             const listener = (message, sender, sendResponse) => {
                 async function handleChatGptWeb(createdTab) {
@@ -704,12 +691,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options2.width = prefs.chatgpt_win_width,
-                win_options2.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options2, prefs);
 
             await browser.windows.create(win_options2);
         }
@@ -755,12 +737,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[google_gemini_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options5, prefs);
 
             await browser.windows.create(win_options5);
         }
@@ -813,12 +790,7 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[ollama_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
-
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options3.width = prefs.chatgpt_win_width,
-                win_options3.height = prefs.chatgpt_win_height
-            }
+            applyWindowPositionAndSize(win_options3, prefs);
 
             await browser.windows.create(win_options3);
 
@@ -866,13 +838,8 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                 type: "popup",
             }
 
-            taLog.log("[openai_comp_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+            applyWindowPositionAndSize(win_options4, prefs);
 
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options4.width = prefs.chatgpt_win_width,
-                win_options4.height = prefs.chatgpt_win_height
-            }
-    
             await browser.windows.create(win_options4);
         }
         break;  // openai_comp_api - END
@@ -881,13 +848,13 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         {
             // We are using the Anthropic API
 
-            let rand_call_id5 = '_anthropic_' + generateCallID();
+            let rand_call_id6 = '_anthropic_' + generateCallID();
 
-            const listener5 = (message, sender, sendResponse) => {
+            const listener6 = (message, sender, sendResponse) => {
 
                 function handleAnthropicApi(createdTab) {
-                    let mailMessageId5 = -1;
-                    if(mailMessage) mailMessageId5 = mailMessage.id;
+                    let mailMessageId6 = -1;
+                    if(mailMessage) mailMessageId6 = mailMessage.id;
 
                     // check if the config is present, or give a message error
                     if (prefs.anthropic_api_key == '') {
@@ -903,32 +870,27 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
                         return;
                     }
                     //console.log(">>>>>>>>>> sender: " + JSON.stringify(sender));
-                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId5, do_custom_text: do_custom_text, prompt_info: prompt_info});
+                    browser.tabs.sendMessage(createdTab.id, { command: "api_send", prompt: promptText, action: action, tabId: curr_tabId, mailMessageId: mailMessageId6, do_custom_text: do_custom_text, prompt_info: prompt_info});
                     taLog.log('[OpenAI ChatGPT] Connection succeded!');
-                    browser.runtime.onMessage.removeListener(listener5);
+                    browser.runtime.onMessage.removeListener(listener6);
                 }
 
-                if (message.command === "anthropic_api_ready_"+rand_call_id5) {
+                if (message.command === "anthropic_api_ready_"+rand_call_id6) {
                     return handleAnthropicApi(sender.tab);
                 }
                 return false;
             }
 
-            browser.runtime.onMessage.addListener(listener5);
+            browser.runtime.onMessage.addListener(listener6);
 
-            let win_options5 = {
-                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id5+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
+            let win_options6 = {
+                url: browser.runtime.getURL('api_webchat/index.html?llm='+prefs.connection_type+'&call_id='+rand_call_id6+'&ph_def_val='+(prefs.placeholders_use_default_value?'1':'0')+'&prompt_id='+encodeURIComponent(prompt_info.id) + '&prompt_name=' + encodeURIComponent(i18nConditionalGet(prompt_info.name))),
                 type: "popup",
             }
 
-            taLog.log("[chatgpt_api] prefs.chatgpt_win_width: " + prefs.chatgpt_win_width + ", prefs.chatgpt_win_height: " + prefs.chatgpt_win_height);
+            applyWindowPositionAndSize(win_options6, prefs);
 
-            if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
-                win_options5.width = prefs.chatgpt_win_width,
-                win_options5.height = prefs.chatgpt_win_height
-            }
-
-            await browser.windows.create(win_options5);
+            await browser.windows.create(win_options6);
         }
         break;  // anthropic_api - END
 
@@ -944,8 +906,22 @@ function checkScreenDimensions(prefs){
 
     if(prefs.chatgpt_win_height > height) prefs.chatgpt_win_height = height - 50;
     if(prefs.chatgpt_win_width > width) prefs.chatgpt_win_width = width - 50;
-    
+
     return prefs;
+}
+
+function applyWindowPositionAndSize(win_options, prefs){
+    if((prefs.chatgpt_win_width != '') && (prefs.chatgpt_win_height != '') && (prefs.chatgpt_win_width != 0) && (prefs.chatgpt_win_height != 0)){
+        win_options.width = prefs.chatgpt_win_width;
+        win_options.height = prefs.chatgpt_win_height;
+        taLog.log("Applying saved window dimensions: width=" + prefs.chatgpt_win_width + ", height=" + prefs.chatgpt_win_height);
+    }
+    if((prefs.chatgpt_win_top != '') && (prefs.chatgpt_win_left != '')){
+        win_options.top = prefs.chatgpt_win_top;
+        win_options.left = prefs.chatgpt_win_left;
+        taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
+    }
+    return win_options;
 }
 
 function doGetSparkFeature(spark_feature_active) {
@@ -972,6 +948,7 @@ async function reload_pref_init(){
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+        chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
@@ -1196,8 +1173,6 @@ const newEmailListener = (folder, messagesList) => {
     async function _newEmailListener(){
         let messages = getMessages(messagesList);
 
-        taSpamReport.logger = taLog;
-
         let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
 
         await processEmails({
@@ -1207,7 +1182,7 @@ const newEmailListener = (folder, messagesList) => {
         });
 
         if(prefs_init.spamfilter){
-            taSpamReport.truncReportData();
+            spamReport.truncReportData();
         }
     }
 
@@ -1330,8 +1305,8 @@ async function processEmails(args) {
                     }
                 }
 
-                await taSpamReport.removeReportData(message.headerMessageId);
-                await taSpamReport.setProcessing(message.headerMessageId);
+                await spamReport.removeReportData(message.headerMessageId);
+                await spamReport.setProcessing(message.headerMessageId);
                 
                 await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
 
@@ -1362,7 +1337,7 @@ async function processEmails(args) {
                     spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
                 } catch (err) {
                     console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, err.message || String(err));
+                    let err_data = await spamReport.saveError(message.headerMessageId, err.message || String(err));
                     await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
                     continue;
                 }
@@ -1373,7 +1348,7 @@ async function processEmails(args) {
                     jsonObj = extractJsonObject(spamfilter_result);
                 } catch (e) {
                     console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, e.message || String(e));
+                    let err_data = await spamReport.saveError(message.headerMessageId, e.message || String(e));
                     await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
                     continue;
                 }
@@ -1399,7 +1374,7 @@ async function processEmails(args) {
                     taLog.log("Marked as spam [" + message.headerMessageId + "]");
                 }
     
-                taSpamReport.saveReportData(report_data, message.headerMessageId);
+                spamReport.saveReportData(report_data, message.headerMessageId);
     
                 // Check if the message is currently displayed and update the banner
                 await updateSpamPanel(message.headerMessageId, "showSpamReport", report_data);
@@ -1473,6 +1448,23 @@ async function processEmails(args) {
     taWorkingStatus.stopWorking();
 }
 
-
-
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+
+// Inject script and CSS in all already open message tabs.
+let openTabs = await messenger.tabs.query();
+let messageTabs = openTabs.filter(
+    tab => ["mail", "messageDisplay"].includes(tab.type)
+);
+for (let messageTab of messageTabs) {
+    if((messageTab.url == undefined) || (["start.thunderbird.net","about:blank"].some(blockedUrl => messageTab.url.includes(blockedUrl)))) {
+        continue;
+    }
+    try {
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/mzta-compose-script.js"
+        })
+    } catch (error) {
+        console.error("[ThunderAI] Error injecting message display script:", error);
+        console.error("[ThunderAI] Message tab:", messageTab.url);
+    }
+}

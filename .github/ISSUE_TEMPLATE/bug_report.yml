@@ -8,7 +8,7 @@ body:
 
         If you have a feature or enhancement request, please use the [feature request][fr] form.
 
-        [fr]: https://github.com/micz/ThunderAI/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=
+        [fr]: https://github.com/micz/ThunderAI/issues/new?assignees=&labels=&projects=&template=feature_request.yml&title=
   - type: textarea
     validations:
       required: true

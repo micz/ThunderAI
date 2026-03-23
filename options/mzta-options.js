@@ -25,7 +25,8 @@ import {
   getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
-  setTomSelectBorder
+  setTomSelectBorder,
+  getMiczItUrl
 } from '../js/mzta-utils.js';
 import {
   injectConnectionUI,
@@ -240,6 +241,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   i18n.updateDocument();
+
+  document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
+  document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+
   document.querySelectorAll(".option-input").forEach(element => {
     element.addEventListener("change", saveOptions);
   });
@@ -358,6 +363,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_GetCalendarEvent();
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
+
+  document.getElementById('btn_welcome').addEventListener('click', async () => {
+      await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+  });
 
   browser.runtime.getPlatformInfo().then(info => {
     taLog.log("OS: " + info.os);

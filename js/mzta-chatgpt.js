@@ -614,11 +614,21 @@ async function doProceed(message, customText = ''){
     let final_prompt = message.prompt;
 
     if (Array.isArray(customText)) {
+        let anyReplaced = false;
         customText.forEach(obj => {
-            let escapedPH = obj.placeholder.replace(/[.*+?^{$}()|[\\]\\\\]/g, '\\\\$&');
-            let regex = new RegExp(escapedPH, 'g');
-            final_prompt = final_prompt.replace(regex, obj.custom_text);
+            if (final_prompt.includes(obj.placeholder)) {
+                anyReplaced = true;
+                let escapedPH = obj.placeholder.replace(/[.*+?^{$}()|[\\]\\\\]/g, '\\\\$&');
+                let regex = new RegExp(escapedPH, 'g');
+                final_prompt = final_prompt.replace(regex, obj.custom_text);
+            }
         });
+        if (!anyReplaced) {
+            const inputText = customText.map(obj => obj.custom_text).join(' ');
+            if (inputText !== '') {
+                final_prompt += ' ' + inputText;
+            }
+        }
     } else {
         //check if there is the additional_text placeholder
         if(final_prompt.includes('{%additional_text%}')){

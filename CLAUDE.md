@@ -1,39 +1,65 @@
-# ThunderAI Project Agent Context
+# ThunderAI - Claude Code Guide
 
 ## Project Overview
-ThunderAI is a Mozilla Thunderbird add-on that integrates Large Language Models (LLMs) such as ChatGPT, Gemini, Claude, and Ollama for advanced email management. It allows users to analyze, draft, correct, tag, and create calendar events directly from the email client.
+ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multiple AI providers (ChatGPT Web, OpenAI API, Google Gemini, Claude/Anthropic, Ollama, and OpenAI-compatible APIs) directly into the Thunderbird email client.
 
-## Technical Stack
-- **Languages:** JavaScript (ES6+), HTML5, CSS3.
-- **Environment:** Thunderbird MailExtension API (based on WebExtensions).
-- **Core Logic:** Primarily located in `background.js` and UI-specific scripts.
-- **API Integrations:** Specific logic is contained within dedicated API provider files (e.g., `api_openai.js`, `api_google_gemini.js`).
+- **Extension ID:** `thunderai@micz.it`
+- **Min Thunderbird:** 140.0+
+- **Language:** Plain ES6+ JavaScript modules — no build tools, no transpilation, no npm
+- **License:** GPLv3
 
-## Development Rules & Style Guide
-- **Code Style:** Use modern JavaScript. Prefer `async/await` over chained Promises.
-- **Naming Conventions:** Use `camelCase` for variables and functions.
-- **Security:** - Never hardcode API keys in the source code.
-    - Use `messenger.storage.local` for data persistence.
-    - Strictly adhere to CORS policies for external API calls.
-- **i18n:** 
-    - The project supports multiple languages via `_locales/`. When adding UI strings, always use `messenger.i18n.getMessage()`.
-    - When you need to modify language file, modify only the english version.
-- **Logging:**
-    - When possibile use the taLog object to log errors, otherwise use the console.error(<msg>) method.
-    - If it's useful to log add debug logs using taLog.log(<msg>) method.
+## Key Rules
 
-## Files & Directories Structure
-- `manifest.json`: Extension entry point and permission definitions.
-- `api_*.js`: Modules for integration with different AI providers.
-- `options/`: Configuration and settings pages.
-- `_locales/`: Translation files (JSON format).
-- `graphics/`: Visual assets and icons.
+1. **Localization:** Modify ONLY `_locales/en/messages.json`. All other locale files are managed via Weblate — never touch them.
+2. **No build system:** There is no bundler, compiler, or package manager. All JS files are plain ES6 modules loaded directly by the browser engine.
+3. **Module imports:** Use relative paths with `.js` extension (e.g., `import { foo } from '../js/mzta-utils.js'`).
+4. **Placeholder format:** Placeholders in prompt text use the `{%placeholder_id%}` syntax (e.g., `{%mail_text_body_or_selected%}`).
+5. **No test suite:** There is no automated test framework. Testing is done manually in Thunderbird.
+6. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
+7. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 
-## Important Commands & Workflow
-- **Testing:** Since this is a Thunderbird add-on, testing is performed by loading the extension as a "Temporary Add-on" via Thunderbird's `Debug Add-ons` menu.
-- **Build:** The project does not use complex build tools (no Webpack/Vite by default); it is a "pure" MailExtension.
+## Directory Map
 
-## Agent Instructions
-1. **Context Awareness:** When modifying API-related files, ensure compatibility with the existing placeholder system (e.g., `{%mail_body%}`, `{%additional_text%}`).
-2. **Permission Review:** Before modifying `manifest.json`, verify that any new permissions requested are strictly necessary for the feature.
-3. **Compatibility:** Ensure code is compatible with the latest Thunderbird ESR (Extended Support Release) versions.
+```
+/
+├── mzta-background.js      # Background script (main entry point)
+├── mzta-background.html    # Loads the background script
+├── manifest.json           # Extension manifest
+├── js/                     # Core modules
+│   ├── api/                # AI API integration modules
+│   ├── workers/            # Web Workers (one per API provider)
+│   ├── lib/                # Third-party libraries (diff.js)
+│   └── mzta-*.js           # Core utilities, menus, prompts, placeholders
+├── options/                # Settings UI
+│   ├── mzta-options.html/.js/.css
+│   ├── mzta-options-default.js   # ALL default preference values
+│   └── mzta-release-notes.html
+├── pages/                  # Feature-specific settings pages
+│   ├── addtags/
+│   ├── customprompts/
+│   ├── customdataplaceholders/
+│   ├── get-calendar-event/
+│   ├── get-task/
+│   ├── spamfilter/
+│   ├── summarize/
+│   └── onboarding/
+├── popup/                  # Popup menu (shown on toolbar click)
+│   └── mzta-popup.html/.js/.css
+├── _locales/               # Localization
+│   ├── en/messages.json    # ← ONLY THIS FILE is edited directly
+│   └── [15 other languages managed by Weblate]
+├── images/                 # Icons and graphical assets
+└── api_webchat/            # Web chat API interface
+```
+
+## Spec Files
+
+For detailed documentation see [`claude-spec/`](claude-spec/):
+
+- [01-architecture.md](claude-spec/01-architecture.md) — Module structure and data flow
+- [02-prompts.md](claude-spec/02-prompts.md) — Prompt system (types, actions, properties)
+- [03-placeholders.md](claude-spec/03-placeholders.md) — Placeholder system
+- [04-api-integrations.md](claude-spec/04-api-integrations.md) — AI provider integrations
+- [05-options.md](claude-spec/05-options.md) — Settings and preferences system
+- [06-localization.md](claude-spec/06-localization.md) — i18n rules and workflow
+- [99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) — Thunderbird WebExtensions development guidelines (API usage, experiments, review requirements)

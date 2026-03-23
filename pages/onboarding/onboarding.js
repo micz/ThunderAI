@@ -18,6 +18,7 @@
 
 import { taLogger } from '../../js/mzta-logger.js';
 import { prefs_default } from '../../options/mzta-options-default.js';
+import { getMiczItUrl } from '../../js/mzta-utils.js';
 
 let taLog = null;
 
@@ -28,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
+
+    document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
+    document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
     if(prefs.connection_type === 'chatgpt_web'){
         let permission_chatgpt = await messenger.permissions.contains({ origins: ["https://*.chatgpt.com/*"] });
         if(permission_chatgpt === false){

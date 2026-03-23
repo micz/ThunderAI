@@ -20,7 +20,7 @@
     "description": ""
   },
   "prompt_reply_custom_command": {
-    "message": "Reply with command",
+    "message": "Reply with command...",
     "description": ""
   },
   "prompt_rewrite_polite": {
@@ -929,6 +929,22 @@
   },
   "prefs_SurveyLinkText2": {
     "message": "Click here, it only takes a minute!",
+    "description": ""
+  },
+  "prefs_doc_title": {
+    "message": "Documentation",
+    "description": ""
+  },
+  "prefs_doc_setup_guide": {
+    "message": "Setup Guides",
+    "description": ""
+  },
+  "prefs_doc_custom_prompt_tutorial": {
+    "message": "Custom Prompt Tutorial",
+    "description": ""
+  },
+  "prefs_doc_open_welcome": {
+    "message": "Open the Welcome Page",
     "description": ""
   },
   "prefs_OpenAIComp_ForceModel": {
@@ -1969,6 +1985,26 @@
   },
   "prefs_THStats_2": {
     "message": "Click here! Try ThunderStats!",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_pos_text":{
+    "message": "AI chat window position",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_top":{
+    "message": "Top",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_win_left":{
+    "message": "Left",
+    "description": ""
+  },
+  "prefs_chatgpt_win_save_position": {
+    "message": "Automatically save the window position when using the close button.",
+    "description": ""
+  },
+  "prefs_chatgpt_win_position_info":{
+    "message": "Leave empty to use the default position.",
     "description": ""
   }
 }

@@ -15,7 +15,7 @@
         "message": "Απάντηση σε αυτό το νήμα"
     },
     "prompt_reply_custom_command": {
-        "message": "Απάντηση με εντολή"
+        "message": "Απάντηση με εντολή..."
     },
     "prompt_rewrite_polite": {
         "message": "Ξαναγράψε ευγενικά"

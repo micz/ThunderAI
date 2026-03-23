@@ -186,7 +186,7 @@
         "message": "Svara på denna tråd"
     },
     "prompt_reply_custom_command": {
-        "message": "Svara med kommando"
+        "message": "Svara med kommando..."
     },
     "prompt_rewrite_polite": {
         "message": "Skriv om artigt"
@@ -1433,5 +1433,32 @@
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Prompten måste innehålla platshållaren {%mail_text_body_or_selected%} eller {%mail_html_body_or_selected%} för att aktivera det här alternativet. Lägg till en av dessa platshållare i prompten eller återställ den till standard."
+    },
+    "prefs_doc_title": {
+        "message": "Dokumentation"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Installationsguider"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Handledning för anpassad prompt"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Öppna välkomstsidan"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "AI-chattfönstrets position"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Överst"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Vänster"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Spara automatiskt fönstrets position när stängningsknappen används."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Lämna tomt för att använda standardpositionen."
     }
 }

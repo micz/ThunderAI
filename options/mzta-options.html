@@ -10,7 +10,24 @@
     <div id="miczStatusPage" class="conntype_chatgpt_web"><a href="https://micz.it/thunderbird-addon-thunderai/status/">__MSG_prefs_status_page__</a></div>
     <table id="miczPrefs">
       <tr id="mzta_top_msg">
-        <td colspan="2"><div>__MSG_prefs_SurveyLinkText__<br><a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__</a></div></td>
+        <td>
+          <div>
+            __MSG_prefs_SurveyLinkText__<br>
+            <a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__</a>
+          </div>
+        </td>
+        <td>
+          <div id="mzta_doc_block">
+            <span class="doc_title">__MSG_prefs_doc_title__</span>
+            <div class="doc_links">
+              <a id="link_doc_guides" href="#">__MSG_prefs_doc_setup_guide__</a>
+              <a id="link_doc_tutorial" href="#">__MSG_prefs_doc_custom_prompt_tutorial__</a>
+            </div>
+            <div class="doc_welcome">
+              <a href="#" id="btn_welcome">__MSG_prefs_doc_open_welcome__</a>
+            </div>
+          </div>
+        </td>
       </tr>
       <tr id="thstats">
         <td colspan="2">
@@ -28,7 +45,7 @@
         <td class="nb">
           <label>
             <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_height__</span>
-            <input type="number" id="chatgpt_win_height" name="chatgpt_win_height" class="option-input" />
+            <input type="number" id="chatgpt_win_height" name="chatgpt_win_height" class="option-input win_prop" />
           </label>
         </td>
       </tr>
@@ -36,7 +53,30 @@
         <td class="nt"><i>__MSG_prefs_OptionText_chatgpt_win_dims_info__</i></td>
         <td class="nt">
           <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_width__</span>
-          <input type="number" id="chatgpt_win_width" name="chatgpt_win_width" class="option-input" />
+          <input type="number" id="chatgpt_win_width" name="chatgpt_win_width" class="option-input win_prop" />
+        </td>
+      </tr>
+      <tr>
+        <td class="nb"><span class="opt_title">__MSG_prefs_OptionText_chatgpt_win_pos_text__</span>
+        <td class="nb">
+          <label>
+            <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_top__</span>
+            <input type="number" id="chatgpt_win_top" name="chatgpt_win_top" class="option-input win_prop" />
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td class="nt nb"><i>__MSG_prefs_chatgpt_win_position_info__</td>
+        <td class="nt nb">
+          <span class="dims_label">__MSG_prefs_OptionText_chatgpt_win_left__</span>
+          <input type="number" id="chatgpt_win_left" name="chatgpt_win_left" class="option-input win_prop" />
+        </td>
+      </tr>
+      <tr>
+        <td class="nt">&nbsp;</td>
+        <td class="nt">
+          <input type="checkbox" id="chatgpt_win_save_position" name="chatgpt_win_save_position" class="option-input" />
+          __MSG_prefs_chatgpt_win_save_position__
         </td>
       </tr>
       <tr>

@@ -55,7 +55,7 @@ jobs:
                 
                 https://cdn.jsdelivr.net/npm/tom-select@${latestTag}/dist/css/tom-select.default.min.css
                 
-            Remember also to update the VENDORS.md file.`
+            Change the VENDORS.md file to trigger the library update.`
               });
               core.info(`New issue created for version ${latestTag}.`);
             }

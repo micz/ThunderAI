@@ -1,0 +1,81 @@
+name: Update Tom Select Files
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'VENDORS.md'
+
+jobs:
+  tom-select-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check and update vendor files
+        run: node .github/scripts/tom-select-update.js
+
+      - name: Commit and push to PR branch
+        id: commit
+        run: |
+          BASE_BRANCH="${{ github.ref_name }}"
+          PR_BRANCH="tom-select-update-${BASE_BRANCH}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # If there are no changes, exit without doing anything
+          if git diff --quiet; then
+            echo "No changes to vendor files."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Crea o aggiorna la branch PR
+          git checkout -B "$PR_BRANCH"
+          git add -A
+          git commit -m "Update Tom Select files from VENDORS.md"
+          git push origin "$PR_BRANCH" --force
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
+          echo "base_branch=$BASE_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request via API
+        if: steps.commit.outputs.has_changes == 'true'
+        run: |
+          # Try to create the PR; if it already exists (422) ignore the error
+          HTTP_CODE=$(curl -s -o /tmp/pr_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{
+              \"title\": \"Update Tom Select files from VENDORS.md\",
+              \"body\": \"Tom Select files updated automatically after a change to \`VENDORS.md\`.\n\nPlease review the downloaded files before merging.\",
+              \"head\": \"${{ steps.commit.outputs.pr_branch }}\",
+              \"base\": \"${{ steps.commit.outputs.base_branch }}\"
+            }")
+
+          cat /tmp/pr_response.json
+
+          if [ "$HTTP_CODE" = "201" ]; then
+            echo "PR created successfully."
+          elif [ "$HTTP_CODE" = "422" ]; then
+            echo "PR already exists, updated with the new commit."
+          else
+            echo "Error creating PR: HTTP $HTTP_CODE"
+            exit 1
+          fi

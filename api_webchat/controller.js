@@ -115,6 +115,8 @@ if (worker) {
             case 'anthropic': llmName = "Claude"; break;
         }
         messagesArea.setLLMName(llmName);
+        
+        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
         let workerInitMessage = {
             type: 'init',
@@ -266,7 +268,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if(userInput !== null) {
                     if(!placeholdersUtils.hasPlaceholder(promptData.prompt, 'additional_text')){
                         // no additional_text placeholder, do as usual
-                        promptData.prompt += " " + userInput;
+                        const inputText = Array.isArray(userInput) ? userInput.map(obj => obj.custom_text).join(' ') : userInput;
+                        promptData.prompt += " " + inputText;
                     }else{
                         // we have the additional_text placeholder, do the magic!
                         let finalSubs = {};
