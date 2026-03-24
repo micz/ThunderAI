@@ -16,6 +16,85 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+function createThreeDotsMenu(isDark, menuItems, panelColors) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position: relative; display: inline-block;';
+
+    const dotsBtn = document.createElement('span');
+    dotsBtn.textContent = '\u22EE';
+    dotsBtn.style.cssText = 'cursor: pointer; opacity: 0.7; font-size: 18px; padding: 2px 6px; line-height: 1; user-select: none; transition: opacity 0.2s;';
+    dotsBtn.onmouseover = () => dotsBtn.style.opacity = '1';
+    dotsBtn.onmouseout = () => dotsBtn.style.opacity = '0.7';
+
+    const dropdown = document.createElement('div');
+    const dropdownBg = panelColors.bg;
+    const dropdownBorder = panelColors.border;
+    const defaultTextColor = panelColors.text;
+    dropdown.style.cssText = `display: none; position: absolute; right: 0; top: 100%; z-index: 9999; min-width: 180px; background-color: ${dropdownBg}; border: 1px solid ${dropdownBorder}; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); overflow: hidden;`;
+
+    menuItems.forEach(item => {
+        const row = document.createElement('div');
+        row.style.cssText = `display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; color: ${defaultTextColor}; transition: background-color 0.15s, color 0.15s;`;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.textContent = item.icon;
+        iconSpan.style.cssText = 'font-size: 15px; width: 18px; text-align: center;';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = item.label;
+
+        row.appendChild(iconSpan);
+        row.appendChild(labelSpan);
+
+        const hoverBg = item.hoverColor === '#cc0000'
+            ? (isDark ? 'rgba(204,0,0,0.2)' : 'rgba(204,0,0,0.1)')
+            : (isDark ? 'rgba(77,157,224,0.2)' : 'rgba(26,95,168,0.1)');
+
+        row.onmouseover = () => {
+            row.style.backgroundColor = hoverBg;
+            row.style.color = item.hoverColor;
+        };
+        row.onmouseout = () => {
+            row.style.backgroundColor = '';
+            row.style.color = defaultTextColor;
+        };
+
+        row.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.style.display = 'none';
+            if (item.disableAfterClick) {
+                row.onclick = null;
+                row.style.opacity = '0.5';
+                row.style.pointerEvents = 'none';
+            }
+            item.onClick();
+        };
+
+        dropdown.appendChild(row);
+    });
+
+    dotsBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    wrapper.appendChild(dotsBtn);
+    wrapper.appendChild(dropdown);
+    return wrapper;
+}
+
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
   case "getSelectedText": {
@@ -702,34 +781,31 @@ switch (message.command) {
     branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
     branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5;';
 
-    const spamRefreshBtn = document.createElement('span');
-    spamRefreshBtn.textContent = '↻';
-    spamRefreshBtn.title = browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report';
-    spamRefreshBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
-    spamRefreshBtn.onmouseover = () => { spamRefreshBtn.style.opacity = '1'; spamRefreshBtn.style.color = isDark ? '#4d9de0' : '#1a5fa8'; };
-    spamRefreshBtn.onmouseout = () => { spamRefreshBtn.style.opacity = '0.6'; spamRefreshBtn.style.color = ''; };
-    spamRefreshBtn.onclick = function() {
-        spamRefreshBtn.onclick = null;
-        spamRefreshBtn.style.opacity = '0.6';
-        browser.runtime.sendMessage({ command: "refreshSpamReport", headerMessageId: data.headerMessageId });
-    };
-
-    const closeBtn = document.createElement('span');
-    closeBtn.textContent = '×';
-    closeBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
-    closeBtn.title = browser.i18n.getMessage("spamfilter_delete");
-    closeBtn.onmouseover = () => { closeBtn.style.opacity = '1'; closeBtn.style.color = '#cc0000'; };
-    closeBtn.onmouseout = () => { closeBtn.style.opacity = '0.6'; closeBtn.style.color = ''; };
-    closeBtn.onclick = function() {
-        container.remove();
-        browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
-    };
+    const spamMenu = createThreeDotsMenu(isDark, [
+        {
+            icon: '↻',
+            label: browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report',
+            hoverColor: isDark ? '#4d9de0' : '#1a5fa8',
+            disableAfterClick: true,
+            onClick: () => {
+                browser.runtime.sendMessage({ command: "refreshSpamReport", headerMessageId: data.headerMessageId });
+            }
+        },
+        {
+            icon: '×',
+            label: browser.i18n.getMessage("spamfilter_delete") || 'Delete spam report',
+            hoverColor: '#cc0000',
+            onClick: () => {
+                container.remove();
+                browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
+            }
+        }
+    ], { bg: bgColor, border: borderColor, text: textColor });
 
     container.appendChild(scoreText);
     container.appendChild(reasonText);
     container.appendChild(branding);
-    container.appendChild(spamRefreshBtn);
-    container.appendChild(closeBtn);
+    container.appendChild(spamMenu);
 
     document.body.insertBefore(container, document.body.firstChild);
     return Promise.resolve(true);
@@ -773,47 +849,32 @@ switch (message.command) {
     summaryTitle.textContent = browser.i18n.getMessage("summarize_title");
     summaryTitle.style.cssText = `font-weight: bold; font-size: 14px; color: ${titleColor};`;
 
-    const refreshBtn = document.createElement('span');
-    refreshBtn.textContent = '↻';
-    refreshBtn.title = browser.i18n.getMessage("summarize_refresh") || 'Refresh summary';
-    refreshBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s, color 0.2s;`;
-    refreshBtn.onmouseover = () => { refreshBtn.style.opacity = '1'; refreshBtn.style.color = isDarkSummary ? '#4d9de0' : '#1a5fa8'; };
-    refreshBtn.onmouseout = () => { refreshBtn.style.opacity = '0.6'; refreshBtn.style.color = ''; };
-    refreshBtn.onclick = async () => {
-        refreshBtn.onclick = null;
-        refreshBtn.style.opacity = '0.6';
-        browser.runtime.sendMessage({ 
-            command: "refreshSummary", 
-            headerMessageId: summaryData.headerMessageId 
-        });
-    };
-
-    const summaryCloseBtn = document.createElement('span');
-    summaryCloseBtn.textContent = '×';
-    summaryCloseBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
-    summaryCloseBtn.title = browser.i18n.getMessage("summarize_delete");
-    summaryCloseBtn.onmouseover = () => { summaryCloseBtn.style.opacity = '1'; summaryCloseBtn.style.color = '#cc0000'; };
-    summaryCloseBtn.onmouseout = () => { summaryCloseBtn.style.opacity = '0.6'; summaryCloseBtn.style.color = ''; };
-    summaryCloseBtn.onclick = function() {
-        summaryContainer.remove();
-        browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
-    };
-
-    const collapseBtn = document.createElement('span');
-    collapseBtn.textContent = '∧';
-    collapseBtn.title = browser.i18n.getMessage("summarize_collapse") || 'Collapse summary';
-    collapseBtn.style.cssText = `cursor: pointer; opacity: 0.6; font-size: 16px; transition: opacity 0.2s;`;
-    collapseBtn.onmouseover = () => collapseBtn.style.opacity = '1';
-    collapseBtn.onmouseout = () => collapseBtn.style.opacity = '0.6';
-
-    const summaryBtnGroup = document.createElement('span');
-    summaryBtnGroup.style.cssText = 'display: flex; align-items: center; gap: 5px;';
-    summaryBtnGroup.appendChild(refreshBtn);
-    summaryBtnGroup.appendChild(summaryCloseBtn);
-    summaryBtnGroup.appendChild(collapseBtn);
+    const summaryMenu = createThreeDotsMenu(isDarkSummary, [
+        {
+            icon: '↻',
+            label: browser.i18n.getMessage("summarize_refresh") || 'Refresh summary',
+            hoverColor: isDarkSummary ? '#4d9de0' : '#1a5fa8',
+            disableAfterClick: true,
+            onClick: () => {
+                browser.runtime.sendMessage({
+                    command: "refreshSummary",
+                    headerMessageId: summaryData.headerMessageId
+                });
+            }
+        },
+        {
+            icon: '×',
+            label: browser.i18n.getMessage("summarize_delete") || 'Delete summary',
+            hoverColor: '#cc0000',
+            onClick: () => {
+                summaryContainer.remove();
+                browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
+            }
+        }
+    ], { bg: bgColorSummary, border: borderColorSummary, text: textColorSummary });
 
     summaryHeader.appendChild(summaryTitle);
-    summaryHeader.appendChild(summaryBtnGroup);
+    summaryHeader.appendChild(summaryMenu);
     summaryContainer.appendChild(summaryHeader);
 
     const summaryText = document.createElement('div');
@@ -824,18 +885,6 @@ switch (message.command) {
         summaryText.textContent = summaryData.summary;
     }
     summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
-
-    collapseBtn.onclick = () => {
-        if (summaryText.style.display === 'none') {
-            summaryText.style.display = '';
-            summaryHeader.style.marginBottom = '0.5rem';
-            collapseBtn.textContent = '∧';
-        } else {
-            summaryText.style.display = 'none';
-            summaryHeader.style.marginBottom = '0';
-            collapseBtn.textContent = '∨';
-        }
-    };
 
     summaryContainer.appendChild(summaryText);
 
