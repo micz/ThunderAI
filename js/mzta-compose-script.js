@@ -883,6 +883,13 @@ switch (message.command) {
     summaryHeader.appendChild(summaryRightGroup);
     summaryContainer.appendChild(summaryHeader);
 
+    const summaryBody = document.createElement('div');
+    summaryBody.style.cssText = 'display: flex; gap: 8px; align-items: flex-start;';
+
+    const summaryIcon = document.createElement('img');
+    summaryIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    summaryIcon.style.cssText = `height: 16px; width: 16px; margin-top: 2px; flex-shrink: 0;${isDarkSummary ? ' filter: invert(1);' : ''}`;
+
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
     if (summaryData.error) {
@@ -892,7 +899,9 @@ switch (message.command) {
     }
     summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
 
-    summaryContainer.appendChild(summaryText);
+    summaryBody.appendChild(summaryIcon);
+    summaryBody.appendChild(summaryText);
+    summaryContainer.appendChild(summaryBody);
 
     const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
     document.body.insertBefore(summaryContainer, spamBanner ? spamBanner.nextSibling : document.body.firstChild);
@@ -920,6 +929,10 @@ switch (message.command) {
     generatingContainer.className = 'thunderai-summary-pane';
     generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
+    const generatingIcon = document.createElement('img');
+    generatingIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    generatingIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkGen ? ' filter: invert(1);' : ''}`;
+
     const generatingLoadingImg = document.createElement('img');
     generatingLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
     generatingLoadingImg.style.cssText = "height: 16px; width: 16px;";
@@ -929,6 +942,7 @@ switch (message.command) {
     generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
     generatingTitle.style.cssText = `font-size: 14px; color: ${titleColorGen};`;
 
+    generatingContainer.appendChild(generatingIcon);
     generatingContainer.appendChild(generatingLoadingImg);
     generatingContainer.appendChild(generatingTitle);
 
