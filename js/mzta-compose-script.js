@@ -847,12 +847,7 @@ switch (message.command) {
     summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
 
     const summaryHeader = document.createElement('div');
-    summaryHeader.style.cssText = `display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;`;
-
-    const summaryTitle = document.createElement('div');
-    summaryTitle.className = 'thunderai-summary-title';
-    summaryTitle.textContent = browser.i18n.getMessage("summarize_title");
-    summaryTitle.style.cssText = `font-weight: bold; font-size: 14px; color: ${titleColor};`;
+    summaryHeader.style.cssText = `display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.25rem; float:right;`;
 
     const summaryMenu = createThreeDotsMenu(isDarkSummary, [
         {
@@ -887,7 +882,6 @@ switch (message.command) {
     summaryRightGroup.appendChild(summaryBranding);
     summaryRightGroup.appendChild(summaryMenu);
 
-    summaryHeader.appendChild(summaryTitle);
     summaryHeader.appendChild(summaryRightGroup);
     summaryContainer.appendChild(summaryHeader);
 
