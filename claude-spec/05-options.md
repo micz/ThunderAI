@@ -97,6 +97,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `summarize` | `false` | Enable email summarization |
 | `summarize_auto` | `0` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` always uses inline regardless of this setting. |
+| `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -111,7 +112,8 @@ The summarize settings page provides:
    - `'inline'` — summary banner in the message pane (default)
    - `'webchat'` — opens the AI chat window
    - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
-4. **Three editable prompts** (used by context menu summarize and webchat mode):
+4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+5. **Three editable prompts** (used by context menu summarize and webchat mode):
    - Summarize instruction prompt (`prompt_summarize`)
    - Email template prompt (`prompt_summarize_email_template`)
    - Email separator prompt (`prompt_summarize_email_separator`)

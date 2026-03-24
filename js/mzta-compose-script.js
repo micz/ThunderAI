@@ -933,6 +933,33 @@ switch (message.command) {
 
     summaryTextWrapper.appendChild(summaryText);
 
+    const maxLen = summaryData.maxDisplayLength || 0;
+    const fullText = summaryData.summary;
+    if (!summaryData.error && maxLen > 0 && fullText && fullText.length > maxLen) {
+        let cutPos = fullText.lastIndexOf(' ', maxLen);
+        if (cutPos <= 0) cutPos = maxLen;
+        const truncated = fullText.substring(0, cutPos) + '\u2026';
+        summaryText.textContent = truncated;
+
+        const toggleLink = document.createElement('a');
+        toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+        toggleLink.href = '#';
+        toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+            (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+        let expanded = false;
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            expanded = !expanded;
+            summaryText.textContent = expanded ? fullText : truncated;
+            toggleLink.textContent = expanded
+                ? (browser.i18n.getMessage("summarize_see_less") || "See less")
+                : (browser.i18n.getMessage("summarize_see_more") || "See more");
+        });
+
+        summaryTextWrapper.appendChild(toggleLink);
+    }
+
     const summaryBody = document.createElement('div');
     summaryBody.style.cssText = 'display: flex; gap: 8px; align-items: flex-start;';
     summaryBody.appendChild(summaryIcon);

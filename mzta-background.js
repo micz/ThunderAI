@@ -220,7 +220,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode });
+                        let prefs = await browser.storage.sync.get({ summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length });
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
@@ -228,7 +228,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // Always show cached summary if available, regardless of summarize_auto
                         let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
                         if (cachedSummary && !cachedSummary.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
                             return;
                         }
 
@@ -464,12 +464,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             connection_type: prefs_default.connection_type,
             do_debug: prefs_default.do_debug,
             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            summarize_max_display_length: prefs_default.summarize_max_display_length,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
         let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
-            browser.tabs.sendMessage(tabId, { command: "showSummary", data: cachedSummary });
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
             return;
         }
 
@@ -524,7 +525,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             headerMessageId: headerMessageId
         };
         await summaryStore.saveSummary(summaryData, headerMessageId);
-        browser.tabs.sendMessage(tabId, { command: "showSummary", data: summaryData });
+        browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {

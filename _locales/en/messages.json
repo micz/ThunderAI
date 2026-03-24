@@ -1964,6 +1964,22 @@
       "message": "Choose where the summary result is displayed. Inline mode shows a summary banner directly in the message pane. Chat window mode opens the AI chat window.",
       "description": ""
   },
+  "prefs_OptionText_summarize_max_display_length": {
+      "message": "Max display length",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_display_length_Info": {
+      "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
+      "description": ""
+  },
+  "summarize_see_more": {
+      "message": "See more",
+      "description": ""
+  },
+  "summarize_see_less": {
+      "message": "See less",
+      "description": ""
+  },
   "summarize_title": {
       "message": "ThunderAI Overview",
       "description": ""
