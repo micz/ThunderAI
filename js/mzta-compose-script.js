@@ -878,8 +878,17 @@ switch (message.command) {
         }
     ], { bg: bgColorSummary, border: borderColorSummary, text: textColorSummary });
 
+    const summaryBranding = document.createElement('span');
+    summaryBranding.textContent = browser.i18n.getMessage("summary_by") + " ThunderAI";
+    summaryBranding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
+
+    const summaryRightGroup = document.createElement('span');
+    summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+    summaryRightGroup.appendChild(summaryBranding);
+    summaryRightGroup.appendChild(summaryMenu);
+
     summaryHeader.appendChild(summaryTitle);
-    summaryHeader.appendChild(summaryMenu);
+    summaryHeader.appendChild(summaryRightGroup);
     summaryContainer.appendChild(summaryHeader);
 
     const summaryText = document.createElement('div');
