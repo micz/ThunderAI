@@ -819,6 +819,8 @@ switch (message.command) {
     const generatingBanner = document.getElementById('mzta-summary-generating');
     if(generatingBanner) generatingBanner.remove();
     
+    const existingTriggerWrapper = document.getElementById('mzta-summary-trigger-wrapper');
+    if(existingTriggerWrapper) existingTriggerWrapper.remove();
     const existingTriggerBtn = document.getElementById('mzta-summary-trigger');
     if(existingTriggerBtn) existingTriggerBtn.remove();
 
@@ -914,6 +916,8 @@ switch (message.command) {
     const existingSummary = document.getElementById('mzta-summary-banner');
     if(existingSummary) existingSummary.remove();
 
+    const existingTriggerWrap = document.getElementById('mzta-summary-trigger-wrapper');
+    if(existingTriggerWrap) existingTriggerWrap.remove();
     const existingTrigger = document.getElementById('mzta-summary-trigger');
     if(existingTrigger) existingTrigger.remove();
 
@@ -964,10 +968,11 @@ switch (message.command) {
     const triggerBtn = document.createElement('div');
     triggerBtn.id = 'mzta-summary-trigger';
     triggerBtn.title = browser.i18n.getMessage("summarize_click_to_generate");
+    const triggerBtnBase = `background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
     if (spamBannerTrigger) {
-        triggerBtn.style.cssText = `background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px; justify-content: flex-end;`;
+        triggerBtn.style.cssText = triggerBtnBase + ' margin-left: auto; margin-top: 4px;';
     } else {
-        triggerBtn.style.cssText = `position: fixed; top: 8px; right: 8px; z-index: 9998; background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px;`;
+        triggerBtn.style.cssText = triggerBtnBase + ' position: fixed; top: 8px; right: 8px; z-index: 9998;';
     }
 
     const triggerIcon = document.createElement('img');
@@ -986,14 +991,23 @@ switch (message.command) {
         triggerBtn.style.opacity = '0.7';
         triggerBtn.onmouseover = null;
         triggerBtn.onmouseout = null;
-        triggerBtn.remove();
+        const wrapper = document.getElementById('mzta-summary-trigger-wrapper');
+        if (wrapper) wrapper.remove(); else triggerBtn.remove();
         browser.runtime.sendMessage({
             command: message.webchat ? "triggerSummaryWebchat" : "triggerSummaryGeneration",
             headerMessageId: message.headerMessageId
         });
     };
 
-    document.body.appendChild(triggerBtn);
+    if (spamBannerTrigger) {
+        const triggerWrapper = document.createElement('div');
+        triggerWrapper.id = 'mzta-summary-trigger-wrapper';
+        triggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        triggerWrapper.appendChild(triggerBtn);
+        document.body.insertBefore(triggerWrapper, spamBannerTrigger.nextSibling);
+    } else {
+        document.body.appendChild(triggerBtn);
+    }
     return Promise.resolve(true);
 
   default:
