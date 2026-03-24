@@ -937,10 +937,10 @@ switch (message.command) {
     generatingLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
     generatingLoadingImg.style.cssText = "height: 16px; width: 16px;";
 
-    const generatingTitle = document.createElement('strong');
+    const generatingTitle = document.createElement('span');
     generatingTitle.className = 'thunderai-summary-title';
     generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
-    generatingTitle.style.cssText = `font-size: 14px; color: ${titleColorGen};`;
+    generatingTitle.style.cssText = `font-size: 14px;`;
 
     generatingContainer.appendChild(generatingIcon);
     generatingContainer.appendChild(generatingLoadingImg);
@@ -960,10 +960,15 @@ switch (message.command) {
     let textColorBtn = isDarkBtn ? '#e0e0e0' : '#333';
     let borderColorBtn = isDarkBtn ? '#444' : '#ddd';
 
+    const spamBannerTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
     const triggerBtn = document.createElement('div');
     triggerBtn.id = 'mzta-summary-trigger';
     triggerBtn.title = browser.i18n.getMessage("summarize_click_to_generate");
-    triggerBtn.style.cssText = `position: fixed; top: 8px; right: 8px; z-index: 9998; background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px;`;
+    if (spamBannerTrigger) {
+        triggerBtn.style.cssText = `background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px; justify-content: flex-end;`;
+    } else {
+        triggerBtn.style.cssText = `position: fixed; top: 8px; right: 8px; z-index: 9998; background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px;`;
+    }
 
     const triggerIcon = document.createElement('img');
     triggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
