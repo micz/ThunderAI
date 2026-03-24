@@ -729,6 +729,23 @@ switch (message.command) {
       containerProgress.appendChild(brandingProgress);
 
       document.body.insertBefore(containerProgress, document.body.firstChild);
+
+      // Reposition summary trigger button if it exists as fixed
+      const existingFixedTriggerProgress = document.getElementById('mzta-summary-trigger');
+      if (existingFixedTriggerProgress && !document.getElementById('mzta-summary-trigger-wrapper')) {
+          existingFixedTriggerProgress.style.position = '';
+          existingFixedTriggerProgress.style.top = '';
+          existingFixedTriggerProgress.style.right = '';
+          existingFixedTriggerProgress.style.zIndex = '';
+          existingFixedTriggerProgress.style.marginLeft = 'auto';
+          existingFixedTriggerProgress.style.marginTop = '4px';
+          const reposTriggerWrapperProgress = document.createElement('div');
+          reposTriggerWrapperProgress.id = 'mzta-summary-trigger-wrapper';
+          reposTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+          reposTriggerWrapperProgress.appendChild(existingFixedTriggerProgress);
+          document.body.insertBefore(reposTriggerWrapperProgress, containerProgress.nextSibling);
+      }
+
       return Promise.resolve(true);
 
   case "showSpamReport":
@@ -813,6 +830,23 @@ switch (message.command) {
     container.appendChild(spamRightGroup);
 
     document.body.insertBefore(container, document.body.firstChild);
+
+    // Reposition summary trigger button if it exists as fixed
+    const existingFixedTrigger = document.getElementById('mzta-summary-trigger');
+    if (existingFixedTrigger && !document.getElementById('mzta-summary-trigger-wrapper')) {
+        existingFixedTrigger.style.position = '';
+        existingFixedTrigger.style.top = '';
+        existingFixedTrigger.style.right = '';
+        existingFixedTrigger.style.zIndex = '';
+        existingFixedTrigger.style.marginLeft = 'auto';
+        existingFixedTrigger.style.marginTop = '4px';
+        const reposTriggerWrapper = document.createElement('div');
+        reposTriggerWrapper.id = 'mzta-summary-trigger-wrapper';
+        reposTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        reposTriggerWrapper.appendChild(existingFixedTrigger);
+        document.body.insertBefore(reposTriggerWrapper, container.nextSibling);
+    }
+
     return Promise.resolve(true);
 
   case "showSummary":
