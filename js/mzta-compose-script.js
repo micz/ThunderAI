@@ -888,7 +888,8 @@ switch (message.command) {
 
     summaryContainer.appendChild(summaryText);
 
-    document.body.insertBefore(summaryContainer, document.body.firstChild);
+    const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    document.body.insertBefore(summaryContainer, spamBanner ? spamBanner.nextSibling : document.body.firstChild);
     return Promise.resolve(true);
 
   case "showSummaryGenerating":
@@ -925,7 +926,8 @@ switch (message.command) {
     generatingContainer.appendChild(generatingLoadingImg);
     generatingContainer.appendChild(generatingTitle);
 
-    document.body.insertBefore(generatingContainer, document.body.firstChild);
+    const spamBannerGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    document.body.insertBefore(generatingContainer, spamBannerGen ? spamBannerGen.nextSibling : document.body.firstChild);
     return Promise.resolve(true);
 
   case "showSummaryButton":
@@ -961,7 +963,8 @@ switch (message.command) {
         });
     };
 
-    document.body.insertBefore(triggerContainer, document.body.firstChild);
+    const spamBannerTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    document.body.insertBefore(triggerContainer, spamBannerTrigger ? spamBannerTrigger.nextSibling : document.body.firstChild);
     return Promise.resolve(true);
 
   default:
