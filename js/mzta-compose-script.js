@@ -18,11 +18,11 @@
 
 function createThreeDotsMenu(isDark, menuItems, panelColors) {
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'position: relative; display: inline-block;';
+    wrapper.style.cssText = 'position: relative; display: inline-flex; align-items: center;';
 
     const dotsBtn = document.createElement('span');
     dotsBtn.textContent = '\u22EE';
-    dotsBtn.style.cssText = 'cursor: pointer; opacity: 0.7; font-size: 18px; padding: 2px 6px; line-height: 1; user-select: none; transition: opacity 0.2s;';
+    dotsBtn.style.cssText = 'cursor: pointer; opacity: 0.7; font-size: 18px; padding: 2px 7px; line-height: 1; user-select: none; transition: opacity 0.2s; display: flex; align-items: center;';
     dotsBtn.onmouseover = () => dotsBtn.style.opacity = '1';
     dotsBtn.onmouseout = () => dotsBtn.style.opacity = '0.7';
 
@@ -761,7 +761,7 @@ switch (message.command) {
         borderColor = '#006600';
     }
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; border-radius:4px; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; border-radius:4px; padding: 8px 0.5rem; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
 
     const scoreText = document.createElement('strong');
     if (data.spamValue == -999) {
@@ -802,10 +802,15 @@ switch (message.command) {
         }
     ], { bg: bgColor, border: borderColor, text: textColor });
 
+    const spamRightGroup = document.createElement('span');
+    spamRightGroup.style.cssText = 'margin-left: auto; margin-right:1px; display: flex; align-items: center; gap: 5px;';
+    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
+    spamRightGroup.appendChild(branding);
+    spamRightGroup.appendChild(spamMenu);
+
     container.appendChild(scoreText);
     container.appendChild(reasonText);
-    container.appendChild(branding);
-    container.appendChild(spamMenu);
+    container.appendChild(spamRightGroup);
 
     document.body.insertBefore(container, document.body.firstChild);
     return Promise.resolve(true);
