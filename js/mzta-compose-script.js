@@ -705,9 +705,9 @@ switch (message.command) {
     const spamRefreshBtn = document.createElement('span');
     spamRefreshBtn.textContent = '↻';
     spamRefreshBtn.title = browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report';
-    spamRefreshBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
-    spamRefreshBtn.onmouseover = () => spamRefreshBtn.style.opacity = '1';
-    spamRefreshBtn.onmouseout = () => spamRefreshBtn.style.opacity = '0.6';
+    spamRefreshBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
+    spamRefreshBtn.onmouseover = () => { spamRefreshBtn.style.opacity = '1'; spamRefreshBtn.style.color = isDark ? '#4d9de0' : '#1a5fa8'; };
+    spamRefreshBtn.onmouseout = () => { spamRefreshBtn.style.opacity = '0.6'; spamRefreshBtn.style.color = ''; };
     spamRefreshBtn.onclick = function() {
         spamRefreshBtn.onclick = null;
         spamRefreshBtn.style.opacity = '0.6';
@@ -716,10 +716,10 @@ switch (message.command) {
 
     const closeBtn = document.createElement('span');
     closeBtn.textContent = '×';
-    closeBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s;';
+    closeBtn.style.cssText = 'cursor: pointer; opacity: 0.6; font-size: 16px; padding: 0 5px; transition: opacity 0.2s, color 0.2s;';
     closeBtn.title = browser.i18n.getMessage("spamfilter_delete");
-    closeBtn.onmouseover = () => closeBtn.style.opacity = '1';
-    closeBtn.onmouseout = () => closeBtn.style.opacity = '0.6';
+    closeBtn.onmouseover = () => { closeBtn.style.opacity = '1'; closeBtn.style.color = '#cc0000'; };
+    closeBtn.onmouseout = () => { closeBtn.style.opacity = '0.6'; closeBtn.style.color = ''; };
     closeBtn.onclick = function() {
         container.remove();
         browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
