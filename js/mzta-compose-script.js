@@ -844,9 +844,6 @@ switch (message.command) {
     summaryContainer.className = 'thunderai-summary-pane';
     summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
 
-    const summaryHeader = document.createElement('div');
-    summaryHeader.style.cssText = `display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.25rem; float:right;`;
-
     const summaryMenu = createThreeDotsMenu(isDarkSummary, [
         {
             icon: '↻',
@@ -873,22 +870,21 @@ switch (message.command) {
 
     const summaryBranding = document.createElement('span');
     summaryBranding.textContent = browser.i18n.getMessage("summary_by") + " ThunderAI";
-    summaryBranding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
+    summaryBranding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap;';
 
     const summaryRightGroup = document.createElement('span');
-    summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+    summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; float: right; margin-left: 10px;';
     summaryRightGroup.appendChild(summaryBranding);
     summaryRightGroup.appendChild(summaryMenu);
 
-    summaryHeader.appendChild(summaryRightGroup);
-    summaryContainer.appendChild(summaryHeader);
-
-    const summaryBody = document.createElement('div');
-    summaryBody.style.cssText = 'display: flex; gap: 8px; align-items: flex-start;';
-
     const summaryIcon = document.createElement('img');
     summaryIcon.src = browser.runtime.getURL("/images/ai_summary.png");
-    summaryIcon.style.cssText = `height: 16px; width: 16px; margin-top: 2px; flex-shrink: 0;${isDarkSummary ? ' filter: invert(1);' : ''}`;
+    summaryIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0; margin-top: 2px;${isDarkSummary ? ' filter: invert(1);' : ''}`;
+
+    const summaryTextWrapper = document.createElement('div');
+    summaryTextWrapper.style.cssText = 'flex: 1; min-width: 0;';
+
+    summaryTextWrapper.appendChild(summaryRightGroup);
 
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
@@ -899,8 +895,12 @@ switch (message.command) {
     }
     summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
 
+    summaryTextWrapper.appendChild(summaryText);
+
+    const summaryBody = document.createElement('div');
+    summaryBody.style.cssText = 'display: flex; gap: 8px; align-items: flex-start;';
     summaryBody.appendChild(summaryIcon);
-    summaryBody.appendChild(summaryText);
+    summaryBody.appendChild(summaryTextWrapper);
     summaryContainer.appendChild(summaryBody);
 
     const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
