@@ -941,6 +941,16 @@ switch (message.command) {
         const truncated = fullText.substring(0, cutPos) + '\u2026';
         summaryText.textContent = truncated;
 
+        // Set up animated expand/collapse via max-height transition
+        summaryText.style.overflow = 'hidden';
+        summaryText.style.transition = 'max-height 0.2s ease';
+
+        // Measure truncated height after layout
+        requestAnimationFrame(() => {
+            const collapsedHeight = summaryText.scrollHeight;
+            summaryText.style.maxHeight = collapsedHeight + 'px';
+        });
+
         const toggleLink = document.createElement('a');
         toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
         toggleLink.href = '#';
@@ -950,11 +960,31 @@ switch (message.command) {
         let expanded = false;
         toggleLink.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!expanded) {
+                // Expand: set full text, measure, animate to full height
+                summaryText.textContent = fullText;
+                const fullHeight = summaryText.scrollHeight;
+                summaryText.style.maxHeight = fullHeight + 'px';
+                toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
+            } else {
+                // Collapse: measure current truncated height, then animate down
+                summaryText.textContent = truncated;
+                // Force layout to get the target height before animating
+                const collapsedHeight = summaryText.scrollHeight;
+                summaryText.textContent = fullText;
+                // Set explicit current height so transition has a starting point
+                summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    summaryText.style.maxHeight = collapsedHeight + 'px';
+                });
+                // Swap text after transition ends
+                summaryText.addEventListener('transitionend', function handler() {
+                    summaryText.removeEventListener('transitionend', handler);
+                    summaryText.textContent = truncated;
+                });
+                toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+            }
             expanded = !expanded;
-            summaryText.textContent = expanded ? fullText : truncated;
-            toggleLink.textContent = expanded
-                ? (browser.i18n.getMessage("summarize_see_less") || "See less")
-                : (browser.i18n.getMessage("summarize_see_more") || "See more");
         });
 
         summaryTextWrapper.appendChild(toggleLink);
