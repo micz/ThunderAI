@@ -819,8 +819,8 @@ switch (message.command) {
     const generatingBanner = document.getElementById('mzta-summary-generating');
     if(generatingBanner) generatingBanner.remove();
     
-    const triggerBtn = document.getElementById('mzta-summary-trigger');
-    if(triggerBtn) triggerBtn.remove();
+    const existingTriggerBtn = document.getElementById('mzta-summary-trigger');
+    if(existingTriggerBtn) existingTriggerBtn.remove();
 
     const summaryBanner = document.getElementById('mzta-summary-banner');
     if(summaryBanner) summaryBanner.remove();
@@ -834,13 +834,11 @@ switch (message.command) {
     let bgColorSummary = isDarkSummary ? '#2a2a2a' : '#f0f0f0';
     let textColorSummary = isDarkSummary ? '#e0e0e0' : '#333';
     let borderColorSummary = isDarkSummary ? '#444' : '#ddd';
-    let titleColor = isDarkSummary ? '#ff6b6b' : '#d70022';
 
     if (summaryData.error) {
         bgColorSummary = isDarkSummary ? '#3a1a1a' : '#f7e6e6';
         textColorSummary = isDarkSummary ? '#ffcccc' : '#660000';
         borderColorSummary = '#660000';
-        titleColor = isDarkSummary ? '#ffcccc' : '#660000';
     }
 
     summaryContainer.className = 'thunderai-summary-pane';
@@ -943,36 +941,40 @@ switch (message.command) {
     if(existingButton) return Promise.resolve(true);
 
     const isDarkBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     let bgColorBtn = isDarkBtn ? '#2a2a2a' : '#f0f0f0';
     let textColorBtn = isDarkBtn ? '#e0e0e0' : '#333';
     let borderColorBtn = isDarkBtn ? '#444' : '#ddd';
-    let titleColorBtn = isDarkBtn ? '#ff6b6b' : '#d70022';
-    
-    const triggerContainer = document.createElement('div');
-    triggerContainer.id = 'mzta-summary-trigger';
-    triggerContainer.className = 'thunderai-summary-pane';
-    triggerContainer.style.cssText = `background-color: ${bgColorBtn}; color: ${textColorBtn}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorBtn}; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
 
-    const triggerText = document.createElement('div');
-    triggerText.className = 'thunderai-summary-title';
-    triggerText.textContent = browser.i18n.getMessage("summarize_click_to_generate");
-    triggerText.style.cssText = `font-weight: bold; font-size: 14px; margin-bottom: 0; color: ${titleColorBtn};`;
+    const triggerBtn = document.createElement('div');
+    triggerBtn.id = 'mzta-summary-trigger';
+    triggerBtn.title = browser.i18n.getMessage("summarize_click_to_generate");
+    triggerBtn.style.cssText = `position: fixed; top: 8px; right: 8px; z-index: 9998; background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: flex; align-items: center; gap: 6px;`;
 
-    triggerContainer.appendChild(triggerText);
-    triggerContainer.onclick = async () => {
-        triggerContainer.onclick = null;
-        triggerContainer.id = 'mzta-summary-generating';
-        triggerContainer.style.cursor = 'default';
-        triggerText.textContent = browser.i18n.getMessage("summarize_generating");
+    const triggerIcon = document.createElement('img');
+    triggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    triggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkBtn ? ' filter: invert(1);' : ''}`;
+    triggerBtn.appendChild(triggerIcon);
+
+    const triggerLabel = document.createElement('span');
+    triggerLabel.textContent = browser.i18n.getMessage("get_ai_summary");
+    triggerBtn.appendChild(triggerLabel);
+    triggerBtn.onmouseover = () => { triggerBtn.style.opacity = '1'; };
+    triggerBtn.onmouseout = () => { triggerBtn.style.opacity = '0.7'; };
+    triggerBtn.onclick = async () => {
+        triggerBtn.onclick = null;
+        triggerBtn.style.cursor = 'default';
+        triggerBtn.style.opacity = '0.7';
+        triggerBtn.onmouseover = null;
+        triggerBtn.onmouseout = null;
+        triggerBtn.remove();
         browser.runtime.sendMessage({
             command: message.webchat ? "triggerSummaryWebchat" : "triggerSummaryGeneration",
             headerMessageId: message.headerMessageId
         });
     };
 
-    const spamBannerTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    document.body.insertBefore(triggerContainer, spamBannerTrigger ? spamBannerTrigger.nextSibling : document.body.firstChild);
+    document.body.appendChild(triggerBtn);
     return Promise.resolve(true);
 
   default:

@@ -1968,6 +1968,10 @@
       "message": "ThunderAI Overview",
       "description": ""
   },
+  "get_ai_summary": {
+      "message": "AI Summary",
+      "description": ""
+  },
   "summarize_collapse": {
       "message": "Collapse summary",
       "description": ""
