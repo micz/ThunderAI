@@ -479,12 +479,14 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         }
 
         await summaryStore.setProcessing(headerMessageId);
+        taWorkingStatus.startWorking();
         browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
 
         const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
         if (!messageResult || messageResult.messages.length === 0) {
             await summaryStore.saveError(headerMessageId, "Message not found");
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+            taWorkingStatus.stopWorking();
             return;
         }
 
@@ -496,6 +498,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
             browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            taWorkingStatus.stopWorking();
             return;
         }
 
@@ -522,11 +525,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         };
         await summaryStore.saveSummary(summaryData, headerMessageId);
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: summaryData });
+        taWorkingStatus.stopWorking();
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        taWorkingStatus.stopWorking();
     }
 }
 
