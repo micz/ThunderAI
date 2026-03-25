@@ -934,6 +934,7 @@ switch (message.command) {
         while (doc.body.firstChild) {
             element.appendChild(doc.body.firstChild);
         }
+        element.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
     }
 
     if (summaryData.error) {
