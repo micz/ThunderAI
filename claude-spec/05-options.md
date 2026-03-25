@@ -95,7 +95,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `summarize` | `false` | Enable email summarization |
-| `summarize_auto` | `0` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open) |
+| `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` always uses inline regardless of this setting. |
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 
