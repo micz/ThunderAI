@@ -52,6 +52,16 @@
     0: Do not use the diff viewer
     1: Use the diff viewer
 
+    ================ DYNAMIC PROPERTIES (set at runtime via prompt_info)
+
+    headerMessageId (set by _openSummaryWebchat in mzta-background.js):
+    When present, the webchat UI shows a "Save as Summary" button to capture
+    the AI response and save it as an inline summary for the message identified
+    by this headerMessageId.
+
+    summaryTabId (set by _openSummaryWebchat in mzta-background.js):
+    The tab ID of the message display tab to update with the saved summary.
+
     ================ USER PROPERTIES
     Enabled (enabled attribute):
     0: Disabled

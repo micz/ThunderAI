@@ -449,9 +449,32 @@ class MessagesArea extends HTMLElement {
         closeButton.addEventListener('click', async () => {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
-        if(promptData.action != 0) { 
+        if(promptData.action != 0) {
             actionButtons.appendChild(splitButton);
             selectionInfo.style.display = "block"; // show selection info
+        }
+
+        // Save as Summary button (only shown for summary webchat sessions)
+        if(promptData.prompt_info?.headerMessageId) {
+            const saveSummaryButton = document.createElement('button');
+            saveSummaryButton.textContent = browser.i18n.getMessage("webchat_save_as_summary");
+            saveSummaryButton.classList.add('action_btn');
+            saveSummaryButton.addEventListener('click', async () => {
+                let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                const selectedHTML = this.getCurrentSelectionHTML();
+                if(selectedHTML != "") {
+                    finalText = removeAloneBRs(selectedHTML);
+                }
+                await browser.runtime.sendMessage({
+                    command: "chatgpt_saveSummary",
+                    text: finalText,
+                    headerMessageId: promptData.prompt_info.headerMessageId,
+                    tabId: promptData.prompt_info.summaryTabId || promptData.tabId,
+                });
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+            });
+            actionButtons.appendChild(saveSummaryButton);
+            selectionInfo.style.display = "block";
         }
 
         // diff viewer button
