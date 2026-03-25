@@ -924,8 +924,22 @@ switch (message.command) {
 
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
+    const hasHtml = !!summaryData.summary_html;
+
+    // Helper to set summary content using DOMParser (innerHTML is blocked in Thunderbird content scripts)
+    function setSummaryHtml(element, html) {
+        element.textContent = '';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        while (doc.body.firstChild) {
+            element.appendChild(doc.body.firstChild);
+        }
+    }
+
     if (summaryData.error) {
         summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
+    } else if (hasHtml) {
+        setSummaryHtml(summaryText, summaryData.summary_html);
     } else {
         summaryText.textContent = summaryData.summary;
     }
@@ -936,58 +950,94 @@ switch (message.command) {
     const maxLen = summaryData.maxDisplayLength || 0;
     const fullText = summaryData.summary;
     if (!summaryData.error && maxLen > 0 && fullText && fullText.length > maxLen) {
-        let cutPos = fullText.lastIndexOf(' ', maxLen);
-        if (cutPos <= 0) cutPos = maxLen;
-        const truncated = fullText.substring(0, cutPos) + '\u2026';
-        summaryText.textContent = truncated;
-
         // Set up animated expand/collapse via max-height transition
         summaryText.style.overflow = 'hidden';
         summaryText.style.transition = 'max-height 0.2s ease';
 
-        // Measure truncated height after layout
-        requestAnimationFrame(() => {
-            const collapsedHeight = summaryText.scrollHeight;
-            summaryText.style.maxHeight = collapsedHeight + 'px';
-        });
+        if (!hasHtml) {
+            // Plain text: truncate by character position
+            let cutPos = fullText.lastIndexOf(' ', maxLen);
+            if (cutPos <= 0) cutPos = maxLen;
+            const truncated = fullText.substring(0, cutPos) + '\u2026';
+            summaryText.textContent = truncated;
 
-        const toggleLink = document.createElement('a');
-        toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
-        toggleLink.href = '#';
-        toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
-            (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
-
-        let expanded = false;
-        toggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!expanded) {
-                // Expand: set full text, measure, animate to full height
-                summaryText.textContent = fullText;
-                const fullHeight = summaryText.scrollHeight;
-                summaryText.style.maxHeight = fullHeight + 'px';
-                toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
-            } else {
-                // Collapse: measure current truncated height, then animate down
-                summaryText.textContent = truncated;
-                // Force layout to get the target height before animating
+            // Measure truncated height after layout
+            requestAnimationFrame(() => {
                 const collapsedHeight = summaryText.scrollHeight;
-                summaryText.textContent = fullText;
-                // Set explicit current height so transition has a starting point
-                summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
-                requestAnimationFrame(() => {
-                    summaryText.style.maxHeight = collapsedHeight + 'px';
-                });
-                // Swap text after transition ends
-                summaryText.addEventListener('transitionend', function handler() {
-                    summaryText.removeEventListener('transitionend', handler);
-                    summaryText.textContent = truncated;
-                });
-                toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
-            }
-            expanded = !expanded;
-        });
+                summaryText.style.maxHeight = collapsedHeight + 'px';
+            });
 
-        summaryTextWrapper.appendChild(toggleLink);
+            const toggleLink = document.createElement('a');
+            toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+            toggleLink.href = '#';
+            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    // Expand: set full text, measure, animate to full height
+                    summaryText.textContent = fullText;
+                    const fullHeight = summaryText.scrollHeight;
+                    summaryText.style.maxHeight = fullHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
+                } else {
+                    // Collapse: measure current truncated height, then animate down
+                    summaryText.textContent = truncated;
+                    // Force layout to get the target height before animating
+                    const collapsedHeight = summaryText.scrollHeight;
+                    summaryText.textContent = fullText;
+                    // Set explicit current height so transition has a starting point
+                    summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
+                    requestAnimationFrame(() => {
+                        summaryText.style.maxHeight = collapsedHeight + 'px';
+                    });
+                    // Swap text after transition ends
+                    summaryText.addEventListener('transitionend', function handler() {
+                        summaryText.removeEventListener('transitionend', handler);
+                        summaryText.textContent = truncated;
+                    });
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+
+            summaryTextWrapper.appendChild(toggleLink);
+        } else {
+            // HTML content: use max-height to collapse, preserve full HTML
+            const collapsedMaxHeight = '4.2em'; // ~3 lines collapsed
+            summaryText.style.maxHeight = collapsedMaxHeight;
+
+            const toggleLink = document.createElement('a');
+            toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+            toggleLink.href = '#';
+            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
+                } else {
+                    summaryText.style.maxHeight = collapsedMaxHeight;
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+
+            // Only show toggle if content is actually taller than collapsed height
+            requestAnimationFrame(() => {
+                if (summaryText.scrollHeight > summaryText.clientHeight) {
+                    summaryTextWrapper.appendChild(toggleLink);
+                } else {
+                    summaryText.style.maxHeight = '';
+                    summaryText.style.overflow = '';
+                }
+            });
+        }
     }
 
     const summaryBody = document.createElement('div');

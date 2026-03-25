@@ -297,9 +297,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'chatgpt_saveSummary':
                 async function _saveSummaryFromWebchat(msg) {
                     try {
+                        let summaryHtml = msg.text.trim();
                         let cleanedSummary = cleanSummaryText(msg.text);
                         const summaryData = {
                             summary: cleanedSummary,
+                            summary_html: summaryHtml,
                             summary_date: new Date(),
                             headerMessageId: msg.headerMessageId
                         };
@@ -558,9 +560,12 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         await cmd.initWorker();
         const aiResponse = await cmd.sendPrompt();
         let cleanedSummary = cleanSummaryText(aiResponse);
+        const md = window.markdownit();
+        let summaryHtml = md.render(aiResponse);
 
         const summaryData = {
             summary: cleanedSummary,
+            summary_html: summaryHtml,
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
