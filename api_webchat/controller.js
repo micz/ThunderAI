@@ -116,6 +116,8 @@ if (worker) {
         }
         messagesArea.setLLMName(llmName);
 
+        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
+
         let workerInitMessage = {
             type: 'init',
             do_debug: prefs_api.do_debug,
