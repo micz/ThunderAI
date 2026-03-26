@@ -5,6 +5,7 @@
 
 <h2>Version 4.0.5 - ??/??/2026</h2>
       <ul>
+        <li>Fix: HTML part of the mail body used in prompt is displayed as HTML code and it is not rendered. This a display fix, there is no change on how the prompt is sent to the AI [<a href="https://github.com/micz/ThunderAI/issues/711">#711</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.4 - 26/03/2026</h2>
