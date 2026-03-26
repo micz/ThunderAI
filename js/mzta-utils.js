@@ -285,8 +285,17 @@ function convertBrToNewlines(html) {
 export function convertNewlinesToParagraphs(input) {
   return input
     .split('\n')
-    .map(line => `<p>${line}</p>`)
+    .map(line => `<p>${escapeHtml(line)}</p>`)
     .join('');
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 
