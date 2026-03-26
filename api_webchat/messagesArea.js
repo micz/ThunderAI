@@ -273,7 +273,11 @@ class MessagesArea extends HTMLElement {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', type);
         // Replace \n with <br> for correct HTML display
-        messageElement.appendChild(htmlStringToFragment(messageText));
+        if (type === "info") {
+            messageElement.appendChild(htmlStringToFragment(messageText));
+        } else {
+            messageElement.appendChild(textWithBrToFragment(messageText));
+        }
         // messageElement.textContent = messageText;
         // // Replace \n with <br> elements for correct HTML display
         // messageElement.innerHTML = '';
@@ -575,6 +579,20 @@ class MessagesArea extends HTMLElement {
 
 customElements.define('messages-area', MessagesArea);
 
+
+function textWithBrToFragment(text) {
+    const fragment = document.createDocumentFragment();
+    const segments = text.split(/<br\s*\/?>/gi);
+    segments.forEach((segment, idx) => {
+        if (segment.length > 0) {
+            fragment.appendChild(document.createTextNode(segment));
+        }
+        if (idx < segments.length - 1) {
+            fragment.appendChild(document.createElement('br'));
+        }
+    });
+    return fragment;
+}
 
 function htmlStringToFragment(htmlString) {
 //   console.log(">>>>>>>>>>>>>>>> htmlStringToFragment htmlString: " + htmlString);
