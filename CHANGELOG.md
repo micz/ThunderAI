@@ -3,6 +3,10 @@
 
 
 
+<h2>Version 4.0.5 - ??/??/2026</h2>
+      <ul>
+        <li>...</li>
+      </ul>
 <h2>Version 4.0.4 - 26/03/2026</h2>
       <ul>
         <li>Fix: Correctly showing the selected model in the special prompt pages.</li>
