@@ -26,6 +26,20 @@ const MZTA_INJECTED_SELECTORS = [
   '.mzta_dialog',
 ];
 
+// Mirrors removeMozMainHeader() from mzta-utils.js.
+// Removes the Thunderbird-injected header table and any preceding divs.
+function removeMozMainHeader(root) {
+  const table = root.querySelector('table.moz-main-header');
+  if (!table) return;
+  let sibling = table.previousElementSibling;
+  while (sibling && sibling.tagName === 'DIV') {
+    const toRemove = sibling;
+    sibling = sibling.previousElementSibling;
+    toRemove.remove();
+  }
+  table.remove();
+}
+
 function getCleanBodyClone() {
   const clone = document.body.cloneNode(true);
   for (const selector of MZTA_INJECTED_SELECTORS) {
@@ -33,6 +47,7 @@ function getCleanBodyClone() {
       el.remove();
     }
   }
+  removeMozMainHeader(clone);
   return clone;
 }
 
