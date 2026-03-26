@@ -16,6 +16,26 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// CSS selectors for DOM elements injected by ThunderAI.
+// These are stripped when retrieving the email body content
+// to avoid contaminating placeholder values sent to AI providers.
+// Add new selectors here when new UI elements are injected into the email DOM.
+const MZTA_INJECTED_SELECTORS = [
+  '#mzta-spam-check-progress',
+  '#mzta-spam-report-banner',
+  '.mzta_dialog',
+];
+
+function getCleanBodyClone() {
+  const clone = document.body.cloneNode(true);
+  for (const selector of MZTA_INJECTED_SELECTORS) {
+    for (const el of clone.querySelectorAll(selector)) {
+      el.remove();
+    }
+  }
+  return clone;
+}
+
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
   case "getSelectedText": {
@@ -60,7 +80,7 @@ switch (message.command) {
 
   case "getText": {
     let t = '';
-    const children = window.document.body.childNodes;
+    const children = getCleanBodyClone().childNodes;
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-signature')) {
@@ -73,11 +93,11 @@ switch (message.command) {
   }
 
   case "getTextOnly": {
-      return Promise.resolve(window.document.body.innerText);
+      return Promise.resolve(getCleanBodyClone().innerText);
   }
 
   case "getFullHtml": {
-      return Promise.resolve(window.document.body.innerHTML);
+      return Promise.resolve(getCleanBodyClone().innerHTML);
   }
 
   case "getOnlyTypedText": {
