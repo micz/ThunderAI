@@ -175,6 +175,9 @@ async function restoreOptions() {
             if (element.id === 'translate_auto') {
               default_select_value = prefs_default.translate_auto;
             }
+            if (element.id === 'translate_display_mode') {
+              default_select_value = prefs_default.translate_display_mode;
+            }
             const restoreValue = result[element.id] ?? default_select_value;
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
             if (element.tomselect) {

@@ -100,6 +100,8 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate` | `true` | Enable email translation |
 | `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open) |
+| `translate_display_mode` | `'inline'` | Where to display translations: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `translate_auto = 2` always uses inline regardless of this setting. |
+| `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 
 ### Summarize Settings Page (`pages/summarize/`)
@@ -132,10 +134,13 @@ The translate settings page provides:
    - `0` (Disabled) — no inline translations
    - `1` (Manual) — shows a "Get AI Translation" button in message display
    - `2` (Automatic) — generates translation immediately when message is opened
-3. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
-4. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
-
-Unlike summarize, translation has no `display_mode` option (always inline) and no max display length setting.
+3. **Display mode dropdown** (`translate_display_mode`) — controls where translations are shown:
+   - `'inline'` — translation banner in the message pane (default)
+   - `'webchat'` — opens the AI chat window with a "Save as Translation" button
+   - Note: `translate_auto = 2` always generates inline regardless of this setting.
+4. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+5. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
+6. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
 ## Adding a New Preference
 

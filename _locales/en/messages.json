@@ -239,6 +239,10 @@
     "message": "Save as Summary",
     "description": "Button label in the webchat window to save the AI response as a message summary"
   },
+  "webchat_save_as_translation": {
+    "message": "Save as Translation",
+    "description": "Button label in the webchat window to save the AI response as a message translation"
+  },
   "chatgpt_textarea_not_found_error": {
     "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please check the service status.",
     "description": ""
@@ -1957,32 +1961,12 @@
       "message": "Auto-summarize messages",
       "description": ""
   },
-  "prefs_OptionText_summarize_auto_disabled": {
-      "message": "Disabled",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_auto_manual": {
-      "message": "Show summary button",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_auto_automatic": {
-      "message": "Generate automatically",
-      "description": ""
-  },
   "prefs_OptionText_summarize_auto_Info": {
       "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
       "description": ""
   },
   "prefs_OptionText_summarize_display_mode": {
       "message": "Display summary in",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_display_mode_inline": {
-      "message": "Message pane (inline)",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_display_mode_webchat": {
-      "message": "Chat window",
       "description": ""
   },
   "prefs_OptionText_summarize_display_mode_Info": {
@@ -2085,20 +2069,52 @@
     "message": "Auto-translate messages",
     "description": ""
   },
-  "prefs_OptionText_translate_auto_disabled": {
+  "prefs_OptionText_action_auto_disabled": {
     "message": "Disabled",
     "description": ""
   },
-  "prefs_OptionText_translate_auto_manual": {
+  "prefs_OptionText_action_auto_manual": {
     "message": "Manual button only",
     "description": ""
   },
-  "prefs_OptionText_translate_auto_automatic": {
+  "prefs_OptionText_action_auto_automatic": {
     "message": "Automatic",
     "description": ""
   },
   "prefs_OptionText_translate_auto_Info": {
     "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_display_mode": {
+    "message": "Display mode for translations",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_inline": {
+    "message": "Message pane (inline)",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_webchat": {
+    "message": "Chat window",
+    "description": ""
+  },
+  "prefs_OptionText_translate_display_mode_Info": {
+    "message": "Choose where to display translations. Note: automatic mode always uses inline display.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length": {
+    "message": "Maximum length of displayed translation",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length_Info": {
+    "message": "Maximum number of characters shown in the inline translation. 0 = no limit. When set, longer text is truncated with a \"See more\" toggle.",
+    "description": ""
+  },
+  "translate_see_more": {
+    "message": "See more",
+    "description": ""
+  },
+  "translate_see_less": {
+    "message": "See less",
     "description": ""
   },
   "prefs_OptionText_translate_lang": {

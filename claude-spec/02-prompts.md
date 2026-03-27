@@ -88,14 +88,16 @@ The summarize feature uses two distinct prompt pathways:
 
 ### Translate: Inline-Only Prompt System
 
-The translate feature uses a single special prompt (`prompt_translate_this`) for inline translation in the message body. Unlike summarize, it has no context menu entry and no webchat mode.
+The translate feature uses a single special prompt (`prompt_translate_this`) for translating emails. It supports both inline display and webchat mode, but has no context menu entry.
 
-**Inline Translation on Message Display** (controlled by `translate_auto` pref):
+**Inline Translation on Message Display** (controlled by `translate_auto` and `translate_display_mode` prefs):
 - Uses a single special prompt: `prompt_translate_this`
 - The prompt text is appended with the target language and the email body: `prompt_text + " " + lang + ". \"" + body_text + "\""`
 - Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
-- Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
+- `translate_display_mode = 'inline'`: result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
+- `translate_display_mode = 'webchat'`: opens AI chat window; webchat shows a "Save as Translation" button to persist the result inline
+- `translate_auto = 2` (automatic) always generates inline regardless of `translate_display_mode`
 - Banner includes refresh (↻) and delete (×) buttons
 - Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)

@@ -1258,6 +1258,9 @@ switch (message.command) {
     translationHeader.appendChild(translationMenu);
     translationContainer.appendChild(translationHeader);
 
+    const translationTextWrapper = document.createElement('div');
+    translationTextWrapper.style.cssText = 'flex-grow: 1;';
+
     const translationText = document.createElement('div');
     translationText.style.cssText = 'white-space: pre-wrap; line-height: 1.5;';
     if (translationData.error) {
@@ -1265,7 +1268,60 @@ switch (message.command) {
     } else {
         translationText.textContent = translationData.translated_text || '';
     }
-    translationContainer.appendChild(translationText);
+    translationTextWrapper.appendChild(translationText);
+
+    // Expand/collapse for long translations
+    const maxLenTranslation = translationData.maxDisplayLength || 0;
+    const fullTranslationText = translationData.translated_text || '';
+    if (!translationData.error && maxLenTranslation > 0 && fullTranslationText.length > maxLenTranslation) {
+        translationText.style.overflow = 'hidden';
+        translationText.style.transition = 'max-height 0.2s ease';
+
+        let cutPos = fullTranslationText.lastIndexOf(' ', maxLenTranslation);
+        if (cutPos <= 0) cutPos = maxLenTranslation;
+        const truncatedTranslation = fullTranslationText.substring(0, cutPos) + '\u2026';
+        translationText.textContent = truncatedTranslation;
+
+        requestAnimationFrame(() => {
+            const collapsedHeight = translationText.scrollHeight;
+            translationText.style.maxHeight = collapsedHeight + 'px';
+        });
+
+        const toggleLinkTranslation = document.createElement('a');
+        toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+        toggleLinkTranslation.href = '#';
+        toggleLinkTranslation.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+            (isDarkTranslation ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+        let expandedTranslation = false;
+        toggleLinkTranslation.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!expandedTranslation) {
+                translationText.textContent = fullTranslationText;
+                const fullHeight = translationText.scrollHeight;
+                translationText.style.maxHeight = fullHeight + 'px';
+                toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
+            } else {
+                translationText.textContent = truncatedTranslation;
+                const collapsedHeight = translationText.scrollHeight;
+                translationText.textContent = fullTranslationText;
+                translationText.style.maxHeight = translationText.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    translationText.style.maxHeight = collapsedHeight + 'px';
+                });
+                translationText.addEventListener('transitionend', function handler() {
+                    translationText.removeEventListener('transitionend', handler);
+                    translationText.textContent = truncatedTranslation;
+                });
+                toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+            }
+            expandedTranslation = !expandedTranslation;
+        });
+
+        translationTextWrapper.appendChild(toggleLinkTranslation);
+    }
+
+    translationContainer.appendChild(translationTextWrapper);
 
     const summaryBannerForTranslation = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-generating');
     const spamBannerForTranslation = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
@@ -1368,7 +1424,7 @@ switch (message.command) {
         const wrapper = document.getElementById('mzta-translation-trigger-wrapper');
         if (wrapper) wrapper.remove(); else translationTriggerBtn.remove();
         browser.runtime.sendMessage({
-            command: "triggerTranslationGeneration",
+            command: message.webchat ? "triggerTranslationWebchat" : "triggerTranslationGeneration",
             headerMessageId: message.headerMessageId
         });
     };

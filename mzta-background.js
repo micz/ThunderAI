@@ -334,16 +334,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initTranslation() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto });
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_display_mode: prefs_default.translate_display_mode, translate_max_display_length: prefs_default.translate_max_display_length });
 
                         if (!prefs.translate) return;
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
 
+                        // Always show cached translation if available, regardless of translate_auto
                         let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
                         if (cachedTranslation && !cachedTranslation.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation } });
+                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
                             return;
                         }
 
@@ -352,15 +353,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
+                        // If translate_auto is disabled, don't show button or auto-generate
                         if (prefs.translate_auto === 0) return;
 
+                        // Auto mode (translate_auto === 2) always generates inline
                         if (prefs.translate_auto === 2) {
                             _generateTranslationForMessage(message.headerMessageId, tabId);
                             return;
                         }
 
                         // Manual button mode (translate_auto === 1)
-                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        if (prefs.translate_display_mode === 'inline') {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        } else {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId, webchat: true });
+                        }
                     } catch (e) {
                         taLog.error("Error in initTranslation: " + e);
                     }
@@ -374,16 +381,58 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
                 _triggerTranslationGeneration(message);
                 break;
+            case 'triggerTranslationWebchat':
+                async function _triggerTranslationWebchat(message) {
+                    let tabId = sender.tab.id;
+                    await _openTranslationWebchat(message.headerMessageId, tabId);
+                }
+                _triggerTranslationWebchat(message);
+                break;
             case 'refreshTranslation':
                 async function _refreshTranslation(message) {
                     let tabId = sender.tab.id;
                     await translationStore.removeTranslation(message.headerMessageId);
-                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                    let prefs_refresh_tr = await browser.storage.sync.get({ translate_display_mode: prefs_default.translate_display_mode });
+                    if (prefs_refresh_tr.translate_display_mode === 'webchat') {
+                        await _openTranslationWebchat(message.headerMessageId, tabId);
+                    } else {
+                        await _generateTranslationForMessage(message.headerMessageId, tabId);
+                    }
                 }
                 _refreshTranslation(message);
                 break;
             case 'removeTranslation':
                 translationStore.removeTranslation(message.headerMessageId);
+                break;
+            case 'chatgpt_saveTranslation':
+                async function _saveTranslationFromWebchat(msg) {
+                    try {
+                        let translatedText = msg.text.trim();
+                        let prefs_tr = await browser.storage.sync.get({
+                            translate_lang: prefs_default.translate_lang,
+                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+                            translate_max_display_length: prefs_default.translate_max_display_length
+                        });
+                        let lang = prefs_tr.translate_lang || prefs_tr.default_chatgpt_lang || '';
+                        const translationData = {
+                            translated_text: translatedText,
+                            lang: lang,
+                            headerMessageId: msg.headerMessageId
+                        };
+                        await translationStore.saveTranslation(translationData, msg.headerMessageId);
+                        try {
+                            browser.tabs.sendMessage(msg.tabId, {
+                                command: "showTranslation",
+                                data: { ...translationData, maxDisplayLength: prefs_tr.translate_max_display_length }
+                            });
+                        } catch (e) {
+                            taLog.error("Error sending showTranslation to tab: " + e);
+                        }
+                    } catch (error) {
+                        console.error("[ThunderAI] Error saving translation from webchat:", error);
+                    }
+                }
+                _saveTranslationFromWebchat(message);
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
@@ -647,12 +696,13 @@ async function _generateTranslationForMessage(headerMessageId, tabId) {
             do_debug: prefs_default.do_debug,
             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
             translate_lang: prefs_default.translate_lang,
+            translate_max_display_length: prefs_default.translate_max_display_length,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
         let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
         if (cachedTranslation && !cachedTranslation.error) {
-            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation } });
+            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
             return;
         }
 
@@ -704,7 +754,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId) {
             headerMessageId: headerMessageId
         };
         await translationStore.saveTranslation(translationData, headerMessageId);
-        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData } });
+        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
@@ -859,6 +909,41 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
     } catch (error) {
         console.error("[ThunderAI] Error opening summary webchat:", error);
+    }
+}
+
+async function _openTranslationWebchat(headerMessageId, tabId) {
+    try {
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            console.error("[ThunderAI] _openTranslationWebchat: Message not found for headerMessageId:", headerMessageId);
+            return;
+        }
+
+        const curr_message = messageResult.messages[0];
+        const curr_message_full = await browser.messages.getFull(curr_message.id);
+
+        const prefs = await browser.storage.sync.get({
+            ...prefs_default,
+            translate_lang: prefs_default.translate_lang,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang
+        });
+        const connectionType = getConnectionType(prefs, {}, 'translate');
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
+            await translationStore.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            return;
+        }
+
+        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        const { promptText, promptInfo } = await taPromptUtils.buildTranslationPrompt(curr_message_full, lang);
+        promptInfo.headerMessageId = headerMessageId;
+        promptInfo.translationTabId = tabId;
+
+        openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
+    } catch (error) {
+        console.error("[ThunderAI] Error opening translation webchat:", error);
     }
 }
 

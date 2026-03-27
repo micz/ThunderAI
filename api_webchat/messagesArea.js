@@ -459,7 +459,7 @@ class MessagesArea extends HTMLElement {
         }
 
         // Save as Summary button (only shown for summary webchat sessions)
-        if(promptData.prompt_info?.headerMessageId) {
+        if(promptData.prompt_info?.headerMessageId && promptData.prompt_info?.summaryTabId) {
             const saveSummaryButton = document.createElement('button');
             saveSummaryButton.textContent = browser.i18n.getMessage("webchat_save_as_summary");
             saveSummaryButton.classList.add('action_btn');
@@ -478,6 +478,29 @@ class MessagesArea extends HTMLElement {
                 browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
             });
             actionButtons.appendChild(saveSummaryButton);
+            selectionInfo.style.display = "block";
+        }
+
+        // Save as Translation button (only shown for translation webchat sessions)
+        if(promptData.prompt_info?.headerMessageId && promptData.prompt_info?.translationTabId) {
+            const saveTranslationButton = document.createElement('button');
+            saveTranslationButton.textContent = browser.i18n.getMessage("webchat_save_as_translation");
+            saveTranslationButton.classList.add('action_btn');
+            saveTranslationButton.addEventListener('click', async () => {
+                let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                const selectedHTML = this.getCurrentSelectionHTML();
+                if(selectedHTML != "") {
+                    finalText = removeAloneBRs(selectedHTML);
+                }
+                await browser.runtime.sendMessage({
+                    command: "chatgpt_saveTranslation",
+                    text: finalText,
+                    headerMessageId: promptData.prompt_info.headerMessageId,
+                    tabId: promptData.prompt_info.translationTabId || promptData.tabId,
+                });
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+            });
+            actionButtons.appendChild(saveTranslationButton);
             selectionInfo.style.display = "block";
         }
 
