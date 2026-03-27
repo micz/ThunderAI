@@ -26,6 +26,40 @@
           </tr>
           <tr id="connection_ui_anchor"></tr>
           <tr id="connection_ui_end"><td colspan="2"></td></tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_auto__</span></td>
+            <td>
+              <label>
+                <select id="summarize_auto" name="summarize_auto" class="option-input">
+                  <option value="0">__MSG_prefs_OptionText_summarize_auto_disabled__</option>
+                  <option value="1">__MSG_prefs_OptionText_summarize_auto_manual__</option>
+                  <option value="2">__MSG_prefs_OptionText_summarize_auto_automatic__</option>
+                </select>
+                <br>__MSG_prefs_OptionText_summarize_auto_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_display_mode__</span></td>
+            <td>
+              <label>
+                <select id="summarize_display_mode" name="summarize_display_mode" class="option-input">
+                  <option value="inline">__MSG_prefs_OptionText_summarize_display_mode_inline__</option>
+                  <option value="webchat">__MSG_prefs_OptionText_summarize_display_mode_webchat__</option>
+                </select>
+                <br>__MSG_prefs_OptionText_summarize_display_mode_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_max_display_length__</span></td>
+            <td>
+              <label>
+                <input type="number" id="summarize_max_display_length" name="summarize_max_display_length" min="0" class="option-input" />
+                <br>__MSG_prefs_OptionText_summarize_max_display_length_Info__
+              </label>
+            </td>
+          </tr>
     </table>
 
     <!-- PROMPTS -->

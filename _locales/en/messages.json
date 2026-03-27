@@ -235,6 +235,10 @@
     "message": "Close",
     "description": ""
   },
+  "webchat_save_as_summary": {
+    "message": "Save as Summary",
+    "description": "Button label in the webchat window to save the AI response as a message summary"
+  },
   "chatgpt_textarea_not_found_error": {
     "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please check the service status.",
     "description": ""
@@ -1388,15 +1392,11 @@
     "description": ""
   },
   "spamfilter_no_reports": {
-    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports for the current session only.",
+    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
     "description": ""
   },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
-    "description": ""
-  },
-  "SpamReport_infoline": {
-    "message": "This information is saved only for the current session.",
     "description": ""
   },
   "Date": {
@@ -1885,6 +1885,21 @@
     "message": "You have denied the optional permission needed to fetch models for this integration.",
     "description": ""
   },
+  "prefs_OptionText_auto_summary": {
+    "message": "Enable automatic AI summarization for message previews"
+  },
+  "prefs_OptionText_auto_summary_Info": {
+      "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service."
+  },
+  "auto_summary_title": {
+      "message": "ThunderAI Summary"
+  },
+  "auto_summary_generating": {
+      "message": "Generating AI summary..."
+  },
+  "auto_summary_failed": {
+      "message": "Failed to generate AI summary. Please confirm your settings and try again."
+  },
   "customPrompts_export_include_api_settings": {
     "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
     "description": ""
@@ -1913,8 +1928,108 @@
       "message": "Spam check in progress...",
       "description": ""
   },
+  "prefs_OptionText_summarize_auto": {
+      "message": "Auto-summarize messages",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_disabled": {
+      "message": "Disabled",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_manual": {
+      "message": "Show summary button",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_automatic": {
+      "message": "Generate automatically",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_Info": {
+      "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode": {
+      "message": "Display summary in",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_inline": {
+      "message": "Message pane (inline)",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_webchat": {
+      "message": "Chat window",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_Info": {
+      "message": "Choose where the summary result is displayed. Inline mode shows a summary banner directly in the message pane. Chat window mode opens the AI chat window.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_display_length": {
+      "message": "Max display length",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_display_length_Info": {
+      "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
+      "description": ""
+  },
+  "summarize_see_more": {
+      "message": "See more",
+      "description": ""
+  },
+  "summarize_see_less": {
+      "message": "See less",
+      "description": ""
+  },
+  "summarize_title": {
+      "message": "ThunderAI Overview",
+      "description": ""
+  },
+  "get_ai_summary": {
+      "message": "AI Summary",
+      "description": ""
+  },
+  "summarize_collapse": {
+      "message": "Collapse summary",
+      "description": ""
+  },
+  "summarize_generating": {
+      "message": "Generating summary...",
+      "description": ""
+  },
+  "summarize_error": {
+      "message": "Failed to generate summary",
+      "description": ""
+  },
+  "summarize_click_to_generate": {
+      "message": "Click here to generate a summary",
+      "description": ""
+  },
+   "summarize_chatgpt_web_not_supported": {
+       "message": "Auto-summary requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+       "description": ""
+   },
+   "summarize_refresh": {
+       "message": "Refresh summary",
+       "description": ""
+   },
+   "spamfilter_refresh": {
+       "message": "Refresh spam report",
+       "description": ""
+   },
+   "spamfilter_delete": {
+       "message": "Delete spam report",
+       "description": ""
+   },
+   "summarize_delete": {
+       "message": "Delete summary",
+       "description": ""
+   },
   "antispam_by": {
     "message": "Antispam by",
+    "description": ""
+  },
+  "summary_by": {
+    "message": "Summary by",
     "description": ""
   },
   "prefs_THStats_1": {

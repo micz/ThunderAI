@@ -41,6 +41,43 @@ js/mzta-prompts.js       (builds final prompt string)
 js/mzta-compose-script.js  (inserts text into Thunderbird compose window)
 ```
 
+### Data Flow: Inline Summary on Message Display
+
+The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls where
+the summary is displayed. The `summarize_auto` preference controls when it is triggered.
+
+- `summarize_auto = 2` (automatic) always generates inline, regardless of `summarize_display_mode`.
+- `summarize_auto = 1` (manual button) respects `summarize_display_mode`:
+  - `'inline'` → button click triggers inline generation
+  - `'webchat'` → button click opens the AI chat window via `_openSummaryWebchat()`
+- Context menu summarize also respects `summarize_display_mode`:
+  - `'inline'` with a single message → generates inline via `_generateSummaryForMessage()`
+  - `'webchat'` or multiple messages → opens the AI chat window via `openChatGPT()`
+
+```
+User opens/selects a message in Thunderbird
+       ↓
+mzta-compose-script.js  (sends "initSummary" to background)
+       ↓
+mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
+       ↓
+  ┌──────────────────────────────────────────────────────────┐
+  │ summarize_auto = 0 → do nothing                          │
+  │ summarize_auto = 1 → show "click to generate" button     │
+  │   display_mode = inline  → click triggers inline gen     │
+  │   display_mode = webchat → click opens chat window       │
+  │ summarize_auto = 2 → generate immediately (always inline)│
+  └──────────────────────────────────────────────────────────┘
+       ↓  (if generating inline)
+  taSummaryStore         (check cache / set processing)
+       ↓  (cache miss)
+  mzta-special-commands  (via Web Worker, NOT chatgpt_web)
+       ↓
+  taSummaryStore         (save result via taStorage)
+       ↓
+  mzta-compose-script.js (render summary banner in message body)
+```
+
 ## Key Modules
 
 | File | Role |
@@ -50,14 +87,16 @@ js/mzta-compose-script.js  (inserts text into Thunderbird compose window)
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.) |
-| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection) |
-| `js/mzta-compose-script.js` | Injects AI response into Thunderbird compose window |
+| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly) |
+| `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders summary/spam banners in message display |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
 | `js/mzta-logger.js` | Debug logging (gated by `do_debug` pref) |
 | `js/mzta-store.js` | Storage abstraction helpers |
+| `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
+| `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing |
 | `js/mzta-addatags-exclusion-list.js` | Tag exclusion list management |
 | `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
@@ -106,3 +145,9 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 ## Storage
 
 All preferences are stored via `browser.storage.local`. The keys and default values are defined in `options/mzta-options-default.js` (`prefs_default` export). Custom prompts and custom placeholders are stored separately in storage under their own keys.
+
+### Per-Message Data Storage
+
+Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup.
+
+`js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states.

@@ -16,6 +16,114 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// CSS selectors for DOM elements injected by ThunderAI.
+// These are stripped when retrieving the email body content
+// to avoid contaminating placeholder values sent to AI providers.
+// Add new selectors here when new UI elements are injected into the email DOM.
+const MZTA_INJECTED_SELECTORS = [
+  '#mzta-spam-check-progress',
+  '#mzta-spam-report-banner',
+  '.mzta_dialog',
+];
+
+function getCleanBodyHtml() {
+  const clone = document.body.cloneNode(true);
+  for (const selector of MZTA_INJECTED_SELECTORS) {
+    for (const el of clone.querySelectorAll(selector)) {
+      el.remove();
+    }
+  }
+  for (const table of clone.querySelectorAll('table.moz-main-header')) {
+    let sibling = table.previousElementSibling;
+    while (sibling && sibling.tagName === 'DIV') {
+      const toRemove = sibling;
+      sibling = sibling.previousElementSibling;
+      toRemove.remove();
+    }
+    table.remove();
+  }
+  return clone;
+}
+
+function createThreeDotsMenu(isDark, menuItems, panelColors) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position: relative; display: inline-flex; align-items: center;';
+
+    const dotsBtn = document.createElement('span');
+    dotsBtn.textContent = '\u22EE';
+    dotsBtn.style.cssText = 'cursor: pointer; opacity: 0.7; font-size: 18px; padding: 2px 7px; line-height: 1; user-select: none; transition: opacity 0.2s; display: flex; align-items: center;';
+    dotsBtn.onmouseover = () => dotsBtn.style.opacity = '1';
+    dotsBtn.onmouseout = () => dotsBtn.style.opacity = '0.7';
+
+    const dropdown = document.createElement('div');
+    const dropdownBg = panelColors.bg;
+    const dropdownBorder = panelColors.border;
+    const defaultTextColor = panelColors.text;
+    dropdown.style.cssText = `display: none; position: absolute; right: 0; top: 100%; z-index: 9999; min-width: 180px; background-color: ${dropdownBg}; border: 1px solid ${dropdownBorder}; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); overflow: hidden;`;
+
+    menuItems.forEach(item => {
+        const row = document.createElement('div');
+        row.style.cssText = `display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; color: ${defaultTextColor}; transition: background-color 0.15s, color 0.15s;`;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.textContent = item.icon;
+        iconSpan.style.cssText = 'font-size: 15px; width: 18px; text-align: center;';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = item.label;
+
+        row.appendChild(iconSpan);
+        row.appendChild(labelSpan);
+
+        const hoverBg = item.hoverColor === '#cc0000'
+            ? (isDark ? 'rgba(204,0,0,0.2)' : 'rgba(204,0,0,0.1)')
+            : (isDark ? 'rgba(77,157,224,0.2)' : 'rgba(26,95,168,0.1)');
+
+        row.onmouseover = () => {
+            row.style.backgroundColor = hoverBg;
+            row.style.color = item.hoverColor;
+        };
+        row.onmouseout = () => {
+            row.style.backgroundColor = '';
+            row.style.color = defaultTextColor;
+        };
+
+        row.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.style.display = 'none';
+            if (item.disableAfterClick) {
+                row.onclick = null;
+                row.style.opacity = '0.5';
+                row.style.pointerEvents = 'none';
+            }
+            item.onClick();
+        };
+
+        dropdown.appendChild(row);
+    });
+
+    dotsBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    wrapper.appendChild(dotsBtn);
+    wrapper.appendChild(dropdown);
+    return wrapper;
+}
+
 browser.runtime.onMessage.addListener((message) => {
 switch (message.command) {
   case "getSelectedText": {
@@ -60,7 +168,7 @@ switch (message.command) {
 
   case "getText": {
     let t = '';
-    const children = window.document.body.childNodes;
+    const children = getCleanBodyHtml().childNodes;
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-signature')) {
@@ -73,11 +181,11 @@ switch (message.command) {
   }
 
   case "getTextOnly": {
-      return Promise.resolve(window.document.body.innerText);
+      return Promise.resolve(getCleanBodyHtml().innerText);
   }
 
   case "getFullHtml": {
-      return Promise.resolve(window.document.body.innerHTML);
+      return Promise.resolve(getCleanBodyHtml().innerHTML);
   }
 
   case "getOnlyTypedText": {
@@ -650,6 +758,23 @@ switch (message.command) {
       containerProgress.appendChild(brandingProgress);
 
       document.body.insertBefore(containerProgress, document.body.firstChild);
+
+      // Reposition summary trigger button if it exists as fixed
+      const existingFixedTriggerProgress = document.getElementById('mzta-summary-trigger');
+      if (existingFixedTriggerProgress && !document.getElementById('mzta-summary-trigger-wrapper')) {
+          existingFixedTriggerProgress.style.position = '';
+          existingFixedTriggerProgress.style.top = '';
+          existingFixedTriggerProgress.style.right = '';
+          existingFixedTriggerProgress.style.zIndex = '';
+          existingFixedTriggerProgress.style.marginLeft = 'auto';
+          existingFixedTriggerProgress.style.marginTop = '4px';
+          const reposTriggerWrapperProgress = document.createElement('div');
+          reposTriggerWrapperProgress.id = 'mzta-summary-trigger-wrapper';
+          reposTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+          reposTriggerWrapperProgress.appendChild(existingFixedTriggerProgress);
+          document.body.insertBefore(reposTriggerWrapperProgress, containerProgress.nextSibling);
+      }
+
       return Promise.resolve(true);
 
   case "showSpamReport":
@@ -682,7 +807,7 @@ switch (message.command) {
         borderColor = '#006600';
     }
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; border-radius:4px; padding: 8px 0.5rem; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
 
     const scoreText = document.createElement('strong');
     if (data.spamValue == -999) {
@@ -702,21 +827,358 @@ switch (message.command) {
     branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
     branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5;';
 
-    const closeBtn = document.createElement('span');
-    closeBtn.textContent = '×';
-    closeBtn.style.cssText = 'cursor: pointer; font-weight: bold; font-size: 16px; padding: 0 5px;';
-    closeBtn.title = browser.i18n.getMessage("chatgpt_win_close");
-    closeBtn.onclick = function() {
-        container.remove();
-        browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
-    };
+    const spamMenu = createThreeDotsMenu(isDark, [
+        {
+            icon: '↻',
+            label: browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report',
+            hoverColor: isDark ? '#4d9de0' : '#1a5fa8',
+            disableAfterClick: true,
+            onClick: () => {
+                browser.runtime.sendMessage({ command: "refreshSpamReport", headerMessageId: data.headerMessageId });
+            }
+        },
+        {
+            icon: '×',
+            label: browser.i18n.getMessage("spamfilter_delete") || 'Delete spam report',
+            hoverColor: '#cc0000',
+            onClick: () => {
+                container.remove();
+                browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
+            }
+        }
+    ], { bg: bgColor, border: borderColor, text: textColor });
+
+    const spamRightGroup = document.createElement('span');
+    spamRightGroup.style.cssText = 'margin-left: auto; margin-right:1px; display: flex; align-items: center; gap: 5px;';
+    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
+    spamRightGroup.appendChild(branding);
+    spamRightGroup.appendChild(spamMenu);
 
     container.appendChild(scoreText);
     container.appendChild(reasonText);
-    container.appendChild(branding);
-    container.appendChild(closeBtn);
+    container.appendChild(spamRightGroup);
 
     document.body.insertBefore(container, document.body.firstChild);
+
+    // Reposition summary trigger button if it exists as fixed
+    const existingFixedTrigger = document.getElementById('mzta-summary-trigger');
+    if (existingFixedTrigger && !document.getElementById('mzta-summary-trigger-wrapper')) {
+        existingFixedTrigger.style.position = '';
+        existingFixedTrigger.style.top = '';
+        existingFixedTrigger.style.right = '';
+        existingFixedTrigger.style.zIndex = '';
+        existingFixedTrigger.style.marginLeft = 'auto';
+        existingFixedTrigger.style.marginTop = '4px';
+        const reposTriggerWrapper = document.createElement('div');
+        reposTriggerWrapper.id = 'mzta-summary-trigger-wrapper';
+        reposTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        reposTriggerWrapper.appendChild(existingFixedTrigger);
+        document.body.insertBefore(reposTriggerWrapper, container.nextSibling);
+    }
+
+    return Promise.resolve(true);
+
+  case "showSummary":
+    const generatingBanner = document.getElementById('mzta-summary-generating');
+    if(generatingBanner) generatingBanner.remove();
+    
+    const existingTriggerWrapper = document.getElementById('mzta-summary-trigger-wrapper');
+    if(existingTriggerWrapper) existingTriggerWrapper.remove();
+    const existingTriggerBtn = document.getElementById('mzta-summary-trigger');
+    if(existingTriggerBtn) existingTriggerBtn.remove();
+
+    const summaryBanner = document.getElementById('mzta-summary-banner');
+    if(summaryBanner) summaryBanner.remove();
+
+    const summaryData = message.data;
+    const summaryContainer = document.createElement('div');
+    summaryContainer.id = 'mzta-summary-banner';
+    
+    const isDarkSummary = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColorSummary = isDarkSummary ? '#2a2a2a' : '#f0f0f0';
+    let textColorSummary = isDarkSummary ? '#e0e0e0' : '#333';
+    let borderColorSummary = isDarkSummary ? '#444' : '#ddd';
+
+    if (summaryData.error) {
+        bgColorSummary = isDarkSummary ? '#3a1a1a' : '#f7e6e6';
+        textColorSummary = isDarkSummary ? '#ffcccc' : '#660000';
+        borderColorSummary = '#660000';
+    }
+
+    summaryContainer.className = 'thunderai-summary-pane';
+    summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+
+    const summaryMenu = createThreeDotsMenu(isDarkSummary, [
+        {
+            icon: '↻',
+            label: browser.i18n.getMessage("summarize_refresh") || 'Refresh summary',
+            hoverColor: isDarkSummary ? '#4d9de0' : '#1a5fa8',
+            disableAfterClick: true,
+            onClick: () => {
+                browser.runtime.sendMessage({
+                    command: "refreshSummary",
+                    headerMessageId: summaryData.headerMessageId
+                });
+            }
+        },
+        {
+            icon: '×',
+            label: browser.i18n.getMessage("summarize_delete") || 'Delete summary',
+            hoverColor: '#cc0000',
+            onClick: () => {
+                summaryContainer.remove();
+                browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
+            }
+        }
+    ], { bg: bgColorSummary, border: borderColorSummary, text: textColorSummary });
+
+    const summaryBranding = document.createElement('span');
+    summaryBranding.textContent = browser.i18n.getMessage("summary_by") + " ThunderAI";
+    summaryBranding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap;';
+
+    const summaryRightGroup = document.createElement('span');
+    summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; float: right; margin-left: 10px;';
+    summaryRightGroup.appendChild(summaryBranding);
+    summaryRightGroup.appendChild(summaryMenu);
+
+    const summaryIcon = document.createElement('img');
+    summaryIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    summaryIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0; margin-top: 2px;${isDarkSummary ? ' filter: invert(1);' : ''}`;
+
+    const summaryTextWrapper = document.createElement('div');
+    summaryTextWrapper.style.cssText = 'flex: 1; min-width: 0;';
+
+    summaryTextWrapper.appendChild(summaryRightGroup);
+
+    const summaryText = document.createElement('div');
+    summaryText.className = 'thunderai-summary-content';
+    const hasHtml = !!summaryData.summary_html;
+
+    // Helper to set summary content using DOMParser (innerHTML is blocked in Thunderbird content scripts)
+    function setSummaryHtml(element, html) {
+        element.textContent = '';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        while (doc.body.firstChild) {
+            element.appendChild(doc.body.firstChild);
+        }
+        element.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
+    }
+
+    if (summaryData.error) {
+        summaryText.textContent = summaryData.message || browser.i18n.getMessage("summarize_error");
+    } else if (hasHtml) {
+        setSummaryHtml(summaryText, summaryData.summary_html);
+    } else {
+        summaryText.textContent = summaryData.summary;
+    }
+    summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
+
+    summaryTextWrapper.appendChild(summaryText);
+
+    const maxLen = summaryData.maxDisplayLength || 0;
+    const fullText = summaryData.summary;
+    if (!summaryData.error && maxLen > 0 && fullText && fullText.length > maxLen) {
+        // Set up animated expand/collapse via max-height transition
+        summaryText.style.overflow = 'hidden';
+        summaryText.style.transition = 'max-height 0.2s ease';
+
+        if (!hasHtml) {
+            // Plain text: truncate by character position
+            let cutPos = fullText.lastIndexOf(' ', maxLen);
+            if (cutPos <= 0) cutPos = maxLen;
+            const truncated = fullText.substring(0, cutPos) + '\u2026';
+            summaryText.textContent = truncated;
+
+            // Measure truncated height after layout
+            requestAnimationFrame(() => {
+                const collapsedHeight = summaryText.scrollHeight;
+                summaryText.style.maxHeight = collapsedHeight + 'px';
+            });
+
+            const toggleLink = document.createElement('a');
+            toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+            toggleLink.href = '#';
+            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    // Expand: set full text, measure, animate to full height
+                    summaryText.textContent = fullText;
+                    const fullHeight = summaryText.scrollHeight;
+                    summaryText.style.maxHeight = fullHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
+                } else {
+                    // Collapse: measure current truncated height, then animate down
+                    summaryText.textContent = truncated;
+                    // Force layout to get the target height before animating
+                    const collapsedHeight = summaryText.scrollHeight;
+                    summaryText.textContent = fullText;
+                    // Set explicit current height so transition has a starting point
+                    summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
+                    requestAnimationFrame(() => {
+                        summaryText.style.maxHeight = collapsedHeight + 'px';
+                    });
+                    // Swap text after transition ends
+                    summaryText.addEventListener('transitionend', function handler() {
+                        summaryText.removeEventListener('transitionend', handler);
+                        summaryText.textContent = truncated;
+                    });
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+
+            summaryTextWrapper.appendChild(toggleLink);
+        } else {
+            // HTML content: use max-height to collapse, preserve full HTML
+            const collapsedMaxHeight = '4.2em'; // ~3 lines collapsed
+            summaryText.style.maxHeight = collapsedMaxHeight;
+
+            const toggleLink = document.createElement('a');
+            toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+            toggleLink.href = '#';
+            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
+                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
+                } else {
+                    summaryText.style.maxHeight = collapsedMaxHeight;
+                    toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+
+            // Only show toggle if content is actually taller than collapsed height
+            requestAnimationFrame(() => {
+                if (summaryText.scrollHeight > summaryText.clientHeight) {
+                    summaryTextWrapper.appendChild(toggleLink);
+                } else {
+                    summaryText.style.maxHeight = '';
+                    summaryText.style.overflow = '';
+                }
+            });
+        }
+    }
+
+    const summaryBody = document.createElement('div');
+    summaryBody.style.cssText = 'display: flex; gap: 8px; align-items: flex-start;';
+    summaryBody.appendChild(summaryIcon);
+    summaryBody.appendChild(summaryTextWrapper);
+    summaryContainer.appendChild(summaryBody);
+
+    const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    document.body.insertBefore(summaryContainer, spamBanner ? spamBanner.nextSibling : document.body.firstChild);
+    return Promise.resolve(true);
+
+  case "showSummaryGenerating":
+    const existingGenerating = document.getElementById('mzta-summary-generating');
+    if(existingGenerating) return Promise.resolve(true);
+
+    const existingSummary = document.getElementById('mzta-summary-banner');
+    if(existingSummary) existingSummary.remove();
+
+    const existingTriggerWrap = document.getElementById('mzta-summary-trigger-wrapper');
+    if(existingTriggerWrap) existingTriggerWrap.remove();
+    const existingTrigger = document.getElementById('mzta-summary-trigger');
+    if(existingTrigger) existingTrigger.remove();
+
+    const isDarkGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    let bgColorGen = isDarkGen ? '#2a2a2a' : '#f0f0f0';
+    let textColorGen = isDarkGen ? '#e0e0e0' : '#333';
+    let borderColorGen = isDarkGen ? '#444' : '#ddd';
+    let titleColorGen = isDarkGen ? '#ff6b6b' : '#d70022';
+
+    const generatingContainer = document.createElement('div');
+    generatingContainer.id = 'mzta-summary-generating';
+    generatingContainer.className = 'thunderai-summary-pane';
+    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+
+    const generatingIcon = document.createElement('img');
+    generatingIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    generatingIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkGen ? ' filter: invert(1);' : ''}`;
+
+    const generatingLoadingImg = document.createElement('img');
+    generatingLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
+    generatingLoadingImg.style.cssText = "height: 16px; width: 16px;";
+
+    const generatingTitle = document.createElement('span');
+    generatingTitle.className = 'thunderai-summary-title';
+    generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
+    generatingTitle.style.cssText = `font-size: 14px;`;
+
+    generatingContainer.appendChild(generatingIcon);
+    generatingContainer.appendChild(generatingLoadingImg);
+    generatingContainer.appendChild(generatingTitle);
+
+    const spamBannerGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    document.body.insertBefore(generatingContainer, spamBannerGen ? spamBannerGen.nextSibling : document.body.firstChild);
+    return Promise.resolve(true);
+
+  case "showSummaryButton":
+    const existingButton = document.getElementById('mzta-summary-trigger');
+    if(existingButton) return Promise.resolve(true);
+
+    const isDarkBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    let bgColorBtn = isDarkBtn ? '#2a2a2a' : '#f0f0f0';
+    let textColorBtn = isDarkBtn ? '#e0e0e0' : '#333';
+    let borderColorBtn = isDarkBtn ? '#444' : '#ddd';
+
+    const spamBannerTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    const triggerBtn = document.createElement('div');
+    triggerBtn.id = 'mzta-summary-trigger';
+    triggerBtn.title = browser.i18n.getMessage("summarize_click_to_generate");
+    const triggerBtnBase = `background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
+    if (spamBannerTrigger) {
+        triggerBtn.style.cssText = triggerBtnBase + ' margin-left: auto; margin-top: 4px;';
+    } else {
+        triggerBtn.style.cssText = triggerBtnBase + ' position: fixed; top: 8px; right: 8px; z-index: 9998;';
+    }
+
+    const triggerIcon = document.createElement('img');
+    triggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    triggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkBtn ? ' filter: invert(1);' : ''}`;
+    triggerBtn.appendChild(triggerIcon);
+
+    const triggerLabel = document.createElement('span');
+    triggerLabel.textContent = browser.i18n.getMessage("get_ai_summary");
+    triggerBtn.appendChild(triggerLabel);
+    triggerBtn.onmouseover = () => { triggerBtn.style.opacity = '1'; };
+    triggerBtn.onmouseout = () => { triggerBtn.style.opacity = '0.7'; };
+    triggerBtn.onclick = async () => {
+        triggerBtn.onclick = null;
+        triggerBtn.style.cursor = 'default';
+        triggerBtn.style.opacity = '0.7';
+        triggerBtn.onmouseover = null;
+        triggerBtn.onmouseout = null;
+        const wrapper = document.getElementById('mzta-summary-trigger-wrapper');
+        if (wrapper) wrapper.remove(); else triggerBtn.remove();
+        browser.runtime.sendMessage({
+            command: message.webchat ? "triggerSummaryWebchat" : "triggerSummaryGeneration",
+            headerMessageId: message.headerMessageId
+        });
+    };
+
+    if (spamBannerTrigger) {
+        const triggerWrapper = document.createElement('div');
+        triggerWrapper.id = 'mzta-summary-trigger-wrapper';
+        triggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        triggerWrapper.appendChild(triggerBtn);
+        document.body.insertBefore(triggerWrapper, spamBannerTrigger.nextSibling);
+    } else {
+        document.body.appendChild(triggerBtn);
+    }
     return Promise.resolve(true);
 
   default:
@@ -727,3 +1189,4 @@ switch (message.command) {
 });
 
 browser.runtime.sendMessage({ command: "checkSpamReport" });
+browser.runtime.sendMessage({ command: "initSummary" });

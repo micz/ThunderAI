@@ -181,6 +181,11 @@ export function getMailBody(fullMessage){
   }
   if(html === "") {
     html = text.replace(/\n/g, "<br>");
+  } else {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    removeMozMainHeader(doc.body);
+    html = doc.body.innerHTML;
   }
   return {text, html};
 }
@@ -246,7 +251,9 @@ export function htmlBodyToPlainText(htmlString) {
 	const parser = new DOMParser();
 	// Parse the HTML string
 	const doc = parser.parseFromString(htmlString, 'text/html');
-	
+
+  removeMozMainHeader(doc.body);
+
   // remove invisible elements https://stackoverflow.com/questions/39813081/queryselector-where-display-is-not-none
    // return doc;
   doc.querySelectorAll('[style*="display:none"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
@@ -263,7 +270,19 @@ export function htmlBodyToPlainText(htmlString) {
   .replace(/&nbsp;/gi,"")
   .trim();
 }
- 
+
+export function removeMozMainHeader(root) {
+  for (const table of root.querySelectorAll('table.moz-main-header')) {
+    let sibling = table.previousElementSibling;
+    while (sibling && sibling.tagName === 'DIV') {
+      const toRemove = sibling;
+      sibling = sibling.previousElementSibling;
+      toRemove.remove();
+    }
+    table.remove();
+  }
+}
+
 export function cleanupNewlines(text) {
   return text
   .replace(/\r\n/g, '\n')
@@ -285,8 +304,17 @@ function convertBrToNewlines(html) {
 export function convertNewlinesToParagraphs(input) {
   return input
     .split('\n')
-    .map(line => `<p>${line}</p>`)
+    .map(line => `<p>${escapeHtml(line)}</p>`)
     .join('');
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 

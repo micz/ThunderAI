@@ -273,7 +273,11 @@ class MessagesArea extends HTMLElement {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', type);
         // Replace \n with <br> for correct HTML display
-        messageElement.appendChild(htmlStringToFragment(messageText));
+        if (type === "info") {
+            messageElement.appendChild(htmlStringToFragment(messageText));
+        } else {
+            messageElement.appendChild(textWithBrToFragment(messageText));
+        }
         // messageElement.textContent = messageText;
         // // Replace \n with <br> elements for correct HTML display
         // messageElement.innerHTML = '';
@@ -449,9 +453,32 @@ class MessagesArea extends HTMLElement {
         closeButton.addEventListener('click', async () => {
             browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
         });
-        if(promptData.action != 0) { 
+        if(promptData.action != 0) {
             actionButtons.appendChild(splitButton);
             selectionInfo.style.display = "block"; // show selection info
+        }
+
+        // Save as Summary button (only shown for summary webchat sessions)
+        if(promptData.prompt_info?.headerMessageId) {
+            const saveSummaryButton = document.createElement('button');
+            saveSummaryButton.textContent = browser.i18n.getMessage("webchat_save_as_summary");
+            saveSummaryButton.classList.add('action_btn');
+            saveSummaryButton.addEventListener('click', async () => {
+                let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                const selectedHTML = this.getCurrentSelectionHTML();
+                if(selectedHTML != "") {
+                    finalText = removeAloneBRs(selectedHTML);
+                }
+                await browser.runtime.sendMessage({
+                    command: "chatgpt_saveSummary",
+                    text: finalText,
+                    headerMessageId: promptData.prompt_info.headerMessageId,
+                    tabId: promptData.prompt_info.summaryTabId || promptData.tabId,
+                });
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+            });
+            actionButtons.appendChild(saveSummaryButton);
+            selectionInfo.style.display = "block";
         }
 
         // diff viewer button
@@ -575,6 +602,20 @@ class MessagesArea extends HTMLElement {
 
 customElements.define('messages-area', MessagesArea);
 
+
+function textWithBrToFragment(text) {
+    const fragment = document.createDocumentFragment();
+    const segments = text.split(/<br\s*\/?>/gi);
+    segments.forEach((segment, idx) => {
+        if (segment.length > 0) {
+            fragment.appendChild(document.createTextNode(segment));
+        }
+        if (idx < segments.length - 1) {
+            fragment.appendChild(document.createElement('br'));
+        }
+    });
+    return fragment;
+}
 
 function htmlStringToFragment(htmlString) {
 //   console.log(">>>>>>>>>>>>>>>> htmlStringToFragment htmlString: " + htmlString);

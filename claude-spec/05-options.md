@@ -95,6 +95,30 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `summarize` | `false` | Enable email summarization |
+| `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open) |
+| `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` always uses inline regardless of this setting. |
+| `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+
+### Summarize Settings Page (`pages/summarize/`)
+
+The summarize settings page provides:
+
+1. **Specific integration checkbox** — enables per-feature API override (like other special prompts)
+2. **Auto-summarize dropdown** (`summarize_auto`) — three modes:
+   - `0` (Disabled) — no inline summaries
+   - `1` (Manual) — shows a "Click to generate summary" button in message display
+   - `2` (Automatic) — generates summary immediately when message is opened
+3. **Display mode dropdown** (`summarize_display_mode`) — controls where summaries are shown:
+   - `'inline'` — summary banner in the message pane (default)
+   - `'webchat'` — opens the AI chat window
+   - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
+4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+5. **Three editable prompts** (used by context menu summarize and webchat mode):
+   - Summarize instruction prompt (`prompt_summarize`)
+   - Email template prompt (`prompt_summarize_email_template`)
+   - Email separator prompt (`prompt_summarize_email_separator`)
+   - Each has Save/Reset buttons and placeholder autocomplete
+   - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
 
 ## Adding a New Preference
 

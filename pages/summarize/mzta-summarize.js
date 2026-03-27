@@ -32,7 +32,8 @@ import {
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
   normalizeStringList,
-  isAPIKeyValue
+  isAPIKeyValue,
+  setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
@@ -196,8 +197,11 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
-        // console.log(">>>>>>>>>> Saving option [select-one]: " + element.id + " = " + element.value);
-        options[element.id] = element.value;
+        if (element.id === 'summarize_auto') {
+          options[element.id] = parseInt(element.value, 10);
+        } else {
+          options[element.id] = element.value;
+        }
         break;
       case 'textarea':
         options[element.id] = normalizeStringList(element.value);
@@ -233,22 +237,31 @@ async function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-            let default_select_value = '';
-            const restoreValue = result[element.id] || default_select_value;
+            let default_select_value = 0;
+            if (element.id === 'summarize_auto') {
+              default_select_value = prefs_default.summarize_auto;
+            }
+            if (element.id === 'summarize_display_mode') {
+              default_select_value = prefs_default.summarize_display_mode;
+            }
+            const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
-            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
-            // If it doesn't exist and restoreValue is not empty, create it
-            if (!optionExists && restoreValue !== '') {
-              let newOption = new Option(restoreValue, restoreValue);
-              element.add(newOption);
-            }
-            // Set value
-            element.value = restoreValue;
-            if (element.value === '') {
-              element.selectedIndex = -1;
-            }
+            let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
             if (element.tomselect) {
-              element.tomselect.setValue(element.value, true);
+              if (!optionExists && restoreValue !== '') {
+                element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
+              }
+              element.tomselect.setValue(String(restoreValue), true);
+              setTomSelectBorder(element.tomselect);
+            } else {
+              if (!optionExists && restoreValue !== '') {
+                let newOption = new Option(restoreValue, restoreValue);
+                element.add(newOption);
+              }
+              element.value = restoreValue;
+              if (element.value === '') {
+                element.selectedIndex = 0;
+              }
             }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);

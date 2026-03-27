@@ -330,19 +330,21 @@ async function restoreOptions() {
             const restoreValue = result[element.id] || default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
-            // If it doesn't exist and restoreValue is not empty, create it
-            if (!optionExists && restoreValue !== '') {
-              let newOption = new Option(restoreValue, restoreValue);
-              element.add(newOption);
-            }
-            // Set value
-            element.value = restoreValue;
-            if (element.value === '') {
-              element.selectedIndex = -1;
-            }
             if (element.tomselect) {
-              element.tomselect.setValue(element.value, true);
+              if (!optionExists && restoreValue !== '') {
+                element.tomselect.addOption({ value: restoreValue, text: restoreValue });
+              }
+              element.tomselect.setValue(restoreValue, true);
               setTomSelectBorder(element.tomselect);
+            } else {
+              if (!optionExists && restoreValue !== '') {
+                let newOption = new Option(restoreValue, restoreValue);
+                element.add(newOption);
+              }
+              element.value = restoreValue;
+              if (element.value === '') {
+                element.selectedIndex = -1;
+              }
             }
         }else{
           console.error("[ThunderAI] Unhandled input type:", element.type);
