@@ -55,6 +55,7 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `summarize` | Summarize email content |
 | `get_calendar_event` | Extract and create a calendar event |
 | `get_task` | Extract and create a task |
+| `translate` | Translate email content into a target language |
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
@@ -84,6 +85,26 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+
+### Translate: Inline-Only Prompt System
+
+The translate feature uses a single special prompt (`prompt_translate_this`) for inline translation in the message body. Unlike summarize, it has no context menu entry and no webchat mode.
+
+**Inline Translation on Message Display** (controlled by `translate_auto` pref):
+- Uses a single special prompt: `prompt_translate_this`
+- The prompt text is appended with the target language and the email body: `prompt_text + " " + lang + ". \"" + body_text + "\""`
+- Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
+- Does **not** support `chatgpt_web` connection type (shows error if configured)
+- Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
+- Banner includes refresh (↻) and delete (×) buttons
+- Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
+- The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
+
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, lang)`:
+- Retrieves the `prompt_translate_this` special prompt text
+- Extracts the email body from the full message
+- Combines prompt + language + body text
+- Returns `{ promptText, promptInfo }`
 
 ## Prompt Types Reference
 

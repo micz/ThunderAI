@@ -1181,6 +1181,209 @@ switch (message.command) {
     }
     return Promise.resolve(true);
 
+  case "showTranslation":
+    const existingTranslationGenerating = document.getElementById('mzta-translation-generating');
+    if(existingTranslationGenerating) existingTranslationGenerating.remove();
+
+    const existingTranslationTriggerWrapper = document.getElementById('mzta-translation-trigger-wrapper');
+    if(existingTranslationTriggerWrapper) existingTranslationTriggerWrapper.remove();
+    const existingTranslationTriggerBtn = document.getElementById('mzta-translation-trigger');
+    if(existingTranslationTriggerBtn) existingTranslationTriggerBtn.remove();
+
+    const existingTranslationBanner = document.getElementById('mzta-translation-banner');
+    if(existingTranslationBanner) existingTranslationBanner.remove();
+
+    const translationData = message.data;
+    const translationContainer = document.createElement('div');
+    translationContainer.id = 'mzta-translation-banner';
+
+    const isDarkTranslation = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    let bgColorTranslation = isDarkTranslation ? '#1a2e2a' : '#e8f5e9';
+    let textColorTranslation = isDarkTranslation ? '#c8e6c9' : '#1b5e20';
+    let borderColorTranslation = isDarkTranslation ? '#2e5740' : '#a5d6a7';
+
+    if (translationData.error) {
+        bgColorTranslation = isDarkTranslation ? '#3a1a1a' : '#f7e6e6';
+        textColorTranslation = isDarkTranslation ? '#ffcccc' : '#660000';
+        borderColorTranslation = '#660000';
+    }
+
+    translationContainer.className = 'thunderai-translation-pane';
+    translationContainer.style.cssText = `background-color: ${bgColorTranslation}; color: ${textColorTranslation}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorTranslation}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+
+    const translationHeader = document.createElement('div');
+    translationHeader.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;';
+
+    const translationIcon = document.createElement('img');
+    translationIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslation ? ' filter: invert(1);' : ''}`;
+
+    const translationTitleSpan = document.createElement('span');
+    translationTitleSpan.style.cssText = `font-weight: bold; font-size: 14px; color: ${textColorTranslation}; flex-grow: 1;`;
+    translationTitleSpan.textContent = browser.i18n.getMessage("translate_banner_title") || "AI Translation";
+    if (translationData.lang) {
+        translationTitleSpan.textContent += ' (' + translationData.lang + ')';
+    }
+
+    const translationMenu = createThreeDotsMenu(isDarkTranslation, [
+        {
+            icon: '↻',
+            label: browser.i18n.getMessage("translate_refresh") || 'Refresh translation',
+            hoverColor: isDarkTranslation ? '#4d9de0' : '#1a5fa8',
+            disableAfterClick: true,
+            onClick: () => {
+                browser.runtime.sendMessage({
+                    command: "refreshTranslation",
+                    headerMessageId: translationData.headerMessageId
+                });
+            }
+        },
+        {
+            icon: '×',
+            label: browser.i18n.getMessage("translate_delete") || 'Delete translation',
+            hoverColor: '#cc0000',
+            onClick: () => {
+                translationContainer.remove();
+                browser.runtime.sendMessage({
+                    command: "removeTranslation",
+                    headerMessageId: translationData.headerMessageId
+                });
+            }
+        }
+    ], { bg: bgColorTranslation, border: borderColorTranslation, text: textColorTranslation });
+
+    translationHeader.appendChild(translationIcon);
+    translationHeader.appendChild(translationTitleSpan);
+    translationHeader.appendChild(translationMenu);
+    translationContainer.appendChild(translationHeader);
+
+    const translationText = document.createElement('div');
+    translationText.style.cssText = 'white-space: pre-wrap; line-height: 1.5;';
+    if (translationData.error) {
+        translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error") || "Translation failed.";
+    } else {
+        translationText.textContent = translationData.translated_text || '';
+    }
+    translationContainer.appendChild(translationText);
+
+    const summaryBannerForTranslation = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-generating');
+    const spamBannerForTranslation = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    const insertAfterTranslation = summaryBannerForTranslation || spamBannerForTranslation;
+    if (insertAfterTranslation) {
+        document.body.insertBefore(translationContainer, insertAfterTranslation.nextSibling);
+    } else {
+        document.body.insertBefore(translationContainer, document.body.firstChild);
+    }
+    return Promise.resolve(true);
+
+  case "showTranslationGenerating":
+    const existingTranslationGen = document.getElementById('mzta-translation-generating');
+    if(existingTranslationGen) return Promise.resolve(true);
+
+    const existingTranslationBannerGen = document.getElementById('mzta-translation-banner');
+    if(existingTranslationBannerGen) existingTranslationBannerGen.remove();
+
+    const existingTranslationTrigWrap = document.getElementById('mzta-translation-trigger-wrapper');
+    if(existingTranslationTrigWrap) existingTranslationTrigWrap.remove();
+    const existingTranslationTrig = document.getElementById('mzta-translation-trigger');
+    if(existingTranslationTrig) existingTranslationTrig.remove();
+
+    const isDarkTranslationGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    let bgColorTranslationGen = isDarkTranslationGen ? '#1a2e2a' : '#e8f5e9';
+    let textColorTranslationGen = isDarkTranslationGen ? '#c8e6c9' : '#1b5e20';
+    let borderColorTranslationGen = isDarkTranslationGen ? '#2e5740' : '#a5d6a7';
+
+    const translationGenContainer = document.createElement('div');
+    translationGenContainer.id = 'mzta-translation-generating';
+    translationGenContainer.className = 'thunderai-translation-pane';
+    translationGenContainer.style.cssText = `background-color: ${bgColorTranslationGen}; color: ${textColorTranslationGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorTranslationGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+
+    const translationGenIcon = document.createElement('img');
+    translationGenIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationGenIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslationGen ? ' filter: invert(1);' : ''}`;
+
+    const translationGenLoadingImg = document.createElement('img');
+    translationGenLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
+    translationGenLoadingImg.style.cssText = "height: 16px; width: 16px;";
+
+    const translationGenTitle = document.createElement('span');
+    translationGenTitle.textContent = browser.i18n.getMessage("translate_generating") || "Translating...";
+    translationGenTitle.style.cssText = `font-size: 14px;`;
+
+    translationGenContainer.appendChild(translationGenIcon);
+    translationGenContainer.appendChild(translationGenLoadingImg);
+    translationGenContainer.appendChild(translationGenTitle);
+
+    const summaryBannerForGen = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-generating');
+    const spamBannerForGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    const insertAfterGen = summaryBannerForGen || spamBannerForGen;
+    if (insertAfterGen) {
+        document.body.insertBefore(translationGenContainer, insertAfterGen.nextSibling);
+    } else {
+        document.body.insertBefore(translationGenContainer, document.body.firstChild);
+    }
+    return Promise.resolve(true);
+
+  case "showTranslationButton":
+    const existingTranslationButton = document.getElementById('mzta-translation-trigger');
+    if(existingTranslationButton) return Promise.resolve(true);
+
+    const isDarkTranslationBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    let bgColorTranslationBtn = isDarkTranslationBtn ? '#1a2e2a' : '#e8f5e9';
+    let textColorTranslationBtn = isDarkTranslationBtn ? '#c8e6c9' : '#1b5e20';
+    let borderColorTranslationBtn = isDarkTranslationBtn ? '#2e5740' : '#a5d6a7';
+
+    const spamBannerTranslationTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    const summaryBannerTranslationTrigger = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-trigger-wrapper') || document.getElementById('mzta-summary-trigger');
+    const translationTriggerBtn = document.createElement('div');
+    translationTriggerBtn.id = 'mzta-translation-trigger';
+    translationTriggerBtn.title = browser.i18n.getMessage("translate_click_to_generate") || "Click to translate this email";
+    const translationTriggerBtnBase = `background-color: ${bgColorTranslationBtn}; border: 1px solid ${borderColorTranslationBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorTranslationBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
+    const insertAfterTranslationBtn = summaryBannerTranslationTrigger || spamBannerTranslationTrigger;
+    if (insertAfterTranslationBtn) {
+        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ' margin-left: auto; margin-top: 4px;';
+    } else {
+        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ' position: fixed; top: 8px; right: 8px; z-index: 9997;';
+    }
+
+    const translationTriggerIcon = document.createElement('img');
+    translationTriggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationTriggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkTranslationBtn ? ' filter: invert(1);' : ''}`;
+    translationTriggerBtn.appendChild(translationTriggerIcon);
+
+    const translationTriggerLabel = document.createElement('span');
+    translationTriggerLabel.textContent = browser.i18n.getMessage("get_ai_translation") || "Get AI Translation";
+    translationTriggerBtn.appendChild(translationTriggerLabel);
+    translationTriggerBtn.onmouseover = () => { translationTriggerBtn.style.opacity = '1'; };
+    translationTriggerBtn.onmouseout = () => { translationTriggerBtn.style.opacity = '0.7'; };
+    translationTriggerBtn.onclick = async () => {
+        translationTriggerBtn.onclick = null;
+        translationTriggerBtn.style.cursor = 'default';
+        translationTriggerBtn.style.opacity = '0.7';
+        translationTriggerBtn.onmouseover = null;
+        translationTriggerBtn.onmouseout = null;
+        const wrapper = document.getElementById('mzta-translation-trigger-wrapper');
+        if (wrapper) wrapper.remove(); else translationTriggerBtn.remove();
+        browser.runtime.sendMessage({
+            command: "triggerTranslationGeneration",
+            headerMessageId: message.headerMessageId
+        });
+    };
+
+    if (insertAfterTranslationBtn) {
+        const translationTriggerWrapper = document.createElement('div');
+        translationTriggerWrapper.id = 'mzta-translation-trigger-wrapper';
+        translationTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        translationTriggerWrapper.appendChild(translationTriggerBtn);
+        document.body.insertBefore(translationTriggerWrapper, insertAfterTranslationBtn.nextSibling);
+    } else {
+        document.body.appendChild(translationTriggerBtn);
+    }
+    return Promise.resolve(true);
+
   default:
     // do nothing
     return Promise.resolve(false);
@@ -1190,3 +1393,4 @@ switch (message.command) {
 
 browser.runtime.sendMessage({ command: "checkSpamReport" });
 browser.runtime.sendMessage({ command: "initSummary" });
+browser.runtime.sendMessage({ command: "initTranslation" });

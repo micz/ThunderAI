@@ -2049,6 +2049,102 @@
        "message": "Delete summary",
        "description": ""
    },
+  "prefs_OptionText_translate": {
+    "message": "Translate email",
+    "description": ""
+  },
+  "prefs_OptionText_translate_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for translating email(s), regardless the one chosen in the ThunderAI options page.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_Info": {
+    "message": "If checked, adds a translate button in the message body.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTranslateInfo": {
+    "message": "Manage translate settings",
+    "description": ""
+  },
+  "Translate_PageTitle": {
+    "message": "Manage Translation Settings",
+    "description": ""
+  },
+  "Translate_info_default": {
+    "message": "In this page you can modify the default prompt used to translate emails.",
+    "description": ""
+  },
+  "Translate_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "Translate_prompt_prefs_title": {
+    "message": "Translation Options",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto": {
+    "message": "Auto-translate messages",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_disabled": {
+    "message": "Disabled",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_manual": {
+    "message": "Manual button only",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_automatic": {
+    "message": "Automatic",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_Info": {
+    "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang": {
+    "message": "Translation target language",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang_Info": {
+    "message": "Language to translate emails into. If empty, uses the default language setting.",
+    "description": ""
+  },
+  "prefs_OptionText_Translate_main_prompt": {
+    "message": "The prompt describing the translation task:",
+    "description": ""
+  },
+  "translate_generating": {
+    "message": "Translating...",
+    "description": ""
+  },
+  "translate_click_to_generate": {
+    "message": "Click here to translate this email",
+    "description": ""
+  },
+  "get_ai_translation": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_chatgpt_web_not_supported": {
+    "message": "Auto-translation requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+    "description": ""
+  },
+  "translate_refresh": {
+    "message": "Refresh translation",
+    "description": ""
+  },
+  "translate_delete": {
+    "message": "Delete translation",
+    "description": ""
+  },
+  "translate_banner_title": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_error": {
+    "message": "Translation failed.",
+    "description": ""
+  },
   "antispam_by": {
     "message": "Antispam by",
     "description": ""

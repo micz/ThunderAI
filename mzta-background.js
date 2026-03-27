@@ -62,6 +62,7 @@ import {
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
+import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
@@ -95,6 +96,7 @@ let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
+let translationStore = new taTranslationStore(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -328,6 +330,61 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
+            case 'initTranslation':
+                async function _initTranslation() {
+                    try {
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto });
+
+                        if (!prefs.translate) return;
+
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+
+                        let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
+                        if (cachedTranslation && !cachedTranslation.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation } });
+                            return;
+                        }
+
+                        if (await translationStore.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                            return;
+                        }
+
+                        if (prefs.translate_auto === 0) return;
+
+                        if (prefs.translate_auto === 2) {
+                            _generateTranslationForMessage(message.headerMessageId, tabId);
+                            return;
+                        }
+
+                        // Manual button mode (translate_auto === 1)
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                    } catch (e) {
+                        taLog.error("Error in initTranslation: " + e);
+                    }
+                }
+                _initTranslation();
+                break;
+            case 'triggerTranslationGeneration':
+                async function _triggerTranslationGeneration(message) {
+                    let tabId = sender.tab.id;
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _triggerTranslationGeneration(message);
+                break;
+            case 'refreshTranslation':
+                async function _refreshTranslation(message) {
+                    let tabId = sender.tab.id;
+                    await translationStore.removeTranslation(message.headerMessageId);
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _refreshTranslation(message);
+                break;
+            case 'removeTranslation':
+                translationStore.removeTranslation(message.headerMessageId);
+                break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
                         let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
@@ -579,6 +636,81 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
         browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        taWorkingStatus.stopWorking();
+    }
+}
+
+async function _generateTranslationForMessage(headerMessageId, tabId) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            translate_lang: prefs_default.translate_lang,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+        if (cachedTranslation && !cachedTranslation.error) {
+            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation } });
+            return;
+        }
+
+        if (await translationStore.isProcessing(headerMessageId)) {
+            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+            return;
+        }
+
+        await translationStore.setProcessing(headerMessageId);
+        taWorkingStatus.startWorking();
+        browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            await translationStore.saveError(headerMessageId, "Message not found");
+            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
+            taWorkingStatus.stopWorking();
+            return;
+        }
+
+        const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+
+        const connectionType = getConnectionType(prefs, {}, 'translate');
+
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
+            await translationStore.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            taWorkingStatus.stopWorking();
+            return;
+        }
+
+        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, lang);
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+
+        const translationData = {
+            translated_text: aiResponse,
+            lang: lang,
+            headerMessageId: headerMessageId
+        };
+        await translationStore.saveTranslation(translationData, headerMessageId);
+        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData } });
+        taWorkingStatus.stopWorking();
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating translation:", error);
+        await translationStore.saveError(headerMessageId, error.message || String(error));
+        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
         taWorkingStatus.stopWorking();
     }
 }

@@ -78,6 +78,38 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
   mzta-compose-script.js (render summary banner in message body)
 ```
 
+### Data Flow: Inline Translation on Message Display
+
+The `translate_auto` preference controls when translation is triggered. Unlike summarize, translation has no `display_mode` option (always inline).
+
+- `translate_auto = 0` (disabled) → do nothing
+- `translate_auto = 1` (manual button) → show "Get AI Translation" button in message body
+- `translate_auto = 2` (automatic) → generate translation immediately on message open
+
+The target language is determined by `translate_lang` (fallback on `default_chatgpt_lang`).
+
+```
+User opens/selects a message in Thunderbird
+       ↓
+mzta-compose-script.js  (sends "initTranslation" to background)
+       ↓
+mzta-background.js      (checks translate + translate_auto prefs)
+       ↓
+  ┌──────────────────────────────────────────────────────────┐
+  │ translate_auto = 0 → do nothing                          │
+  │ translate_auto = 1 → show "click to translate" button    │
+  │ translate_auto = 2 → generate immediately (always inline)│
+  └──────────────────────────────────────────────────────────┘
+       ↓  (if generating)
+  taTranslationStore     (check cache / set processing)
+       ↓  (cache miss)
+  mzta-special-commands  (via Web Worker, NOT chatgpt_web)
+       ↓
+  taTranslationStore     (save result via taStorage)
+       ↓
+  mzta-compose-script.js (render translation banner in message body)
+```
+
 ## Key Modules
 
 | File | Role |
@@ -87,7 +119,7 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
 | `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.) |
-| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly) |
+| `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders summary/spam banners in message display |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
@@ -97,6 +129,7 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
 | `js/mzta-store.js` | Storage abstraction helpers |
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
 | `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
+| `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching, truncation, and processing-state tracking |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing |
 | `js/mzta-addatags-exclusion-list.js` | Tag exclusion list management |
 | `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
@@ -139,6 +172,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `get-task/` | Task creation settings |
 | `spamfilter/` | Spam filter settings |
 | `summarize/` | Email summarization settings |
+| `translate/` | Email translation settings |
 | `onboarding/` | First-run welcome page |
 | `_lib/` | Shared libraries used by pages |
 
@@ -151,3 +185,5 @@ All preferences are stored via `browser.storage.local`. The keys and default val
 Per-message data (summaries, spam reports, translations) is stored via `js/mzta-storage.js` (`taStorage` class). Each record is keyed by `msg:<headerMessageId>` in `messenger.storage.local` and follows schema version 1. Records contain optional fields: `summary`, `spam`, `translation`, plus metadata (`v`, `ts`). The `taStorage` class provides typed read/write/delete methods per field, automatic record cleanup when all fields are removed, and age-based cleanup.
 
 `js/mzta-summarystore.js` (`taSummaryStore` class) wraps `taStorage` for summary-specific operations: load/save/remove summaries, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states.
+
+`js/mzta-translationstore.js` (`taTranslationStore` class) wraps `taStorage` for translation-specific operations: load/save/remove translations, track in-flight generation state via `browser.storage.session`, enforce a 100-entry cache limit with oldest-first truncation, and store error states. Each translation record stores `translated_text`, `lang`, and optional error information.

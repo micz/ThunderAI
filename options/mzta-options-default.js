@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task'];
+const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
 export const integration_options_config = {
     chatgpt: {
@@ -141,6 +141,9 @@ export const prefs_default = {
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
+    translate: true,
+    translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic
+    translate_lang: '',                  // target language, fallback on default_chatgpt_lang
     spamfilter_show_msg_panel: true,
     ...generated_prefs
 }
