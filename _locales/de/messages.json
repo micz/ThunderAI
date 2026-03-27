@@ -1399,9 +1399,6 @@
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
         "message": "Wenn aktiviert, wird oben über der Nachricht ein Panel mit dem Spam-Bericht angezeigt."
     },
-    "SpamReport_infoline": {
-        "message": "Diese Informationen werden nur für die aktuelle Sitzung gespeichert."
-    },
     "Spam": {
         "message": "Spam"
     },

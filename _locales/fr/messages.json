@@ -1399,9 +1399,6 @@
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
         "message": "Si coché, un panneau avec le rapport de spam s'affichera au-dessus du message."
     },
-    "SpamReport_infoline": {
-        "message": "Ces informations ne sont enregistrées que pour la session en cours."
-    },
     "Spam": {
         "message": "Indésirables"
     },
