@@ -272,15 +272,15 @@ export function htmlBodyToPlainText(htmlString) {
 }
 
 export function removeMozMainHeader(root) {
-  const table = root.querySelector('table.moz-main-header');
-  if (!table) return;
-  let sibling = table.previousElementSibling;
-  while (sibling && sibling.tagName === 'DIV') {
-    const toRemove = sibling;
-    sibling = sibling.previousElementSibling;
-    toRemove.remove();
+  for (const table of root.querySelectorAll('table.moz-main-header')) {
+    let sibling = table.previousElementSibling;
+    while (sibling && sibling.tagName === 'DIV') {
+      const toRemove = sibling;
+      sibling = sibling.previousElementSibling;
+      toRemove.remove();
+    }
+    table.remove();
   }
-  table.remove();
 }
 
 export function cleanupNewlines(text) {
