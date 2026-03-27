@@ -198,6 +198,7 @@ export class taStorage {
             let now = Date.now();
             record[taStorage.FIELD_SUMMARY] = {
                 summary: summary_data.summary,
+                summary_html: summary_data.summary_html || '',
                 error: summary_data.error || false,
                 message: summary_data.message || '',
                 summary_date: summary_data.summary_date instanceof Date

@@ -80,6 +80,7 @@ export class taSummaryStore {
         return {
             headerMessageId: data_id,
             summary: summary.summary,
+            summary_html: summary.summary_html || '',
             error: summary.error || false,
             message: summary.message || '',
             summary_date: new Date(summary.summary_date || summary.ts),

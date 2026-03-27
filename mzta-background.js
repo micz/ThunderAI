@@ -220,7 +220,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length });
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length });
+
+                        if (!prefs.summarize) return;
 
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
@@ -282,12 +284,46 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _refreshSummary(message) {
                     let tabId = sender.tab.id;
                     await summaryStore.removeSummary(message.headerMessageId);
-                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                    let prefs_refresh = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+                    if (prefs_refresh.summarize_display_mode === 'webchat') {
+                        await _openSummaryWebchat(message.headerMessageId, tabId);
+                    } else {
+                        await _generateSummaryForMessage(message.headerMessageId, tabId);
+                    }
                 }
                 _refreshSummary(message);
                 break;
             case 'removeSummary':
                 summaryStore.removeSummary(message.headerMessageId);
+                break;
+            case 'chatgpt_saveSummary':
+                async function _saveSummaryFromWebchat(msg) {
+                    try {
+                        let summaryHtml = msg.text.trim();
+                        let cleanedSummary = cleanSummaryText(msg.text);
+                        const summaryData = {
+                            summary: cleanedSummary,
+                            summary_html: summaryHtml,
+                            summary_date: new Date(),
+                            headerMessageId: msg.headerMessageId
+                        };
+                        await summaryStore.saveSummary(summaryData, msg.headerMessageId);
+                        let prefs_summary = await browser.storage.sync.get({
+                            summarize_max_display_length: prefs_default.summarize_max_display_length
+                        });
+                        try {
+                            browser.tabs.sendMessage(msg.tabId, {
+                                command: "showSummary",
+                                data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length }
+                            });
+                        } catch (e) {
+                            taLog.error("Error sending showSummary to tab: " + e);
+                        }
+                    } catch (error) {
+                        console.error("[ThunderAI] Error saving summary from webchat:", error);
+                    }
+                }
+                _saveSummaryFromWebchat(message);
                 break;
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
@@ -458,6 +494,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
 });
 
+// Clean summary text by stripping HTML, markdown, and formatting artifacts.
+// Used by both inline summary generation and webchat summary save.
+function cleanSummaryText(text) {
+    let cleaned = text.replace(/<\/?[^>]+(>|$)/g, '');  // strip HTML tags
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+    cleaned = cleaned.replace(/[\*#_~`]/g, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    cleaned = cleaned.replace(/^Summary:\s*/i, '');
+    return cleaned;
+}
+
 async function _generateSummaryForMessage(headerMessageId, tabId) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -514,13 +561,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
 
         await cmd.initWorker();
         const aiResponse = await cmd.sendPrompt();
-        let cleanedSummary = aiResponse.replace(/```[\s\S]*?```/g, '');
-        cleanedSummary = cleanedSummary.replace(/[\*#_~`]/g, '');
-        cleanedSummary = cleanedSummary.replace(/\s+/g, ' ').trim();
-        cleanedSummary = cleanedSummary.replace(/^Summary:\s*/i, '');
+        let cleanedSummary = cleanSummaryText(aiResponse);
+        const md = window.markdownit();
+        let summaryHtml = md.render(aiResponse);
 
         const summaryData = {
             summary: cleanedSummary,
+            summary_html: summaryHtml,
             summary_date: new Date(),
             headerMessageId: headerMessageId
         };
@@ -665,7 +712,17 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
+        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), {}, 'summarize');
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
+            await summaryStore.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            return;
+        }
+
         const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }]);
+        promptInfo.headerMessageId = headerMessageId;
+        promptInfo.summaryTabId = tabId;
 
         openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
     } catch (error) {
