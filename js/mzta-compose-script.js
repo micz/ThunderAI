@@ -26,28 +26,22 @@ const MZTA_INJECTED_SELECTORS = [
   '.mzta_dialog',
 ];
 
-// Mirrors removeMozMainHeader() from mzta-utils.js.
-// Removes the Thunderbird-injected header table and any preceding divs.
-function removeMozMainHeader(root) {
-  const table = root.querySelector('table.moz-main-header');
-  if (!table) return;
-  let sibling = table.previousElementSibling;
-  while (sibling && sibling.tagName === 'DIV') {
-    const toRemove = sibling;
-    sibling = sibling.previousElementSibling;
-    toRemove.remove();
-  }
-  table.remove();
-}
-
-function getCleanBodyClone() {
+function getCleanBodyHtml() {
   const clone = document.body.cloneNode(true);
   for (const selector of MZTA_INJECTED_SELECTORS) {
     for (const el of clone.querySelectorAll(selector)) {
       el.remove();
     }
   }
-  removeMozMainHeader(clone);
+  for (const table of clone.querySelectorAll('table.moz-main-header')) {
+    let sibling = table.previousElementSibling;
+    while (sibling && sibling.tagName === 'DIV') {
+      const toRemove = sibling;
+      sibling = sibling.previousElementSibling;
+      toRemove.remove();
+    }
+    table.remove();
+  }
   return clone;
 }
 
@@ -95,7 +89,7 @@ switch (message.command) {
 
   case "getText": {
     let t = '';
-    const children = getCleanBodyClone().childNodes;
+    const children = getCleanBodyHtml().childNodes;
     for (const node of children) {
       if (node instanceof Element) {
         if (node.classList.contains('moz-signature')) {
@@ -108,11 +102,11 @@ switch (message.command) {
   }
 
   case "getTextOnly": {
-      return Promise.resolve(getCleanBodyClone().innerText);
+      return Promise.resolve(getCleanBodyHtml().innerText);
   }
 
   case "getFullHtml": {
-      return Promise.resolve(getCleanBodyClone().innerHTML);
+      return Promise.resolve(getCleanBodyHtml().innerHTML);
   }
 
   case "getOnlyTypedText": {
