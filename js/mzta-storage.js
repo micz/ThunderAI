@@ -344,4 +344,22 @@ export class taStorage {
             return 0;
         }
     }
+
+    /**
+     * Remove all records (all keys with the storage prefix).
+     * @returns {Promise<number>} The number of deleted records.
+     */
+    static async clearAllRecords() {
+        try {
+            let all = await messenger.storage.local.get(null);
+            let keysToDelete = Object.keys(all).filter(k => k.startsWith(taStorage.STORAGE_KEY_PREFIX));
+            if (keysToDelete.length > 0) {
+                await messenger.storage.local.remove(keysToDelete);
+            }
+            return keysToDelete.length;
+        } catch (e) {
+            console.error('[taStorage.clearAllRecords] error: ' + e);
+            return 0;
+        }
+    }
 }

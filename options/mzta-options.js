@@ -26,8 +26,10 @@ import {
   isAPIKeyValue,
   getConnectionType,
   setTomSelectBorder,
-  getMiczItUrl
+  getMiczItUrl,
+  getCacheStorageUsedSpace
 } from '../js/mzta-utils.js';
+import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   varConnectionUI,
@@ -220,6 +222,11 @@ function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
   browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
+}
+
+async function updateCacheSize() {
+  let size = await getCacheStorageUsedSpace();
+  document.getElementById('cache_storage_size').textContent = size;
 }  
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -366,6 +373,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+  });
+
+  // Cache management
+  updateCacheSize();
+
+  document.getElementById('btnClearCache').addEventListener('click', async () => {
+    if (!confirm(browser.i18n.getMessage("prefs_cache_clear_confirm"))) {
+      return;
+    }
+    let count = await taStorage.clearAllRecords();
+    alert(browser.i18n.getMessage("prefs_cache_clear_done", [String(count)]));
+    updateCacheSize();
   });
 
   browser.runtime.getPlatformInfo().then(info => {

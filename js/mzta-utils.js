@@ -827,6 +827,15 @@ export async function getLocalStorageUsedSpace(){
   return formatBytes(customprompts_space);
 }
 
+export async function getCacheStorageUsedSpace(){
+  let all = await browser.storage.local.get(null);
+  let cacheSpace = Object.entries(all)
+    .filter(([key]) => key.startsWith('msg:'))
+    .map(([key, value]) => key.length + JSON.stringify(value).length)
+    .reduce((acc, x) => acc + x, 0);
+  return formatBytes(cacheSpace);
+}
+
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const step = 1024;
