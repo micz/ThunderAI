@@ -1399,9 +1399,6 @@
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
         "message": "Se selezionato, verrà mostrato un pannello con il report spam sopra il messaggio."
     },
-    "SpamReport_infoline": {
-        "message": "Queste informazioni sono salvate solo per la sessione corrente."
-    },
     "Spam": {
         "message": "Spam"
     },

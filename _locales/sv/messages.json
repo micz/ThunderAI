@@ -1410,9 +1410,6 @@
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
         "message": "Om markerat visas en panel med skräppostrapporten högst upp i meddelandet."
     },
-    "SpamReport_infoline": {
-        "message": "Denna information sparas endast för den aktuella sessionen."
-    },
     "prefs_OptionText_chatgpt_web_load_wait_time": {
         "message": "Väntetid för sidinläsning"
     },
