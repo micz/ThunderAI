@@ -2084,5 +2084,9 @@
   "prefs_chatgpt_win_position_info":{
     "message": "Leave empty to use the default position.",
     "description": ""
+  },
+  "prefs_OptionText_action_auto_batch": {
+    "message": "When the email is received",
+    "description": ""
   }
 }
