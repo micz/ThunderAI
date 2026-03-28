@@ -1087,7 +1087,7 @@
         "message": "Tröskel skräppost"
     },
     "spamfilter_no_reports": {
-        "message": "Inga meddelanden har ännu granskats för skräppost. Här hittar du en lista över de senaste 100 skräppostrapporterna för den aktuella sessionen."
+        "message": "Inga meddelanden har ännu granskats för skräppost. Här hittar du en lista över de senaste 100 skräppostrapporter."
     },
     "SpamReport_Title": {
         "message": "Rapporter om skräppostfilter"
@@ -1457,5 +1457,118 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Lämna tomt för att använda standardpositionen."
+    },
+    "webchat_save_as_summary": {
+        "message": "Spara som sammanfattning"
+    },
+    "prefs_cache_title": {
+        "message": "Cachelagring"
+    },
+    "prefs_cache_storage_size": {
+        "message": "Cachestorlek"
+    },
+    "prefs_cache_clear_button": {
+        "message": "Rensa cache"
+    },
+    "prefs_cache_clear_confirm": {
+        "message": "Är du säker på att du vill rensa all cachad data (sammanfattningar, skräppostrapporter, översättningar)? Den här åtgärden kan inte ångras."
+    },
+    "prefs_cache_clear_done": {
+        "message": "$COUNT$ register borttagna.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Aktivera automatisk AI-sammanfattning för förhandsgranskningar av meddelanden"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Om markerat kommer ThunderAI automatiskt att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar omedelbart skickas till den konfigurerade AI-tjänsten."
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI sammanfattning"
+    },
+    "auto_summary_generating": {
+        "message": "Genererar AI-sammanfattning..."
+    },
+    "auto_summary_failed": {
+        "message": "Misslyckades att generera AI-sammanfattning. Bekräfta dina inställningar och försök igen."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Sammanfatta meddelanden automatiskt"
+    },
+    "prefs_OptionText_summarize_auto_disabled": {
+        "message": "Inaktiverad"
+    },
+    "prefs_OptionText_summarize_auto_manual": {
+        "message": "Visa sammanfattningsknapp"
+    },
+    "prefs_OptionText_summarize_auto_automatic": {
+        "message": "Generera automatiskt"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Välj om sammanfattningar ska genereras automatiskt när meddelanden visas. Kräver en API-baserad anslutning (inte ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Visa sammanfattning i"
+    },
+    "prefs_OptionText_summarize_display_mode_inline": {
+        "message": "Meddelandepanel (inbäddad)"
+    },
+    "prefs_OptionText_summarize_display_mode_webchat": {
+        "message": "Chatt fönster"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Välj var sammanfattningsresultatet visas. I infogat läge visas en sammanfattningsbanderoll direkt i meddelandefönstret. I chattfönsterläget öppnas AI-chattfönstret."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Max skärmlängd"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Maximalt antal tecken som ska visas i den inbäddade sammanfattningen. Ange 0 för obegränsad gräns."
+    },
+    "summarize_see_more": {
+        "message": "Se mer"
+    },
+    "summarize_see_less": {
+        "message": "Se mindre"
+    },
+    "summarize_title": {
+        "message": "ThunderAI översikt"
+    },
+    "get_ai_summary": {
+        "message": "AI sammanfattning"
+    },
+    "summarize_collapse": {
+        "message": "Fäll in sammanfattning"
+    },
+    "summarize_generating": {
+        "message": "Genererar sammanfattning..."
+    },
+    "summarize_error": {
+        "message": "Misslyckades att generera sammanfattning"
+    },
+    "summarize_click_to_generate": {
+        "message": "Klicka här för att skapa en sammanfattning"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Autosammanfattning kräver en API-baserad anslutning. Konfigurera en API-anslutning i ThunderAI-inställningarna."
+    },
+    "summarize_refresh": {
+        "message": "Uppdatera sammanfattning"
+    },
+    "spamfilter_refresh": {
+        "message": "Uppdatera skräppostrapport"
+    },
+    "spamfilter_delete": {
+        "message": "Ta bort skräppostrapport"
+    },
+    "summarize_delete": {
+        "message": "Ta bort sammanfattning"
+    },
+    "summary_by": {
+        "message": "Sammanfattning av"
     }
 }
