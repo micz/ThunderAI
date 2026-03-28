@@ -1461,19 +1461,19 @@
     "webchat_save_as_summary": {
         "message": "Spara som sammanfattning"
     },
-    "prefs_cache_title": {
+    "prefs_storage_title": {
         "message": "Cachelagring"
     },
-    "prefs_cache_storage_size": {
+    "prefs_storage_size": {
         "message": "Cachestorlek"
     },
-    "prefs_cache_clear_button": {
+    "prefs_storage_clear_button": {
         "message": "Rensa cache"
     },
-    "prefs_cache_clear_confirm": {
+    "prefs_storage_clear_confirm": {
         "message": "Är du säker på att du vill rensa all cachad data (sammanfattningar, skräppostrapporter, översättningar)? Den här åtgärden kan inte ångras."
     },
-    "prefs_cache_clear_done": {
+    "prefs_storage_clear_done": {
         "message": "$COUNT$ register borttagna.",
         "placeholders": {
             "count": {
