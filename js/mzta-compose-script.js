@@ -784,12 +784,28 @@ switch (message.command) {
           existingFixedTriggerProgress.style.right = '';
           existingFixedTriggerProgress.style.zIndex = '';
           existingFixedTriggerProgress.style.marginLeft = 'auto';
-          existingFixedTriggerProgress.style.marginTop = '4px';
+          existingFixedTriggerProgress.style.marginTop = '';
           const reposTriggerWrapperProgress = document.createElement('div');
           reposTriggerWrapperProgress.id = 'mzta-summary-trigger-wrapper';
-          reposTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+          reposTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
           reposTriggerWrapperProgress.appendChild(existingFixedTriggerProgress);
           document.body.insertBefore(reposTriggerWrapperProgress, containerProgress.nextSibling);
+      }
+      // Reposition translation trigger button if it exists as fixed
+      const existingFixedTranslTriggerProgress = document.getElementById('mzta-translation-trigger');
+      if (existingFixedTranslTriggerProgress && !document.getElementById('mzta-translation-trigger-wrapper')) {
+          existingFixedTranslTriggerProgress.style.position = '';
+          existingFixedTranslTriggerProgress.style.top = '';
+          existingFixedTranslTriggerProgress.style.right = '';
+          existingFixedTranslTriggerProgress.style.zIndex = '';
+          existingFixedTranslTriggerProgress.style.marginLeft = 'auto';
+          existingFixedTranslTriggerProgress.style.marginTop = '';
+          const reposTranslTriggerWrapperProgress = document.createElement('div');
+          reposTranslTriggerWrapperProgress.id = 'mzta-translation-trigger-wrapper';
+          reposTranslTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
+          reposTranslTriggerWrapperProgress.appendChild(existingFixedTranslTriggerProgress);
+          const insertAfterForTranslProgress = document.getElementById('mzta-summary-trigger-wrapper') || containerProgress;
+          document.body.insertBefore(reposTranslTriggerWrapperProgress, insertAfterForTranslProgress.nextSibling);
       }
 
       _updatePanelMargins();
@@ -886,12 +902,28 @@ switch (message.command) {
         existingFixedTrigger.style.right = '';
         existingFixedTrigger.style.zIndex = '';
         existingFixedTrigger.style.marginLeft = 'auto';
-        existingFixedTrigger.style.marginTop = '4px';
+        existingFixedTrigger.style.marginTop = '';
         const reposTriggerWrapper = document.createElement('div');
         reposTriggerWrapper.id = 'mzta-summary-trigger-wrapper';
-        reposTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
+        reposTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
         reposTriggerWrapper.appendChild(existingFixedTrigger);
         document.body.insertBefore(reposTriggerWrapper, container.nextSibling);
+    }
+    // Reposition translation trigger button if it exists as fixed
+    const existingFixedTranslTrigger = document.getElementById('mzta-translation-trigger');
+    if (existingFixedTranslTrigger && !document.getElementById('mzta-translation-trigger-wrapper')) {
+        existingFixedTranslTrigger.style.position = '';
+        existingFixedTranslTrigger.style.top = '';
+        existingFixedTranslTrigger.style.right = '';
+        existingFixedTranslTrigger.style.zIndex = '';
+        existingFixedTranslTrigger.style.marginLeft = 'auto';
+        existingFixedTranslTrigger.style.marginTop = '';
+        const reposTranslTriggerWrapper = document.createElement('div');
+        reposTranslTriggerWrapper.id = 'mzta-translation-trigger-wrapper';
+        reposTranslTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
+        reposTranslTriggerWrapper.appendChild(existingFixedTranslTrigger);
+        const insertAfterForTransl = document.getElementById('mzta-summary-trigger-wrapper') || container;
+        document.body.insertBefore(reposTranslTriggerWrapper, insertAfterForTransl.nextSibling);
     }
 
     _updatePanelMargins();
@@ -905,6 +937,12 @@ switch (message.command) {
     if(existingTriggerWrapper) existingTriggerWrapper.remove();
     const existingTriggerBtn = document.getElementById('mzta-summary-trigger');
     if(existingTriggerBtn) existingTriggerBtn.remove();
+
+    // If translation button is fixed at top:40px (was offset for summary button), move it back to top:8px
+    const existingTranslTriggerShowSummary = document.getElementById('mzta-translation-trigger');
+    if (existingTranslTriggerShowSummary && !document.getElementById('mzta-translation-trigger-wrapper')) {
+        existingTranslTriggerShowSummary.style.top = '8px';
+    }
 
     const summaryBanner = document.getElementById('mzta-summary-banner');
     if(summaryBanner) summaryBanner.remove();
@@ -1114,6 +1152,12 @@ switch (message.command) {
     const existingTrigger = document.getElementById('mzta-summary-trigger');
     if(existingTrigger) existingTrigger.remove();
 
+    // If translation button is fixed at top:40px (was offset for summary button), move it back to top:8px
+    const existingTranslTriggerShowSummaryGen = document.getElementById('mzta-translation-trigger');
+    if (existingTranslTriggerShowSummaryGen && !document.getElementById('mzta-translation-trigger-wrapper')) {
+        existingTranslTriggerShowSummaryGen.style.top = '8px';
+    }
+
     const isDarkGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     let bgColorGen = isDarkGen ? '#2a2a2a' : '#f0f0f0';
@@ -1203,6 +1247,11 @@ switch (message.command) {
         document.body.insertBefore(triggerWrapper, spamBannerTrigger.nextSibling);
     } else {
         document.body.appendChild(triggerBtn);
+        // If translation button is also fixed, push it down to avoid overlap
+        const existingTranslFixedBtn = document.getElementById('mzta-translation-trigger');
+        if (existingTranslFixedBtn && !document.getElementById('mzta-translation-trigger-wrapper')) {
+            existingTranslFixedBtn.style.top = '40px';
+        }
     }
     return Promise.resolve(true);
 
@@ -1421,16 +1470,18 @@ switch (message.command) {
     let borderColorTranslationBtn = isDarkTranslationBtn ? '#2e5740' : '#a5d6a7';
 
     const spamBannerTranslationTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const summaryBannerTranslationTrigger = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-trigger-wrapper') || document.getElementById('mzta-summary-trigger');
+    const summaryPanelTranslationTrigger = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-trigger-wrapper');
+    const summaryFixedBtnTranslationTrigger = document.getElementById('mzta-summary-trigger');
     const translationTriggerBtn = document.createElement('div');
     translationTriggerBtn.id = 'mzta-translation-trigger';
     translationTriggerBtn.title = browser.i18n.getMessage("translate_click_to_generate") || "Click to translate this email";
     const translationTriggerBtnBase = `background-color: ${bgColorTranslationBtn}; border: 1px solid ${borderColorTranslationBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorTranslationBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
-    const insertAfterTranslationBtn = summaryBannerTranslationTrigger || spamBannerTranslationTrigger;
+    const insertAfterTranslationBtn = summaryPanelTranslationTrigger || spamBannerTranslationTrigger;
     if (insertAfterTranslationBtn) {
         translationTriggerBtn.style.cssText = translationTriggerBtnBase + ' margin-left: auto; margin-top: 4px;';
     } else {
-        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ' position: fixed; top: 8px; right: 8px; z-index: 9997;';
+        const topOffset = summaryFixedBtnTranslationTrigger ? '40px' : '8px';
+        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ` position: fixed; top: ${topOffset}; right: 8px; z-index: 9997;`;
     }
 
     const translationTriggerIcon = document.createElement('img');
