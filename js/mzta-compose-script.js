@@ -45,6 +45,23 @@ function getCleanBodyHtml() {
   return clone;
 }
 
+function _updatePanelMargins() {
+    const panelIds = [
+        'mzta-spam-check-progress', 'mzta-spam-report-banner',
+        'mzta-translation-generating', 'mzta-translation-banner',
+        'mzta-summary-generating', 'mzta-summary-banner'
+    ];
+    let lastPanel = null;
+    for (const id of panelIds) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.marginBottom = '';
+            lastPanel = el;
+        }
+    }
+    if (lastPanel) lastPanel.style.marginBottom = '1rem';
+}
+
 function createThreeDotsMenu(isDark, menuItems, panelColors) {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'position: relative; display: inline-flex; align-items: center;';
@@ -775,6 +792,7 @@ switch (message.command) {
           document.body.insertBefore(reposTriggerWrapperProgress, containerProgress.nextSibling);
       }
 
+      _updatePanelMargins();
       return Promise.resolve(true);
 
   case "showSpamReport":
@@ -876,6 +894,7 @@ switch (message.command) {
         document.body.insertBefore(reposTriggerWrapper, container.nextSibling);
     }
 
+    _updatePanelMargins();
     return Promise.resolve(true);
 
   case "showSummary":
@@ -907,7 +926,7 @@ switch (message.command) {
     }
 
     summaryContainer.className = 'thunderai-summary-pane';
-    summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+    summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
 
     const summaryMenu = createThreeDotsMenu(isDarkSummary, [
         {
@@ -1076,8 +1095,11 @@ switch (message.command) {
     summaryBody.appendChild(summaryTextWrapper);
     summaryContainer.appendChild(summaryBody);
 
+    const translationBannerForSummary = document.getElementById('mzta-translation-banner') || document.getElementById('mzta-translation-generating');
     const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    document.body.insertBefore(summaryContainer, spamBanner ? spamBanner.nextSibling : document.body.firstChild);
+    const insertAfterSummary = translationBannerForSummary || spamBanner;
+    document.body.insertBefore(summaryContainer, insertAfterSummary ? insertAfterSummary.nextSibling : document.body.firstChild);
+    _updatePanelMargins();
     return Promise.resolve(true);
 
   case "showSummaryGenerating":
@@ -1102,7 +1124,7 @@ switch (message.command) {
     const generatingContainer = document.createElement('div');
     generatingContainer.id = 'mzta-summary-generating';
     generatingContainer.className = 'thunderai-summary-pane';
-    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
     const generatingIcon = document.createElement('img');
     generatingIcon.src = browser.runtime.getURL("/images/ai_summary.png");
@@ -1121,8 +1143,11 @@ switch (message.command) {
     generatingContainer.appendChild(generatingLoadingImg);
     generatingContainer.appendChild(generatingTitle);
 
+    const translationBannerForSummaryGen = document.getElementById('mzta-translation-banner') || document.getElementById('mzta-translation-generating');
     const spamBannerGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    document.body.insertBefore(generatingContainer, spamBannerGen ? spamBannerGen.nextSibling : document.body.firstChild);
+    const insertAfterSummaryGen = translationBannerForSummaryGen || spamBannerGen;
+    document.body.insertBefore(generatingContainer, insertAfterSummaryGen ? insertAfterSummaryGen.nextSibling : document.body.firstChild);
+    _updatePanelMargins();
     return Promise.resolve(true);
 
   case "showSummaryButton":
@@ -1210,7 +1235,7 @@ switch (message.command) {
     }
 
     translationContainer.className = 'thunderai-translation-pane';
-    translationContainer.style.cssText = `background-color: ${bgColorTranslation}; color: ${textColorTranslation}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorTranslation}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+    translationContainer.style.cssText = `background-color: ${bgColorTranslation}; color: ${textColorTranslation}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorTranslation}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
 
     const translationHeader = document.createElement('div');
     translationHeader.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;';
@@ -1323,14 +1348,13 @@ switch (message.command) {
 
     translationContainer.appendChild(translationTextWrapper);
 
-    const summaryBannerForTranslation = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-generating');
     const spamBannerForTranslation = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const insertAfterTranslation = summaryBannerForTranslation || spamBannerForTranslation;
-    if (insertAfterTranslation) {
-        document.body.insertBefore(translationContainer, insertAfterTranslation.nextSibling);
+    if (spamBannerForTranslation) {
+        document.body.insertBefore(translationContainer, spamBannerForTranslation.nextSibling);
     } else {
         document.body.insertBefore(translationContainer, document.body.firstChild);
     }
+    _updatePanelMargins();
     return Promise.resolve(true);
 
   case "showTranslationGenerating":
@@ -1354,7 +1378,7 @@ switch (message.command) {
     const translationGenContainer = document.createElement('div');
     translationGenContainer.id = 'mzta-translation-generating';
     translationGenContainer.className = 'thunderai-translation-pane';
-    translationGenContainer.style.cssText = `background-color: ${bgColorTranslationGen}; color: ${textColorTranslationGen}; padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; border: 1px solid ${borderColorTranslationGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+    translationGenContainer.style.cssText = `background-color: ${bgColorTranslationGen}; color: ${textColorTranslationGen}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorTranslationGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
     const translationGenIcon = document.createElement('img');
     translationGenIcon.src = browser.runtime.getURL("/images/ai_summary.png");
@@ -1372,14 +1396,13 @@ switch (message.command) {
     translationGenContainer.appendChild(translationGenLoadingImg);
     translationGenContainer.appendChild(translationGenTitle);
 
-    const summaryBannerForGen = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-generating');
     const spamBannerForGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const insertAfterGen = summaryBannerForGen || spamBannerForGen;
-    if (insertAfterGen) {
-        document.body.insertBefore(translationGenContainer, insertAfterGen.nextSibling);
+    if (spamBannerForGen) {
+        document.body.insertBefore(translationGenContainer, spamBannerForGen.nextSibling);
     } else {
         document.body.insertBefore(translationGenContainer, document.body.firstChild);
     }
+    _updatePanelMargins();
     return Promise.resolve(true);
 
   case "showTranslationButton":
