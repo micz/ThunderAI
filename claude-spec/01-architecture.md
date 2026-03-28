@@ -47,6 +47,7 @@ The `summarize_display_mode` preference (`'inline'` or `'webchat'`) controls whe
 the summary is displayed. The `summarize_auto` preference controls when it is triggered.
 
 - `summarize_auto = 2` (automatic) always generates inline, regardless of `summarize_display_mode`.
+- `summarize_auto = 3` (on receive) pre-caches the summary silently when the email arrives via `onNewMailReceived`. When the user later opens the message, the cache hit triggers an instant display.
 - `summarize_auto = 1` (manual button) respects `summarize_display_mode`:
   - `'inline'` → button click triggers inline generation
   - `'webchat'` → button click opens the AI chat window via `_openSummaryWebchat()`
@@ -67,6 +68,7 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
   │   display_mode = inline  → click triggers inline gen     │
   │   display_mode = webchat → click opens chat window       │
   │ summarize_auto = 2 → generate immediately (always inline)│
+  │ summarize_auto = 3 → cache hit (pre-cached on receive)   │
   └──────────────────────────────────────────────────────────┘
        ↓  (if generating inline)
   taSummaryStore         (check cache / set processing)
@@ -112,6 +114,27 @@ mzta-background.js      (checks translate + translate_auto + translate_display_m
   taTranslationStore     (save result via taStorage)
        ↓
   mzta-compose-script.js (render translation banner in message body)
+```
+
+### Data Flow: Background Summary on Email Receive (summarize_auto = 3)
+
+When `summarize_auto = 3`, a summary is generated silently when a new email arrives. The flow mirrors `add_tags_auto`:
+
+```
+New email arrives
+       ↓
+browser.messages.onNewMailReceived
+       ↓
+newEmailListener  (checks _process_incoming, which includes summarize_auto === 3)
+       ↓
+processEmails({ summarizeOnReceive: true })
+       ↓  (single loop — shared with addTagsAuto / spamFilter)
+_generateSummaryForMessage(headerMessageId, null, { messageData })
+  ← tabId is null → no UI messages sent, silent pre-cache
+       ↓
+taSummaryStore.saveSummary()
+       ↓
+[later] user opens the message → initSummary → cache hit → showSummary instantly
 ```
 
 ## Key Modules
