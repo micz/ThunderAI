@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
+    document.getElementById('summarize_auto').addEventListener('change', updateDisplayModeConstraint);
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
@@ -179,6 +180,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Methods to manage options, derived from: /options/mzta-options.js
+
+function updateDisplayModeConstraint() {
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const display_mode_el = document.getElementById('summarize_display_mode');
+  const autoVal = String(summarize_auto_el.value);
+  if (autoVal === '2' || autoVal === '3') {
+    display_mode_el.value = 'inline';
+    display_mode_el.disabled = true;
+    browser.storage.sync.set({ summarize_display_mode: 'inline' });
+  } else {
+    display_mode_el.disabled = false;
+  }
+}
 
 function saveOptions(e) {
   e.preventDefault();
@@ -294,4 +308,5 @@ async function restoreOptions() {
   }
 
   setCurrentChoice(getting);
+  updateDisplayModeConstraint();
 }

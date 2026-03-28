@@ -505,7 +505,9 @@ function cleanSummaryText(text) {
     return cleaned;
 }
 
-async function _generateSummaryForMessage(headerMessageId, tabId) {
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
+async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
             connection_type: prefs_default.connection_type,
@@ -517,40 +519,46 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
 
         let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
-            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
             return;
         }
 
         if (await summaryStore.isProcessing(headerMessageId)) {
-            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
             return;
         }
 
         await summaryStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
 
-        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-        if (!messageResult || messageResult.messages.length === 0) {
-            await summaryStore.saveError(headerMessageId, "Message not found");
-            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
-            taWorkingStatus.stopWorking();
-            return;
+        let message, fullMessage;
+        if (options.messageData) {
+            message = options.messageData.message;
+            fullMessage = options.messageData.fullMessage;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                await summaryStore.saveError(headerMessageId, "Message not found");
+                if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
+            message = messageResult.messages[0];
+            fullMessage = await browser.messages.getFull(message.id);
         }
 
-        const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
-
         const connectionType = getConnectionType(prefs, {}, 'summarize');
-        
+
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
-            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
             taWorkingStatus.stopWorking();
             return;
         }
 
-        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message: messageResult.messages[0], fullMessage }]);
+        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
 
         const cmd = new mzta_specialCommand({
             prompt: promptText,
@@ -572,13 +580,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId) {
             headerMessageId: headerMessageId
         };
         await summaryStore.saveSummary(summaryData, headerMessageId);
-        browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length } });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
-        browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
         taWorkingStatus.stopWorking();
     }
 }
@@ -1162,13 +1170,14 @@ async function reload_pref_init(){
         add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
+        summarize_auto: prefs_default.summarize_auto,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -1395,7 +1404,8 @@ const newEmailListener = (folder, messagesList) => {
         await processEmails({
             messages: messages,
             addTagsAuto: add_tags_auto_enabled,
-            spamFilter: prefs_init.spamfilter
+            spamFilter: prefs_init.spamfilter,
+            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3
         });
 
         if(prefs_init.spamfilter){
@@ -1428,15 +1438,16 @@ async function processEmails(args) {
         messages,
         addTagsAuto = false,
         spamFilter = false,
-        summarize = false
+        summarize = false,
+        summarizeOnReceive = false
     } = args;
 
     taWorkingStatus.startWorking();
 
-    // We keep two different loops, one for addTagsAuto and spamFilter and one for summarize
-    // because summarize is never called when an email is received, but only when using the context menu item
+    // One loop handles addTagsAuto, spamFilter, and summarizeOnReceive (on email receive).
+    // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1530,6 +1541,16 @@ async function processEmails(args) {
                         autoMove: true
                     });
                 if (!result.success) continue;
+            }
+
+            if (summarizeOnReceive) {
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+                taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId);
+                await _generateSummaryForMessage(message.headerMessageId, null, {
+                    messageData: { message, fullMessage: curr_fullMessage }
+                });
             }
         }
     }

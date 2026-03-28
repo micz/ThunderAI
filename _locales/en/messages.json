@@ -1966,7 +1966,7 @@
       "description": ""
   },
   "prefs_OptionText_summarize_auto_automatic": {
-      "message": "Generate automatically",
+      "message": "When the email is opened",
       "description": ""
   },
   "prefs_OptionText_summarize_auto_Info": {
