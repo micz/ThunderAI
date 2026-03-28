@@ -331,25 +331,25 @@
     "message": "Manage your data placeholders",
     "description": ""
   },
-  "prefs_cache_title": {
-    "message": "Cache Storage",
-    "description": "Title for cache management section in options"
+  "prefs_storage_title": {
+    "message": "Additional Info Storage",
+    "description": "Title for additional info storage management section in options"
   },
-  "prefs_cache_storage_size": {
-    "message": "Cache size",
-    "description": "Label for cache storage size display"
+  "prefs_storage_size": {
+    "message": "Storage size",
+    "description": "Label for storage size display"
   },
-  "prefs_cache_clear_button": {
-    "message": "Clear Cache",
-    "description": "Button to clear all cached message data"
+  "prefs_storage_clear_button": {
+    "message": "Clear Storage",
+    "description": "Button to clear all stored message data"
   },
   "prefs_cache_clear_confirm": {
-    "message": "Are you sure you want to clear all cached data (summaries, spam reports, translations)? This action cannot be undone.",
-    "description": "Confirmation dialog for clearing cache"
+    "message": "Are you sure you want to clear all stored data (summaries, spam reports, translations)? This action cannot be undone.",
+    "description": "Confirmation dialog for clearing storage"
   },
-  "prefs_cache_clear_done": {
+  "prefs_storage_clear_done": {
     "message": "$COUNT$ records removed.",
-    "description": "Message shown after cache is cleared",
+    "description": "Message shown after storage is cleared",
     "placeholders": {
       "count": {
         "content": "$1"
