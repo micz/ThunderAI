@@ -1264,7 +1264,7 @@ switch (message.command) {
     const translationText = document.createElement('div');
     translationText.style.cssText = 'white-space: pre-wrap; line-height: 1.5;';
     if (translationData.error) {
-        translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error") || "Translation failed.";
+        translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error") || browser.i18n.getMessage("translate_error");
     } else {
         translationText.textContent = translationData.translated_text || '';
     }
