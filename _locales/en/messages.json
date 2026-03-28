@@ -347,7 +347,7 @@
     "message": "Clear Storage",
     "description": "Button to clear all stored message data"
   },
-  "prefs_cache_clear_confirm": {
+  "prefs_storage_clear_confirm": {
     "message": "Are you sure you want to clear all stored data (summaries, spam reports, translations)? This action cannot be undone.",
     "description": "Confirmation dialog for clearing storage"
   },
