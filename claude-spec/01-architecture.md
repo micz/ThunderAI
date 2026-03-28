@@ -128,13 +128,34 @@ browser.messages.onNewMailReceived
 newEmailListener  (checks _process_incoming, which includes summarize_auto === 3)
        ↓
 processEmails({ summarizeOnReceive: true })
-       ↓  (single loop — shared with addTagsAuto / spamFilter)
+       ↓  (single loop — shared with addTagsAuto / spamFilter / translateOnReceive)
 _generateSummaryForMessage(headerMessageId, null, { messageData })
   ← tabId is null → no UI messages sent, silent pre-cache
        ↓
 taSummaryStore.saveSummary()
        ↓
 [later] user opens the message → initSummary → cache hit → showSummary instantly
+```
+
+### Data Flow: Background Translation on Email Receive (translate_auto = 3)
+
+When `translate_auto = 3`, a translation is generated silently when a new email arrives. Mirrors the summarize on-receive flow:
+
+```
+New email arrives
+       ↓
+browser.messages.onNewMailReceived
+       ↓
+newEmailListener  (checks _process_incoming, which includes translate_auto === 3)
+       ↓
+processEmails({ translateOnReceive: true })
+       ↓  (single loop — shared with addTagsAuto / spamFilter / summarizeOnReceive)
+_generateTranslationForMessage(headerMessageId, null, { messageData })
+  ← tabId is null → no UI messages sent, silent pre-cache
+       ↓
+taTranslationStore.saveTranslation()
+       ↓
+[later] user opens the message → initTranslation → cache hit → showTranslation instantly
 ```
 
 ## Key Modules

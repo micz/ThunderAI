@@ -697,7 +697,9 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
     }
 }
 
-async function _generateTranslationForMessage(headerMessageId, tabId) {
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
+async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
             connection_type: prefs_default.connection_type,
@@ -710,35 +712,39 @@ async function _generateTranslationForMessage(headerMessageId, tabId) {
 
         let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
         if (cachedTranslation && !cachedTranslation.error) {
-            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
             return;
         }
 
         if (await translationStore.isProcessing(headerMessageId)) {
-            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
             return;
         }
 
         await translationStore.setProcessing(headerMessageId);
         taWorkingStatus.startWorking();
-        browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
 
-        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-        if (!messageResult || messageResult.messages.length === 0) {
-            await translationStore.saveError(headerMessageId, "Message not found");
-            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
-            taWorkingStatus.stopWorking();
-            return;
+        let fullMessage;
+        if (options.messageData) {
+            fullMessage = options.messageData.fullMessage;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                await translationStore.saveError(headerMessageId, "Message not found");
+                if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
+            fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
         }
-
-        const fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
 
         const connectionType = getConnectionType(prefs, {}, 'translate');
 
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
             await translationStore.saveError(headerMessageId, errorMsg);
-            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
             taWorkingStatus.stopWorking();
             return;
         }
@@ -762,13 +768,13 @@ async function _generateTranslationForMessage(headerMessageId, tabId) {
             headerMessageId: headerMessageId
         };
         await translationStore.saveTranslation(translationData, headerMessageId);
-        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
         await translationStore.saveError(headerMessageId, error.message || String(error));
-        browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
         taWorkingStatus.stopWorking();
     }
 }
@@ -1388,13 +1394,15 @@ async function reload_pref_init(){
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
         summarize_auto: prefs_default.summarize_auto,
+        translate: prefs_default.translate,
+        translate_auto: prefs_default.translate_auto,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3);
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -1622,7 +1630,8 @@ const newEmailListener = (folder, messagesList) => {
             messages: messages,
             addTagsAuto: add_tags_auto_enabled,
             spamFilter: prefs_init.spamfilter,
-            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3
+            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
+            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3
         });
 
         if(prefs_init.spamfilter){
@@ -1656,15 +1665,16 @@ async function processEmails(args) {
         addTagsAuto = false,
         spamFilter = false,
         summarize = false,
-        summarizeOnReceive = false
+        summarizeOnReceive = false,
+        translateOnReceive = false
     } = args;
 
     taWorkingStatus.startWorking();
 
-    // One loop handles addTagsAuto, spamFilter, and summarizeOnReceive (on email receive).
+    // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter || summarizeOnReceive) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1767,6 +1777,16 @@ async function processEmails(args) {
                 taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId);
                 await _generateSummaryForMessage(message.headerMessageId, null, {
                     messageData: { message, fullMessage: curr_fullMessage }
+                });
+            }
+
+            if (translateOnReceive) {
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+                taLog.log("[ThunderAI] Pre-caching translation on receive for: " + message.headerMessageId);
+                await _generateTranslationForMessage(message.headerMessageId, null, {
+                    messageData: { fullMessage: curr_fullMessage }
                 });
             }
         }

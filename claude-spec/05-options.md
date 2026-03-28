@@ -99,8 +99,8 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate` | `true` | Enable email translation |
-| `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open) |
-| `translate_display_mode` | `'inline'` | Where to display translations: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `translate_auto = 2` always uses inline regardless of this setting. |
+| `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
+| `translate_display_mode` | `'inline'` | Where to display translations: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `translate_auto = 2` and `translate_auto = 3` always use inline regardless of this setting. |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 
