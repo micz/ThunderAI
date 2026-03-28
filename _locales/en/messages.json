@@ -2169,6 +2169,10 @@
     "message": "Summary by",
     "description": ""
   },
+  "translate_by": {
+    "message": "Translation by",
+    "description": ""
+  },
   "prefs_THStats_1": {
     "message": "Do you want beautiful statistics about your emails?",
     "description": ""

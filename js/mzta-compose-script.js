@@ -1241,7 +1241,7 @@ switch (message.command) {
     translationHeader.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;';
 
     const translationIcon = document.createElement('img');
-    translationIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationIcon.src = browser.runtime.getURL("/images/ai_translation.png");
     translationIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslation ? ' filter: invert(1);' : ''}`;
 
     const translationTitleSpan = document.createElement('span');
@@ -1278,8 +1278,13 @@ switch (message.command) {
         }
     ], { bg: bgColorTranslation, border: borderColorTranslation, text: textColorTranslation });
 
+    const translationBranding = document.createElement('span');
+    translationBranding.textContent = browser.i18n.getMessage("translate_by") + " ThunderAI";
+    translationBranding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap;';
+
     translationHeader.appendChild(translationIcon);
     translationHeader.appendChild(translationTitleSpan);
+    translationHeader.appendChild(translationBranding);
     translationHeader.appendChild(translationMenu);
     translationContainer.appendChild(translationHeader);
 
@@ -1381,7 +1386,7 @@ switch (message.command) {
     translationGenContainer.style.cssText = `background-color: ${bgColorTranslationGen}; color: ${textColorTranslationGen}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorTranslationGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
     const translationGenIcon = document.createElement('img');
-    translationGenIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationGenIcon.src = browser.runtime.getURL("/images/ai_translation.png");
     translationGenIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslationGen ? ' filter: invert(1);' : ''}`;
 
     const translationGenLoadingImg = document.createElement('img');
@@ -1429,7 +1434,7 @@ switch (message.command) {
     }
 
     const translationTriggerIcon = document.createElement('img');
-    translationTriggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    translationTriggerIcon.src = browser.runtime.getURL("/images/ai_translation.png");
     translationTriggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkTranslationBtn ? ' filter: invert(1);' : ''}`;
     translationTriggerBtn.appendChild(translationTriggerIcon);
 
