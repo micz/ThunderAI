@@ -38,7 +38,7 @@ js/mzta-prompts.js       (builds final prompt string)
        ↓
  Result returned to background
        ↓
-js/mzta-compose-script.js  (inserts text into Thunderbird compose window)
+js/mzta-compose-script.js  (inserts text into Thunderbird compose window and display window)
 ```
 
 ### Data Flow: Inline Summary on Message Display
