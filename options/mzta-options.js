@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateCacheSize();
 
   document.getElementById('btnClearCache').addEventListener('click', async () => {
-    if (!confirm(browser.i18n.getMessage("prefs_cache_clear_confirm"))) {
+    if (!confirm(browser.i18n.getMessage("prefs_storage_clear_confirm"))) {
       return;
     }
     let count = await taStorage.clearAllRecords();
