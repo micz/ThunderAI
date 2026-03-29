@@ -377,6 +377,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerTranslationGeneration':
                 async function _triggerTranslationGeneration(message) {
                     let tabId = sender.tab.id;
+                    let prefs_tl = await browser.storage.sync.get({
+                        translate_lang: prefs_default.translate_lang,
+                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
+                    });
+                    const lang_tl = prefs_tl.translate_lang || prefs_tl.default_chatgpt_lang || '';
+                    if (!lang_tl) {
+                        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        return;
+                    }
                     await _generateTranslationForMessage(message.headerMessageId, tabId);
                 }
                 _triggerTranslationGeneration(message);
@@ -384,6 +395,17 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerTranslationWebchat':
                 async function _triggerTranslationWebchat(message) {
                     let tabId = sender.tab.id;
+                    let prefs_tw = await browser.storage.sync.get({
+                        translate_lang: prefs_default.translate_lang,
+                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
+                    });
+                    const lang_tw = prefs_tw.translate_lang || prefs_tw.default_chatgpt_lang || '';
+                    if (!lang_tw) {
+                        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId, webchat: true });
+                        return;
+                    }
                     await _openTranslationWebchat(message.headerMessageId, tabId);
                 }
                 _triggerTranslationWebchat(message);
@@ -716,6 +738,12 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             return;
         }
 
+        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        if (!lang) {
+            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
+            return;
+        }
+
         if (await translationStore.isProcessing(headerMessageId)) {
             if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
             return;
@@ -748,8 +776,6 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             taWorkingStatus.stopWorking();
             return;
         }
-
-        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
         const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, lang);
 
         const cmd = new mzta_specialCommand({
@@ -951,6 +977,10 @@ async function _openTranslationWebchat(headerMessageId, tabId) {
         }
 
         const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        if (!lang) {
+            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
+            return;
+        }
         const { promptText, promptInfo } = await taPromptUtils.buildTranslationPrompt(curr_message_full, lang);
         promptInfo.headerMessageId = headerMessageId;
         promptInfo.translationTabId = tabId;

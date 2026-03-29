@@ -2165,6 +2165,10 @@
     "message": "Translation failed.",
     "description": ""
   },
+  "translate_no_language_configured": {
+    "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
+    "description": ""
+  },
   "antispam_by": {
     "message": "Antispam by",
     "description": ""
