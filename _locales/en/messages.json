@@ -336,8 +336,12 @@
     "description": ""
   },
   "prefs_storage_title": {
-    "message": "Additional Info Storage",
-    "description": "Title for additional info storage management section in options"
+    "message": "Storage",
+    "description": "Title for storage management section in options"
+  },
+  "prefs_storage_info": {
+    "message": "The storage is used to save information about spam score, summaries and translations of each message.",
+    "description": "Info text for storage management section in options"
   },
   "prefs_storage_size": {
     "message": "Storage size",
