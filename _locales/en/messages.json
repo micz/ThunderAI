@@ -2129,6 +2129,14 @@
     "message": "Language to translate emails into. If empty, uses the default language setting.",
     "description": ""
   },
+  "prefs_OptionText_translate_exclude_lang": {
+    "message": "Exclude languages",
+    "description": ""
+  },
+  "prefs_OptionText_translate_exclude_lang_Info": {
+    "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
+    "description": ""
+  },
   "prefs_OptionText_Translate_main_prompt": {
     "message": "The prompt describing the translation task:",
     "description": ""
@@ -2215,6 +2223,10 @@
   },
   "prefs_OptionText_action_auto_batch": {
     "message": "When the email is received",
+    "description": ""
+  },
+  "placeholder_string": {
+    "message": "Placeholder",
     "description": ""
   }
 }

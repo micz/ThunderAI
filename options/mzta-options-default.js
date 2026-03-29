@@ -146,6 +146,7 @@ export const prefs_default = {
     translate_display_mode: 'inline',    // 'inline' or 'webchat'
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     translate_lang: '',                  // target language, fallback on default_chatgpt_lang
+    translate_exclude_lang: '',          // languages to do not translate
     spamfilter_show_msg_panel: true,
     ...generated_prefs
 }
