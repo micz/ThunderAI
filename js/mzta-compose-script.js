@@ -21,8 +21,7 @@
 // to avoid contaminating placeholder values sent to AI providers.
 // Add new selectors here when new UI elements are injected into the email DOM.
 const MZTA_INJECTED_SELECTORS = [
-  '#mzta-spam-check-progress',
-  '#mzta-spam-report-banner',
+  '#mzta-container',
   '.mzta_dialog',
 ];
 
@@ -45,19 +44,145 @@ function getCleanBodyHtml() {
   return clone;
 }
 
-function _updatePanelMargins() {
-    const panelIds = [
-        'mzta-spam-check-progress', 'mzta-spam-report-banner',
-        'mzta-translation-generating', 'mzta-translation-banner',
-        'mzta-summary-generating', 'mzta-summary-banner'
-    ];
-    let lastPanel = null;
-    for (const id of panelIds) {
-        const el = document.getElementById(id);
-        if (el) {
-            el.style.marginBottom = '';
-            lastPanel = el;
+// ── Theme colors ────────────────────────────────────────────────────
+function _getThemeColors(spamValue, spamThreshold) {
+    const isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    const colors = {
+        isDark,
+        toolbar:     { bg: isDark ? '#1e1e1e' : '#f5f5f5', text: isDark ? '#ddd' : '#333', border: isDark ? '#444' : '#ddd' },
+        spamLoading: { bg: isDark ? '#003366' : '#e6f2ff', text: isDark ? '#cce5ff' : '#004085', border: isDark ? '#004085' : '#b8daff' },
+        summary:     { bg: isDark ? '#2a2a2a' : '#f0f0f0', text: isDark ? '#e0e0e0' : '#333', border: isDark ? '#444' : '#ddd' },
+        summaryErr:  { bg: isDark ? '#3a1a1a' : '#f7e6e6', text: isDark ? '#ffcccc' : '#660000', border: '#660000' },
+        translation: { bg: isDark ? '#1a2e2a' : '#e8f5e9', text: isDark ? '#c8e6c9' : '#1b5e20', border: isDark ? '#2e5740' : '#a5d6a7' },
+        translErr:   { bg: isDark ? '#3a1a1a' : '#f7e6e6', text: isDark ? '#ffcccc' : '#660000', border: '#660000' },
+        linkColor:   isDark ? '#6db3f2' : '#1a5fa8',
+    };
+    // Spam colors depend on the score
+    if (spamValue !== undefined) {
+        const threshold = spamThreshold || 50;
+        if (spamValue == -999) {
+            colors.spam = { bg: isDark ? '#332701' : '#fff3cd', text: isDark ? '#ffeb80' : '#856404', border: isDark ? '#664d03' : '#ffeeba' };
+        } else if (spamValue >= threshold) {
+            colors.spam = { bg: isDark ? '#5a1a1a' : '#ffe6e6', text: isDark ? '#ffcccc' : '#cc0000', border: '#cc0000' };
+        } else {
+            colors.spam = { bg: isDark ? '#1a401a' : '#e6ffe6', text: isDark ? '#ccffcc' : '#006600', border: '#006600' };
         }
+    }
+    return colors;
+}
+
+// ── Container / Toolbar / Panels management ─────────────────────────
+function _ensureContainer() {
+    let container = document.getElementById('mzta-container');
+    if (!container) {
+        const colors = _getThemeColors();
+        container = document.createElement('div');
+        container.id = 'mzta-container';
+        container.style.cssText = 'font-family: system-ui, -apple-system, sans-serif;';
+        document.body.insertBefore(container, document.body.firstChild);
+
+        const toolbar = document.createElement('div');
+        toolbar.id = 'mzta-toolbar';
+        toolbar.style.cssText = `display: none; align-items: center; gap: 8px; padding: 6px 0.5rem; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
+        container.appendChild(toolbar);
+
+        const panels = document.createElement('div');
+        panels.id = 'mzta-panels';
+        panels.style.cssText = 'display: flex; flex-direction: column; gap: 4px; padding: 4px 0;';
+        container.appendChild(panels);
+    }
+    return {
+        toolbar: document.getElementById('mzta-toolbar'),
+        panels: document.getElementById('mzta-panels'),
+    };
+}
+
+function _updateToolbarVisibility() {
+    const toolbar = document.getElementById('mzta-toolbar');
+    if (!toolbar) return;
+    const hasItems = toolbar.querySelector('#mzta-toolbar-spam, #mzta-toolbar-summary, #mzta-toolbar-translation');
+    toolbar.style.display = hasItems ? 'flex' : 'none';
+}
+
+function _ensureBranding(toolbar) {
+    if (document.getElementById('mzta-toolbar-branding')) return;
+    const branding = document.createElement('span');
+    branding.id = 'mzta-toolbar-branding';
+    branding.textContent = 'by ThunderAI';
+    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap;';
+    toolbar.appendChild(branding);
+}
+
+const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-toolbar-translation', 'mzta-toolbar-branding'];
+
+function _addToolbarItem(id, element) {
+    const { toolbar } = _ensureContainer();
+    const existing = document.getElementById(id);
+    if (existing) existing.remove();
+    element.id = id;
+
+    const myIndex = _TOOLBAR_SLOT_ORDER.indexOf(id);
+    let insertBefore = null;
+    for (let i = myIndex + 1; i < _TOOLBAR_SLOT_ORDER.length; i++) {
+        const later = document.getElementById(_TOOLBAR_SLOT_ORDER[i]);
+        if (later) { insertBefore = later; break; }
+    }
+    if (insertBefore) toolbar.insertBefore(element, insertBefore);
+    else toolbar.appendChild(element);
+
+    _ensureBranding(toolbar);
+    _updateToolbarVisibility();
+}
+
+function _removeToolbarItem(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    // Remove branding if toolbar is now empty of content slots
+    const toolbar = document.getElementById('mzta-toolbar');
+    if (toolbar && !toolbar.querySelector('#mzta-toolbar-spam, #mzta-toolbar-summary, #mzta-toolbar-translation')) {
+        const branding = document.getElementById('mzta-toolbar-branding');
+        if (branding) branding.remove();
+    }
+    _updateToolbarVisibility();
+}
+
+const _PANEL_ORDER = [
+    'mzta-spam-check-progress', 'mzta-spam-report-banner',
+    'mzta-translation-generating', 'mzta-translation-banner',
+    'mzta-summary-generating', 'mzta-summary-banner'
+];
+
+function _addPanel(id, element) {
+    const { panels } = _ensureContainer();
+    const existing = document.getElementById(id);
+    if (existing) existing.remove();
+    element.id = id;
+
+    const myIndex = _PANEL_ORDER.indexOf(id);
+    let insertBefore = null;
+    for (let i = myIndex + 1; i < _PANEL_ORDER.length; i++) {
+        const later = document.getElementById(_PANEL_ORDER[i]);
+        if (later) { insertBefore = later; break; }
+    }
+    if (insertBefore) panels.insertBefore(element, insertBefore);
+    else panels.appendChild(element);
+
+    _updatePanelMargins();
+}
+
+function _removePanel(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    _updatePanelMargins();
+}
+
+function _updatePanelMargins() {
+    const panels = document.getElementById('mzta-panels');
+    if (!panels) return;
+    let lastPanel = null;
+    for (const child of panels.children) {
+        child.style.marginBottom = '';
+        lastPanel = child;
     }
     if (lastPanel) lastPanel.style.marginBottom = '1rem';
 }
@@ -742,114 +867,81 @@ switch (message.command) {
 
     break;
 
-    case "showSpamCheckInProgress":
-      const oldBanner = document.getElementById('mzta-spam-report-banner');
-      if(oldBanner) oldBanner.remove();
+    case "showSpamCheckInProgress": {
+      _removePanel('mzta-spam-report-banner');
+      _removeToolbarItem('mzta-toolbar-spam');
+      if (document.getElementById('mzta-spam-check-progress')) return Promise.resolve(true);
 
-      if(document.getElementById('mzta-spam-check-progress')) return Promise.resolve(true);
+      const colors = _getThemeColors();
 
-      const containerProgress = document.createElement('div');
-      containerProgress.id = 'mzta-spam-check-progress';
-      
-      const isDarkProgress = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      
-      let bgColorProgress = isDarkProgress ? '#003366' : '#e6f2ff';
-      let textColorProgress = isDarkProgress ? '#cce5ff' : '#004085';
-      let borderColorProgress = isDarkProgress ? '#004085' : '#b8daff';
+      // Loading badge in toolbar
+      const badge = document.createElement('div');
+      badge.style.cssText = `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;`;
+      const badgeLoading = document.createElement('img');
+      badgeLoading.src = browser.runtime.getURL("/images/loading.gif");
+      badgeLoading.style.cssText = "height: 14px; width: 14px;";
+      badge.appendChild(badgeLoading);
+      const badgeText = document.createElement('span');
+      badgeText.textContent = browser.i18n.getMessage("spam_check_in_progress");
+      badge.appendChild(badgeText);
+      _addToolbarItem('mzta-toolbar-spam', badge);
 
-      containerProgress.style.cssText = `background-color: ${bgColorProgress}; color: ${textColorProgress}; border-bottom: 1px solid ${borderColorProgress}; padding: 8px 12px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+      // Loading panel
+      const panel = document.createElement('div');
+      panel.style.cssText = `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border}; border-radius: 4px; padding: 8px 0.5rem; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+      const panelLoading = document.createElement('img');
+      panelLoading.src = browser.runtime.getURL("/images/loading.gif");
+      panelLoading.style.cssText = "height: 16px; width: 16px;";
+      const panelText = document.createElement('strong');
+      panelText.textContent = browser.i18n.getMessage("spam_check_in_progress");
+      panel.appendChild(panelLoading);
+      panel.appendChild(panelText);
 
-      const textProgress = document.createElement('strong');
-      textProgress.textContent = browser.i18n.getMessage("spam_check_in_progress");
-      
-      const loadingImg = document.createElement('img');
-      loadingImg.src = browser.runtime.getURL("/images/loading.gif");
-      loadingImg.style.cssText = "height: 16px; width: 16px;";
-
-      const brandingProgress = document.createElement('span');
-      brandingProgress.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
-      brandingProgress.style.cssText = 'margin-left: auto; font-style: italic; font-size: 11px; opacity: 0.7;';
-
-      containerProgress.appendChild(loadingImg);
-      containerProgress.appendChild(textProgress);
-      containerProgress.appendChild(brandingProgress);
-
-      document.body.insertBefore(containerProgress, document.body.firstChild);
-
-      // Reposition summary trigger button if it exists as fixed
-      const existingFixedTriggerProgress = document.getElementById('mzta-summary-trigger');
-      if (existingFixedTriggerProgress && !document.getElementById('mzta-summary-trigger-wrapper')) {
-          existingFixedTriggerProgress.style.position = '';
-          existingFixedTriggerProgress.style.top = '';
-          existingFixedTriggerProgress.style.right = '';
-          existingFixedTriggerProgress.style.zIndex = '';
-          existingFixedTriggerProgress.style.marginLeft = 'auto';
-          existingFixedTriggerProgress.style.marginTop = '';
-          const reposTriggerWrapperProgress = document.createElement('div');
-          reposTriggerWrapperProgress.id = 'mzta-summary-trigger-wrapper';
-          reposTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
-          reposTriggerWrapperProgress.appendChild(existingFixedTriggerProgress);
-          document.body.insertBefore(reposTriggerWrapperProgress, containerProgress.nextSibling);
-      }
-      // Reposition translation trigger button if it exists as fixed
-      const existingFixedTranslTriggerProgress = document.getElementById('mzta-translation-trigger');
-      if (existingFixedTranslTriggerProgress && !document.getElementById('mzta-translation-trigger-wrapper')) {
-          existingFixedTranslTriggerProgress.style.position = '';
-          existingFixedTranslTriggerProgress.style.top = '';
-          existingFixedTranslTriggerProgress.style.right = '';
-          existingFixedTranslTriggerProgress.style.zIndex = '';
-          existingFixedTranslTriggerProgress.style.marginLeft = 'auto';
-          existingFixedTranslTriggerProgress.style.marginTop = '';
-          const reposTranslTriggerWrapperProgress = document.createElement('div');
-          reposTranslTriggerWrapperProgress.id = 'mzta-translation-trigger-wrapper';
-          reposTranslTriggerWrapperProgress.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
-          reposTranslTriggerWrapperProgress.appendChild(existingFixedTranslTriggerProgress);
-          const insertAfterForTranslProgress = document.getElementById('mzta-summary-trigger-wrapper') || containerProgress;
-          document.body.insertBefore(reposTranslTriggerWrapperProgress, insertAfterForTranslProgress.nextSibling);
-      }
-
-      _updatePanelMargins();
+      _addPanel('mzta-spam-check-progress', panel);
       return Promise.resolve(true);
+    }
 
-  case "showSpamReport":
-    const progressBanner = document.getElementById('mzta-spam-check-progress');
-    if(progressBanner) progressBanner.remove();
+  case "showSpamReport": {
+    _removePanel('mzta-spam-check-progress');
+    _removeToolbarItem('mzta-toolbar-spam');
 
     const data = message.data;
-    if(document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
+    if (document.getElementById('mzta-spam-report-banner')) return Promise.resolve(true);
 
-    const container = document.createElement('div');
-    container.id = 'mzta-spam-report-banner';
-    
-    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    let bgColor = '#f8f9fa';
-    let textColor = '#333';
-    let borderColor = '#ccc';
-    
+    const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
+    const sc = colors.spam;
+
+    // Spam badge in toolbar (clickable to toggle explanation panel)
+    const badge = document.createElement('div');
+    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;`;
     if (data.spamValue == -999) {
-        bgColor = isDark ? '#332701' : '#fff3cd';
-        textColor = isDark ? '#ffeb80' : '#856404';
-        borderColor = isDark ? '#664d03' : '#ffeeba';
-    } else if (data.spamValue >= (data.SpamThreshold || 50)) {
-        bgColor = isDark ? '#5a1a1a' : '#ffe6e6';
-        textColor = isDark ? '#ffcccc' : '#cc0000';
-        borderColor = '#cc0000';
+        badge.textContent = browser.i18n.getMessage("apiwebchat_error");
     } else {
-        bgColor = isDark ? '#1a401a' : '#e6ffe6';
-        textColor = isDark ? '#ccffcc' : '#006600';
-        borderColor = '#006600';
+        badge.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "\u26A0\uFE0F " + browser.i18n.getMessage("Spam") : "\uD83D\uDEE1\uFE0F " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
     }
+    const chevron = document.createElement('span');
+    chevron.textContent = ' \u25BC';
+    chevron.style.cssText = 'font-size: 10px; transition: transform 0.2s; transform: rotate(-90deg);';
+    badge.appendChild(chevron);
 
-    container.style.cssText = `background-color: ${bgColor}; color: ${textColor}; border-bottom: 1px solid ${borderColor}; border-radius:4px; padding: 8px 0.5rem; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+    let spamExpanded = false;
+    badge.onclick = () => {
+        const panel = document.getElementById('mzta-spam-report-banner');
+        if (panel) {
+            spamExpanded = !spamExpanded;
+            panel.style.display = spamExpanded ? 'flex' : 'none';
+            chevron.style.transform = spamExpanded ? '' : 'rotate(-90deg)';
+        }
+    };
+    badge.onmouseover = () => { badge.style.opacity = '0.8'; };
+    badge.onmouseout = () => { badge.style.opacity = '1'; };
 
-    const scoreText = document.createElement('strong');
-    if (data.spamValue == -999) {
-        scoreText.textContent = browser.i18n.getMessage("apiwebchat_error");
-    } else {
-        scoreText.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "⚠️ " + browser.i18n.getMessage("Spam") : "🛡️ " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
-    }
-    
+    _addToolbarItem('mzta-toolbar-spam', badge);
+
+    // Explanation panel (collapsed by default)
+    const panel = document.createElement('div');
+    panel.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 8px 0.5rem; font-size: 13px; display: none; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
+
     const reasonText = document.createElement('span');
     if (data.spamValue == -999) {
         reasonText.textContent = data.explanation;
@@ -857,138 +949,76 @@ switch (message.command) {
         reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
     }
 
-    const branding = document.createElement('span');
-    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
-    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5;';
-
-    const spamMenu = createThreeDotsMenu(isDark, [
+    const spamMenu = createThreeDotsMenu(colors.isDark, [
         {
-            icon: '↻',
+            icon: '\u21BB',
             label: browser.i18n.getMessage("spamfilter_refresh") || 'Refresh spam report',
-            hoverColor: isDark ? '#4d9de0' : '#1a5fa8',
+            hoverColor: colors.isDark ? '#4d9de0' : '#1a5fa8',
             disableAfterClick: true,
             onClick: () => {
                 browser.runtime.sendMessage({ command: "refreshSpamReport", headerMessageId: data.headerMessageId });
             }
         },
         {
-            icon: '×',
+            icon: '\u00D7',
             label: browser.i18n.getMessage("spamfilter_delete") || 'Delete spam report',
             hoverColor: '#cc0000',
             onClick: () => {
-                container.remove();
+                _removePanel('mzta-spam-report-banner');
+                _removeToolbarItem('mzta-toolbar-spam');
                 browser.runtime.sendMessage({ command: "removeSpamReport", headerMessageId: data.headerMessageId });
             }
         }
-    ], { bg: bgColor, border: borderColor, text: textColor });
+    ], { bg: sc.bg, border: sc.border, text: sc.text });
 
-    const spamRightGroup = document.createElement('span');
-    spamRightGroup.style.cssText = 'margin-left: auto; margin-right:1px; display: flex; align-items: center; gap: 5px;';
+    const rightGroup = document.createElement('span');
+    rightGroup.style.cssText = 'margin-left: auto; display: flex; align-items: center; gap: 5px;';
+    const branding = document.createElement('span');
+    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
     branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
-    spamRightGroup.appendChild(branding);
-    spamRightGroup.appendChild(spamMenu);
+    rightGroup.appendChild(branding);
+    rightGroup.appendChild(spamMenu);
 
-    container.appendChild(scoreText);
-    container.appendChild(reasonText);
-    container.appendChild(spamRightGroup);
+    panel.appendChild(reasonText);
+    panel.appendChild(rightGroup);
 
-    document.body.insertBefore(container, document.body.firstChild);
-
-    // Reposition summary trigger button if it exists as fixed
-    const existingFixedTrigger = document.getElementById('mzta-summary-trigger');
-    if (existingFixedTrigger && !document.getElementById('mzta-summary-trigger-wrapper')) {
-        existingFixedTrigger.style.position = '';
-        existingFixedTrigger.style.top = '';
-        existingFixedTrigger.style.right = '';
-        existingFixedTrigger.style.zIndex = '';
-        existingFixedTrigger.style.marginLeft = 'auto';
-        existingFixedTrigger.style.marginTop = '';
-        const reposTriggerWrapper = document.createElement('div');
-        reposTriggerWrapper.id = 'mzta-summary-trigger-wrapper';
-        reposTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
-        reposTriggerWrapper.appendChild(existingFixedTrigger);
-        document.body.insertBefore(reposTriggerWrapper, container.nextSibling);
-    }
-    // Reposition translation trigger button if it exists as fixed
-    const existingFixedTranslTrigger = document.getElementById('mzta-translation-trigger');
-    if (existingFixedTranslTrigger && !document.getElementById('mzta-translation-trigger-wrapper')) {
-        existingFixedTranslTrigger.style.position = '';
-        existingFixedTranslTrigger.style.top = '';
-        existingFixedTranslTrigger.style.right = '';
-        existingFixedTranslTrigger.style.zIndex = '';
-        existingFixedTranslTrigger.style.marginLeft = 'auto';
-        existingFixedTranslTrigger.style.marginTop = '';
-        const reposTranslTriggerWrapper = document.createElement('div');
-        reposTranslTriggerWrapper.id = 'mzta-translation-trigger-wrapper';
-        reposTranslTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 2px 0.5rem;';
-        reposTranslTriggerWrapper.appendChild(existingFixedTranslTrigger);
-        const insertAfterForTransl = document.getElementById('mzta-summary-trigger-wrapper') || container;
-        document.body.insertBefore(reposTranslTriggerWrapper, insertAfterForTransl.nextSibling);
-    }
-
-    _updatePanelMargins();
+    _addPanel('mzta-spam-report-banner', panel);
     return Promise.resolve(true);
+  }
 
-  case "showSummary":
-    const generatingBanner = document.getElementById('mzta-summary-generating');
-    if(generatingBanner) generatingBanner.remove();
-    
-    const existingTriggerWrapper = document.getElementById('mzta-summary-trigger-wrapper');
-    if(existingTriggerWrapper) existingTriggerWrapper.remove();
-    const existingTriggerBtn = document.getElementById('mzta-summary-trigger');
-    if(existingTriggerBtn) existingTriggerBtn.remove();
-
-    // If translation button is fixed at top:40px (was offset for summary button), move it back to top:8px
-    const existingTranslTriggerShowSummary = document.getElementById('mzta-translation-trigger');
-    if (existingTranslTriggerShowSummary && !document.getElementById('mzta-translation-trigger-wrapper')) {
-        existingTranslTriggerShowSummary.style.top = '8px';
-    }
-
-    const summaryBanner = document.getElementById('mzta-summary-banner');
-    if(summaryBanner) summaryBanner.remove();
+  case "showSummary": {
+    _removePanel('mzta-summary-generating');
+    _removePanel('mzta-summary-banner');
+    _removeToolbarItem('mzta-toolbar-summary');
 
     const summaryData = message.data;
+    const colors = _getThemeColors();
+    const sc = summaryData.error ? colors.summaryErr : colors.summary;
+
     const summaryContainer = document.createElement('div');
-    summaryContainer.id = 'mzta-summary-banner';
-    
-    const isDarkSummary = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    let bgColorSummary = isDarkSummary ? '#2a2a2a' : '#f0f0f0';
-    let textColorSummary = isDarkSummary ? '#e0e0e0' : '#333';
-    let borderColorSummary = isDarkSummary ? '#444' : '#ddd';
-
-    if (summaryData.error) {
-        bgColorSummary = isDarkSummary ? '#3a1a1a' : '#f7e6e6';
-        textColorSummary = isDarkSummary ? '#ffcccc' : '#660000';
-        borderColorSummary = '#660000';
-    }
-
     summaryContainer.className = 'thunderai-summary-pane';
-    summaryContainer.style.cssText = `background-color: ${bgColorSummary}; color: ${textColorSummary}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorSummary}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+    summaryContainer.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${sc.border}; font-size: 14px;`;
 
-    const summaryMenu = createThreeDotsMenu(isDarkSummary, [
+    const summaryMenu = createThreeDotsMenu(colors.isDark, [
         {
-            icon: '↻',
+            icon: '\u21BB',
             label: browser.i18n.getMessage("summarize_refresh") || 'Refresh summary',
-            hoverColor: isDarkSummary ? '#4d9de0' : '#1a5fa8',
+            hoverColor: colors.isDark ? '#4d9de0' : '#1a5fa8',
             disableAfterClick: true,
             onClick: () => {
-                browser.runtime.sendMessage({
-                    command: "refreshSummary",
-                    headerMessageId: summaryData.headerMessageId
-                });
+                browser.runtime.sendMessage({ command: "refreshSummary", headerMessageId: summaryData.headerMessageId });
             }
         },
         {
-            icon: '×',
+            icon: '\u00D7',
             label: browser.i18n.getMessage("summarize_delete") || 'Delete summary',
             hoverColor: '#cc0000',
             onClick: () => {
-                summaryContainer.remove();
+                _removePanel('mzta-summary-banner');
                 browser.runtime.sendMessage({ command: "removeSummary", headerMessageId: summaryData.headerMessageId });
             }
         }
-    ], { bg: bgColorSummary, border: borderColorSummary, text: textColorSummary });
+    ], { bg: sc.bg, border: sc.border, text: sc.text });
 
     const summaryBranding = document.createElement('span');
     summaryBranding.textContent = browser.i18n.getMessage("summary_by") + " ThunderAI";
@@ -1001,18 +1031,16 @@ switch (message.command) {
 
     const summaryIcon = document.createElement('img');
     summaryIcon.src = browser.runtime.getURL("/images/ai_summary.png");
-    summaryIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0; margin-top: 2px;${isDarkSummary ? ' filter: invert(1);' : ''}`;
+    summaryIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0; margin-top: 2px;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
     const summaryTextWrapper = document.createElement('div');
     summaryTextWrapper.style.cssText = 'flex: 1; min-width: 0;';
-
     summaryTextWrapper.appendChild(summaryRightGroup);
 
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
     const hasHtml = !!summaryData.summary_html;
 
-    // Helper to set summary content using DOMParser (innerHTML is blocked in Thunderbird content scripts)
     function setSummaryHtml(element, html) {
         element.textContent = '';
         const parser = new DOMParser();
@@ -1030,57 +1058,45 @@ switch (message.command) {
     } else {
         summaryText.textContent = summaryData.summary;
     }
-    summaryText.style.cssText = `font-size: 14px; line-height: 1.4;`;
-
+    summaryText.style.cssText = 'font-size: 14px; line-height: 1.4;';
     summaryTextWrapper.appendChild(summaryText);
 
     const maxLen = summaryData.maxDisplayLength || 0;
     const fullText = summaryData.summary;
     if (!summaryData.error && maxLen > 0 && fullText && fullText.length > maxLen) {
-        // Set up animated expand/collapse via max-height transition
         summaryText.style.overflow = 'hidden';
         summaryText.style.transition = 'max-height 0.2s ease';
 
         if (!hasHtml) {
-            // Plain text: truncate by character position
             let cutPos = fullText.lastIndexOf(' ', maxLen);
             if (cutPos <= 0) cutPos = maxLen;
             const truncated = fullText.substring(0, cutPos) + '\u2026';
             summaryText.textContent = truncated;
 
-            // Measure truncated height after layout
             requestAnimationFrame(() => {
-                const collapsedHeight = summaryText.scrollHeight;
-                summaryText.style.maxHeight = collapsedHeight + 'px';
+                summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
             });
 
             const toggleLink = document.createElement('a');
             toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
             toggleLink.href = '#';
-            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
-                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+            toggleLink.style.cssText = `display: inline-block; margin-top: 4px; font-size: 13px; color: ${colors.linkColor}; cursor: pointer; text-decoration: underline;`;
 
             let expanded = false;
             toggleLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (!expanded) {
-                    // Expand: set full text, measure, animate to full height
                     summaryText.textContent = fullText;
-                    const fullHeight = summaryText.scrollHeight;
-                    summaryText.style.maxHeight = fullHeight + 'px';
+                    summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
                     toggleLink.textContent = browser.i18n.getMessage("summarize_see_less") || "See less";
                 } else {
-                    // Collapse: measure current truncated height, then animate down
                     summaryText.textContent = truncated;
-                    // Force layout to get the target height before animating
                     const collapsedHeight = summaryText.scrollHeight;
                     summaryText.textContent = fullText;
-                    // Set explicit current height so transition has a starting point
                     summaryText.style.maxHeight = summaryText.scrollHeight + 'px';
                     requestAnimationFrame(() => {
                         summaryText.style.maxHeight = collapsedHeight + 'px';
                     });
-                    // Swap text after transition ends
                     summaryText.addEventListener('transitionend', function handler() {
                         summaryText.removeEventListener('transitionend', handler);
                         summaryText.textContent = truncated;
@@ -1089,18 +1105,15 @@ switch (message.command) {
                 }
                 expanded = !expanded;
             });
-
             summaryTextWrapper.appendChild(toggleLink);
         } else {
-            // HTML content: use max-height to collapse, preserve full HTML
-            const collapsedMaxHeight = '4.2em'; // ~3 lines collapsed
+            const collapsedMaxHeight = '4.2em';
             summaryText.style.maxHeight = collapsedMaxHeight;
 
             const toggleLink = document.createElement('a');
             toggleLink.textContent = browser.i18n.getMessage("summarize_see_more") || "See more";
             toggleLink.href = '#';
-            toggleLink.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
-                (isDarkSummary ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+            toggleLink.style.cssText = `display: inline-block; margin-top: 4px; font-size: 13px; color: ${colors.linkColor}; cursor: pointer; text-decoration: underline;`;
 
             let expanded = false;
             toggleLink.addEventListener('click', (e) => {
@@ -1115,7 +1128,6 @@ switch (message.command) {
                 expanded = !expanded;
             });
 
-            // Only show toggle if content is actually taller than collapsed height
             requestAnimationFrame(() => {
                 if (summaryText.scrollHeight > summaryText.clientHeight) {
                     summaryTextWrapper.appendChild(toggleLink);
@@ -1133,199 +1145,120 @@ switch (message.command) {
     summaryBody.appendChild(summaryTextWrapper);
     summaryContainer.appendChild(summaryBody);
 
-    const translationBannerForSummary = document.getElementById('mzta-translation-banner') || document.getElementById('mzta-translation-generating');
-    const spamBanner = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const insertAfterSummary = translationBannerForSummary || spamBanner;
-    document.body.insertBefore(summaryContainer, insertAfterSummary ? insertAfterSummary.nextSibling : document.body.firstChild);
-    _updatePanelMargins();
+    _addPanel('mzta-summary-banner', summaryContainer);
     return Promise.resolve(true);
+  }
 
-  case "showSummaryGenerating":
-    const existingGenerating = document.getElementById('mzta-summary-generating');
-    if(existingGenerating) return Promise.resolve(true);
+  case "showSummaryGenerating": {
+    if (document.getElementById('mzta-summary-generating')) return Promise.resolve(true);
 
-    const existingSummary = document.getElementById('mzta-summary-banner');
-    if(existingSummary) existingSummary.remove();
+    _removePanel('mzta-summary-banner');
+    _removeToolbarItem('mzta-toolbar-summary');
 
-    const existingTriggerWrap = document.getElementById('mzta-summary-trigger-wrapper');
-    if(existingTriggerWrap) existingTriggerWrap.remove();
-    const existingTrigger = document.getElementById('mzta-summary-trigger');
-    if(existingTrigger) existingTrigger.remove();
+    const colors = _getThemeColors();
+    const genContainer = document.createElement('div');
+    genContainer.className = 'thunderai-summary-pane';
+    genContainer.style.cssText = `background-color: ${colors.summary.bg}; color: ${colors.summary.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${colors.summary.border}; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
-    // If translation button is fixed at top:40px (was offset for summary button), move it back to top:8px
-    const existingTranslTriggerShowSummaryGen = document.getElementById('mzta-translation-trigger');
-    if (existingTranslTriggerShowSummaryGen && !document.getElementById('mzta-translation-trigger-wrapper')) {
-        existingTranslTriggerShowSummaryGen.style.top = '8px';
-    }
+    const genIcon = document.createElement('img');
+    genIcon.src = browser.runtime.getURL("/images/ai_summary.png");
+    genIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
-    const isDarkGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    let bgColorGen = isDarkGen ? '#2a2a2a' : '#f0f0f0';
-    let textColorGen = isDarkGen ? '#e0e0e0' : '#333';
-    let borderColorGen = isDarkGen ? '#444' : '#ddd';
-    let titleColorGen = isDarkGen ? '#ff6b6b' : '#d70022';
+    const genLoading = document.createElement('img');
+    genLoading.src = browser.runtime.getURL("/images/loading.gif");
+    genLoading.style.cssText = "height: 16px; width: 16px;";
 
-    const generatingContainer = document.createElement('div');
-    generatingContainer.id = 'mzta-summary-generating';
-    generatingContainer.className = 'thunderai-summary-pane';
-    generatingContainer.style.cssText = `background-color: ${bgColorGen}; color: ${textColorGen}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+    const genTitle = document.createElement('span');
+    genTitle.className = 'thunderai-summary-title';
+    genTitle.textContent = browser.i18n.getMessage("summarize_generating");
+    genTitle.style.cssText = 'font-size: 14px;';
 
-    const generatingIcon = document.createElement('img');
-    generatingIcon.src = browser.runtime.getURL("/images/ai_summary.png");
-    generatingIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkGen ? ' filter: invert(1);' : ''}`;
+    genContainer.appendChild(genIcon);
+    genContainer.appendChild(genLoading);
+    genContainer.appendChild(genTitle);
 
-    const generatingLoadingImg = document.createElement('img');
-    generatingLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
-    generatingLoadingImg.style.cssText = "height: 16px; width: 16px;";
-
-    const generatingTitle = document.createElement('span');
-    generatingTitle.className = 'thunderai-summary-title';
-    generatingTitle.textContent = browser.i18n.getMessage("summarize_generating");
-    generatingTitle.style.cssText = `font-size: 14px;`;
-
-    generatingContainer.appendChild(generatingIcon);
-    generatingContainer.appendChild(generatingLoadingImg);
-    generatingContainer.appendChild(generatingTitle);
-
-    const translationBannerForSummaryGen = document.getElementById('mzta-translation-banner') || document.getElementById('mzta-translation-generating');
-    const spamBannerGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const insertAfterSummaryGen = translationBannerForSummaryGen || spamBannerGen;
-    document.body.insertBefore(generatingContainer, insertAfterSummaryGen ? insertAfterSummaryGen.nextSibling : document.body.firstChild);
-    _updatePanelMargins();
+    _addPanel('mzta-summary-generating', genContainer);
     return Promise.resolve(true);
+  }
 
-  case "showSummaryButton":
-    const existingButton = document.getElementById('mzta-summary-trigger');
-    if(existingButton) return Promise.resolve(true);
+  case "showSummaryButton": {
+    if (document.getElementById('mzta-toolbar-summary')) return Promise.resolve(true);
 
-    const isDarkBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    let bgColorBtn = isDarkBtn ? '#2a2a2a' : '#f0f0f0';
-    let textColorBtn = isDarkBtn ? '#e0e0e0' : '#333';
-    let borderColorBtn = isDarkBtn ? '#444' : '#ddd';
-
-    const spamBannerTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
+    const colors = _getThemeColors();
     const triggerBtn = document.createElement('div');
-    triggerBtn.id = 'mzta-summary-trigger';
     triggerBtn.title = browser.i18n.getMessage("summarize_click_to_generate");
-    const triggerBtnBase = `background-color: ${bgColorBtn}; border: 1px solid ${borderColorBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
-    if (spamBannerTrigger) {
-        triggerBtn.style.cssText = triggerBtnBase + ' margin-left: auto; margin-top: 4px;';
-    } else {
-        triggerBtn.style.cssText = triggerBtnBase + ' position: fixed; top: 8px; right: 8px; z-index: 9998;';
-    }
+    triggerBtn.style.cssText = `background-color: ${colors.summary.bg}; border: 1px solid ${colors.summary.border}; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${colors.summary.text}; display: inline-flex; align-items: center; gap: 6px;`;
 
     const triggerIcon = document.createElement('img');
     triggerIcon.src = browser.runtime.getURL("/images/ai_summary.png");
-    triggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkBtn ? ' filter: invert(1);' : ''}`;
+    triggerIcon.style.cssText = `height: 14px; width: 14px;${colors.isDark ? ' filter: invert(1);' : ''}`;
     triggerBtn.appendChild(triggerIcon);
 
     const triggerLabel = document.createElement('span');
     triggerLabel.textContent = browser.i18n.getMessage("get_ai_summary");
     triggerBtn.appendChild(triggerLabel);
+
     triggerBtn.onmouseover = () => { triggerBtn.style.opacity = '1'; };
     triggerBtn.onmouseout = () => { triggerBtn.style.opacity = '0.7'; };
-    triggerBtn.onclick = async () => {
-        triggerBtn.onclick = null;
-        triggerBtn.style.cursor = 'default';
-        triggerBtn.style.opacity = '0.7';
-        triggerBtn.onmouseover = null;
-        triggerBtn.onmouseout = null;
-        const wrapper = document.getElementById('mzta-summary-trigger-wrapper');
-        if (wrapper) wrapper.remove(); else triggerBtn.remove();
+    triggerBtn.onclick = () => {
+        _removeToolbarItem('mzta-toolbar-summary');
         browser.runtime.sendMessage({
             command: message.webchat ? "triggerSummaryWebchat" : "triggerSummaryGeneration",
             headerMessageId: message.headerMessageId
         });
     };
 
-    if (spamBannerTrigger) {
-        const triggerWrapper = document.createElement('div');
-        triggerWrapper.id = 'mzta-summary-trigger-wrapper';
-        triggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
-        triggerWrapper.appendChild(triggerBtn);
-        document.body.insertBefore(triggerWrapper, spamBannerTrigger.nextSibling);
-    } else {
-        document.body.appendChild(triggerBtn);
-        // If translation button is also fixed, push it down to avoid overlap
-        const existingTranslFixedBtn = document.getElementById('mzta-translation-trigger');
-        if (existingTranslFixedBtn && !document.getElementById('mzta-translation-trigger-wrapper')) {
-            existingTranslFixedBtn.style.top = '40px';
-        }
-    }
+    _addToolbarItem('mzta-toolbar-summary', triggerBtn);
     return Promise.resolve(true);
+  }
 
-  case "showTranslation":
-    const existingTranslationGenerating = document.getElementById('mzta-translation-generating');
-    if(existingTranslationGenerating) existingTranslationGenerating.remove();
-
-    const existingTranslationTriggerWrapper = document.getElementById('mzta-translation-trigger-wrapper');
-    if(existingTranslationTriggerWrapper) existingTranslationTriggerWrapper.remove();
-    const existingTranslationTriggerBtn = document.getElementById('mzta-translation-trigger');
-    if(existingTranslationTriggerBtn) existingTranslationTriggerBtn.remove();
-
-    const existingTranslationBanner = document.getElementById('mzta-translation-banner');
-    if(existingTranslationBanner) existingTranslationBanner.remove();
+  case "showTranslation": {
+    _removePanel('mzta-translation-generating');
+    _removePanel('mzta-translation-banner');
+    _removeToolbarItem('mzta-toolbar-translation');
 
     const translationData = message.data;
+    const colors = _getThemeColors();
+    const tc = translationData.error ? colors.translErr : colors.translation;
+
     const translationContainer = document.createElement('div');
-    translationContainer.id = 'mzta-translation-banner';
-
-    const isDarkTranslation = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    let bgColorTranslation = isDarkTranslation ? '#1a2e2a' : '#e8f5e9';
-    let textColorTranslation = isDarkTranslation ? '#c8e6c9' : '#1b5e20';
-    let borderColorTranslation = isDarkTranslation ? '#2e5740' : '#a5d6a7';
-
-    if (translationData.error) {
-        bgColorTranslation = isDarkTranslation ? '#3a1a1a' : '#f7e6e6';
-        textColorTranslation = isDarkTranslation ? '#ffcccc' : '#660000';
-        borderColorTranslation = '#660000';
-    }
-
     translationContainer.className = 'thunderai-translation-pane';
-    translationContainer.style.cssText = `background-color: ${bgColorTranslation}; color: ${textColorTranslation}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorTranslation}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px;`;
+    translationContainer.style.cssText = `background-color: ${tc.bg}; color: ${tc.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${tc.border}; font-size: 14px;`;
 
     const translationHeader = document.createElement('div');
     translationHeader.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;';
 
     const translationIcon = document.createElement('img');
     translationIcon.src = browser.runtime.getURL("/images/ai_translation.png");
-    translationIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslation ? ' filter: invert(1);' : ''}`;
+    translationIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
     const translationTitleSpan = document.createElement('span');
-    translationTitleSpan.style.cssText = `font-weight: bold; font-size: 14px; color: ${textColorTranslation}; flex-grow: 1;`;
+    translationTitleSpan.style.cssText = `font-weight: bold; font-size: 14px; color: ${tc.text}; flex-grow: 1;`;
     translationTitleSpan.textContent = browser.i18n.getMessage("translate_banner_title") || "AI Translation";
     if (translationData.lang) {
         translationTitleSpan.textContent += ' (' + translationData.lang + ')';
     }
 
-    const translationMenu = createThreeDotsMenu(isDarkTranslation, [
+    const translationMenu = createThreeDotsMenu(colors.isDark, [
         {
-            icon: '↻',
+            icon: '\u21BB',
             label: browser.i18n.getMessage("translate_refresh") || 'Refresh translation',
-            hoverColor: isDarkTranslation ? '#4d9de0' : '#1a5fa8',
+            hoverColor: colors.isDark ? '#4d9de0' : '#1a5fa8',
             disableAfterClick: true,
             onClick: () => {
-                browser.runtime.sendMessage({
-                    command: "refreshTranslation",
-                    headerMessageId: translationData.headerMessageId
-                });
+                browser.runtime.sendMessage({ command: "refreshTranslation", headerMessageId: translationData.headerMessageId });
             }
         },
         {
-            icon: '×',
+            icon: '\u00D7',
             label: browser.i18n.getMessage("translate_delete") || 'Delete translation',
             hoverColor: '#cc0000',
             onClick: () => {
-                translationContainer.remove();
-                browser.runtime.sendMessage({
-                    command: "removeTranslation",
-                    headerMessageId: translationData.headerMessageId
-                });
+                _removePanel('mzta-translation-banner');
+                browser.runtime.sendMessage({ command: "removeTranslation", headerMessageId: translationData.headerMessageId });
             }
         }
-    ], { bg: bgColorTranslation, border: borderColorTranslation, text: textColorTranslation });
+    ], { bg: tc.bg, border: tc.border, text: tc.text });
 
     const translationBranding = document.createElement('span');
     translationBranding.textContent = browser.i18n.getMessage("translate_by") + " ThunderAI";
@@ -1343,13 +1276,12 @@ switch (message.command) {
     const translationText = document.createElement('div');
     translationText.style.cssText = 'white-space: pre-wrap; line-height: 1.5;';
     if (translationData.error) {
-        translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error") || browser.i18n.getMessage("translate_error");
+        translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error");
     } else {
         translationText.textContent = translationData.translated_text || '';
     }
     translationTextWrapper.appendChild(translationText);
 
-    // Expand/collapse for long translations
     const maxLenTranslation = translationData.maxDisplayLength || 0;
     const fullTranslationText = translationData.translated_text || '';
     if (!translationData.error && maxLenTranslation > 0 && fullTranslationText.length > maxLenTranslation) {
@@ -1362,24 +1294,21 @@ switch (message.command) {
         translationText.textContent = truncatedTranslation;
 
         requestAnimationFrame(() => {
-            const collapsedHeight = translationText.scrollHeight;
-            translationText.style.maxHeight = collapsedHeight + 'px';
+            translationText.style.maxHeight = translationText.scrollHeight + 'px';
         });
 
-        const toggleLinkTranslation = document.createElement('a');
-        toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
-        toggleLinkTranslation.href = '#';
-        toggleLinkTranslation.style.cssText = 'display: inline-block; margin-top: 4px; font-size: 13px; color: ' +
-            (isDarkTranslation ? '#6db3f2' : '#1a5fa8') + '; cursor: pointer; text-decoration: underline;';
+        const toggleLink = document.createElement('a');
+        toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+        toggleLink.href = '#';
+        toggleLink.style.cssText = `display: inline-block; margin-top: 4px; font-size: 13px; color: ${colors.linkColor}; cursor: pointer; text-decoration: underline;`;
 
-        let expandedTranslation = false;
-        toggleLinkTranslation.addEventListener('click', (e) => {
+        let expanded = false;
+        toggleLink.addEventListener('click', (e) => {
             e.preventDefault();
-            if (!expandedTranslation) {
+            if (!expanded) {
                 translationText.textContent = fullTranslationText;
-                const fullHeight = translationText.scrollHeight;
-                translationText.style.maxHeight = fullHeight + 'px';
-                toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
+                translationText.style.maxHeight = translationText.scrollHeight + 'px';
+                toggleLink.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
             } else {
                 translationText.textContent = truncatedTranslation;
                 const collapsedHeight = translationText.scrollHeight;
@@ -1392,132 +1321,80 @@ switch (message.command) {
                     translationText.removeEventListener('transitionend', handler);
                     translationText.textContent = truncatedTranslation;
                 });
-                toggleLinkTranslation.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+                toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
             }
-            expandedTranslation = !expandedTranslation;
+            expanded = !expanded;
         });
-
-        translationTextWrapper.appendChild(toggleLinkTranslation);
+        translationTextWrapper.appendChild(toggleLink);
     }
 
     translationContainer.appendChild(translationTextWrapper);
 
-    const spamBannerForTranslation = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    if (spamBannerForTranslation) {
-        document.body.insertBefore(translationContainer, spamBannerForTranslation.nextSibling);
-    } else {
-        document.body.insertBefore(translationContainer, document.body.firstChild);
-    }
-    _updatePanelMargins();
+    _addPanel('mzta-translation-banner', translationContainer);
     return Promise.resolve(true);
+  }
 
-  case "showTranslationGenerating":
-    const existingTranslationGen = document.getElementById('mzta-translation-generating');
-    if(existingTranslationGen) return Promise.resolve(true);
+  case "showTranslationGenerating": {
+    if (document.getElementById('mzta-translation-generating')) return Promise.resolve(true);
 
-    const existingTranslationBannerGen = document.getElementById('mzta-translation-banner');
-    if(existingTranslationBannerGen) existingTranslationBannerGen.remove();
+    _removePanel('mzta-translation-banner');
+    _removeToolbarItem('mzta-toolbar-translation');
 
-    const existingTranslationTrigWrap = document.getElementById('mzta-translation-trigger-wrapper');
-    if(existingTranslationTrigWrap) existingTranslationTrigWrap.remove();
-    const existingTranslationTrig = document.getElementById('mzta-translation-trigger');
-    if(existingTranslationTrig) existingTranslationTrig.remove();
+    const colors = _getThemeColors();
+    const genContainer = document.createElement('div');
+    genContainer.className = 'thunderai-translation-pane';
+    genContainer.style.cssText = `background-color: ${colors.translation.bg}; color: ${colors.translation.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${colors.translation.border}; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
-    const isDarkTranslationGen = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const genIcon = document.createElement('img');
+    genIcon.src = browser.runtime.getURL("/images/ai_translation.png");
+    genIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
-    let bgColorTranslationGen = isDarkTranslationGen ? '#1a2e2a' : '#e8f5e9';
-    let textColorTranslationGen = isDarkTranslationGen ? '#c8e6c9' : '#1b5e20';
-    let borderColorTranslationGen = isDarkTranslationGen ? '#2e5740' : '#a5d6a7';
+    const genLoading = document.createElement('img');
+    genLoading.src = browser.runtime.getURL("/images/loading.gif");
+    genLoading.style.cssText = "height: 16px; width: 16px;";
 
-    const translationGenContainer = document.createElement('div');
-    translationGenContainer.id = 'mzta-translation-generating';
-    translationGenContainer.className = 'thunderai-translation-pane';
-    translationGenContainer.style.cssText = `background-color: ${bgColorTranslationGen}; color: ${textColorTranslationGen}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${borderColorTranslationGen}; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
+    const genTitle = document.createElement('span');
+    genTitle.textContent = browser.i18n.getMessage("translate_generating") || "Translating...";
+    genTitle.style.cssText = 'font-size: 14px;';
 
-    const translationGenIcon = document.createElement('img');
-    translationGenIcon.src = browser.runtime.getURL("/images/ai_translation.png");
-    translationGenIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${isDarkTranslationGen ? ' filter: invert(1);' : ''}`;
+    genContainer.appendChild(genIcon);
+    genContainer.appendChild(genLoading);
+    genContainer.appendChild(genTitle);
 
-    const translationGenLoadingImg = document.createElement('img');
-    translationGenLoadingImg.src = browser.runtime.getURL("/images/loading.gif");
-    translationGenLoadingImg.style.cssText = "height: 16px; width: 16px;";
-
-    const translationGenTitle = document.createElement('span');
-    translationGenTitle.textContent = browser.i18n.getMessage("translate_generating") || "Translating...";
-    translationGenTitle.style.cssText = `font-size: 14px;`;
-
-    translationGenContainer.appendChild(translationGenIcon);
-    translationGenContainer.appendChild(translationGenLoadingImg);
-    translationGenContainer.appendChild(translationGenTitle);
-
-    const spamBannerForGen = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    if (spamBannerForGen) {
-        document.body.insertBefore(translationGenContainer, spamBannerForGen.nextSibling);
-    } else {
-        document.body.insertBefore(translationGenContainer, document.body.firstChild);
-    }
-    _updatePanelMargins();
+    _addPanel('mzta-translation-generating', genContainer);
     return Promise.resolve(true);
+  }
 
-  case "showTranslationButton":
-    const existingTranslationButton = document.getElementById('mzta-translation-trigger');
-    if(existingTranslationButton) return Promise.resolve(true);
+  case "showTranslationButton": {
+    if (document.getElementById('mzta-toolbar-translation')) return Promise.resolve(true);
 
-    const isDarkTranslationBtn = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const colors = _getThemeColors();
+    const triggerBtn = document.createElement('div');
+    triggerBtn.title = browser.i18n.getMessage("translate_click_to_generate") || "Click to translate this email";
+    triggerBtn.style.cssText = `background-color: ${colors.translation.bg}; border: 1px solid ${colors.translation.border}; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${colors.translation.text}; display: inline-flex; align-items: center; gap: 6px;`;
 
-    let bgColorTranslationBtn = isDarkTranslationBtn ? '#1a2e2a' : '#e8f5e9';
-    let textColorTranslationBtn = isDarkTranslationBtn ? '#c8e6c9' : '#1b5e20';
-    let borderColorTranslationBtn = isDarkTranslationBtn ? '#2e5740' : '#a5d6a7';
+    const triggerIcon = document.createElement('img');
+    triggerIcon.src = browser.runtime.getURL("/images/ai_translation.png");
+    triggerIcon.style.cssText = `height: 14px; width: 14px;${colors.isDark ? ' filter: invert(1);' : ''}`;
+    triggerBtn.appendChild(triggerIcon);
 
-    const spamBannerTranslationTrigger = document.getElementById('mzta-spam-report-banner') || document.getElementById('mzta-spam-check-progress');
-    const summaryPanelTranslationTrigger = document.getElementById('mzta-summary-banner') || document.getElementById('mzta-summary-trigger-wrapper');
-    const summaryFixedBtnTranslationTrigger = document.getElementById('mzta-summary-trigger');
-    const translationTriggerBtn = document.createElement('div');
-    translationTriggerBtn.id = 'mzta-translation-trigger';
-    translationTriggerBtn.title = browser.i18n.getMessage("translate_click_to_generate") || "Click to translate this email";
-    const translationTriggerBtnBase = `background-color: ${bgColorTranslationBtn}; border: 1px solid ${borderColorTranslationBtn}; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${textColorTranslationBtn}; display: inline-flex; align-items: center; gap: 6px; width: fit-content;`;
-    const insertAfterTranslationBtn = summaryPanelTranslationTrigger || spamBannerTranslationTrigger;
-    if (insertAfterTranslationBtn) {
-        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ' margin-left: auto; margin-top: 4px;';
-    } else {
-        const topOffset = summaryFixedBtnTranslationTrigger ? '40px' : '8px';
-        translationTriggerBtn.style.cssText = translationTriggerBtnBase + ` position: fixed; top: ${topOffset}; right: 8px; z-index: 9997;`;
-    }
+    const triggerLabel = document.createElement('span');
+    triggerLabel.textContent = browser.i18n.getMessage("get_ai_translation") || "Get AI Translation";
+    triggerBtn.appendChild(triggerLabel);
 
-    const translationTriggerIcon = document.createElement('img');
-    translationTriggerIcon.src = browser.runtime.getURL("/images/ai_translation.png");
-    translationTriggerIcon.style.cssText = `height: 14px; width: 14px;${isDarkTranslationBtn ? ' filter: invert(1);' : ''}`;
-    translationTriggerBtn.appendChild(translationTriggerIcon);
-
-    const translationTriggerLabel = document.createElement('span');
-    translationTriggerLabel.textContent = browser.i18n.getMessage("get_ai_translation") || "Get AI Translation";
-    translationTriggerBtn.appendChild(translationTriggerLabel);
-    translationTriggerBtn.onmouseover = () => { translationTriggerBtn.style.opacity = '1'; };
-    translationTriggerBtn.onmouseout = () => { translationTriggerBtn.style.opacity = '0.7'; };
-    translationTriggerBtn.onclick = async () => {
-        translationTriggerBtn.onclick = null;
-        translationTriggerBtn.style.cursor = 'default';
-        translationTriggerBtn.style.opacity = '0.7';
-        translationTriggerBtn.onmouseover = null;
-        translationTriggerBtn.onmouseout = null;
-        const wrapper = document.getElementById('mzta-translation-trigger-wrapper');
-        if (wrapper) wrapper.remove(); else translationTriggerBtn.remove();
+    triggerBtn.onmouseover = () => { triggerBtn.style.opacity = '1'; };
+    triggerBtn.onmouseout = () => { triggerBtn.style.opacity = '0.7'; };
+    triggerBtn.onclick = () => {
+        _removeToolbarItem('mzta-toolbar-translation');
         browser.runtime.sendMessage({
             command: message.webchat ? "triggerTranslationWebchat" : "triggerTranslationGeneration",
             headerMessageId: message.headerMessageId
         });
     };
 
-    if (insertAfterTranslationBtn) {
-        const translationTriggerWrapper = document.createElement('div');
-        translationTriggerWrapper.id = 'mzta-translation-trigger-wrapper';
-        translationTriggerWrapper.style.cssText = 'display: flex; justify-content: flex-end; padding: 4px 0.5rem;';
-        translationTriggerWrapper.appendChild(translationTriggerBtn);
-        document.body.insertBefore(translationTriggerWrapper, insertAfterTranslationBtn.nextSibling);
-    } else {
-        document.body.appendChild(translationTriggerBtn);
-    }
+    _addToolbarItem('mzta-toolbar-translation', triggerBtn);
     return Promise.resolve(true);
+  }
 
   default:
     // do nothing
