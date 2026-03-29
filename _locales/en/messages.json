@@ -2165,6 +2165,10 @@
     "message": "Antispam by",
     "description": ""
   },
+  "spam_badge_tooltip": {
+    "message": "Spam score — Click to see the explanation",
+    "description": "Tooltip shown on the spam score badge in the toolbar"
+  },
   "summary_by": {
     "message": "Summary by",
     "description": ""

@@ -102,18 +102,15 @@ function _updateToolbarVisibility() {
     if (!toolbar) return;
     const hasItems = toolbar.querySelector('#mzta-toolbar-spam, #mzta-toolbar-summary, #mzta-toolbar-translation');
     toolbar.style.display = hasItems ? 'flex' : 'none';
+    // Push the first button (summary or translation) to the right
+    const summary = document.getElementById('mzta-toolbar-summary');
+    const translation = document.getElementById('mzta-toolbar-translation');
+    const firstBtn = summary || translation;
+    if (summary) summary.style.marginLeft = (firstBtn === summary) ? 'auto' : '';
+    if (translation) translation.style.marginLeft = (firstBtn === translation) ? 'auto' : '';
 }
 
-function _ensureBranding(toolbar) {
-    if (document.getElementById('mzta-toolbar-branding')) return;
-    const branding = document.createElement('span');
-    branding.id = 'mzta-toolbar-branding';
-    branding.textContent = 'by ThunderAI';
-    branding.style.cssText = 'margin-left: auto; font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap;';
-    toolbar.appendChild(branding);
-}
-
-const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-toolbar-translation', 'mzta-toolbar-branding'];
+const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-toolbar-translation'];
 
 function _addToolbarItem(id, element) {
     const { toolbar } = _ensureContainer();
@@ -130,19 +127,12 @@ function _addToolbarItem(id, element) {
     if (insertBefore) toolbar.insertBefore(element, insertBefore);
     else toolbar.appendChild(element);
 
-    _ensureBranding(toolbar);
     _updateToolbarVisibility();
 }
 
 function _removeToolbarItem(id) {
     const el = document.getElementById(id);
     if (el) el.remove();
-    // Remove branding if toolbar is now empty of content slots
-    const toolbar = document.getElementById('mzta-toolbar');
-    if (toolbar && !toolbar.querySelector('#mzta-toolbar-spam, #mzta-toolbar-summary, #mzta-toolbar-translation')) {
-        const branding = document.getElementById('mzta-toolbar-branding');
-        if (branding) branding.remove();
-    }
     _updateToolbarVisibility();
 }
 
@@ -885,19 +875,6 @@ switch (message.command) {
       badgeText.textContent = browser.i18n.getMessage("spam_check_in_progress");
       badge.appendChild(badgeText);
       _addToolbarItem('mzta-toolbar-spam', badge);
-
-      // Loading panel
-      const panel = document.createElement('div');
-      panel.style.cssText = `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border}; border-radius: 4px; padding: 8px 0.5rem; font-size: 13px; display: flex; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
-      const panelLoading = document.createElement('img');
-      panelLoading.src = browser.runtime.getURL("/images/loading.gif");
-      panelLoading.style.cssText = "height: 16px; width: 16px;";
-      const panelText = document.createElement('strong');
-      panelText.textContent = browser.i18n.getMessage("spam_check_in_progress");
-      panel.appendChild(panelLoading);
-      panel.appendChild(panelText);
-
-      _addPanel('mzta-spam-check-progress', panel);
       return Promise.resolve(true);
     }
 
@@ -913,6 +890,7 @@ switch (message.command) {
 
     // Spam badge in toolbar (clickable to toggle explanation panel)
     const badge = document.createElement('div');
+    badge.title = browser.i18n.getMessage("spam_badge_tooltip");
     badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;`;
     if (data.spamValue == -999) {
         badge.textContent = browser.i18n.getMessage("apiwebchat_error");
