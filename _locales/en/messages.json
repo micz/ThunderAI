@@ -1316,8 +1316,16 @@
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""
   },
-  "thunderai_def_lang": {
+  "placeholder_thunderai_def_lang": {
     "message": "Default language as defined in ThunderAI options.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_lang": {
+    "message": "The language to be used in the mail translations.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_exclude_lang": {
+    "message": "The languages code to do not translate when found.",
     "description": ""
   },
   "placeholder_mail_attachments_info": {

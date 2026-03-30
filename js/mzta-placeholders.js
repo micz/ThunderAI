@@ -254,6 +254,24 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        id: 'thunderai_translate_lang',
+        name: "__MSG_placeholder_thunderai_translate_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'thunderai_translate_exclude_lang',
+        name: "__MSG_placeholder_thunderai_translate_exclude_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
         id: 'empty',
         name: "__MSG_placeholder_empty__",
         default_value: "",
@@ -598,6 +616,14 @@ export const placeholdersUtils = {
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'thunderai_translate_lang':
+                    let prefs_translate_lang = await browser.storage.sync.get({ translate_lang: prefs_default.translate_lang });
+                    finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_lang.translate_lang);
+                    break;
+                case 'thunderai_translate_exclude_lang':
+                    let prefs_translate_exclude_lang = await browser.storage.sync.get({ translate_exclude_lang: prefs_default.translate_exclude_lang });
+                    finalSubs['thunderai_translate_exclude_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_exclude_lang.translate_exclude_lang);
                     break;
                 case 'mail_attachments_info':
                     let attachments_info_string = "";
