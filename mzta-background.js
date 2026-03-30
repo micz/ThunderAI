@@ -45,6 +45,7 @@ import {
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
     contextMenuID_Summarize,
+    contextMenuID_Translate,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -1603,6 +1604,13 @@ function addContextMenuItems() {
         removeContextMenu(contextMenuID_Summarize);
     }
 
+    // Add Context menu: Translate
+    if(prefs_init.translate && checkAPIIntegration(prefs_init.connection_type, prefs_init.translate_use_specific_integration, prefs_init.translate_connection_type)){
+        itemsToAdd.push(contextMenuID_Translate);
+    } else {
+        removeContextMenu(contextMenuID_Translate);
+    }
+
     itemsToAdd.sort((a, b) => {
         let titleA = browser.i18n.getMessage("context_menu_" + a);
         let titleB = browser.i18n.getMessage("context_menu_" + b);
@@ -1621,6 +1629,7 @@ browser.menus.onClicked.addListener( (info, tab) => {
     let _add_tags = false
     let _spamfilter = false
     let _summarize = false;
+    let _translate = false;
     if(info.menuItemId === contextMenuID_AddTags){
         _add_tags = true;
     }
@@ -1630,12 +1639,16 @@ browser.menus.onClicked.addListener( (info, tab) => {
     if(info.menuItemId === contextMenuID_Summarize) {
         _summarize = true;
     }
-    if(_add_tags || _spamfilter || _summarize){
+    if(info.menuItemId === contextMenuID_Translate) {
+        _translate = true;
+    }
+    if(_add_tags || _spamfilter || _summarize || _translate){
         processEmails({
             messages: getMessages(info.selectedMessages),
             addTagsAuto: _add_tags,
             spamFilter: _spamfilter,
-            summarize: _summarize
+            summarize: _summarize,
+            translate: _translate
         });
     }
 });
@@ -1696,7 +1709,8 @@ async function processEmails(args) {
         spamFilter = false,
         summarize = false,
         summarizeOnReceive = false,
-        translateOnReceive = false
+        translateOnReceive = false,
+        translate = false
     } = args;
 
     taWorkingStatus.startWorking();
@@ -1704,7 +1718,7 @@ async function processEmails(args) {
     // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive || translate) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1810,12 +1824,17 @@ async function processEmails(args) {
                 });
             }
 
-            if (translateOnReceive) {
+            if (translateOnReceive || translate) {
                 if (!curr_fullMessage) {
                     curr_fullMessage = await browser.messages.getFull(message.id);
                 }
-                taLog.log("[ThunderAI] Pre-caching translation on receive for: " + message.headerMessageId);
-                await _generateTranslationForMessage(message.headerMessageId, null, {
+                let translateTabId = null;
+                if (translate) {
+                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    translateTabId = tabs[0].id;
+                }
+                taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
+                await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
                     messageData: { fullMessage: curr_fullMessage }
                 });
             }

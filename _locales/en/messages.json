@@ -1496,6 +1496,10 @@
     "message": "Summarize",
     "description": ""
   },
+  "context_menu_mzta-translate": {
+    "message": "Translate",
+    "description": ""
+  },
   "noActiveCalendar": {
     "message": "No editable calendar found!",
     "description": ""
