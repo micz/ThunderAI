@@ -1462,16 +1462,16 @@
         "message": "Spara som sammanfattning"
     },
     "prefs_storage_title": {
-        "message": "Cachelagring"
+        "message": "Ytterligare informationslagring"
     },
     "prefs_storage_size": {
-        "message": "Cachestorlek"
+        "message": "Lagringsstorlek"
     },
     "prefs_storage_clear_button": {
-        "message": "Rensa cache"
+        "message": "Rensa lagring"
     },
     "prefs_storage_clear_confirm": {
-        "message": "Är du säker på att du vill rensa all cachad data (sammanfattningar, skräppostrapporter, översättningar)? Den här åtgärden kan inte ångras."
+        "message": "Är du säker på att du vill rensa all lagrad data (sammanfattningar, skräppostrapporter, översättningar)? Den här åtgärden kan inte ångras."
     },
     "prefs_storage_clear_done": {
         "message": "$COUNT$ register borttagna.",
@@ -1506,7 +1506,7 @@
         "message": "Visa sammanfattningsknapp"
     },
     "prefs_OptionText_summarize_auto_automatic": {
-        "message": "Generera automatiskt"
+        "message": "När e-postmeddelandet öppnas"
     },
     "prefs_OptionText_summarize_auto_Info": {
         "message": "Välj om sammanfattningar ska genereras automatiskt när meddelanden visas. Kräver en API-baserad anslutning (inte ChatGPT Web)."
@@ -1570,5 +1570,8 @@
     },
     "summary_by": {
         "message": "Sammanfattning av"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "När e-postmeddelandet tas emot"
     }
 }
