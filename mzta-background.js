@@ -643,6 +643,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             do_debug: prefs_default.do_debug,
             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
             summarize_max_display_length: prefs_default.summarize_max_display_length,
+            translate_summary_translation: prefs_default.translate_summary_translation,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
@@ -687,7 +688,16 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             return;
         }
 
-        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
+        // Summary Translation: if enabled and a cached translation exists, use it as input
+        let overrideBodyText = null;
+        if (prefs.translate_summary_translation) {
+            let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+            if (cachedTranslation && !cachedTranslation.error && cachedTranslation.translated_text) {
+                overrideBodyText = cachedTranslation.translated_text;
+            }
+        }
+
+        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }], overrideBodyText);
 
         const cmd = new mzta_specialCommand({
             prompt: promptText,
@@ -730,6 +740,8 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
             translate_lang: prefs_default.translate_lang,
             translate_max_display_length: prefs_default.translate_max_display_length,
+            translate_summary_translation: prefs_default.translate_summary_translation,
+            summarize_max_display_length: prefs_default.summarize_max_display_length,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
@@ -796,6 +808,38 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         };
         await translationStore.saveTranslation(translationData, headerMessageId);
         if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
+
+        // Summary Translation: if enabled and a cached summary exists, also translate the summary
+        if (prefs.translate_summary_translation) {
+            let cachedSummary = await summaryStore.loadSummary(headerMessageId);
+            if (cachedSummary && !cachedSummary.error && cachedSummary.summary) {
+                try {
+                    const { promptText: summaryTranslationPrompt } = await taPromptUtils.buildTranslationPrompt(null, lang, cachedSummary.summary);
+                    const cmdSummary = new mzta_specialCommand({
+                        prompt: summaryTranslationPrompt,
+                        llm: connectionType,
+                        do_debug: prefs.do_debug,
+                        config: {}
+                    });
+                    await cmdSummary.initWorker();
+                    const translatedSummary = await cmdSummary.sendPrompt();
+                    let cleanedSummary = cleanSummaryText(translatedSummary);
+                    const md = window.markdownit();
+                    let summaryHtml = md.render(translatedSummary);
+                    const summaryData = {
+                        summary: cleanedSummary,
+                        summary_html: summaryHtml,
+                        summary_date: new Date(),
+                        headerMessageId: headerMessageId
+                    };
+                    await summaryStore.saveSummary(summaryData, headerMessageId);
+                    if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length } });
+                } catch (summaryError) {
+                    console.error("[ThunderAI] Error translating summary:", summaryError);
+                }
+            }
+        }
+
         taWorkingStatus.stopWorking();
 
     } catch (error) {
@@ -935,7 +979,8 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
-        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), {}, 'summarize');
+        const prefs = await browser.storage.sync.get(prefs_default);
+        const connectionType = getConnectionType(prefs, {}, 'summarize');
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
@@ -943,7 +988,16 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
             return;
         }
 
-        const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }]);
+        // Summary Translation: if enabled and a cached translation exists, use it as input
+        let overrideBodyText = null;
+        if (prefs.translate_summary_translation) {
+            let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+            if (cachedTranslation && !cachedTranslation.error && cachedTranslation.translated_text) {
+                overrideBodyText = cachedTranslation.translated_text;
+            }
+        }
+
+        const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }], overrideBodyText);
         promptInfo.headerMessageId = headerMessageId;
         promptInfo.summaryTabId = tabId;
 

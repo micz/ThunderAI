@@ -132,7 +132,7 @@ export const taPromptUtils = {
     },
 
     
-    async buildSummaryPrompt(messageDataArray) {
+    async buildSummaryPrompt(messageDataArray, overrideBodyText = null) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_summarize');
         const prompt_email = specialPrompts.find(p => p.id === 'prompt_summarize_email_template');
@@ -151,10 +151,17 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
-            const bodyHtml = getMailBody(entry.fullMessage);
-            let bodyText = htmlBodyToPlainText(bodyHtml.html);
-            if (bodyText.length === 0) {
-                bodyText = bodyHtml.text || '';
+            let bodyText;
+            let bodyHtml;
+            if (overrideBodyText && messageDataArray.length === 1) {
+                bodyText = overrideBodyText;
+                bodyHtml = { html: '', text: overrideBodyText };
+            } else {
+                bodyHtml = getMailBody(entry.fullMessage);
+                bodyText = htmlBodyToPlainText(bodyHtml.html);
+                if (bodyText.length === 0) {
+                    bodyText = bodyHtml.text || '';
+                }
             }
 
             messages_list.push(await taPromptUtils.preparePrompt({
@@ -173,7 +180,7 @@ export const taPromptUtils = {
         return { promptText, promptInfo: prompt };
     },
 
-    async buildTranslationPrompt(fullMessage, lang) {
+    async buildTranslationPrompt(fullMessage, lang, overrideBodyText = null) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -182,10 +189,15 @@ export const taPromptUtils = {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
 
-        const bodyHtml = getMailBody(fullMessage);
-        let bodyText = htmlBodyToPlainText(bodyHtml.html);
-        if (bodyText.length === 0) {
-            bodyText = bodyHtml.text || '';
+        let bodyText;
+        if (overrideBodyText) {
+            bodyText = overrideBodyText;
+        } else {
+            const bodyHtml = getMailBody(fullMessage);
+            bodyText = htmlBodyToPlainText(bodyHtml.html);
+            if (bodyText.length === 0) {
+                bodyText = bodyHtml.text || '';
+            }
         }
 
         const fullPrompt = promptText + " " + lang + ". \"" + bodyText + "\"";

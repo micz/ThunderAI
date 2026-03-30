@@ -2149,6 +2149,14 @@
     "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
     "description": ""
   },
+  "prefs_OptionText_translate_summary_translation": {
+    "message": "Summary Translation",
+    "description": ""
+  },
+  "prefs_OptionText_translate_summary_translation_Info": {
+    "message": "When translating, also translate the existing summary. When summarizing, use the existing translation as input.",
+    "description": ""
+  },
   "prefs_OptionText_Translate_main_prompt": {
     "message": "The prompt describing the translation task:",
     "description": ""

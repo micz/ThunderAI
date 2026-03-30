@@ -103,6 +103,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `translate_display_mode` | `'inline'` | Where to display translations: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `translate_auto = 2` and `translate_auto = 3` always use inline regardless of this setting. |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
+| `translate_summary_translation` | `false` | Links translation and summary features. When translating, also translates the existing cached summary. When summarizing, uses the existing cached translation as input instead of the original email body. |
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -141,6 +142,7 @@ The translate settings page provides:
 4. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 5. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
 6. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
+7. **Summary Translation checkbox** (`translate_summary_translation`) — links translation and summary features. When enabled: translating an email also translates the cached summary (if present), and summarizing an email uses the cached translation (if present) as input instead of the original email body.
 
 ## Adding a New Preference
 
