@@ -756,7 +756,7 @@
     "Spam_Value": {
         "message": "Wartość spamu"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Domyślny język zgodnie z opcjami ThunderAI."
     },
     "prompt_spamfilter": {

@@ -753,7 +753,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Standardsignatur wie in den ThunderAI-Optionen definiert."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Standardsprache wie in den ThunderAI-Optionen definiert."
     },
     "prefs_OptionText_spamfilter": {

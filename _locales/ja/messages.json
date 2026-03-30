@@ -878,7 +878,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "ThunderAIオプションで定義されたデフォルトの署名。"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "ThunderAIオプションで定義されたデフォルト言語。"
     },
     "placeholder_mail_attachments_info": {

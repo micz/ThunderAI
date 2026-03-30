@@ -810,7 +810,7 @@
     "SpamFilter_prompt_text_title": {
         "message": "Texte du prompt actuelle"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Langue par défaut telle que définie dans les options de ThunderAI."
     },
     "prefs_OptionText_btnManageSpamFilterInfo": {

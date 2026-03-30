@@ -804,7 +804,7 @@
     "SpamFilter_info_default": {
         "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per rilevare le email di spam."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Lingua predefinita come impostata nelle opzioni di ThunderAI."
     },
     "spamfilter_no_reports": {

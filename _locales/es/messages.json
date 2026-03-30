@@ -875,7 +875,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Firma predeterminada según lo definido en las opciones de ThunderAI."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Idioma predeterminado según lo definido en las opciones de ThunderAI."
     },
     "placeholder_mail_attachments_info": {

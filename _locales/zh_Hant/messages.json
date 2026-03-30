@@ -1002,7 +1002,7 @@
     "prefs_OptionText_chatgpt_web_custom_gpt": {
         "message": "ChatGPT 網頁自訂 GPT"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "ThunderAI 選項中定義的預設語言。"
     },
     "prefs_SurveyLinkText2": {

@@ -629,7 +629,7 @@
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Pokud je zaškrtnuto, AI bude přidávat štítky pouze e-mailům přijatým ve složce Doručená pošta."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Výchozí jazyk podle nastavení ThunderAI."
     },
     "StorageSpace": {

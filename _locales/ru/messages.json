@@ -848,7 +848,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Подпись по умолчанию, определенная в опциях ThunderAI."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Язык по умолчанию, определенный в опциях ThunderAI."
     },
     "empty": {
