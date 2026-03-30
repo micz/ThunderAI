@@ -119,7 +119,7 @@ _The language status represents the percentage of translated strings in the late
 - [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
 - [Roundicons](https://www.flaticon.com/authors/roundicons) for the summarize context menu icon
 - [HideMau](https://www.flaticon.com/authors/hidemaru) for the ai summarize icon
-- [Hilmy Abiyyu A.](https://www.flaticon.com/authors/hilmy-abiyyu-a) for the ai translate icon
+- [Hilmy Abiyyu A.](https://www.flaticon.com/authors/hilmy-abiyyu-a) for the ai translate and context menu icons
 
 
 <br>

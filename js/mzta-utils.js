@@ -29,10 +29,10 @@ export const contextMenuID_Spamfilter = 'mzta-spamfilter';
 export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuID_Translate = 'mzta-translate';
 export const contextMenuIconsPath = {
-  [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
-  [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
-  [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
-  [contextMenuID_Translate]: 'moz-extension:images/ai_translation.png',
+  [contextMenuID_AddTags]: 'moz-extension:images/menu_autotags.png',
+  [contextMenuID_Spamfilter]: 'moz-extension:images/menu_spamfilter.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/menu_summarize.png',
+  [contextMenuID_Translate]: 'moz-extension:images/menu_translate.png',
 };
 
 export function getLanguageDisplayName(languageCode) {

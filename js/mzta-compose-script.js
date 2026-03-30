@@ -1207,7 +1207,7 @@ switch (message.command) {
     translationHeader.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 6px;';
 
     const translationIcon = document.createElement('img');
-    translationIcon.src = browser.runtime.getURL("/images/ai_translation.png");
+    translationIcon.src = browser.runtime.getURL("/images/ai_translate.png");
     translationIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
     const translationTitleSpan = document.createElement('span');
@@ -1324,7 +1324,7 @@ switch (message.command) {
     genContainer.style.cssText = `background-color: ${colors.translation.bg}; color: ${colors.translation.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${colors.translation.border}; font-size: 14px; display: flex; align-items: center; gap: 10px;`;
 
     const genIcon = document.createElement('img');
-    genIcon.src = browser.runtime.getURL("/images/ai_translation.png");
+    genIcon.src = browser.runtime.getURL("/images/ai_translate.png");
     genIcon.style.cssText = `height: 16px; width: 16px; flex-shrink: 0;${colors.isDark ? ' filter: invert(1);' : ''}`;
 
     const genLoading = document.createElement('img');
@@ -1352,7 +1352,7 @@ switch (message.command) {
     triggerBtn.style.cssText = `background-color: ${colors.translation.bg}; border: 1px solid ${colors.translation.border}; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-style: italic; opacity: 0.7; transition: opacity 0.2s; color: ${colors.translation.text}; display: inline-flex; align-items: center; gap: 6px;`;
 
     const triggerIcon = document.createElement('img');
-    triggerIcon.src = browser.runtime.getURL("/images/ai_translation.png");
+    triggerIcon.src = browser.runtime.getURL("/images/ai_translate.png");
     triggerIcon.style.cssText = `height: 14px; width: 14px;${colors.isDark ? ' filter: invert(1);' : ''}`;
     triggerBtn.appendChild(triggerIcon);
 
