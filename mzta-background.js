@@ -430,7 +430,18 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'chatgpt_saveTranslation':
                 async function _saveTranslationFromWebchat(msg) {
                     try {
-                        let translatedText = msg.text.trim();
+                        let rawText = msg.text.trim();
+                        let translatedBody = '';
+                        let translatedSubject = '';
+                        let translationStatus = '';
+                        try {
+                            const parsed = JSON.parse(rawText);
+                            translatedBody = parsed.body || '';
+                            translatedSubject = parsed.subject || '';
+                            translationStatus = String(parsed.status || '');
+                        } catch (e) {
+                            translatedBody = rawText;
+                        }
                         let prefs_tr = await browser.storage.sync.get({
                             translate_lang: prefs_default.translate_lang,
                             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
@@ -438,7 +449,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         });
                         let lang = prefs_tr.translate_lang || prefs_tr.default_chatgpt_lang || '';
                         const translationData = {
-                            translated_text: translatedText,
+                            translated_text: translatedBody,
+                            translated_subject: translatedSubject,
+                            translation_status: translationStatus,
                             lang: lang,
                             headerMessageId: msg.headerMessageId
                         };
@@ -777,7 +790,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             taWorkingStatus.stopWorking();
             return;
         }
-        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage, lang);
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage);
 
         const cmd = new mzta_specialCommand({
             prompt: promptText,
@@ -996,7 +1009,7 @@ async function _openTranslationWebchat(headerMessageId, tabId) {
             taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
             return;
         }
-        const { promptText, promptInfo } = await taPromptUtils.buildTranslationPrompt(curr_message_full, lang);
+        const { promptText, promptInfo } = await taPromptUtils.buildTranslationPrompt(curr_message_full);
         promptInfo.headerMessageId = headerMessageId;
         promptInfo.translationTabId = tabId;
 

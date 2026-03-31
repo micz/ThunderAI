@@ -274,8 +274,13 @@ export class taStorage {
     /**
      * Write the translation field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
-     * @param {string} translated_text - The translated text.
-     * @param {string} lang - Target language code.
+     * @param {Object} data - Translation data object.
+     * @param {string} [data.translated_text=''] - The translated body text.
+     * @param {string} [data.translated_subject=''] - The translated subject.
+     * @param {string} [data.translation_status=''] - Status: "1" = ok, "-1" = skipped.
+     * @param {string} [data.lang=''] - Target language code.
+     * @param {boolean} [data.error=false] - Whether an error occurred.
+     * @param {string} [data.message=''] - Error message.
      * @param {boolean} [force=true] - If true, overwrite existing translation data.
      */
     async writeTranslation(messageId, data, force = true) {

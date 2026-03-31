@@ -177,6 +177,21 @@ function _updatePanelMargins() {
     if (lastPanel) lastPanel.style.marginBottom = '1rem';
 }
 
+function _isHtml(text) {
+    return /<[a-z][^>]*>/i.test(text);
+}
+
+function _renderSafeHtml(container, html) {
+    container.textContent = '';
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    doc.querySelectorAll('script, img').forEach(el => el.remove());
+    while (doc.body.firstChild) {
+        container.appendChild(doc.body.firstChild);
+    }
+    container.querySelectorAll('p').forEach(p => { p.style.marginBlockStart = '0'; });
+}
+
 function createThreeDotsMenu(isDark, menuItems, panelColors) {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'position: relative; display: inline-flex; align-items: center;';
@@ -1264,54 +1279,89 @@ switch (message.command) {
             subjectEl.textContent = translationData.translated_subject;
             translationTextWrapper.appendChild(subjectEl);
         }
-        translationText.textContent = translationData.translated_text || '';
+        const bodyText = translationData.translated_text || '';
+        const bodyIsHtml = _isHtml(bodyText);
+        if (bodyIsHtml) {
+            translationText.style.whiteSpace = '';
+            _renderSafeHtml(translationText, bodyText);
+        } else {
+            translationText.textContent = bodyText;
+        }
     }
     translationTextWrapper.appendChild(translationText);
 
     const maxLenTranslation = translationData.maxDisplayLength || 0;
     const fullTranslationText = translationData.translated_text || '';
+    const fullTranslationIsHtml = _isHtml(fullTranslationText);
     if (!translationData.error && translationData.translation_status !== '-1' && maxLenTranslation > 0 && fullTranslationText.length > maxLenTranslation) {
         translationText.style.overflow = 'hidden';
         translationText.style.transition = 'max-height 0.2s ease';
-
-        let cutPos = fullTranslationText.lastIndexOf(' ', maxLenTranslation);
-        if (cutPos <= 0) cutPos = maxLenTranslation;
-        const truncatedTranslation = fullTranslationText.substring(0, cutPos) + '\u2026';
-        translationText.textContent = truncatedTranslation;
-
-        requestAnimationFrame(() => {
-            translationText.style.maxHeight = translationText.scrollHeight + 'px';
-        });
 
         const toggleLink = document.createElement('a');
         toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
         toggleLink.href = '#';
         toggleLink.style.cssText = `display: inline-block; margin-top: 4px; font-size: 13px; color: ${colors.linkColor}; cursor: pointer; text-decoration: underline;`;
 
-        let expanded = false;
-        toggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!expanded) {
-                translationText.textContent = fullTranslationText;
+        if (fullTranslationIsHtml) {
+            const collapsedMaxHeight = '4.2em';
+            translationText.style.maxHeight = collapsedMaxHeight;
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    translationText.style.maxHeight = translationText.scrollHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
+                } else {
+                    translationText.style.maxHeight = collapsedMaxHeight;
+                    toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+
+            requestAnimationFrame(() => {
+                if (translationText.scrollHeight > translationText.clientHeight) {
+                    translationTextWrapper.appendChild(toggleLink);
+                } else {
+                    translationText.style.maxHeight = '';
+                    translationText.style.overflow = '';
+                }
+            });
+        } else {
+            let cutPos = fullTranslationText.lastIndexOf(' ', maxLenTranslation);
+            if (cutPos <= 0) cutPos = maxLenTranslation;
+            const truncatedTranslation = fullTranslationText.substring(0, cutPos) + '\u2026';
+            translationText.textContent = truncatedTranslation;
+
+            requestAnimationFrame(() => {
                 translationText.style.maxHeight = translationText.scrollHeight + 'px';
-                toggleLink.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
-            } else {
-                translationText.textContent = truncatedTranslation;
-                const collapsedHeight = translationText.scrollHeight;
-                translationText.textContent = fullTranslationText;
-                translationText.style.maxHeight = translationText.scrollHeight + 'px';
-                requestAnimationFrame(() => {
-                    translationText.style.maxHeight = collapsedHeight + 'px';
-                });
-                translationText.addEventListener('transitionend', function handler() {
-                    translationText.removeEventListener('transitionend', handler);
+            });
+
+            let expanded = false;
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!expanded) {
+                    translationText.textContent = fullTranslationText;
+                    translationText.style.maxHeight = translationText.scrollHeight + 'px';
+                    toggleLink.textContent = browser.i18n.getMessage("translate_see_less") || "See less";
+                } else {
                     translationText.textContent = truncatedTranslation;
-                });
-                toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
-            }
-            expanded = !expanded;
-        });
-        translationTextWrapper.appendChild(toggleLink);
+                    const collapsedHeight = translationText.scrollHeight;
+                    translationText.textContent = fullTranslationText;
+                    translationText.style.maxHeight = translationText.scrollHeight + 'px';
+                    requestAnimationFrame(() => {
+                        translationText.style.maxHeight = collapsedHeight + 'px';
+                    });
+                    translationText.addEventListener('transitionend', function handler() {
+                        translationText.removeEventListener('transitionend', handler);
+                        translationText.textContent = truncatedTranslation;
+                    });
+                    toggleLink.textContent = browser.i18n.getMessage("translate_see_more") || "See more";
+                }
+                expanded = !expanded;
+            });
+            translationTextWrapper.appendChild(toggleLink);
+        }
     }
 
     translationContainer.appendChild(translationTextWrapper);
