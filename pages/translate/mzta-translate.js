@@ -74,8 +74,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
     });
-    document.getElementById('translate_auto').addEventListener('change', updateDisplayModeConstraint);
-
     let translate_textarea = document.getElementById("translate_prompt_text");
     let translate_save_btn = document.getElementById("btn_save_prompt");
     let translate_reset_btn = document.getElementById("btn_reset_prompt");
@@ -118,21 +116,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-function updateDisplayModeConstraint() {
-  const translate_auto_el = document.getElementById('translate_auto');
-  const display_mode_el = document.getElementById('translate_display_mode');
-  const autoVal = String(translate_auto_el.value);
-  if (autoVal === '2' || autoVal === '3') {
-    display_mode_el.value = 'inline';
-    display_mode_el.disabled = true;
-    browser.storage.sync.set({ translate_display_mode: 'inline' });
-  } else if (autoVal === '0') {
-    display_mode_el.disabled = true;
-  } else {
-    display_mode_el.disabled = false;
-  }
-}
 
 function saveOptions(e) {
   e.preventDefault();
@@ -191,9 +174,6 @@ async function restoreOptions() {
             if (element.id === 'translate_auto') {
               default_select_value = prefs_default.translate_auto;
             }
-            if (element.id === 'translate_display_mode') {
-              default_select_value = prefs_default.translate_display_mode;
-            }
             const restoreValue = result[element.id] ?? default_select_value;
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
             if (element.tomselect) {
@@ -248,5 +228,4 @@ async function restoreOptions() {
   }
 
   setCurrentChoice(getting);
-  updateDisplayModeConstraint();
 }

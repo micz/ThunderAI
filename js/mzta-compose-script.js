@@ -1423,7 +1423,7 @@ switch (message.command) {
     triggerBtn.onclick = () => {
         _removeToolbarItem('mzta-toolbar-translation');
         browser.runtime.sendMessage({
-            command: message.webchat ? "triggerTranslationWebchat" : "triggerTranslationGeneration",
+            command: "triggerTranslationGeneration",
             headerMessageId: message.headerMessageId
         });
     };

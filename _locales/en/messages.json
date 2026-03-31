@@ -239,10 +239,6 @@
     "message": "Save as Summary",
     "description": "Button label in the webchat window to save the AI response as a message summary"
   },
-  "webchat_save_as_translation": {
-    "message": "Save as Translation",
-    "description": "Button label in the webchat window to save the AI response as a message translation"
-  },
   "chatgpt_textarea_not_found_error": {
     "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please check the service status.",
     "description": ""
@@ -2101,20 +2097,12 @@
     "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
     "description": ""
   },
-  "prefs_OptionText_translate_display_mode": {
-    "message": "Display mode for translations",
-    "description": ""
-  },
   "prefs_OptionText_display_mode_inline": {
     "message": "Message pane (inline)",
     "description": ""
   },
   "prefs_OptionText_display_mode_webchat": {
     "message": "Chat window",
-    "description": ""
-  },
-  "prefs_OptionText_translate_display_mode_Info": {
-    "message": "Choose where to display translations. Note: automatic mode always uses inline display.",
     "description": ""
   },
   "prefs_OptionText_translate_max_display_length": {

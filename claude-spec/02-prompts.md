@@ -88,24 +88,24 @@ The summarize feature uses two distinct prompt pathways:
 
 ### Translate: Inline-Only Prompt System
 
-The translate feature uses a single special prompt (`prompt_translate_this`) for translating emails. It supports both inline display and webchat mode, but has no context menu entry.
+The translate feature uses a single special prompt (`prompt_translate_this`) for translating emails. Translation always renders inline (no webchat mode).
 
-**Inline Translation on Message Display** (controlled by `translate_auto` and `translate_display_mode` prefs):
+**Inline Translation on Message Display** (controlled by `translate_auto` pref):
 - Uses a single special prompt: `prompt_translate_this`
-- The prompt text is appended with the target language and the email body: `prompt_text + " " + lang + ". \"" + body_text + "\""`
+- The prompt uses placeholders (`{%mail_subject%}`, `{%mail_html_body%}`, `{%thunderai_translate_lang%}`, `{%thunderai_translate_exclude_lang%}`) resolved via the standard placeholder system
+- The AI response is a JSON object: `{ "subject": "...", "body": "...", "status": "1"|"-1" }`
+  - `status = "1"`: translation completed, subject and body are displayed
+  - `status = "-1"`: translation skipped (excluded/target language), a "skipped" message is shown
 - Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
 - Does **not** support `chatgpt_web` connection type (shows error if configured)
-- `translate_display_mode = 'inline'`: result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
-- `translate_display_mode = 'webchat'`: opens AI chat window; webchat shows a "Save as Translation" button to persist the result inline
-- `translate_auto = 2` (automatic) always generates inline regardless of `translate_display_mode`
+- Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
 - Banner includes refresh (↻) and delete (×) buttons
 - Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
 - The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
 
-**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage, lang)`:
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage)`:
 - Retrieves the `prompt_translate_this` special prompt text
-- Extracts the email body from the full message
-- Combines prompt + language + body text
+- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`
 - Returns `{ promptText, promptInfo }`
 
 ## Prompt Types Reference

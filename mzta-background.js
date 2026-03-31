@@ -335,7 +335,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initTranslation() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_display_mode: prefs_default.translate_display_mode, translate_max_display_length: prefs_default.translate_max_display_length });
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length });
 
                         if (!prefs.translate) return;
 
@@ -364,11 +364,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
 
                         // Manual button mode (translate_auto === 1)
-                        if (prefs.translate_display_mode === 'inline') {
-                            browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
-                        } else {
-                            browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId, webchat: true });
-                        }
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
                     } catch (e) {
                         taLog.error("Error in initTranslation: " + e);
                     }
@@ -393,82 +389,16 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
                 _triggerTranslationGeneration(message);
                 break;
-            case 'triggerTranslationWebchat':
-                async function _triggerTranslationWebchat(message) {
-                    let tabId = sender.tab.id;
-                    let prefs_tw = await browser.storage.sync.get({
-                        translate_lang: prefs_default.translate_lang,
-                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
-                    });
-                    const lang_tw = prefs_tw.translate_lang || prefs_tw.default_chatgpt_lang || '';
-                    if (!lang_tw) {
-                        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                        browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
-                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId, webchat: true });
-                        return;
-                    }
-                    await _openTranslationWebchat(message.headerMessageId, tabId);
-                }
-                _triggerTranslationWebchat(message);
-                break;
             case 'refreshTranslation':
                 async function _refreshTranslation(message) {
                     let tabId = sender.tab.id;
                     await translationStore.removeTranslation(message.headerMessageId);
-                    let prefs_refresh_tr = await browser.storage.sync.get({ translate_display_mode: prefs_default.translate_display_mode });
-                    if (prefs_refresh_tr.translate_display_mode === 'webchat') {
-                        await _openTranslationWebchat(message.headerMessageId, tabId);
-                    } else {
-                        await _generateTranslationForMessage(message.headerMessageId, tabId);
-                    }
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
                 }
                 _refreshTranslation(message);
                 break;
             case 'removeTranslation':
                 translationStore.removeTranslation(message.headerMessageId);
-                break;
-            case 'chatgpt_saveTranslation':
-                async function _saveTranslationFromWebchat(msg) {
-                    try {
-                        let rawText = msg.text.trim();
-                        let translatedBody = '';
-                        let translatedSubject = '';
-                        let translationStatus = '';
-                        try {
-                            const parsed = JSON.parse(rawText);
-                            translatedBody = parsed.body || '';
-                            translatedSubject = parsed.subject || '';
-                            translationStatus = String(parsed.status || '');
-                        } catch (e) {
-                            translatedBody = rawText;
-                        }
-                        let prefs_tr = await browser.storage.sync.get({
-                            translate_lang: prefs_default.translate_lang,
-                            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
-                            translate_max_display_length: prefs_default.translate_max_display_length
-                        });
-                        let lang = prefs_tr.translate_lang || prefs_tr.default_chatgpt_lang || '';
-                        const translationData = {
-                            translated_text: translatedBody,
-                            translated_subject: translatedSubject,
-                            translation_status: translationStatus,
-                            lang: lang,
-                            headerMessageId: msg.headerMessageId
-                        };
-                        await translationStore.saveTranslation(translationData, msg.headerMessageId);
-                        try {
-                            browser.tabs.sendMessage(msg.tabId, {
-                                command: "showTranslation",
-                                data: { ...translationData, maxDisplayLength: prefs_tr.translate_max_display_length }
-                            });
-                        } catch (e) {
-                            taLog.error("Error sending showTranslation to tab: " + e);
-                        }
-                    } catch (error) {
-                        console.error("[ThunderAI] Error saving translation from webchat:", error);
-                    }
-                }
-                _saveTranslationFromWebchat(message);
                 break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
@@ -977,45 +907,6 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
     } catch (error) {
         console.error("[ThunderAI] Error opening summary webchat:", error);
-    }
-}
-
-async function _openTranslationWebchat(headerMessageId, tabId) {
-    try {
-        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-        if (!messageResult || messageResult.messages.length === 0) {
-            console.error("[ThunderAI] _openTranslationWebchat: Message not found for headerMessageId:", headerMessageId);
-            return;
-        }
-
-        const curr_message = messageResult.messages[0];
-        const curr_message_full = await browser.messages.getFull(curr_message.id);
-
-        const prefs = await browser.storage.sync.get({
-            ...prefs_default,
-            translate_lang: prefs_default.translate_lang,
-            default_chatgpt_lang: prefs_default.default_chatgpt_lang
-        });
-        const connectionType = getConnectionType(prefs, {}, 'translate');
-        if (connectionType === 'chatgpt_web') {
-            const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
-            await translationStore.saveError(headerMessageId, errorMsg);
-            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
-            return;
-        }
-
-        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
-        if (!lang) {
-            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
-            return;
-        }
-        const { promptText, promptInfo } = await taPromptUtils.buildTranslationPrompt(curr_message_full);
-        promptInfo.headerMessageId = headerMessageId;
-        promptInfo.translationTabId = tabId;
-
-        openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
-    } catch (error) {
-        console.error("[ThunderAI] Error opening translation webchat:", error);
     }
 }
 

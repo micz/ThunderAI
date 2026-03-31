@@ -82,13 +82,8 @@ mzta-background.js      (checks summarize_auto + summarize_display_mode prefs)
 
 ### Data Flow: Inline Translation on Message Display
 
-The `translate_display_mode` preference (`'inline'` or `'webchat'`) controls where
-the translation is displayed. The `translate_auto` preference controls when it is triggered.
-
-- `translate_auto = 2` (automatic) always generates inline, regardless of `translate_display_mode`.
-- `translate_auto = 1` (manual button) respects `translate_display_mode`:
-  - `'inline'` → button click triggers inline generation
-  - `'webchat'` → button click opens the AI chat window via `_openTranslationWebchat()`
+The `translate_auto` preference controls when translation is triggered.
+Translation always renders inline (webchat mode has been removed).
 
 The target language is determined by `translate_lang` (fallback on `default_chatgpt_lang`).
 
@@ -97,16 +92,14 @@ User opens/selects a message in Thunderbird
        ↓
 mzta-compose-script.js  (sends "initTranslation" to background)
        ↓
-mzta-background.js      (checks translate + translate_auto + translate_display_mode prefs)
+mzta-background.js      (checks translate + translate_auto prefs)
        ↓
   ┌──────────────────────────────────────────────────────────┐
   │ translate_auto = 0 → do nothing                          │
   │ translate_auto = 1 → show "click to translate" button    │
-  │   display_mode = inline  → click triggers inline gen     │
-  │   display_mode = webchat → click opens chat window       │
-  │ translate_auto = 2 → generate immediately (always inline)│
+  │ translate_auto = 2 → generate immediately                │
   └──────────────────────────────────────────────────────────┘
-       ↓  (if generating inline)
+       ↓
   taTranslationStore     (check cache / set processing)
        ↓  (cache miss)
   mzta-special-commands  (via Web Worker, NOT chatgpt_web)
