@@ -278,7 +278,15 @@ export class taStorage {
      * @param {string} lang - Target language code.
      * @param {boolean} [force=true] - If true, overwrite existing translation data.
      */
-    async writeTranslation(messageId, translated_text, lang, force = true, error = false, error_message = '') {
+    async writeTranslation(messageId, data, force = true) {
+        const {
+            translated_text = '',
+            translated_subject = '',
+            translation_status = '',
+            lang = '',
+            error = false,
+            message = '',
+        } = data || {};
         this.taLog.log('[writeTranslation] messageId: ' + messageId + ', lang: ' + lang + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
@@ -288,7 +296,15 @@ export class taStorage {
                 return;
             }
             let now = Date.now();
-            record[taStorage.FIELD_TRANSLATION] = { translated_text: translated_text, lang: lang, error: error, message: error_message, ts: now };
+            record[taStorage.FIELD_TRANSLATION] = {
+                translated_text,
+                translated_subject,
+                translation_status,
+                lang,
+                error,
+                message,
+                ts: now
+            };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {

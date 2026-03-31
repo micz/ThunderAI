@@ -173,7 +173,7 @@ export const taPromptUtils = {
         return { promptText, promptInfo: prompt };
     },
 
-    async buildTranslationPrompt(fullMessage, lang) {
+    async buildTranslationPrompt(fullMessage) {
         const specialPrompts = await getSpecialPrompts();
         const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
 
@@ -183,12 +183,19 @@ export const taPromptUtils = {
         }
 
         const bodyHtml = getMailBody(fullMessage);
-        let bodyText = htmlBodyToPlainText(bodyHtml.html);
-        if (bodyText.length === 0) {
-            bodyText = bodyHtml.text || '';
-        }
+        const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
-        const fullPrompt = promptText + " " + lang + ". \"" + bodyText + "\"";
+        const finalSubs = await placeholdersUtils.getPlaceholdersValues({
+            prompt_text: promptText,
+            msg_text: { html: bodyHtml.html, text: bodyHtml.text },
+            mail_subject: mailSubject,
+        });
+
+        const fullPrompt = placeholdersUtils.replacePlaceholders({
+            text: promptText,
+            replacements: finalSubs,
+            use_default_value: false,
+        });
 
         return { promptText: fullPrompt, promptInfo: prompt };
     },

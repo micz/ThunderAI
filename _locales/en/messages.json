@@ -821,7 +821,7 @@
     "description": ""
   },
   "prompt_translate_this_full_text": {
-    "message": "Translate the following email in",
+    "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
     "description": ""
   },
   "prompt_this_full_text": {
@@ -2188,6 +2188,10 @@
   "translate_no_language_configured": {
     "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
     "description": ""
+  },
+  "translate_skipped": {
+    "message": "Translation skipped: Language excluded or identical to target.",
+    "description": "Shown in the translation banner when the email language matches the excluded or target language"
   },
   "antispam_by": {
     "message": "Antispam by",

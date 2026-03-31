@@ -49,7 +49,7 @@ export class taTranslationStore {
     async saveTranslation(data, data_id) {
         this.taLog.log("[saveTranslation] data_id: " + data_id);
         try {
-            await this._storage.writeTranslation(data_id, data.translated_text || '', data.lang || '', true, data.error || false, data.message || '');
+            await this._storage.writeTranslation(data_id, data, true);
             await browser.storage.session.remove(this._processing_prefix + data_id);
         } catch (e) {
             this.taLog.error("[saveTranslation] error: " + e);
@@ -81,6 +81,8 @@ export class taTranslationStore {
         return {
             headerMessageId: data_id,
             translated_text: translation.translated_text || '',
+            translated_subject: translation.translated_subject || '',
+            translation_status: translation.translation_status || '',
             lang: translation.lang || '',
             error: translation.error || false,
             message: translation.message || '',

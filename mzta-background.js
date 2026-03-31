@@ -789,8 +789,22 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         await cmd.initWorker();
         const aiResponse = await cmd.sendPrompt();
 
+        let translatedBody = '';
+        let translatedSubject = '';
+        let translationStatus = '';
+        try {
+            const parsed = JSON.parse(aiResponse);
+            translatedBody = parsed.body || '';
+            translatedSubject = parsed.subject || '';
+            translationStatus = String(parsed.status || '');
+        } catch (e) {
+            translatedBody = aiResponse;
+        }
+
         const translationData = {
-            translated_text: aiResponse,
+            translated_text: translatedBody,
+            translated_subject: translatedSubject,
+            translation_status: translationStatus,
             lang: lang,
             headerMessageId: headerMessageId
         };

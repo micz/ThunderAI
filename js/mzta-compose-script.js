@@ -1255,14 +1255,22 @@ switch (message.command) {
     translationText.style.cssText = 'white-space: pre-wrap; line-height: 1.5;';
     if (translationData.error) {
         translationText.textContent = translationData.message || browser.i18n.getMessage("translate_error");
+    } else if (translationData.translation_status === '-1') {
+        translationText.textContent = browser.i18n.getMessage("translate_skipped");
     } else {
+        if (translationData.translated_subject) {
+            const subjectEl = document.createElement('div');
+            subjectEl.style.cssText = 'font-weight: bold; margin-bottom: 4px;';
+            subjectEl.textContent = translationData.translated_subject;
+            translationTextWrapper.appendChild(subjectEl);
+        }
         translationText.textContent = translationData.translated_text || '';
     }
     translationTextWrapper.appendChild(translationText);
 
     const maxLenTranslation = translationData.maxDisplayLength || 0;
     const fullTranslationText = translationData.translated_text || '';
-    if (!translationData.error && maxLenTranslation > 0 && fullTranslationText.length > maxLenTranslation) {
+    if (!translationData.error && translationData.translation_status !== '-1' && maxLenTranslation > 0 && fullTranslationText.length > maxLenTranslation) {
         translationText.style.overflow = 'hidden';
         translationText.style.transition = 'max-height 0.2s ease';
 
