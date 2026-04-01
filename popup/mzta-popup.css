@@ -47,10 +47,6 @@ body {
     display: none;
   }
 
-  #mzta_sending_prompt{
-      display: none;
-  }
-  
   .mzta_autocomplete-item {
       padding: 4px;
       cursor: pointer;

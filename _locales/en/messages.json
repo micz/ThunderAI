@@ -752,10 +752,6 @@
     "message": "Use the current model",
     "description": ""
   },
-  "SendingPrompt": {
-    "message": "Sending prompt...",
-    "description": ""
-  },
   "AllowedValues": {
     "message": "Allowed values",
     "description": ""
