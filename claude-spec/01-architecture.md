@@ -108,7 +108,6 @@ mzta-background.js      (checks translate + translate_auto prefs)
        ↓
   mzta-compose-script.js (render translation banner in message body)
 ```
-
 ### Data Flow: Background Summary on Email Receive (summarize_auto = 3)
 
 When `summarize_auto = 3`, a summary is generated silently when a new email arrives. The flow mirrors `add_tags_auto`:
