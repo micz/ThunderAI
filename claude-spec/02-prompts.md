@@ -55,6 +55,7 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `summarize` | Summarize email content |
 | `get_calendar_event` | Extract and create a calendar event |
 | `get_task` | Extract and create a task |
+| `translate` | Translate email content into a target language |
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
@@ -84,6 +85,28 @@ The summarize feature uses two distinct prompt pathways:
 - All summary paths (inline, webchat single, webchat multi) use this single method
 - Accepts an array of `{ message, fullMessage }` entries
 - Returns `{ promptText, promptInfo }` where `promptInfo` is the `prompt_summarize` prompt object
+
+### Translate: Inline-Only Prompt System
+
+The translate feature uses a single special prompt (`prompt_translate_this`) for translating emails. Translation always renders inline (no webchat mode).
+
+**Inline Translation on Message Display** (controlled by `translate_auto` pref):
+- Uses a single special prompt: `prompt_translate_this`
+- The prompt uses placeholders (`{%mail_subject%}`, `{%mail_html_body%}`, `{%thunderai_translate_lang%}`, `{%thunderai_translate_exclude_lang%}`) resolved via the standard placeholder system
+- The AI response is a JSON object: `{ "subject": "...", "body": "...", "status": "1"|"-1" }`
+  - `status = "1"`: translation completed, subject and body are displayed
+  - `status = "-1"`: translation skipped (excluded/target language), a "skipped" message is shown
+- Target language is determined by `translate_lang` pref, falling back to `default_chatgpt_lang`
+- Does **not** support `chatgpt_web` connection type (shows error if configured)
+- Result is rendered as a styled banner (green/teal theme) in the message body via `mzta-compose-script.js`
+- Banner includes refresh (↻) and delete (×) buttons
+- Cached per-message via `taTranslationStore` / `taStorage` (max 100 entries)
+- The prompt was originally a regular prompt (`defaultPrompts`) and was moved to `specialPrompts` with `is_special: "1"` and `type: "1"` (reading email only)
+
+**Prompt Building** — `taPromptUtils.buildTranslationPrompt(fullMessage)`:
+- Retrieves the `prompt_translate_this` special prompt text
+- Resolves placeholders via `placeholdersUtils.getPlaceholdersValues()` + `replacePlaceholders()`
+- Returns `{ promptText, promptInfo }`
 
 ## Prompt Types Reference
 

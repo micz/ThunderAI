@@ -35,7 +35,7 @@ use_specific_integration   (default: false)
 
 ### Special Prompt Integration Overrides
 
-The 5 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`) each get their own `use_specific_integration` and `connection_type` keys:
+The 6 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) each get their own `use_specific_integration` and `connection_type` keys:
 
 ```
 {prefix}_use_specific_integration   (default: false)
@@ -98,6 +98,10 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
 | `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+| `translate` | `true` | Enable email translation |
+| `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
+| `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+| `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
 
 ### Summarize Settings Page (`pages/summarize/`)
 
@@ -119,6 +123,19 @@ The summarize settings page provides:
    - Email separator prompt (`prompt_summarize_email_separator`)
    - Each has Save/Reset buttons and placeholder autocomplete
    - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
+
+### Translate Settings Page (`pages/translate/`)
+
+The translate settings page provides:
+
+1. **Specific integration checkbox** — enables per-feature API override (like other special prompts)
+2. **Auto-translate dropdown** (`translate_auto`) — three modes:
+   - `0` (Disabled) — no inline translations
+   - `1` (Manual) — shows a "Get AI Translation" button in message display
+   - `2` (Automatic) — generates translation immediately when message is opened
+3. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
+5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
 ## Adding a New Preference
 

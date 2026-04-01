@@ -203,6 +203,17 @@
           </label>
         </td>
       </tr>
+      <tr class="translate_tr">
+        <td><span class="opt_title">__MSG_prefs_OptionText_translate__</span>
+        <br><button id="btnManageTranslateInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTranslateInfo__</button></td>
+        <td>
+          <label>
+            <input type="checkbox" id="translate" name="translate" class="option-input" />
+            __MSG_prefs_OptionText_translate_Info__
+            <br><span class="warn_API_needed" id="translate_warn_API_needed">__MSG_warn_API_needed__</span>
+          </label>
+        </td>
+      </tr>
       <tr class="get_calendar_event_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_get_calendar_event__</span>
         <br><button id="btnManageCalendarEventInfo" class="btn_small">__MSG_prefs_OptionText_btnManageCalendarEventInfo__</button></td>
@@ -242,10 +253,11 @@
         </td>
       </tr>
       <tr>
-        <td><span class="opt_title">__MSG_prefs_storage_title__</span></td>
+        <td><span class="opt_title">ThunderAI __MSG_prefs_storage_title__</span></td>
         <td>
           __MSG_prefs_storage_size__: <span id="cache_storage_size"></span>
           &nbsp;<button id="btnClearCache" class="btn_small">__MSG_prefs_storage_clear_button__</button>
+          <br>__MSG_prefs_storage_info__
         </td>
       </tr>
     </table>

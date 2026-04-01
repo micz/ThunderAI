@@ -332,8 +332,12 @@
     "description": ""
   },
   "prefs_storage_title": {
-    "message": "Additional Info Storage",
-    "description": "Title for additional info storage management section in options"
+    "message": "Storage",
+    "description": "Title for storage management section in options"
+  },
+  "prefs_storage_info": {
+    "message": "The storage is used to save information about spam score, summaries and translations of each message.",
+    "description": "Info text for storage management section in options"
   },
   "prefs_storage_size": {
     "message": "Storage size",
@@ -813,7 +817,7 @@
     "description": ""
   },
   "prompt_translate_this_full_text": {
-    "message": "Translate the following email in",
+    "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
     "description": ""
   },
   "prompt_this_full_text": {
@@ -1308,8 +1312,16 @@
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""
   },
-  "thunderai_def_lang": {
+  "placeholder_thunderai_def_lang": {
     "message": "Default language as defined in ThunderAI options.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_lang": {
+    "message": "The language to be used in the mail translations.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_exclude_lang": {
+    "message": "The languages code to do not translate when found.",
     "description": ""
   },
   "placeholder_mail_attachments_info": {
@@ -1478,6 +1490,10 @@
   },
   "context_menu_mzta-summarize": {
     "message": "Summarize",
+    "description": ""
+  },
+  "context_menu_mzta-translate": {
+    "message": "Translate",
     "description": ""
   },
   "noActiveCalendar": {
@@ -1957,32 +1973,12 @@
       "message": "Auto-summarize messages",
       "description": ""
   },
-  "prefs_OptionText_summarize_auto_disabled": {
-      "message": "Disabled",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_auto_manual": {
-      "message": "Show summary button",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_auto_automatic": {
-      "message": "When the email is opened",
-      "description": ""
-  },
   "prefs_OptionText_summarize_auto_Info": {
       "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
       "description": ""
   },
   "prefs_OptionText_summarize_display_mode": {
       "message": "Display summary in",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_display_mode_inline": {
-      "message": "Message pane (inline)",
-      "description": ""
-  },
-  "prefs_OptionText_summarize_display_mode_webchat": {
-      "message": "Chat window",
       "description": ""
   },
   "prefs_OptionText_summarize_display_mode_Info": {
@@ -2049,12 +2045,156 @@
        "message": "Delete summary",
        "description": ""
    },
+  "prefs_OptionText_translate": {
+    "message": "Translate email",
+    "description": ""
+  },
+  "prefs_OptionText_translate_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for translating email(s), regardless the one chosen in the ThunderAI options page.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_Info": {
+    "message": "If checked, adds a translate button in the message body.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTranslateInfo": {
+    "message": "Manage translate settings",
+    "description": ""
+  },
+  "Translate_PageTitle": {
+    "message": "Manage Translation Settings",
+    "description": ""
+  },
+  "Translate_info_default": {
+    "message": "In this page you can modify the default prompt used to translate emails.",
+    "description": ""
+  },
+  "Translate_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "Translate_prompt_prefs_title": {
+    "message": "Translation Options",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto": {
+    "message": "Auto-translate messages",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_disabled": {
+    "message": "Disabled",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_manual": {
+    "message": "Manual button only",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_automatic": {
+    "message": "When the email is opened",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_Info": {
+    "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_inline": {
+    "message": "Message pane (inline)",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_webchat": {
+    "message": "Chat window",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length": {
+    "message": "Maximum length of displayed translation",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length_Info": {
+    "message": "Maximum number of characters shown in the inline translation. 0 = no limit. When set, longer text is truncated with a \"See more\" toggle.",
+    "description": ""
+  },
+  "translate_see_more": {
+    "message": "See more",
+    "description": ""
+  },
+  "translate_see_less": {
+    "message": "See less",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang": {
+    "message": "Translation target language",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang_Info": {
+    "message": "Language to translate emails into. If empty, uses the default language setting.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_exclude_lang": {
+    "message": "Exclude languages",
+    "description": ""
+  },
+  "prefs_OptionText_translate_exclude_lang_Info": {
+    "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
+    "description": ""
+  },
+  "prefs_OptionText_Translate_main_prompt": {
+    "message": "The prompt describing the translation task:",
+    "description": ""
+  },
+  "translate_generating": {
+    "message": "Translating...",
+    "description": ""
+  },
+  "translate_click_to_generate": {
+    "message": "Click here to translate this email",
+    "description": ""
+  },
+  "get_ai_translation": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_chatgpt_web_not_supported": {
+    "message": "Auto-translation requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+    "description": ""
+  },
+  "translate_refresh": {
+    "message": "Refresh translation",
+    "description": ""
+  },
+  "translate_delete": {
+    "message": "Delete translation",
+    "description": ""
+  },
+  "translate_banner_title": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_error": {
+    "message": "Translation failed.",
+    "description": ""
+  },
+  "translate_no_language_configured": {
+    "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
+    "description": ""
+  },
+  "translate_skipped": {
+    "message": "Translation skipped: Language excluded or identical to target.",
+    "description": "Shown in the translation banner when the email language matches the excluded or target language"
+  },
   "antispam_by": {
     "message": "Antispam by",
     "description": ""
   },
+  "spam_badge_tooltip": {
+    "message": "Spam score — Click to see the explanation",
+    "description": "Tooltip shown on the spam score badge in the toolbar"
+  },
   "summary_by": {
     "message": "Summary by",
+    "description": ""
+  },
+  "translate_by": {
+    "message": "Translation by",
     "description": ""
   },
   "prefs_THStats_1": {
@@ -2087,6 +2227,10 @@
   },
   "prefs_OptionText_action_auto_batch": {
     "message": "When the email is received",
+    "description": ""
+  },
+  "placeholder_string": {
+    "message": "Placeholder",
     "description": ""
   }
 }

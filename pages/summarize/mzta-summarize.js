@@ -189,6 +189,8 @@ function updateDisplayModeConstraint() {
     display_mode_el.value = 'inline';
     display_mode_el.disabled = true;
     browser.storage.sync.set({ summarize_display_mode: 'inline' });
+  } else if (autoVal === '0') {
+    display_mode_el.disabled = true;
   } else {
     display_mode_el.disabled = false;
   }

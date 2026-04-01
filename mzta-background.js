@@ -45,6 +45,7 @@ import {
     contextMenuID_AddTags,
     contextMenuID_Spamfilter,
     contextMenuID_Summarize,
+    contextMenuID_Translate,
     contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
@@ -62,6 +63,7 @@ import {
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
+import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
@@ -95,6 +97,7 @@ let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
+let translationStore = new taTranslationStore(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -328,6 +331,75 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
+            case 'initTranslation':
+                async function _initTranslation() {
+                    try {
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length });
+
+                        if (!prefs.translate) return;
+
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+
+                        // Always show cached translation if available, regardless of translate_auto
+                        let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
+                        if (cachedTranslation && !cachedTranslation.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+                            return;
+                        }
+
+                        if (await translationStore.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                            return;
+                        }
+
+                        // If translate_auto is disabled, don't show button or auto-generate
+                        if (prefs.translate_auto === 0) return;
+
+                        // Auto mode (translate_auto === 2) always generates inline
+                        if (prefs.translate_auto === 2) {
+                            _generateTranslationForMessage(message.headerMessageId, tabId);
+                            return;
+                        }
+
+                        // Manual button mode (translate_auto === 1)
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                    } catch (e) {
+                        taLog.error("Error in initTranslation: " + e);
+                    }
+                }
+                _initTranslation();
+                break;
+            case 'triggerTranslationGeneration':
+                async function _triggerTranslationGeneration(message) {
+                    let tabId = sender.tab.id;
+                    let prefs_tl = await browser.storage.sync.get({
+                        translate_lang: prefs_default.translate_lang,
+                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
+                    });
+                    const lang_tl = prefs_tl.translate_lang || prefs_tl.default_chatgpt_lang || '';
+                    if (!lang_tl) {
+                        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        return;
+                    }
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _triggerTranslationGeneration(message);
+                break;
+            case 'refreshTranslation':
+                async function _refreshTranslation(message) {
+                    let tabId = sender.tab.id;
+                    await translationStore.removeTranslation(message.headerMessageId);
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _refreshTranslation(message);
+                break;
+            case 'removeTranslation':
+                translationStore.removeTranslation(message.headerMessageId);
+                break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
                         let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
@@ -587,6 +659,106 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         console.error("[ThunderAI] Error generating summary:", error);
         await summaryStore.saveError(headerMessageId, error.message || String(error));
         if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        taWorkingStatus.stopWorking();
+    }
+}
+
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
+async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            translate_lang: prefs_default.translate_lang,
+            translate_max_display_length: prefs_default.translate_max_display_length,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+        if (cachedTranslation && !cachedTranslation.error) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+            return;
+        }
+
+        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        if (!lang) {
+            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
+            return;
+        }
+
+        if (await translationStore.isProcessing(headerMessageId)) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+            return;
+        }
+
+        await translationStore.setProcessing(headerMessageId);
+        taWorkingStatus.startWorking();
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+
+        let fullMessage;
+        if (options.messageData) {
+            fullMessage = options.messageData.fullMessage;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                await translationStore.saveError(headerMessageId, "Message not found");
+                if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
+            fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+        }
+
+        const connectionType = getConnectionType(prefs, {}, 'translate');
+
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
+            await translationStore.saveError(headerMessageId, errorMsg);
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            taWorkingStatus.stopWorking();
+            return;
+        }
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage);
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+
+        let translatedBody = '';
+        let translatedSubject = '';
+        let translationStatus = '';
+        try {
+            const parsed = JSON.parse(aiResponse);
+            translatedBody = parsed.body || '';
+            translatedSubject = parsed.subject || '';
+            translationStatus = String(parsed.status || '');
+        } catch (e) {
+            translatedBody = aiResponse;
+        }
+
+        const translationData = {
+            translated_text: translatedBody,
+            translated_subject: translatedSubject,
+            translation_status: translationStatus,
+            lang: lang,
+            headerMessageId: headerMessageId
+        };
+        await translationStore.saveTranslation(translationData, headerMessageId);
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
+        taWorkingStatus.stopWorking();
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating translation:", error);
+        await translationStore.saveError(headerMessageId, error.message || String(error));
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
         taWorkingStatus.stopWorking();
     }
 }
@@ -1171,13 +1343,15 @@ async function reload_pref_init(){
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
         summarize_auto: prefs_default.summarize_auto,
+        translate: prefs_default.translate,
+        translate_auto: prefs_default.translate_auto,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3);
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -1348,6 +1522,13 @@ function addContextMenuItems() {
         removeContextMenu(contextMenuID_Summarize);
     }
 
+    // Add Context menu: Translate
+    if(prefs_init.translate && checkAPIIntegration(prefs_init.connection_type, prefs_init.translate_use_specific_integration, prefs_init.translate_connection_type)){
+        itemsToAdd.push(contextMenuID_Translate);
+    } else {
+        removeContextMenu(contextMenuID_Translate);
+    }
+
     itemsToAdd.sort((a, b) => {
         let titleA = browser.i18n.getMessage("context_menu_" + a);
         let titleB = browser.i18n.getMessage("context_menu_" + b);
@@ -1366,6 +1547,7 @@ browser.menus.onClicked.addListener( (info, tab) => {
     let _add_tags = false
     let _spamfilter = false
     let _summarize = false;
+    let _translate = false;
     if(info.menuItemId === contextMenuID_AddTags){
         _add_tags = true;
     }
@@ -1375,12 +1557,16 @@ browser.menus.onClicked.addListener( (info, tab) => {
     if(info.menuItemId === contextMenuID_Summarize) {
         _summarize = true;
     }
-    if(_add_tags || _spamfilter || _summarize){
+    if(info.menuItemId === contextMenuID_Translate) {
+        _translate = true;
+    }
+    if(_add_tags || _spamfilter || _summarize || _translate){
         processEmails({
             messages: getMessages(info.selectedMessages),
             addTagsAuto: _add_tags,
             spamFilter: _spamfilter,
-            summarize: _summarize
+            summarize: _summarize,
+            translate: _translate
         });
     }
 });
@@ -1405,7 +1591,8 @@ const newEmailListener = (folder, messagesList) => {
             messages: messages,
             addTagsAuto: add_tags_auto_enabled,
             spamFilter: prefs_init.spamfilter,
-            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3
+            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
+            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3
         });
 
         if(prefs_init.spamfilter){
@@ -1439,15 +1626,17 @@ async function processEmails(args) {
         addTagsAuto = false,
         spamFilter = false,
         summarize = false,
-        summarizeOnReceive = false
+        summarizeOnReceive = false,
+        translateOnReceive = false,
+        translate = false
     } = args;
 
     taWorkingStatus.startWorking();
 
-    // One loop handles addTagsAuto, spamFilter, and summarizeOnReceive (on email receive).
+    // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter || summarizeOnReceive) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive || translate) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1550,6 +1739,21 @@ async function processEmails(args) {
                 taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId);
                 await _generateSummaryForMessage(message.headerMessageId, null, {
                     messageData: { message, fullMessage: curr_fullMessage }
+                });
+            }
+
+            if (translateOnReceive || translate) {
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+                let translateTabId = null;
+                if (translate) {
+                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    translateTabId = tabs[0].id;
+                }
+                taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
+                await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
+                    messageData: { fullMessage: curr_fullMessage }
                 });
             }
         }

@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>ThunderAI - __MSG_Translate_PageTitle__</title>
+    <link rel="stylesheet" href="mzta-translate.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
+    <link rel="icon" href="../../images/icon-16px.png" />
+</head>
+<body>
+    <div>
+        <h1 class="page_title">__MSG_Translate_PageTitle__</h1>
+        <p>__MSG_Translate_info_default__</p>
+    </div>
+    <div class="translate_table_title section_title">__MSG_Translate_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="translate_tr specific_integration">
+            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="translate_use_specific_integration" name="translate_use_specific_integration" class="option-input" />
+                __MSG_prefs_OptionText_translate_use_specific_integration_Info__
+              </label>
+            </td>
+          </tr>
+          <tr id="connection_ui_anchor"></tr>
+          <tr id="connection_ui_end"><td colspan="2"></td></tr>
+          <tr class="translate_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_translate_auto__</span></td>
+            <td>
+              <label>
+                <select id="translate_auto" name="translate_auto" class="option-input">
+                  <option value="0">__MSG_prefs_OptionText_action_auto_disabled__</option>
+                  <option value="1">__MSG_prefs_OptionText_action_auto_manual__</option>
+                  <option value="2">__MSG_prefs_OptionText_action_auto_automatic__</option>
+                  <option value="3">__MSG_prefs_OptionText_action_auto_batch__</option>
+                </select>
+                <br>__MSG_prefs_OptionText_translate_auto_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="translate_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_translate_max_display_length__</span></td>
+            <td>
+              <label>
+                <input type="number" id="translate_max_display_length" name="translate_max_display_length" min="0" class="option-input" />
+                <br>__MSG_prefs_OptionText_translate_max_display_length_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="translate_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_translate_lang__</span></td>
+            <td>
+              <label>
+                <input type="text" id="translate_lang" name="translate_lang" class="option-input" />
+                <br>__MSG_prefs_OptionText_translate_lang_Info__
+                <br>__MSG_placeholder_string__: <i>{%thunderai_translate_lang%}</i>
+              </label>
+            </td>
+          </tr>
+          <tr class="translate_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_translate_exclude_lang__</span></td>
+            <td>
+              <label>
+                <input type="text" id="translate_exclude_lang" name="translate_exclude_lang" class="option-input" />
+                <br>__MSG_prefs_OptionText_translate_exclude_lang_Info__
+                <br>__MSG_placeholder_string__: <i>{%thunderai_translate_exclude_lang%}</i>
+              </label>
+            </td>
+          </tr>
+    </table>
+
+    <!-- PROMPTS -->
+    <div id="translate_prompt_container">
+        <!--title and description-->
+        <span class="section_title">
+            __MSG_Translate_prompt_text_title__
+        </span>
+
+        <br>
+
+        <span class="infoline">
+            __MSG_prefs_OptionText_btnManagePrompts_infoline__
+            <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">
+                __MSG_more_info_string__
+            </a>
+        </span>
+
+        <br>
+
+        <!--main prompt-->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Translate_main_prompt__
+        </span>
+
+        <br>
+
+        <div class="autocomplete-container">
+            <textarea id="translate_prompt_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
+        </div>
+
+        <div id="translate_info_additional_statements"></div>
+        <div class="btn_div">
+            <button id="btn_reset_prompt" disabled>
+                __MSG_reset_default__
+            </button>
+            <button id="btn_save_prompt" disabled>
+                __MSG_save__
+            </button>
+        </div>
+
+    </div>
+    <script src="mzta-translate.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

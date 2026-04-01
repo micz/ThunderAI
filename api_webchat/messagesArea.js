@@ -459,7 +459,7 @@ class MessagesArea extends HTMLElement {
         }
 
         // Save as Summary button (only shown for summary webchat sessions)
-        if(promptData.prompt_info?.headerMessageId) {
+        if(promptData.prompt_info?.headerMessageId && promptData.prompt_info?.summaryTabId) {
             const saveSummaryButton = document.createElement('button');
             saveSummaryButton.textContent = browser.i18n.getMessage("webchat_save_as_summary");
             saveSummaryButton.classList.add('action_btn');

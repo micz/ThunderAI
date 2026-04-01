@@ -822,7 +822,7 @@
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Se marcado, a IA adicionará tags apenas aos e-mails recebidos na pasta da caixa de entrada."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Idioma padrão conforme definido nas opções do ThunderAI."
     },
     "placeholder_thunderai_def_sign": {

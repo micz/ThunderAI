@@ -734,7 +734,7 @@
     "prefs_OptionText_get_calendar_event": {
         "message": "Lägg till en ny kalenderhändelse från markerad text"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Standardspråk som definierat i ThunderAI-alternativ."
     },
     "placeholder_mail_attachments_info": {

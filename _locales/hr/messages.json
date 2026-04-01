@@ -759,7 +759,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Zadani potpis kako je određeno u mogućnostima ThunderAI."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Zadani jezik kako je određeno u mogućnostima ThunderAI."
     },
     "prefs_OptionText_spamfilter": {

@@ -274,11 +274,24 @@ export class taStorage {
     /**
      * Write the translation field for a given Message-ID.
      * @param {string} messageId - The Message-ID header string.
-     * @param {string} translated_text - The translated text.
-     * @param {string} lang - Target language code.
+     * @param {Object} data - Translation data object.
+     * @param {string} [data.translated_text=''] - The translated body text.
+     * @param {string} [data.translated_subject=''] - The translated subject.
+     * @param {string} [data.translation_status=''] - Status: "1" = ok, "-1" = skipped.
+     * @param {string} [data.lang=''] - Target language code.
+     * @param {boolean} [data.error=false] - Whether an error occurred.
+     * @param {string} [data.message=''] - Error message.
      * @param {boolean} [force=true] - If true, overwrite existing translation data.
      */
-    async writeTranslation(messageId, translated_text, lang, force = true) {
+    async writeTranslation(messageId, data, force = true) {
+        const {
+            translated_text = '',
+            translated_subject = '',
+            translation_status = '',
+            lang = '',
+            error = false,
+            message = '',
+        } = data || {};
         this.taLog.log('[writeTranslation] messageId: ' + messageId + ', lang: ' + lang + ', force: ' + force);
         try {
             let key = this._buildKey(messageId);
@@ -288,11 +301,77 @@ export class taStorage {
                 return;
             }
             let now = Date.now();
-            record[taStorage.FIELD_TRANSLATION] = { translated_text: translated_text, lang: lang, ts: now };
+            record[taStorage.FIELD_TRANSLATION] = {
+                translated_text,
+                translated_subject,
+                translation_status,
+                lang,
+                error,
+                message,
+                ts: now
+            };
             record.ts = now;
             await messenger.storage.local.set({ [key]: record });
         } catch (e) {
             this.taLog.error('writeTranslation error: ' + e);
+        }
+    }
+
+    /**
+     * Get all records that have a translation field.
+     * @returns {Promise<Object>} A map of messageId → translation data.
+     */
+    async getAllTranslationRecords() {
+        this.taLog.log('[getAllTranslationRecords] loading all translation records');
+        try {
+            let all = await messenger.storage.local.get(null);
+            let result = {};
+            for (let [key, record] of Object.entries(all)) {
+                if (!key.startsWith(taStorage.STORAGE_KEY_PREFIX)) continue;
+                if (!this.hasField(record, taStorage.FIELD_TRANSLATION)) continue;
+                let messageId = key.slice(taStorage.STORAGE_KEY_PREFIX.length);
+                let translation = record[taStorage.FIELD_TRANSLATION];
+                result[messageId] = {
+                    headerMessageId: messageId,
+                    translated_text: translation.translated_text,
+                    lang: translation.lang || '',
+                    error: translation.error || false,
+                    message: translation.message || '',
+                    translation_date: new Date(translation.ts),
+                };
+            }
+            return result;
+        } catch (e) {
+            this.taLog.error('getAllTranslationRecords error: ' + e);
+            return {};
+        }
+    }
+
+    /**
+     * Delete only the translation field from a record.
+     * Deletes the entire record if no other data fields remain.
+     * @param {string} messageId - The Message-ID header string.
+     */
+    async deleteTranslationField(messageId) {
+        this.taLog.log('[deleteTranslationField] messageId: ' + messageId);
+        try {
+            let key = this._buildKey(messageId);
+            let record = await this.getRecord(messageId);
+            if (!record || !(taStorage.FIELD_TRANSLATION in record)) {
+                this.taLog.log('[deleteTranslationField] no translation field found for messageId: ' + messageId);
+                return;
+            }
+            delete record[taStorage.FIELD_TRANSLATION];
+            const remainingFields = Object.keys(record).filter(k => k !== 'v' && k !== 'ts');
+            if (remainingFields.length === 0) {
+                this.taLog.log('[deleteTranslationField] no remaining fields, deleting entire record');
+                await messenger.storage.local.remove(key);
+            } else {
+                this.taLog.log('[deleteTranslationField] remaining fields: ' + remainingFields.join(', '));
+                await messenger.storage.local.set({ [key]: record });
+            }
+        } catch (e) {
+            this.taLog.error('deleteTranslationField error: ' + e);
         }
     }
 

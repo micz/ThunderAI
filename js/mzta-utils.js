@@ -27,10 +27,12 @@ export const getMenuContextDisplay = () => 'message_display_action_menu';
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
 export const contextMenuID_Summarize = 'mzta-summarize';
+export const contextMenuID_Translate = 'mzta-translate';
 export const contextMenuIconsPath = {
-  [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
-  [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
-  [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
+  [contextMenuID_AddTags]: 'moz-extension:images/menu_autotags.png',
+  [contextMenuID_Spamfilter]: 'moz-extension:images/menu_spamfilter.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/menu_summarize.png',
+  [contextMenuID_Translate]: 'moz-extension:images/menu_translate.png',
 };
 
 export function getLanguageDisplayName(languageCode) {
@@ -517,6 +519,8 @@ function getTagsKeyFromLabel(tag_names, all_tags_list) {
 }
 
 function sanitizeString(input) {
+  // Replaces accented characters with their non-accented version
+  input = input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   // Define the regex to match valid characters
   const validChar = /^[^ ()/{%*<>"]+$/;
   // Filter out invalid characters from the string

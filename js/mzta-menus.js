@@ -202,8 +202,8 @@ export class mzta_Menus {
             
             switch(curr_prompt.id){
                 case 'prompt_translate_this':
-                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage())});
-                    let chatgpt_lang2 = prefs2.default_chatgpt_lang;
+                    let prefs2 = await browser.storage.sync.get({default_chatgpt_lang: getLanguageDisplayName(browser.i18n.getUILanguage()), translate_lang: ''});
+                    let chatgpt_lang2 = prefs2.translate_lang || prefs2.default_chatgpt_lang;
                     if(chatgpt_lang2 === ''){
                         chatgpt_lang2 = getLanguageDisplayName(browser.i18n.getUILanguage());
                     }

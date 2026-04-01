@@ -173,6 +173,33 @@ export const taPromptUtils = {
         return { promptText, promptInfo: prompt };
     },
 
+    async buildTranslationPrompt(fullMessage) {
+        const specialPrompts = await getSpecialPrompts();
+        const prompt = specialPrompts.find(p => p.id === 'prompt_translate_this');
+
+        let promptText = prompt.text;
+        if (promptText === 'prompt_translate_this_full_text') {
+            promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
+        }
+
+        const bodyHtml = getMailBody(fullMessage);
+        const mailSubject = fullMessage.headers?.subject?.[0] || '';
+
+        const finalSubs = await placeholdersUtils.getPlaceholdersValues({
+            prompt_text: promptText,
+            msg_text: { html: bodyHtml.html, text: bodyHtml.text },
+            mail_subject: mailSubject,
+        });
+
+        const fullPrompt = placeholdersUtils.replacePlaceholders({
+            text: promptText,
+            replacements: finalSubs,
+            use_default_value: false,
+        });
+
+        return { promptText: fullPrompt, promptInfo: prompt };
+    },
+
     /**
      * Extracts tags from the response text.
      * @param {string} response_text - The response text from which to extract tags.

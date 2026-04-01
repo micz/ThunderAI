@@ -611,7 +611,7 @@
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "占位符：使用默认值"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "ThunderAI 选项中定义的默认语言。"
     },
     "prefs_OptionText_openai_comp_info_remote": {
