@@ -1228,10 +1228,7 @@ switch (message.command) {
     const translationTitleSpan = document.createElement('span');
     translationTitleSpan.style.cssText = `font-weight: bold; font-size: 14px; color: ${tc.text}; flex-grow: 1;`;
     translationTitleSpan.textContent = browser.i18n.getMessage("translate_banner_title") || "AI Translation";
-    if (translationData.lang) {
-        translationTitleSpan.textContent += ' (' + translationData.lang + ')';
-    }
-
+    
     const translationMenu = createThreeDotsMenu(colors.isDark, [
         {
             icon: '\u21BB',
@@ -1274,10 +1271,13 @@ switch (message.command) {
         translationText.textContent = browser.i18n.getMessage("translate_skipped");
     } else {
         if (translationData.translated_subject) {
-            const subjectEl = document.createElement('div');
-            subjectEl.style.cssText = 'font-weight: bold; margin-bottom: 4px;';
-            subjectEl.textContent = translationData.translated_subject;
-            translationTextWrapper.appendChild(subjectEl);
+            // const subjectEl = document.createElement('div');
+            // subjectEl.style.cssText = 'font-weight: bold; margin-bottom: 4px;';
+            if (translationData.lang) {
+              translationTitleSpan.textContent = '[' + translationData.lang + '] ';
+            }
+            translationTitleSpan.textContent += translationData.translated_subject;
+            // translationTextWrapper.appendChild(subjectEl);
         }
         const bodyText = translationData.translated_text || '';
         const bodyIsHtml = _isHtml(bodyText);
