@@ -519,6 +519,8 @@ function getTagsKeyFromLabel(tag_names, all_tags_list) {
 }
 
 function sanitizeString(input) {
+  // Replaces accented characters with their non-accented version
+  input = input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   // Define the regex to match valid characters
   const validChar = /^[^ ()/{%*<>"]+$/;
   // Filter out invalid characters from the string
