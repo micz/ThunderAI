@@ -62,10 +62,20 @@ Using an API integration, you can activate some automatic features:
 
 <br>
 
+## Documentation
+
+[Setup Guides](https://micz.it/thunderbird-addon-thunderai/guides/) - Step-by-step guides to connect ThunderAI to the AI backend of your choice, from ChatGPT to local models with Ollama.
+
+[Custom Prompt Tutorial](https://micz.it/thunderbird-addon-thunderai/tutorial/) - Learn how to build your first custom prompt from scratch, combining placeholders and user input to automate your email replies.
+
+<br>
+
 ## Translations
 Do you want to help translate this addon?
 
 [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)
+
+
 
 <br>
 
