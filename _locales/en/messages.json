@@ -203,6 +203,26 @@
     "message": "Composing an email",
     "description": ""
   },
+  "show_in": {
+    "message": "Show in",
+    "description": ""
+  },
+  "show_in_popup": {
+    "message": "Popup only",
+    "description": ""
+  },
+  "show_in_context": {
+    "message": "Context menu only",
+    "description": ""
+  },
+  "show_in_both": {
+    "message": "Both",
+    "description": ""
+  },
+  "show_in_none": {
+    "message": "None",
+    "description": ""
+  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""

@@ -35,6 +35,24 @@ export const contextMenuIconsPath = {
   [contextMenuID_Translate]: 'moz-extension:images/menu_translate.png',
 };
 
+// Map from special prompt IDs to context menu IDs
+export const specialPromptToContextMenuID = {
+  'prompt_add_tags': contextMenuID_AddTags,
+  'prompt_spamfilter': contextMenuID_Spamfilter,
+  'prompt_summarize': contextMenuID_Summarize,
+  'prompt_translate_this': contextMenuID_Translate,
+};
+
+const defaultContextMenuIcon = 'moz-extension:images/icon-32.png';
+
+export function getContextMenuIcon(promptId) {
+  const contextMenuId = specialPromptToContextMenuID[promptId];
+  if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
+    return contextMenuIconsPath[contextMenuId];
+  }
+  return defaultContextMenuIcon;
+}
+
 export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
    let lang_string = languageDisplay.of(languageCode);

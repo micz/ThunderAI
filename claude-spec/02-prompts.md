@@ -28,9 +28,10 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `enabled` | number | `0` = hidden, `1` = shown in popup |
-| `position_display` | number | Sort order in reading view |
-| `position_compose` | number | Sort order in compose view |
+| `enabled` | number | `0` = hidden, `1` = shown in menus |
+| `position_display` | number | Sort order in reading view (used when alphabetical ordering is off) |
+| `position_compose` | number | Sort order in compose view (used when alphabetical ordering is off) |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = hidden from all menus. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
 
 ### Per-Prompt API Override Properties
 
@@ -58,6 +59,20 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 | `translate` | Translate email content into a target language |
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
+
+## Menu System
+
+### Popup Menu
+- Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property)
+- Ordering: user can choose between alphabetical or position-based (using `position_display`/`position_compose`) via the `dynamic_menu_order_alphabet` preference
+- Special prompts retain their colored background (CSS class `special_prompt`) in the popup based on `is_special == "1"`
+
+### Context Menu
+- Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)
+- Appears as a "ThunderAI" submenu in the `message_list` context
+- Special prompts (add_tags, spamfilter, summarize, translate) route through `processEmails()` for batch processing; regular prompts execute via `menus.executeMenuAction()`
+- Icons: special prompts use dedicated icons (defined in `contextMenuIconsPath`); all other prompts use the addon icon (`images/icon-32.png`)
+- Add Tags in context menu assigns tags automatically (`addTagsAuto: true`), while in the popup it shows the interactive tag selection form
 
 ### Summarize: Dual-Mode Prompt System
 

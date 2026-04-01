@@ -62,6 +62,12 @@
     summaryTabId (set by _openSummaryWebchat in mzta-background.js):
     The tab ID of the message display tab to update with the saved summary.
 
+    Show in menu (show_in attribute):
+    "popup": Show only in the popup menu
+    "context": Show only in the context menu
+    "both": Show in both popup and context menus
+    "none": Do not show in any menu
+
     ================ USER PROPERTIES
     Enabled (enabled attribute):
     0: Disabled
@@ -108,6 +114,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_reply_advanced',
@@ -126,6 +133,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_reply_custom_command',
@@ -144,6 +152,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_rewrite_polite',
@@ -162,6 +171,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_rewrite_formal',
@@ -180,6 +190,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_classify',
@@ -198,6 +209,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_summarize_this',
@@ -216,6 +228,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_proofread_this',
@@ -234,6 +247,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_this',
@@ -252,6 +266,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
 ];
 
@@ -270,6 +285,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_get_calendar_event',
@@ -285,6 +301,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_get_calendar_event_from_clipboard',
@@ -300,6 +317,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_get_task',
@@ -315,6 +333,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_spamfilter',
@@ -330,6 +349,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_summarize',
@@ -346,6 +366,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_summarize_email_template',
@@ -362,6 +383,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_summarize_email_separator',
@@ -378,6 +400,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_translate_this',
@@ -394,6 +417,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     }
 ];
 
@@ -464,7 +488,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'];
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text', 'show_in'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -534,6 +558,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
                 prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
+                prompt.show_in = prefs._default_prompts_properties[prompt.id]?.show_in || prompt.show_in;
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -569,6 +594,9 @@ async function getCustomPrompts() {
             if(prompt.api_type === undefined){
                 prompt.api_type = "";
             }
+            if(prompt.show_in === undefined){
+                prompt.show_in = "popup";
+            }
         });
         return prefs._custom_prompt;
     }
@@ -586,6 +614,7 @@ export async function setDefaultPromptsProperties(prompts) {
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
             api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+            show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
         };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
@@ -616,6 +645,13 @@ export async function getSpecialPrompts(){
                 updatedPrompts.push(newPrompt);
             }
         });
+        // Migrate: add show_in if missing from saved special prompts
+        updatedPrompts.forEach((prompt) => {
+            if (prompt.show_in === undefined) {
+                prompt.show_in = "both";
+            }
+        });
+
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
         if (updatedPrompts.length !== prefs._special_prompts.length) {
             await browser.storage.local.set({ _special_prompts: updatedPrompts });

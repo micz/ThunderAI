@@ -18,34 +18,15 @@
 
 import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
-import {
-  checkSparksPresence,
-  checkAPIIntegration,
-} from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
-let connection_type = 'chatgpt_web';
-let add_tags = false;
-let add_tags_use_specific_integration = false;
-let add_tags_connection_type = '';
-let get_calendar_event = false;
-let get_calendar_event_from_clipboard = false;
-let get_task = false;
-let _ok_sparks = false;
 let tabType;
-let num_special_menu_items = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let prefs = await browser.storage.sync.get({
       do_debug: prefs_default.do_debug,
       dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-      add_tags: prefs_default.add_tags,
-      add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-      add_tags_connection_type: prefs_default.add_tags_connection_type,
-      get_calendar_event: prefs_default.get_calendar_event,
-      get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
-      get_task: prefs_default.get_task,
       connection_type: prefs_default.connection_type
     });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
@@ -63,19 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     taLog.log("active_prompts: " + JSON.stringify(active_prompts));
     menuSendImmediately = prefs.dynamic_menu_force_enter;
-    connection_type = prefs.connection_type;
-    add_tags = prefs.add_tags;
-    add_tags_use_specific_integration = prefs.add_tags_use_specific_integration;
-    add_tags_connection_type = prefs.add_tags_connection_type;
-    get_calendar_event = prefs.get_calendar_event;
-    get_calendar_event_from_clipboard = prefs.get_calendar_event_from_clipboard;
-    get_task = prefs.get_task;
-    _ok_sparks = await checkSparksPresence() == 1;
-    // console.log(">>>>>>>>>>>>>>>>> add_tags: " + add_tags);
-    // console.log(">>>>>>>>>>>>>>>>> get_calendar_event: " + get_calendar_event);
-    // console.log(">>>>>>>>>>>>>>>>> get_task: " + get_task);
-    // console.log(">>>>>>>>>>>>>>>>> _ok_sparks: " + _ok_sparks);
-    searchPrompt(active_prompts, tabId, tabType);
+    searchPrompt(active_prompts, tabId, tabType, filtering);
     i18n.updateDocument();
 
     if(prefs.connection_type === 'chatgpt_web'){
@@ -110,13 +79,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 }, { once: true });
 
-async function searchPrompt(allPrompts, tabId, tabType){
+async function searchPrompt(allPrompts, tabId, tabType, filtering){
  taLog.log("tabType: " + tabType);
 
  let prefs_order = await browser.storage.sync.get({dynamic_menu_order_alphabet: true});
 
  if(prefs_order.dynamic_menu_order_alphabet){
   allPrompts.sort((a, b) => a.label.localeCompare(b.label));
+ } else {
+  // Sort by position: use position_display for reading (filtering=1), position_compose for composing (filtering=2)
+  const posKey = filtering === 2 ? 'position_compose' : 'position_display';
+  allPrompts.sort((a, b) => (a[posKey] || 9999) - (b[posKey] || 9999));
  }
 
  // console.log(">>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
@@ -161,68 +134,10 @@ async function searchPrompt(allPrompts, tabId, tabType){
 
 
    // Prepend numbers to the first 10 items
-   // If add_tags is true and connection_type is not 'chatgpt_web' reserve 0 position for prompt_add_tags and 1 for prompt_get_calendar_event (0, if no prompt_add_tags is disabled)
-   let max_num_el = 10
-   let first_num_el = 0;
-
-   let do_add_tags = checkDoAddTags();
-   let do_get_calendar_event = checkDoCalendarEvent();
-   let do_get_calendar_event_from_clipboard = checkDoCalendarEventFromClipboard();
-   let do_get_task = checkDoTask();
-
-  //  console.log(">>>>>>>>>>> do_add_tags: " + do_add_tags);
-  //  console.log(">>>>>>>>>>> do_get_calendar_event: " + do_get_calendar_event);
-  //  console.log(">>>>>>>>>>> do_get_task: " + do_get_task);
-  //  console.log(">>>>>>>>>>> filteredData: " + JSON.stringify(filteredData));
-
-   num_special_menu_items = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0) + (do_get_task ? 1 : 0);
-   //  console.log(">>>>>>>>>>>> num_special_menu_items: " + num_special_menu_items);
-   if(num_special_menu_items > 0){
-     max_num_el -= num_special_menu_items;
-     first_num_el = num_special_menu_items;
-    //  console.log(">>>>>>>>>>>>> max_num_el: " + max_num_el);
-    //  console.log(">>>>>>>>>>>>> first_num_el: " + first_num_el);
-     if(do_add_tags){
-      filteredData = ensurePromptAddTagsFirst(filteredData);
-      if (!filteredData[0].numberPrepended) {
-        filteredData[0].numberPrepended = 'true';
-        filteredData[0].label = '0. ' + filteredData[0].label;
-       }
-     }
-     if(do_get_calendar_event){
-      filteredData = ensurePromptGetCalendarEventFirst(filteredData, do_add_tags);
-      let gce_curr_pos = do_add_tags ? 1 : 0;
-      if (!filteredData[gce_curr_pos].numberPrepended) {
-        filteredData[gce_curr_pos].numberPrepended = 'true';
-        filteredData[gce_curr_pos].label = gce_curr_pos + '. ' + filteredData[gce_curr_pos].label;
-       }
-     }
-     if(do_get_calendar_event_from_clipboard){
-      filteredData = ensurePromptGetCalendarEventFromClipboardFirst(filteredData, do_add_tags, do_get_calendar_event);
-      let gcefc_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
-      if (!filteredData[gcefc_curr_pos].numberPrepended) {
-        filteredData[gcefc_curr_pos].numberPrepended = 'true';
-        filteredData[gcefc_curr_pos].label = gcefc_curr_pos + '. ' + filteredData[gcefc_curr_pos].label;
-       }
-     }
-      if(do_get_task){
-        filteredData = ensurePromptGetTaskFirst(filteredData, do_add_tags, do_get_calendar_event, do_get_calendar_event_from_clipboard);
-        let gtask_curr_pos = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0);
-        if (!filteredData[gtask_curr_pos].numberPrepended) {
-          filteredData[gtask_curr_pos].numberPrepended = 'true';
-          filteredData[gtask_curr_pos].label = gtask_curr_pos + '. ' + filteredData[gtask_curr_pos].label;
-        }
-      }
-   }
-
-  //  console.log(">>>>>>>>>>> filteredData after special items check: " + JSON.stringify(filteredData));
-
-   Array.from(filteredData).slice(first_num_el, max_num_el).forEach((item, index) => {
-     let number = (index + first_num_el).toString();
-     // Check if the number is already prepended to avoid duplication
+   Array.from(filteredData).slice(0, 10).forEach((item, index) => {
      if (!item.numberPrepended) {
-         item.label = `${number}. ${item.label}`;
-         item.numberPrepended = 'true'; // Mark as prepended
+         item.label = `${index}. ${item.label}`;
+         item.numberPrepended = 'true';
      }
    });
 
@@ -234,7 +149,7 @@ async function searchPrompt(allPrompts, tabId, tabType){
        itemDiv.classList.add('mzta_autocomplete-item');
        itemDiv.textContent = item.label;
        itemDiv.setAttribute('data-id', item.id);
-       if((item.id === 'prompt_add_tags')||(item.id === 'prompt_get_calendar_event')||(item.id === 'prompt_get_calendar_event_from_clipboard')||(item.id === 'prompt_get_task')){
+       if(item.is_special == "1"){
          itemDiv.className += ' special_prompt';
        }
 
@@ -367,9 +282,15 @@ async function sendPrompt(prompt_id, tabId){
 }
 
 function filterPromptsForTab(prompts_data, filtering){
- // If filtering is 0, return the original array without any filters (btw it should not happen)
+ // Filter by show_in: only show prompts visible in the popup
+ let filtered = prompts_data.filter(prompt => {
+   const showIn = prompt.show_in || "popup";
+   return showIn === "popup" || showIn === "both";
+ });
+
+ // If filtering is 0, return without type filter (should not happen)
  if (filtering === 0) {
-   return prompts_data;
+   return filtered;
  }
 
  // Define the types to include based on the value of filtering
@@ -379,95 +300,10 @@ function filterPromptsForTab(prompts_data, filtering){
  } else if (filtering === 2) {
      allowedTypes = ["0", "2"];
  } else {
-     // If filtering has an unexpected value, return the original data
-     return prompts_data;
+     return filtered;
  }
 
  // Filter the array based on the allowed types
- return prompts_data.filter(prompt => allowedTypes.includes(prompt.type));
+ return filtered.filter(prompt => allowedTypes.includes(prompt.type));
 }
 
-function checkDoAddTags(){
-  return add_tags && checkAPIIntegration(connection_type, add_tags_use_specific_integration,add_tags_connection_type) && (tabType !== 'messageCompose');
-}
-
-function checkDoCalendarEvent(){
-  return get_calendar_event && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
-}
-
-function checkDoCalendarEventFromClipboard(){
-  return get_calendar_event_from_clipboard && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
-}
-
-function checkDoTask(){
-  return get_task && (connection_type !== "chatgpt_web" && tabType !== 'messageCompose') && _ok_sparks;
-}
-
-function ensurePromptAddTagsFirst(arr) {
-  // Find the index of the object with id "prompt_add_tags"
-  const index = arr.findIndex(item => item.id === "prompt_add_tags");
-
-  // If found and not already the first element
-  if (index !== -1 && index !== 0) {
-    // Remove it from its current position
-    const [promptAddTags] = arr.splice(index, 1);
-    // Add it to the beginning of the array
-    arr.unshift(promptAddTags);
-  }
-
-  return arr;
-}
-
-function ensurePromptGetCalendarEventFirst(arr, do_add_tags) {
-  // Find the index of the object with id "prompt_get_calendar_event"
-  const index = arr.findIndex(item => item.id === "prompt_get_calendar_event");
-
-  // If found and needs repositioning
-  if (index !== -1 && (do_add_tags ? index !== 1 : index !== 0)) {
-    // Remove it from its current position
-    const [promptAddTags] = arr.splice(index, 1);
-
-    // Add it to the specified position
-    const targetPosition = do_add_tags ? 1 : 0;
-    arr.splice(targetPosition, 0, promptAddTags);
-  }
-
-  return arr;
-}
-
-function ensurePromptGetCalendarEventFromClipboardFirst(arr, do_add_tags, do_get_calendar_event) {
-  // Find the index of the object with id "prompt_get_calendar_event_from_clipboard"
-  const index = arr.findIndex(item => item.id === "prompt_get_calendar_event_from_clipboard");
-
-  const targetPosition = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0);
-
-  // If found and needs repositioning
-  if (index !== -1 && index !== targetPosition) {
-    // Remove it from its current position
-    const [promptAddTags] = arr.splice(index, 1);
-
-    // Add it to the specified position
-    arr.splice(targetPosition, 0, promptAddTags);
-  }
-
-  return arr;
-}
-
-function ensurePromptGetTaskFirst(arr, do_add_tags, do_get_calendar_event, do_get_calendar_event_from_clipboard) {
-  // Find the index of the object with id "prompt_get_task"
-  const index = arr.findIndex(item => item.id === "prompt_get_task");
-
-  // Determine the target position to insert "prompt_get_task" after calendar
-  const targetPosition = (do_add_tags ? 1 : 0) + (do_get_calendar_event ? 1 : 0) + (do_get_calendar_event_from_clipboard ? 1 : 0);
-
-  // If found and needs repositioning
-  if (index !== -1 && index !== targetPosition) {
-    // Remove it from its current position
-    const [promptGetTask] = arr.splice(index, 1);
-
-    // Add it to the specified position
-    arr.splice(targetPosition, 0, promptGetTask);
-  }
-
-  return arr;
-}

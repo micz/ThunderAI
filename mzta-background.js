@@ -42,18 +42,12 @@ import {
     getMessages,
     getMailBody,
     extractJsonObject,
-    contextMenuID_AddTags,
-    contextMenuID_Spamfilter,
-    contextMenuID_Summarize,
-    contextMenuID_Translate,
-    contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
     stripHtmlKeepLines,
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
     getConnectionType,
-    checkAPIIntegration,
     hasSpecificIntegration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
@@ -1446,9 +1440,7 @@ function setupStorageChangeListener() {
                 menus.reload(special_prompts_ids);
             }
 
-            reload_pref_init().then(() => {
-                addContextMenuItems();
-            });
+            reload_pref_init();
         }
     });
 }
@@ -1480,94 +1472,30 @@ setupPermissionsRemovedListener();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(special_prompts_ids);
 
-// Context Menus
-function addContextMenu(menu_id) {
-    browser.menus.remove(menu_id);
-    browser.menus.create({
-        id: menu_id,
-        title: browser.i18n.getMessage("context_menu_" + menu_id),
-        contexts: ["message_list"],
-        icons: contextMenuIconsPath[menu_id],
-    });
-    taLog.log("Context menu added: " + menu_id);
-    // console.log(">>>>>>> contextMenuIconsPath[menu_id]: " + contextMenuIconsPath[menu_id]);
-}
+// Context menu click handling
+// Context menus are now created dynamically by mzta_Menus.loadContextMenus()
+// based on each prompt's show_in property. The menu item IDs use the format 'mzta-ctx-<prompt_id>'.
+// Special prompts (add_tags, spamfilter, summarize, translate) are routed to processEmails()
+// for batch processing. Regular prompts are executed via menus.executeMenuAction().
 
-function removeContextMenu(menu_id) {
-    browser.menus.remove(menu_id);
-    taLog.log("Context menu removed: " + menu_id);
-}
+const specialContextMenuActions = {
+    'prompt_add_tags': (messages) => processEmails({ messages, addTagsAuto: true }),
+    'prompt_spamfilter': (messages) => processEmails({ messages, spamFilter: true }),
+    'prompt_summarize': (messages) => processEmails({ messages, summarize: true }),
+    'prompt_translate_this': (messages) => processEmails({ messages, translate: true }),
+};
 
-function addContextMenuItems() {
-    let itemsToAdd = [];
+browser.menus.onClicked.addListener((info, tab) => {
+    const menuItemId = info.menuItemId;
+    if (typeof menuItemId !== 'string' || !menuItemId.startsWith('mzta-ctx-')) {
+        return;
+    }
+    const promptId = menuItemId.replace('mzta-ctx-', '');
 
-    // Add Context menu: Add tags
-    if(prefs_init.add_tags && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
-        itemsToAdd.push(contextMenuID_AddTags);
+    if (specialContextMenuActions[promptId]) {
+        specialContextMenuActions[promptId](getMessages(info.selectedMessages));
     } else {
-        removeContextMenu(contextMenuID_AddTags);
-    }
-
-    // Add Context menu: Spamfilter
-    if(prefs_init.spamfilter && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
-        itemsToAdd.push(contextMenuID_Spamfilter);
-    } else {
-        removeContextMenu(contextMenuID_Spamfilter);
-    }
-    
-    // Add Context menu: Summarize
-    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type, prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
-        itemsToAdd.push(contextMenuID_Summarize);
-    } else {
-        removeContextMenu(contextMenuID_Summarize);
-    }
-
-    // Add Context menu: Translate
-    if(prefs_init.translate && checkAPIIntegration(prefs_init.connection_type, prefs_init.translate_use_specific_integration, prefs_init.translate_connection_type)){
-        itemsToAdd.push(contextMenuID_Translate);
-    } else {
-        removeContextMenu(contextMenuID_Translate);
-    }
-
-    itemsToAdd.sort((a, b) => {
-        let titleA = browser.i18n.getMessage("context_menu_" + a);
-        let titleB = browser.i18n.getMessage("context_menu_" + b);
-        return titleA.localeCompare(titleB);
-    });
-
-    itemsToAdd.forEach(menu_id => {
-        addContextMenu(menu_id);
-    });
-}
-
-addContextMenuItems();
-
-// Listen for context menu item clicks
-browser.menus.onClicked.addListener( (info, tab) => {
-    let _add_tags = false
-    let _spamfilter = false
-    let _summarize = false;
-    let _translate = false;
-    if(info.menuItemId === contextMenuID_AddTags){
-        _add_tags = true;
-    }
-    if(info.menuItemId === contextMenuID_Spamfilter){
-        _spamfilter = true;
-    }
-    if(info.menuItemId === contextMenuID_Summarize) {
-        _summarize = true;
-    }
-    if(info.menuItemId === contextMenuID_Translate) {
-        _translate = true;
-    }
-    if(_add_tags || _spamfilter || _summarize || _translate){
-        processEmails({
-            messages: getMessages(info.selectedMessages),
-            addTagsAuto: _add_tags,
-            spamFilter: _spamfilter,
-            summarize: _summarize,
-            translate: _translate
-        });
+        menus.executeMenuAction(promptId);
     }
 });
 
