@@ -1499,26 +1499,11 @@
     "prefs_OptionText_summarize_auto": {
         "message": "Sammanfatta meddelanden automatiskt"
     },
-    "prefs_OptionText_summarize_auto_disabled": {
-        "message": "Inaktiverad"
-    },
-    "prefs_OptionText_summarize_auto_manual": {
-        "message": "Visa sammanfattningsknapp"
-    },
-    "prefs_OptionText_summarize_auto_automatic": {
-        "message": "När e-postmeddelandet öppnas"
-    },
     "prefs_OptionText_summarize_auto_Info": {
         "message": "Välj om sammanfattningar ska genereras automatiskt när meddelanden visas. Kräver en API-baserad anslutning (inte ChatGPT Web)."
     },
     "prefs_OptionText_summarize_display_mode": {
         "message": "Visa sammanfattning i"
-    },
-    "prefs_OptionText_summarize_display_mode_inline": {
-        "message": "Meddelandepanel (inbäddad)"
-    },
-    "prefs_OptionText_summarize_display_mode_webchat": {
-        "message": "Chatt fönster"
     },
     "prefs_OptionText_summarize_display_mode_Info": {
         "message": "Välj var sammanfattningsresultatet visas. I infogat läge visas en sammanfattningsbanderoll direkt i meddelandefönstret. I chattfönsterläget öppnas AI-chattfönstret."
