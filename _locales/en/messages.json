@@ -388,6 +388,14 @@
     "message": "You can change the shortcut clicking on the cogwheel icon at the top right of this page and choosing \"Manage Extension Shortcut\".",
     "description": ""
   },
+  "prefsInfoDesc_7": {
+    "message": "To use the Google Gemini API, you need a Google Gemini API Key and must choose a model.",
+    "description": ""
+  },
+  "prefsInfoDesc_8": {
+    "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
+    "description": ""
+  },
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""

@@ -239,6 +239,18 @@ async function disable_GetCalendarEvent(){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
+function updateDescription(){
+  let conntype_select = document.getElementById("connection_type");
+  let conntype = conntype_select.value;
+  let desc = document.getElementById("miczDescription");
+  const types = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+  for(let t of types){
+    desc.querySelectorAll(".conntype_" + t).forEach(el => {
+      el.style.display = (conntype === t) ? "" : "none";
+    });
+  }
+}
+
 function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
@@ -394,8 +406,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
+  conntype_select.addEventListener("change", updateDescription);
 
   showConnectionOptions(conntype_select);
+  updateDescription();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
