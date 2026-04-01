@@ -16,7 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, getDynamicSettingsDefaults } from './mzta-options-default.js';
+import {
+  prefs_default,
+  getDynamicSettingsDefaults,
+  getDynamicSettingValue,
+  special_prompts_with_integration
+} from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import {
   ChatGPTWeb_models,
@@ -121,6 +126,51 @@ async function restoreOptions() {
 
   let getting = await browser.storage.sync.get(prefs_default);
   setCurrentChoice(getting);
+}
+
+function getConnectionTypeLabel(value) {
+  const select = document.getElementById('connection_type');
+  if (select) {
+    const option = select.querySelector(`option[value="${value}"]`);
+    if (option) return option.textContent;
+  }
+  return value;
+}
+
+function getConnectionTypeColor(value) {
+  const row = document.querySelector(`tr.conntype_${value}`);
+  if (row) return getComputedStyle(row).backgroundColor;
+  return '';
+}
+
+function getContrastTextColor(bgColor) {
+  const match = bgColor.match(/\d+/g);
+  if (!match || match.length < 3) return '';
+  const [r, g, b] = match.map(Number);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#222' : '#eee';
+}
+
+function updateSpecificApiIndicators(prefs_opt) {
+  for (const prefix of special_prompts_with_integration) {
+    const indicator = document.getElementById(`${prefix}_specific_api_indicator`);
+    if (!indicator) continue;
+    const useSpecific = getDynamicSettingValue(prefs_opt, prefix, 'use_specific_integration');
+    if (useSpecific) {
+      const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+      const apiName = getConnectionTypeLabel(connType);
+      const bgColor = getConnectionTypeColor(connType);
+      indicator.textContent = browser.i18n.getMessage('prefs_specific_api_indicator', [apiName]);
+      indicator.style.backgroundColor = bgColor;
+      indicator.style.color = getContrastTextColor(bgColor);
+      indicator.style.display = 'inline-block';
+    } else {
+      indicator.textContent = '';
+      indicator.style.backgroundColor = '';
+      indicator.style.color = '';
+      indicator.style.display = 'none';
+    }
+  }
 }
 
 function disable_MaxPromptLength(){
@@ -416,6 +466,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
   disable_GetCalendarEvent();
+  updateSpecificApiIndicators(prefs_opt);
+
+  browser.storage.onChanged.addListener(async (changes, area) => {
+    if (area !== 'sync') return;
+    const hasRelevantChange = Object.keys(changes).some(key =>
+      key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
+    );
+    if (hasRelevantChange) {
+      prefs_opt = await browser.storage.sync.get({
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+      });
+      updateSpecificApiIndicators(prefs_opt);
+    }
+  });
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
 

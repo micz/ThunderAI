@@ -18,7 +18,6 @@ table#miczPrefs {
     font-size: 13px;
     padding: 10px;
     border-spacing: 0px;
-    
 }
 
 table#miczPrefs td{
@@ -99,6 +98,14 @@ div#miczTranslate{
 .warn_API_needed{
     display: none;
     font-weight: bold;
+}
+
+.specific_api_indicator{
+    display: none;
+    font-size: 0.75em;
+    margin-left: 0.5em;
+    padding: 0.15em 0.5em;
+    border-radius: 0.8em;
 }
 
 #no_sparks td{
@@ -281,4 +288,5 @@ label:has(input[type="checkbox"]) {
     #thstats div{
         background: rgb(41, 70, 70);
     }
+
 }
