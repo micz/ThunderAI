@@ -360,6 +360,17 @@ export async function injectConnectionUI({
   </tr>
   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
+      <span class="opt_title">__MSG_prefs_ollama_format_json__</span>
+    </label></td>
+    <td>
+      <label>
+        <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_format_json" class="option-input"/>
+        __MSG_prefs_ollama_format_json_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+    <td><label>
       <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
     </label></td>
     <td>
@@ -571,20 +582,20 @@ export async function injectConnectionUI({
   }
 
   conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select));
-  conntype_select.addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
-  conntype_select.addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
-  conntype_select.addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
-  conntype_select.addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
-  conntype_select.addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
-  conntype_select.addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
+  conntype_select.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
   document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
   document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
-  document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", (ev) => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
-  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", (ev) => warn_Ollama_HostEmpty(modelId_prefix));
-  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", (ev) => warn_OpenAIComp_HostEmpty(modelId_prefix));
-  document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", (ev) => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
-  document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", (ev) => warn_Anthropic_APIKeyEmpty(modelId_prefix));
-  document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", (ev) => warn_Anthropic_VersionEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("google_gemini_api_key")).addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_api_key")).addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
+  document.getElementById(getPrefixedId("anthropic_version")).addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_chat_name")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));

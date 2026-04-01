@@ -32,7 +32,7 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
 - Worker: `js/workers/model-worker-ollama.js`
-- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`
+- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`, `ollama_format_json`
 - Requires CORS to be configured on the Ollama server
 
 ### OpenAI-Compatible (`openai_comp_api`)

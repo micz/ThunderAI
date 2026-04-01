@@ -31,7 +31,8 @@ export const integration_options_config = {
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false
+        think: false,
+        format_json: false
     },
     openai_comp: {
         host: '',

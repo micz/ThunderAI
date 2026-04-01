@@ -1790,6 +1790,14 @@
     "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
     "description": ""
   },
+  "prefs_ollama_format_json": {
+    "message": "Force JSON output",
+    "description": ""
+  },
+  "prefs_ollama_format_json_Info": {
+    "message": "If checked, Ollama will be forced to return a valid JSON response. This option works only with models that support structured output.",
+    "description": ""
+  },
   "chatgpt_win_change_reply_type": {
     "message": "Click to change the reply type",
     "description": ""
