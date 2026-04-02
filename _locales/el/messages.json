@@ -512,9 +512,6 @@
     "chatgpt_btn_model": {
         "message": "Χρησιμοποιήστε το τρέχον μοντέλο"
     },
-    "SendingPrompt": {
-        "message": "Αποστολή προτροπής..."
-    },
     "AllowedValues": {
         "message": "Επιτρεπόμενες τιμές"
     },

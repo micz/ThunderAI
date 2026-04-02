@@ -521,9 +521,6 @@
     "chatgpt_btn_model": {
         "message": "現在のモデルを使用"
     },
-    "SendingPrompt": {
-        "message": "プロンプトを送信中..."
-    },
     "AllowedValues": {
         "message": "許可される値"
     },

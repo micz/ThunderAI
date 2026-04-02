@@ -429,9 +429,6 @@
     "prefs_API_Host_Info": {
         "message": "類似於"
     },
-    "SendingPrompt": {
-        "message": "送出提示中..."
-    },
     "context_menu_mzta-add-tags": {
         "message": "新增標籤"
     },
