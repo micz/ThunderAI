@@ -219,10 +219,6 @@
     "message": "Both",
     "description": ""
   },
-  "show_in_none": {
-    "message": "None",
-    "description": ""
-  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""

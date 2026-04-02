@@ -31,7 +31,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `enabled` | number | `0` = hidden, `1` = shown in menus |
 | `position_display` | number | Sort order in reading view (used when alphabetical ordering is off) |
 | `position_compose` | number | Sort order in compose view (used when alphabetical ordering is off) |
-| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = hidden from all menus. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
 
 ### Per-Prompt API Override Properties
 

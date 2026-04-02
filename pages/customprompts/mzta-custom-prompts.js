@@ -1091,9 +1091,6 @@ function loadPromptsList(values){
                 case "both":
                     show_in_output = `__MSG_show_in_both__`;
                     break;
-                case "none":
-                    show_in_output = `__MSG_show_in_none__`;
-                    break;
             }
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
@@ -1151,7 +1148,6 @@ function loadPromptsList(values){
                 <option value="popup"` + ((values.show_in == "popup" || !values.show_in) ? ' selected':'') + `>__MSG_show_in_popup__</option>
                 <option value="context"` + ((values.show_in == "context") ? ' selected':'') + `>__MSG_show_in_context__</option>
                 <option value="both"` + ((values.show_in == "both") ? ' selected':'') + `>__MSG_show_in_both__</option>
-                <option value="none"` + ((values.show_in == "none") ? ' selected':'') + `>__MSG_show_in_none__</option>
                 </select>` +
                 `<span class="show_in hiddendata"></span>
               <br><br>
