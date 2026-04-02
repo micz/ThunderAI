@@ -645,7 +645,7 @@
         "message": "Sammanfatta följande e-postmeddelande i en punktlista."
     },
     "prompt_translate_this_full_text": {
-        "message": "Översätt följande e-postmeddelande till"
+        "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Svara endast med den text som behövs och utan extra kommentarer eller annan text."
@@ -1462,7 +1462,7 @@
         "message": "Spara som sammanfattning"
     },
     "prefs_storage_title": {
-        "message": "Ytterligare informationslagring"
+        "message": "Lagring"
     },
     "prefs_storage_size": {
         "message": "Lagringsstorlek"
@@ -1558,5 +1558,128 @@
     },
     "prefs_OptionText_action_auto_batch": {
         "message": "När e-postmeddelandet tas emot"
+    },
+    "prefs_storage_info": {
+        "message": "Lagringen används för att spara information om skräppostpoäng, sammanfattningar och översättningar av varje meddelande."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "Språket som ska användas i e-postöversättningarna."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Språkkoden ska inte översättas när den hittas."
+    },
+    "context_menu_mzta-translate": {
+        "message": "Översätt"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Översätt e-post"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att översätta e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Om markerad läggs en översättningsknapp till i meddelandetexten."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Hantera översättningsinställningar"
+    },
+    "Translate_PageTitle": {
+        "message": "Hantera översättningsinställningar"
+    },
+    "Translate_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att översätta e-postmeddelanden."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Aktuell prompttext"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Översättningsalternativ"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Översätt meddelanden automatiskt"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Inaktiverad"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Endast manuell knapp"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "När e-postmeddelandet öppnas"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Välj när meddelanden ska översättas: inaktiverad, endast när du klickar på knappen eller automatiskt när du öppnar ett meddelande."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Meddelandepanel (inbäddad)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Chattfönster"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Maximal längd på visad översättning"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Maximalt antal tecken som visas i den inbäddade översättningen. 0 = ingen gräns. När den är inställd avkortas längre text med en \"Visa mer\"-knapp."
+    },
+    "translate_see_more": {
+        "message": "Visa mer"
+    },
+    "translate_see_less": {
+        "message": "Visa mindre"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Översättningens målspråk"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Språk att översätta e-postmeddelanden till. Om tomt används standardspråkinställningen."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Uteslut språk"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som ska hoppas över för automatisk översättning. Om e-postmeddelandet är på ett av dessa språk kommer det inte att översättas automatiskt eller så visas inte den manuella knappen."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Prompten som beskriver översättningsuppgiften:"
+    },
+    "translate_generating": {
+        "message": "Översätter..."
+    },
+    "translate_click_to_generate": {
+        "message": "Klicka här för att översätta detta e-postmeddelande"
+    },
+    "get_ai_translation": {
+        "message": "AI-översättning"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Automatisk översättning kräver en API-baserad anslutning. Konfigurera en API-anslutning i ThunderAI-inställningarna."
+    },
+    "translate_refresh": {
+        "message": "Uppdatera översättning"
+    },
+    "translate_delete": {
+        "message": "Ta bort översättning"
+    },
+    "translate_banner_title": {
+        "message": "AI-översättning"
+    },
+    "translate_error": {
+        "message": "Översättning misslyckades."
+    },
+    "translate_no_language_configured": {
+        "message": "Översättningsspråket är inte konfigurerat. Ange ett språk i översättningsinställningarna eller ange ett standardspråk i de allmänna inställningarna."
+    },
+    "translate_skipped": {
+        "message": "Översättning hoppas över: Språk uteslutet eller identiskt med målet."
+    },
+    "spam_badge_tooltip": {
+        "message": "Skräppostpoäng — Klicka för att se förklaring"
+    },
+    "translate_by": {
+        "message": "Översättning av"
+    },
+    "placeholder_string": {
+        "message": "Platshållare"
     }
 }
