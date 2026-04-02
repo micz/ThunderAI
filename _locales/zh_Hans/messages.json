@@ -107,9 +107,6 @@
     "chatgpt_btn_model": {
         "message": "使用当前模型"
     },
-    "SendingPrompt": {
-        "message": "正在发送提示词..."
-    },
     "AllowedValues": {
         "message": "允许的值"
     },

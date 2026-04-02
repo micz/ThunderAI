@@ -395,9 +395,6 @@
     "chatgpt_btn_model": {
         "message": "Použít aktuální model"
     },
-    "SendingPrompt": {
-        "message": "Odesílání výzvy..."
-    },
     "AddTags_prompt_text_title": {
         "message": "Aktuální text výzvy"
     },

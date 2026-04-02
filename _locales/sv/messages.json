@@ -593,9 +593,6 @@
     "chatgpt_btn_model": {
         "message": "Använd den nuvarande modellen"
     },
-    "SendingPrompt": {
-        "message": "Skickar prompt..."
-    },
     "AllowedValues": {
         "message": "Tillåtna värden"
     },

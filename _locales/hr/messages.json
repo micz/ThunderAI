@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Koristi trenutni model"
     },
-    "SendingPrompt": {
-        "message": "Slanje upita..."
-    },
     "AllowedValues": {
         "message": "Dopuštene vrijednosti"
     },

@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Usa il modello corrente"
     },
-    "SendingPrompt": {
-        "message": "Invio del prompt..."
-    },
     "AllowedValues": {
         "message": "Valori consentiti"
     },

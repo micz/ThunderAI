@@ -512,9 +512,6 @@
     "chatgpt_btn_model": {
         "message": "Использовать текущую модель"
     },
-    "SendingPrompt": {
-        "message": "Отправка запроса..."
-    },
     "AllowedValues": {
         "message": "Разрешенные значения"
     },

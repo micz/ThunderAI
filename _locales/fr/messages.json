@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Utiliser le modèle actuel"
     },
-    "SendingPrompt": {
-        "message": "Envoi de l'invite..."
-    },
     "AllowedValues": {
         "message": "Valeurs autorisées"
     },
