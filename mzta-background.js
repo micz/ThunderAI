@@ -99,6 +99,9 @@ let special_prompts_ids = getActiveSpecialPromptsIDs({
     get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
     get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
     get_task: doGetSparkFeature(prefs_init.get_task),
+    spamfilter: prefs_init.spamfilter,
+    summarize: prefs_init.summarize,
+    translate: prefs_init.translate,
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
   });
 
@@ -163,7 +166,7 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
     let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
     let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
     let getTask = doGetSparkFeature(prefs_reload.get_task);
@@ -173,6 +176,9 @@ async function _reload_menus() {
         get_calendar_event: getCalendarEvent,
         get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
         get_task: getTask,
+        spamfilter: prefs_reload.spamfilter,
+        summarize: prefs_reload.summarize,
+        translate: prefs_reload.translate,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
       });
     menus.reload(special_prompts_ids);
@@ -1367,6 +1373,9 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });
                 menus.reload(special_prompts_ids);
@@ -1384,8 +1393,11 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -1401,8 +1413,11 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -1418,8 +1433,71 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'spamfilter' changes
+            if (changes.spamfilter) {
+                const newSpamfilter = changes.spamfilter.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: newSpamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'summarize' changes
+            if (changes.summarize) {
+                const newSummarize = changes.summarize.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: newSummarize,
+                    translate: prefs_init.translate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'translate' changes
+            if (changes.translate) {
+                const newTranslate = changes.translate.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: newTranslate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -1435,8 +1513,11 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 

@@ -649,10 +649,11 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     get_calendar_event = false,
     get_calendar_event_from_clipboard = false,
     get_task = false,
+    spamfilter = false,
+    summarize = false,
+    translate = false,
     is_chatgpt_web = false
   } = args;
-  // The Antispam filter is not here, because this method is used only
-  // to reload the ThunderAI button menu, not the context menu
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
@@ -672,6 +673,15 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   if (get_task) {
     output.push('prompt_get_task');
+  }
+  if (spamfilter) {
+    output.push('prompt_spamfilter');
+  }
+  if (summarize) {
+    output.push('prompt_summarize');
+  }
+  if (translate) {
+    output.push('prompt_translate_this');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
