@@ -7,7 +7,11 @@
       <ul>
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
         <li><i>[All APIs]</i> A summary has been added above the mail content [<a href="https://github.com/micz/ThunderAI/issues/580">#580</a>].</li>
-        <li><i>[All APIs]</i> Inline auto translation for emails added [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
+        <li><i>[All APIs]</i> Added inline auto translation for emails [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
+        <li>Now the popup menu closes immediatly and the working indicator is in the button icon [<a href="https://github.com/micz/ThunderAI/issues/247">#677</a>].</li>
+        <li><i>[Ollama API]</i> Added <i>format: json</i> option [<a href="https://github.com/micz/ThunderAI/issues/703">#703</a>].</li>
+        <li>Fix: The "Important Information" section in the options page now updates correctly when choosing an integration [<a href="https://github.com/micz/ThunderAI/issues/730">#730</a>].</li>
+        <li>In the options page now is visible if a special prompt is using a specific API integration [<a href="https://github.com/micz/ThunderAI/issues/676">#676</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>
