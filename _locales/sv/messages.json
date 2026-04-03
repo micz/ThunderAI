@@ -642,7 +642,7 @@
         "message": "Sammanfatta följande e-postmeddelande i en punktlista."
     },
     "prompt_translate_this_full_text": {
-        "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
+        "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Svara endast med den text som behövs och utan extra kommentarer eller annan text."
@@ -1678,5 +1678,25 @@
     },
     "placeholder_string": {
         "message": "Platshållare"
+    },
+    "prefsInfoDesc_7": {
+        "message": "För att använda Google Gemini API behöver du en Google Gemini API-nyckel och måste välja en modell."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Tvinga JSON utdata"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Om markerat kommer Ollama att tvingas returnera ett giltigt JSON-svar. Det här alternativet fungerar bara med modeller som stöder strukturerad utdata."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "[Använder $1]",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_8": {
+        "message": "För att använda Claude API behöver du en Anthropic Claude API-nyckel och måste välja en modell."
     }
 }
