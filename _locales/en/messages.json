@@ -1109,7 +1109,7 @@
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "Please provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
+    "message": "Provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
     "description": ""
   },
   "prompt_summarize_email_template": {
