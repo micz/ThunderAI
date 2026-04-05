@@ -1109,7 +1109,7 @@
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "You are an assistant that summarizes email conversations.\n\nGiven an email thread, produce a concise, accurate summary that captures:\n\n- The main topic or purpose of the conversation\n- Key decisions, conclusions, or agreements\n- Important questions, requests, or action items\n- Who is responsible for each action item (if stated)\n\nOmit greetings, signatures, quoted text, and redundant back-and-forth.\nDo not add assumptions or information not present in the emails.\n\nWrite the summary in clear, neutral language suitable for a busy professional.",
+    "message": "Please provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
     "description": ""
   },
   "prompt_summarize_email_template": {
