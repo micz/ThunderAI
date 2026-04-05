@@ -2019,6 +2019,14 @@
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
       "description": ""
   },
+  "prefs_OptionText_summarize_strip_formatting": {
+      "message": "Strip formatting",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_strip_formatting_Info": {
+      "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
+      "description": ""
+  },
   "summarize_see_more": {
       "message": "See more",
       "description": ""

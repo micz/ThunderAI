@@ -1032,7 +1032,7 @@ switch (message.command) {
 
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
-    const hasHtml = !!summaryData.summary_html;
+    const hasHtml = !!summaryData.summary_html && !summaryData.stripFormatting;
 
     function setSummaryHtml(element, html) {
         element.textContent = '';
