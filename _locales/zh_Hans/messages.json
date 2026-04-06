@@ -907,5 +907,23 @@
     },
     "placeholder_selected_html": {
         "message": "已选中的 HTML"
+    },
+    "webchat_save_as_summary": {
+        "message": "另存为摘要"
+    },
+    "prefs_storage_title": {
+        "message": "存储"
+    },
+    "prefs_storage_info": {
+        "message": "该存储用于保存每条消息的垃圾邮件分数、摘要和翻译。"
+    },
+    "prefs_storage_size": {
+        "message": "存储容量"
+    },
+    "prefs_storage_clear_button": {
+        "message": "清除存储"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "您确定要清除所有已存储的数据（包含：摘要、垃圾邮件报告、翻译等）吗？此操作无法撤销。"
     }
 }

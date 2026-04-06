@@ -1291,7 +1291,7 @@
         "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
     },
     "prompt_summarize_full_text": {
-        "message": "Du är en assistent som sammanfattar e-postkonversationer.\n\nMed tanke på en e-posttråd, skapa en kortfattad och korrekt sammanfattning som fångar:\n\n- Konversationens huvudämne eller syfte\n- Viktiga beslut, slutsatser eller överenskommelser\n- Viktiga frågor, förfrågningar eller åtgärdspunkter\n- Vem som är ansvarig för varje åtgärdspunkt (om det anges)\n\nUteslut hälsningar, signaturer, citat och överflödig fram-och-tillbaka-text.\nLägg inte till antaganden eller information som inte finns i e-postmeddelandena.\n\nSkriv sammanfattningen på ett tydligt och neutralt språk som passar en upptagen yrkesperson."
+        "message": "Ge en kortfattad sammanfattning av följande e-postmeddelanden. Sammanfattningen bör vara högst 3–5 meningar lång och fånga huvudpunkterna. Skriv i enkla stycken utan punktlistor, listor eller markdownformatering:\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Sammanfattningsmall för e-post"
@@ -1683,7 +1683,7 @@
         "message": "För att använda Google Gemini API behöver du en Google Gemini API-nyckel och måste välja en modell."
     },
     "prefs_ollama_format_json": {
-        "message": "Tvinga JSON utdata"
+        "message": "Tvinga fram JSON-utdata"
     },
     "prefs_ollama_format_json_Info": {
         "message": "Om markerat kommer Ollama att tvingas returnera ett giltigt JSON-svar. Det här alternativet fungerar bara med modeller som stöder strukturerad utdata."
@@ -1698,5 +1698,11 @@
     },
     "prefsInfoDesc_8": {
         "message": "För att använda Claude API behöver du en Anthropic Claude API-nyckel och måste välja en modell."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Strimla formatering"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Ta bort HTML och Markdown formatering från den AI-genererade sammanfattningen, så att endast vanlig text visas."
     }
 }
