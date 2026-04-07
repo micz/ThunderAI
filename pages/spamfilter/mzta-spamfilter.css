@@ -131,6 +131,15 @@ label:has(input[type="checkbox"]) {
     cursor: pointer;
 }
 
+#spamfilter_skip_addresses_container{
+    width: 90%;
+    margin: 40px auto;
+}
+
+#spamfilter_skip_addresses{
+    width: 30em;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1C1B22;

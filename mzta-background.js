@@ -805,6 +805,28 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             }
         }
+console.log(">>>>>>>>>>>>>> options.skip_addresses: " + JSON.stringify(options.skip_addresses));
+        // Check if sender is in the skip addresses list
+        let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
+        if (skip_addresses.length > 0) {
+            let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+            if (senderEmail && skip_addresses.includes(senderEmail)) {
+                taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
+                let report_data = {};
+                report_data.report_date = new Date();
+                report_data.headerMessageId = headerMessageId;
+                report_data.spamValue = 0;
+                report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addresses_explanation');
+                report_data.subject = curr_fullMessage.headers.subject;
+                report_data.from = curr_fullMessage.headers.from;
+                report_data.message_date = new Date(message.date);
+                report_data.moved = false;
+                report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                spamReport.saveReportData(report_data, headerMessageId);
+                await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                return { success: true };
+            }
+        }
 
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
@@ -1650,10 +1672,13 @@ async function processEmails(args) {
             add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
+            spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
+        let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
+
         for await (let message of messages) {
             let curr_fullMessage = null;
             let msg_text = null;
@@ -1729,7 +1754,8 @@ async function processEmails(args) {
                     {
                         messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
                         prefs: prefs_aats,
-                        autoMove: true
+                        autoMove: true,
+                        skip_addresses: spamfilter_skip_addresses
                     });
                 if (!result.success) continue;
             }

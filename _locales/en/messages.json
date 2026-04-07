@@ -1436,6 +1436,22 @@
     "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
     "description": ""
   },
+  "SpamFilter_skip_addresses_title": {
+    "message": "Email address skip list",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline": {
+    "message": "Emails from these addresses will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline2": {
+    "message": "Add one email address per line, or separated by a comma.",
+    "description": ""
+  },
+  "spamfilter_skip_addresses_explanation": {
+    "message": "The sender is in the email address antispam skip list.",
+    "description": ""
+  },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
     "description": ""

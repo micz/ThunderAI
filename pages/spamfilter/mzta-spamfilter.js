@@ -34,6 +34,7 @@ import { taSpamReport } from '../../js/mzta-spamreport.js';
 import {
   getAccountsList,
   isAPIKeyValue,
+  normalizeStringList,
   setTomSelectBorder
 } from "../../js/mzta-utils.js";
 import {
@@ -129,6 +130,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
+
+    // Skip addresses list
+    let skip_addresses_textarea = document.getElementById('spamfilter_skip_addresses');
+    let skip_addresses_save_btn = document.getElementById('btn_save_skip_addresses');
+
+    let skip_addresses_value = await spamfilter_getSkipAddresses();
+    let skip_addresses_string = skip_addresses_value.join('\n');
+
+    skip_addresses_textarea.value = skip_addresses_string;
+
+    skip_addresses_textarea.addEventListener('input', (event) => {
+        skip_addresses_save_btn.disabled = (event.target.value === skip_addresses_string);
+        if(skip_addresses_save_btn.disabled){
+            document.getElementById('skip_addresses_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('skip_addresses_unsaved').classList.remove('hidden');
+        }
+    });
+
+    skip_addresses_save_btn.addEventListener('click', () => {
+        let skip_array_new = normalizeStringList(skip_addresses_textarea.value, 2);
+        spamfilter_setSkipAddresses(skip_array_new);
+        skip_addresses_save_btn.disabled = true;
+        skip_addresses_string = skip_array_new.join('\n');
+        skip_addresses_textarea.value = skip_addresses_string;
+        document.getElementById('skip_addresses_unsaved').classList.add('hidden');
+    });
 
      //Accounts manager
      let accounts = await getAccountsList();
@@ -373,4 +401,13 @@ async function restoreOptions() {
   }
 
   setCurrentChoice(getting);
+}
+
+async function spamfilter_getSkipAddresses() {
+    let prefs = await browser.storage.sync.get({spamfilter_skip_addresses: []});
+    return prefs.spamfilter_skip_addresses;
+}
+
+function spamfilter_setSkipAddresses(spamfilter_skip_addresses) {
+    browser.storage.sync.set({spamfilter_skip_addresses: spamfilter_skip_addresses});
 }
