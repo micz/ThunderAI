@@ -1704,5 +1704,14 @@
     },
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "Ta bort HTML och Markdown formatering från den AI-genererade sammanfattningen, så att endast vanlig text visas."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Lista över e-postadresser att hoppa över"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "E-postmeddelanden från dessa adresser kommer inte att skickas till AI:n för skräppostfiltrering."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Lägg till en e-postadress per rad, eller separera med kommatecken."
     }
 }
