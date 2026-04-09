@@ -68,6 +68,8 @@ Using an API integration, you can activate some automatic features:
 
 [Custom Prompt Tutorial](https://micz.it/thunderbird-addon-thunderai/tutorial/) - Learn how to build your first custom prompt from scratch, combining placeholders and user input to automate your email replies.
 
+[ThunderAI Prompt Architect](https://chatgpt.com/g/g-69b6b11c89b88191a6798be6e97025f1-thunder-ai-prompt-architect) - Let ChatGPT help you crafting your custom prompts. Thanks to [Paweł](https://github.com/PawelKinczyk) for this tool!
+
 <br>
 
 ## Translations
