@@ -139,6 +139,7 @@ export const prefs_default = {
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
     spamfilter_skip_addresses: [],
+    spamfilter_skip_addressbook: false,
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'

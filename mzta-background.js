@@ -805,11 +805,13 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 body_text = msg_text.text.replace(/\s+/g, ' ').trim();
             }
         }
-console.log(">>>>>>>>>>>>>> options.skip_addresses: " + JSON.stringify(options.skip_addresses));
+
+        // Extract sender email for skip checks
+        let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+
         // Check if sender is in the skip addresses list
         let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
         if (skip_addresses.length > 0) {
-            let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
             if (senderEmail && skip_addresses.includes(senderEmail)) {
                 taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
                 let report_data = {};
@@ -825,6 +827,43 @@ console.log(">>>>>>>>>>>>>> options.skip_addresses: " + JSON.stringify(options.s
                 spamReport.saveReportData(report_data, headerMessageId);
                 await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
                 return { success: true };
+            }
+        }
+
+        // Check if sender is in any address book
+        let skip_addressbook = options.skip_addressbook !== undefined
+            ? options.skip_addressbook
+            : (await browser.storage.sync.get({spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook})).spamfilter_skip_addressbook;
+        if (skip_addressbook && senderEmail) {
+            try {
+                let hasPermission = await browser.permissions.contains({ permissions: ["addressBooks"] });
+                if (hasPermission) {
+                    let matchingContacts = await browser.contacts.quickSearch({ searchString: senderEmail });
+                    let isInAddressBook = matchingContacts.some(contact => {
+                        let props = contact.properties;
+                        return (props.PrimaryEmail && props.PrimaryEmail.toLowerCase() === senderEmail) ||
+                               (props.SecondEmail && props.SecondEmail.toLowerCase() === senderEmail);
+                    });
+                    if (isInAddressBook) {
+                        taLog.log("Sender " + senderEmail + " is in the address book, skipping spam filter.");
+                        let report_data = {};
+                        report_data.report_date = new Date();
+                        report_data.headerMessageId = headerMessageId;
+                        report_data.spamValue = 0;
+                        report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addressbook_explanation');
+                        report_data.subject = curr_fullMessage.headers.subject;
+                        report_data.from = curr_fullMessage.headers.from;
+                        report_data.message_date = new Date(message.date);
+                        report_data.moved = false;
+                        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                        spamReport.saveReportData(report_data, headerMessageId);
+                        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                        return { success: true };
+                    }
+                }
+            } catch (err) {
+                taLog.error("Error checking address book for sender: " + err);
+                // Fail open — continue with normal spam check
             }
         }
 
@@ -1673,11 +1712,13 @@ async function processEmails(args) {
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
             spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
+            spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
+        let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
         for await (let message of messages) {
             let curr_fullMessage = null;
@@ -1755,7 +1796,8 @@ async function processEmails(args) {
                         messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
                         prefs: prefs_aats,
                         autoMove: true,
-                        skip_addresses: spamfilter_skip_addresses
+                        skip_addresses: spamfilter_skip_addresses,
+                        skip_addressbook: spamfilter_skip_addressbook
                     });
                 if (!result.success) continue;
             }

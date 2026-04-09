@@ -158,6 +158,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('skip_addresses_unsaved').classList.add('hidden');
     });
 
+    // Address book skip option
+    let skip_addressbook_checkbox = document.getElementById('spamfilter_skip_addressbook');
+    let prefs_skip_ab = await browser.storage.sync.get({ spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook });
+    skip_addressbook_checkbox.checked = prefs_skip_ab.spamfilter_skip_addressbook;
+
+    skip_addressbook_checkbox.addEventListener('change', async (event) => {
+        if (event.target.checked) {
+            try {
+                const granted = await browser.permissions.request({ permissions: ["addressBooks"] });
+                if (granted) {
+                    await browser.storage.sync.set({ spamfilter_skip_addressbook: true });
+                } else {
+                    event.target.checked = false;
+                    alert(browser.i18n.getMessage("addressbook_permission_denied"));
+                }
+            } catch (err) {
+                taLog.error("Error requesting addressBooks permission:", err);
+                event.target.checked = false;
+                alert(browser.i18n.getMessage("addressbook_permission_error"));
+            }
+        } else {
+            await browser.storage.sync.set({ spamfilter_skip_addressbook: false });
+        }
+    });
+
      //Accounts manager
      let accounts = await getAccountsList();
      const accountsContainer = document.getElementById('account_selector_checkboxes');

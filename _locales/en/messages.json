@@ -1448,6 +1448,26 @@
     "message": "The sender is in the email address antispam skip list.",
     "description": ""
   },
+  "prefs_OptionText_spamfilter_skip_addressbook": {
+    "message": "Skip address books addresses",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+    "message": "If checked, emails from senders in your address books will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "spamfilter_skip_addressbook_explanation": {
+    "message": "The sender is a contact in the address book.",
+    "description": ""
+  },
+  "addressbook_permission_denied": {
+    "message": "Address book permission was denied. Please enable the feature again to grant permission.",
+    "description": ""
+  },
+  "addressbook_permission_error": {
+    "message": "Error requesting address book permission. Please try again.",
+    "description": ""
+  },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
     "description": ""

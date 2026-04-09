@@ -34,6 +34,7 @@
         "messagesTagsList"
     ],
     "optional_permissions": [
+        "addressBooks",
         "clipboardRead",
         "messagesTags",
         "messagesUpdate",
