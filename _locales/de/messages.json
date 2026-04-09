@@ -501,9 +501,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Klicken Sie auf einen Wert, um ihn festzulegen."
-    },
     "prompt_reply_full_text": {
         "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
     },

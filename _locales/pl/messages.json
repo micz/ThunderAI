@@ -501,9 +501,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Wygląda na to, że przynajmniej jedno z Twoich kont używa dodatku Owl for Exchange. Istnieje znany problem między Thunderbirdem a Owl, który jest obecnie rozwiązywany. Na ten moment możesz używać ThunderAI podczas pisania e-maili, ale nie podczas ich czytania."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Kliknij na wartość, aby ją ustawić."
-    },
     "prompt_reply_full_text": {
         "message": "Odpowiedz na poniższy e-mail. Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu."
     },

@@ -501,9 +501,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Čini se da barem jedan od vaših računa koristi dodatak Owl for Exchange. Postoji poznati problem između Thunderbirda i Owl, koji se trenutno rješava. Trenutačno možete koristiti ThunderAI dok sastavljate e-poruke, ali ne i dok ih čitate."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Pritisnite vrijednost da biste je postavili."
-    },
     "prompt_reply_full_text": {
         "message": "Odgovori na sljedeću e-poruku. Odgovorit samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
     },
