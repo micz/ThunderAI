@@ -18,7 +18,6 @@
 
 import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -337,46 +336,6 @@ export function getGPTWebModelString(model) {
     default:
       return model;
   }
-}
-
-export function getChatGPTWebModelsList_HTML(values, targetRowId) {
-  const rowElement = document.getElementById(targetRowId);
-  if (!rowElement) return;
-
-  // Clears any existing td elements
-  rowElement.innerHTML = '';
-
-  // First TD: label
-  const labelTd = document.createElement('td');
-  const label = document.createElement('i');
-  label.className = 'small_info';
-  const labelNobr = document.createElement('nobr');
-  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
-  label.appendChild(labelNobr);
-  labelTd.appendChild(label);
-
-  // Second TD: values
-  const valuesTd = document.createElement('td');
-  const valuesContainer = document.createElement('i');
-  valuesContainer.className = 'small_info';
-
-  values.forEach(value => {
-    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
-    const valueNobr = document.createElement('nobr');
-    valueNobr.className = 'conntype_chatgpt_web_option';
-    valueNobr.textContent = value;
-    const nbspAfter = document.createTextNode(' \u00A0 ');
-
-    valuesContainer.appendChild(nbspBefore);
-    valuesContainer.appendChild(valueNobr);
-    valuesContainer.appendChild(nbspAfter);
-  });
-
-  valuesTd.appendChild(valuesContainer);
-
-  // Adds the td elements to the row
-  rowElement.appendChild(labelTd);
-  rowElement.appendChild(valuesTd);
 }
 
 export function openTab(url){

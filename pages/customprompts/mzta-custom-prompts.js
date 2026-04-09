@@ -33,11 +33,9 @@ import {
     updateWarnings
 } from "../../pages/_lib/connection-ui.js";
 import {
-    ChatGPTWeb_models,
     getLocalStorageUsedSpace,
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
-    getChatGPTWebModelsList_HTML,
     openTab,
     setTomSelectBorder
 } from "../../js/mzta-utils.js";
@@ -511,28 +509,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.querySelectorAll('.api_additional_info_show').forEach(element => {
         toggleApiPropertiesShow(element.closest('tr'));
-    });
-
-    getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
-    let formNewWebModelList = document.getElementById('chatgpt_web_models_list');
-    formNewWebModelList.querySelectorAll('.conntype_chatgpt_web_option').forEach(element => {
-        element.addEventListener("click", () => {
-            let el = document.getElementById("chatGPTWebModelNew");
-            el.value = element.textContent;
-            el.dispatchEvent(new Event('change'), { bubbles: true });
-        });
-    });
-
-    document.querySelectorAll('.id_output').forEach(element => {
-        getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list_' + element.value);
-        let formWebModelList = document.getElementById('chatgpt_web_models_list_' + element.value);
-        formWebModelList.querySelectorAll('.conntype_chatgpt_web_option').forEach(element2 => {
-            element2.addEventListener("click", () => {
-                let el = document.getElementById("chatgpt_web_model_output_" + element.value);
-                el.value = element2.textContent;
-                el.dispatchEvent(new Event('change'), { bubbles: true });
-            });
-        });
     });
 
 }, { once: true });
@@ -1086,7 +1062,6 @@ function loadPromptsList(values){
                         <span class="field_title_us">__MSG_prefs_OptionText_chatgpt_web_model__:</span>
                         <br>
                         <input type="text" id="chatgpt_web_model_output_` + values.id + `" class="input_additional chatgpt_web_model_output" tabindex="10" value="` + values.chatgpt_web_model + `">
-                        <table class="chatgpt_web_models_list_table" title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list_` + values.id + `"></tr></table>
                         <br><br>
                         <span class="field_title_us">__MSG_prefs_OptionText_chatgpt_web_project__:</span>
                         <br>

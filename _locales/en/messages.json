@@ -776,10 +776,6 @@
     "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
     "description": ""
   },
-  "prefs_OptionText_chatgpt_web_model_tooltip": {
-    "message": "Click on a value to set it.",
-    "description": ""
-  },
   "prompt_reply_full_text": {
     "message": "Reply to the following email. Reply with only the needed text and with no extra comments or other text.",
     "description": ""
