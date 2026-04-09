@@ -645,6 +645,16 @@ export function extractJsonObject(inputString) {
   }
 }
 
+export function normalizeDateTimeString(str) {
+  if (!str || typeof str !== 'string') return null;
+  str = str.trim();
+  // Accept any non-digit separator (or none) between date/time components
+  const match = str.match(/^(\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(Z?)$/);
+  if (!match) return null;
+  const [, y, mo, d, h, mi, s, z] = match;
+  return `${y}${mo}${d}T${h}${mi}${s}${z}`;
+}
+
 export function isAPIKeyValue(id){
   return id.endsWith('_api_key');
 }

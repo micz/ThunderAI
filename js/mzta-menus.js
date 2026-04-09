@@ -31,6 +31,7 @@ import {
     getMailSubject,
     getTagsList,
     extractJsonObject,
+    normalizeDateTimeString,
     convertNewlinesToBr,
     cleanupNewlines,
     checkIfTagLabelExists,
@@ -333,6 +334,13 @@ export class mzta_Menus {
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
                         }
+                        // Normalize date strings returned by the LLM
+                        if (calendar_event_data_obj.startDate) {
+                            calendar_event_data_obj.startDate = normalizeDateTimeString(calendar_event_data_obj.startDate);
+                        }
+                        if (calendar_event_data_obj.endDate) {
+                            calendar_event_data_obj.endDate = normalizeDateTimeString(calendar_event_data_obj.endDate);
+                        }
                         // Timezone management
                         calendar_event_data_obj.use_timezone = false;
                         if(prefs_at.calendar_enforce_timezone){
@@ -405,10 +413,17 @@ export class mzta_Menus {
                         let task_data_obj = {};
                         try{
                             task_data_obj = extractJsonObject(task_data);
-                            if (!task_data_obj.dueDate || isNaN(Date.parse(task_data_obj.dueDate)) || task_data_obj.dueDate == '' ) {
+                            // Normalize date strings returned by the LLM
+                            if (task_data_obj.dueDate) {
+                                task_data_obj.dueDate = normalizeDateTimeString(task_data_obj.dueDate);
+                            }
+                            if (task_data_obj.InitialDate) {
+                                task_data_obj.InitialDate = normalizeDateTimeString(task_data_obj.InitialDate);
+                            }
+                            if (!task_data_obj.dueDate) {
                                 delete task_data_obj.dueDate;
                             }
-                            if (!task_data_obj.InitialDate || isNaN(Date.parse(task_data_obj.InitialDate)) || task_data_obj.InitialDate == '' ) {
+                            if (!task_data_obj.InitialDate) {
                                 delete task_data_obj.InitialDate;
                             }
                         }catch(err){
