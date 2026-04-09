@@ -716,9 +716,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Zdá se, že alespoň jeden z vašich účtů používá doplněk Owl for Exchange. Mezi Thunderbirdem a Owlem je známý problém, který se v současné době řeší. V tuto chvíli můžete používat ThunderAI při psaní e-mailů, ale ne při jejich čtení."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Kliknutím na hodnotu ji nastavíte."
-    },
     "prompt_reply_full_text": {
         "message": "Odpovězte na následující e-mail. Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
     },

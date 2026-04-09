@@ -1011,9 +1011,6 @@
     "spamfilter_threshold_zero": {
         "message": "垃圾郵件閾值為零！您將把所有郵件標記為垃圾郵件！"
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "點擊一個值來設定它。"
-    },
     "prefs_OptionText_dynamic_menu_order_alphabet_info": {
         "message": "如果勾選，選單中的提示將按字母順序排列。"
     },

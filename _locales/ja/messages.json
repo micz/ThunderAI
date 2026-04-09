@@ -539,9 +539,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "アカウントの少なくとも1つがOwl for Exchangeアドオンを使用しているようです。ThunderbirdとOwlの間には既知の問題があり、現在対処中です。現時点では、メール作成時にはThunderAIを使用できますが、閲覧時には使用できません。"
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "クリックして値を設定してください。"
-    },
     "prompt_reply_full_text": {
         "message": "以下のメールに返信してください。必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
     },

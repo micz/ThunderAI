@@ -501,9 +501,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Clique em um valor para defini-lo."
-    },
     "prompt_reply_full_text": {
         "message": "Responda ao e-mail a seguir. Responda apenas com o texto necessário e sem comentários adicionais ou outros textos."
     },

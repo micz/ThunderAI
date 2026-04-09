@@ -554,9 +554,6 @@
     "placeholder_cc_list": {
         "message": "抄送列表"
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "单击一个值进行设置。"
-    },
     "prefs_OpenAIComp_ForceModel": {
         "message": "手动填入模型"
     },
