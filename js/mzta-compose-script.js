@@ -1278,7 +1278,6 @@ switch (message.command) {
 
     translationHeader.appendChild(translationIcon);
     translationHeader.appendChild(translationTitleSpan);
-    translationHeader.appendChild(translationBranding);
     translationHeader.appendChild(translationMenu);
     translationContainer.appendChild(translationHeader);
 
@@ -1343,10 +1342,21 @@ switch (message.command) {
 
             requestAnimationFrame(() => {
                 if (translationText.scrollHeight > translationText.clientHeight) {
-                    translationTextWrapper.appendChild(toggleLink);
+                    const toggleContainer = document.createElement('div');
+                    toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+                    toggleContainer.appendChild(toggleLink);
+                    toggleContainer.appendChild(translationBranding);
+                    translationBranding.style.marginRight = '-4px';
+                    translationBranding.style.marginBottom = '-6px';
+                    translationTextWrapper.appendChild(toggleContainer);
                 } else {
                     translationText.style.maxHeight = '';
                     translationText.style.overflow = '';
+                    // No toggle, branding goes directly after text
+                    const brandingContainer = document.createElement('div');
+                    brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+                    brandingContainer.appendChild(translationBranding);
+                    translationTextWrapper.appendChild(brandingContainer);
                 }
             });
         } else {
@@ -1382,8 +1392,20 @@ switch (message.command) {
                 }
                 expanded = !expanded;
             });
-            translationTextWrapper.appendChild(toggleLink);
+            const toggleContainer = document.createElement('div');
+            toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+            toggleContainer.appendChild(toggleLink);
+            toggleContainer.appendChild(translationBranding);
+            translationBranding.style.marginRight = '-4px';
+            translationBranding.style.marginBottom = '-6px';
+            translationTextWrapper.appendChild(toggleContainer);
         }
+    } else {
+        // No truncation, branding goes directly after text
+        const brandingContainer = document.createElement('div');
+        brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+        brandingContainer.appendChild(translationBranding);
+        translationTextWrapper.appendChild(brandingContainer);
     }
 
     translationContainer.appendChild(translationTextWrapper);
