@@ -668,6 +668,10 @@
     "message": "Mail headers",
     "description": ""
   },
+  "placeholder_mail_full_headers": {
+    "message": "All mail headers",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""

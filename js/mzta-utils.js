@@ -215,13 +215,21 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
-export async function getMailHeader(curr_message, mail_header_id) {
+export async function getMailHeader(curr_message, mail_header_id = false) {
   let mail_header_value = "";
   let full_message = await browser.messages.getFull(curr_message.id);
   // console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
-  if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
-    const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
-    mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+  if(full_message.hasOwnProperty("headers")) {
+    if(mail_header_id) {
+      if(Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
+        const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+        mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+      }
+    } else {
+      mail_header_value = Object.entries(full_message.headers)
+        .map(([key, value]) => key + ": " + (Array.isArray(value) ? value.join(", ") : value))
+        .join("\n");
+    }
   }
   // console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
   return mail_header_value;

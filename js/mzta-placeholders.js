@@ -128,6 +128,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        id: 'mail_full_headers',
+        name: "__MSG_placeholder_mail_full_headers__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
         id: 'selected_text',
         name: "__MSG_placeholder_selected_text__",
         default_value: "",
@@ -567,6 +576,9 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_headers':
                     finalSubs['mail_headers:' + currPH.custom_value] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(await getMailHeader(curr_message, currPH.custom_value)));
+                    break;
+                case 'mail_full_headers':
+                    finalSubs['mail_full_headers'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(await getMailHeader(curr_message)));
                     break;
                 case 'selected_text':
                     finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);

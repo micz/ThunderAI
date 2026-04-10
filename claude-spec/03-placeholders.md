@@ -43,6 +43,7 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `identity_signature` | Current identity signature | 0 |
 | `additional_text[id]` | User input field (dynamic, shows input in popup) | 0 |
 | `mail_header:name` | Any email header by name (dynamic) | 1 |
+| `mail_full_headers` | All mail headers (key: value format, newline-separated) | 1 |
 
 ## Dynamic Placeholders
 
