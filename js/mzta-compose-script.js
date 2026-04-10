@@ -1019,7 +1019,6 @@ switch (message.command) {
 
     const summaryRightGroup = document.createElement('span');
     summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; float: right; margin-left: 10px;';
-    summaryRightGroup.appendChild(summaryBranding);
     summaryRightGroup.appendChild(summaryMenu);
 
     const summaryIcon = document.createElement('img');
@@ -1098,7 +1097,13 @@ switch (message.command) {
                 }
                 expanded = !expanded;
             });
-            summaryTextWrapper.appendChild(toggleLink);
+            const toggleContainer = document.createElement('div');
+            toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 8px; justify-content: space-between;';
+            toggleContainer.appendChild(toggleLink);
+            toggleContainer.appendChild(summaryBranding);
+            summaryBranding.style.marginRight = '0px';
+            summaryBranding.style.marginBottom = '0px';
+            summaryTextWrapper.appendChild(toggleContainer);
         } else {
             const collapsedMaxHeight = '4.2em';
             summaryText.style.maxHeight = collapsedMaxHeight;
@@ -1123,13 +1128,30 @@ switch (message.command) {
 
             requestAnimationFrame(() => {
                 if (summaryText.scrollHeight > summaryText.clientHeight) {
-                    summaryTextWrapper.appendChild(toggleLink);
+                    const toggleContainer = document.createElement('div');
+                    toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+                    toggleContainer.appendChild(toggleLink);
+                    toggleContainer.appendChild(summaryBranding);
+                    summaryBranding.style.marginRight = '-4px';
+                    summaryBranding.style.marginBottom = '-6px';
+                    summaryTextWrapper.appendChild(toggleContainer);
                 } else {
                     summaryText.style.maxHeight = '';
                     summaryText.style.overflow = '';
+                    // No toggle, branding goes directly after text
+                    const brandingContainer = document.createElement('div');
+                    brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+                    brandingContainer.appendChild(summaryBranding);
+                    summaryTextWrapper.appendChild(brandingContainer);
                 }
             });
         }
+    } else {
+        // No truncation, branding goes directly after text
+        const brandingContainer = document.createElement('div');
+        brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+        brandingContainer.appendChild(summaryBranding);
+        summaryTextWrapper.appendChild(brandingContainer);
     }
 
     const summaryBody = document.createElement('div');
