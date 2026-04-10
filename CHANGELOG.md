@@ -16,6 +16,7 @@
         <li>Fix: Correctly setting the end date for a new calendar event [<a href="https://github.com/micz/ThunderAI/issues/750">#750</a>].</li>
         <li>Now it's possibile to use different date and time formats in the AI output when creating a calendar event [<a href="https://github.com/micz/ThunderAI/issues/737">#737</a>].</li>
         <li>Added the <i>{%mail_full_headers%}</i> placeholder to retrieve all the email headers at once [<a href="https://github.com/micz/ThunderAI/issues/713">#713</a>].</li>
+        <li><i>[All APIs]</i> In the API webchat the status messages have different colors [<a href="https://github.com/micz/ThunderAI/issues/3">#3</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>
