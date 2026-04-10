@@ -1710,5 +1710,20 @@
     },
     "SpamFilter_skip_addresses_infoline2": {
         "message": "Lägg till en e-postadress per rad, eller separera med kommatecken."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Hoppa över adressböckernas adresser"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Om markerat kommer e-postmeddelanden från avsändare i dina adressböcker inte att skickas till AI:n för skräppostfiltrering."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Avsändaren är en kontakt i adressboken."
+    },
+    "addressbook_permission_denied": {
+        "message": "Adressboksbehörighet nekades. Aktivera funktionen igen för att ge behörighet."
+    },
+    "addressbook_permission_error": {
+        "message": "Fel vid begäran om behörighet till adressboken. Försök igen."
     }
 }
