@@ -1572,6 +1572,10 @@
     "message": "Receiving data",
     "description": ""
   },
+  "apiwebchat_done": {
+    "message": "Done!",
+    "description": ""
+  },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""

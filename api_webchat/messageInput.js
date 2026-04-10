@@ -74,6 +74,26 @@ messagesInputStyle.textContent = `
         display: none;
         vertical-align: middle;
     }
+    #statusLoggerText{
+        font-weight: 600;
+    }
+    #statusLogger.status-working{
+        border-color: #2196F3;
+        background: #E3F2FD;
+        color: #1565C0;
+    }
+    #statusLogger.status-done{
+        border-color: #4CAF50;
+        background: #E8F5E9;
+        color: #2E7D32;
+    }
+    @keyframes statusFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+    #statusLogger.status-fadeout{
+        animation: statusFadeOut 0.5s ease-out forwards;
+    }
     #mzta-custom_text{
         padding:10px;
         width:50%;
@@ -133,6 +153,16 @@ messagesInputStyle.textContent = `
         #statusLogger{
             background: #212121;
             color: #ffffff;
+        }
+        #statusLogger.status-working{
+            border-color: #64B5F6;
+            background: #1A3A5C;
+            color: #90CAF9;
+        }
+        #statusLogger.status-done{
+            border-color: #81C784;
+            background: #1B3D1E;
+            color: #A5D6A7;
         }
     }
 `;
@@ -228,6 +258,7 @@ messageInputTemplate.content.appendChild(customDiv);
 class MessageInput extends HTMLElement {
 
     model = '';
+    _doneTimeout = null;
     _customTextArray = [];
     _currentCustomTextIndex = 0;
 
@@ -285,7 +316,7 @@ class MessageInput extends HTMLElement {
         this._messageInputField.value = '';
     }
 
-    enableInput() {
+    enableInput(showDone = true) {
         // console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
         this._messageInputField.removeAttribute('disabled');
@@ -294,21 +325,56 @@ class MessageInput extends HTMLElement {
         this._stopButton.setAttribute('disabled', 'disabled');
         this._stopButton.style.display = 'none';
         this._stopButton.title = browser.i18n.getMessage("chagpt_api_send_button") + ": " + this.model;
-        this.hideStatusMessage();
-        this.setStatusMessage('');
+        if (showDone) {
+            this.showDoneStatus();
+        } else {
+            this.hideStatusMessage();
+            this.setStatusMessage('');
+        }
     }
 
     setStatusMessage(message) {
         this._statusLoggerText.textContent = message;
     }
 
-    showStatusMessage() {
+    showStatusMessage(state = 'working') {
+        if (this._doneTimeout) {
+            clearTimeout(this._doneTimeout);
+            this._doneTimeout = null;
+        }
+        this._setStatusClass('status-' + state);
         this._statusLogger.style.display = 'flex';
     }
 
     hideStatusMessage() {
         this._statusLogger.style.display = 'none';
         this._statusLoggerImg.style.display = 'none';
+        this._setStatusClass(null);
+    }
+
+    _setStatusClass(className) {
+        this._statusLogger.classList.remove('status-working', 'status-done', 'status-fadeout');
+        if (className) {
+            this._statusLogger.classList.add(className);
+        }
+    }
+
+    showDoneStatus() {
+        if (this._doneTimeout) {
+            clearTimeout(this._doneTimeout);
+        }
+        this._statusLoggerImg.style.display = 'none';
+        this.setStatusMessage(browser.i18n.getMessage('apiwebchat_done'));
+        this._setStatusClass('status-done');
+        this._statusLogger.style.display = 'flex';
+
+        this._doneTimeout = setTimeout(() => {
+            this._statusLogger.classList.add('status-fadeout');
+            this._doneTimeout = setTimeout(() => {
+                this.hideStatusMessage();
+                this.setStatusMessage('');
+            }, 500);
+        }, 1500);
     }
 
     _handleKeyDown(event) {

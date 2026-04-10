@@ -244,7 +244,7 @@ worker.onmessage = async function(event) {
             break;
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
-            messageInput.enableInput();
+            messageInput.enableInput(false);
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -292,7 +292,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
-            messageInput.enableInput();
+            messageInput.enableInput(false);
             break;
     }
 });
