@@ -1725,5 +1725,14 @@
     },
     "addressbook_permission_error": {
         "message": "Fel vid begäran om behörighet till adressboken. Försök igen."
+    },
+    "apiwebchat_done": {
+        "message": "Klar!"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Alla e-postrubriker"
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Avsändaren finns i listan över e-postadresser som inte ska skickas med skräppost."
     }
 }
