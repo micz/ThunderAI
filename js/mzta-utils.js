@@ -146,38 +146,52 @@ export async function getMailSubject(tab){
 }
 
 function extractTextParts(fullMessage) {
-  const textParts = [];
-
+  const textParts = []
   function walkParts(parts) {
     for (const part of parts) {
       if (part.parts && part.parts.length > 0) {
-        // Recursively walk through sub-parts
-        walkParts(part.parts);
-      } else {
-        // Check if contentType starts with "text/"
-        if (part.contentType && part.contentType.startsWith("text/")) {
-          textParts.push(part);
-        }
+        walkParts(part.parts)
+      }
+      // console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
+      if (part.contentType && part.contentType.startsWith('text/')) {
+        textParts.push(part)
       }
     }
   }
-
   if (fullMessage.parts && fullMessage.parts.length > 0) {
-    walkParts(fullMessage.parts);
+    walkParts(fullMessage.parts)
   }
+  return textParts
+}
 
-  return textParts;
+function smartDecode(buf) {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (e) {
+    return new TextDecoder('windows-1252').decode(buf);
+  }
 }
   
-export function getMailBody(fullMessage){
+export async function getMailBody(fullMessage, messageId) {
   const textParts = extractTextParts(fullMessage);
   let text = "";
   let html = "";
+  // console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
+  // console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
   for (const part of textParts) {
+    let body = part.body;
+    if ((body === undefined || body === "") && messageId && part.partName) {
+      const file = await browser.messages.getAttachmentFile(messageId, part.partName);
+      const buf = await file.arrayBuffer();
+      //const buf = new TextDecoder('utf-8').decode(buf);
+      body = smartDecode(buf);
+    }
     if (part.contentType === "text/plain") {
-      text += part.body;
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
+      text += body ?? "";
     } else if (part.contentType === "text/html") {
-      html += part.body;
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
+      html += body ?? "";
     }
   }
   if(html === "") {

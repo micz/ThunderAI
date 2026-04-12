@@ -799,7 +799,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             }
             message = messageResult.messages[0];
             curr_fullMessage = await browser.messages.getFull(message.id);
-            msg_text = getMailBody(curr_fullMessage);
+            msg_text = await getMailBody(curr_fullMessage);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
                 body_text = msg_text.text.replace(/\s+/g, ' ').trim();
@@ -1729,7 +1729,7 @@ async function processEmails(args) {
     
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
-                msg_text = getMailBody(curr_fullMessage);
+                msg_text = await getMailBody(curr_fullMessage);
                 taLog.log("Starting from the HTML body if present and converting to plain text...");
                 body_text = htmlBodyToPlainText(msg_text.html);
                 if( body_text.length == 0 ){
