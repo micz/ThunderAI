@@ -1113,7 +1113,7 @@ async function processEmails(args) {
     
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
-                msg_text = getMailBody(curr_fullMessage);
+                msg_text = await getMailBody(curr_fullMessage);
                 taLog.log("Starting from the HTML body if present and converting to plain text...");
                 body_text = htmlBodyToPlainText(msg_text.html);
                 if( body_text.length == 0 ){
@@ -1283,7 +1283,7 @@ async function processEmails(args) {
           
             // extract body of current message as text
             const curr_message_full = await browser.messages.getFull(curr_message.id);
-            const curr_body_full_html = getMailBody(curr_message_full);
+            const curr_body_full_html = await getMailBody(curr_message_full);
             let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
             if( curr_body_full_text.length === 0) {
                 taLog.log("No HTML found in the message body, using plain text...");
