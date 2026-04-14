@@ -1796,7 +1796,7 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipSpamFilter) {
-                    let result = await _generateSpamReportForMessage(
+                    await _generateSpamReportForMessage(
                         message.headerMessageId,
                         {
                             messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
@@ -1805,7 +1805,6 @@ async function processEmails(args) {
                             skip_addresses: spamfilter_skip_addresses,
                             skip_addressbook: spamfilter_skip_addressbook
                         });
-                    if (!result.success) continue;
                 }
             }
 
