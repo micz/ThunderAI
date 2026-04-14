@@ -1655,7 +1655,8 @@ const newEmailListener = (folder, messagesList) => {
             addTagsAuto: add_tags_auto_enabled,
             spamFilter: prefs_init.spamfilter,
             summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
-            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3
+            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
+            isAutoMode: true,
         });
 
         if(prefs_init.spamfilter){
@@ -1691,7 +1692,8 @@ async function processEmails(args) {
         summarize = false,
         summarizeOnReceive = false,
         translateOnReceive = false,
-        translate = false
+        translate = false,
+        isAutoMode = false,
     } = args;
 
     taWorkingStatus.startWorking();
@@ -1737,69 +1739,74 @@ async function processEmails(args) {
             }
     
             if (addTagsAuto) {
-                if(prefs_aats.add_tags_enabled_accounts.length > 0){
+                let skipAddTags = false;
+                if(isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
-                        continue;
+                        skipAddTags = true;
                     }
                 }
-                let specialFullPrompt_add_tags = '';
-                let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
-                let tags_full_list = await getTagsList();
-                //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
-                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-                specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
-                    curr_prompt: curr_prompt_add_tags,
-                    curr_message: message,
-                    chatgpt_lang: chatgpt_lang,
-                    body_text: body_text,
-                    subject_text: curr_fullMessage.headers.subject,
-                    msg_text: msg_text,
-                    tags_full_list: tags_full_list
-                });
-                specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-                // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
-                let cmd_addTags = new mzta_specialCommand({
-                    prompt: specialFullPrompt_add_tags,
-                    llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
-                    custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                    do_debug: prefs_aats.do_debug,
-                    config: curr_prompt_add_tags
-                });
-                await cmd_addTags.initWorker();
-                let tags_current_email = [];
-                try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                } catch (err) {
-                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                if (!skipAddTags) {
+                    let specialFullPrompt_add_tags = '';
+                    let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
+                    let tags_full_list = await getTagsList();
+                    //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
+                    let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+                    specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
+                        curr_prompt: curr_prompt_add_tags,
+                        curr_message: message,
+                        chatgpt_lang: chatgpt_lang,
+                        body_text: body_text,
+                        subject_text: curr_fullMessage.headers.subject,
+                        msg_text: msg_text,
+                        tags_full_list: tags_full_list
+                    });
+                    specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+                    // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
+                    let cmd_addTags = new mzta_specialCommand({
+                        prompt: specialFullPrompt_add_tags,
+                        llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
+                        custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
+                        do_debug: prefs_aats.do_debug,
+                        config: curr_prompt_add_tags
+                    });
+                    await cmd_addTags.initWorker();
+                    let tags_current_email = [];
+                    try {
+                        tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    } catch (err) {
+                        console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                    }
+                    taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                    let _data = { messageId: message.id, tags: tags_current_email };
+                    _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
                 }
-                taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                let _data = { messageId: message.id, tags: tags_current_email };
-                _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
             }
     
             if (spamFilter) {
-                if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let skipSpamFilter = false;
+                if(isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
-                        continue;
+                        skipSpamFilter = true;
                     }
                 }
-
-                let result = await _generateSpamReportForMessage(
-                    message.headerMessageId,
-                    {
-                        messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
-                        prefs: prefs_aats,
-                        autoMove: true,
-                        skip_addresses: spamfilter_skip_addresses,
-                        skip_addressbook: spamfilter_skip_addressbook
-                    });
-                if (!result.success) continue;
+                if (!skipSpamFilter) {
+                    let result = await _generateSpamReportForMessage(
+                        message.headerMessageId,
+                        {
+                            messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
+                            prefs: prefs_aats,
+                            autoMove: true,
+                            skip_addresses: spamfilter_skip_addresses,
+                            skip_addressbook: spamfilter_skip_addressbook
+                        });
+                    if (!result.success) continue;
+                }
             }
 
             if (summarizeOnReceive) {
