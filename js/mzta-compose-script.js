@@ -83,7 +83,7 @@ function _ensureContainer() {
 
         const toolbar = document.createElement('div');
         toolbar.id = 'mzta-toolbar';
-        toolbar.style.cssText = `display: none; align-items: flex-start; gap: 8px; padding: 6px 0.5rem; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
+        toolbar.style.cssText = `display: none; align-items: flex-start; gap: 8px; padding: 4px 0.2rem;; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
         container.appendChild(toolbar);
 
         const panels = document.createElement('div');
@@ -911,7 +911,7 @@ switch (message.command) {
     // Outer wrapper: flex-direction column, but initially only topRow is visible (no height from brandingRow)
     const badge = document.createElement('div');
     badge.title = browser.i18n.getMessage("spam_badge_tooltip");
-    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 0px 8px; font-size: 12px; font-weight: bold; display: inline-flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; flex: 1; box-sizing: border-box; align-self: stretch;`;
+    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 4px 8px; font-size: 12px; font-weight: bold; display: inline-flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; box-sizing: border-box; align-self: stretch;`;
 
     // Top row (always visible): score + text + chevron + branding + menu
     const topRow = document.createElement('div');
