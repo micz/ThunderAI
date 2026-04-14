@@ -980,23 +980,35 @@ switch (message.command) {
 
     chevron.onclick = (e) => {
         e.stopPropagation();
-        badgeText.style.transition = 'max-height 0.3s ease';
-        badgeText.style.maxHeight = badgeText.scrollHeight + 'px';
         badgeText.style.whiteSpace = 'normal';
         badgeText.style.overflow = 'hidden';
         badgeText.style.textOverflow = 'unset';
-        badgeText.style.padding = 'padding: 0px 8px;';
         topRow.style.alignItems = 'flex-start';
         spamMenu.style.display = '';
-        branding.style.display = 'none';
+        chevron.style.display = 'none';
         brandingRow.style.maxHeight = '2em';
         brandingRow.style.opacity = '1';
-        chevron.style.display = 'none';
     };
     badge.onmouseover = () => { badge.style.opacity = '0.8'; };
     badge.onmouseout = () => { badge.style.opacity = '1'; };
 
     _addToolbarItem('mzta-toolbar-spam', badge);
+
+    // After render: if text fits, show branding+menu inline and hide chevron;
+    // if text is truncated, show chevron and keep branding+menu hidden.
+    requestAnimationFrame(() => {
+        if (badgeText.scrollWidth > badgeText.clientWidth) {
+            // Text is truncated: show chevron, keep branding+menu hidden
+            chevron.style.display = 'inline';
+            branding.style.display = 'none';
+            spamMenu.style.display = 'none';
+        } else {
+            // Text fits: show branding+menu inline, hide chevron
+            chevron.style.display = 'none';
+            branding.style.display = '';
+            spamMenu.style.display = '';
+        }
+    });
 
     return Promise.resolve(true);
   }
