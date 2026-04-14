@@ -83,7 +83,7 @@ function _ensureContainer() {
 
         const toolbar = document.createElement('div');
         toolbar.id = 'mzta-toolbar';
-        toolbar.style.cssText = `display: none; align-items: center; gap: 8px; padding: 6px 0.5rem; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
+        toolbar.style.cssText = `display: none; align-items: flex-start; gap: 8px; padding: 6px 0.5rem; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
         container.appendChild(toolbar);
 
         const panels = document.createElement('div');
@@ -980,6 +980,7 @@ switch (message.command) {
 
     chevron.onclick = (e) => {
         e.stopPropagation();
+        _spamResizeObserver.disconnect();
         badgeText.style.whiteSpace = 'normal';
         badgeText.style.overflow = 'hidden';
         badgeText.style.textOverflow = 'unset';
@@ -994,21 +995,23 @@ switch (message.command) {
 
     _addToolbarItem('mzta-toolbar-spam', badge);
 
-    // After render: if text fits, show branding+menu inline and hide chevron;
-    // if text is truncated, show chevron and keep branding+menu hidden.
-    requestAnimationFrame(() => {
+    const _updateSpamVisibility = () => {
+        if (badgeText.style.whiteSpace === 'normal') return; // already expanded, don't interfere
         if (badgeText.scrollWidth > badgeText.clientWidth) {
-            // Text is truncated: show chevron, keep branding+menu hidden
             chevron.style.display = 'inline';
             branding.style.display = 'none';
             spamMenu.style.display = 'none';
         } else {
-            // Text fits: show branding+menu inline, hide chevron
             chevron.style.display = 'none';
             branding.style.display = '';
             spamMenu.style.display = '';
         }
-    });
+    };
+
+    requestAnimationFrame(_updateSpamVisibility);
+
+    const _spamResizeObserver = new ResizeObserver(_updateSpamVisibility);
+    _spamResizeObserver.observe(badge);
 
     return Promise.resolve(true);
   }
