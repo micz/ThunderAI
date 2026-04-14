@@ -903,44 +903,44 @@ switch (message.command) {
     const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
     const sc = colors.spam;
 
-    // Spam badge in toolbar (clickable to toggle explanation panel)
+    const explanationText = data.spamValue == -999
+        ? data.explanation
+        : browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+
+    // Single toolbar item: score + truncated explanation + chevron + branding + menu
+    // Outer wrapper: flex-direction column, but initially only topRow is visible (no height from brandingRow)
     const badge = document.createElement('div');
     badge.title = browser.i18n.getMessage("spam_badge_tooltip");
-    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;`;
+    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 0px 8px; font-size: 12px; font-weight: bold; display: inline-flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; flex: 1; box-sizing: border-box; align-self: stretch;`;
+
+    // Top row (always visible): score + text + chevron + branding + menu
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display: flex; align-items: center; gap: 4px; width: 100%; min-width: 0;';
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.style.cssText = 'white-space: nowrap; flex-shrink: 0;';
     if (data.spamValue == -999) {
-        badge.textContent = browser.i18n.getMessage("apiwebchat_error");
+        scoreSpan.textContent = browser.i18n.getMessage("apiwebchat_error");
     } else {
-        badge.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "\u26A0\uFE0F " + browser.i18n.getMessage("Spam") : "\uD83D\uDEE1\uFE0F " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+        scoreSpan.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "\u26A0\uFE0F " + browser.i18n.getMessage("Spam") : "\uD83D\uDEE1\uFE0F " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
     }
+    topRow.appendChild(scoreSpan);
+
+    const badgeText = document.createElement('span');
+    badgeText.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; font-weight: normal;';
+    badgeText.textContent = explanationText;
+    topRow.appendChild(badgeText);
+
+    // Chevron: expands once, then disappears
     const chevron = document.createElement('span');
-    chevron.textContent = ' \u25BC';
-    chevron.style.cssText = 'font-size: 10px; transition: transform 0.2s; transform: rotate(-90deg);';
-    badge.appendChild(chevron);
+    chevron.textContent = '\u25BC';
+    chevron.style.cssText = 'font-size: 10px; flex-shrink: 0; cursor: pointer;';
+    topRow.appendChild(chevron);
 
-    let spamExpanded = false;
-    badge.onclick = () => {
-        const panel = document.getElementById('mzta-spam-report-banner');
-        if (panel) {
-            spamExpanded = !spamExpanded;
-            panel.style.display = spamExpanded ? 'flex' : 'none';
-            chevron.style.transform = spamExpanded ? '' : 'rotate(-90deg)';
-        }
-    };
-    badge.onmouseover = () => { badge.style.opacity = '0.8'; };
-    badge.onmouseout = () => { badge.style.opacity = '1'; };
-
-    _addToolbarItem('mzta-toolbar-spam', badge);
-
-    // Explanation panel (collapsed by default)
-    const panel = document.createElement('div');
-    panel.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 8px 0.5rem; font-size: 13px; display: none; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
-
-    const reasonText = document.createElement('span');
-    if (data.spamValue == -999) {
-        reasonText.textContent = data.explanation;
-    } else {
-        reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
-    }
+    const branding = document.createElement('span');
+    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap; flex-shrink: 0; font-weight: normal; display: none;';
+    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+    topRow.appendChild(branding);
 
     const spamMenu = createThreeDotsMenu(colors.isDark, [
         {
@@ -963,19 +963,41 @@ switch (message.command) {
             }
         }
     ], { bg: sc.bg, border: sc.border, text: sc.text });
+    spamMenu.style.fontWeight = 'normal';
+    spamMenu.style.display = 'none';
+    topRow.appendChild(spamMenu);
 
-    const rightGroup = document.createElement('span');
-    rightGroup.style.cssText = 'margin-left: auto; display: flex; align-items: center; gap: 5px;';
-    const branding = document.createElement('span');
-    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
-    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
-    rightGroup.appendChild(branding);
-    rightGroup.appendChild(spamMenu);
+    badge.appendChild(topRow);
 
-    panel.appendChild(reasonText);
-    panel.appendChild(rightGroup);
+    // Bottom row (only when expanded): branding right-aligned, hidden via zero height
+    const brandingRow = document.createElement('div');
+    brandingRow.style.cssText = 'display: flex; justify-content: flex-end; width: 100%; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s ease;';
+    const brandingExpanded = document.createElement('span');
+    brandingExpanded.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; font-weight: normal;';
+    brandingExpanded.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+    brandingRow.appendChild(brandingExpanded);
+    badge.appendChild(brandingRow);
 
-    _addPanel('mzta-spam-report-banner', panel);
+    chevron.onclick = (e) => {
+        e.stopPropagation();
+        badgeText.style.transition = 'max-height 0.3s ease';
+        badgeText.style.maxHeight = badgeText.scrollHeight + 'px';
+        badgeText.style.whiteSpace = 'normal';
+        badgeText.style.overflow = 'hidden';
+        badgeText.style.textOverflow = 'unset';
+        badgeText.style.padding = 'padding: 0px 8px;';
+        topRow.style.alignItems = 'flex-start';
+        spamMenu.style.display = '';
+        branding.style.display = 'none';
+        brandingRow.style.maxHeight = '2em';
+        brandingRow.style.opacity = '1';
+        chevron.style.display = 'none';
+    };
+    badge.onmouseover = () => { badge.style.opacity = '0.8'; };
+    badge.onmouseout = () => { badge.style.opacity = '1'; };
+
+    _addToolbarItem('mzta-toolbar-spam', badge);
+
     return Promise.resolve(true);
   }
 
