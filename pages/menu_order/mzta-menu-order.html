@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ThunderAI - __MSG_menu_order_title__</title>
+    <link rel="stylesheet" href="mzta-menu-order.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
+  </head>
+  <body>
+    <h1 class="page_title">__MSG_menu_order_title__</h1>
+    <p class="info_text">__MSG_menu_order_info__</p>
+    <div id="command_palette">
+      <button id="btnSave" disabled>__MSG_menu_order_save__</button>
+      <span id="msgDisplay"></span>
+    </div>
+    <div id="lists_container">
+      <div class="menu_list_panel" id="popup_panel">
+        <h2>__MSG_menu_order_popup_list_title__</h2>
+        <div class="sub_tabs">
+          <button class="sub_tab active" data-view="display">__MSG_menu_order_tab_reading__</button>
+          <button class="sub_tab" data-view="compose">__MSG_menu_order_tab_composing__</button>
+        </div>
+        <h3 class="section_label">__MSG_menu_order_active_items__</h3>
+        <ul id="popup_list" class="sortable_list"></ul>
+        <h3 class="section_label hidden_section_label">__MSG_menu_order_hidden_items__</h3>
+        <ul id="popup_list_hidden" class="hidden_list"></ul>
+      </div>
+      <div class="menu_list_panel" id="context_panel">
+        <h2>__MSG_menu_order_context_list_title__</h2>
+        <h3 class="section_label">__MSG_menu_order_active_items__</h3>
+        <ul id="context_list" class="sortable_list"></ul>
+        <h3 class="section_label hidden_section_label">__MSG_menu_order_hidden_items__</h3>
+        <ul id="context_list_hidden" class="hidden_list"></ul>
+      </div>
+    </div>
+    <script src="mzta-menu-order.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+  </body>
+</html>

@@ -488,6 +488,7 @@ export class mzta_Menus {
             is_special: prompt.is_special,
             position_display: prompt.position_display,
             position_compose: prompt.position_compose,
+            position_context: prompt.position_context,
         };
         this.shortcutMenu.push(curr_menu_entry);
     }
@@ -514,8 +515,11 @@ export class mzta_Menus {
             }, resolve)
         );
 
-        // Sort alphabetically for context menu
+        // Sort by position_context if available, otherwise alphabetically
         contextPrompts.sort((a, b) => {
+            const posA = a.position_context || 9999;
+            const posB = b.position_context || 9999;
+            if (posA !== posB) return posA - posB;
             const nameA = i18nConditionalGet(a.name);
             const nameB = i18nConditionalGet(b.name);
             return nameA.localeCompare(nameB);

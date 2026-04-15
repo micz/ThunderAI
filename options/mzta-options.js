@@ -412,6 +412,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
   });
 
+  document.getElementById('btnMenuOrder').addEventListener('click', () => {
+    openTab('/pages/menu_order/mzta-menu-order.html');
+  });
+
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
     openTab('/pages/addtags/mzta-add-tags.html');
   });

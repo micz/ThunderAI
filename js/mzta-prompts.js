@@ -383,7 +383,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "none",
     },
     {
         id: 'prompt_summarize_email_separator',
@@ -400,7 +400,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "none",
     },
     {
         id: 'prompt_translate_this',
@@ -488,7 +488,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text', 'show_in'];
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -541,6 +541,7 @@ async function getDefaultPrompts_withProps() {
             prompt.text = browser.i18n.getMessage(prompt.text);
             prompt.position_display = pos;
             prompt.position_compose = pos;
+            prompt.position_context = pos;
             prompt.enabled = 1;
             pos++;
         })
@@ -552,6 +553,7 @@ async function getDefaultPrompts_withProps() {
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
+                prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
@@ -562,6 +564,7 @@ async function getDefaultPrompts_withProps() {
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
+                prompt.position_context = pos;
                 prompt.enabled = 1;
                 pos++;
             }
@@ -608,6 +611,7 @@ export async function setDefaultPromptsProperties(prompts) {
         default_prompts_properties[prompt.id] = {
             position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
             position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+            position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
             enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
             need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
@@ -664,6 +668,10 @@ export async function getSpecialPrompts(){
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
     await browser.storage.local.set({_special_prompts: prompts});
+}
+
+export function getHiddenSpecialPromptIds() {
+    return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
 }
 
 export async function getSpamFilterPrompt(){

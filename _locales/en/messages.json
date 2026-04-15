@@ -36,11 +36,11 @@
     "description": ""
   },
   "prompt_summarize_this": {
-    "message": "Summarize this",
+    "message": "Summarize",
     "description": ""
   },
   "prompt_translate_this": {
-    "message": "Translate this",
+    "message": "Translate",
     "description": ""
   },
   "prompt_this": {
@@ -853,7 +853,7 @@
     "description": ""
   },
   "prompt_add_tags": {
-    "message": "Add tags to this email",
+    "message": "Add tags",
     "description": ""
   },
   "prompt_add_tags_full_text": {
@@ -1393,7 +1393,7 @@
     "description": ""
   },
   "prompt_spamfilter" : {
-    "message" : "Detect spam emails",
+    "message" : "Analyze for spam",
     "description" : ""
   },
   "prompt_spamfilter_full_text" : {
@@ -1498,22 +1498,6 @@
   },
   "no_string": {
     "message": "No",
-    "description": ""
-  },
-  "context_menu_mzta-add-tags": {
-    "message": "Add tags",
-    "description": ""
-  },
-  "context_menu_mzta-spamfilter": {
-    "message": "Analyze for spam",
-    "description": ""
-  },
-  "context_menu_mzta-summarize": {
-    "message": "Summarize",
-    "description": ""
-  },
-  "context_menu_mzta-translate": {
-    "message": "Translate",
     "description": ""
   },
   "noActiveCalendar": {
@@ -2274,5 +2258,73 @@
   "placeholder_string": {
     "message": "Placeholder",
     "description": ""
+  },
+  "menu_order_title": {
+    "message": "Menu Order",
+    "description": "Title for the menu order page"
+  },
+  "menu_order_popup_list_title": {
+    "message": "Popup Menu",
+    "description": "Header for the popup menu list in the menu order page"
+  },
+  "menu_order_context_list_title": {
+    "message": "Context Menu",
+    "description": "Header for the context menu list in the menu order page"
+  },
+  "menu_order_save": {
+    "message": "Save",
+    "description": "Save button label in menu order page"
+  },
+  "menu_order_saved": {
+    "message": "Menu order saved.",
+    "description": "Message shown after saving menu order"
+  },
+  "menu_order_tab_reading": {
+    "message": "Reading",
+    "description": "Sub-tab label for reading view ordering"
+  },
+  "menu_order_tab_composing": {
+    "message": "Composing",
+    "description": "Sub-tab label for composing view ordering"
+  },
+  "menu_order_badge_default": {
+    "message": "Default",
+    "description": "Badge label for default prompts"
+  },
+  "menu_order_badge_special": {
+    "message": "Special",
+    "description": "Badge label for special prompts"
+  },
+  "menu_order_badge_custom": {
+    "message": "Custom",
+    "description": "Badge label for custom prompts"
+  },
+  "menu_order_type_reading": {
+    "message": "Reading",
+    "description": "Badge label for reading-only prompts"
+  },
+  "menu_order_type_composing": {
+    "message": "Composing",
+    "description": "Badge label for composing-only prompts"
+  },
+  "menu_order_type_always": {
+    "message": "Always",
+    "description": "Badge label for prompts shown in all contexts"
+  },
+  "menu_order_btn_label": {
+    "message": "Menu Order",
+    "description": "Button label to open the menu order page from options"
+  },
+  "menu_order_info": {
+    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "description": "Info text for the menu order page"
+  },
+  "menu_order_active_items": {
+    "message": "Visible items",
+    "description": "Section header for active/visible menu items"
+  },
+  "menu_order_hidden_items": {
+    "message": "Hidden items",
+    "description": "Section header for hidden menu items"
   }
 }
