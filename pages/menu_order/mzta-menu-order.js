@@ -20,6 +20,7 @@ import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, setSpecialPr
 import { i18nConditionalGet } from '../../js/mzta-utils.js';
 
 let allPrompts = [];
+let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
 let currentPopupView = 'display'; // 'display' or 'compose'
 let hasUnsavedChanges = false;
 
@@ -27,8 +28,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     allPrompts = await getPrompts(false, [], true);
 
     // Exclude special prompts that are defined with show_in: "none" (internal prompts, not user-toggleable)
+    // and special prompts whose feature is not active (e.g. add_tags disabled, sparks not present)
     const hiddenSpecialIds = getHiddenSpecialPromptIds();
-    allPrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
+    const activeSpecialIds = await browser.runtime.sendMessage({ command: "get_active_special_ids" });
+    allExcludedSpecialPrompts = allPrompts.filter(p =>
+        hiddenSpecialIds.includes(p.id) ||
+        (String(p.is_special) === '1' && !activeSpecialIds.includes(p.id))
+    );
+    allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.some(e => e.id === p.id));
 
     // Resolve i18n names and assign initial position_context if missing
     let contextPos = 1;
@@ -297,7 +304,7 @@ async function saveAll() {
 
     const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
     const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
-    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1');
+    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);
     await setCustomPrompts(customPromptsToSave);

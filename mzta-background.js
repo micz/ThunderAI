@@ -186,6 +186,24 @@ async function _reload_menus() {
     return true;
 }
 
+async function _getActiveSpecialIds() {
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
+    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
+    let getTask = doGetSparkFeature(prefs_reload.get_task);
+    return getActiveSpecialPromptsIDs({
+        addtags: prefs_reload.add_tags,
+        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+        get_calendar_event: getCalendarEvent,
+        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+        get_task: getTask,
+        spamfilter: prefs_reload.spamfilter,
+        summarize: prefs_reload.summarize,
+        translate: prefs_reload.translate,
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+    });
+}
+
 async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
     let all_tags_list = await getTagsList();
     all_tags_list = all_tags_list[1];
@@ -505,6 +523,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'reload_menus':
                 return _reload_menus();
+                break;
+            case 'get_active_special_ids':
+                return _getActiveSpecialIds();
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
