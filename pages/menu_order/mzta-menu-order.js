@@ -82,12 +82,15 @@ function initSubTabs() {
 
 function renderPopupList() {
     const posKey = currentPopupView === 'display' ? 'position_display' : 'position_compose';
+    // Filter by type: reading view shows type 0+1, composing view shows type 0+2
+    const allowedTypes = currentPopupView === 'display' ? ['0', '1'] : ['0', '2'];
+    const typeFiltered = allPrompts.filter(p => allowedTypes.includes(String(p.type)));
 
-    const activeItems = allPrompts.filter(p => {
+    const activeItems = typeFiltered.filter(p => {
         const showIn = p.show_in || 'popup';
         return showIn === 'popup' || showIn === 'both';
     });
-    const hiddenItems = allPrompts.filter(p => {
+    const hiddenItems = typeFiltered.filter(p => {
         const showIn = p.show_in || 'popup';
         return showIn !== 'popup' && showIn !== 'both';
     });
