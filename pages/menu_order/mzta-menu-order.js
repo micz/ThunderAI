@@ -23,8 +23,15 @@ import {
     setSpecialPrompts,
     getHiddenSpecialPromptIds
 } from '../../js/mzta-prompts.js';
-import { i18nConditionalGet, specialPromptToContextMenuID, contextMenuIconsPath } from '../../js/mzta-utils.js';
-import { customMenuIcons, customMenuIconsPath } from './mzta-custom-menu-icons.js';
+import {
+    i18nConditionalGet,
+    specialPromptToContextMenuID,
+    contextMenuIconsPath
+} from '../../js/mzta-utils.js';
+import {
+    customMenuIcons,
+    customMenuIconsPath
+} from './mzta-custom-menu-icons.js';
 
 // Convert "moz-extension:images/foo.png" to a relative path usable from this page
 function resolveSpecialIconPath(promptId) {

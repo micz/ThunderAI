@@ -383,4 +383,12 @@
     a:visited { color: #409eff; }
     a:hover { color: #66b1ff; }
     a:active { color: #66b1ff; }
+
+    .item_icon_preview_empty {
+        filter: invert(1);
+    }
+
+    .icon_picker_cell_none img {
+        filter: invert(1);
+    }
 }
