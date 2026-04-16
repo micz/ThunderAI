@@ -29,9 +29,10 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | Property | Type | Description |
 |----------|------|-------------|
 | `enabled` | number | `0` = hidden, `1` = shown in menus |
-| `position_display` | number | Sort order in reading view (used when alphabetical ordering is off) |
-| `position_compose` | number | Sort order in compose view (used when alphabetical ordering is off) |
-| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
+| `position_display` | number | Sort order for the popup menu in reading view |
+| `position_compose` | number | Sort order for the popup menu in compose view |
+| `position_context` | number | Sort order for the context menu |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = hidden from all menus. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
 
 ### Per-Prompt API Override Properties
 
@@ -63,16 +64,66 @@ These special prompts can have their own dedicated API integration settings (con
 ## Menu System
 
 ### Popup Menu
-- Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property)
-- Ordering: user can choose between alphabetical or position-based (using `position_display`/`position_compose`) via the `dynamic_menu_order_alphabet` preference
+- Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`)
+- Ordering: always position-based using `position_display` (reading view) or `position_compose` (compose view). Alphabetical ordering has been removed
 - Special prompts retain their colored background (CSS class `special_prompt`) in the popup based on `is_special == "1"`
 
 ### Context Menu
 - Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)
 - Appears as a "ThunderAI" submenu in the `message_list` context
+- Ordering: position-based using `position_context` (fallback to alphabetical only when positions are equal)
 - Special prompts (add_tags, spamfilter, summarize, translate) route through `processEmails()` for batch processing; regular prompts execute via `menus.executeMenuAction()`
 - Icons: special prompts use dedicated icons (defined in `contextMenuIconsPath`); all other prompts use the addon icon (`images/icon-32.png`)
 - Add Tags in context menu assigns tags automatically (`addTagsAuto: true`), while in the popup it shows the interactive tag selection form
+
+### Menu Order Page (`pages/menu_order/`)
+
+Dedicated page for reordering, enabling, and disabling menu items across both the popup and the context menu. Opened from the options page via the "Menu Order" button.
+
+**UI layout** — two side-by-side panels:
+- **Popup Menu panel**: sub-tabs for "Reading" / "Composing" switch the list between `position_display` / `position_compose` ordering and between the allowed types (`0`+`1` vs `0`+`2`)
+- **Context Menu panel**: single list ordered by `position_context`. Items with `type: "2"` (composing-only) are never shown here
+
+Each list has two sections:
+- **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
+- **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically, not draggable
+
+**Toggle coordination** — flipping the checkbox updates the prompt's `show_in` with four-state logic:
+- Popup ON: `"none"` → `"popup"`, `"context"` → `"both"`
+- Popup OFF: `"popup"` → `"none"`, `"both"` → `"context"`
+- Context ON: `"none"` → `"context"`, `"popup"` → `"both"`
+- Context OFF: `"context"` → `"none"`, `"both"` → `"popup"`
+
+**Drag and drop** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context` depending on which list is being sorted.
+
+**Exclusions from the UI** (preserved on save so data is not lost):
+- Prompts with `enabled === 0` (disabled)
+- Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
+- Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
+
+**Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work.
+
+**Save flow**:
+1. Re-concat preserved prompts (disabled + hidden-specials + inactive-feature specials) with the UI-visible prompts
+2. Split by `is_default` / `is_special` and call `setDefaultPromptsProperties()`, `setCustomPrompts()`, `setSpecialPrompts()`
+3. Send `reload_menus` to the background to rebuild both menus
+
+### Alphabetic-to-Position Migration
+
+The `dynamic_menu_order_alphabet` preference (previously a user-facing option) has been retired and removed from the UI, but the key still exists in storage as a one-shot migration flag. At every background startup, `migrateMenuOrderAlphabetic()` in `js/mzta-prompts.js` runs:
+
+1. Reads `dynamic_menu_order_alphabet` (defaults to `true` if unset)
+2. If `true`: sorts all visible prompts with special prompts first (alphabetically), then the rest (alphabetically), and assigns sequential `position_display` = `position_compose` = `position_context` numbers. Hidden special prompts are preserved untouched.
+3. Persists the new positions via `setDefaultPromptsProperties` / `setCustomPrompts` / `setSpecialPrompts`
+4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
+
+This ensures existing users upgrading from the previous alphabetical-default behaviour get the same visible ordering on first run, while subsequent launches keep whatever custom ordering the user has set.
+
+### Special Prompt Visibility Dependencies
+
+`getActiveSpecialPromptsIDs()` in `js/mzta-utils.js` maps feature prefs to active special prompt IDs. Notable dependency:
+
+- `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref.
 
 ### Summarize: Dual-Mode Prompt System
 

@@ -210,6 +210,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `customdataplaceholders/` | Custom placeholder editor |
 | `get-calendar-event/` | Calendar event extraction settings |
 | `get-task/` | Task creation settings |
+| `menu_order/` | Drag-and-drop reordering and visibility control for popup and context menus |
 | `spamfilter/` | Spam filter settings |
 | `summarize/` | Email summarization settings |
 | `translate/` | Email translation settings |
