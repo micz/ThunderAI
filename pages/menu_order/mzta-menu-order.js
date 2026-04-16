@@ -23,7 +23,6 @@ let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
 let allDisabledPrompts = []; // default/custom prompts disabled (enabled=0), excluded from UI, preserved on save
 let currentPopupView = 'display'; // 'display' or 'compose'
-let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
@@ -32,14 +31,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnSaveAll').addEventListener('click', saveAll);
 
     // If prompts are modified elsewhere (e.g. custom prompts page saving), reload this page's data.
-    // We skip reload if we have unsaved changes, to avoid losing user work.
+    // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
     let reloadDebounce = null;
     browser.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local') return;
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
-        if (hasUnsavedChanges) return;
         clearTimeout(reloadDebounce);
         reloadDebounce = setTimeout(() => {
+            document.getElementById('btnSaveAll').disabled = true;
+            const msgDisplay = document.getElementById('msgDisplay');
+            msgDisplay.textContent = '';
+            msgDisplay.style.display = 'none';
             loadAndRender();
         }, 200);
     });
@@ -341,7 +343,6 @@ async function saveAll() {
 
     await browser.runtime.sendMessage({ command: "reload_menus" });
 
-    hasUnsavedChanges = false;
     msgDisplay.textContent = browser.i18n.getMessage('menu_order_saved');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'green';
@@ -352,7 +353,6 @@ async function saveAll() {
 }
 
 function markUnsaved() {
-    hasUnsavedChanges = true;
     document.getElementById('btnSaveAll').disabled = false;
     const msgDisplay = document.getElementById('msgDisplay');
     msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
