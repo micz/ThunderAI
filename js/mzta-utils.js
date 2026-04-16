@@ -16,7 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
+import {
+  prefs_default,
+  getDynamicSettingValue
+} from '../options/mzta-options-default.js';
+
+import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
+
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
@@ -29,10 +35,10 @@ export const contextMenuID_Spamfilter = 'mzta-spamfilter';
 export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuID_Translate = 'mzta-translate';
 export const contextMenuIconsPath = {
-  [contextMenuID_AddTags]: 'moz-extension:images/menu_autotags.png',
-  [contextMenuID_Spamfilter]: 'moz-extension:images/menu_spamfilter.png',
-  [contextMenuID_Summarize]: 'moz-extension:images/menu_summarize.png',
-  [contextMenuID_Translate]: 'moz-extension:images/menu_translate.png',
+  [contextMenuID_AddTags]: 'moz-extension:images/context_menu/autotags.png',
+  [contextMenuID_Spamfilter]: 'moz-extension:images/context_menu/spamfilter.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/context_menu/summarize.png',
+  [contextMenuID_Translate]: 'moz-extension:images/context_menu/translate.png',
 };
 
 // Map from special prompt IDs to context menu IDs
@@ -59,7 +65,7 @@ export function getContextMenuIcon(prompt) {
   }
 
   if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
-    return 'moz-extension:images/custom_menu/' + prompt.custom_icon;
+    return 'moz-extension:' + customMenuIconsPath + prompt.custom_icon;
   }
 
   return defaultContextMenuIcon;

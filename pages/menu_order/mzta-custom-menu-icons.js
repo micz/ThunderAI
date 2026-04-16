@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-export const customMenuIconsPath = 'images/custom_menu/';
+export const customMenuIconsPath = 'images/context_menu/custom/';
 
 export const customMenuIcons = [
     'adventure-game.png',

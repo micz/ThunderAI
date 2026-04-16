@@ -33,7 +33,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
 | `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = hidden from all menus. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
-| `custom_icon` | string | Filename (with extension) of an icon in `images/custom_menu/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
+| `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
 
 ### Per-Prompt API Override Properties
 
