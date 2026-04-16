@@ -21,6 +21,7 @@ import { i18nConditionalGet } from '../../js/mzta-utils.js';
 
 let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
+let allDisabledPrompts = []; // default/custom prompts disabled (enabled=0), excluded from UI, preserved on save
 let currentPopupView = 'display'; // 'display' or 'compose'
 let hasUnsavedChanges = false;
 
@@ -36,6 +37,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         (String(p.is_special) === '1' && !activeSpecialIds.includes(p.id))
     );
     allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.some(e => e.id === p.id));
+
+    // Exclude disabled prompts (enabled=0) from the UI, preserve them for save
+    allDisabledPrompts = allPrompts.filter(p => String(p.enabled) === '0');
+    allPrompts = allPrompts.filter(p => String(p.enabled) !== '0');
 
     // Resolve i18n names and assign initial position_context if missing
     let contextPos = 1;
@@ -305,9 +310,13 @@ async function saveAll() {
     const msgDisplay = document.getElementById('msgDisplay');
     btnSaveAll.disabled = true;
 
-    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
-    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
-    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
+    const disabledDefaults = allDisabledPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
+    const disabledCustoms = allDisabledPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    const disabledSpecials = allDisabledPrompts.filter(p => String(p.is_special) === '1');
+
+    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1').concat(disabledDefaults);
+    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1').concat(disabledCustoms);
+    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(disabledSpecials).concat(allExcludedSpecialPrompts);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);
     await setCustomPrompts(customPromptsToSave);
