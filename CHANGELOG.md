@@ -8,6 +8,7 @@
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
         <li><i>[All APIs]</i> A summary has been added above the mail content [<a href="https://github.com/micz/ThunderAI/issues/580">#580</a>].</li>
         <li><i>[All APIs]</i> Inline auto translation for emails added [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
+        <li>Custom menus configuration added. Now it's possibile to define which prompts show in the ThunderAI menu, which ones in the context menu and in which order [<a href="https://github.com/micz/ThunderAI/issues/680">#680</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>
