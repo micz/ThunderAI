@@ -2268,7 +2268,7 @@
     "description": "Save button label in menu order page"
   },
   "menu_order_saved": {
-    "message": "Menu order saved.",
+    "message": "Menu order saved!",
     "description": "Message shown after saving menu order"
   },
   "menu_order_tab_reading": {
