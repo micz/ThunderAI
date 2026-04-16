@@ -82,15 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function searchPrompt(allPrompts, tabId, tabType, filtering){
  taLog.log("tabType: " + tabType);
 
- let prefs_order = await browser.storage.sync.get({dynamic_menu_order_alphabet: true});
-
- if(prefs_order.dynamic_menu_order_alphabet){
-  allPrompts.sort((a, b) => a.label.localeCompare(b.label));
- } else {
-  // Sort by position: use position_display for reading (filtering=1), position_compose for composing (filtering=2)
-  const posKey = filtering === 2 ? 'position_compose' : 'position_display';
-  allPrompts.sort((a, b) => (a[posKey] || 9999) - (b[posKey] || 9999));
- }
+ // Sort by position: use position_display for reading (filtering=1), position_compose for composing (filtering=2)
+ const posKey = filtering === 2 ? 'position_compose' : 'position_display';
+ allPrompts.sort((a, b) => (a[posKey] || 9999) - (b[posKey] || 9999));
 
  // console.log(">>>>>>>>> allPrompts: " + JSON.stringify(allPrompts));
 
