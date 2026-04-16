@@ -43,7 +43,8 @@ export const specialPromptToContextMenuID = {
   'prompt_translate_this': contextMenuID_Translate,
 };
 
-const defaultContextMenuIcon = 'moz-extension:images/icon-32.png';
+// const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
+const defaultContextMenuIcon = '';
 
 export function getContextMenuIcon(promptId) {
   const contextMenuId = specialPromptToContextMenuID[promptId];
