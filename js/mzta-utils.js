@@ -30,11 +30,17 @@ const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
 
+export const contextMenuID_GetCalendarEvent = 'mzta-get-calendar-event';
+export const contextMenuID_GetCalendarEventFromClipboard = 'mzta-get-calendar-event-from-clipboard';
+export const contextMenuID_GetTask = 'mzta-get-task';
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
 export const contextMenuID_Summarize = 'mzta-summarize';
 export const contextMenuID_Translate = 'mzta-translate';
 export const contextMenuIconsPath = {
+  [contextMenuID_GetCalendarEvent]: 'moz-extension:images/context_menu/getcalendarevent.png',
+  [contextMenuID_GetCalendarEventFromClipboard]: 'moz-extension:images/context_menu/getcalendareventfromclipboard.png',
+  [contextMenuID_GetTask]: 'moz-extension:images/context_menu/gettask.png',
   [contextMenuID_AddTags]: 'moz-extension:images/context_menu/autotags.png',
   [contextMenuID_Spamfilter]: 'moz-extension:images/context_menu/spamfilter.png',
   [contextMenuID_Summarize]: 'moz-extension:images/context_menu/summarize.png',
@@ -43,6 +49,9 @@ export const contextMenuIconsPath = {
 
 // Map from special prompt IDs to context menu IDs
 export const specialPromptToContextMenuID = {
+  'prompt_get_calendar_event': contextMenuID_GetCalendarEvent,
+  'prompt_get_calendar_event_from_clipboard': contextMenuID_GetCalendarEventFromClipboard,
+  'prompt_get_task': contextMenuID_GetTask,
   'prompt_add_tags': contextMenuID_AddTags,
   'prompt_spamfilter': contextMenuID_Spamfilter,
   'prompt_summarize': contextMenuID_Summarize,
