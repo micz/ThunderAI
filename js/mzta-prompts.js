@@ -674,6 +674,52 @@ export function getHiddenSpecialPromptIds() {
     return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
 }
 
+// Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions
+// so that prompts appear alphabetically with special prompts first, then disable the flag
+// to switch to position-based ordering permanently.
+export async function migrateMenuOrderAlphabetic() {
+    const prefs = await browser.storage.sync.get({ dynamic_menu_order_alphabet: true });
+    if (!prefs.dynamic_menu_order_alphabet) {
+        return;
+    }
+
+    const allPrompts = await getPrompts(false, [], true);
+    const hiddenSpecialIds = getHiddenSpecialPromptIds();
+    const visiblePrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
+
+    const resolveName = (p) => {
+        const n = p.name || '';
+        if (n.startsWith('__MSG_') && n.endsWith('__')) {
+            return browser.i18n.getMessage(n.substring(6, n.length - 2));
+        }
+        return n;
+    };
+
+    const specials = visiblePrompts.filter(p => String(p.is_special) === '1')
+        .sort((a, b) => resolveName(a).localeCompare(resolveName(b)));
+    const others = visiblePrompts.filter(p => String(p.is_special) !== '1')
+        .sort((a, b) => resolveName(a).localeCompare(resolveName(b)));
+    const ordered = specials.concat(others);
+
+    ordered.forEach((prompt, idx) => {
+        const pos = idx + 1;
+        prompt.position_display = pos;
+        prompt.position_compose = pos;
+        prompt.position_context = pos;
+    });
+
+    const defaultPromptsToSave = ordered.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
+    const customPromptsToSave = ordered.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    const visibleSpecialsToSave = ordered.filter(p => String(p.is_special) === '1');
+    const hiddenSpecialsToPreserve = allPrompts.filter(p => hiddenSpecialIds.includes(p.id));
+
+    await setDefaultPromptsProperties(defaultPromptsToSave);
+    await setCustomPrompts(customPromptsToSave);
+    await setSpecialPrompts(visibleSpecialsToSave.concat(hiddenSpecialsToPreserve));
+
+    await browser.storage.sync.set({ dynamic_menu_order_alphabet: false });
+}
+
 export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
 }

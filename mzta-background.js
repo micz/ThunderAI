@@ -53,7 +53,8 @@ import {
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
-    getSpamFilterPrompt
+    getSpamFilterPrompt,
+    migrateMenuOrderAlphabetic
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -1571,6 +1572,7 @@ function setupPermissionsRemovedListener() {
 setupPermissionsRemovedListener();
 
 // Menus handling
+await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(special_prompts_ids);
 
