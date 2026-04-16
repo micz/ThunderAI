@@ -1,17 +1,5 @@
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 20px;
-    padding: 0;
-}
-
 .page_title {
-    margin-bottom: 4px;
-}
-
-.info_text {
-    margin-top: 0;
-    font-size: 0.9em;
-    color: #555;
+    margin-bottom: 0px;
 }
 
 #command_palette {
@@ -199,10 +187,6 @@ body {
     body {
         background-color: #1c1b22;
         color: rgb(251, 251, 254);
-    }
-
-    .info_text {
-        color: #aaa;
     }
 
     #msgDisplay {
