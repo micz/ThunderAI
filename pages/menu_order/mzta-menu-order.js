@@ -16,7 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getPrompts, setDefaultPromptsProperties, setCustomPrompts, setSpecialPrompts, getHiddenSpecialPromptIds } from '../../js/mzta-prompts.js';
+import {
+    getPrompts,
+    setDefaultPromptsProperties,
+    setCustomPrompts,
+    setSpecialPrompts,
+    getHiddenSpecialPromptIds
+} from '../../js/mzta-prompts.js';
 import { i18nConditionalGet } from '../../js/mzta-utils.js';
 
 let allPrompts = [];
