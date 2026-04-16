@@ -488,7 +488,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in'];
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
