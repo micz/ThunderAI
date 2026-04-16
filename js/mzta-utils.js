@@ -667,9 +667,9 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   if (get_calendar_event) {
     output.push('prompt_get_calendar_event');
-  }
-  if (get_calendar_event_from_clipboard) {
-    output.push('prompt_get_calendar_event_from_clipboard');
+    if (get_calendar_event_from_clipboard) {
+      output.push('prompt_get_calendar_event_from_clipboard');
+    }
   }
   if (get_task) {
     output.push('prompt_get_task');
