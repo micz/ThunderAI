@@ -21,20 +21,12 @@ body {
     gap: 12px;
 }
 
-#btnSave {
-    padding: 6px 20px;
-    font-size: 1em;
-    cursor: pointer;
-}
-
-#btnSave:disabled {
-    opacity: 0.5;
-    cursor: default;
+#btnSaveAll {
+    float: left;
 }
 
 #msgDisplay {
-    font-size: 0.9em;
-    color: #2a7e2a;
+    padding-left: 40px;
 }
 
 #lists_container {
@@ -61,6 +53,9 @@ body {
     display: flex;
     gap: 4px;
     margin-bottom: 12px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0;
+    padding-left: 12px;
 }
 
 .sub_tab {
@@ -70,6 +65,7 @@ body {
     cursor: pointer;
     border-radius: 4px 4px 0 0;
     font-size: 0.9em;
+    margin-bottom: -1px;
 }
 
 .sub_tab.active {
@@ -216,6 +212,10 @@ body {
     .menu_list_panel {
         border-color: #444;
         background: #2a2a30;
+    }
+
+    .sub_tabs {
+        border-bottom-color: #555;
     }
 
     .sub_tab {

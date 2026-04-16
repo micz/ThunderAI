@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderContextList();
     initSubTabs();
 
-    document.getElementById('btnSave').addEventListener('click', saveAll);
+    document.getElementById('btnSaveAll').addEventListener('click', saveAll);
 
     i18n.updateDocument();
 });
@@ -301,9 +301,9 @@ function updatePositionsFromDOM(listEl, positionKey) {
 // ==================== Save ====================
 
 async function saveAll() {
-    const btnSave = document.getElementById('btnSave');
+    const btnSaveAll = document.getElementById('btnSaveAll');
     const msgDisplay = document.getElementById('msgDisplay');
-    btnSave.disabled = true;
+    btnSaveAll.disabled = true;
 
     const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
     const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
@@ -317,11 +317,19 @@ async function saveAll() {
 
     hasUnsavedChanges = false;
     msgDisplay.textContent = browser.i18n.getMessage('menu_order_saved');
-    setTimeout(() => { msgDisplay.textContent = ''; }, 3000);
+    msgDisplay.style.display = 'inline';
+    msgDisplay.style.color = 'green';
+    setTimeout(() => {
+        msgDisplay.textContent = '';
+        msgDisplay.style.display = 'none';
+    }, 3000);
 }
 
 function markUnsaved() {
     hasUnsavedChanges = true;
-    document.getElementById('btnSave').disabled = false;
-    document.getElementById('msgDisplay').textContent = '';
+    document.getElementById('btnSaveAll').disabled = false;
+    const msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
+    msgDisplay.style.display = 'inline';
+    msgDisplay.style.color = 'red';
 }
