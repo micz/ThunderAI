@@ -561,6 +561,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
                 prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
                 prompt.show_in = prefs._default_prompts_properties[prompt.id]?.show_in || prompt.show_in;
+                prompt.custom_icon = prefs._default_prompts_properties[prompt.id]?.custom_icon || "";
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
@@ -600,6 +601,9 @@ async function getCustomPrompts() {
             if(prompt.show_in === undefined){
                 prompt.show_in = "popup";
             }
+            if(prompt.custom_icon === undefined){
+                prompt.custom_icon = "";
+            }
         });
         return prefs._custom_prompt;
     }
@@ -619,6 +623,7 @@ export async function setDefaultPromptsProperties(prompts) {
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
             api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
             show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
+            custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
         };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));

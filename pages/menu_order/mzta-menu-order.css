@@ -171,6 +171,86 @@
     color: #e65100;
 }
 
+.item_icon_preview {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 1px;
+    box-sizing: border-box;
+}
+
+.item_icon_preview:hover {
+    border-color: #409df3;
+    background: #eef5ff;
+}
+
+.item_icon_preview_empty {
+    display: inline-block;
+    background: transparent;
+}
+
+.item_icon_preview_special {
+    cursor: default;
+}
+
+.item_icon_preview_special:hover {
+    border-color: transparent;
+    background: transparent;
+}
+
+.icon_picker_popover {
+    position: absolute;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    padding: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    display: grid;
+    grid-template-columns: repeat(5, 28px);
+    gap: 4px;
+    max-width: 180px;
+}
+
+.icon_picker_cell {
+    width: 28px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.icon_picker_cell img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.icon_picker_cell:hover {
+    background: #eef5ff;
+    border-color: #409df3;
+}
+
+.icon_picker_cell.selected {
+    background: #d4eaff;
+    border-color: #409df3;
+}
+
+.icon_picker_cell_none {
+    font-size: 1.2em;
+    color: #888;
+}
+
 /* Hidden list items */
 .hidden_list .sortable_item {
     opacity: 0.6;
@@ -266,6 +346,29 @@
     .badge_type {
         background: #3d2800;
         color: #ffb74d;
+    }
+
+    .item_icon_preview:hover {
+        background: #3a3a44;
+        border-color: #409df3;
+    }
+
+    .icon_picker_popover {
+        background: #2a2a30;
+        border-color: #555;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .icon_picker_cell:hover {
+        background: #3a3a44;
+    }
+
+    .icon_picker_cell.selected {
+        background: #1a3a5c;
+    }
+
+    .icon_picker_cell_none {
+        color: #aaa;
     }
 
     .hidden_list .sortable_item {

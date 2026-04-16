@@ -2314,5 +2314,13 @@
   "menu_order_hidden_items": {
     "message": "Hidden items",
     "description": "Section header for hidden menu items"
+  },
+  "menu_order_icon_label": {
+    "message": "Choose an icon",
+    "description": "Label/tooltip for the context menu icon picker on the menu order page"
+  },
+  "menu_order_icon_none": {
+    "message": "(none)",
+    "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   }
 }

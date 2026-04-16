@@ -46,11 +46,22 @@ export const specialPromptToContextMenuID = {
 // const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
 const defaultContextMenuIcon = '';
 
-export function getContextMenuIcon(promptId) {
-  const contextMenuId = specialPromptToContextMenuID[promptId];
-  if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
-    return contextMenuIconsPath[contextMenuId];
+export function getContextMenuIcon(prompt) {
+  // Back-compat: accept a plain id string too
+  const promptId = (typeof prompt === 'string') ? prompt : prompt?.id;
+  const isSpecial = (typeof prompt === 'object' && prompt !== null) ? String(prompt.is_special) === '1' : true;
+
+  if (isSpecial) {
+    const contextMenuId = specialPromptToContextMenuID[promptId];
+    if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
+      return contextMenuIconsPath[contextMenuId];
+    }
   }
+
+  if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
+    return 'moz-extension:images/custom_menu/' + prompt.custom_icon;
+  }
+
   return defaultContextMenuIcon;
 }
 

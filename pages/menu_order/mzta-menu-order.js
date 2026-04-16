@@ -23,7 +23,17 @@ import {
     setSpecialPrompts,
     getHiddenSpecialPromptIds
 } from '../../js/mzta-prompts.js';
-import { i18nConditionalGet } from '../../js/mzta-utils.js';
+import { i18nConditionalGet, specialPromptToContextMenuID, contextMenuIconsPath } from '../../js/mzta-utils.js';
+import { customMenuIcons, customMenuIconsPath } from './mzta-custom-menu-icons.js';
+
+// Convert "moz-extension:images/foo.png" to a relative path usable from this page
+function resolveSpecialIconPath(promptId) {
+    const ctxId = specialPromptToContextMenuID[promptId];
+    if (!ctxId) return '';
+    const raw = contextMenuIconsPath[ctxId];
+    if (!raw) return '';
+    return '../../' + raw.replace(/^moz-extension:/, '');
+}
 
 let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
@@ -182,6 +192,15 @@ function renderListItems(listEl, items, menuType, isActive) {
         handle.textContent = '\u2630';
         li.appendChild(handle);
 
+        // Icon slot (context menu only) - between handle and toggle, to keep rows aligned
+        if (menuType === 'context') {
+            if (String(prompt.is_special) === '1') {
+                li.appendChild(buildSpecialIconDisplay(prompt));
+            } else {
+                li.appendChild(buildIconPicker(prompt));
+            }
+        }
+
         // Toggle checkbox
         const toggle = document.createElement('input');
         toggle.type = 'checkbox';
@@ -227,6 +246,136 @@ function renderListItems(listEl, items, menuType, isActive) {
 
         listEl.appendChild(li);
     });
+}
+
+// ==================== Custom icon picker ====================
+
+let activeIconPopover = null;
+
+function closeIconPopover() {
+    if (activeIconPopover) {
+        activeIconPopover.remove();
+        activeIconPopover = null;
+        document.removeEventListener('mousedown', onDocMouseDownForPopover, true);
+        document.removeEventListener('keydown', onDocKeyDownForPopover, true);
+    }
+}
+
+function onDocMouseDownForPopover(e) {
+    if (activeIconPopover && !activeIconPopover.contains(e.target) && !e.target.classList.contains('item_icon_preview')) {
+        closeIconPopover();
+    }
+}
+
+function onDocKeyDownForPopover(e) {
+    if (e.key === 'Escape') closeIconPopover();
+}
+
+function applyIconToPreview(preview, filename) {
+    if (filename) {
+        preview.src = '../../' + customMenuIconsPath + filename;
+        preview.classList.remove('item_icon_preview_empty');
+    } else {
+        preview.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+        preview.classList.add('item_icon_preview_empty');
+    }
+}
+
+function buildSpecialIconDisplay(prompt) {
+    const img = document.createElement('img');
+    img.classList.add('item_icon_preview', 'item_icon_preview_special');
+    img.alt = '';
+    const path = resolveSpecialIconPath(prompt.id);
+    if (path) {
+        img.src = path;
+    } else {
+        img.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+        img.classList.add('item_icon_preview_empty');
+    }
+    return img;
+}
+
+function buildIconPicker(prompt) {
+    const preview = document.createElement('img');
+    preview.classList.add('item_icon_preview');
+    preview.alt = '';
+    preview.title = browser.i18n.getMessage('menu_order_icon_label');
+    applyIconToPreview(preview, prompt.custom_icon || '');
+
+    preview.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeIconPopover && activeIconPopover.dataset.forId === prompt.id) {
+            closeIconPopover();
+            return;
+        }
+        closeIconPopover();
+        openIconPopover(preview, prompt);
+    });
+
+    return preview;
+}
+
+function openIconPopover(anchorEl, prompt) {
+    const popover = document.createElement('div');
+    popover.classList.add('icon_picker_popover');
+    popover.dataset.forId = prompt.id;
+
+    // "None" option
+    const noneBtn = document.createElement('button');
+    noneBtn.type = 'button';
+    noneBtn.classList.add('icon_picker_cell', 'icon_picker_cell_none');
+    noneBtn.title = browser.i18n.getMessage('menu_order_icon_none');
+    const noneImg = document.createElement('img');
+    noneImg.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+    noneImg.alt = '';
+    noneBtn.appendChild(noneImg);
+    if (!prompt.custom_icon) noneBtn.classList.add('selected');
+    noneBtn.addEventListener('click', () => {
+        prompt.custom_icon = '';
+        applyIconToPreview(anchorEl, '');
+        markUnsaved();
+        closeIconPopover();
+    });
+    popover.appendChild(noneBtn);
+
+    customMenuIcons.forEach(filename => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.classList.add('icon_picker_cell');
+        btn.title = filename.replace(/\.[^.]+$/, '');
+        if (filename === prompt.custom_icon) btn.classList.add('selected');
+
+        const img = document.createElement('img');
+        img.src = '../../' + customMenuIconsPath + filename;
+        img.alt = '';
+        btn.appendChild(img);
+
+        btn.addEventListener('click', () => {
+            prompt.custom_icon = filename;
+            applyIconToPreview(anchorEl, filename);
+            markUnsaved();
+            closeIconPopover();
+        });
+        popover.appendChild(btn);
+    });
+
+    document.body.appendChild(popover);
+    activeIconPopover = popover;
+
+    // Position popover below the anchor
+    const rect = anchorEl.getBoundingClientRect();
+    const popRect = popover.getBoundingClientRect();
+    let left = rect.left + window.scrollX;
+    let top = rect.bottom + window.scrollY + 4;
+    if (left + popRect.width > window.scrollX + document.documentElement.clientWidth - 8) {
+        left = window.scrollX + document.documentElement.clientWidth - popRect.width - 8;
+    }
+    if (left < window.scrollX + 4) left = window.scrollX + 4;
+    popover.style.left = left + 'px';
+    popover.style.top = top + 'px';
+
+    document.addEventListener('mousedown', onDocMouseDownForPopover, true);
+    document.addEventListener('keydown', onDocKeyDownForPopover, true);
 }
 
 // ==================== Toggle show_in ====================

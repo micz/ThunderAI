@@ -528,14 +528,18 @@ export class mzta_Menus {
         // Create child menu items
         for (const prompt of contextPrompts) {
             const title = i18nConditionalGet(prompt.name);
+            const iconPath = getContextMenuIcon(prompt);
+            const menuOpts = {
+                id: 'mzta-ctx-' + prompt.id,
+                title: title,
+                contexts: ["message_list"],
+                parentId: 'mzta-context-parent',
+            };
+            if (iconPath) {
+                menuOpts.icons = iconPath;
+            }
             await new Promise(resolve =>
-                browser.menus.create({
-                    id: 'mzta-ctx-' + prompt.id,
-                    title: title,
-                    contexts: ["message_list"],
-                    parentId: 'mzta-context-parent',
-                    icons: getContextMenuIcon(prompt.id),
-                }, resolve)
+                browser.menus.create(menuOpts, resolve)
             );
         }
         this.logger.log("Context menus loaded: " + contextPrompts.length + " items");
