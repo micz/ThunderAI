@@ -1943,7 +1943,7 @@
     "description": ""
   },
   "prefs_specific_api_indicator": {
-    "message": "[Using $1]",
+    "message": "Using $1",
     "description": "Indicator near settings button when a special prompt uses a specific API.",
     "placeholders": {
       "1": {

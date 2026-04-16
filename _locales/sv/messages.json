@@ -1686,7 +1686,7 @@
         "message": "Om markerat kommer Ollama att tvingas returnera ett giltigt JSON-svar. Det här alternativet fungerar bara med modeller som stöder strukturerad utdata."
     },
     "prefs_specific_api_indicator": {
-        "message": "[Använder $1]",
+        "message": "Använder $1",
         "placeholders": {
             "1": {
                 "content": "$1"
