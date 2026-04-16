@@ -2263,10 +2263,6 @@
     "message": "Context Menu",
     "description": "Header for the context menu list in the menu order page"
   },
-  "menu_order_save": {
-    "message": "Save",
-    "description": "Save button label in menu order page"
-  },
   "menu_order_saved": {
     "message": "Menu order saved!",
     "description": "Message shown after saving menu order"
@@ -2304,7 +2300,7 @@
     "description": "Badge label for prompts shown in all contexts"
   },
   "menu_order_btn_label": {
-    "message": "Menu Order",
+    "message": "Manage menu order settings",
     "description": "Button label to open the menu order page from options"
   },
   "menu_order_info": {
