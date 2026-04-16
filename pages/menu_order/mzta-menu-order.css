@@ -3,10 +3,14 @@
 }
 
 #command_palette {
+    position: sticky;
+    top: 0;
+    padding-top: 1px;
+    height: 26px;
+    width: 100%;
+    z-index: 90;
     margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    background-color: #ffffff;
 }
 
 #btnSaveAll {
@@ -187,6 +191,10 @@
     body {
         background-color: #1c1b22;
         color: rgb(251, 251, 254);
+    }
+
+    #command_palette {
+        background-color: inherit;
     }
 
     #msgDisplay {
