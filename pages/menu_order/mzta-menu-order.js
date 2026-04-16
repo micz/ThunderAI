@@ -26,6 +26,28 @@ let currentPopupView = 'display'; // 'display' or 'compose'
 let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await loadAndRender();
+    initSubTabs();
+
+    document.getElementById('btnSaveAll').addEventListener('click', saveAll);
+
+    // If prompts are modified elsewhere (e.g. custom prompts page saving), reload this page's data.
+    // We skip reload if we have unsaved changes, to avoid losing user work.
+    let reloadDebounce = null;
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') return;
+        if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
+        if (hasUnsavedChanges) return;
+        clearTimeout(reloadDebounce);
+        reloadDebounce = setTimeout(() => {
+            loadAndRender();
+        }, 200);
+    });
+
+    i18n.updateDocument();
+});
+
+async function loadAndRender() {
     allPrompts = await getPrompts(false, [], true);
 
     // Exclude special prompts that are defined with show_in: "none" (internal prompts, not user-toggleable)
@@ -63,12 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderPopupList();
     renderContextList();
-    initSubTabs();
-
-    document.getElementById('btnSaveAll').addEventListener('click', saveAll);
-
-    i18n.updateDocument();
-});
+}
 
 // ==================== Sub-tabs ====================
 
