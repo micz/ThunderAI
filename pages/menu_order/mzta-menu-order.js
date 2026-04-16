@@ -304,7 +304,7 @@ function buildSpecialIconDisplay(prompt) {
 
 function buildIconPicker(prompt) {
     const preview = document.createElement('img');
-    preview.classList.add('item_icon_preview');
+    preview.classList.add('item_icon_preview', 'item_icon_preview_editable');
     preview.alt = '';
     preview.title = browser.i18n.getMessage('menu_order_icon_label');
     applyIconToPreview(preview, prompt.custom_icon || '');

@@ -193,6 +193,10 @@
     background: transparent;
 }
 
+.item_icon_preview_editable {
+    border-color: #b0c4de;
+}
+
 .item_icon_preview_special {
     cursor: default;
 }
@@ -346,6 +350,10 @@
     .badge_type {
         background: #3d2800;
         color: #ffb74d;
+    }
+
+    .item_icon_preview_editable {
+        border-color: #556;
     }
 
     .item_icon_preview:hover {
