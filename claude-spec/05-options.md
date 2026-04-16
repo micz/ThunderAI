@@ -64,7 +64,6 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Sort prompts alphabetically |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `max_prompt_length` | `30000` | Max prompt string length |
 
