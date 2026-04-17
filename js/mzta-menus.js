@@ -218,7 +218,7 @@ export class mzta_Menus {
 
             // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
-            //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
+            // browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
