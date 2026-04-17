@@ -171,7 +171,7 @@ taTranslationStore.saveTranslation()
 | `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
 | `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching, truncation, and processing-state tracking |
 | `js/mzta-working-status.js` | Visual status indicator during AI processing |
-| `js/mzta-addatags-exclusion-list.js` | Tag exclusion list management |
+| `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
 | `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
 
 ## API Modules (`js/api/`)

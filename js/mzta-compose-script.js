@@ -580,7 +580,7 @@ switch (message.command) {
   case "getTags":
     // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
-    // ===== These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
+    // ===== These methods are also defined in the file /js/mzta-addtags-exclusion-list.js
     async function addTags_getExclusionList() {
       let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
       // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
