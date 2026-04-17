@@ -3,6 +3,10 @@
 
 
 
+<h2>Version 4.0.7 - 17/04/2026</h2>
+      <ul>
+        <li>Fix: Correctly parsing the body of HTML base64 encoded mails [<a href="https://github.com/micz/ThunderAI/issues/757">#757</a>].</li>
+      </ul>
 <h2>Version 4.0.6 - 01/04/2026</h2>
       <ul>
         <li>Fix: Now it's possibile to create a tag also with accented characters in the label [<a href="https://github.com/micz/ThunderAI/issues/738">#738</a>].</li>
