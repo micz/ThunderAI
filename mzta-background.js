@@ -68,7 +68,7 @@ import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
-} from './js/mzta-addatags-exclusion-list.js';
+} from './js/mzta-addtags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
