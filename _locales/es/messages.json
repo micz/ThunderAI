@@ -1280,5 +1280,157 @@
     },
     "reset": {
         "message": "Reiniciar"
+    },
+    "webchat_save_as_summary": {
+        "message": "Guardar como Resumen"
+    },
+    "prefs_storage_title": {
+        "message": "Almacenamiento"
+    },
+    "prefs_storage_info": {
+        "message": "El almacenamiento se utiliza para guardar información sobre la puntuación de spam, los resúmenes y las traducciones de cada mensaje."
+    },
+    "prefs_storage_size": {
+        "message": "Tamaño de almacenamiento"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Borrar almacenamiento"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "¿Estás seguro de que quieres borrar todos los datos almacenados (resúmenes, informes de spam, traducciones)? Esta acción no se puede deshacer."
+    },
+    "prefs_storage_clear_done": {
+        "message": "Se eliminaron $COUNT$ registros.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Para usar la API de Google Gemini, necesitas una clave de API de Google Gemini y debes elegir un modelo."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Para usar la API de Claude, necesitas una clave de API de Anthropic Claude y debes elegir un modelo."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Todos los encabezados de correo"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Cuerpo del correo o texto seleccionado"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Cuerpo del correo o HTML seleccionado"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Tiempo de espera para la carga de la página"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Tiempo en milisegundos para esperar a que la página de ChatGPT se cargue antes de cargar el contenido adicional. El valor predeterminado es de 1000ms. Si se define un GPT personalizado o un proyecto, se sumarán 1000ms adicionales a este valor."
+    },
+    "prefs_doc_title": {
+        "message": "Documentación"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Guías de configuración"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutorial de prompt personalizado"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Abrir la página de bienvenida"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Añadir evento de calendario desde portapapeles"
+    },
+    "clipboard_read_error": {
+        "message": "No se pudo leer el portapapeles. Por favor, verifica los permisos."
+    },
+    "clipboard_empty_error": {
+        "message": "El portapapeles está vacío. Por favor, copia algo de texto primero."
+    },
+    "clipboard_permission_denied": {
+        "message": "Se denegó el permiso del portapapeles. Por favor, habilita la función nuevamente en la configuración para conceder permiso."
+    },
+    "clipboard_permission_error": {
+        "message": "Error al solicitar permiso del portapapeles. Por favor, inténtalo de nuevo."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Mostrar un elemento de menú adicional para crear eventos de calendario a partir del contenido de texto del portapapeles."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Opciones de resumen"
+    },
+    "prompt_summarize": {
+        "message": "Resumir este correo electrónico o estos correos electrónicos"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Proporcione un resumen conciso del siguiente mensaje(s) de correo electrónico. El resumen debe tener un máximo de 3 a 5 oraciones y capturar los puntos principales. Escriba en párrafos sencillos sin viñetas, listas o formato markdown:\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "Resumir plantilla de correo electrónico"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "De: {%author%}\nPara: {%recipients%}\nCC: {%cc_list%}\nAsunto: {%mail_subject%}\nFecha: {%mail_datetime%}\nArchivos adjuntos:\n{%mail_attachments_info%}\nCuerpo:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Separador de correo electrónico"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- SIGUIENTE CORREO ----------\n\n"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Puedes cambiar el prompt como desees, el primer campo es el prompt principal, el segundo campo es la plantilla para un correo individual. La lista de correos electrónicos se adjuntará al prompt principal. Los correos electrónicos se separarán por el separador especificado en el tercer campo."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "El prompt principal que describe la tarea a realizar en todos los correos electrónicos seleccionados:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "La plantilla para un correo electrónico individual:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "El separador entre correos electrónicos:"
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Si está marcado, el Modelo y la API especificados a continuación se utilizarán para crear eventos de calendario, independientemente del que se elija en la página de opciones de ThunderAI."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "El idioma que se utilizará en las traducciones de correo."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Los códigos de idioma que no se deben traducir cuando se encuentren."
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Resumir correo electrónico"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Si está marcado, el Modelo y la API especificados a continuación se utilizarán para resumir el(los) correo(s) electrónico(s), independientemente del que se elija en la página de opciones de ThunderAI."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Si está marcado, añade una opción al menú contextual para resumir el(los) correo(s) electrónico(s)."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Administrar configuración de resumen"
+    },
+    "Summarize_PageTitle": {
+        "message": "Administrar configuraciones de resumen"
+    },
+    "Summarize_info_default": {
+        "message": "En esta página puedes modificar el prompt predeterminado utilizado para resumir correos electrónicos."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Texto del prompt actual"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Mostrar panel de informe de spam"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Si está marcado, se mostrará un panel con el informe de spam encima del mensaje."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Lista de salto de direcciones de correo electrónico"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Obtener evento de calendario del portapapeles"
     }
 }
