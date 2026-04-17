@@ -35,10 +35,6 @@
     "message": "Classify",
     "description": ""
   },
-  "prompt_summarize_this": {
-    "message": "Summarize",
-    "description": ""
-  },
   "prompt_translate_this": {
     "message": "Translate",
     "description": ""
@@ -824,10 +820,6 @@
     "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
     "description": ""
   },
-  "prompt_summarize_this_full_text": {
-    "message": "Summarize the following email into a bullet point list.",
-    "description": ""
-  },
   "prompt_translate_this_full_text": {
     "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
     "description": ""
@@ -1113,7 +1105,7 @@
     "description": ""
   },
   "prompt_summarize": {
-    "message": "Summarize this email or these emails",
+    "message": "Summarize",
     "description": ""
   },
   "prompt_summarize_full_text": {
