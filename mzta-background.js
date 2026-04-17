@@ -530,6 +530,21 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
+                if (specialContextMenuActions[message.promptId]) {
+                    async function _shortcut_special() {
+                        let tabId = message.tabId;
+                        if (!tabId) {
+                            let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                            if (tabs.length === 0) return false;
+                            tabId = tabs[0].id;
+                        }
+                        let displayedMessage = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!displayedMessage) return false;
+                        taLog.log("Displayed message found.");
+                        return specialContextMenuActions[message.promptId]([displayedMessage]);
+                    }
+                    return _shortcut_special();
+                }
                 return menus.executeMenuAction(message.promptId);
                 break;
             case 'popup_menu_ready':
