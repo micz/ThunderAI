@@ -530,7 +530,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
-                if (specialContextMenuActions[message.promptId]) {
+                if (message.promptId !== 'prompt_add_tags' && specialContextMenuActions[message.promptId]) {    //TODO Add an option here if you want the user to decide to use the autotagging also in the popup menu
                     async function _shortcut_special() {
                         let tabId = message.tabId;
                         if (!tabId) {
