@@ -567,7 +567,7 @@
         "message": "Resume el siguiente correo electrónico en una lista de viñetas."
     },
     "prompt_translate_this_full_text": {
-        "message": "Traducir el siguiente correo electrónico en"
+        "message": "Traduce el correo electrónico a continuación a {%thunderai_translate_lang%}.\n\nReglas:\n- Traduce tanto el asunto como el cuerpo.\n- Devuelve el resultado como un objeto JSON con tres campos: \"subject\", \"body\" y \"status\".\n- Si la traducción se ha realizado, el estado es igual a 1.\n- Si el correo electrónico está escrito en uno de estos idiomas \"{%thunderai_translate_exclude_lang%}\" o en el idioma {%thunderai_translate_lang%}, devuelve una cadena vacía para el cuerpo y el asunto y establece el estado en -1.\n- No añadas explicaciones, notas o ningún texto fuera del JSON.\n\nAsunto del correo electrónico: {%mail_subject%}\n\nCuerpo del correo electrónico: {%mail_html_body%}\n\nGenera una respuesta solo en formato JSON. La salida debe ser solo un objeto JSON. Aquí hay un ejemplo del formato JSON a utilizar:\n{\n\"subject\": \"traducción del asunto\",\n\"body\": \"traducción del cuerpo\",\n\"status\": \"resultado del estado\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Responder solo con el texto necesario y sin comentarios extra ni otro texto."
@@ -900,7 +900,7 @@
         "message": "Detectar correos spam"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales. \nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras. \nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.  \nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:  \n{\n\"explanation\": \"Breve explicación de tu razonamiento\",\n\"spamValue\": <entero de 0 a 100>\n}  \nAquí está la información del correo:  \nRemitente: \"{%author%}\"  \nAsunto: \"{%mail_subject%}\"  \nCuerpo HTML: \"{%mail_html_body%}\""
+        "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.\nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:\n{\n\"explanation\": \"Breve explicación de tu razonamiento\",\n\"spamValue\": <entero de 0 a 100>\n}\nAquí está la información del correo:\nRemitente: \"{%author%}\"\nAsunto: \"{%mail_subject%}\"\nCuerpo HTML: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Opciones del filtro de spam"
@@ -924,7 +924,7 @@
         "message": "¡El umbral de spam es cero! ¡Marcarás todos los correos como spam!"
     },
     "spamfilter_no_reports": {
-        "message": "No hay mensajes filtrados como spam todavía. Aquí encontrarás una lista de los últimos 100 informes de spam solo para la sesión actual."
+        "message": "Aún no se ha revisado ningún mensaje en busca de spam. Aquí encontrará una lista de los últimos 100 informes de spam."
     },
     "SpamReport_Title": {
         "message": "Informes del filtro de spam"
@@ -1041,7 +1041,7 @@
         "message": "Cada cambio se guarda inmediatamente."
     },
     "AccountSelector_Spamfilter": {
-        "message": "Elige las cuentas donde el filtro de spam está habilitado"
+        "message": "Elige las cuentas donde el filtro de spam automático está activado"
     },
     "prefs_OptionText_chatgpt_web_project": {
         "message": "Proyecto ChatGPT Web"
@@ -1371,7 +1371,7 @@
         "message": "Resumir plantilla de correo electrónico"
     },
     "prompt_summarize_email_template_full_text": {
-        "message": "De: {%author%}\nPara: {%recipients%}\nCC: {%cc_list%}\nAsunto: {%mail_subject%}\nFecha: {%mail_datetime%}\nArchivos adjuntos:\n{%mail_attachments_info%}\nCuerpo:\n{%mail_text_body%}"
+        "message": "De: {%author%}\nPara: {%recipients%}\nCC: {%cc_list%}\nAsunto: {%mail_subject%}\nFecha: {%mail_datetime%}\nArchivos adjuntos:\n{%mail_attachments_info%}\n\nCuerpo:\n{%mail_text_body%}"
     },
     "prompt_summarize_email_separator": {
         "message": "Separador de correo electrónico"
@@ -1432,5 +1432,307 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard": {
         "message": "Obtener evento de calendario del portapapeles"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Los correos electrónicos de estas direcciones no se enviarán a la IA para filtrar spam."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Agrega una dirección de correo electrónico por línea, o separada por una coma."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "El remitente está en la lista de omisión antispam de la dirección de correo electrónico."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Omitir direcciones de la agenda"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Si está marcado, los correos electrónicos de remitentes en sus agendas no se enviarán a la IA para filtrar spam."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "El remitente es un contacto en la agenda."
+    },
+    "addressbook_permission_denied": {
+        "message": "Se denegó el permiso de la agenda. Por favor, habilite la función de nuevo para otorgar permiso."
+    },
+    "addressbook_permission_error": {
+        "message": "Error al solicitar el permiso de la agenda. Por favor, inténtelo de nuevo."
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Válido"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "Resumir"
+    },
+    "context_menu_mzta-translate": {
+        "message": "Traducir"
+    },
+    "apiwebchat_done": {
+        "message": "¡Hecho!"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Presione el botón de abajo para dar el permiso al host actual para evitar cualquier problema de CORS."
+    },
+    "CORS_give_host_perm": {
+        "message": "Dar permiso al host actual"
+    },
+    "CORS_localhost_warn": {
+        "message": "Si está usando localhost o 127.0.0.1 porque el servidor de IA está alojado en su PC, se requiere el permiso <all_urls>."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Forzar salida JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Si está marcado, Ollama se verá obligado a devolver una respuesta JSON válida. Esta opción solo funciona con modelos que admiten salida estructurada."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Usando $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Habilitar el resumen automático de IA para previsualizaciones de mensajes"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Si está marcado, ThunderAI generará y mostrará automáticamente resúmenes de IA encima de los mensajes de correo electrónico cuando se abran. Tenga en cuenta que esto significa que todos los mensajes que vea en vista previa se enviarán inmediatamente al servicio de IA configurado."
+    },
+    "auto_summary_title": {
+        "message": "Resumen de ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Generando resumen de IA..."
+    },
+    "auto_summary_failed": {
+        "message": "No se pudo generar el resumen de IA. Por favor, confirme su configuración e inténtelo de nuevo."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "¿Desea incluir la configuración de la API en la exportación? ¡Tenga en cuenta que también se guardará la clave de API en el archivo!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "No preguntar para seleccionar texto"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Si está marcado, no es necesario seleccionar texto. Se utilizará el cuerpo completo del mensaje para obtener el evento de calendario."
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "El prompt debe contener el marcador de posición {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} para habilitar esta opción. Por favor, añada uno de estos marcadores de posición al prompt o restablezca a la configuración predeterminada."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Copiar"
+    },
+    "copy_text": {
+        "message": "Copiar"
+    },
+    "spam_check_in_progress": {
+        "message": "Comprobación de spam en curso..."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Resumir automáticamente mensajes"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Elige si generar automáticamente resúmenes al ver mensajes. Requiere una conexión basada en API (no ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Mostrar resumen en"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Elige dónde se muestra el resultado del resumen. El modo en línea muestra un banner de resumen directamente en el panel de mensajes. El modo de ventana de chat abre la ventana de chat de IA."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Longitud máxima de visualización"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Número máximo de caracteres para mostrar en el resumen en línea. Establecer en 0 para no tener límite."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Eliminar formato"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Eliminar formato HTML y Markdown del resumen generado por IA, mostrando solo texto plano."
+    },
+    "summarize_see_more": {
+        "message": "Ver más"
+    },
+    "summarize_see_less": {
+        "message": "Ver menos"
+    },
+    "summarize_title": {
+        "message": "Resumen de ThunderAI"
+    },
+    "get_ai_summary": {
+        "message": "Resumen de IA"
+    },
+    "summarize_collapse": {
+        "message": "Colapsar resumen"
+    },
+    "summarize_generating": {
+        "message": "Generando resumen..."
+    },
+    "summarize_error": {
+        "message": "Fallo al generar el resumen"
+    },
+    "summarize_click_to_generate": {
+        "message": "Haz clic aquí para generar un resumen"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "El resumen automático requiere una conexión basada en API. Por favor, configure una conexión API en la configuración de ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Actualizar resumen"
+    },
+    "spamfilter_refresh": {
+        "message": "Actualizar informe de spam"
+    },
+    "spamfilter_delete": {
+        "message": "Eliminar informe de spam"
+    },
+    "summarize_delete": {
+        "message": "Eliminar resumen"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Traducir correo electrónico"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Si está marcado, el Modelo y la API especificados a continuación se utilizarán para traducir el(los) correo(s), independientemente de la opción elegida en la página de opciones de ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Si está marcado, añade un botón de traducción en el cuerpo del mensaje."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Gestionar configuraciones de traducción"
+    },
+    "Translate_PageTitle": {
+        "message": "Gestionar configuraciones de traducción"
+    },
+    "Translate_info_default": {
+        "message": "En esta página puedes modificar el prompt predeterminado utilizado para traducir correos electrónicos."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Texto del prompt actual"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Opciones de traducción"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Traducir automáticamente mensajes"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Desactivado"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Solo botón manual"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Cuando se abre el correo electrónico"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Elige cuándo traducir los mensajes: desactivado, solo al hacer clic en el botón o automáticamente al abrir un mensaje."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Panel de mensajes (en línea)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Ventana de chat"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Número máximo de caracteres que se muestran en la traducción en línea. 0 = sin límite. Al establecerlo, el texto más largo se trunca con un interruptor de \"Ver más\"."
+    },
+    "translate_see_more": {
+        "message": "Ver más"
+    },
+    "translate_see_less": {
+        "message": "Ver menos"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Idioma de destino de la traducción"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Idioma al que traducir los correos electrónicos. Si está vacío, utiliza la configuración de idioma predeterminada."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Excluir idiomas"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Lista separada por comas de códigos de idioma (por ejemplo, en, fr, it) para omitir en la traducción automática. Si el correo electrónico está en uno de estos idiomas, no se traducirá automáticamente ni se mostrará el botón manual."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "El prompt que describe la tarea de traducción:"
+    },
+    "translate_generating": {
+        "message": "Traduciendo..."
+    },
+    "translate_click_to_generate": {
+        "message": "Haz clic aquí para traducir este correo electrónico"
+    },
+    "get_ai_translation": {
+        "message": "Traducción de IA"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "La traducción automática requiere una conexión basada en API. Por favor, configure una conexión API en la configuración de ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Actualizar traducción"
+    },
+    "translate_delete": {
+        "message": "Eliminar traducción"
+    },
+    "translate_banner_title": {
+        "message": "Traducción de IA"
+    },
+    "translate_error": {
+        "message": "Fallo la traducción."
+    },
+    "translate_no_language_configured": {
+        "message": "El idioma de traducción no está configurado. Por favor, establece un idioma en la configuración de Traducción o establece un idioma predeterminado en la configuración General."
+    },
+    "translate_skipped": {
+        "message": "Traducción omitida: Idioma excluido o idéntico al objetivo."
+    },
+    "antispam_by": {
+        "message": "Antispam por"
+    },
+    "spam_badge_tooltip": {
+        "message": "Puntuación de spam — Haz clic para ver la explicación"
+    },
+    "summary_by": {
+        "message": "Resumen por"
+    },
+    "translate_by": {
+        "message": "Traducción por"
+    },
+    "prefs_THStats_1": {
+        "message": "¿Quieres estadísticas bonitas sobre tus correos electrónicos?"
+    },
+    "prefs_THStats_2": {
+        "message": "¡Haz clic aquí! ¡Prueba ThunderStats!"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Posición de la ventana de chat de IA"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Superior"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Izquierdo"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Guardar automáticamente la posición de la ventana al usar el botón de cerrar."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Déjalo vacío para usar la posición predeterminada."
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Cuando se recibe el correo electrónico"
+    },
+    "placeholder_string": {
+        "message": "Marcador de posición"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Longitud máxima de la traducción mostrada"
     }
 }
