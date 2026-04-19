@@ -1883,8 +1883,6 @@ async function processEmails(args) {
     }
 
     if (summarize) {
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        const tabId = tabs[0].id;
         let summarize_prefs = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
 
         // Collect messages into array to check count
@@ -1893,9 +1891,19 @@ async function processEmails(args) {
             messageArray.push(msg);
         }
 
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        const tabId = tabs[0].id;
+
         // Inline mode for single message: generate inline summary in the message pane
         if (summarize_prefs.summarize_display_mode === 'inline' && messageArray.length === 1) {
-            await _generateSummaryForMessage(messageArray[0].headerMessageId, tabId);
+            // Fire the inline loading indicator immediately, before any heavy work
+            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+
+            const msg = messageArray[0];
+            const fullMessage = await browser.messages.getFull(msg.id);
+            await _generateSummaryForMessage(msg.headerMessageId, tabId, {
+                messageData: { message: msg, fullMessage }
+            });
         } else {
             // Webchat mode, or inline with multiple messages (fallback to webchat)
             const messageDataArray = [];
