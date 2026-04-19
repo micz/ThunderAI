@@ -68,9 +68,6 @@
     "prefs_OptionText_chatgpt_win_width": {
         "message": "Bredd"
     },
-    "prompt_summarize_this": {
-        "message": "Sammanfatta detta"
-    },
     "prompt_translate_this": {
         "message": "Översätt detta"
     },
@@ -506,12 +503,6 @@
     "prefs_OptionText_dynamic_menu_force_enter": {
         "message": "Meny: skicka omedelbart prompt"
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Meny: ordna alfabetiskt"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Om markerat kommer promptar i menyn att ordnas alfabetiskt."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Ställ in värdet till 0 om du inte vill ange fönsterstorleken."
     },
@@ -634,9 +625,6 @@
     },
     "prompt_rewrite_formal_full_text": {
         "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Sammanfatta följande e-postmeddelande i en punktlista."
     },
     "prompt_translate_this_full_text": {
         "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
@@ -796,12 +784,6 @@
     },
     "no_string": {
         "message": "Nej"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Lägg till taggar"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analysera för skräppost"
     },
     "noActiveCalendar": {
         "message": "Ingen redigerbar kalender hittades!"
@@ -1335,9 +1317,6 @@
     "Summarize_prompt_text_title": {
         "message": "Aktuell prompttext"
     },
-    "context_menu_mzta-summarize": {
-        "message": "Sammanfatta"
-    },
     "CORS_alternative_2_new": {
         "message": "Tryck på knappen nedan för att ge den aktuella värden behörighet att undvika CORS-problem."
     },
@@ -1561,9 +1540,6 @@
     },
     "placeholder_thunderai_translate_exclude_lang": {
         "message": "Språkkoden ska inte översättas när den hittas."
-    },
-    "context_menu_mzta-translate": {
-        "message": "Översätt"
     },
     "prefs_OptionText_translate": {
         "message": "Översätt e-post"

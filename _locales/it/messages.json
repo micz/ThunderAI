@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Classifica"
     },
-    "prompt_summarize_this": {
-        "message": "Riassumi"
-    },
     "prompt_translate_this": {
         "message": "Traduci"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Se selezionato, l'utilizzo della combinazione di tasti CTRL+ALT+A invierà automaticamente il prompt evidenziato dal menu. In caso contrario, verrà visualizzato il nome del prompt, richiedendo un'ulteriore pressione del tasto Invio per inviarlo."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu: ordina alfabeticamente"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Se selezionato, i prompt nel menu verranno ordinati in ordine alfabetico."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Imposta a 0 se non desideri specificare la dimensione della finestra."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, indicando una percentuale per ciascuna categoria. Rispondi solo con la categoria e il punteggio, senza commenti aggiuntivi o altro testo."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Riepiloga la seguente email in una lista con punti elenco."
     },
     "prompt_translate_this_full_text": {
         "message": "Traduci la seguente email in"
@@ -839,12 +827,6 @@
     },
     "placeholder_account_email_address": {
         "message": "Indirizzo email dell'account"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analizza come spam"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Aggiungi etichette"
     },
     "noActiveCalendar": {
         "message": "Non è stato trovato alcun calendario modificabile!"
@@ -1398,9 +1380,6 @@
     },
     "Valid": {
         "message": "Valido"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "Riassumi"
     },
     "CORS_alternative_2_new": {
         "message": "Premi il pulsante qui sotto per concedere le autorizzazioni all'host corrente ed evitare problemi di CORS."

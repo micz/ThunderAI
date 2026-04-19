@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Klasificiraj"
     },
-    "prompt_summarize_this": {
-        "message": "Sažmi ovo"
-    },
     "prompt_translate_this": {
         "message": "Prevedi ovo"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Ako je označeno, korištenje tipkovničkog prečaca CTRL+ALT+A automatski će poslati istaknuti upit iz izbornika. U protivnom će korisniku biti prikazan naziv upita, koji će zahtijevati još jedan pritisak tipke Enter za slanje."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Izbornik: redoslijed po abecedi"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Ako je označeno, upiti u izborniku bit će poredani abecednim redom."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Postavite na 0 ako ne želite odrediti veličinu prozora."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Sažmi sljedeću e-poruku u popis s točkama."
     },
     "prompt_translate_this_full_text": {
         "message": "Prevedi sljedeću e-poruku na"

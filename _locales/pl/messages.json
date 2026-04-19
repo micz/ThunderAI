@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Klasyfikuj"
     },
-    "prompt_summarize_this": {
-        "message": "Podsumuj to"
-    },
     "prompt_translate_this": {
         "message": "Przetłumacz to"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Jeśli zaznaczone, użycie skrótu klawiszowego CTRL+ALT+A automatycznie wyśle zaznaczone polecenie z menu. W przeciwnym razie nazwa polecenia zostanie wyświetlona użytkownikowi, wymagając kolejnego naciśnięcia klawisza Enter, aby je wysłać."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu: sortuj alfabetycznie"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Jeśli zaznaczone, polecenia w menu będą uporządkowane alfabetycznie."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Ustaw na 0, jeśli nie chcesz określać rozmiaru okna."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Sklasyfikuj poniższy tekst pod względem uprzejmości, serdeczności, formalności, stanowczości, obraźliwości, podając procent dla każdej kategorii. Odpowiedz wyłącznie kategorią i wynikiem, bez dodatkowych komentarzy ani innego tekstu."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Podsumuj poniższy e-mail w formie listy punktowanej."
     },
     "prompt_translate_this_full_text": {
         "message": "Przetłumacz poniższy e-mail na"
@@ -834,9 +822,6 @@
     "spamfilter_no_reports": {
         "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie tylko dla bieżącej sesji."
     },
-    "context_menu_mzta-add-tags": {
-        "message": "Dodaj tagi"
-    },
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Widok zmian może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
     },
@@ -866,9 +851,6 @@
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Wymuś konkretną strefę czasową"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analizuj pod kątem spamu"
     },
     "placeholder_account_email_address": {
         "message": "Adres email konta"
