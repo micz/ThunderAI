@@ -285,6 +285,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerSummaryGeneration':
                 async function _triggerSummaryGeneration(message) {
                     let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
                 _triggerSummaryGeneration(message);
@@ -305,11 +307,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSummary':
                 async function _refreshSummary(message) {
                     let tabId = sender.tab.id;
-                    await summaryStore.removeSummary(message.headerMessageId);
                     let prefs_refresh = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
                     if (prefs_refresh.summarize_display_mode === 'webchat') {
+                        await summaryStore.removeSummary(message.headerMessageId);
                         await _openSummaryWebchat(message.headerMessageId, tabId);
                     } else {
+                        // Fire the inline loading indicator immediately, before any await
+                        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                        await summaryStore.removeSummary(message.headerMessageId);
                         await _generateSummaryForMessage(message.headerMessageId, tabId);
                     }
                 }
