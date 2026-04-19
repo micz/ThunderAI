@@ -59,9 +59,6 @@
     "prompt_translate_this": {
         "message": "Přeložit"
     },
-    "prompt_summarize_this": {
-        "message": "Shrnout"
-    },
     "customPrompts_managePrompts": {
         "message": "Spravovat dotazy"
     },
@@ -641,12 +638,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Pokud je zaškrtnuto, použití klávesové zkratky CTRL+ALT+A automaticky odešle zvýrazněnou výzvu z menu. Jinak se uživateli zobrazí název výzvy a pro její odeslání bude nutné znovu stisknout klávesu Enter."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu: seřadit abecedně"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Pokud je zaškrtnuto, výzvy v menu budou seřazeny abecedně."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Nastavte na 0, pokud nechcete specifikovat velikost okna."
     },
@@ -739,9 +730,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Klasifikujte následující text z hlediska zdvořilosti, vřelosti, formálnosti, asertivity, urážlivosti a uveďte procento pro každou kategorii. Odpovězte pouze kategorií a skóre bez dalších komentářů nebo jiného textu."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Shrňte následující e-mail do seznamu s odrážkami."
     },
     "prompt_translate_this_full_text": {
         "message": "Přeložte následující e-mail do"
@@ -838,12 +826,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n\"spamValue\": <celé číslo od 0 do 100>\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Přidat štítky"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analýza spamu"
     },
     "get_calendar_event_prompt_prefs_title": {
         "message": "Možnosti události kalendáře"

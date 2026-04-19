@@ -32,9 +32,6 @@
     "prompt_classify": {
         "message": "分類"
     },
-    "prompt_summarize_this": {
-        "message": "摘要這段"
-    },
     "prompt_this": {
         "message": "提示這段"
     },
@@ -414,9 +411,6 @@
     "customPrompts_ExportAll": {
         "message": "匯出所有提示"
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "選單：按字母排序"
-    },
     "prefs_API_Host": {
         "message": "主機位址"
     },
@@ -428,9 +422,6 @@
     },
     "prefs_API_Host_Info": {
         "message": "類似於"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "新增標籤"
     },
     "placeholder_mail_subject": {
         "message": "郵件主旨"
@@ -625,9 +616,6 @@
     },
     "SpamReport_Title": {
         "message": "垃圾郵件過濾報告"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "檢測垃圾郵件"
     },
     "apiwebchat_use_this_answer": {
         "message": "使用這個答案"
@@ -981,9 +969,6 @@
     "prompt_reply_additional_text": {
         "message": "不要在回覆中加入主旨。"
     },
-    "prompt_summarize_this_full_text": {
-        "message": "將以下電子郵件總結為要點清單。"
-    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "佔位符：使用預設值"
     },
@@ -1010,9 +995,6 @@
     },
     "spamfilter_threshold_zero": {
         "message": "垃圾郵件閾值為零！您將把所有郵件標記為垃圾郵件！"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "如果勾選，選單中的提示將按字母順序排列。"
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "如果勾選，ThunderAI 將自動將垃圾郵件移至垃圾郵件資料夾。"

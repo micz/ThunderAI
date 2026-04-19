@@ -20,9 +20,6 @@
     "prompt_rewrite_formal": {
         "message": "Reescribe de manera formal"
     },
-    "prompt_summarize_this": {
-        "message": "Resume esto"
-    },
     "prompt_translate_this": {
         "message": "Traducir esto"
     },
@@ -425,12 +422,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Si está marcado, usar el atajo de teclado CTRL+ALT+A envará automáticamente el prompt resaltado del menú. De lo contrario, se mostrará el nombre del prompt al usuario, requiriendo otra pulsación de la tecla Enter para enviarlo."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menú: ordenar alfabéticamente"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Si está marcado, los prompts en el menú se ordenarán alfabéticamente."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Establezca en 0 si no quiere especificar el tamaño de la ventana."
     },
@@ -562,9 +553,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Clasifique el siguiente texto en términos de Cortesía, Calidez, Formalidad, Asertividad, Ofensividad dando un porcentaje para cada categoría. Responda solo con la categoría y la puntuación sin comentarios extra ni otro texto."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Resume el siguiente correo electrónico en una lista de viñetas."
     },
     "prompt_translate_this_full_text": {
         "message": "Traduce el correo electrónico a continuación a {%thunderai_translate_lang%}.\n\nReglas:\n- Traduce tanto el asunto como el cuerpo.\n- Devuelve el resultado como un objeto JSON con tres campos: \"subject\", \"body\" y \"status\".\n- Si la traducción se ha realizado, el estado es igual a 1.\n- Si el correo electrónico está escrito en uno de estos idiomas \"{%thunderai_translate_exclude_lang%}\" o en el idioma {%thunderai_translate_lang%}, devuelve una cadena vacía para el cuerpo y el asunto y establece el estado en -1.\n- No añadas explicaciones, notas o ningún texto fuera del JSON.\n\nAsunto del correo electrónico: {%mail_subject%}\n\nCuerpo del correo electrónico: {%mail_html_body%}\n\nGenera una respuesta solo en formato JSON. La salida debe ser solo un objeto JSON. Aquí hay un ejemplo del formato JSON a utilizar:\n{\n\"subject\": \"traducción del asunto\",\n\"body\": \"traducción del cuerpo\",\n\"status\": \"resultado del estado\"\n}"
@@ -955,12 +943,6 @@
     },
     "no_string": {
         "message": "No"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Añadir etiquetas"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analizar el spam"
     },
     "noActiveCalendar": {
         "message": "¡No se encontró un calendario editable!"
@@ -1462,12 +1444,6 @@
     },
     "Valid": {
         "message": "Válido"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "Resumir"
-    },
-    "context_menu_mzta-translate": {
-        "message": "Traducir"
     },
     "apiwebchat_done": {
         "message": "¡Hecho!"

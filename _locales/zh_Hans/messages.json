@@ -1,7 +1,4 @@
 {
-    "prompt_summarize_this": {
-        "message": "总结一下这个"
-    },
     "prompt_reply": {
         "message": "回复此电子邮件"
     },
@@ -317,9 +314,6 @@
     "prefs_Connection_type_OpenAI_Comp_API": {
         "message": "OpenAI 兼容的 API"
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "如果勾选此项，菜单中的提示将按字母顺序排列。"
-    },
     "chatgpt_win_send": {
         "message": "发送"
     },
@@ -406,9 +400,6 @@
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "尝试获取 ChatGPT 模型时出错"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "菜单：按字母顺序排列"
     },
     "prefsInfoDesc_2": {
         "message": "要使用 ChatGPT API，您需要一个 OpenAI ChatGPT API 密钥并且必须选择一个模型。"
@@ -626,9 +617,6 @@
     "addtags_dialog_title": {
         "message": "为电子邮件添加标签"
     },
-    "prompt_summarize_this_full_text": {
-        "message": "将以下电子邮件总结为要点列表。"
-    },
     "prompt_rewrite_formal_full_text": {
         "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。"
     },
@@ -826,12 +814,6 @@
     },
     "Report_Date": {
         "message": "报告日期"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "添加标签"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "分析垃圾邮件"
     },
     "noActiveCalendar": {
         "message": "未找到可编辑的日历！"
@@ -1098,12 +1080,6 @@
     },
     "Valid": {
         "message": "有效的"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "总结"
-    },
-    "context_menu_mzta-translate": {
-        "message": "翻译"
     },
     "hyprland_warning": {
         "message": "如果您在打开 AI 聊天窗口时遇到问题，请尝试将高度和宽度值设置为 0。此问题可能在某些 Linux 环境下出现，例如在使用 Hyprland 时。"

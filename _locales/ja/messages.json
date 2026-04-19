@@ -26,9 +26,6 @@
     "prompt_classify": {
         "message": "分類する"
     },
-    "prompt_summarize_this": {
-        "message": "要約する"
-    },
     "prompt_translate_this": {
         "message": "翻訳する"
     },
@@ -428,12 +425,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "チェックすると、キーボードショートカットCTRL+ALT+Aでメニューから選択したプロンプトが自動的に送信されます。チェックしない場合、プロンプト名が表示され、送信するにはEnterキーを再度押す必要があります。"
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "メニュー：アルファベット順に並べる"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "チェックすると、メニュー内のプロンプトがアルファベット順に並べられます。"
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "ウィンドウサイズを指定しない場合は0を設定してください。"
     },
@@ -565,9 +556,6 @@
     },
     "prompt_classify_full_text": {
         "message": "以下のテキストを丁寧さ、温かさ、フォーマルさ、自己主張、攻撃性の観点から分類し、各カテゴリのパーセンテージを示してください。カテゴリとスコアのみで、余分なコメントや他のテキストなしで返信してください。"
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "以下のメールを箇条書きリストに要約してください。"
     },
     "prompt_translate_this_full_text": {
         "message": "以下のメールを次の言語に翻訳してください："
@@ -958,12 +946,6 @@
     },
     "no_string": {
         "message": "いいえ"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "タグを追加"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "スパムを分析"
     },
     "noActiveCalendar": {
         "message": "編集可能なカレンダーが見つかりません！"
