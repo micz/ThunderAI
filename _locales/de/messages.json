@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Klassifizieren"
     },
-    "prompt_summarize_this": {
-        "message": "Zusammenfassen"
-    },
     "prompt_translate_this": {
         "message": "Übersetzen"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Wenn diese Option aktiviert ist, wird die Tastenkombination STRG+ALT+A den hervorgehobenen Prompt aus dem Menü automatisch senden. Andernfalls wird der Prompt-Name dem Benutzer angezeigt, und es ist ein weiterer Druck auf die Eingabetaste erforderlich, um ihn zu senden."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menü: Alphabetisch sortieren"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Wenn diese Option aktiviert ist, werden die Prompts im Menü alphabetisch sortiert."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Auf 0 setzen, wenn Sie die Fenstergröße nicht angeben möchten."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Klassifizieren Sie den folgenden Text nach Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit der Kategorie und der Punktzahl ohne zusätzliche Kommentare oder andere Texte."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Fassen Sie die folgende E-Mail in einer Liste mit Aufzählungspunkten zusammen."
     },
     "prompt_translate_this_full_text": {
         "message": "Übersetzen Sie die folgende E-Mail in"
@@ -833,12 +821,6 @@
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Erzwinge die angegebene Zeitzone"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Tags hinzufügen"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Auf Spam analysieren"
     },
     "noActiveCalendar": {
         "message": "Kein bearbeitbarer Kalender gefunden!"
@@ -1398,9 +1380,6 @@
     },
     "Valid": {
         "message": "Zulässig"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "Zusammenfassen"
     },
     "CORS_alternative_2_new": {
         "message": "Klicken Sie auf die untenstehende Schaltfläche, um dem aktuellen Host die Berechtigung zu erteilen und CORS-Probleme zu vermeiden."

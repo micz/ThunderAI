@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Classificar"
     },
-    "prompt_summarize_this": {
-        "message": "Resuma isso"
-    },
     "prompt_translate_this": {
         "message": "Traduza isso"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Se marcado, usar o atalho de teclado CTRL+ALT+A enviará automaticamente o prompt destacado do menu. Caso contrário, o nome do prompt será exibido para o usuário, exigindo outra pressão da tecla Enter para enviá-lo."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu: ordenar alfabeticamente"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Se marcado, os prompts no menu serão ordenados alfabeticamente."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Defina como 0 se você não quiser especificar o tamanho da janela."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Classifique o texto a seguir em termos de Educação, Calor, Formalidade, Assertividade e Ofensividade, atribuindo uma porcentagem para cada categoria. Responda apenas com as categorias e as pontuações, sem comentários adicionais ou outros textos."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Resuma o e-mail a seguir em uma lista de tópicos."
     },
     "prompt_translate_this_full_text": {
         "message": "Traduza o e-mail a seguir para"

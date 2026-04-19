@@ -26,9 +26,6 @@
     "prompt_classify": {
         "message": "Класифициране"
     },
-    "prompt_summarize_this": {
-        "message": "Обобщаване"
-    },
     "prompt_translate_this": {
         "message": "Превеждане"
     },

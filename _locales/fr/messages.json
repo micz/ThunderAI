@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Classer"
     },
-    "prompt_summarize_this": {
-        "message": "Résumer ceci"
-    },
     "prompt_translate_this": {
         "message": "Traduire ceci"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Si cette option est cochée, le raccourci clavier CTRL+ALT+A enverra automatiquement l'invite sélectionnée dans le menu. Sinon, le nom de l'invite sera affiché à l'utilisateur, nécessitant une nouvelle pression sur la touche Entrée pour l'envoyer."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu : Trier par ordre alphabétique"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Si cette option est cochée, les prompts dans le menu seront triés par ordre alphabétique."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Réglez sur 0 si vous ne souhaitez pas spécifier la taille de la fenêtre."
     },
@@ -524,9 +515,6 @@
     },
     "prompt_classify_full_text": {
         "message": "Classifiez le texte suivant en termes de politesse, chaleur, formalité, assertivité, caractère offensant en donnant un pourcentage pour chaque catégorie. Répondez uniquement avec la catégorie et le score, sans commentaires ou autre texte."
-    },
-    "prompt_summarize_this_full_text": {
-        "message": "Résumez le courriel suivant sous forme de liste à puces."
     },
     "prompt_translate_this_full_text": {
         "message": "Traduisez le courriel suivant en"
@@ -831,9 +819,6 @@
     "prompt_spamfilter_full_text": {
         "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nEn cas de données de message manquantes, définissez la valeur à 0 (non spam) et indiquez la raison.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"explanation\" : \"Brève explication de votre raisonnement\",\n\"spamValue\" : <entier de 0 à 100>\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
     },
-    "context_menu_mzta-add-tags": {
-        "message": "Ajouter des étiquettes"
-    },
     "noActiveCalendar": {
         "message": "Aucun calendrier modifiable trouvé !"
     },
@@ -872,9 +857,6 @@
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Active la visionneuse de comparaison de texte"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analyser comme spam"
     },
     "apiwebchat_info": {
         "message": "Information"
@@ -1398,9 +1380,6 @@
     },
     "Valid": {
         "message": "Valide"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "Résumer"
     },
     "CORS_alternative_2_new": {
         "message": "Appuyez sur le bouton ci-dessous pour donner l'autorisation à l'hôte actuel afin d'éviter tout problème CORS."
