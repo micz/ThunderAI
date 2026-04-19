@@ -282,7 +282,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "popup",
     },
     {
         id: 'prompt_get_calendar_event_from_clipboard',
@@ -298,7 +298,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "popup",
     },
     {
         id: 'prompt_get_task',
@@ -314,7 +314,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "popup",
     },
     {
         id: 'prompt_spamfilter',
@@ -330,7 +330,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "context",
     },
     {
         id: 'prompt_summarize',
@@ -347,7 +347,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "context",
     },
     {
         id: 'prompt_summarize_email_template',
@@ -398,7 +398,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
-        show_in: "both",
+        show_in: "context",
     }
 ];
 
