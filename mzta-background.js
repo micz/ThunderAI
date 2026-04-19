@@ -399,6 +399,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerTranslationGeneration':
                 async function _triggerTranslationGeneration(message) {
                     let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
                     let prefs_tl = await browser.storage.sync.get({
                         translate_lang: prefs_default.translate_lang,
                         default_chatgpt_lang: prefs_default.default_chatgpt_lang

@@ -83,7 +83,7 @@ function _ensureContainer() {
 
         const toolbar = document.createElement('div');
         toolbar.id = 'mzta-toolbar';
-        toolbar.style.cssText = `display: none; align-items: flex-start; gap: 8px; padding: 4px 0.2rem;; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
+        toolbar.style.cssText = `display: none; align-items: flex-start; justify-content: flex-end; gap: 8px; padding: 4px 0.2rem;; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
         container.appendChild(toolbar);
 
         const panels = document.createElement('div');
@@ -102,12 +102,6 @@ function _updateToolbarVisibility() {
     if (!toolbar) return;
     const hasItems = toolbar.querySelector('#mzta-toolbar-spam, #mzta-toolbar-summary, #mzta-toolbar-translation');
     toolbar.style.display = hasItems ? 'flex' : 'none';
-    // Push the first button (summary or translation) to the right
-    const summary = document.getElementById('mzta-toolbar-summary');
-    const translation = document.getElementById('mzta-toolbar-translation');
-    const firstBtn = summary || translation;
-    if (summary) summary.style.marginLeft = (firstBtn === summary) ? 'auto' : '';
-    if (translation) translation.style.marginLeft = (firstBtn === translation) ? 'auto' : '';
 }
 
 const _TOOLBAR_SLOT_ORDER = ['mzta-toolbar-spam', 'mzta-toolbar-summary', 'mzta-toolbar-translation'];
@@ -1483,6 +1477,7 @@ switch (message.command) {
   }
 
   case "showTranslationButton": {
+    _removePanel('mzta-translation-generating');
     if (document.getElementById('mzta-toolbar-translation')) return Promise.resolve(true);
 
     const colors = _getThemeColors();
