@@ -151,7 +151,7 @@ export const taPromptUtils = {
 
         const messages_list = [];
         for (let entry of messageDataArray) {
-            const bodyHtml = getMailBody(entry.fullMessage);
+            const bodyHtml = await getMailBody(entry.fullMessage);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
                 bodyText = bodyHtml.text || '';
@@ -182,7 +182,7 @@ export const taPromptUtils = {
             promptText = browser.i18n.getMessage('prompt_translate_this_full_text');
         }
 
-        const bodyHtml = getMailBody(fullMessage);
+        const bodyHtml = await getMailBody(fullMessage);
         const mailSubject = fullMessage.headers?.subject?.[0] || '';
 
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({
