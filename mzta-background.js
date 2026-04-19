@@ -417,6 +417,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshTranslation':
                 async function _refreshTranslation(message) {
                     let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
                     await translationStore.removeTranslation(message.headerMessageId);
                     await _generateTranslationForMessage(message.headerMessageId, tabId);
                 }
