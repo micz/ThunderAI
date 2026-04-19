@@ -7,6 +7,17 @@
       <ul>
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
         <li><i>[All APIs]</i> A summary has been added above the mail content [<a href="https://github.com/micz/ThunderAI/issues/580">#580</a>].</li>
+        <li><i>[All APIs]</i> Added inline auto translation for emails [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
+        <li>Now the popup menu closes immediatly and the working indicator is in the button icon [<a href="https://github.com/micz/ThunderAI/issues/247">#677</a>].</li>
+        <li><i>[Ollama API]</i> Added <i>format: json</i> option [<a href="https://github.com/micz/ThunderAI/issues/703">#703</a>].</li>
+        <li>Fix: The "Important Information" section in the options page now updates correctly when choosing an integration [<a href="https://github.com/micz/ThunderAI/issues/730">#730</a>].</li>
+        <li>In the options page now is visible if a special prompt is using a specific API integration [<a href="https://github.com/micz/ThunderAI/issues/676">#676</a>].</li>
+        <li>Added an antispam skip list to ensure messages from designated addresses are not forwarded to the AI [<a href="https://github.com/micz/ThunderAI/issues/743">#743</a>].</li>
+        <li>Fix: Correctly setting the end date for a new calendar event [<a href="https://github.com/micz/ThunderAI/issues/750">#750</a>].</li>
+        <li>Now it's possibile to use different date and time formats in the AI output when creating a calendar event [<a href="https://github.com/micz/ThunderAI/issues/737">#737</a>].</li>
+        <li>Added the <i>{%mail_full_headers%}</i> placeholder to retrieve all the email headers at once [<a href="https://github.com/micz/ThunderAI/issues/713">#713</a>].</li>
+        <li><i>[All APIs]</i> In the API webchat the status messages have different colors [<a href="https://github.com/micz/ThunderAI/issues/3">#3</a>].</li>
+        <li>Account exclusion lists for add tags and antispam are enforced only for automatic analysis of incoming emails and not for the context menu action that is always executed [<a href="https://github.com/micz/ThunderAI/issues/749">#749</a>].</li>
         <li><i>[All APIs]</i> Inline auto translation for emails added [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
         <li>Custom menus configuration added. Now it's possibile to define which prompts show in the ThunderAI menu, which ones in the context menu and in which order [<a href="https://github.com/micz/ThunderAI/issues/49">#49</a>, <a href="https://github.com/micz/ThunderAI/issues/184">#184</a>, <a href="https://github.com/micz/ThunderAI/issues/680">#680</a>].</li>
         <li>...</li>

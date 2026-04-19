@@ -24,10 +24,8 @@ import {
 } from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import {
-  ChatGPTWeb_models,
   checkSparksPresence,
   openTab,
-  getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
   setTomSelectBorder,
@@ -440,7 +438,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/get-task/mzta-get-task.html');
   });
 
-  getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
   document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
     element.addEventListener("click", () => {
       let el = document.getElementById("chatgpt_web_model");

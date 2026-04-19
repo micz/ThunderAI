@@ -83,7 +83,7 @@ function _ensureContainer() {
 
         const toolbar = document.createElement('div');
         toolbar.id = 'mzta-toolbar';
-        toolbar.style.cssText = `display: none; align-items: center; gap: 8px; padding: 6px 0.5rem; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
+        toolbar.style.cssText = `display: none; align-items: flex-start; gap: 8px; padding: 4px 0.2rem;; background-color: ${colors.toolbar.bg}; border-bottom: 1px solid ${colors.toolbar.border}; font-size: 13px; color: ${colors.toolbar.text};`;
         container.appendChild(toolbar);
 
         const panels = document.createElement('div');
@@ -580,7 +580,7 @@ switch (message.command) {
   case "getTags":
     // console.log(">>>>>>>>>>>>>> getTags: " + JSON.stringify(message.tags));
 
-    // ===== These methods are also defined in the file /js/mzta-addatags-exclusion-list.js
+    // ===== These methods are also defined in the file /js/mzta-addtags-exclusion-list.js
     async function addTags_getExclusionList() {
       let prefs_excluded_tags = await browser.storage.local.get({add_tags_exclusions: []});
       // console.log(">>>>>>>>>>>>>>> addTags_getExclusionList prefs_excluded_tags: " + JSON.stringify(prefs_excluded_tags));
@@ -903,44 +903,44 @@ switch (message.command) {
     const colors = _getThemeColors(data.spamValue, data.SpamThreshold);
     const sc = colors.spam;
 
-    // Spam badge in toolbar (clickable to toggle explanation panel)
+    const explanationText = data.spamValue == -999
+        ? data.explanation
+        : browser.i18n.getMessage("Explanation") + ": " + data.explanation;
+
+    // Single toolbar item: score + truncated explanation + chevron + branding + menu
+    // Outer wrapper: flex-direction column, but initially only topRow is visible (no height from brandingRow)
     const badge = document.createElement('div');
     badge.title = browser.i18n.getMessage("spam_badge_tooltip");
-    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;`;
+    badge.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 4px 8px; font-size: 12px; font-weight: bold; display: inline-flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; box-sizing: border-box; align-self: stretch;`;
+
+    // Top row (always visible): score + text + chevron + branding + menu
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display: flex; align-items: center; gap: 4px; width: 100%; min-width: 0;';
+
+    const scoreSpan = document.createElement('span');
+    scoreSpan.style.cssText = 'white-space: nowrap; flex-shrink: 0;';
     if (data.spamValue == -999) {
-        badge.textContent = browser.i18n.getMessage("apiwebchat_error");
+        scoreSpan.textContent = browser.i18n.getMessage("apiwebchat_error");
     } else {
-        badge.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "\u26A0\uFE0F " + browser.i18n.getMessage("Spam") : "\uD83D\uDEE1\uFE0F " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
+        scoreSpan.textContent = ((data.spamValue >= (data.SpamThreshold || 50)) ? "\u26A0\uFE0F " + browser.i18n.getMessage("Spam") : "\uD83D\uDEE1\uFE0F " + browser.i18n.getMessage("Valid")) + " [" + data.spamValue + "/100]";
     }
+    topRow.appendChild(scoreSpan);
+
+    const badgeText = document.createElement('span');
+    badgeText.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; font-weight: normal;';
+    badgeText.textContent = explanationText;
+    topRow.appendChild(badgeText);
+
+    // Chevron: expands once, then disappears
     const chevron = document.createElement('span');
-    chevron.textContent = ' \u25BC';
-    chevron.style.cssText = 'font-size: 10px; transition: transform 0.2s; transform: rotate(-90deg);';
-    badge.appendChild(chevron);
+    chevron.textContent = '\u25BC';
+    chevron.style.cssText = 'font-size: 10px; flex-shrink: 0; cursor: pointer;';
+    topRow.appendChild(chevron);
 
-    let spamExpanded = false;
-    badge.onclick = () => {
-        const panel = document.getElementById('mzta-spam-report-banner');
-        if (panel) {
-            spamExpanded = !spamExpanded;
-            panel.style.display = spamExpanded ? 'flex' : 'none';
-            chevron.style.transform = spamExpanded ? '' : 'rotate(-90deg)';
-        }
-    };
-    badge.onmouseover = () => { badge.style.opacity = '0.8'; };
-    badge.onmouseout = () => { badge.style.opacity = '1'; };
-
-    _addToolbarItem('mzta-toolbar-spam', badge);
-
-    // Explanation panel (collapsed by default)
-    const panel = document.createElement('div');
-    panel.style.cssText = `background-color: ${sc.bg}; color: ${sc.text}; border: 1px solid ${sc.border}; border-radius: 4px; padding: 8px 0.5rem; font-size: 13px; display: none; align-items: center; gap: 15px; width: 100%; box-sizing: border-box;`;
-
-    const reasonText = document.createElement('span');
-    if (data.spamValue == -999) {
-        reasonText.textContent = data.explanation;
-    } else {
-        reasonText.textContent = browser.i18n.getMessage("Explanation") + ": " + data.explanation;
-    }
+    const branding = document.createElement('span');
+    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; white-space: nowrap; flex-shrink: 0; font-weight: normal; display: none;';
+    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+    topRow.appendChild(branding);
 
     const spamMenu = createThreeDotsMenu(colors.isDark, [
         {
@@ -963,19 +963,56 @@ switch (message.command) {
             }
         }
     ], { bg: sc.bg, border: sc.border, text: sc.text });
+    spamMenu.style.fontWeight = 'normal';
+    spamMenu.style.display = 'none';
+    topRow.appendChild(spamMenu);
 
-    const rightGroup = document.createElement('span');
-    rightGroup.style.cssText = 'margin-left: auto; display: flex; align-items: center; gap: 5px;';
-    const branding = document.createElement('span');
-    branding.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
-    branding.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5;';
-    rightGroup.appendChild(branding);
-    rightGroup.appendChild(spamMenu);
+    badge.appendChild(topRow);
 
-    panel.appendChild(reasonText);
-    panel.appendChild(rightGroup);
+    // Bottom row (only when expanded): branding right-aligned, hidden via zero height
+    const brandingRow = document.createElement('div');
+    brandingRow.style.cssText = 'display: flex; justify-content: flex-end; width: 100%; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s ease;';
+    const brandingExpanded = document.createElement('span');
+    brandingExpanded.style.cssText = 'font-style: italic; font-size: 10px; opacity: 0.5; font-weight: normal;';
+    brandingExpanded.textContent = browser.i18n.getMessage("antispam_by") + " ThunderAI";
+    brandingRow.appendChild(brandingExpanded);
+    badge.appendChild(brandingRow);
 
-    _addPanel('mzta-spam-report-banner', panel);
+    chevron.onclick = (e) => {
+        e.stopPropagation();
+        _spamResizeObserver.disconnect();
+        badgeText.style.whiteSpace = 'normal';
+        badgeText.style.overflow = 'hidden';
+        badgeText.style.textOverflow = 'unset';
+        topRow.style.alignItems = 'flex-start';
+        spamMenu.style.display = '';
+        chevron.style.display = 'none';
+        brandingRow.style.maxHeight = '2em';
+        brandingRow.style.opacity = '1';
+    };
+    badge.onmouseover = () => { badge.style.opacity = '0.8'; };
+    badge.onmouseout = () => { badge.style.opacity = '1'; };
+
+    _addToolbarItem('mzta-toolbar-spam', badge);
+
+    const _updateSpamVisibility = () => {
+        if (badgeText.style.whiteSpace === 'normal') return; // already expanded, don't interfere
+        if (badgeText.scrollWidth > badgeText.clientWidth) {
+            chevron.style.display = 'inline';
+            branding.style.display = 'none';
+            spamMenu.style.display = 'none';
+        } else {
+            chevron.style.display = 'none';
+            branding.style.display = '';
+            spamMenu.style.display = '';
+        }
+    };
+
+    requestAnimationFrame(_updateSpamVisibility);
+
+    const _spamResizeObserver = new ResizeObserver(_updateSpamVisibility);
+    _spamResizeObserver.observe(badge);
+
     return Promise.resolve(true);
   }
 
@@ -1019,7 +1056,6 @@ switch (message.command) {
 
     const summaryRightGroup = document.createElement('span');
     summaryRightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; float: right; margin-left: 10px;';
-    summaryRightGroup.appendChild(summaryBranding);
     summaryRightGroup.appendChild(summaryMenu);
 
     const summaryIcon = document.createElement('img');
@@ -1032,7 +1068,7 @@ switch (message.command) {
 
     const summaryText = document.createElement('div');
     summaryText.className = 'thunderai-summary-content';
-    const hasHtml = !!summaryData.summary_html;
+    const hasHtml = !!summaryData.summary_html && !summaryData.stripFormatting;
 
     function setSummaryHtml(element, html) {
         element.textContent = '';
@@ -1098,7 +1134,13 @@ switch (message.command) {
                 }
                 expanded = !expanded;
             });
-            summaryTextWrapper.appendChild(toggleLink);
+            const toggleContainer = document.createElement('div');
+            toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 8px; justify-content: space-between;';
+            toggleContainer.appendChild(toggleLink);
+            toggleContainer.appendChild(summaryBranding);
+            summaryBranding.style.marginRight = '0px';
+            summaryBranding.style.marginBottom = '0px';
+            summaryTextWrapper.appendChild(toggleContainer);
         } else {
             const collapsedMaxHeight = '4.2em';
             summaryText.style.maxHeight = collapsedMaxHeight;
@@ -1123,13 +1165,30 @@ switch (message.command) {
 
             requestAnimationFrame(() => {
                 if (summaryText.scrollHeight > summaryText.clientHeight) {
-                    summaryTextWrapper.appendChild(toggleLink);
+                    const toggleContainer = document.createElement('div');
+                    toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+                    toggleContainer.appendChild(toggleLink);
+                    toggleContainer.appendChild(summaryBranding);
+                    summaryBranding.style.marginRight = '-4px';
+                    summaryBranding.style.marginBottom = '-6px';
+                    summaryTextWrapper.appendChild(toggleContainer);
                 } else {
                     summaryText.style.maxHeight = '';
                     summaryText.style.overflow = '';
+                    // No toggle, branding goes directly after text
+                    const brandingContainer = document.createElement('div');
+                    brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+                    brandingContainer.appendChild(summaryBranding);
+                    summaryTextWrapper.appendChild(brandingContainer);
                 }
             });
         }
+    } else {
+        // No truncation, branding goes directly after text
+        const brandingContainer = document.createElement('div');
+        brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+        brandingContainer.appendChild(summaryBranding);
+        summaryTextWrapper.appendChild(brandingContainer);
     }
 
     const summaryBody = document.createElement('div');
@@ -1256,7 +1315,6 @@ switch (message.command) {
 
     translationHeader.appendChild(translationIcon);
     translationHeader.appendChild(translationTitleSpan);
-    translationHeader.appendChild(translationBranding);
     translationHeader.appendChild(translationMenu);
     translationContainer.appendChild(translationHeader);
 
@@ -1321,10 +1379,21 @@ switch (message.command) {
 
             requestAnimationFrame(() => {
                 if (translationText.scrollHeight > translationText.clientHeight) {
-                    translationTextWrapper.appendChild(toggleLink);
+                    const toggleContainer = document.createElement('div');
+                    toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+                    toggleContainer.appendChild(toggleLink);
+                    toggleContainer.appendChild(translationBranding);
+                    translationBranding.style.marginRight = '-4px';
+                    translationBranding.style.marginBottom = '-6px';
+                    translationTextWrapper.appendChild(toggleContainer);
                 } else {
                     translationText.style.maxHeight = '';
                     translationText.style.overflow = '';
+                    // No toggle, branding goes directly after text
+                    const brandingContainer = document.createElement('div');
+                    brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+                    brandingContainer.appendChild(translationBranding);
+                    translationTextWrapper.appendChild(brandingContainer);
                 }
             });
         } else {
@@ -1360,8 +1429,20 @@ switch (message.command) {
                 }
                 expanded = !expanded;
             });
-            translationTextWrapper.appendChild(toggleLink);
+            const toggleContainer = document.createElement('div');
+            toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: -6px; justify-content: space-between;';
+            toggleContainer.appendChild(toggleLink);
+            toggleContainer.appendChild(translationBranding);
+            translationBranding.style.marginRight = '-4px';
+            translationBranding.style.marginBottom = '-6px';
+            translationTextWrapper.appendChild(toggleContainer);
         }
+    } else {
+        // No truncation, branding goes directly after text
+        const brandingContainer = document.createElement('div');
+        brandingContainer.style.cssText = 'display: flex; justify-content: flex-end; margin-right: -4px; margin-bottom: -6px;';
+        brandingContainer.appendChild(translationBranding);
+        translationTextWrapper.appendChild(brandingContainer);
     }
 
     translationContainer.appendChild(translationTextWrapper);

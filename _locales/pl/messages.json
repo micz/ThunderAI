@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Użyj bieżącego modelu"
     },
-    "SendingPrompt": {
-        "message": "Wysyłanie polecenia..."
-    },
     "AllowedValues": {
         "message": "Dozwolone wartości"
     },
@@ -503,9 +500,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Wygląda na to, że przynajmniej jedno z Twoich kont używa dodatku Owl for Exchange. Istnieje znany problem między Thunderbirdem a Owl, który jest obecnie rozwiązywany. Na ten moment możesz używać ThunderAI podczas pisania e-maili, ale nie podczas ich czytania."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Kliknij na wartość, aby ją ustawić."
     },
     "prompt_reply_full_text": {
         "message": "Odpowiedz na poniższy e-mail. Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu."
@@ -688,7 +682,7 @@
         "message": "Dodaj nowe wydarzenie w kalendarzu"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Wyodrębnij wszystkie istotne szczegóły wymagane do wygenerowania wydarzenia w kalendarzu z poniższego tekstu. Wyodrębnione informacje powinny obejmować:\n- Tytuł wydarzenia\n- Datę i godzinę rozpoczęcia (w tym strefę czasową, jeśli została określona)\n- Datę i godzinę zakończenia (w tym strefę czasową, jeśli została określona)\n- Cały dzień (jeśli jest podany)\n- Uczestnicy\nUpewnij się, że dane są sformatowane w sposób jasny i spójny, tak aby można go bezpośrednio wykorzystać do utworzenia wydarzenia w kalendarzu.\nJeśli istnieją odniesienia do czasu względnego, pamiętaj, że data i godzina wysłania wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz ponownie datę i godzinę rozpoczęcia, stosując jako podstawę „{%current_datetime%}”.\nJeśli czas trwania nie jest określony, ustaw go na jedną godzinę.\nOto uczestnicy: {%author%}, {%recipients%}, {%cc_list%}. Jeśli jest obecny, wyklucz mój adres: {%account_email_address%}.\nJeśli nie możesz uzyskać co najmniej jednej z wymaganych informacji, w odpowiedzi wpisz pusty ciąg znaków.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, którego należy użyć:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Tutaj podsumowanie wydarzenia w kalendarzu\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOto tekst:\"{%mail_text_body_or_selected%}\""
+        "message": "Wyodrębnij wszystkie istotne szczegóły wymagane do wygenerowania wydarzenia w kalendarzu z poniższego tekstu. Wyodrębnione informacje powinny obejmować:\n- Tytuł wydarzenia\n- Datę i godzinę rozpoczęcia (w tym strefę czasową, jeśli została określona)\n- Datę i godzinę zakończenia (w tym strefę czasową, jeśli została określona)\n- Cały dzień (jeśli jest podany)\n- Uczestnicy\nUpewnij się, że dane są sformatowane w sposób jasny i spójny, tak aby można go bezpośrednio wykorzystać do utworzenia wydarzenia w kalendarzu.\nJeśli istnieją odniesienia do czasu względnego, pamiętaj, że data i godzina wysłania wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz ponownie datę i godzinę rozpoczęcia, stosując jako podstawę „{%current_datetime%}”.\nJeśli wydarzenie jest całodniowe, data zakończenia (endDate) musi przypadać na dzień po dacie rozpoczęcia (startDate), a godzina musi być ustawiona na \"T000000\".\nJeśli czas trwania nie jest określony, ustaw go na jedną godzinę.\nOto uczestnicy: {%author%}, {%recipients%}, {%cc_list%}. Jeśli jest obecny, wyklucz mój adres: {%account_email_address%}.\nJeśli nie możesz uzyskać co najmniej jednej z wymaganych informacji, w odpowiedzi wpisz pusty ciąg znaków.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, którego należy użyć:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Tutaj podsumowanie wydarzenia w kalendarzu\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOto tekst:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Dodaj nowe wydarzenie w kalendarzu z zaznaczonego tekstu"
@@ -829,7 +823,7 @@
         "message": "Zarządzaj ustawieniami filtra spamu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Przeanalizuj poniższy e-mail i określ, czy jest to spam, czy nie. Weź pod uwagę takie czynniki jak podejrzane słowa kluczowe, nadmierny język promocyjny, wprowadzające w błąd tematy, prośby o podanie danych osobowych i nietypowe adresy nadawców.\nPodaj wartość od 0 (nie spam) do 100 (spam) oraz wyjaśnienie nie dłuższe niż 10 słów.\nW przypadku braku danych wiadomości ustaw wartość na 0 (nie spam) i podaj powód.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dodawaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, który należy użyć:\n{\n\"spamValue\": <liczba całkowita od 0 do 100>,\n\"explanation\": \"Krótkie wyjaśnienie twojego rozumowania\"\n}\nOto informacje o e-mailu:\nNadawca: \"{%author%}\"\nTemat: \"{%mail_subject%}\"\nTreść HTML: \"{%mail_html_body%}\""
+        "message": "Przeanalizuj poniższy e-mail i określ, czy jest to spam, czy nie. Weź pod uwagę takie czynniki jak podejrzane słowa kluczowe, nadmierny język promocyjny, wprowadzające w błąd tematy, prośby o podanie danych osobowych i nietypowe adresy nadawców.\nPodaj wartość od 0 (nie spam) do 100 (spam) oraz wyjaśnienie nie dłuższe niż 10 słów.\nW przypadku braku danych wiadomości ustaw wartość na 0 (nie spam) i podaj powód.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dodawaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, który należy użyć:\n{\n\"explanation\": \"Krótkie wyjaśnienie twojego rozumowania\",\n\"spamValue\": <liczba całkowita od 0 do 100>\n}\nOto informacje o e-mailu:\nNadawca: \"{%author%}\"\nTemat: \"{%mail_subject%}\"\nTreść HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "Jeśli wartość zwrócona przez AI przekroczy ten próg, e-mail zostanie przeniesiony do folderu spamu."

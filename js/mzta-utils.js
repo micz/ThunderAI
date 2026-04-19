@@ -24,7 +24,6 @@ import {
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
@@ -192,38 +191,52 @@ export async function getMailSubject(tab){
 }
 
 function extractTextParts(fullMessage) {
-  const textParts = [];
-
+  const textParts = []
   function walkParts(parts) {
     for (const part of parts) {
       if (part.parts && part.parts.length > 0) {
-        // Recursively walk through sub-parts
-        walkParts(part.parts);
-      } else {
-        // Check if contentType starts with "text/"
-        if (part.contentType && part.contentType.startsWith("text/")) {
-          textParts.push(part);
-        }
+        walkParts(part.parts)
+      }
+      // console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
+      if (part.contentType && part.contentType.startsWith('text/')) {
+        textParts.push(part)
       }
     }
   }
-
   if (fullMessage.parts && fullMessage.parts.length > 0) {
-    walkParts(fullMessage.parts);
+    walkParts(fullMessage.parts)
   }
+  return textParts
+}
 
-  return textParts;
+function smartDecode(buf) {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (e) {
+    return new TextDecoder('windows-1252').decode(buf);
+  }
 }
   
-export function getMailBody(fullMessage){
+export async function getMailBody(fullMessage, messageId) {
   const textParts = extractTextParts(fullMessage);
   let text = "";
   let html = "";
+  // console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
+  // console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
   for (const part of textParts) {
+    let body = part.body;
+    if ((body === undefined || body === "") && messageId && part.partName) {
+      const file = await browser.messages.getAttachmentFile(messageId, part.partName);
+      const buf = await file.arrayBuffer();
+      //const buf = new TextDecoder('utf-8').decode(buf);
+      body = smartDecode(buf);
+    }
     if (part.contentType === "text/plain") {
-      text += part.body;
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
+      text += body ?? "";
     } else if (part.contentType === "text/html") {
-      html += part.body;
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
+      html += body ?? "";
     }
   }
   if(html === "") {
@@ -261,13 +274,21 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
-export async function getMailHeader(curr_message, mail_header_id) {
+export async function getMailHeader(curr_message, mail_header_id = false) {
   let mail_header_value = "";
   let full_message = await browser.messages.getFull(curr_message.id);
   // console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
-  if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
-    const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
-    mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+  if(full_message.hasOwnProperty("headers")) {
+    if(mail_header_id) {
+      if(Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
+        const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+        mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+      }
+    } else {
+      mail_header_value = Object.entries(full_message.headers)
+        .map(([key, value]) => key + ": " + (Array.isArray(value) ? value.join(", ") : value))
+        .join("\n");
+    }
   }
   // console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
   return mail_header_value;
@@ -382,46 +403,6 @@ export function getGPTWebModelString(model) {
     default:
       return model;
   }
-}
-
-export function getChatGPTWebModelsList_HTML(values, targetRowId) {
-  const rowElement = document.getElementById(targetRowId);
-  if (!rowElement) return;
-
-  // Clears any existing td elements
-  rowElement.innerHTML = '';
-
-  // First TD: label
-  const labelTd = document.createElement('td');
-  const label = document.createElement('i');
-  label.className = 'small_info';
-  const labelNobr = document.createElement('nobr');
-  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
-  label.appendChild(labelNobr);
-  labelTd.appendChild(label);
-
-  // Second TD: values
-  const valuesTd = document.createElement('td');
-  const valuesContainer = document.createElement('i');
-  valuesContainer.className = 'small_info';
-
-  values.forEach(value => {
-    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
-    const valueNobr = document.createElement('nobr');
-    valueNobr.className = 'conntype_chatgpt_web_option';
-    valueNobr.textContent = value;
-    const nbspAfter = document.createTextNode(' \u00A0 ');
-
-    valuesContainer.appendChild(nbspBefore);
-    valuesContainer.appendChild(valueNobr);
-    valuesContainer.appendChild(nbspAfter);
-  });
-
-  valuesTd.appendChild(valuesContainer);
-
-  // Adds the td elements to the row
-  rowElement.appendChild(labelTd);
-  rowElement.appendChild(valuesTd);
 }
 
 export function openTab(url){
@@ -739,6 +720,16 @@ export function extractJsonObject(inputString) {
     throw new Error("Error extracting JSON object: " + error.message);
     return null;
   }
+}
+
+export function normalizeDateTimeString(str) {
+  if (!str || typeof str !== 'string') return null;
+  str = str.trim();
+  // Accept any non-digit separator (or none) between date/time components
+  const match = str.match(/^(\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(Z?)$/);
+  if (!match) return null;
+  const [, y, mo, d, h, mi, s, z] = match;
+  return `${y}${mo}${d}T${h}${mi}${s}${z}`;
 }
 
 export function isAPIKeyValue(id){

@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Utiliser le modèle actuel"
     },
-    "SendingPrompt": {
-        "message": "Envoi de l'invite..."
-    },
     "AllowedValues": {
         "message": "Valeurs autorisées"
     },
@@ -503,9 +500,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Il semble qu'au moins un de vos comptes utilise le module complémentaire Chouette pour Exchange. Il existe un problème connu entre Thunderbird et Chouette, qui est en cours de résolution. Pour le moment, vous pouvez utiliser ThunderAI lors de la rédaction d'e-mails, mais pas lors de leur lecture."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Cliquez sur une valeur pour la définir."
     },
     "prompt_reply_full_text": {
         "message": "Répondez au courriel suivant. Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte."
@@ -697,7 +691,7 @@
         "message": "Ajouter un nouvel événement au calendrier"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée)\n- Participants\nAssurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\". Calculez la date et l'heure de début sur cette base. Si la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nVoici les participants : {%author%}, {%recipients%}, {%cc_list%}. Si elle est présente, exclure mon adresse : {%account_email_address%}.\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\" : \"YYYYMMDDTHHMMSS\",\n\"endDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\" : false\n\"attendees\" : [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nVoici le texte : \"{%mail_text_body_or_selected%}\""
+        "message": "Extrayez tous les détails pertinents nécessaires pour générer un événement de calendrier à partir du texte suivant. Les informations extraites doivent inclure :\n- Titre de l'événement\n- Date et heure de début (y compris le fuseau horaire, si spécifié)\n- Date et heure de fin (y compris le fuseau horaire, si spécifié)\n- Journée entière (si mentionnée)\n- Participants\nAssurez-vous que les données sont formatées clairement et de manière cohérente afin qu'elles puissent être utilisées directement pour créer un événement de calendrier.\nS'il y a des références temporelles relatives, considérez que la date et l'heure de l'email sont \"{%mail_datetime%}\". Calculez la date et l'heure de début sur cette base. Si la date et l'heure de début calculées sont antérieures à \"{%current_datetime%}\", recalculez-les en utilisant \"{%current_datetime%}\" comme base.\nSi la durée n'est pas spécifiée, définissez-la sur une heure.\nVoici les participants : {%author%}, {%recipients%}, {%cc_list%}. Si elle est présente, exclure mon adresse : {%account_email_address%}.\nSi l'événement dure toute la journée, endDate doit être le lendemain de startDate avec l'heure définie sur \"T000000\".\nSi vous n'êtes pas en mesure d'obtenir une ou plusieurs des informations requises, répondez avec une chaîne vide.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"startDate\" : \"YYYYMMDDTHHMMSS\",\n\"endDate\" : \"YYYYMMDDTHHMMSS\",\n\"summary\" : \"Résumé de l'événement du calendrier ici\",\n\"forceAllDay\" : false\n\"attendees\" : [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nVoici le texte : \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ajouter un nouvel événement au calendrier à partir du texte sélectionné"
@@ -835,7 +829,7 @@
         "message": "Date du rapport"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nEn cas de données de message manquantes, définissez la valeur à 0 (non spam) et indiquez la raison.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"spamValue\" : <entier de 0 à 100>,\n\"explanation\" : \"Brève explication de votre raisonnement\"\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
+        "message": "Analysez l'e-mail suivant et déterminez s'il s'agit d'un spam ou non. Prenez en compte des facteurs tels que des mots-clés suspects, un langage promotionnel excessif, des lignes d'objet trompeuses, des demandes d'informations personnelles et des adresses d'expéditeurs inhabituelles.\nFournissez une valeur de 0 (non spam) à 100 (spam) et une explication de 10 mots maximum.\nEn cas de données de message manquantes, définissez la valeur à 0 (non spam) et indiquez la raison.\nGénérez une réponse uniquement au format JSON. N'incluez aucun texte ou explication supplémentaire ; fournissez uniquement le JSON. Voici le format à utiliser :\n{\n\"explanation\" : \"Brève explication de votre raisonnement\",\n\"spamValue\" : <entier de 0 à 100>\n}\nVoici les informations de l'e-mail :\nExpéditeur : \"{%author%}\"\nObjet : \"{%mail_subject%}\"\nCorps HTML : \"{%mail_html_body%}\""
     },
     "context_menu_mzta-add-tags": {
         "message": "Ajouter des étiquettes"

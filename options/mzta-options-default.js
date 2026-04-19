@@ -137,10 +137,13 @@ export const prefs_default = {
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    spamfilter_skip_addresses: [],
+    spamfilter_skip_addressbook: false,
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
+    summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
     translate: true,
     translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline

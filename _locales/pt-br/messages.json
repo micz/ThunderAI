@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Usar o modelo atual"
     },
-    "SendingPrompt": {
-        "message": "Enviando prompt..."
-    },
     "AllowedValues": {
         "message": "Valores permitidos"
     },
@@ -503,9 +500,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Parece que pelo menos uma das suas contas está usando o complemento Coruja para Exchange. Existe um problema conhecido entre Thunderbird e Coruja, que está sendo resolvido no momento. Por enquanto, você pode usar o ThunderAI ao redigir e-mails, mas não ao lê-los."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Clique em um valor para defini-lo."
     },
     "prompt_reply_full_text": {
         "message": "Responda ao e-mail a seguir. Responda apenas com o texto necessário e sem comentários adicionais ou outros textos."
@@ -697,7 +691,7 @@
         "message": "Adicionar um novo evento ao calendário"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
+        "message": "Extraia todos os detalhes relevantes necessários para gerar um evento de calendário a partir do texto a seguir. As informações extraídas devem incluir:\n- Título do evento\n- Data e hora de início (incluindo fuso horário, se especificado)\n- Data e hora de término (incluindo fuso horário, se especificado)\n- Dia inteiro (se mencionado)\n- Participantes\nCertifique-se de que os dados estejam formatados de maneira clara e consistente para que possam ser usados diretamente para criar um evento de calendário.\nSe houver referências de tempo relativas, considere que a data e a hora do e-mail são \"{%mail_datetime%}\". Calcule a data e a hora de início com base nessa referência. Se a data e a hora de início calculadas forem anteriores a \"{%current_datetime%}\", recalcule a data e a hora de início usando \"{%current_datetime%}\" como base.\nSe a duração não for especificada, defina-a como uma hora.\nEstes são os participantes: {%author%}, {%recipients%}, {%cc_list%}. Se estiver presente, exclua meu endereço: {%account_email_address%}.\nSe o evento for de dia inteiro, o campo endDate deve ser o dia seguinte ao startDate com o horário definido como \"T000000\".\nSe você não conseguir obter uma ou mais informações necessárias, responda com uma string vazia.\nGere uma resposta apenas no formato JSON. Não inclua texto ou explicações adicionais; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Resumo do evento do calendário aqui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nAqui está o texto: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Adicionar um novo evento ao calendário a partir do texto selecionado"
@@ -814,7 +808,7 @@
         "message": "Filtro de spam automático"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"spamValue\": <inteiro de 0 a 100>,\n\"explanation\": \"Breve explicação do seu raciocínio\"\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+        "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "Se o valor retornado pela IA estiver acima deste limite, o e-mail será movido para a pasta de spam."

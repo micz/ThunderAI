@@ -395,9 +395,6 @@
     "chatgpt_btn_model": {
         "message": "Použít aktuální model"
     },
-    "SendingPrompt": {
-        "message": "Odesílání výzvy..."
-    },
     "AddTags_prompt_text_title": {
         "message": "Aktuální text výzvy"
     },
@@ -719,9 +716,6 @@
     "prefs_OptionText_owl_warning": {
         "message": "Zdá se, že alespoň jeden z vašich účtů používá doplněk Owl for Exchange. Mezi Thunderbirdem a Owlem je známý problém, který se v současné době řeší. V tuto chvíli můžete používat ThunderAI při psaní e-mailů, ale ne při jejich čtení."
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Kliknutím na hodnotu ji nastavíte."
-    },
     "prompt_reply_full_text": {
         "message": "Odpovězte na následující e-mail. Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
     },
@@ -795,7 +789,7 @@
         "message": "Spravovat nastavení štítků"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%mail_text_body_or_selected%}\""
+        "message": "Z následujícího textu extrahuj všechny relevantní podrobnosti potřebné k vygenerování události kalendáře. Extrahované informace by měly zahrnovat:\n- Název události\n- Datum a čas zahájení (včetně časového pásma, pokud je uvedeno)\n- Datum a čas ukončení (včetně časového pásma, pokud je uvedeno)\n- Celý den (pokud je zmíněn)\n- Účastníci\nZajisti, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytvoření události kalendáře.\nPokud existují relativní časové odkazy, vezmi v úvahu, že datum a čas e-mailu jsou \"{%mail_datetime%}\". Vypočítej datum a čas zahájení na základě tohoto odkazu. Pokud jsou vypočítané datum a čas zahájení dřívější než \"{%current_datetime%}\", přepočti datum a čas zahájení pomocí \"{%current_datetime%}\" jako základu.\nPokud není zadána doba trvání, nastav ji na jednu hodinu.\nToto jsou účastníci: {%author%}, {%recipients%}, {%cc_list%}. Pokud je přítomna, nezahrnuj mou adresu: {%account_email_address%}.\nPokud se jedná o celodenní událost, musí být endDate jeden den po startDate s časem nastaveným na \"T000000\".\nPokud nejsi schopen získat jednu nebo více požadovaných informací, odpověz prázdným řetězcem.\nVygeneruj odpověď pouze ve formátu JSON. Nezahrnuj žádný další text ani vysvětlení; poskytni pouze JSON. Zde je formát, který se má použít:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Zde je souhrn události kalendáře\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nZde je text:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Přidat novou událost do kalendáře z vybraného textu"
@@ -843,7 +837,7 @@
         "message": "Vynutit existující štítky při automatickém označování nebo použití kontextového menu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"spamValue\": <celé číslo od 0 do 100>,\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\"\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
+        "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n\"spamValue\": <celé číslo od 0 do 100>\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
     },
     "context_menu_mzta-add-tags": {
         "message": "Přidat štítky"

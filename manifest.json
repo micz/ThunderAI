@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "ThunderAI",
     "description": "__MSG_extensionDescription__",
-    "version": "4.1.0pre1",
+    "version": "4.1.0pre3",
     "author": "Mic (m@micz.it)",
     "homepage_url": "https://micz.it/thunderbird-addon-thunderai/",
     "browser_specific_settings": {
@@ -34,6 +34,7 @@
         "messagesTagsList"
     ],
     "optional_permissions": [
+        "addressBooks",
         "clipboardRead",
         "messagesTags",
         "messagesUpdate",

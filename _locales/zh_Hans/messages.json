@@ -107,9 +107,6 @@
     "chatgpt_btn_model": {
         "message": "使用当前模型"
     },
-    "SendingPrompt": {
-        "message": "正在发送提示词..."
-    },
     "AllowedValues": {
         "message": "允许的值"
     },
@@ -489,7 +486,7 @@
         "message": "如果在 ThunderAI 窗口中遇到登录问题，请使用右侧的按钮在新标签页中打开 ChatGPT，完成登录后关闭该标签页，然后继续使用 ThunderAI。"
     },
     "prompt_translate_this_full_text": {
-        "message": "将以下电子邮件翻译成"
+        "message": "将以下电子邮件翻译成 {%thunderai_translate_lang%}。\n\n规则：\n- 翻译主题和正文。\n- 以包含三个字段（“subject”、“body”和“status”）的 JSON 对象形式返回结果。\n- 如果翻译已完成，则状态等于 1。\n- 如果电子邮件是以这些语言“{%thunderai_translate_exclude_lang%}”之一或 {%thunderai_translate_lang%} 语言编写的，请为主体和主题返回空字符串，并将状态设置为 -1。\n- 请勿在 JSON 之外添加解释、注释或任何文本。\n\n邮件主题：{%mail_subject%}\n\n邮件正文：{%mail_html_body%}\n\n仅以 JSON 格式生成响应。输出应仅为一个 JSON 对象。以下是要使用的 JSON 格式示例：\n\n{\n\n\"subject\": \"主题翻译\",\n\"body\": \"正文翻译\",\n\"status\": \"状态结果\"\n}"
     },
     "prompt_add_tags": {
         "message": "为这封电子邮件添加标签"
@@ -557,9 +554,6 @@
     "placeholder_cc_list": {
         "message": "抄送列表"
     },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "单击一个值进行设置。"
-    },
     "prefs_OpenAIComp_ForceModel": {
         "message": "手动填入模型"
     },
@@ -624,7 +618,7 @@
         "message": "单击此处，只需一分钟！"
     },
     "prompt_add_tags_full_text": {
-        "message": "请分析以下电子邮件文本，并生成一个 JSON 数组的标签，总结其内容。请使用主题、关键话题和相关描述词作为标签。确保标签简洁且与邮件内容密切相关。\n邮件文本：{%mail_text_body%}\n考虑以下细节以获取上下文：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请仅根据邮件正文和上下文生成标签，忽略无关信息或琐碎细节。\n请仅以 JSON 格式生成回复。输出应仅包含标签的 JSON 数组，不包含任何额外注释或文本。以下是需使用的 JSON 格式示例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
+        "message": "分析以下邮件正文，并生成一个总结其内容的 JSON 标签数组。使用主题、关键话题和相关描述符作为标签。确保标签简洁且与邮件内容相关。\n邮件正文：{%mail_text_body%}\n考虑以下背景详情：\n- 发件人：{%author%}\n- 收件人：{%recipients%}\n- 抄送列表：{%cc_list%}\n- 邮件主题：{%mail_subject%}\n请根据邮件的正文和背景信息生成标签，忽略不必要的信息或琐碎的细节。\n仅以 JSON 格式生成响应。输出应仅为标签的 JSON 数组，不含任何额外注释或文本。以下是要使用的 JSON 格式示例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
     },
     "placeholder_tags_full_list": {
         "message": "现有标签"
@@ -765,7 +759,7 @@
         "message": "管理垃圾邮件过滤器设置"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
+        "message": "从以下文本中提取生成日历事件所需的所有相关细节。提取的信息应包括：\n- 事件标题\n- 开始日期和时间（如果指定时区，则包括时区）\n- 结束日期和时间（如果指定时区，则包括时区）\n- 全天事件（如果提及）\n- 参与者 \n确保数据格式清晰且一致，以便可以直接用于创建日历事件。\n如果存在相对时间的引用，请注意邮件的日期和时间为“{%mail_datetime%}”。基于此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，则使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果未指定持续时间，请将其设置为一小时。\n以下是参与者：{%author%}, {%recipients%}, {%cc_list%}。如有，请排除我的地址：{%account_email_address%}。\n如果该活动为全天活动，endDate 必须为 startDate 的后一天，且时间设置为 \"T000000\"。\n如果无法获取一个或多个所需信息，请以空字符串响应。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明，仅提供 JSON。以下是使用的格式：\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"日历事件摘要\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\n以下是文本：“{%mail_text_body_or_selected%}”"
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "从所选文本添加新日历事件"
@@ -810,7 +804,7 @@
         "message": "获取日历事件数据时出错"
     },
     "prompt_spamfilter_full_text": {
-        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"spamValue\": <0 到 100 的整数>,\n\"explanation\": \"简要说明您的判断理由\"\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
+        "message": "分析以下邮件并判断它是否为垃圾邮件。考虑因素包括可疑关键词、过多的宣传语言、误导性的主题行、索取个人信息的请求以及异常的发件人地址。\n提供一个从 0（非垃圾邮件）到 100（垃圾邮件）的值，并附上不超过 10 个单词的解释。\n如果消息数据缺失，将数值设为0（非垃圾邮件），并说明原因。\n仅以 JSON 格式生成响应。不要包含任何额外文本或解释；仅提供 JSON。以下是使用的格式：\n{\n\"explanation\": \"简要说明您的判断理由\",\n\"spamValue\": <0 到 100 的整数>\n}\n以下是邮件信息：\n发件人：“{%author%}”\n主题：“{%mail_subject%}”\nHTML 正文：“{%mail_html_body%}”"
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "如果 AI 返回的值高于此阈值，电子邮件将被移至垃圾邮件文件夹。"
@@ -910,5 +904,232 @@
     },
     "placeholder_selected_html": {
         "message": "已选中的 HTML"
+    },
+    "webchat_save_as_summary": {
+        "message": "另存为摘要"
+    },
+    "prefs_storage_title": {
+        "message": "存储"
+    },
+    "prefs_storage_info": {
+        "message": "该存储用于保存每条消息的垃圾邮件分数、摘要和翻译。"
+    },
+    "prefs_storage_size": {
+        "message": "存储容量"
+    },
+    "prefs_storage_clear_button": {
+        "message": "清除存储"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "您确定要清除所有已存储的数据（包含：摘要、垃圾邮件报告、翻译等）吗？此操作无法撤销。"
+    },
+    "prefs_storage_clear_done": {
+        "message": "清除存储后显示的消息",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "要使用 Google Gemini API，您需要一个 Google Gemini API 密钥，并且必须选择一个模型。"
+    },
+    "prefsInfoDesc_8": {
+        "message": "要使用 Claude API，您需要一个 Anthropic Claude API 密钥，并且必须选择一个模型。"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "邮件正文或选定文本"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "邮件正文或选定的 HTML"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "页面加载等待时间"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "在加载附加内容之前等待 ChatGPT 页面加载的时间（以毫秒为单位）。默认值为 1000 毫秒。如果定义了自定义 GPT 或项目，则该值将额外增加 1000 毫秒。"
+    },
+    "sign_msg_as": {
+        "message": "使用以下身份签名"
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "请回复以下邮件 \"{%mail_text_body%}\"。{%additional_text%}。仅回复所需文本，不要包含额外的评论或其他文字。"
+    },
+    "prompt_proofread_this": {
+        "message": "校对这封邮件"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "请校对以下电子邮件，并纠正任何拼写或语法错误。仅回复更正后的文本，不要包含任何额外评论或其他文字。\n\n“{%mail_typed_text%}”"
+    },
+    "reset": {
+        "message": "重置"
+    },
+    "prefs_doc_title": {
+        "message": "文档"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "设置指南"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "自定义提示词教程"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "打开欢迎页面"
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "标签必须用以下方式编写："
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "邮件正文中的引用文本"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "从剪贴板添加日历事件"
+    },
+    "clipboard_read_error": {
+        "message": "无法读取剪贴板。请检查权限。"
+    },
+    "clipboard_empty_error": {
+        "message": "剪贴板为空。请先复制一些文本。"
+    },
+    "clipboard_permission_denied": {
+        "message": "剪贴板权限被拒绝。请在设置中重新启用该功能以授予权限。"
+    },
+    "clipboard_permission_error": {
+        "message": "请求剪贴板权限时出错，请重试。"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "从剪贴板获取日历事件"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "显示一个额外的菜单项，用于根据剪贴板文本内容创建日历事件。"
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "摘要选项"
+    },
+    "prompt_summarize": {
+        "message": "总结这封或这些邮件"
+    },
+    "prompt_summarize_full_text": {
+        "message": "请提供以下电子邮件的简明摘要。摘要应不超过 3-5 句话，并概括要点。请使用纯段落格式，不要使用项目符号、列表或 Markdown 格式。\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "邮件模板摘要"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "发件人：{%author%} \n收件人：{%recipients%} \n抄送：{%cc_list%} \n主题：{%mail_subject%} \n日期：{%mail_datetime%} \n附件： {%mail_attachments_info%} \n\n正文：\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "电子邮件分隔符"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n----------下一封邮件----------\n\n"
+    },
+    "prompt_get_task": {
+        "message": "添加新任务"
+    },
+    "prompt_get_task_full_text": {
+        "message": "从以下文本中提取生成任务所需的所有相关详细信息。提取的信息应包括：\n- 截止日期和时间（如果指定，包括时区）\n- 任务摘要\n- 开始日期和时间（如果指定，包括时区）\n- 确保数据格式清晰且一致，以便直接用于创建任务。\n如果存在相对时间引用，请认为电子邮件的日期和时间为“{%mail_datetime%}”。根据此参考计算开始日期和时间。如果计算出的开始日期和时间早于“{%current_datetime%}”，请使用“{%current_datetime%}”作为基准重新计算开始日期和时间。\n如果您无法获取一项或多项所需信息，请回复空字符串。\n仅以 JSON 格式生成响应。不要包含任何额外的文本或说明；仅提供 JSON。以下是要使用的格式：\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"在此处填写任务摘要\"\n}\n如果没有关于日期的信息，请将其删除。\n以下是文本：“{%selected_text%}”"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "从选定文本添加新任务"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "如果选中，则会在菜单中添加一个项目，以便从选定的文本获取任务信息。"
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "任务选项"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "您可以根据需要更改提示词，第一个字段是主提示词，第二个字段是单封邮件的模板。邮件列表将附加到主提示词中。邮件将由第三个字段中指定的间隔符分隔。"
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "针对所有选定电子邮件，描述要执行的任务的主要提示："
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "单封邮件的模板："
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "电子邮件地址之间的分隔符："
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "要使用日历事件和任务功能，请安装最新版本的 ThunderAI Sparks 插件。"
+    },
+    "GetTask_PageTitle": {
+        "message": "管理任务设置"
+    },
+    "GetTask_info_default": {
+        "message": "在此页面中，您可以修改用于从选定文本获取任务的默认提示。"
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "管理任务设置"
+    },
+    "task_getting_data_error": {
+        "message": "获取任务数据时出错"
+    },
+    "task_opening_dialog_error": {
+        "message": "打开任务对话框时出错"
+    },
+    "no_valid_data_received": {
+        "message": "未收到来自 AI 的有效数据。"
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "请在页面底部选择要为其激活此功能的帐户。"
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "仅使用这些标签"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "如果选中此项，AI 将仅添加以下列表中的标签。"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "列表中必须至少包含一个标签。每行添加一个标签，标签之间用逗号分隔。"
+    },
+    "prompt_add_tags_use_list": {
+        "message": "仅使用此逗号分隔列表中的标签"
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "如果选中此项，则无论在 ThunderAI 选项页面中选择哪个模型和 API，都将使用下面指定的模型和 API 向电子邮件添加标签。"
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "每行添加一个电子邮件地址，或用逗号分隔。"
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "发件人已在反垃圾邮件跳过列表中。"
+    },
+    "Valid": {
+        "message": "有效的"
+    },
+    "context_menu_mzta-summarize": {
+        "message": "总结"
+    },
+    "context_menu_mzta-translate": {
+        "message": "翻译"
+    },
+    "hyprland_warning": {
+        "message": "如果您在打开 AI 聊天窗口时遇到问题，请尝试将高度和宽度值设置为 0。此问题可能在某些 Linux 环境下出现，例如在使用 Hyprland 时。"
+    },
+    "remember_CORS": {
+        "message": "记住，您需要在服务器上设置 CORS 设置！"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "使用 OpenAI 兼容 API 可能需要在服务器上设置 CORS 设置。"
+    },
+    "CORS_alternative_1": {
+        "message": "CORS设置有问题吗？"
+    },
+    "CORS_alternative_2_new": {
+        "message": "点击下方按钮授予当前主机权限，以避免任何 CORS 问题。"
+    },
+    "CORS_give_host_perm": {
+        "message": "授予当前主机权限"
+    },
+    "CORS_localhost_warn": {
+        "message": "如果您使用 localhost 或 127.0.0.1，因为 AI 服务器托管在您的 PC 上，则需要 <all_urls> 权限。"
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "以纯文本编写"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "如果您以纯文本格式编写电子邮件，请选中此选项。"
     }
 }

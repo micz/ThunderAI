@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Aktuelles Modell verwenden"
     },
-    "SendingPrompt": {
-        "message": "Sende Eingabe..."
-    },
     "AllowedValues": {
         "message": "Erlaubte Werte"
     },
@@ -503,9 +500,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Es scheint, dass mindestens eines Ihrer Konten das Add-on Eule für Exchange verwendet. Es gibt ein bekanntes Problem zwischen Thunderbird und Eule, das derzeit behoben wird. Derzeit können Sie ThunderAI beim Verfassen von E-Mails verwenden, jedoch nicht beim Lesen."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Klicken Sie auf einen Wert, um ihn festzulegen."
     },
     "prompt_reply_full_text": {
         "message": "Antworten Sie auf die folgende E-Mail. Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
@@ -697,7 +691,7 @@
         "message": "Ein neues Kalenderevent hinzufügen"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
+        "message": "Extrahieren Sie alle relevanten Details, die erforderlich sind, um ein Kalenderevent aus dem folgenden Text zu erstellen. Die extrahierten Informationen sollten Folgendes enthalten:\n- Ereignistitel\n- Startdatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Enddatum und -uhrzeit (einschließlich Zeitzone, falls angegeben)\n- Ganztägig (falls erwähnt)\n- Teilnehmer\nStellen Sie sicher, dass die Daten klar und konsistent formatiert sind, sodass sie direkt für die Erstellung eines Kalenderevents verwendet werden können.\nFalls relative Zeitangaben enthalten sind, beachten Sie, dass Datum und Uhrzeit der E-Mail \"{%mail_datetime%}\" sind. Berechnen Sie das Startdatum und die Startzeit basierend auf diesem Bezugspunkt. Falls das berechnete Startdatum und die Startzeit vor \"{%current_datetime%}\" liegen, berechnen Sie Startdatum und -zeit erneut, wobei Sie \"{%current_datetime%}\" als Grundlage verwenden.\nFalls keine Dauer angegeben ist, setzen Sie sie auf eine Stunde.\nDas sind die Teilnehmer: {%author%}, {%recipients%}, {%cc_list%}. Falls vorhanden, meine Adresse ausschließen: {%account_email_address%}.\nWenn es sich um ein ganztägiges Ereignis handelt, muss endDate ein Tag nach startDate liegen und die Zeit auf \"T000000\" eingestellt sein.\nFalls Sie eine oder mehrere der erforderlichen Informationen nicht erhalten können, antworten Sie mit einem leeren String.\nErstellen Sie eine Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; geben Sie nur das JSON an. Verwenden Sie folgendes Format:\n{\n \"startDate\": \"YYYYMMDDTHHMMSS\",\n \"endDate\": \"YYYYMMDDTHHMMSS\",\n \"summary\": \"Zusammenfassung des Kalenderevents hier\",\n \"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHier ist der Text: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Ein neues Kalenderevent aus ausgewähltem Text hinzufügen"
@@ -832,7 +826,7 @@
         "message": "Wenn ausgewählt, wird ThunderAI Spam-E-Mails automatisch in den Spam-Ordner verschieben."
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nFalls Nachrichtendaten fehlen, setzen Sie den Wert auf 0 (kein Spam) und geben Sie den Grund an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"spamValue\": <Ganzzahl von 0 bis 100>,\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\"\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
+        "message": "Analysieren Sie die folgende E-Mail und bestimmen Sie, ob es sich um Spam handelt oder nicht. Berücksichtigen Sie Faktoren wie verdächtige Schlüsselwörter, übermäßige Werbesprache, irreführende Betreffzeilen, Anfragen nach persönlichen Informationen und ungewöhnliche Absenderadressen.\nGeben Sie einen Wert von 0 (kein Spam) bis 100 (Spam) und eine Erklärung mit maximal 10 Wörtern an.\nFalls Nachrichtendaten fehlen, setzen Sie den Wert auf 0 (kein Spam) und geben Sie den Grund an.\nGenerieren Sie die Antwort ausschließlich im JSON-Format. Fügen Sie keinen zusätzlichen Text oder Erklärungen hinzu; liefern Sie nur das JSON. Hier ist das zu verwendende Format:\n{\n\"explanation\": \"Kurze Erklärung Ihrer Begründung\",\n\"spamValue\": <Ganzzahl von 0 bis 100>\n}\nHier sind die Mail-Informationen:\nAbsender: \"{%author%}\"\nBetreff: \"{%mail_subject%}\"\nHTML-Inhalt: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_openai_comp_info_remote": {
         "message": "Hier können Sie auch die Adresse eines entfernten Servers eingeben."

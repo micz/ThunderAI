@@ -63,7 +63,7 @@ import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
-} from './js/mzta-addatags-exclusion-list.js';
+} from './js/mzta-addtags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -242,7 +242,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length });
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting });
 
                         if (!prefs.summarize) return;
 
@@ -252,7 +252,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // Always show cached summary if available, regardless of summarize_auto
                         let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
                         if (cachedSummary && !cachedSummary.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
                             return;
                         }
 
@@ -331,12 +331,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         };
                         await summaryStore.saveSummary(summaryData, msg.headerMessageId);
                         let prefs_summary = await browser.storage.sync.get({
-                            summarize_max_display_length: prefs_default.summarize_max_display_length
+                            summarize_max_display_length: prefs_default.summarize_max_display_length,
+                            summarize_strip_formatting: prefs_default.summarize_strip_formatting
                         });
                         try {
                             browser.tabs.sendMessage(msg.tabId, {
                                 command: "showSummary",
-                                data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length }
+                                data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
                             });
                         } catch (e) {
                             taLog.error("Error sending showSummary to tab: " + e);
@@ -623,12 +624,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             do_debug: prefs_default.do_debug,
             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
             summarize_max_display_length: prefs_default.summarize_max_display_length,
+            summarize_strip_formatting: prefs_default.summarize_strip_formatting,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
 
         let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length } });
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
             return;
         }
 
@@ -689,7 +691,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             headerMessageId: headerMessageId
         };
         await summaryStore.saveSummary(summaryData, headerMessageId);
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length } });
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
@@ -834,10 +836,71 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             }
             message = messageResult.messages[0];
             curr_fullMessage = await browser.messages.getFull(message.id);
-            msg_text = getMailBody(curr_fullMessage);
+            msg_text = await getMailBody(curr_fullMessage);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
                 body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        // Extract sender email for skip checks
+        let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+
+        // Check if sender is in the skip addresses list
+        let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
+        if (skip_addresses.length > 0) {
+            if (senderEmail && skip_addresses.includes(senderEmail)) {
+                taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
+                let report_data = {};
+                report_data.report_date = new Date();
+                report_data.headerMessageId = headerMessageId;
+                report_data.spamValue = 0;
+                report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addresses_explanation');
+                report_data.subject = curr_fullMessage.headers.subject;
+                report_data.from = curr_fullMessage.headers.from;
+                report_data.message_date = new Date(message.date);
+                report_data.moved = false;
+                report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                spamReport.saveReportData(report_data, headerMessageId);
+                await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                return { success: true };
+            }
+        }
+
+        // Check if sender is in any address book
+        let skip_addressbook = options.skip_addressbook !== undefined
+            ? options.skip_addressbook
+            : (await browser.storage.sync.get({spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook})).spamfilter_skip_addressbook;
+        if (skip_addressbook && senderEmail) {
+            try {
+                let hasPermission = await browser.permissions.contains({ permissions: ["addressBooks"] });
+                if (hasPermission) {
+                    let matchingContacts = await browser.contacts.quickSearch({ searchString: senderEmail });
+                    let isInAddressBook = matchingContacts.some(contact => {
+                        let props = contact.properties;
+                        return (props.PrimaryEmail && props.PrimaryEmail.toLowerCase() === senderEmail) ||
+                               (props.SecondEmail && props.SecondEmail.toLowerCase() === senderEmail);
+                    });
+                    if (isInAddressBook) {
+                        taLog.log("Sender " + senderEmail + " is in the address book, skipping spam filter.");
+                        let report_data = {};
+                        report_data.report_date = new Date();
+                        report_data.headerMessageId = headerMessageId;
+                        report_data.spamValue = 0;
+                        report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addressbook_explanation');
+                        report_data.subject = curr_fullMessage.headers.subject;
+                        report_data.from = curr_fullMessage.headers.from;
+                        report_data.message_date = new Date(message.date);
+                        report_data.moved = false;
+                        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                        spamReport.saveReportData(report_data, headerMessageId);
+                        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                        return { success: true };
+                    }
+                }
+            } catch (err) {
+                taLog.error("Error checking address book for sender: " + err);
+                // Fail open — continue with normal spam check
             }
         }
 
@@ -1639,7 +1702,8 @@ const newEmailListener = (folder, messagesList) => {
             addTagsAuto: add_tags_auto_enabled,
             spamFilter: prefs_init.spamfilter,
             summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
-            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3
+            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
+            isAutoMode: true,
         });
 
         if(prefs_init.spamfilter){
@@ -1675,7 +1739,8 @@ async function processEmails(args) {
         summarize = false,
         summarizeOnReceive = false,
         translateOnReceive = false,
-        translate = false
+        translate = false,
+        isAutoMode = false,
     } = args;
 
     taWorkingStatus.startWorking();
@@ -1695,10 +1760,15 @@ async function processEmails(args) {
             add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
+            spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
+            spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
+        let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
+        let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
+
         for await (let message of messages) {
             let curr_fullMessage = null;
             let msg_text = null;
@@ -1706,7 +1776,7 @@ async function processEmails(args) {
     
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
-                msg_text = getMailBody(curr_fullMessage);
+                msg_text = await getMailBody(curr_fullMessage);
                 taLog.log("Starting from the HTML body if present and converting to plain text...");
                 body_text = htmlBodyToPlainText(msg_text.html);
                 if( body_text.length == 0 ){
@@ -1716,67 +1786,73 @@ async function processEmails(args) {
             }
     
             if (addTagsAuto) {
-                if(prefs_aats.add_tags_enabled_accounts.length > 0){
+                let skipAddTags = false;
+                if(isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
-                        continue;
+                        skipAddTags = true;
                     }
                 }
-                let specialFullPrompt_add_tags = '';
-                let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
-                let tags_full_list = await getTagsList();
-                //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
-                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-                specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
-                    curr_prompt: curr_prompt_add_tags,
-                    curr_message: message,
-                    chatgpt_lang: chatgpt_lang,
-                    body_text: body_text,
-                    subject_text: curr_fullMessage.headers.subject,
-                    msg_text: msg_text,
-                    tags_full_list: tags_full_list
-                });
-                specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-                // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
-                let cmd_addTags = new mzta_specialCommand({
-                    prompt: specialFullPrompt_add_tags,
-                    llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
-                    custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                    do_debug: prefs_aats.do_debug,
-                    config: curr_prompt_add_tags
-                });
-                await cmd_addTags.initWorker();
-                let tags_current_email = [];
-                try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                } catch (err) {
-                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                if (!skipAddTags) {
+                    let specialFullPrompt_add_tags = '';
+                    let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
+                    let tags_full_list = await getTagsList();
+                    //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
+                    let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+                    specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
+                        curr_prompt: curr_prompt_add_tags,
+                        curr_message: message,
+                        chatgpt_lang: chatgpt_lang,
+                        body_text: body_text,
+                        subject_text: curr_fullMessage.headers.subject,
+                        msg_text: msg_text,
+                        tags_full_list: tags_full_list
+                    });
+                    specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+                    // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
+                    let cmd_addTags = new mzta_specialCommand({
+                        prompt: specialFullPrompt_add_tags,
+                        llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
+                        custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
+                        do_debug: prefs_aats.do_debug,
+                        config: curr_prompt_add_tags
+                    });
+                    await cmd_addTags.initWorker();
+                    let tags_current_email = [];
+                    try {
+                        tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    } catch (err) {
+                        console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                    }
+                    taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                    let _data = { messageId: message.id, tags: tags_current_email };
+                    _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
                 }
-                taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                let _data = { messageId: message.id, tags: tags_current_email };
-                _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
             }
     
             if (spamFilter) {
-                if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let skipSpamFilter = false;
+                if(isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
-                        continue;
+                        skipSpamFilter = true;
                     }
                 }
-
-                let result = await _generateSpamReportForMessage(
-                    message.headerMessageId,
-                    {
-                        messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
-                        prefs: prefs_aats,
-                        autoMove: true
-                    });
-                if (!result.success) continue;
+                if (!skipSpamFilter) {
+                    await _generateSpamReportForMessage(
+                        message.headerMessageId,
+                        {
+                            messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
+                            prefs: prefs_aats,
+                            autoMove: true,
+                            skip_addresses: spamfilter_skip_addresses,
+                            skip_addressbook: spamfilter_skip_addressbook
+                        });
+                }
             }
 
             if (summarizeOnReceive) {

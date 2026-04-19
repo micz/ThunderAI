@@ -39,10 +39,6 @@ table#miczPrefs td.nt{
     border-top: none;
 }
 
-tr#chatgpt_web_models_list td{
-    border: none;
-}
-  
 div#miczRelNotes{
     position:absolute;
     right: 0px;
@@ -104,7 +100,8 @@ div#miczTranslate{
     display: none;
     font-size: 0.75em;
     margin-left: 0.5em;
-    padding: 0.15em 0.5em;
+    margin-top: 3px;
+    padding: 0.35em 0.5em;
     border-radius: 0.8em;
 }
 

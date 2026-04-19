@@ -104,7 +104,6 @@ export async function injectConnectionUI({
   <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
-      <br><table title="__MSG_prefs_OptionText_chatgpt_web_model_tooltip__"><tr id="chatgpt_web_models_list"></tr></table>
     </label></td>
     <td>
       <label>

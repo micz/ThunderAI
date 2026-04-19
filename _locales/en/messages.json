@@ -672,6 +672,10 @@
     "message": "Mail headers",
     "description": ""
   },
+  "placeholder_mail_full_headers": {
+    "message": "All mail headers",
+    "description": ""
+  },
   "placeholder_selected_text": {
     "message": "Selected text",
     "description": ""
@@ -778,10 +782,6 @@
   },
   "prefs_OptionText_owl_warning": {
     "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_model_tooltip": {
-    "message": "Click on a value to set it.",
     "description": ""
   },
   "prompt_reply_full_text": {
@@ -1069,7 +1069,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
     "description": ""
   },
   "prompt_get_calendar_event_from_clipboard": {
@@ -1109,7 +1109,7 @@
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "You are an assistant that summarizes email conversations.\n\nGiven an email thread, produce a concise, accurate summary that captures:\n\n- The main topic or purpose of the conversation\n- Key decisions, conclusions, or agreements\n- Important questions, requests, or action items\n- Who is responsible for each action item (if stated)\n\nOmit greetings, signatures, quoted text, and redundant back-and-forth.\nDo not add assumptions or information not present in the emails.\n\nWrite the summary in clear, neutral language suitable for a busy professional.",
+    "message": "Provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
     "description": ""
   },
   "prompt_summarize_email_template": {
@@ -1381,7 +1381,7 @@
     "description" : ""
   },
   "prompt_spamfilter_full_text" : {
-    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"spamValue\": <integer from 0 to 100>,\n\"explanation\": \"Brief explanation of your reasoning\"\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
+    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
     "description" : ""
   },
   "SpamFilter_prompt_prefs_title": {
@@ -1434,6 +1434,42 @@
   },
   "spamfilter_no_reports": {
     "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_title": {
+    "message": "Email address skip list",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline": {
+    "message": "Emails from these addresses will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline2": {
+    "message": "Add one email address per line, or separated by a comma.",
+    "description": ""
+  },
+  "spamfilter_skip_addresses_explanation": {
+    "message": "The sender is in the email address antispam skip list.",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_skip_addressbook": {
+    "message": "Skip address books addresses",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+    "message": "If checked, emails from senders in your address books will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "spamfilter_skip_addressbook_explanation": {
+    "message": "The sender is a contact in the address book.",
+    "description": ""
+  },
+  "addressbook_permission_denied": {
+    "message": "Address book permission was denied. Please enable the feature again to grant permission.",
+    "description": ""
+  },
+  "addressbook_permission_error": {
+    "message": "Error requesting address book permission. Please try again.",
     "description": ""
   },
   "SpamReport_Title": {
@@ -1520,6 +1556,10 @@
     "message": "Receiving data",
     "description": ""
   },
+  "apiwebchat_done": {
+    "message": "Done!",
+    "description": ""
+  },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""
@@ -1601,7 +1641,7 @@
     "description": ""
   },
   "AccountSelector_Spamfilter": {
-    "message": "Choose the accounts where the spam filter is enabled",
+    "message": "Choose the accounts where the automatic spam filter is enabled",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_project": {
@@ -1887,7 +1927,7 @@
     "description": ""
   },
   "prefs_specific_api_indicator": {
-    "message": "[Using $1]",
+    "message": "Using $1",
     "description": "Indicator near settings button when a special prompt uses a specific API.",
     "placeholders": {
       "1": {
@@ -2001,6 +2041,14 @@
   },
   "prefs_OptionText_summarize_max_display_length_Info": {
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_strip_formatting": {
+      "message": "Strip formatting",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_strip_formatting_Info": {
+      "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
       "description": ""
   },
   "summarize_see_more": {

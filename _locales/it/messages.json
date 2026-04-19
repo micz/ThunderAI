@@ -486,9 +486,6 @@
     "chatgpt_btn_model": {
         "message": "Usa il modello corrente"
     },
-    "SendingPrompt": {
-        "message": "Invio del prompt..."
-    },
     "AllowedValues": {
         "message": "Valori consentiti"
     },
@@ -503,9 +500,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Sembra che almeno uno dei tuoi account stia utilizzando il componente aggiuntivo Gufo per Exchange. Esiste un problema noto tra Thunderbird e Gufo, che è attualmente in fase di risoluzione. Al momento, puoi utilizzare ThunderAI durante la composizione delle email, ma non durante la loro lettura."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Fai clic su un valore per impostarlo."
     },
     "prompt_reply_full_text": {
         "message": "Rispondi alla seguente email. Rispondi solo con il testo necessario, senza commenti o altro testo aggiuntivo."
@@ -697,7 +691,7 @@
         "message": "Aggiungi un nuovo evento al calendario"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
+        "message": "Estrai tutti i dettagli rilevanti necessari per generare un evento del calendario dal seguente testo. Le informazioni estratte devono includere:\n- Titolo dell'evento\n- Data e ora di inizio (incluso il fuso orario, se specificato)\n- Data e ora di fine (incluso il fuso orario, se specificato)\n- Giornata intera (se menzionato)\n- I partecipanti\nAssicurati che i dati siano formattati in modo chiaro e coerente in modo che possano essere utilizzati direttamente per creare un evento del calendario.\nSe ci sono riferimenti temporali relativi, considera che la data e l'ora dell'email sono \"{%mail_datetime%}\". Calcola la data e l'ora di inizio in base a questo riferimento. Se la data e l'ora di inizio calcolate sono precedenti a \"{%current_datetime%}\", ricalcolale utilizzando \"{%current_datetime%}\" come base.\nSe la durata non è specificata, impostala a un'ora.\nQuesti sono i partecipanti: {%author%}, {%recipients%}, {%cc_list%}. Se presente, escludi il mio indirizzo: {%account_email_address%}.\nSe l'evento dura tutto il giorno, endDate deve essere il giorno successivo a startDate con l'orario impostato su \"T000000\".\nSe non riesci a ottenere una o più delle informazioni richieste, rispondi con una stringa vuota.\nGenera una risposta solo in formato JSON. Non includere testo o spiegazioni aggiuntive; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Riassunto evento calendario qui\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nEcco il testo: \"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Aggiungi un nuovo evento al calendario dal testo selezionato"
@@ -826,7 +820,7 @@
         "message": "Valore soglia per lo spam"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nIn caso di dati del messaggio mancanti, imposta il valore a 0 (non spam) e fornisci la motivazione.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"spamValue\": <intero da 0 a 100>,\n\"explanation\": \"Breve spiegazione del tuo ragionamento\"\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
+        "message": "Analizza la seguente email e determina se si tratta di spam o meno. Considera fattori come parole chiave sospette, linguaggio promozionale eccessivo, linee oggetto fuorvianti, richieste di informazioni personali e indirizzi del mittente insoliti.\nFornisci un valore da 0 (non spam) a 100 (spam) e una spiegazione di non più di 10 parole.\nIn caso di dati del messaggio mancanti, imposta il valore a 0 (non spam) e fornisci la motivazione.\nGenera una risposta esclusivamente in formato JSON. Non includere alcun testo o spiegazione aggiuntiva; fornisci solo il JSON. Ecco il formato da utilizzare:\n{\n\"explanation\": \"Breve spiegazione del tuo ragionamento\",\n\"spamValue\": <intero da 0 a 100>\n}\nQui ci sono le informazioni sull'email:\nMittente: \"{%author%}\"\nOggetto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
         "message": "Se selezionato, l'IA aggiungerà solo i tag esistenti e non creerà nuovi tag."
