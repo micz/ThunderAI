@@ -288,7 +288,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
-            api_type: document.getElementById('new_prompt_api_type').value
+            api_type: document.getElementById('new_prompt_api_type').value,
+            show_in: document.getElementById('selectShowInNew').value,
         };
 
         switch(prefs.connection_type) {
@@ -663,6 +664,8 @@ function showItemRowEditor(tr) {
     tr.querySelector('.api_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
+    tr.querySelector('.show_in_output').style.display = 'inline';
+    tr.querySelector('.show_in_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'inline';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -688,6 +691,8 @@ function hideItemRowEditor(tr) {
     toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
+    tr.querySelector('.show_in_output').style.display = 'none';
+    tr.querySelector('.show_in_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'none';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -824,6 +829,7 @@ function handleCancelClick(e) {
     tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
     tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
+    tr.querySelector('.show_in_output').value = tr.querySelector('.show_in').innerText || 'popup';
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
     // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -850,6 +856,7 @@ function handleConfirmClick(e) {
     newValues.name = tr.querySelector('.name_output').value.trim();
     newValues.text = tr.querySelector('.text_output').value;
     newValues.type = tr.querySelector('.type_output').value;
+    newValues.show_in = tr.querySelector('.show_in_output').value;
     newValues.action = tr.querySelector('.action_output').value;
     newValues.need_selected = tr.querySelector('.need_selected').checked ? 1 : 0;
     newValues.need_signature = tr.querySelector('.need_signature').checked ? 1 : 0;
@@ -876,6 +883,8 @@ function handleConfirmClick(e) {
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+    tr.querySelector('.show_in').innerText = tr.querySelector('.show_in_output').value;
+    tr.querySelector('.show_in_show').innerText = tr.querySelector('.show_in_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
     if (newValues.api_type !== '') {
@@ -951,6 +960,7 @@ function handleCopyClick(e) {
     document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
     document.getElementById('txtTextNew').value = text;
     document.getElementById('selectTypeNew').value = type;
+    document.getElementById('selectShowInNew').value = tr.querySelector('.show_in_output').value || 'popup';
     document.getElementById('selectActionNew').value = action;
     
     document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
@@ -1019,7 +1029,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1046,7 +1056,18 @@ function loadPromptsList(values){
                     action_output = `__MSG_customPrompts_substitute_text__`;
                     break;
             }
-            //console.log('>>>>>>>>>>>>> action_output: ' + JSON.stringify(action_output));
+            let show_in_output = '';
+            switch(String(values.show_in || 'popup')){
+                case "popup":
+                    show_in_output = `__MSG_show_in_popup__`;
+                    break;
+                case "context":
+                    show_in_output = `__MSG_show_in_context__`;
+                    break;
+                case "both":
+                    show_in_output = `__MSG_show_in_both__`;
+                    break;
+            }
 
             let output = `<tr ` + ((values.is_default == 1) ? 'class="is_default"':'') + `>
                 <td class="w08"><span class="id id_show"></span><input type="text" class="hiddendata id_output" value="` + values.id + `" /></td>
@@ -1094,6 +1115,16 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
+              <br><br>
+              <span class="field_title_s">__MSG_show_in__:</span>
+                <br>
+                <span class="show_in_show">` + show_in_output + `</span>
+                <select class="show_in_output hiddendata input_mod">
+                <option value="popup"` + ((values.show_in == "popup" || !values.show_in) ? ' selected':'') + `>__MSG_show_in_popup__</option>
+                <option value="context"` + ((values.show_in == "context") ? ' selected':'') + `>__MSG_show_in_context__</option>
+                <option value="both"` + ((values.show_in == "both") ? ' selected':'') + `>__MSG_show_in_both__</option>
+                </select>` +
+                `<span class="show_in hiddendata"></span>
               <br><br>
               <span class="field_title_s">__MSG_customPrompts_form_label_Action__:</span>
                 <br><span class="action_show">` + action_output + `</span>
@@ -1251,6 +1282,7 @@ function clearFields() {
     document.getElementById('chatGPTWebProjectNew').value = '';
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
+    document.getElementById('selectShowInNew').value = 'popup';
     document.getElementById('selectActionNew').value = '0';
     document.getElementById('checkboxNeedSelectedNew').value = '0';
     document.getElementById('checkboxNeedSignatureNew').value = '0';

@@ -35,12 +35,8 @@
     "message": "Classify",
     "description": ""
   },
-  "prompt_summarize_this": {
-    "message": "Summarize this",
-    "description": ""
-  },
   "prompt_translate_this": {
-    "message": "Translate this",
+    "message": "Translate",
     "description": ""
   },
   "prompt_this": {
@@ -201,6 +197,22 @@
   },
   "customPrompts_add_to_menu_composing": {
     "message": "Composing an email",
+    "description": ""
+  },
+  "show_in": {
+    "message": "Show in",
+    "description": ""
+  },
+  "show_in_popup": {
+    "message": "Popup only",
+    "description": ""
+  },
+  "show_in_context": {
+    "message": "Context menu only",
+    "description": ""
+  },
+  "show_in_both": {
+    "message": "Both",
     "description": ""
   },
   "customPrompts_close_button": {
@@ -612,14 +624,6 @@
     "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the highlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
     "description": ""
   },
-  "prefs_OptionText_dynamic_menu_order_alphabet": {
-    "message": "Menu: order alphabetically",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-    "message": "If checked, the prompts in the menu will be ordered alphabetically.",
-    "description": ""
-  },
   "prefs_OptionText_chatgpt_win_dims_info": {
     "message": "Set to 0 if you don't want to specify the window size.",
     "description": ""
@@ -816,10 +820,6 @@
     "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
     "description": ""
   },
-  "prompt_summarize_this_full_text": {
-    "message": "Summarize the following email into a bullet point list.",
-    "description": ""
-  },
   "prompt_translate_this_full_text": {
     "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
     "description": ""
@@ -837,7 +837,7 @@
     "description": ""
   },
   "prompt_add_tags": {
-    "message": "Add tags to this email",
+    "message": "Add tags",
     "description": ""
   },
   "prompt_add_tags_full_text": {
@@ -1105,7 +1105,7 @@
     "description": ""
   },
   "prompt_summarize": {
-    "message": "Summarize this email or these emails",
+    "message": "Summarize",
     "description": ""
   },
   "prompt_summarize_full_text": {
@@ -1377,7 +1377,7 @@
     "description": ""
   },
   "prompt_spamfilter" : {
-    "message" : "Detect spam emails",
+    "message" : "Analyze for spam",
     "description" : ""
   },
   "prompt_spamfilter_full_text" : {
@@ -1518,22 +1518,6 @@
   },
   "no_string": {
     "message": "No",
-    "description": ""
-  },
-  "context_menu_mzta-add-tags": {
-    "message": "Add tags",
-    "description": ""
-  },
-  "context_menu_mzta-spamfilter": {
-    "message": "Analyze for spam",
-    "description": ""
-  },
-  "context_menu_mzta-summarize": {
-    "message": "Summarize",
-    "description": ""
-  },
-  "context_menu_mzta-translate": {
-    "message": "Translate",
     "description": ""
   },
   "noActiveCalendar": {
@@ -2306,5 +2290,77 @@
   "placeholder_string": {
     "message": "Placeholder",
     "description": ""
+  },
+  "menu_order_title": {
+    "message": "Menu Order",
+    "description": "Title for the menu order page"
+  },
+  "menu_order_popup_list_title": {
+    "message": "Popup Menu",
+    "description": "Header for the popup menu list in the menu order page"
+  },
+  "menu_order_context_list_title": {
+    "message": "Context Menu",
+    "description": "Header for the context menu list in the menu order page"
+  },
+  "menu_order_saved": {
+    "message": "Menu order saved!",
+    "description": "Message shown after saving menu order"
+  },
+  "menu_order_tab_reading": {
+    "message": "Reading",
+    "description": "Sub-tab label for reading view ordering"
+  },
+  "menu_order_tab_composing": {
+    "message": "Composing",
+    "description": "Sub-tab label for composing view ordering"
+  },
+  "menu_order_badge_default": {
+    "message": "Default",
+    "description": "Badge label for default prompts"
+  },
+  "menu_order_badge_special": {
+    "message": "Special",
+    "description": "Badge label for special prompts"
+  },
+  "menu_order_badge_custom": {
+    "message": "Custom",
+    "description": "Badge label for custom prompts"
+  },
+  "menu_order_type_reading": {
+    "message": "Reading",
+    "description": "Badge label for reading-only prompts"
+  },
+  "menu_order_type_composing": {
+    "message": "Composing",
+    "description": "Badge label for composing-only prompts"
+  },
+  "menu_order_type_always": {
+    "message": "Always",
+    "description": "Badge label for prompts shown in all contexts"
+  },
+  "menu_order_btn_label": {
+    "message": "Manage menu order settings",
+    "description": "Button label to open the menu order page from options"
+  },
+  "menu_order_info": {
+    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "description": "Info text for the menu order page"
+  },
+  "menu_order_active_items": {
+    "message": "Visible items",
+    "description": "Section header for active/visible menu items"
+  },
+  "menu_order_hidden_items": {
+    "message": "Hidden items",
+    "description": "Section header for hidden menu items"
+  },
+  "menu_order_icon_label": {
+    "message": "Choose an icon",
+    "description": "Label/tooltip for the context menu icon picker on the menu order page"
+  },
+  "menu_order_icon_none": {
+    "message": "(none)",
+    "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   }
 }

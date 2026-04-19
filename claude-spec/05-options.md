@@ -64,7 +64,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Sort prompts alphabetically |
+| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `max_prompt_length` | `30000` | Max prompt string length |
 
@@ -125,6 +125,10 @@ The summarize settings page provides:
    - Email separator prompt (`prompt_summarize_email_separator`)
    - Each has Save/Reset buttons and placeholder autocomplete
    - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
+
+### Menu Order Page (`pages/menu_order/`)
+
+Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.
 
 ### Translate Settings Page (`pages/translate/`)
 

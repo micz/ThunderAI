@@ -62,6 +62,12 @@
     summaryTabId (set by _openSummaryWebchat in mzta-background.js):
     The tab ID of the message display tab to update with the saved summary.
 
+    Show in menu (show_in attribute):
+    "popup": Show only in the popup menu
+    "context": Show only in the context menu
+    "both": Show in both popup and context menus
+    "none": Do not show in any menu
+
     ================ USER PROPERTIES
     Enabled (enabled attribute):
     0: Disabled
@@ -108,6 +114,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_reply_advanced',
@@ -126,6 +133,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_reply_custom_command',
@@ -144,6 +152,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_rewrite_polite',
@@ -162,6 +171,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_rewrite_formal',
@@ -180,6 +190,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_classify',
@@ -198,24 +209,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
-    },
-    {
-        id: 'prompt_summarize_this',
-        name: "__MSG_prompt_summarize_this__",
-        text: "prompt_summarize_this_full_text",
-        type: "0",
-        action: "0",
-        need_selected: "0",
-        need_signature: "0",
-        need_custom_text: "0",
-        define_response_lang: "1",
-        use_diff_viewer: "0",
-        chatgpt_web_model: '',
-        chatgpt_web_project: '',
-        chatgpt_web_custom_gpt: '',
-        api_type: '',
-        is_default: "1",
-        is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_proofread_this',
@@ -234,6 +228,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
     {
         id: 'prompt_this',
@@ -252,6 +247,7 @@ const defaultPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "0",
+        show_in: "popup",
     },
 ];
 
@@ -270,6 +266,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "both",
     },
     {
         id: 'prompt_get_calendar_event',
@@ -285,6 +282,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "popup",
     },
     {
         id: 'prompt_get_calendar_event_from_clipboard',
@@ -300,6 +298,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "popup",
     },
     {
         id: 'prompt_get_task',
@@ -315,6 +314,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "popup",
     },
     {
         id: 'prompt_spamfilter',
@@ -330,6 +330,7 @@ const specialPrompts = [
         api_type: '',
         is_default: "1",
         is_special: "1",
+        show_in: "context",
     },
     {
         id: 'prompt_summarize',
@@ -346,6 +347,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "context",
     },
     {
         id: 'prompt_summarize_email_template',
@@ -362,6 +364,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "none",
     },
     {
         id: 'prompt_summarize_email_separator',
@@ -378,6 +381,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "none",
     },
     {
         id: 'prompt_translate_this',
@@ -394,6 +398,7 @@ const specialPrompts = [
         api_model: '',
         is_default: "1",
         is_special: "1",
+        show_in: "context",
     }
 ];
 
@@ -464,7 +469,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'need_custom_text'];
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -517,6 +522,7 @@ async function getDefaultPrompts_withProps() {
             prompt.text = browser.i18n.getMessage(prompt.text);
             prompt.position_display = pos;
             prompt.position_compose = pos;
+            prompt.position_context = pos;
             prompt.enabled = 1;
             pos++;
         })
@@ -528,15 +534,19 @@ async function getDefaultPrompts_withProps() {
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
+                prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
                 prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
+                prompt.show_in = prefs._default_prompts_properties[prompt.id]?.show_in || prompt.show_in;
+                prompt.custom_icon = prefs._default_prompts_properties[prompt.id]?.custom_icon || "";
             }else{
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
+                prompt.position_context = pos;
                 prompt.enabled = 1;
                 pos++;
             }
@@ -569,6 +579,12 @@ async function getCustomPrompts() {
             if(prompt.api_type === undefined){
                 prompt.api_type = "";
             }
+            if(prompt.show_in === undefined){
+                prompt.show_in = "popup";
+            }
+            if(prompt.custom_icon === undefined){
+                prompt.custom_icon = "";
+            }
         });
         return prefs._custom_prompt;
     }
@@ -580,12 +596,15 @@ export async function setDefaultPromptsProperties(prompts) {
         default_prompts_properties[prompt.id] = {
             position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
             position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
+            position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
             enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
             need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
             api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+            show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
+            custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
         };
     });
     //console.log('>>>>>>>>>>>>>> default_prompts_properties: ' + JSON.stringify(default_prompts_properties));
@@ -616,6 +635,13 @@ export async function getSpecialPrompts(){
                 updatedPrompts.push(newPrompt);
             }
         });
+        // Migrate: add show_in if missing from saved special prompts
+        updatedPrompts.forEach((prompt) => {
+            if (prompt.show_in === undefined) {
+                prompt.show_in = "both";
+            }
+        });
+
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));
         if (updatedPrompts.length !== prefs._special_prompts.length) {
             await browser.storage.local.set({ _special_prompts: updatedPrompts });
@@ -628,6 +654,56 @@ export async function getSpecialPrompts(){
 export async function setSpecialPrompts(prompts) {
     // console.log(">>>>>>>>>>>> setSpecialPrompts prompts: " + JSON.stringify(prompts));
     await browser.storage.local.set({_special_prompts: prompts});
+}
+
+export function getHiddenSpecialPromptIds() {
+    return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
+}
+
+// Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions
+// so that prompts appear alphabetically with special prompts first, then disable the flag
+// to switch to position-based ordering permanently.
+export async function migrateMenuOrderAlphabetic() {
+    const prefs = await browser.storage.sync.get({ dynamic_menu_order_alphabet: true });
+    if (!prefs.dynamic_menu_order_alphabet) {
+        return;
+    }
+
+    const allPrompts = await getPrompts(false, [], true);
+    const hiddenSpecialIds = getHiddenSpecialPromptIds();
+    const visiblePrompts = allPrompts.filter(p => !hiddenSpecialIds.includes(p.id));
+
+    const resolveName = (p) => {
+        const n = p.name || '';
+        if (n.startsWith('__MSG_') && n.endsWith('__')) {
+            return browser.i18n.getMessage(n.substring(6, n.length - 2));
+        }
+        return n;
+    };
+
+    const specials = visiblePrompts.filter(p => String(p.is_special) === '1')
+        .sort((a, b) => resolveName(a).localeCompare(resolveName(b)));
+    const others = visiblePrompts.filter(p => String(p.is_special) !== '1')
+        .sort((a, b) => resolveName(a).localeCompare(resolveName(b)));
+    const ordered = specials.concat(others);
+
+    ordered.forEach((prompt, idx) => {
+        const pos = idx + 1;
+        prompt.position_display = pos;
+        prompt.position_compose = pos;
+        prompt.position_context = pos;
+    });
+
+    const defaultPromptsToSave = ordered.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
+    const customPromptsToSave = ordered.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    const visibleSpecialsToSave = ordered.filter(p => String(p.is_special) === '1');
+    const hiddenSpecialsToPreserve = allPrompts.filter(p => hiddenSpecialIds.includes(p.id));
+
+    await setDefaultPromptsProperties(defaultPromptsToSave);
+    await setCustomPrompts(customPromptsToSave);
+    await setSpecialPrompts(visibleSpecialsToSave.concat(hiddenSpecialsToPreserve));
+
+    await browser.storage.sync.set({ dynamic_menu_order_alphabet: false });
 }
 
 export async function getSpamFilterPrompt(){

@@ -18,6 +18,8 @@
         <li>Added the <i>{%mail_full_headers%}</i> placeholder to retrieve all the email headers at once [<a href="https://github.com/micz/ThunderAI/issues/713">#713</a>].</li>
         <li><i>[All APIs]</i> In the API webchat the status messages have different colors [<a href="https://github.com/micz/ThunderAI/issues/3">#3</a>].</li>
         <li>Account exclusion lists for add tags and antispam are enforced only for automatic analysis of incoming emails and not for the context menu action that is always executed [<a href="https://github.com/micz/ThunderAI/issues/749">#749</a>].</li>
+        <li><i>[All APIs]</i> Inline auto translation for emails added [<a href="https://github.com/micz/ThunderAI/issues/247">#247</a>].</li>
+        <li>Custom menus configuration added. Now it's possibile to define which prompts show in the ThunderAI menu, which ones in the context menu and in which order [<a href="https://github.com/micz/ThunderAI/issues/49">#49</a>, <a href="https://github.com/micz/ThunderAI/issues/184">#184</a>, <a href="https://github.com/micz/ThunderAI/issues/680">#680</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>

@@ -36,6 +36,7 @@ import {
     cleanupNewlines,
     checkIfTagLabelExists,
     getConnectionType,
+    getContextMenuIcon,
  } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
@@ -75,8 +76,7 @@ export class mzta_Menus {
         this.rootMenu = [];
         this.shortcutMenu = [];
         this.menu_listeners = {};
-        this.allPrompts = await getPrompts(true,also_special);   
-        this.allPrompts.sort((a, b) => a.name.localeCompare(b.name));
+        this.allPrompts = await getPrompts(true,also_special);
         this.allPrompts.forEach((prompt) => {
             this.addAction(prompt)
         });
@@ -219,7 +219,7 @@ export class mzta_Menus {
 
             // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             // add custom text if needed
-            //browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
+            // browser.runtime.sendMessage({command: "chatgpt_open", prompt: fullPrompt, action: curr_prompt.action, tabId: tabs[0].id});
             if(curr_prompt.is_special == '1'){  // Special prompts
                 switch(curr_prompt.id){
                     case 'prompt_add_tags': {   // Add tags to the email
@@ -495,8 +495,69 @@ export class mzta_Menus {
     }
 
     addShortcutMenu(prompt) {
-        let curr_menu_entry = {id: prompt.id, label: i18nConditionalGet(prompt.name), type: prompt.type};
+        let curr_menu_entry = {
+            id: prompt.id,
+            label: i18nConditionalGet(prompt.name),
+            type: prompt.type,
+            show_in: prompt.show_in || "popup",
+            is_special: prompt.is_special,
+            position_display: prompt.position_display,
+            position_compose: prompt.position_compose,
+            position_context: prompt.position_context,
+        };
         this.shortcutMenu.push(curr_menu_entry);
+    }
+
+    async loadContextMenus() {
+        await browser.menus.removeAll();
+        const contextPrompts = this.allPrompts.filter(p => {
+            const showIn = p.show_in || "popup";
+            // Only show prompts that should appear in context menu and are for reading context (type 0 or 1)
+            return (showIn === "context" || showIn === "both") && (String(p.type) === "0" || String(p.type) === "1");
+        });
+
+        if (contextPrompts.length === 0) {
+            this.logger.log("No prompts for context menu");
+            return;
+        }
+
+        // Create parent menu
+        await new Promise(resolve =>
+            browser.menus.create({
+                id: 'mzta-context-parent',
+                title: 'ThunderAI',
+                contexts: ["message_list"],
+            }, resolve)
+        );
+
+        // Sort by position_context if available, otherwise alphabetically
+        contextPrompts.sort((a, b) => {
+            const posA = a.position_context || 9999;
+            const posB = b.position_context || 9999;
+            if (posA !== posB) return posA - posB;
+            const nameA = i18nConditionalGet(a.name);
+            const nameB = i18nConditionalGet(b.name);
+            return nameA.localeCompare(nameB);
+        });
+
+        // Create child menu items
+        for (const prompt of contextPrompts) {
+            const title = i18nConditionalGet(prompt.name);
+            const iconPath = getContextMenuIcon(prompt);
+            const menuOpts = {
+                id: 'mzta-ctx-' + prompt.id,
+                title: title,
+                contexts: ["message_list"],
+                parentId: 'mzta-context-parent',
+            };
+            if (iconPath) {
+                menuOpts.icons = iconPath;
+            }
+            await new Promise(resolve =>
+                browser.menus.create(menuOpts, resolve)
+            );
+        }
+        this.logger.log("Context menus loaded: " + contextPrompts.length + " items");
     }
 
     async loadMenus(also_special = []) {
@@ -504,6 +565,7 @@ export class mzta_Menus {
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
+        await this.loadContextMenus();
         this.logger.log("Menus loaded");
     }
 
