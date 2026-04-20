@@ -41,18 +41,18 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
         console.error("[ThunderAI] Textarea not found!");
         return -2;
     }
-    // from sept 2024
-    // Remove existing content
-    while (textArea.firstChild) {
-        textArea.removeChild(textArea.firstChild);
-    }
-    // Parse msg as HTML and append its nodes
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(msg, 'text/html');
-    Array.from(doc.body.childNodes).forEach(node => {
-        textArea.appendChild(node.cloneNode(true));
-    });
-    textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    // #prompt-textarea is a ProseMirror contenteditable. Place the caret at
+    // the end of the inner paragraph and let execCommand('insertText') feed
+    // the text through the browser's input pipeline so PM can reconcile.
+    textArea.focus();
+    const pmTarget = textArea.querySelector('p') || textArea;
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(pmTarget);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('insertText', false, msg);
     //wait for the button to change from the audio button to the send button (from nov-2024)
     await new Promise(resolve => setTimeout(resolve, 1000));
     let sendButton = document.querySelector('[data-testid="send-button"]') // pre-GPT-4o
@@ -66,8 +66,9 @@ async function chatgpt_sendMsg(msg, method ='') {       // return -1 send button
     const delaySend = setInterval(() => {
         //console.log(">>>>>>>>>> sendButton disabled: " + sendButton?.hasAttribute('disabled'));
         if (!sendButton?.hasAttribute('disabled')) { // send msg
-            method.toLowerCase() == 'click' ? sendButton.click()
-                : textArea.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 13, bubbles: true }));
+            // Always click the send button: a synthetic KeyboardEvent with
+            // only keyCode:13 desyncs ProseMirror and crashes the React app.
+            sendButton.click();
             clearInterval(delaySend);
         }else{
             //console.error(">>>>>>>>>> The sendButton seems to be disabled! Trying again...");
@@ -911,9 +912,6 @@ function run(checkTab = null) {
         }
         doLog("User not logged in, showing warning message.");
         alert(browser.i18n.getMessage("chatgpt_user_not_logged_in"));
-        // we are not closing the window, because the user could try to log in
-        // doLog("User not logged in, closing window.");
-        // browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
     }else{
         addCustomDiv(current_action,current_tabId,current_mailMessageId);
         (async () => {
