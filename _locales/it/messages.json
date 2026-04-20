@@ -1446,5 +1446,55 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Lascia vuoto per usare la posizione di default."
+    },
+    "show_in": {
+        "message": "Mostra in"
+    },
+    "show_in_popup": {
+        "message": "Solo popup"
+    },
+    "show_in_context": {
+        "message": "Solo menu contestuale"
+    },
+    "show_in_both": {
+        "message": "Entrambi"
+    },
+    "webchat_save_as_summary": {
+        "message": "Salva come Riepilogo"
+    },
+    "prefs_storage_title": {
+        "message": "Archiviazione"
+    },
+    "prefs_storage_info": {
+        "message": "L'archiviazione viene utilizzata per salvare informazioni sul punteggio di spam, i riepiloghi e le traduzioni di ogni messaggio."
+    },
+    "prefs_storage_size": {
+        "message": "Dimensione archiviazione"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Svuota Archiviazione"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Sei sicuro di voler cancellare tutti i dati memorizzati (riepiloghi, segnalazioni spam, traduzioni)? L'azione è irreversibile."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ elementi cancellati.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Per utilizzare le API di Google Gemini, è necessario avere una chiave API (API Key) di Google Gemini e scegliere un modello."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Per utilizzare le API di Claude, è necessario avere una chiave API (API Key) di Anthropic Claude e scegliere un modello."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Tutte le intestazioni email"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Nascondi l'output del ragionamento"
     }
 }
