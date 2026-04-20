@@ -194,6 +194,25 @@ messagesAreaStyle.textContent = `
       display: flex;
     }
       
+    /* Thinking block styles */
+    details.thinking-block {
+        border-left: 3px solid #bbb;
+        background: #f7f7f7;
+        padding: 0.3em 0.6em;
+        margin: 0 0 0.6em 0;
+        font-size: 0.9em;
+        color: #555;
+        border-radius: 4px;
+    }
+    details.thinking-block > summary {
+        cursor: pointer;
+        font-weight: 600;
+    }
+    details.thinking-block .thinking-content {
+        white-space: pre-wrap;
+        margin-top: 0.3em;
+    }
+
     /* Dark mode styles */
     @media (prefers-color-scheme: dark) {
         .added {
@@ -201,6 +220,11 @@ messagesAreaStyle.textContent = `
         }
         .removed {
             background-color:rgb(90, 0, 0);
+        }
+        details.thinking-block {
+            background: #2a2a2a;
+            color: #bbb;
+            border-left-color: #555;
         }
     }
 `;
@@ -218,6 +242,8 @@ class MessagesArea extends HTMLElement {
     constructor() {
         super();
         this.accumulatingMessageEl = null;
+        this.thinkingAccumulator = '';
+        this.hideThinking = false;
 
         const shadowRoot = this.attachShadow({ mode: 'open' });
         shadowRoot.appendChild(messagesAreaTemplate.content.cloneNode(true));
@@ -246,6 +272,14 @@ class MessagesArea extends HTMLElement {
 
     setLLMName(llmName) {
         this.llmName = llmName;
+    }
+
+    setHideThinking(val) {
+        this.hideThinking = !!val;
+    }
+
+    handleNewThinkingToken(token) {
+        this.thinkingAccumulator += token;
     }
 
     async handleTokensDone(promptData = null) {
@@ -558,7 +592,33 @@ class MessagesArea extends HTMLElement {
             this.accumulatingMessageEl.querySelectorAll('.token').forEach(tokenEl => {
                 fullText += tokenEl.textContent;
             });
-    
+
+            // If an unterminated <think> block is present (mid-stream), defer the
+            // markdown render until the closing tag arrives — tokens stay in the DOM
+            // as raw fading spans, but the partial <think> content is never sent
+            // through markdown-it or promoted to the final thinking block.
+            const openThink = fullText.match(/<think>/i);
+            const closeThink = fullText.match(/<\/think>/i);
+            if (openThink && !closeThink) {
+                return;
+            }
+
+            // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip them from fullText.
+            let inlineThinking = '';
+            const thinkRegex = /<think>([\s\S]*?)<\/think>/gi;
+            let match;
+            while ((match = thinkRegex.exec(fullText)) !== null) {
+                inlineThinking += (inlineThinking ? '\n' : '') + match[1];
+            }
+            fullText = fullText.replace(thinkRegex, '').replace(/^\s+/, '');
+
+            // Combined thinking content: worker-side (Anthropic) + inline (<think> tags)
+            let combinedThinking = this.thinkingAccumulator;
+            if (inlineThinking) {
+                combinedThinking += (combinedThinking ? '\n' : '') + inlineThinking;
+            }
+            this.thinkingAccumulator = '';
+
             // Convert Markdown to DOM nodes using the markdown-it library
             const md = window.markdownit();
             const html = md.render(fullText);
@@ -566,15 +626,32 @@ class MessagesArea extends HTMLElement {
             this.fullTextHTML += html;
 
             // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
-    
+
             // Create a new DOM parser
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             convertTextNodeNewlinesToBr(doc.body);
-    
+
             // Remove existing tokens
             while (this.accumulatingMessageEl.firstChild) {
                 this.accumulatingMessageEl.removeChild(this.accumulatingMessageEl.firstChild);
+            }
+
+            // Prepend thinking block (if any). hide_thinking controls the initial
+            // open/collapsed state: true -> collapsed, false -> open. Users can always
+            // toggle with a click.
+            if (combinedThinking) {
+                const details = document.createElement('details');
+                details.classList.add('thinking-block');
+                if (!this.hideThinking) details.open = true;
+                const summary = document.createElement('summary');
+                summary.textContent = browser.i18n.getMessage('prefs_OptionText_thinking_summary') || 'Thinking';
+                const content = document.createElement('div');
+                content.classList.add('thinking-content');
+                content.textContent = combinedThinking;
+                details.appendChild(summary);
+                details.appendChild(content);
+                this.accumulatingMessageEl.appendChild(details);
             }
     
             // Append new nodes

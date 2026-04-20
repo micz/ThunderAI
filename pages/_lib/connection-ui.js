@@ -549,6 +549,15 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_extended_thinking_budget__</span></td>
+    <td>
+      <label>
+        <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" class="option-input" />
+        <br>__MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
+      </label>
+    </td>
+  </tr>
   `;
 
   const template = document.createElement('template');

@@ -24,7 +24,7 @@ chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature,
 ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
-anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature
+anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_extended_thinking_budget
 ```
 
 Plus the global connection selector:
@@ -66,6 +66,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
 | `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
+| `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 
 ### Feature Flags

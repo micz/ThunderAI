@@ -724,6 +724,18 @@
     "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
     "description": ""
   },
+  "prefs_OptionText_hide_thinking": {
+    "message": "Hide thinking output",
+    "description": ""
+  },
+  "prefs_OptionText_hide_thinking_info": {
+    "message": "If checked, reasoning/thinking output produced by the model is completely removed. If unchecked, it is shown in a collapsed block above the answer.",
+    "description": ""
+  },
+  "prefs_OptionText_thinking_summary": {
+    "message": "Thinking",
+    "description": ""
+  },
   "prefs_OptionText_max_prompt_length" : {
     "message": "Max prompt length",
     "description": ""
@@ -1726,6 +1738,14 @@
   },
   "prefs_OptionText_anthropic_max_tokens_Info": {
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_extended_thinking_budget": {
+    "message": "Extended thinking budget (tokens)",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. When enabled, the temperature value is ignored by the Claude API.",
     "description": ""
   },
   "anthropic_empty_apikey": {

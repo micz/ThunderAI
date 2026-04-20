@@ -55,7 +55,8 @@ export const integration_options_config = {
         version: '2023-06-01',
         max_tokens: 4096,
         system_prompt: '',
-        temperature: ''
+        temperature: '',
+        extended_thinking_budget: 0
     }
 };
 
@@ -115,6 +116,7 @@ export const prefs_default = {
     chatgpt_web_load_wait_time: 1000,
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
+    hide_thinking: true,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

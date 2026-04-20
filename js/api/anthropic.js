@@ -26,7 +26,8 @@ export class Anthropic {
   model = '';
   system_prompt = '';
   temperature = '';
-  max_tokens = 4096;  
+  max_tokens = 4096;
+  extended_thinking_budget = 0;
   stream = false;
 
   constructor({
@@ -36,6 +37,7 @@ export class Anthropic {
     system_prompt = '',
     temperature = '',
     max_tokens = 4096,
+    extended_thinking_budget = 0,
     stream = false,
   } = {}) {
     this.apiKey = apiKey;
@@ -44,6 +46,7 @@ export class Anthropic {
     this.system_prompt = system_prompt;
     this.temperature = temperature;
     this.max_tokens = max_tokens > 0 ? max_tokens : 4096;
+    this.extended_thinking_budget = extended_thinking_budget;
     this.stream = stream;
   }
 
@@ -89,7 +92,7 @@ export class Anthropic {
 
     try {
 
-      let claude_body = { 
+      let claude_body = {
               model: this.model,
               max_tokens: parseInt(this.max_tokens),
               system: this.system_prompt,
@@ -97,9 +100,15 @@ export class Anthropic {
               stream: this.stream,
             };
 
-      const tempFloat = parseFloat(this.temperature);
+      const thinkingBudget = parseInt(this.extended_thinking_budget);
+      const thinkingEnabled = !Number.isNaN(thinkingBudget) && thinkingBudget > 0;
 
-      if(this.temperature != '' && !Number.isNaN(tempFloat)) claude_body.temperature = tempFloat;
+      if (thinkingEnabled) {
+        claude_body.thinking = { type: 'enabled', budget_tokens: thinkingBudget };
+      } else {
+        const tempFloat = parseFloat(this.temperature);
+        if(this.temperature != '' && !Number.isNaN(tempFloat)) claude_body.temperature = tempFloat;
+      }
 
       // console.log(">>>>>>>>>>>>>>>>> [ThunderAI] Anthropic API request: " + JSON.stringify(claude_body));
 

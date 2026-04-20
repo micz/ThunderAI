@@ -49,7 +49,17 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
+- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). Thinking output arrives in the SSE stream as `content_block_delta` events with `delta.type === 'thinking_delta'` and is forwarded to the webchat UI as `newThinkingToken` messages, captured into a `thinkingAccumulator` in the worker and passed on `tokensDone`.
+
+## Thinking output in the webchat UI
+
+Two provider categories emit reasoning/thinking content:
+
+- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `MessagesArea.flushAccumulatingMessage()` strips these blocks from the rendered text and renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
+- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `MessagesArea` accumulates it and renders the same `<details>` block on final flush.
+
+The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
 
 ## Configuration Validation
 
