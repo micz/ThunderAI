@@ -517,7 +517,7 @@
         "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, indicando una percentuale per ciascuna categoria. Rispondi solo con la categoria e il punteggio, senza commenti aggiuntivi o altro testo."
     },
     "prompt_translate_this_full_text": {
-        "message": "Traduci la seguente email in"
+        "message": "Traduci l'email qui sotto in italiano.\n\nRegole:\n- Traduci sia l'oggetto che il corpo dell'email.\n- Restituisci il risultato come un oggetto JSON con tre campi: \"subject\", \"body\" e \"status\".\n- Se la traduzione viene effettuata, lo stato è uguale a 1.\n- Se l'email è scritta in una di queste lingue \"{%thunderai_translate_exclude_lang%}\" o nella lingua {%thunderai_translate_lang%}, restituisci una stringa vuota per il corpo e l'oggetto e imposta lo stato a 1.\n- Non aggiungere spiegazioni, note o alcun testo al di fuori del JSON.\n\nOggetto dell'email: {%mail_subject%}\n\nCorpo dell'email: {%mail_html_body%}\n\nGenera una risposta esclusivamente in formato JSON. L'output deve essere solo un oggetto JSON. Ecco un esempio del formato JSON da utilizzare:\n{\n\"subject\": \"traduzione oggetto\",\n\"body\": \"traduzione corpo\",\n\"status\": \"risultato stato\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo."
@@ -1446,5 +1446,58 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Lascia vuoto per usare la posizione di default."
+    },
+    "show_in": {
+        "message": "Mostra in"
+    },
+    "show_in_popup": {
+        "message": "Solo popup"
+    },
+    "show_in_context": {
+        "message": "Solo menu contestuale"
+    },
+    "show_in_both": {
+        "message": "Entrambi"
+    },
+    "webchat_save_as_summary": {
+        "message": "Salva come Riepilogo"
+    },
+    "prefs_storage_title": {
+        "message": "Archiviazione"
+    },
+    "prefs_storage_info": {
+        "message": "L'archiviazione viene utilizzata per salvare informazioni sul punteggio di spam, i riepiloghi e le traduzioni di ogni messaggio."
+    },
+    "prefs_storage_size": {
+        "message": "Dimensione archiviazione"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Svuota Archiviazione"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Sei sicuro di voler cancellare tutti i dati memorizzati (riepiloghi, segnalazioni spam, traduzioni)? L'azione è irreversibile."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ elementi cancellati.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Per utilizzare le API di Google Gemini, è necessario avere una chiave API (API Key) di Google Gemini e scegliere un modello."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Per utilizzare le API di Claude, è necessario avere una chiave API (API Key) di Anthropic Claude e scegliere un modello."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Tutte le intestazioni email"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Nascondi l'output del ragionamento"
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Ragionamento"
     }
 }

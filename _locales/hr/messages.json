@@ -517,7 +517,7 @@
         "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta."
     },
     "prompt_translate_this_full_text": {
-        "message": "Prevedi sljedeću e-poruku na"
+        "message": "Prevedite donju e-poštu na {%thunderai_translate_lang%}.\n\nPravila:\n- Prevedite i predmet i tijelo e-pošte.\n- Vratite rezultat kao JSON objekt s tri polja: \"subject\", \"body\" i \"status\".\n- Ako je prijevod izvršen, status je jedan 1.\n- Ako je e-pošta napisana na jednom od ovih jezika \"{%thunderai_translate_exclude_lang%}\" ili na jeziku {%thunderai_translate_lang%}, vratite prazan niz za tijelo i predmet i postavite status na -1.\n- Nemojte dodavati objašnjenja, bilješke ili bilo kakav tekst izvan JSON-a.\n\nPredmet e-pošte: {%mail_subject%}\n\nTijelo e-pošte: {%mail_html_body%}\n\nGenerirajte odgovor isključivo u JSON formatu. Izlaz treba biti samo JSON objekt. Evo primjera JSON formata koji treba koristiti:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."

@@ -517,7 +517,7 @@
         "message": "Classifiez le texte suivant en termes de politesse, chaleur, formalité, assertivité, caractère offensant en donnant un pourcentage pour chaque catégorie. Répondez uniquement avec la catégorie et le score, sans commentaires ou autre texte."
     },
     "prompt_translate_this_full_text": {
-        "message": "Traduisez le courriel suivant en"
+        "message": "Traduisez l'e-mail ci-dessous en {%thunderai_translate_lang%}.\n\nRègles :\n- Traduisez à la fois l'objet et le corps du message.\n- Renvoyez le résultat sous forme d'objet JSON avec trois champs : \"subject\", \"body\" et \"status\".\n- Si la traduction a été effectuée, le statut est égal à 1.\n- Si l'e-mail est écrit dans l'une de ces langues \"{%thunderai_translate_exclude_lang%}\" ou dans la langue {%thunderai_translate_lang%}, renvoyez une chaîne vide pour le corps et l'objet et réglez le statut sur -1.\n- N'ajoutez pas d'explications, de notes ou de texte en dehors du JSON.\n\nObjet du mail : {%mail_subject%}\n\nCorps du mail : {%mail_html_body%}\n\nGénérez une réponse au format JSON uniquement. La sortie doit être exclusivement un objet JSON. Voici un exemple du format JSON à utiliser :\n{\n\"subject\" : \"subject translation\",\n\"body\" : \"body translation\",\n\"status\" : \"status result\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte."
