@@ -725,11 +725,11 @@
     "description": ""
   },
   "prefs_OptionText_hide_thinking": {
-    "message": "Hide thinking output",
+    "message": "Collapse thinking block by default",
     "description": ""
   },
   "prefs_OptionText_hide_thinking_info": {
-    "message": "If checked, reasoning/thinking output produced by the model is completely removed. If unchecked, it is shown in a collapsed block above the answer.",
+    "message": "Controls the initial state of the thinking block shown above the answer. If checked, the block is collapsed by default and can be opened with a click. If unchecked, the block is open by default and can be collapsed with a click. The thinking content is always preserved.",
     "description": ""
   },
   "prefs_OptionText_thinking_summary": {
