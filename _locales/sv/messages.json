@@ -69,7 +69,7 @@
         "message": "Bredd"
     },
     "prompt_translate_this": {
-        "message": "Översätt detta"
+        "message": "Översätt"
     },
     "more_info_string": {
         "message": "Mer information"
@@ -639,7 +639,7 @@
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att tillämpa taggar på e-postmeddelanden."
     },
     "prompt_add_tags": {
-        "message": "Lägg till taggar i det här e-postmeddelandet"
+        "message": "Lägg till taggar"
     },
     "prompt_proofread_this": {
         "message": "Korrekturläs detta e-postmeddelande"
@@ -741,7 +741,7 @@
         "message": "Aktuell prompttext"
     },
     "prompt_spamfilter": {
-        "message": "Upptäck skräppostmeddelanden"
+        "message": "Analysera för skräppost"
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Alternativ för skräppostfilter"
@@ -1267,7 +1267,7 @@
         "message": "Sammanfattningsalternativ"
     },
     "prompt_summarize": {
-        "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
+        "message": "Sammanfatta"
     },
     "prompt_summarize_full_text": {
         "message": "Ge en kortfattad sammanfattning av följande e-postmeddelanden. Sammanfattningen bör vara högst 3–5 meningar lång och fånga huvudpunkterna. Skriv i enkla stycken utan punktlistor, listor eller markdownformatering:\n\n"
@@ -1710,5 +1710,71 @@
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Avsändaren finns i listan över e-postadresser som inte ska skickas med skräppost."
+    },
+    "show_in": {
+        "message": "Visa i"
+    },
+    "show_in_popup": {
+        "message": "Popup endast"
+    },
+    "show_in_context": {
+        "message": "Kontextmeny endast"
+    },
+    "show_in_both": {
+        "message": "Båda"
+    },
+    "menu_order_title": {
+        "message": "Menyordning"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Popup meny"
+    },
+    "menu_order_context_list_title": {
+        "message": "Kontextmeny"
+    },
+    "menu_order_saved": {
+        "message": "Menyordning sparad!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Läser"
+    },
+    "menu_order_tab_composing": {
+        "message": "Skriver"
+    },
+    "menu_order_badge_default": {
+        "message": "Standard"
+    },
+    "menu_order_badge_special": {
+        "message": "Special"
+    },
+    "menu_order_badge_custom": {
+        "message": "Anpassad"
+    },
+    "menu_order_type_reading": {
+        "message": "Läser"
+    },
+    "menu_order_type_composing": {
+        "message": "Skriver"
+    },
+    "menu_order_type_always": {
+        "message": "Alltid"
+    },
+    "menu_order_btn_label": {
+        "message": "Hantera menyordningsinställningar"
+    },
+    "menu_order_info": {
+        "message": "Dra och släpp objekt för att ändra ordningen på dem. Använd växlingsknappen för att visa eller dölja objekt i varje meny."
+    },
+    "menu_order_active_items": {
+        "message": "Synliga objekt"
+    },
+    "menu_order_hidden_items": {
+        "message": "Dolda objekt"
+    },
+    "menu_order_icon_label": {
+        "message": "Välj en ikon"
+    },
+    "menu_order_icon_none": {
+        "message": "(ingen)"
     }
 }
