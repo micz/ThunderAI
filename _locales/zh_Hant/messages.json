@@ -656,7 +656,7 @@
         "message": "回覆以下郵件。僅回覆所需內容，不要提供任何註解或其他文字。"
     },
     "prompt_translate_this_full_text": {
-        "message": "將以下電子郵件翻譯成"
+        "message": "請將以下電子郵件翻譯成 **{%thunderai_translate_lang%}**。\n\n**規則：**\n- 同時翻譯主題（Subject）與正文（Body）。\n- 以 JSON 物件格式回傳結果，包含三個欄位：\"subject\"、\"body\" 以及 \"status\"。\n- 如果完成翻譯，status 等於 1。\n- 如果郵件是以 \"{%thunderai_translate_exclude_lang%}\" 其中之一的語言或 {%thunderai_translate_lang%} 語言編寫，請將 body 和 subject 設為空字串，並將 status 設為 -1。\n- 請勿在 JSON 之外添加任何說明、備註或文字。\n\n郵件主題：{%mail_subject%}\n\n郵件正文：{%mail_html_body%}\n\n請僅以 JSON 格式生成回應。輸出應僅包含一個 JSON 物件。以下是要使用的 JSON 格式範例：\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_rewrite_full_text": {
         "message": "請重寫以下文字，使其更有禮貌。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
