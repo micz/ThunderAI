@@ -2103,6 +2103,10 @@
        "message": "Delete summary",
        "description": ""
    },
+   "generic_error_dismiss": {
+       "message": "Dismiss",
+       "description": "Menu item to dismiss a generic error panel shown in the message display."
+   },
   "prefs_OptionText_translate": {
     "message": "Translate email",
     "description": ""

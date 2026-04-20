@@ -1727,6 +1727,16 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
+async function showGenericError(errMsg, source) {
+    let tabs = await browser.tabs.query({});
+    for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, {
+            command: "showGenericError",
+            data: { message: errMsg, source: source }
+        }).catch(() => {});
+    }
+}
+
 async function updateSpamPanel(messageId, command, data = null) {
     if (prefs_init.spamfilter_show_msg_panel) {
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -1833,16 +1843,28 @@ async function processEmails(args) {
                         do_debug: prefs_aats.do_debug,
                         config: curr_prompt_add_tags
                     });
-                    await cmd_addTags.initWorker();
-                    let tags_current_email = [];
+                    let addTagsInitFailed = false;
                     try {
-                        tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                        await cmd_addTags.initWorker();
                     } catch (err) {
-                        console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                        addTagsInitFailed = true;
+                        if (err.isConfigError) {
+                            await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
+                        } else {
+                            console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
+                        }
                     }
-                    taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                    let _data = { messageId: message.id, tags: tags_current_email };
-                    _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                    if (!addTagsInitFailed) {
+                        let tags_current_email = [];
+                        try {
+                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                        } catch (err) {
+                            console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                        }
+                        taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                        let _data = { messageId: message.id, tags: tags_current_email };
+                        _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                    }
                 }
             }
     

@@ -131,6 +131,7 @@ function _removeToolbarItem(id) {
 }
 
 const _PANEL_ORDER = [
+    'mzta-generic-error',
     'mzta-spam-check-progress', 'mzta-spam-report-banner',
     'mzta-translation-generating', 'mzta-translation-banner',
     'mzta-summary-generating', 'mzta-summary-banner'
@@ -865,6 +866,53 @@ switch (message.command) {
     });
 
     break;
+
+    case "showGenericError": {
+      const { message: errMsg, source } = message.data || {};
+      const colors = _getThemeColors();
+      const ec = colors.summaryErr;
+
+      const panel = document.createElement('div');
+      panel.style.cssText = `background-color: ${ec.bg}; color: ${ec.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${ec.border}; font-size: 14px; display: flex; align-items: flex-start; gap: 8px;`;
+
+      const icon = document.createElement('span');
+      icon.textContent = '\u26A0';
+      icon.style.cssText = 'font-size: 16px; flex-shrink: 0; line-height: 1.4;';
+
+      const textWrap = document.createElement('div');
+      textWrap.style.cssText = 'flex: 1; min-width: 0; line-height: 1.4;';
+
+      const prefix = document.createElement('strong');
+      prefix.textContent = `[ThunderAI${source ? ' | ' + source : ''}] `;
+      const body = document.createElement('span');
+      body.textContent = errMsg || '';
+      textWrap.appendChild(prefix);
+      textWrap.appendChild(body);
+
+      const rightGroup = document.createElement('span');
+      rightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; margin-left: auto;';
+      const dismissMenu = createThreeDotsMenu(colors.isDark, [
+          {
+              icon: '\u00D7',
+              label: browser.i18n.getMessage("generic_error_dismiss") || 'Dismiss',
+              hoverColor: '#cc0000',
+              onClick: () => { _removePanel('mzta-generic-error'); }
+          }
+      ], { bg: ec.bg, border: ec.border, text: ec.text });
+      rightGroup.appendChild(dismissMenu);
+
+      panel.appendChild(icon);
+      panel.appendChild(textWrap);
+      panel.appendChild(rightGroup);
+
+      _addPanel('mzta-generic-error', panel);
+      return Promise.resolve(true);
+    }
+
+    case "clearGenericError": {
+      _removePanel('mzta-generic-error');
+      return Promise.resolve(true);
+    }
 
     case "showSpamCheckInProgress": {
       _removePanel('mzta-spam-report-banner');
