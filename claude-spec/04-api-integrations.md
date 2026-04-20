@@ -51,6 +51,24 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 - Worker: `js/workers/model-worker-anthropic.js`
 - Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`
 
+## Configuration Validation
+
+For special prompts (`mzta_specialCommand`), required fields are validated in `initWorker()` (`js/mzta-special-commands.js`) **before** the worker is created. If a required field is empty, an `Error` with `isConfigError = true` is thrown. Validation covers:
+
+| Provider | Required fields |
+|----------|----------------|
+| `chatgpt_api` | `chatgpt_api_key`, `chatgpt_model` |
+| `google_gemini_api` | `google_gemini_api_key`, `google_gemini_model` |
+| `ollama_api` | `ollama_host`, `ollama_model` |
+| `openai_comp_api` | `openai_comp_host`, `openai_comp_model` |
+| `anthropic_api` | `anthropic_api_key`, `anthropic_model`, `anthropic_version` |
+
+Validation is skipped when `use_specific_api = true` (i.e., the prompt's own `api_type` overrides the global setting — credentials come from the prompt config, not global prefs).
+
+The `isConfigError` flag on the thrown error tells callers in `mzta-background.js` to display the error in the panel **without saving it to storage** — so the user can fix settings and retry cleanly.
+
+For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created (unchanged behavior).
+
 ## Web Worker Pattern
 
 For all API-based providers (everything except ChatGPT Web), the call goes through a Web Worker:

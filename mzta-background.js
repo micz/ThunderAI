@@ -705,7 +705,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
-        await summaryStore.saveError(headerMessageId, error.message || String(error));
+        if (!error.isConfigError) await summaryStore.saveError(headerMessageId, error.message || String(error));
         if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
         taWorkingStatus.stopWorking();
     }
@@ -805,7 +805,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
-        await translationStore.saveError(headerMessageId, error.message || String(error));
+        if (!error.isConfigError) await translationStore.saveError(headerMessageId, error.message || String(error));
         if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
         taWorkingStatus.stopWorking();
     }
@@ -984,8 +984,12 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
 
     } catch (error) {
         console.error("[ThunderAI] Error generating spam report:", error);
-        let err_data = await spamReport.saveError(headerMessageId, error.message || String(error));
-        await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        if (error.isConfigError) {
+            await updateSpamPanel(headerMessageId, "showSpamReport", { spamValue: -999, explanation: error.message || String(error) });
+        } else {
+            let err_data = await spamReport.saveError(headerMessageId, error.message || String(error));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        }
         return { success: false };
     }
 }
