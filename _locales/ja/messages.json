@@ -558,7 +558,7 @@
         "message": "以下のテキストを丁寧さ、温かさ、フォーマルさ、自己主張、攻撃性の観点から分類し、各カテゴリのパーセンテージを示してください。カテゴリとスコアのみで、余分なコメントや他のテキストなしで返信してください。"
     },
     "prompt_translate_this_full_text": {
-        "message": "以下のメールを次の言語に翻訳してください："
+        "message": "以下のメールを {%thunderai_translate_lang%} に翻訳してください。\n\nルール：\n- 件名と本文の両方を翻訳してください。\n- 結果は \"subject\"、\"body\"、\"status\" の3つのフィールドを持つ JSON オブジェクトとして返してください。\n- 翻訳が実行された場合、status は 1 になります。\n- メールが \"{%thunderai_translate_exclude_lang%}\" のいずれかの言語、または {%thunderai_translate_lang%} 言語で書かれている場合は、本文と件名に空の文字列を返し、status を -1 に設定してください。\n- JSON 以外の説明、メモ、テキストを追加しないでください。\n\nメール件名：{%mail_subject%}\n\nメール本文：{%mail_html_body%}\n\nJSON 形式のみで回答を生成してください。出力は JSON オブジェクトのみである必要があります。使用する JSON 形式の例は次のとおりです：\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_this_full_text": {
         "message": "必要なテキストのみで、余分なコメントや他のテキストなしで返信してください。"
