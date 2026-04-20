@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.5.2
+* Tom Select v2.6.0
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -1725,6 +1725,7 @@
 	    this.isFocused = false;
 	    this.isInputHidden = false;
 	    this.isSetup = false;
+	    this.isDropdownContentStale = true;
 	    this.ignoreFocus = false;
 	    this.ignoreHover = false;
 	    this.hasOptions = false;
@@ -2138,8 +2139,6 @@
 	    }) : self.settings;
 	    self.setupOptions(settings.options, settings.optgroups);
 	    self.setValue(settings.items || [], true); // silent prevents recursion
-
-	    self.lastQuery = null; // so updated options will be displayed in dropdown
 	  }
 
 	  /**
@@ -2452,7 +2451,7 @@
 	    } else {
 	      value = option.dataset.value;
 	      if (typeof value !== 'undefined') {
-	        self.lastQuery = null;
+	        self.isDropdownContentStale = self.settings.hideSelected;
 	        self.addItem(value);
 	        if (self.settings.closeAfterSelect) {
 	          self.close();
@@ -2534,7 +2533,7 @@
 	  loadCallback(options, optgroups) {
 	    const self = this;
 	    self.loading = Math.max(self.loading - 1, 0);
-	    self.lastQuery = null;
+	    self.isDropdownContentStale = true;
 	    self.clearActiveOption(); // when new results load, focus should be on first option
 	    self.setupOptions(options, optgroups);
 	    self.refreshOptions(self.isFocused && !self.isInputHidden);
@@ -2887,7 +2886,7 @@
 	    }
 
 	    // perform search
-	    if (query !== self.lastQuery) {
+	    if (self.isDropdownContentStale || query !== self.lastQuery) {
 	      self.lastQuery = query;
 	      // temp fix for https://github.com/orchidjs/tom-select/issues/987
 	      // UI crashed when more than 30 same chars in a row, prevent search and return empt result
@@ -3053,6 +3052,7 @@
 	    });
 	    dropdown_content.innerHTML = '';
 	    append(dropdown_content, html);
+	    self.isDropdownContentStale = false;
 
 	    // highlight matching terms inline
 	    if (self.settings.highlight) {
@@ -3155,12 +3155,13 @@
 	    }
 	    const key = hash_key(data[self.settings.valueField]);
 	    if (key === null || self.options.hasOwnProperty(key)) {
+	      self.updateOption(data[self.settings.valueField], data);
 	      return false;
 	    }
 	    data.$order = data.$order || ++self.order;
 	    data.$id = self.inputId + '-opt-' + data.$order;
 	    self.options[key] = data;
-	    self.lastQuery = null;
+	    self.isDropdownContentStale = true;
 	    if (user_created) {
 	      self.userOptions[key] = user_created;
 	      self.trigger('option_add', key, data);
@@ -3283,8 +3284,8 @@
 	      replaceNode(item, item_new);
 	    }
 
-	    // invalidate last query because we might have updated the sortField
-	    self.lastQuery = null;
+	    // we might have updated the sortField
+	    self.isDropdownContentStale = true;
 	  }
 
 	  /**
@@ -3297,7 +3298,7 @@
 	    self.uncacheValue(value);
 	    delete self.userOptions[value];
 	    delete self.options[value];
-	    self.lastQuery = null;
+	    self.isDropdownContentStale = true;
 	    self.trigger('option_remove', value);
 	    self.removeItem(value, silent);
 	  }
@@ -3317,7 +3318,7 @@
 	      }
 	    });
 	    this.options = this.sifter.items = selected;
-	    this.lastQuery = null;
+	    this.isDropdownContentStale = true;
 	    this.trigger('option_clear');
 	  }
 
@@ -3501,7 +3502,7 @@
 	      removeClasses(item, 'active');
 	    }
 	    self.items.splice(i, 1);
-	    self.lastQuery = null;
+	    self.isDropdownContentStale = true;
 	    if (!self.settings.persist && self.userOptions.hasOwnProperty(value)) {
 	      self.removeOption(value, silent);
 	    }
@@ -3582,7 +3583,7 @@
 	   */
 	  refreshItems() {
 	    var self = this;
-	    self.lastQuery = null;
+	    self.isDropdownContentStale = true;
 	    if (self.isSetup) {
 	      self.addItems(self.items);
 	    }
