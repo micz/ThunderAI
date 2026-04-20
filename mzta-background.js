@@ -784,10 +784,10 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         let translatedSubject = '';
         let translationStatus = '';
         try {
-            const parsed = JSON.parse(aiResponse);
+            const parsed = extractJsonObject(aiResponse);
             translatedBody = parsed.body || '';
             translatedSubject = parsed.subject || '';
-            translationStatus = String(parsed.status || '');
+            translationStatus = String(parsed.status ?? '');
         } catch (e) {
             translatedBody = aiResponse;
         }
