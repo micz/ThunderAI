@@ -1776,5 +1776,23 @@
     },
     "menu_order_icon_none": {
         "message": "(ingen)"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Fäll in tankeblock som standard"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Styr det initiala tillståndet för tankeblocket som visas ovanför svaret. Om markerat är blocket hopfällt som standard och kan öppnas med ett klick. Om det avmarkeras är blocket öppet som standard och kan hopfällas med ett klick. Tankeinnehållet bevaras alltid."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Tänker"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Utökad tankebudget (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Maximalt antal tokens som modellen kan spendera på utökat tänkande. Ställ in på 0 för att inaktivera utökat tänkande. När det är aktiverat ignoreras temperaturvärdet av Claude API."
+    },
+    "generic_error_dismiss": {
+        "message": "Avfärda"
     }
 }
