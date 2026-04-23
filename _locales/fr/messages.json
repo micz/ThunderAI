@@ -961,7 +961,7 @@
         "message": "Chaque modification est enregistrée immédiatement."
     },
     "AccountSelector_Spamfilter": {
-        "message": "Choisissez les comptes pour lesquels le filtre anti-spam est activé"
+        "message": "Choisissez les comptes pour lesquels le filtre anti-spam est actif"
     },
     "ask_integration_permission_ok": {
         "message": "Autorisation accordée. Vous pouvez cliquer ici pour fermer cet onglet et revenir à la fenêtre principale."
@@ -1319,7 +1319,7 @@
         "message": "Résumer cet e-mail ou ces e-mails"
     },
     "prompt_summarize_full_text": {
-        "message": "Vous êtes un assistant qui résume les conversations par e-mail.\n\nÀ partir d'un fil de discussion, produisez un résumé concis et précis qui capture :\n\n- Le sujet principal ou l'objet de la conversation.\n- Les décisions clés, conclusions ou accords.\n- Les questions importantes, requêtes ou points à traiter.\n- Le responsable de chaque action à entreprendre (si précisé).\n\nOmettez les salutations, les signatures, le texte cité et les échanges redondants.\nN'ajoutez pas d'hypothèses ou d'informations non présentes dans les e-mails.\n\nRédigez le résumé dans un langage clair et neutre, adapté à un professionnel occupé."
+        "message": "Vous êtes un assistant qui résume les conversations par e-mail.\n\nÀ partir d'un fil de discussion, produisez un résumé concis et précis qui capture :\n\n- Le sujet principal ou l'objet de la conversation.\n- Les décisions clés, conclusions ou accords.\n- Les questions importantes, requêtes ou points à traiter.\n- Le responsable de chaque action à entreprendre (si précisé).\n\nOmettez les salutations, les signatures, le texte cité et les échanges redondants.\nN'ajoutez pas d'hypothèses ou d'informations non présentes dans les e-mails.\n\nRédigez le résumé dans un langage clair et neutre, adapté à un professionnel occupé.\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Résumé du modèle d'e-mail"
@@ -1446,5 +1446,295 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Laisser vide pour utiliser la position par défaut."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Ignorer les adresses du carnet d'adresses"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Si cette option est sélectionnée, les e-mails provenant d'expéditeurs figurant dans vos carnets d'adresses ne seront pas envoyés à l'IA pour le filtrage anti-spam."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "L'expéditeur est un contact dans votre carnet d'adresses."
+    },
+    "addressbook_permission_denied": {
+        "message": "La permission d'accéder au carnet d'adresses a été refusée. Veuillez réactiver la fonction pour accorder la permission."
+    },
+    "addressbook_permission_error": {
+        "message": "Erreur lors de la demande de permission pour le carnet d'adresses. Veuillez réessayer."
+    },
+    "apiwebchat_done": {
+        "message": "Terminé !"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Budget de réflexion étendue (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Nombre maximum de tokens que le modèle peut utiliser pour la réflexion étendue. Réglez sur 0 pour désactiver. Lorsqu'il est activé, la valeur de la température est ignorée par l'API Claude."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Forcer le format JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Si coché, Ollama sera forcé de renvoyer une réponse JSON valide. Cette option ne fonctionne qu'avec les modèles prenant en charge la sortie structurée."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Utilisation de $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Activer le résumé IA automatique pour l'aperçu des messages"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Si sélectionné, ThunderAI générera et affichera automatiquement des résumés IA au-dessus des messages lors de leur ouverture. Remarque : cela enverra immédiatement chaque message consulté au service IA configuré."
+    },
+    "auto_summary_title": {
+        "message": "Résumé ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Génération du résumé IA..."
+    },
+    "auto_summary_failed": {
+        "message": "Échec de la génération du résumé IA. Vérifiez vos paramètres et réessayez."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Résumer les messages automatiquement"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Choisissez de générer automatiquement des résumés lors de la visualisation des messages. Nécessite une connexion basée sur l'API (pas ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Afficher le résumé dans"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Choisissez où afficher le résultat du résumé. Le mode 'En ligne' affiche une bannière directement dans le panneau du message. Le mode 'Fenêtre de chat' ouvre la fenêtre de chat IA."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Longueur maximale d'affichage"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Nombre maximum de caractères à afficher dans le résumé en ligne. Réglez sur 0 pour aucune limite."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Supprimer le formatage"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Supprime le formatage HTML et Markdown du résumé généré par l'IA, n'affichant que du texte brut."
+    },
+    "summarize_see_more": {
+        "message": "Voir plus"
+    },
+    "summarize_see_less": {
+        "message": "Voir moins"
+    },
+    "summarize_title": {
+        "message": "Aperçu ThunderAI"
+    },
+    "get_ai_summary": {
+        "message": "Résumé IA"
+    },
+    "summarize_collapse": {
+        "message": "Réduire le résumé"
+    },
+    "summarize_generating": {
+        "message": "Génération du résumé..."
+    },
+    "summarize_error": {
+        "message": "Impossible de générer le résumé"
+    },
+    "summarize_click_to_generate": {
+        "message": "Cliquez ici pour générer un résumé"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Le résumé automatique nécessite une connexion basée sur l'API. Veuillez configurer une connexion API dans les paramètres de ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Actualiser le résumé"
+    },
+    "spamfilter_refresh": {
+        "message": "Actualiser le rapport spam"
+    },
+    "spamfilter_delete": {
+        "message": "Supprimer le rapport spam"
+    },
+    "summarize_delete": {
+        "message": "Supprimer le résumé"
+    },
+    "generic_error_dismiss": {
+        "message": "Ignorer"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Traduire les e-mails"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Si sélectionné, le modèle et l'API spécifiés ci-dessous seront utilisés pour la traduction des e-mails, quel que soit le choix fait dans les options générales de ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Si sélectionné, ajoute un bouton de traduction dans le corps du message."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Gérer les paramètres de traduction"
+    },
+    "Translate_PageTitle": {
+        "message": "Gérer les paramètres de traduction"
+    },
+    "Translate_info_default": {
+        "message": "Sur cette page, vous pouvez modifier le prompt par défaut utilisé pour traduire les e-mails."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Texte du prompt actuel"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Options de traduction"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Traduire les messages automatiquement"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Désactivé"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Bouton manuel uniquement"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "À l'ouverture de l'e-mail"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Choisissez quand traduire les messages : désactivé, uniquement au clic sur le bouton, ou automatiquement à l'ouverture d'un message."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Panneau de message (en ligne)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Fenêtre de chat"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Longueur maximale de traduction affichée"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Nombre maximum de caractères affichés dans la traduction en ligne. 0 = pas de limite. Si défini, le texte plus long sera tronqué avec un bouton 'Voir plus'."
+    },
+    "translate_see_more": {
+        "message": "Voir plus"
+    },
+    "translate_see_less": {
+        "message": "Voir moins"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Langue de destination"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Langue dans laquelle traduire les e-mails. Si vide, utilise le paramètre de langue par défaut."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Exclure des langues"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Liste de codes de langue séparés par des virgules (ex: en, fr, it) à ignorer pour la traduction automatique. Si l'e-mail est dans l'une de ces langues, il ne sera pas traduit automatiquement ou le bouton manuel ne sera pas affiché."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Prompt décrivant la tâche de traduction :"
+    },
+    "translate_generating": {
+        "message": "Traduction en cours..."
+    },
+    "translate_click_to_generate": {
+        "message": "Cliquez ici pour traduire cet e-mail"
+    },
+    "get_ai_translation": {
+        "message": "Traduction IA"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "La traduction automatique nécessite une connexion basée sur l'API. Veuillez configurer une connexion API dans les paramètres de ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Actualiser la traduction"
+    },
+    "translate_delete": {
+        "message": "Supprimer la traduction"
+    },
+    "translate_banner_title": {
+        "message": "Traduction IA"
+    },
+    "translate_error": {
+        "message": "Échec de la traduction."
+    },
+    "translate_no_language_configured": {
+        "message": "Aucune langue de traduction n'est configurée. Définissez une langue dans les paramètres de Traduction ou une langue par défaut dans les paramètres Généraux."
+    },
+    "translate_skipped": {
+        "message": "Traduction ignorée : langue exclue ou identique à la destination."
+    },
+    "spam_badge_tooltip": {
+        "message": "Score de spam — Cliquez pour voir l'explication"
+    },
+    "summary_by": {
+        "message": "Résumé par"
+    },
+    "translate_by": {
+        "message": "Traduction par"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "À la réception de l'e-mail"
+    },
+    "placeholder_string": {
+        "message": "Espace réservé"
+    },
+    "menu_order_title": {
+        "message": "Ordre du menu"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Menu contextuel (Popup)"
+    },
+    "menu_order_context_list_title": {
+        "message": "Menu contextuel"
+    },
+    "menu_order_saved": {
+        "message": "Ordre du menu enregistré !"
+    },
+    "menu_order_tab_reading": {
+        "message": "Lecture"
+    },
+    "menu_order_tab_composing": {
+        "message": "Rédaction"
+    },
+    "menu_order_badge_default": {
+        "message": "Par défaut"
+    },
+    "menu_order_badge_special": {
+        "message": "Spécial"
+    },
+    "menu_order_badge_custom": {
+        "message": "Personnalisé"
+    },
+    "menu_order_type_reading": {
+        "message": "Lecture"
+    },
+    "menu_order_type_composing": {
+        "message": "Rédaction"
+    },
+    "menu_order_type_always": {
+        "message": "Toujours"
+    },
+    "menu_order_btn_label": {
+        "message": "Gérer les paramètres d'ordre du menu"
+    },
+    "menu_order_info": {
+        "message": "Faites glisser et déposez les éléments pour les réordonner. Utilisez l'interrupteur pour afficher ou masquer les éléments dans chaque menu."
+    },
+    "menu_order_active_items": {
+        "message": "Éléments visibles"
+    },
+    "menu_order_hidden_items": {
+        "message": "Éléments masqués"
+    },
+    "menu_order_icon_label": {
+        "message": "Choisir une icône"
+    },
+    "menu_order_icon_none": {
+        "message": "(aucune)"
     }
 }
