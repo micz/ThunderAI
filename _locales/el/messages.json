@@ -27,7 +27,7 @@
         "message": "Ταξινόμησε"
     },
     "prompt_translate_this": {
-        "message": "Μετάφρασε το"
+        "message": "Μετάφρασε"
     },
     "prompt_this": {
         "message": "Μήνυμα για"
@@ -705,7 +705,7 @@
         "message": "Τρέχον κείμενο προτροπής"
     },
     "prompt_spamfilter": {
-        "message": "Εντοπισμός ανεπιθύμητων μηνυμάτων ηλεκτρονικού ταχυδρομείου"
+        "message": "Ανάλυση για ανεπιθύμητα μηνύματα"
     },
     "prompt_spamfilter_full_text": {
         "message": "Αναλύστε το ακόλουθο email και προσδιορίστε εάν είναι spam ή όχι. Λάβετε υπόψη παράγοντες όπως ύποπτες λέξεις-κλειδιά, υπερβολική διαφημιστική γλώσσα, παραπλανητικές γραμμές θέματος, αιτήματα για προσωπικά στοιχεία και ασυνήθιστες διευθύνσεις αποστολέα.\nΔώστε μια τιμή από 0 (όχι spam) έως 100 (spam) και μια εξήγηση που δεν υπερβαίνει τις 10 λέξεις.\nΣε περίπτωση που λείπουν δεδομένα μηνύματος, ορίστε την τιμή σε 0 (όχι spam) και δώστε τον λόγο.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Μην συμπεριλάβετε κανένα επιπλέον κείμενο ή εξήγηση. Δώστε μόνο το JSON. Ακολουθεί η μορφή που θα χρησιμοποιηθεί:\n{\n\"explanation\": \"Σύντομη εξήγηση του συλλογισμού σας\",\n\"spamValue\": <ακέραιος αριθμός από 0 έως 100>\n}\nΕδώ βρίσκονται οι πληροφορίες του email:\nΑποστολέας: \"{%author%}\"\nΘέμα: \"{%mail_subject%}\"\nΣώμα Html: \"{%mail_html_body%}\""
@@ -732,7 +732,7 @@
         "message": "Το όριο ανεπιθύμητης αλληλογραφίας είναι μηδέν! Θα επισημάνετε όλα τα μηνύματα ως ανεπιθύμητα!"
     },
     "spamfilter_no_reports": {
-        "message": "Δεν έχουν ελεγχθεί ακόμη μηνύματα για ανεπιθύμητα. Εδώ θα βρείτε μια λίστα με τις τελευταίες 100 αναφορές ανεπιθύμητων μηνυμάτων μόνο για την τρέχουσα συνεδρία."
+        "message": "Δεν έχουν ελεγχθεί ακόμη μηνύματα για ανεπιθύμητα. Εδώ θα βρείτε μια λίστα με τις τελευταίες 100 αναφορές ανεπιθύμητων μηνυμάτων."
     },
     "SpamReport_Title": {
         "message": "Αναφορές φίλτρου ανεπιθύμητης αλληλογραφίας"
@@ -1045,7 +1045,7 @@
         "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για την εφαρμογή ετικετών σε μηνύματα ηλεκτρονικού ταχυδρομείου."
     },
     "prompt_add_tags": {
-        "message": "Προσθήκη ετικετών σε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου"
+        "message": "Προσθήκη ετικετών"
     },
     "prompt_add_tags_full_text": {
         "message": "Αναλύστε το ακόλουθο κείμενο email και δημιουργήστε έναν πίνακα ετικετών JSON που συνοψίζει το περιεχόμενό του. Χρησιμοποιήστε θέματα, βασικά θέματα και σχετικές περιγραφές ως ετικέτες. Βεβαιωθείτε ότι οι ετικέτες είναι συνοπτικές και σχετικές με το περιεχόμενο του email.\nΚείμενο email: {%mail_text_body%}\nΛάβετε υπόψη τις ακόλουθες λεπτομέρειες για το περιεχόμενο:\n- Αποστολέας: {%author%}\n- Παραλήπτες: {%recipients%}\n- Λίστα CC: {%cc_list%}\n- Θέμα email: {%mail_subject%}\nΒασίστε τις ετικέτες σας στο κείμενο και το περιεχόμενο του email, αγνοώντας περιττές πληροφορίες ή ασήμαντες λεπτομέρειες.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Η έξοδος θα πρέπει να είναι μόνο ένας πίνακας ετικετών JSON χωρίς κανένα επιπλέον σχόλιο ή κείμενο. Ακολουθεί ένα παράδειγμα της μορφής JSON που θα χρησιμοποιηθεί:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -1291,13 +1291,13 @@
         "message": "Εμφάνιση ενός επιπλέον στοιχείου μενού για τη δημιουργία συμβάντων ημερολογίου από περιεχόμενο κειμένου στο πρόχειρο."
     },
     "Summarize_prompt_prefs_title": {
-        "message": "Προσθήκη επιλογών σύνοψης"
+        "message": "Επιλογές σύνοψης"
     },
     "prompt_summarize": {
-        "message": "Συνοψίστε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου ή αυτά τα μηνύματα ηλεκτρονικού ταχυδρομείου"
+        "message": "Συνοψίστε"
     },
     "prompt_summarize_full_text": {
-        "message": "Είστε βοηθός που συνοψίζει συνομιλίες μέσω email. \nΔεδομένου ενός νήματος email, δημιουργήστε μια συνοπτική και ακριβή περίληψη που να καταγράφει: \n- Το κύριο θέμα ή τον σκοπό της συζήτησης \n- Βασικές αποφάσεις, συμπεράσματα ή συμφωνίες \n- Σημαντικές ερωτήσεις, αιτήματα ή ενέργειες \n- Ποιος είναι υπεύθυνος για κάθε ενέργεια (εάν αναφέρεται) \nΠαραλείψτε χαιρετισμούς, υπογραφές, παρατιθέμενο κείμενο και περιττές ανταλλαγές απόψεων. Μην προσθέτετε υποθέσεις ή πληροφορίες που δεν υπάρχουν στα email. \nΓράψτε την περίληψη σε σαφή, ουδέτερη γλώσσα, κατάλληλη για έναν πολυάσχολο επαγγελματία."
+        "message": "Δώστε μια συνοπτική περίληψη των ακόλουθων μηνυμάτων ηλεκτρονικού ταχυδρομείου. Η περίληψη πρέπει να έχει μέγιστο μήκος 3-5 προτάσεις και να καταγράφει τα κύρια σημεία. Γράψτε σε απλές παραγράφους χωρίς κουκκίδες, λίστες ή μορφοποίηση markdown:\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Σύνοψη προτύπου email"
@@ -1382,5 +1382,417 @@
     },
     "copy_text": {
         "message": "αντιγραφή"
+    },
+    "show_in": {
+        "message": "Εμφάνιση σε"
+    },
+    "show_in_popup": {
+        "message": "Μόνο αναδυόμενο παράθυρο"
+    },
+    "show_in_context": {
+        "message": "Μόνο μενού περιβάλλοντος"
+    },
+    "show_in_both": {
+        "message": "Και τα δύο"
+    },
+    "webchat_save_as_summary": {
+        "message": "Αποθήκευση ως Σύνοψη"
+    },
+    "prefs_storage_title": {
+        "message": "Αποθήκευση"
+    },
+    "prefs_storage_info": {
+        "message": "Ο χώρος αποθήκευσης χρησιμοποιείται για την αποθήκευση πληροφοριών σχετικά με τη βαθμολογία ανεπιθύμητης αλληλογραφίας, τις περιλήψεις και τις μεταφράσεις κάθε μηνύματος."
+    },
+    "prefs_storage_size": {
+        "message": "Μέγεθος αποθήκευσης"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Εκκαθάριση χώρου αποθήκευσης"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Είστε βέβαιοι ότι θέλετε να διαγράψετε όλα τα αποθηκευμένα δεδομένα (περιλήψεις, αναφορές ανεπιθύμητων μηνυμάτων, μεταφράσεις); Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ εγγραφές καταργήθηκαν.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Για να χρησιμοποιήσετε το Google Gemini API, χρειάζεστε ένα κλειδί Google Gemini API και πρέπει να επιλέξετε ένα μοντέλο."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Για να χρησιμοποιήσετε το Claude API, χρειάζεστε ένα Anthropic Claude API Key και πρέπει να επιλέξετε ένα μοντέλο."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Όλες οι κεφαλίδες μηνυμάτων"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Σύμπτυξη μπλοκ σκέψης από προεπιλογή"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Ελέγχει την αρχική κατάσταση του μπλοκ σκέψης που εμφανίζεται πάνω από την απάντηση. Εάν είναι επιλεγμένο, το μπλοκ συμπτύσσεται από προεπιλογή και μπορεί να ανοιχτεί με ένα κλικ. Εάν δεν είναι επιλεγμένο, το μπλοκ είναι ανοιχτό από προεπιλογή και μπορεί να συμπτυχθεί με ένα κλικ. Το περιεχόμενο της σκέψης διατηρείται πάντα."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Σκέψη"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Χρόνος αναμονής για φόρτωση σελίδας"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Χρόνος σε χιλιοστά του δευτερολέπτου για την αναμονή φόρτωσης της σελίδας ChatGPT πριν από τη φόρτωση του πρόσθετου περιεχομένου. Η προεπιλογή είναι 1000ms. Εάν έχει οριστεί ένα προσαρμοσμένο GPT ή έργο, θα προστεθούν επιπλέον 1000ms σε αυτήν την τιμή."
+    },
+    "prefs_doc_title": {
+        "message": "Documentation"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Οδηγοί εγκατάστασης"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Εκπαιδευτικό σεμινάριο προσαρμοσμένης προτροπής"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Άνοιγμα της σελίδας υποδοχής"
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "Η γλώσσα που θα χρησιμοποιηθεί στις μεταφράσεις αλληλογραφίας."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Ο κώδικας γλώσσας δεν θα μεταφράζεται όταν βρεθεί."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Λίστα παράλειψης διεύθυνσης ηλεκτρονικού ταχυδρομείου"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Τα email από αυτές τις διευθύνσεις δεν θα αποστέλλονται στην Τεχνητή Νοημοσύνη για φιλτράρισμα ανεπιθύμητης αλληλογραφίας."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Προσθέστε μία διεύθυνση ηλεκτρονικού ταχυδρομείου ανά γραμμή ή διαχωρισμένη με κόμμα."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Ο αποστολέας βρίσκεται στη λίστα παράλειψης ανεπιθύμητης αλληλογραφίας της διεύθυνσης ηλεκτρονικού ταχυδρομείου."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Παράλειψη διευθύνσεων βιβλίων διευθύνσεων"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Εάν είναι επιλεγμένο, τα email από αποστολείς στα βιβλία διευθύνσεών σας δεν θα αποστέλλονται στην Τεχνητή Νοημοσύνη για φιλτράρισμα ανεπιθύμητης αλληλογραφίας."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Ο αποστολέας είναι μια επαφή στο βιβλίο διευθύνσεων."
+    },
+    "addressbook_permission_denied": {
+        "message": "Η άδεια χρήσης του βιβλίου διευθύνσεων απορρίφθηκε. Ενεργοποιήστε ξανά τη λειτουργία για να παραχωρήσετε άδεια."
+    },
+    "addressbook_permission_error": {
+        "message": "Σφάλμα κατά την αίτηση άδειας για το βιβλίο διευθύνσεων. Δοκιμάστε ξανά."
+    },
+    "apiwebchat_done": {
+        "message": "Έγινε!"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Προϋπολογισμός εκτεταμένης σκέψης (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Μέγιστος αριθμός διακριτικών που μπορεί να δαπανήσει το μοντέλο για εκτεταμένη σκέψη. Ορίστε σε 0 για να απενεργοποιήσετε την εκτεταμένη σκέψη. Όταν είναι ενεργοποιημένη, η τιμή θερμοκρασίας αγνοείται από το Claude API."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Επιβολή εξόδου JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Εάν επιλεγεί, το Ollama θα αναγκαστεί να επιστρέψει μια έγκυρη απόκριση JSON. Αυτή η επιλογή λειτουργεί μόνο με μοντέλα που υποστηρίζουν δομημένη έξοδο."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Χρησιμοποιώντας 1$",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Ενεργοποίηση αυτόματης σύνοψης με τεχνητή νοημοσύνη για προεπισκοπήσεις μηνυμάτων"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Εάν είναι επιλεγμένο, το ThunderAI θα δημιουργεί και θα εμφανίζει αυτόματα περιλήψεις AI πάνω από τα μηνύματα email όταν αυτά ανοίγονται. Σημειώστε ότι αυτό σημαίνει ότι όλα τα μηνύματα που βλέπετε σε προεπισκόπηση θα αποστέλλονται αμέσως στην διαμορφωμένη υπηρεσία AI."
+    },
+    "auto_summary_title": {
+        "message": "Σύνοψη ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Δημιουργία σύνοψης τεχνητής νοημοσύνης..."
+    },
+    "auto_summary_failed": {
+        "message": "Η δημιουργία σύνοψης τεχνητής νοημοσύνης απέτυχε. Επιβεβαιώστε τις ρυθμίσεις σας και δοκιμάστε ξανά."
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "Η προτροπή πρέπει να περιέχει το σύμβολο κράτησης θέσης {%mail_text_body_or_selected%} ή {%mail_html_body_or_selected%} για να ενεργοποιηθεί αυτή η επιλογή. Προσθέστε ένα από αυτά τα σύμβολα κράτησης θέσης στην προτροπή ή επαναφέρετέ το στην προεπιλεγμένη τιμή."
+    },
+    "spam_check_in_progress": {
+        "message": "Έλεγχος ανεπιθύμητης αλληλογραφίας σε εξέλιξη..."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Αυτόματη σύνοψη μηνυμάτων"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Επιλέξτε εάν θα δημιουργούνται αυτόματα συνόψεις κατά την προβολή μηνυμάτων. Απαιτείται σύνδεση που βασίζεται σε API (όχι ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Εμφάνιση σύνοψης σε"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Επιλέξτε πού θα εμφανίζεται το αποτέλεσμα σύνοψης. Η λειτουργία Inline εμφανίζει ένα banner σύνοψης απευθείας στο παράθυρο μηνύματος. Η λειτουργία παραθύρου συνομιλίας ανοίγει το παράθυρο συνομιλίας με τεχνητή νοημοσύνη."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Μέγιστο μήκος οθόνης"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Μέγιστος αριθμός χαρακτήρων που θα εμφανίζονται στην ενσωματωμένη σύνοψη. Ορίστε σε 0 για χωρίς όριο."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Μορφοποίηση λωρίδας"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Αφαιρέστε τη μορφοποίηση HTML και Markdown από τη σύνοψη που δημιουργείται από την τεχνητή νοημοσύνη, εμφανίζοντας μόνο απλό κείμενο."
+    },
+    "summarize_see_more": {
+        "message": "Δείτε περισσότερα"
+    },
+    "summarize_see_less": {
+        "message": "Δείτε λιγότερα"
+    },
+    "summarize_title": {
+        "message": "Επισκόπηση ThunderAI"
+    },
+    "get_ai_summary": {
+        "message": "Σύνοψη Τεχνητής Νοημοσύνης"
+    },
+    "summarize_collapse": {
+        "message": "Σύμπτυξη σύνοψης"
+    },
+    "summarize_generating": {
+        "message": "Δημιουργία σύνοψης..."
+    },
+    "summarize_error": {
+        "message": "Η δημιουργία σύνοψης απέτυχε"
+    },
+    "summarize_click_to_generate": {
+        "message": "Κάντε κλικ εδώ για να δημιουργήσετε μια σύνοψη"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Η αυτόματη σύνοψη απαιτεί σύνδεση που βασίζεται σε API. Παρακαλούμε διαμορφώστε μια σύνδεση API στις ρυθμίσεις του ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Ανανέωση σύνοψης"
+    },
+    "spamfilter_refresh": {
+        "message": "Ανανέωση αναφοράς ανεπιθύμητων μηνυμάτων"
+    },
+    "spamfilter_delete": {
+        "message": "Διαγραφή αναφοράς ανεπιθύμητων μηνυμάτων"
+    },
+    "summarize_delete": {
+        "message": "Διαγραφή σύνοψης"
+    },
+    "generic_error_dismiss": {
+        "message": "Απόριψη"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Μετάφραση email"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Εάν επιλεγεί, το μοντέλο και το API που καθορίζονται παρακάτω θα χρησιμοποιηθούν για τη μετάφραση email(s), ανεξάρτητα από αυτό που έχει επιλεγεί στη σελίδα επιλογών ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Εάν είναι επιλεγμένο, προσθέτει ένα κουμπί μετάφρασης στο σώμα του μηνύματος."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Διαχείριση ρυθμίσεων μετάφρασης"
+    },
+    "Translate_PageTitle": {
+        "message": "Διαχείριση ρυθμίσεων μετάφρασης"
+    },
+    "Translate_info_default": {
+        "message": "Σε αυτήν τη σελίδα μπορείτε να τροποποιήσετε την προεπιλεγμένη προτροπή που χρησιμοποιείται για τη μετάφραση μηνυμάτων ηλεκτρονικού ταχυδρομείου."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Τρέχον κείμενο προτροπής"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Επιλογές μετάφρασης"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Αυτόματη μετάφραση μηνυμάτων"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Απενεργοποιημένο"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Μόνο χειροκίνητο κουμπί"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Όταν ανοίξει το email"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Επιλέξτε πότε θα μεταφράζονται τα μηνύματα: απενεργοποιημένη, μόνο όταν κάνετε κλικ στο κουμπί ή αυτόματα κατά το άνοιγμα ενός μηνύματος."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Παράθυρο μηνύματος (ενσωματωμένο)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Παράθυρο συνομιλίας"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Μέγιστο μήκος εμφανιζόμενης μετάφρασης"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Μέγιστος αριθμός χαρακτήρων που εμφανίζονται στην ενσωματωμένη μετάφραση. 0 = χωρίς όριο. Όταν οριστεί, το μεγαλύτερο κείμενο περικόπτεται με την επιλογή \"Δείτε περισσότερα\"."
+    },
+    "translate_see_more": {
+        "message": "Δείτε περισσότερα"
+    },
+    "translate_see_less": {
+        "message": "Δείτε λιγότερα"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Γλώσσα-στόχος μετάφρασης"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Γλώσσα στην οποία θα μεταφραστούν τα μηνύματα ηλεκτρονικού ταχυδρομείου. Εάν είναι κενό, χρησιμοποιείται η προεπιλεγμένη ρύθμιση γλώσσας."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Εξαίρεση γλωσσών"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Λίστα κωδικών γλώσσας (π.χ., en, fr, it) διαχωρισμένων με κόμμα για παράλειψη για αυτόματη μετάφραση. Εάν το μήνυμα ηλεκτρονικού ταχυδρομείου είναι σε μία από αυτές τις γλώσσες, δεν θα μεταφραστεί αυτόματα ή το κουμπί χειροκίνητης μετάφρασης δεν θα εμφανιστεί."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Η προτροπή που περιγράφει την εργασία μετάφρασης:"
+    },
+    "translate_generating": {
+        "message": "Μεταφράζοντας..."
+    },
+    "translate_click_to_generate": {
+        "message": "Κάντε κλικ εδώ για να μεταφράσετε αυτό το μήνυμα ηλεκτρονικού ταχυδρομείου"
+    },
+    "get_ai_translation": {
+        "message": "Μετάφραση Τεχνητής Νοημοσύνης"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Η αυτόματη μετάφραση απαιτεί σύνδεση που βασίζεται σε API. Παρακαλούμε διαμορφώστε μια σύνδεση API στις ρυθμίσεις του ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Ανανέωση μετάφρασης"
+    },
+    "translate_delete": {
+        "message": "Διαγραφή μετάφρασης"
+    },
+    "translate_banner_title": {
+        "message": "Μετάφραση Τεχνητής Νοημοσύνης"
+    },
+    "translate_error": {
+        "message": "Η μετάφραση απέτυχε."
+    },
+    "translate_no_language_configured": {
+        "message": "Η γλώσσα μετάφρασης δεν έχει ρυθμιστεί. Ορίστε μια γλώσσα στις ρυθμίσεις μετάφρασης ή ορίστε μια προεπιλεγμένη γλώσσα στις Γενικές ρυθμίσεις."
+    },
+    "translate_skipped": {
+        "message": "Η μετάφραση παραλείφθηκε: Η γλώσσα εξαιρείται ή είναι πανομοιότυπη με τη γλώσσα-στόχο."
+    },
+    "antispam_by": {
+        "message": "Antispam από"
+    },
+    "spam_badge_tooltip": {
+        "message": "Βαθμολογία ανεπιθύμητης αλληλογραφίας — Κάντε κλικ για να δείτε την εξήγηση"
+    },
+    "summary_by": {
+        "message": "Σύνοψη από"
+    },
+    "translate_by": {
+        "message": "Μετάφραση από"
+    },
+    "prefs_THStats_1": {
+        "message": "Θέλετε όμορφα στατιστικά στοιχεία για τα email σας;"
+    },
+    "prefs_THStats_2": {
+        "message": "Κάντε κλικ εδώ! Δοκιμάστε το ThunderStats!"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Θέση παραθύρου συνομιλίας με τεχνητή νοημοσύνη"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Κορυφαία"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Αριστερά"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Αυτόματη αποθήκευση της θέσης του παραθύρου όταν χρησιμοποιείται το κουμπί κλεισίματος."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Αφήστε το κενό για να χρησιμοποιήσετε την προεπιλεγμένη θέση."
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Όταν ληφθεί το email"
+    },
+    "placeholder_string": {
+        "message": "Θέση κράτησης"
+    },
+    "menu_order_title": {
+        "message": "Σειρά μενού"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Αναδυόμενο μενού"
+    },
+    "menu_order_context_list_title": {
+        "message": "Μενού περιβάλλοντος"
+    },
+    "menu_order_saved": {
+        "message": "Η σειρά μενού αποθηκεύτηκε!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Ανάγνωση"
+    },
+    "menu_order_tab_composing": {
+        "message": "Σύνθεση"
+    },
+    "menu_order_badge_default": {
+        "message": "Προεπιλογή"
+    },
+    "menu_order_badge_special": {
+        "message": "Σπέσιαλ"
+    },
+    "menu_order_badge_custom": {
+        "message": "Ειδικό"
+    },
+    "menu_order_type_reading": {
+        "message": "Ανάγνωση"
+    },
+    "menu_order_type_composing": {
+        "message": "Σύνθεση"
+    },
+    "menu_order_type_always": {
+        "message": "Πάντοτε"
+    },
+    "menu_order_btn_label": {
+        "message": "Διαχείριση ρυθμίσεων σειράς μενού"
+    },
+    "menu_order_info": {
+        "message": "Σύρετε και αποθέστε στοιχεία για να τα αναδιατάξετε. Χρησιμοποιήστε την εναλλαγή για να εμφανίσετε ή να αποκρύψετε στοιχεία σε κάθε μενού."
+    },
+    "menu_order_active_items": {
+        "message": "Ορατά στοιχεία"
+    },
+    "menu_order_hidden_items": {
+        "message": "Κρυμμένα αντικείμενα"
+    },
+    "menu_order_icon_label": {
+        "message": "Επιλέξτε ένα εικονίδιο"
+    },
+    "menu_order_icon_none": {
+        "message": "(τίποτα)"
     }
 }
