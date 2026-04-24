@@ -1504,7 +1504,7 @@
         "message": "Controlla lo stato iniziale del ragionamento visualizzato sopra la risposta. Se selezionato, il ragionamento è compresso di default e può essere aperto con un clic. Se deselezionato, è invece aperto di default e può essere compresso con un clic. Il contenuto del ragionamento viene sempre conservato."
     },
     "placeholder_thunderai_translate_lang": {
-        "message": "Il linguaggio da utilizzare nella traduzioni delle email."
+        "message": "La lingua da utilizzare nella traduzioni delle email."
     },
     "placeholder_thunderai_translate_exclude_lang": {
         "message": "I codici delle lingue da non tradurre se rilevate."
@@ -1513,7 +1513,7 @@
         "message": "Elenco di esclusione indirizzi email"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Le email provenienti da questi indirizzi non saranno inviate all'IA per il filtraggio dello spam."
+        "message": "Le email provenienti da questi indirizzi non saranno inviate all'IA per l'analisi antispam."
     },
     "SpamFilter_skip_addresses_infoline2": {
         "message": "Aggiungi un indirizzo email per riga, oppure separali con una virgola."
@@ -1525,7 +1525,7 @@
         "message": "Salta gli indirizzi in rubrica"
     },
     "prefs_OptionText_spamfilter_skip_addressbook_Info": {
-        "message": "Se selezionato, le email provenienti da mittenti presenti nelle tue rubriche non verranno inviate all'IA per il filtraggio antispam."
+        "message": "Se selezionato, le email provenienti da mittenti presenti nelle tue rubriche non verranno inviate all'IA per l'analisi antispam."
     },
     "spamfilter_skip_addressbook_explanation": {
         "message": "Il mittente è un contatto presente in rubrica."
@@ -1677,7 +1677,7 @@
         "message": "All'apertura dell'email"
     },
     "prefs_OptionText_translate_auto_Info": {
-        "message": "Scegli quando tradurre i messaggi: disabilitato, solo al clic del pulsante, o automaticamente all'apertura di un messaggio."
+        "message": "Scegli quando tradurre i messaggi: disabilitato, solo al click del pulsante, o automaticamente all'apertura di un messaggio."
     },
     "prefs_OptionText_display_mode_inline": {
         "message": "Pannello messaggio (inline)"
