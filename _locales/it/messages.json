@@ -529,7 +529,7 @@
         "message": "Se selezionato, verrà incluso nel menu un elemento per applicare i tag alle email."
     },
     "prompt_add_tags": {
-        "message": "Aggiungi tag a questa email"
+        "message": "Aggiungi tag"
     },
     "prompt_add_tags_full_text": {
         "message": "Analizza il seguente testo email e genera un array JSON di tag che ne riassumano il contenuto. Utilizza come tag i temi, gli argomenti principali e i descrizioni rilevanti. Assicurati che i tag siano concisi e pertinenti al contenuto dell’email.\nTesto email: {%mail_text_body%}\nConsidera i seguenti dettagli come contesto:\n- Mittente: {%author%}\n- Destinatari: {%recipients%}\n- Lista CC: {%cc_list%}\n- Oggetto dell'email: {%mail_subject%}\nBasati sul testo dell’email e sul contesto per generare i tag, ignorando le informazioni superflue o i dettagli irrilevanti.\nGenera una risposta esclusivamente in formato JSON. L’output deve essere solo un array JSON di tag, senza alcun commento o testo aggiuntivo. Ecco un esempio del formato JSON da utilizzare:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -748,7 +748,7 @@
         "message": "Aggiungi tag solo alle email nella posta in arrivo"
     },
     "prompt_spamfilter": {
-        "message": "Rileva le email di spam"
+        "message": "Analizza per spam"
     },
     "Moved_to_Spam": {
         "message": "Spostato nello spam"
@@ -790,7 +790,7 @@
         "message": "Lingua predefinita come impostata nelle opzioni di ThunderAI."
     },
     "spamfilter_no_reports": {
-        "message": "Nessun messaggio è stato ancora controllato per lo spam. Qui troverai un elenco degli ultimi 100 report di spam solo per la sessione corrente."
+        "message": "Nessun messaggio è stato ancora controllato per lo spam. Qui troverai un elenco degli ultimi 100 report di spam."
     },
     "placeholder_thunderai_def_sign": {
         "message": "Firma predefinita come impostata nelle opzioni di ThunderAI."
@@ -1316,10 +1316,10 @@
         "message": "Impostazioni riassunto"
     },
     "prompt_summarize": {
-        "message": "Riassumi email"
+        "message": "Riassumi"
     },
     "prompt_summarize_full_text": {
-        "message": "Sei un assistente che riassume conversazioni via email.\n\nDato un thread di email, produci un riassunto conciso e accurato che includa:\n\n- L'argomento principale o lo scopo della conversazione\n- Decisioni chiave, conclusioni o accordi\n- Domande importanti, richieste o punti d'azione\n- Il responsabile per ogni punto d'azione (se indicato)\n\nOmetti saluti, firme, testo citato e scambi ridondanti.\nNon aggiungere supposizioni o informazioni non presenti nelle email.\n\nScrivi il riassunto con un linguaggio chiaro e neutro, adatto a un professionista impegnato."
+        "message": "Fornisci un riassunto conciso dei seguenti messaggi email. Il riassunto deve essere di massimo 3-5 frasi e deve catturare i punti principali. Scrivi in paragrafi semplici, senza elenchi puntati, liste o formattazione markdown.\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Template riassunto email"
@@ -1495,9 +1495,320 @@
         "message": "Tutte le intestazioni email"
     },
     "prefs_OptionText_hide_thinking": {
-        "message": "Nascondi l'output del ragionamento"
+        "message": "Nascondi l'output del ragionamento come impostazione predefinita"
     },
     "prefs_OptionText_thinking_summary": {
         "message": "Ragionamento"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Controlla lo stato iniziale del ragionamento visualizzato sopra la risposta. Se selezionato, il ragionamento è compresso di default e può essere aperto con un clic. Se deselezionato, è invece aperto di default e può essere compresso con un clic. Il contenuto del ragionamento viene sempre conservato."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "La lingua da utilizzare nella traduzioni delle email."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "I codici delle lingue da non tradurre se rilevate."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Elenco di esclusione indirizzi email"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Le email provenienti da questi indirizzi non saranno inviate all'IA per l'analisi antispam."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Aggiungi un indirizzo email per riga, oppure separali con una virgola."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Il mittente è incluso nell'elenco di esclusione antispam degli indirizzi email."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Salta gli indirizzi in rubrica"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Se selezionato, le email provenienti da mittenti presenti nelle tue rubriche non verranno inviate all'IA per l'analisi antispam."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Il mittente è un contatto presente in rubrica."
+    },
+    "addressbook_permission_denied": {
+        "message": "Il permesso di accesso alla rubrica è stato negato. Abilita nuovamente la funzione per concedere il permesso."
+    },
+    "addressbook_permission_error": {
+        "message": "Errore durante la richiesta del permesso per la rubrica. Per favore, riprova."
+    },
+    "apiwebchat_done": {
+        "message": "Fatto!"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Budget per il pensiero esteso (token)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Numero massimo di token che il modello può utilizzare per il pensiero esteso. Imposta a 0 per disabilitare. Quando abilitato, il valore della temperatura viene ignorato dall'API di Claude."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Forza output JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Se selezionato, Ollama sarà forzato a restituire una risposta JSON valida. Questa opzione funziona solo con i modelli che supportano l'output strutturato."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Utilizzando $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Abilita riassunto IA automatico per l'anteprima messaggi"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Se selezionato, ThunderAI genererà e visualizzerà automaticamente dei riassunti IA sopra i messaggi quando vengono aperti. Nota: questo comporterà l'invio immediato di ogni messaggio visualizzato al servizio IA configurato."
+    },
+    "auto_summary_title": {
+        "message": "Riassunto ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Generazione riassunto IA..."
+    },
+    "auto_summary_failed": {
+        "message": "Impossibile generare il riassunto IA. Verifica le impostazioni e riprova."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Riassumi messaggi automaticamente"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Scegli se generare automaticamente i riassunti durante la visualizzazione dei messaggi. Richiede una connessione basata su API (non ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Visualizza riassunto in"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Scegli dove visualizzare il risultato del riassunto. La modalità 'Inline' mostra un banner direttamente nel pannello del messaggio. La modalità 'Finestra chat' apre la finestra della chat IA."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Lunghezza massima visualizzata"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Numero massimo di caratteri da mostrare nel riassunto inline. Imposta a 0 per nessun limite."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Rimuovi formattazione"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Rimuove la formattazione HTML e Markdown dal riassunto generato dall'IA, mostrando solo testo semplice."
+    },
+    "summarize_see_more": {
+        "message": "Mostra altro"
+    },
+    "summarize_see_less": {
+        "message": "Mostra meno"
+    },
+    "summarize_title": {
+        "message": "Panoramica ThunderAI"
+    },
+    "get_ai_summary": {
+        "message": "Riassunto IA"
+    },
+    "summarize_collapse": {
+        "message": "Comprimi riassunto"
+    },
+    "summarize_generating": {
+        "message": "Generazione riassunto..."
+    },
+    "summarize_error": {
+        "message": "Impossibile generare il riassunto"
+    },
+    "summarize_click_to_generate": {
+        "message": "Clicca qui per generare un riassunto"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Il riassunto automatico richiede una connessione basata su API. Configura una connessione API nelle impostazioni di ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Aggiorna riassunto"
+    },
+    "spamfilter_refresh": {
+        "message": "Aggiorna rapporto spam"
+    },
+    "spamfilter_delete": {
+        "message": "Elimina rapporto spam"
+    },
+    "summarize_delete": {
+        "message": "Elimina riassunto"
+    },
+    "generic_error_dismiss": {
+        "message": "Ignora"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Traduci email"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Se selezionato, per la traduzione delle email verranno utilizzati il Modello e l'API specificati sotto, indipendentemente da quanto scelto nelle opzioni generali di ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Se selezionato, aggiunge un pulsante di traduzione nel corpo del messaggio."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Gestisci impostazioni traduzione"
+    },
+    "Translate_PageTitle": {
+        "message": "Gestisci Impostazioni Traduzione"
+    },
+    "Translate_info_default": {
+        "message": "In questa pagina puoi modificare il prompt predefinito utilizzato per tradurre le email."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Testo del prompt attuale"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Opzioni Traduzione"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Traduci messaggi automaticamente"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Disabilitato"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Solo pulsante manuale"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "All'apertura dell'email"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Scegli quando tradurre i messaggi: disabilitato, solo al click del pulsante, o automaticamente all'apertura di un messaggio."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Pannello messaggio (inline)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Finestra chat"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Lunghezza massima della traduzione visualizzata"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Numero massimo di caratteri mostrati nella traduzione inline. 0 = nessun limite. Se impostato, il testo più lungo verrà troncato con un interruttore 'Mostra altro'."
+    },
+    "translate_see_more": {
+        "message": "Mostra altro"
+    },
+    "translate_see_less": {
+        "message": "Mostra meno"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Lingua di destinazione traduzione"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Lingua in cui tradurre le email. Se vuoto, utilizza l'impostazione della lingua predefinita."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Escludi lingue"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Elenco di codici lingua separati da virgola (es. en, fr, it) da saltare per la traduzione automatica. Se l'email è in una di queste lingue, non verrà tradotta automaticamente o il pulsante manuale non sarà mostrato."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Prompt che descrive l'attività di traduzione:"
+    },
+    "translate_generating": {
+        "message": "Traduzione in corso..."
+    },
+    "translate_click_to_generate": {
+        "message": "Clicca qui per tradurre questa email"
+    },
+    "get_ai_translation": {
+        "message": "Traduzione IA"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "La traduzione automatica richiede una connessione basata su API. Configura una connessione API nelle impostazioni di ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Aggiorna traduzione"
+    },
+    "translate_delete": {
+        "message": "Elimina traduzione"
+    },
+    "translate_banner_title": {
+        "message": "Traduzione IA"
+    },
+    "translate_error": {
+        "message": "Traduzione fallita."
+    },
+    "translate_no_language_configured": {
+        "message": "La lingua di traduzione non è configurata. Imposta una lingua nelle impostazioni di Traduzione o una lingua predefinita nelle impostazioni Generali."
+    },
+    "translate_skipped": {
+        "message": "Traduzione saltata: lingua esclusa o identica alla destinazione."
+    },
+    "spam_badge_tooltip": {
+        "message": "Punteggio spam — Clicca per vedere la spiegazione"
+    },
+    "summary_by": {
+        "message": "Riassunto da"
+    },
+    "translate_by": {
+        "message": "Traduzione da"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Alla ricezione dell'email"
+    },
+    "placeholder_string": {
+        "message": "Segnaposto"
+    },
+    "menu_order_title": {
+        "message": "Ordine Menu"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Menu Popup"
+    },
+    "menu_order_context_list_title": {
+        "message": "Menu Contestuale"
+    },
+    "menu_order_saved": {
+        "message": "Ordine menu salvato!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Lettura"
+    },
+    "menu_order_tab_composing": {
+        "message": "Composizione"
+    },
+    "menu_order_badge_default": {
+        "message": "Predefinito"
+    },
+    "menu_order_badge_special": {
+        "message": "Speciale"
+    },
+    "menu_order_badge_custom": {
+        "message": "Personalizzato"
+    },
+    "menu_order_type_reading": {
+        "message": "Lettura"
+    },
+    "menu_order_type_composing": {
+        "message": "Composizione"
+    },
+    "menu_order_type_always": {
+        "message": "Sempre"
+    },
+    "menu_order_btn_label": {
+        "message": "Gestisci impostazioni ordine menu"
+    },
+    "menu_order_info": {
+        "message": "Trascina gli elementi per riordinarli. Usa l'interruttore per mostrare o nascondere gli elementi in ogni menu."
+    },
+    "menu_order_active_items": {
+        "message": "Elementi visibili"
+    },
+    "menu_order_hidden_items": {
+        "message": "Elementi nascosti"
+    },
+    "menu_order_icon_label": {
+        "message": "Scegli un'icona"
+    },
+    "menu_order_icon_none": {
+        "message": "(nessuna)"
     }
 }
