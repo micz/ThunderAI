@@ -1235,7 +1235,7 @@
         "message": "Définissez le nombre de jetons à utiliser pour le raisonnement. Laissez ce champ vide si le modèle sélectionné ne prend pas en charge le raisonnement ou si vous souhaitez utiliser la méthode par défaut. Entrez 0 pour désactiver le raisonnement, ou -1 pour l’activer de manière dynamique."
     },
     "prefs_google_gemini_thinking_budget": {
-        "message": "Thinking Budget"
+        "message": "Budget de réflexion"
     },
     "SelectAll": {
         "message": "Tout sélectionner"
@@ -1736,5 +1736,79 @@
     },
     "menu_order_icon_none": {
         "message": "(aucune)"
+    },
+    "show_in": {
+        "message": "Afficher dans"
+    },
+    "show_in_popup": {
+        "message": "Fenêtre contextuelle uniquement"
+    },
+    "show_in_context": {
+        "message": "Menu contextuel uniquement"
+    },
+    "show_in_both": {
+        "message": "Les deux"
+    },
+    "webchat_save_as_summary": {
+        "message": "Enregistrer comme résumé"
+    },
+    "prefs_storage_title": {
+        "message": "Stockage"
+    },
+    "prefs_storage_info": {
+        "message": "Le stockage est utilisé pour sauvegarder les informations relatives au score de spam, aux résumés et aux traductions de chaque message."
+    },
+    "prefs_storage_size": {
+        "message": "Taille du stockage"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Effacer le stockage"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Êtes-vous sûr de vouloir effacer toutes le données stockées (résumés, rapports de spam, traductions) ? Cette action est irréversible."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ enregistrements supprimés.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Pour utiliser l'API Google Gemini, vous avez besoin d'une clé API Google Gemini et vous devez choisir un modèle."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Pour utiliser l'API Claude, vous avez besoin d'une clé API Anthropic Claude et vous devez choisir un modèle."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Tous les en-têtes du message"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Réduire le bloc de réflexion par défaut"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Contrôle l'état initial du bloc de réflexion affiché au-dessus de la réponse. Si coché, le bloc est réduit par défaut. Le contenu de la réflexion est toujours conservé."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Réflexion"
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "La langue à utiliser pour les traductions des messages."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Les codes de langue à ne pas traduire lorsqu'ils sont détectés."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Liste d'exclusion d'adresses e-mail"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Les e-mails provenant de ces adresses ne seront pas envoyés à l'IA pour le filtrage du spam."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Ajoutez une adresse e-mail par ligne, ou séparez-les par une virgule."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "L'expéditeur figure dans la liste d'exclusion de l'antispam."
     }
 }
