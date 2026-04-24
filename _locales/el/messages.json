@@ -1303,7 +1303,7 @@
         "message": "Σύνοψη προτύπου email"
     },
     "prompt_summarize_email_template_full_text": {
-        "message": "Από: {%author%} \nΠρος: {%recipients%} \nΚοινοποίηση: {%cc_list%} \nΘέμα: {%mail_subject%} \nΗμερομηνία: {%mail_datetime%} \nΣυνημμένα: {%mail_attachments_info%} \nΚύριο κείμενο: \n{%mail_text_body%}"
+        "message": "Από: {%author%} \nΠρος: {%recipients%} \nΚοινοποίηση: {%cc_list%} \nΘέμα: {%mail_subject%} \nΗμερομηνία: {%mail_datetime%} \nΣυνημμένα:\n{%mail_attachments_info%} \n\nΚύριο κείμενο: \n{%mail_text_body%}"
     },
     "prompt_summarize_email_separator": {
         "message": "Διαχωριστής email"
