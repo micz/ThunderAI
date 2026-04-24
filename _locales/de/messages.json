@@ -529,7 +529,7 @@
         "message": "Wenn aktiviert, wird ein Element im Menü hinzugefügt, um Tags auf E-Mails anzuwenden."
     },
     "prompt_add_tags": {
-        "message": "Tags zu dieser E-Mail hinzufügen"
+        "message": "Tags hinzufügen"
     },
     "prompt_add_tags_full_text": {
         "message": "Analysiere den folgenden E-Mail-Text und erstelle ein JSON-Array mit Tags, die den Inhalt zusammenfassen. Verwende Themen, zentrale Schlagwörter und relevante Beschreibungen als Tags. Achte darauf, dass die Tags prägnant und inhaltlich relevant sind.\nE-Mail-Text: {%mail_text_body%}\nBerücksichtigen Sie die folgenden Details als Kontext:\n- Absender: {%author%}\n- Empfänger: {%recipients%}\n- CC-Liste: {%cc_list%}\n- E-Mail-Betreff: {%mail_subject%}\nErstelle die Tags auf Grundlage des E-Mail-Inhalts und Kontexts. Ignoriere unnötige Informationen oder unwichtige Details.\nGib die Antwort ausschließlich im JSON-Format aus. Die Ausgabe darf nur ein JSON-Array mit Tags enthalten – ohne weiteren Kommentar oder Text. Hier ein Beispiel für das zu verwendende JSON-Format:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -754,7 +754,7 @@
         "message": "Aktueller Aufforderungstext"
     },
     "prompt_spamfilter": {
-        "message": "Spam-E-Mails erkennen"
+        "message": "Auf Spam prüfen"
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Spam-Filter-Optionen"
@@ -808,7 +808,7 @@
         "message": "Vorhandene Tags erzwingen"
     },
     "spamfilter_no_reports": {
-        "message": "Es wurden noch keine Nachrichten auf Spam überprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte nur für die aktuelle Sitzung."
+        "message": "Es wurden noch keine Nachrichten auf Spam geprüft. Hier finden Sie eine Liste der letzten 100 Spam-Berichte."
     },
     "prefs_OptionText_spamfilter_Info": {
         "message": "Wenn ausgewählt, wird ThunderAI Spam-E-Mails automatisch in den Spam-Ordner verschieben."
@@ -979,7 +979,7 @@
         "message": "Jede Änderung wird sofort gespeichert."
     },
     "AccountSelector_Spamfilter": {
-        "message": "Wähle die Konten aus, bei denen der Spamfilter aktiviert ist"
+        "message": "Wähle die Konten aus, bei denen der automatische Spamfilter aktiviert ist"
     },
     "prompt_proofread_this": {
         "message": "Korrigiere diese E-Mail"
@@ -1316,10 +1316,10 @@
         "message": "Zusammenfassungseinstellungen"
     },
     "prompt_summarize": {
-        "message": "Diese E-Mail o. E-Mails zusammenfassen"
+        "message": "Zusammenfassen"
     },
     "prompt_summarize_full_text": {
-        "message": "Du bist ein Assistent, der E-Mail-Konversationen zusammenfasst.\n\nErstelle aus einem E-Mail-Verlauf eine prägnante und präzise Zusammenfassung, die Folgendes enthält:\n\n- Das Hauptthema oder den Zweck der Konversation\n- Wichtige Entscheidungen, Schlussfolgerungen oder Vereinbarungen\n- Wichtige Fragen, Anfragen oder Aufgaben (Action Items)\n- Die verantwortliche Person für jede Aufgabe (falls angegeben)\n\nLasse Begrüßungen, Signaturen, zitierten Text und redundantes Hin- und Her weg.\nFüge keine Annahmen oder Informationen hinzu, die nicht in den E-Mails enthalten sind.\n\nVerfasse die Zusammenfassung in einer klaren, neutralen Sprache, die für vielbeschäftigte Fachkräfte geeignet ist."
+        "message": "Geben Sie eine prägnante Zusammenfassung der folgenden E-Mail-Nachricht(en) an. Die Zusammenfassung sollte maximal 3 bis 5 Sätze umfassen und die wesentlichen Punkte enthalten. Schreiben Sie in einfachen Absätzen ohne Aufzählungszeichen, Listen oder Markdown-Formatierung.\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Vorlage für E-Mail-Zusammenfassung"
@@ -1446,5 +1446,369 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Leer lassen, um die Standardposition zu verwenden."
+    },
+    "show_in": {
+        "message": "Anzeigen in"
+    },
+    "show_in_popup": {
+        "message": "Nur Popup"
+    },
+    "show_in_context": {
+        "message": "Nur Kontextmenü"
+    },
+    "show_in_both": {
+        "message": "Beide"
+    },
+    "webchat_save_as_summary": {
+        "message": "Als Zusammenfassung speichern"
+    },
+    "prefs_storage_title": {
+        "message": "Speicher"
+    },
+    "prefs_storage_info": {
+        "message": "Der Speicher wird verwendet, um Informationen über Spam-Scores, Zusammenfassungen und Übersetzungen jeder Nachricht zu speichern."
+    },
+    "prefs_storage_size": {
+        "message": "Speichergröße"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Speicher leeren"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Sind Sie sicher, dass Sie alle gespeicherten Daten (Zusammenfassungen, Spam-Berichte, Übersetzungen) löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ Datensätze entfernt.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Um die Google Gemini API zu nutzen, benötigen Sie einen Google Gemini API-Key und müssen ein Modell auswählen."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Um die Claude API zu nutzen, benötigen Sie einen Anthropic Claude API-Key und müssen ein Modell auswählen."
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Alle E-Mail-Header"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Denk-Block standardmäßig einklappen"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Steuert den Anfangszustand des Denk-Blocks, der über der Antwort angezeigt wird. Wenn aktiviert, ist der Block standardmäßig eingeklappt und kann per Klick geöffnet werden. Wenn deaktiviert, ist der Block standardmäßig geöffnet und kann per Klick eingeklappt werden. Der Inhalt des Denk-Prozesses bleibt dabei stets erhalten."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Denkt nach"
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "Die Sprache, die für E-Mail-Übersetzungen verwendet werden soll."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Sprachcodes, die nicht übersetzt werden sollen."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Ausschlussliste für E-Mail-Adressen"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "E-Mails von diesen Adressen werden nicht zur Spam-Filterung an die KI gesendet."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Geben Sie eine E-Mail-Adresse pro Zeile ein oder trennen Sie diese durch Kommas."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Der Absender befindet sich auf der Antispam-Ausschlussliste."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Adressbuch-Kontakte überspringen"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Wenn aktiviert, werden E-Mails von Absendern in Ihren Adressbüchern nicht zur Spam-Prüfung an die KI gesendet."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Der Absender ist ein Kontakt im Adressbuch."
+    },
+    "addressbook_permission_denied": {
+        "message": "Der Zugriff auf das Adressbuch wurde verweigert. Bitte aktivieren Sie die Funktion erneut, um die Berechtigung zu erteilen."
+    },
+    "addressbook_permission_error": {
+        "message": "Fehler beim Anfordern der Adressbuch-Berechtigung. Bitte versuchen Sie es erneut."
+    },
+    "apiwebchat_done": {
+        "message": "Fertig!"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Budget für erweitertes Denken (Tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Maximale Anzahl an Tokens, die das Modell für erweitertes Denken (Extended Thinking) verwenden darf. Auf 0 setzen, um das erweiterte Denken zu deaktivieren. Wenn diese Funktion aktiviert ist, wird der Temperature-Wert von der Claude-API ignoriert."
+    },
+    "prefs_ollama_format_json": {
+        "message": "JSON-Ausgabe erzwingen"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Wenn aktiviert, wird Ollama gezwungen, eine gültige JSON-Antwort zurückzugeben (nur für unterstützte Modelle)."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Verwendet $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Automatische KI-Zusammenfassung für Nachrichtenvorschauen aktivieren"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Falls aktiviert, erstellt und zeigt ThunderAI automatisch KI-Zusammenfassungen oberhalb von E-Mails an, sobald diese geöffnet werden. Beachten Sie, dass hierbei alle von Ihnen aufgerufenen Nachrichten sofort an den konfigurierten KI-Dienst gesendet werden."
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI Zusammenfassung"
+    },
+    "auto_summary_generating": {
+        "message": "KI-Zusammenfassung wird generiert..."
+    },
+    "auto_summary_failed": {
+        "message": "KI-Zusammenfassung konnte nicht generiert werden. Bitte Einstellungen prüfen."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Nachrichten automatisch zusammenfassen"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Wählen Sie aus, ob beim Anzeigen von Nachrichten automatisch Zusammenfassungen erstellt werden sollen. Erfordert eine API-basierte Verbindung (kein ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Zusammenfassung anzeigen in"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Wählen Sie aus, wo das Ergebnis der Zusammenfassung angezeigt werden soll. Der Inline-Modus zeigt ein Zusammenfassungs-Banner direkt im Nachrichtenbereich an. Der Chat-Fenster-Modus öffnet das KI-Chat-Fenster."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Maximale Anzeigelänge"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Maximale Anzahl der Zeichen in der Inline-Zusammenfassung. 0 für kein Limit."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Formatierung entfernen"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Entfernt HTML und Markdown aus der Zusammenfassung, um nur reinen Text anzuzeigen."
+    },
+    "summarize_see_more": {
+        "message": "Mehr sehen"
+    },
+    "summarize_see_less": {
+        "message": "Weniger sehen"
+    },
+    "summarize_title": {
+        "message": "ThunderAI Überblick"
+    },
+    "get_ai_summary": {
+        "message": "KI-Zusammenfassung"
+    },
+    "summarize_collapse": {
+        "message": "Zusammenfassung einklappen"
+    },
+    "summarize_generating": {
+        "message": "Zusammenfassung wird generiert..."
+    },
+    "summarize_error": {
+        "message": "Zusammenfassung konnte nicht erstellt werden"
+    },
+    "summarize_click_to_generate": {
+        "message": "Klicken Sie hier, um eine Zusammenfassung zu erstellen"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Die automatische Zusammenfassung erfordert eine API-basierte Verbindung. Bitte konfigurieren Sie eine API-Verbindung in den ThunderAI-Einstellungen."
+    },
+    "summarize_refresh": {
+        "message": "Zusammenfassung aktualisieren"
+    },
+    "spamfilter_refresh": {
+        "message": "Spam-Bericht aktualisieren"
+    },
+    "spamfilter_delete": {
+        "message": "Spam-Bericht löschen"
+    },
+    "summarize_delete": {
+        "message": "Zusammenfassung löschen"
+    },
+    "generic_error_dismiss": {
+        "message": "Verwerfen"
+    },
+    "prefs_OptionText_translate": {
+        "message": "E-Mail übersetzen"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Wenn aktiviert, werden das unten angegebene Modell und die API für Übersetzungen verwendet."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Wenn aktiviert, wird eine Schaltfläche zum Übersetzen im Nachrichtentext hinzugefügt."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Übersetzungseinstellungen verwalten"
+    },
+    "Translate_PageTitle": {
+        "message": "Übersetzungseinstellungen verwalten"
+    },
+    "Translate_info_default": {
+        "message": "Auf dieser Seite können Sie den Standard-Prompt für Übersetzungen bearbeiten."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Aktueller Prompt-Text"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Übersetzungsoptionen"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Nachrichten automatisch übersetzen"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Deaktiviert"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Nur manuelle Schaltfläche"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Wenn die E-Mail geöffnet wird"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Wählen Sie aus, wann Nachrichten übersetzt werden sollen: deaktiviert, nur beim Klicken auf die Schaltfläche oder automatisch beim Öffnen einer Nachricht."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Nachrichtenbereich (inline)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Chat-Fenster"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Maximale Länge der Anzeige"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Maximale Anzahl der Zeichen, die in der Inline-Übersetzung angezeigt werden. 0 = kein Limit. Wenn festgelegt, wird längerer Text gekürzt und mit einer „Mehr anzeigen“-Schaltfläche versehen."
+    },
+    "translate_see_more": {
+        "message": "Mehr sehen"
+    },
+    "translate_see_less": {
+        "message": "Weniger sehen"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Zielsprache für Übersetzungen"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Sprache, in die E-Mails übersetzt werden sollen. Wenn das Feld leer ist, wird die Standardspracheinstellung verwendet."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Sprachen ausschließen"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Kommagetrennte Liste von Sprachkürzeln (z. B. en, fr, it), die von der automatischen Übersetzung ausgeschlossen werden sollen. Falls eine E-Mail in einer dieser Sprachen verfasst ist, wird sie nicht automatisch übersetzt bzw. die Schaltfläche für die manuelle Übersetzung wird nicht angezeigt."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Der Prompt für die Übersetzungsaufgabe:"
+    },
+    "translate_generating": {
+        "message": "Wird übersetzt..."
+    },
+    "translate_click_to_generate": {
+        "message": "Hier klicken, um diese E-Mail zu übersetzen"
+    },
+    "get_ai_translation": {
+        "message": "KI-Übersetzung"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Die automatische Übersetzung erfordert eine API-basierte Verbindung. Bitte konfigurieren Sie eine API-Verbindung in den ThunderAI-Einstellungen."
+    },
+    "translate_refresh": {
+        "message": "Übersetzung aktualisieren"
+    },
+    "translate_delete": {
+        "message": "Übersetzung löschen"
+    },
+    "translate_banner_title": {
+        "message": "KI-Übersetzung"
+    },
+    "translate_error": {
+        "message": "Übersetzung fehlgeschlagen."
+    },
+    "translate_no_language_configured": {
+        "message": "Die Übersetzungssprache ist nicht konfiguriert. Bitte legen Sie eine Sprache in den Übersetzungseinstellungen fest oder definieren Sie eine Standardsprache in den allgemeinen Einstellungen."
+    },
+    "translate_skipped": {
+        "message": "Übersetzung übersprungen: Sprache ausgeschlossen oder identisch."
+    },
+    "spam_badge_tooltip": {
+        "message": "Spam-Score — Klicken für Details"
+    },
+    "summary_by": {
+        "message": "Zusammenfassung von"
+    },
+    "translate_by": {
+        "message": "Übersetzung von"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Wenn die E-Mail empfangen wird"
+    },
+    "placeholder_string": {
+        "message": "Platzhalter"
+    },
+    "menu_order_title": {
+        "message": "Menü-Reihenfolge"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Popup-Menü"
+    },
+    "menu_order_context_list_title": {
+        "message": "Kontextmenü"
+    },
+    "menu_order_saved": {
+        "message": "Menü-Reihenfolge gespeichert!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Lesen"
+    },
+    "menu_order_tab_composing": {
+        "message": "Verfassen"
+    },
+    "menu_order_badge_default": {
+        "message": "Standard"
+    },
+    "menu_order_badge_special": {
+        "message": "Spezial"
+    },
+    "menu_order_badge_custom": {
+        "message": "Benutzerdefiniert"
+    },
+    "menu_order_type_reading": {
+        "message": "Lesen"
+    },
+    "menu_order_type_composing": {
+        "message": "Verfassen"
+    },
+    "menu_order_type_always": {
+        "message": "Immer"
+    },
+    "menu_order_btn_label": {
+        "message": "Menü-Reihenfolge verwalten"
+    },
+    "menu_order_info": {
+        "message": "Elemente per Drag-and-Drop neu anordnen oder über den Umschalter ein-/ausblenden."
+    },
+    "menu_order_active_items": {
+        "message": "Sichtbare Elemente"
+    },
+    "menu_order_hidden_items": {
+        "message": "Versteckte Elemente"
+    },
+    "menu_order_icon_label": {
+        "message": "Icon wählen"
+    },
+    "menu_order_icon_none": {
+        "message": "(keines)"
     }
 }
