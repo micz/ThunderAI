@@ -1319,7 +1319,7 @@
         "message": "Résumer cet e-mail ou ces e-mails"
     },
     "prompt_summarize_full_text": {
-        "message": "Vous êtes un assistant qui résume les conversations par e-mail.\n\nÀ partir d'un fil de discussion, produisez un résumé concis et précis qui capture :\n\n- Le sujet principal ou l'objet de la conversation.\n- Les décisions clés, conclusions ou accords.\n- Les questions importantes, requêtes ou points à traiter.\n- Le responsable de chaque action à entreprendre (si précisé).\n\nOmettez les salutations, les signatures, le texte cité et les échanges redondants.\nN'ajoutez pas d'hypothèses ou d'informations non présentes dans les e-mails.\n\nRédigez le résumé dans un langage clair et neutre, adapté à un professionnel occupé.\n\n"
+        "message": "Fournissez un résumé concis du ou des messages électroniques suivants. Le résumé doit comporter un maximum de 3 à 5 phrases et capturer les points principaux. Rédigez en paragraphes simples, sans listes à puces, énumérations ou formatage markdown.\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Résumé du modèle d'e-mail"
@@ -1633,7 +1633,7 @@
         "message": "Exclure des langues"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Liste de codes de langue séparés par des virgules (ex: en, fr, it) à ignorer pour la traduction automatique. Si l'e-mail est dans l'une de ces langues, il ne sera pas traduit automatiquement ou le bouton manuel ne sera pas affiché."
+        "message": "Liste de codes de langue séparés par des virgules (ex : en, fr, it) à ignorer pour la traduction automatique. Si l'e-mail est dans l'une de ces langues, il ne sera pas traduit automatiquement ou le bouton manuel ne sera pas affiché."
     },
     "prefs_OptionText_Translate_main_prompt": {
         "message": "Prompt décrivant la tâche de traduction :"
