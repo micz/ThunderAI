@@ -923,7 +923,7 @@ switch (message.command) {
 
       // Loading badge in toolbar
       const badge = document.createElement('div');
-      badge.style.cssText = `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;`;
+      badge.style.cssText = `background-color: ${colors.spamLoading.bg}; color: ${colors.spamLoading.text}; border: 1px solid ${colors.spamLoading.border}; border-radius: 4px; padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-right: auto;`;
       const badgeLoading = document.createElement('img');
       badgeLoading.src = browser.runtime.getURL("/images/loading.gif");
       badgeLoading.style.cssText = "height: 14px; width: 14px;";
