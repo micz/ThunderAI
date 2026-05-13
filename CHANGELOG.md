@@ -21,6 +21,24 @@
         <li><i>[All APIs]</i> In the API webchat the status messages have different colors [<a href="https://github.com/micz/ThunderAI/issues/3">#3</a>].</li>
         <li>Account exclusion lists for add tags and antispam are enforced only for automatic analysis of incoming emails and not for the context menu action that is always executed [<a href="https://github.com/micz/ThunderAI/issues/749">#749</a>].</li>
       </ul>
+<h2>Version 4.0.7 - 17/04/2026</h2>
+      <ul>
+        <li>Fix: Correctly parsing the body of HTML base64 encoded mails [<a href="https://github.com/micz/ThunderAI/issues/757">#757</a>].</li>
+      </ul>
+<h2>Version 4.0.6 - 01/04/2026</h2>
+      <ul>
+        <li>Fix: Now it's possibile to create a tag also with accented characters in the label [<a href="https://github.com/micz/ThunderAI/issues/738">#738</a>].</li>
+      </ul>
+<h2>Version 4.0.5 - 27/03/2026</h2>
+      <ul>
+        <li>Fix: HTML part of the mail body used in prompt is displayed as HTML code and it is not rendered. This a display fix, there is no change on how the prompt is sent to the AI [<a href="https://github.com/micz/ThunderAI/issues/711">#711</a>].</li>
+        <li>Fix: HTML elements added by ThunderAI (like the antispam banner) are now not present in HTML or text data placeholders [<a href="https://github.com/micz/ThunderAI/issues/710">#710</a>].</li>
+        <li><i>[All APIs]</i> The API webchat window now has a dynamic title [<a href="https://github.com/micz/ThunderAI/issues/696">#696</a>]</li>
+      </ul>
+<h2>Version 4.0.4 - 26/03/2026</h2>
+      <ul>
+        <li>Fix: Correctly showing the selected model in the special prompt pages.</li>
+      </ul>
 <h2>Version 4.0.3 - 20/03/2026</h2>
       <ul>
         <li>Fixed a bug in creating new tags [<a href="https://github.com/micz/ThunderAI/issues/698">#698</a>].</li>

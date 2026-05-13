@@ -2,7 +2,7 @@ name: pre-release comment issues
 
 on:
   release:
-    types: [published, edited]
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}
