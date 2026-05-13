@@ -24,7 +24,8 @@ export class Ollama {
     num_ctx = 0;
     temperature = '';
     think = false;
-  
+    format_json = false;
+
     constructor({
       host = '',
       model = '',
@@ -32,6 +33,7 @@ export class Ollama {
       num_ctx = 0,
       temperature = '',
       think = false,
+      format_json = false,
     } = {}) {
       this.host = (host || '').trim().replace(/\/+$/, "");
       this.model = model;
@@ -39,6 +41,7 @@ export class Ollama {
       this.num_ctx = num_ctx;
       this.temperature = temperature;
       this.think = think;
+      this.format_json = format_json;
     }
 
     fetchModels = async () => {
@@ -93,6 +96,7 @@ export class Ollama {
                 messages: messages,
                 stream: this.stream,
                 think: this.think,
+                ...(this.format_json ? { format: "json" } : {}),
                 ...(this.num_ctx > 0 ? { options: { num_ctx: parseInt(this.num_ctx) } } : {}),
                 ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { options: { temperature: tempFloat } } : {}),
             }),

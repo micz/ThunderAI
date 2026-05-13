@@ -16,18 +16,23 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, getDynamicSettingsDefaults } from './mzta-options-default.js';
+import {
+  prefs_default,
+  getDynamicSettingsDefaults,
+  getDynamicSettingValue,
+  special_prompts_with_integration
+} from './mzta-options-default.js';
 import { taLogger } from '../js/mzta-logger.js';
 import {
-  ChatGPTWeb_models,
   checkSparksPresence,
   openTab,
-  getChatGPTWebModelsList_HTML,
   isAPIKeyValue,
   getConnectionType,
   setTomSelectBorder,
-  getMiczItUrl
+  getMiczItUrl,
+  getCacheStorageUsedSpace
 } from '../js/mzta-utils.js';
+import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
   varConnectionUI,
@@ -121,6 +126,51 @@ async function restoreOptions() {
   setCurrentChoice(getting);
 }
 
+function getConnectionTypeLabel(value) {
+  const select = document.getElementById('connection_type');
+  if (select) {
+    const option = select.querySelector(`option[value="${value}"]`);
+    if (option) return option.textContent;
+  }
+  return value;
+}
+
+function getConnectionTypeColor(value) {
+  const row = document.querySelector(`tr.conntype_${value}`);
+  if (row) return getComputedStyle(row).backgroundColor;
+  return '';
+}
+
+function getContrastTextColor(bgColor) {
+  const match = bgColor.match(/\d+/g);
+  if (!match || match.length < 3) return '';
+  const [r, g, b] = match.map(Number);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#222' : '#eee';
+}
+
+function updateSpecificApiIndicators(prefs_opt) {
+  for (const prefix of special_prompts_with_integration) {
+    const indicator = document.getElementById(`${prefix}_specific_api_indicator`);
+    if (!indicator) continue;
+    const useSpecific = getDynamicSettingValue(prefs_opt, prefix, 'use_specific_integration');
+    if (useSpecific) {
+      const connType = getDynamicSettingValue(prefs_opt, prefix, 'connection_type');
+      const apiName = getConnectionTypeLabel(connType);
+      const bgColor = getConnectionTypeColor(connType);
+      indicator.textContent = browser.i18n.getMessage('prefs_specific_api_indicator', [apiName]);
+      indicator.style.backgroundColor = bgColor;
+      indicator.style.color = getContrastTextColor(bgColor);
+      indicator.style.display = 'inline-block';
+    } else {
+      indicator.textContent = '';
+      indicator.style.backgroundColor = '';
+      indicator.style.color = '';
+      indicator.style.display = 'none';
+    }
+  }
+}
+
 function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
@@ -193,6 +243,27 @@ function disable_Summarize(prefs_opt){
   }
 }
 
+function disable_Translate(prefs_opt){
+  let translate = document.getElementById('translate');
+  let conntype_select = document.getElementById("connection_type");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let translate_disabled = (getConnectionType(tempPrefs, null, 'translate') === "chatgpt_web");
+  let translate_checked_original = translate.checked;
+  translate.checked = translate_disabled ? false : translate.checked;
+  if(!translate.checked){
+    let translate_info_btn = document.getElementById('btnManageTranslateInfo');
+    translate_info_btn.disabled = 'disabled';
+  }
+  let translate_warn_API_needed = document.getElementById('translate_warn_API_needed');
+  translate_warn_API_needed.style.display = (translate_disabled) ? 'inline-block' : 'none';
+  if(translate_checked_original != translate.checked){
+    browser.storage.sync.set({translate: translate.checked});
+  }
+}
+
 async function disable_GetCalendarEvent(){
   let get_calendar_event = document.getElementById('get_calendar_event');
   let get_task = document.getElementById('get_task');
@@ -216,10 +287,27 @@ async function disable_GetCalendarEvent(){
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
 
+function updateDescription(){
+  let conntype_select = document.getElementById("connection_type");
+  let conntype = conntype_select.value;
+  let desc = document.getElementById("miczDescription");
+  const types = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+  for(let t of types){
+    desc.querySelectorAll(".conntype_" + t).forEach(el => {
+      el.style.display = (conntype === t) ? "" : "none";
+    });
+  }
+}
+
 function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
   browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
+}
+
+async function updateCacheSize() {
+  let size = await getCacheStorageUsedSpace();
+  document.getElementById('cache_storage_size').textContent = size;
 }  
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -293,6 +381,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   summarize_info_btn.disabled = summarize_el.checked ? '' : 'disabled';
 
+  let translate_el = document.getElementById('translate');
+  let translate_info_btn = document.getElementById('btnManageTranslateInfo');
+  translate_el.addEventListener('click', (event) => {
+    translate_info_btn.disabled = event.target.checked ? '' : 'disabled';
+  });
+  translate_info_btn.disabled = translate_el.checked ? '' : 'disabled';
+
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
@@ -315,6 +410,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/customdataplaceholders/mzta-custom-dataplaceholders.html');
   });
 
+  document.getElementById('btnMenuOrder').addEventListener('click', () => {
+    openTab('/pages/menu_order/mzta-menu-order.html');
+  });
+
   document.getElementById('btnManageTagsInfo').addEventListener('click', () => {
     openTab('/pages/addtags/mzta-add-tags.html');
   });
@@ -327,6 +426,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/summarize/mzta-summarize.html');
   });
 
+  document.getElementById('btnManageTranslateInfo').addEventListener('click', () => {
+    openTab('/pages/translate/mzta-translate.html');
+  });
+
   document.getElementById('btnManageCalendarEventInfo').addEventListener('click', () => {
     openTab('/pages/get-calendar-event/mzta-get-calendar-event.html');
   });
@@ -335,7 +438,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     openTab('/pages/get-task/mzta-get-task.html');
   });
 
-  getChatGPTWebModelsList_HTML(ChatGPTWeb_models, 'chatgpt_web_models_list');
   document.querySelectorAll(".conntype_chatgpt_web_option").forEach(element => {
     element.addEventListener("click", () => {
       let el = document.getElementById("chatgpt_web_model");
@@ -353,19 +455,49 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_AddTags(prefs_opt));
   conntype_select.addEventListener("change", () => disable_SpamFilter(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
+  conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
-  
+  conntype_select.addEventListener("change", updateDescription);
+
   showConnectionOptions(conntype_select);
+  updateDescription();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
   disable_Summarize(prefs_opt);
+  disable_Translate(prefs_opt);
   disable_GetCalendarEvent();
+  updateSpecificApiIndicators(prefs_opt);
+
+  browser.storage.onChanged.addListener(async (changes, area) => {
+    if (area !== 'sync') return;
+    const hasRelevantChange = Object.keys(changes).some(key =>
+      key.endsWith('_use_specific_integration') || key.endsWith('_connection_type')
+    );
+    if (hasRelevantChange) {
+      prefs_opt = await browser.storage.sync.get({
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+      });
+      updateSpecificApiIndicators(prefs_opt);
+    }
+  });
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+  });
+
+  // Cache management
+  updateCacheSize();
+
+  document.getElementById('btnClearCache').addEventListener('click', async () => {
+    if (!confirm(browser.i18n.getMessage("prefs_storage_clear_confirm"))) {
+      return;
+    }
+    let count = await taStorage.clearAllRecords();
+    alert(browser.i18n.getMessage("prefs_storage_clear_done", [String(count)]));
+    updateCacheSize();
   });
 
   browser.runtime.getPlatformInfo().then(info => {

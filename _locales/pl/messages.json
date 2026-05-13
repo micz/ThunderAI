@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Klasyfikuj"
     },
-    "prompt_summarize_this": {
-        "message": "Podsumuj to"
-    },
     "prompt_translate_this": {
         "message": "Przetłumacz to"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Jeśli zaznaczone, użycie skrótu klawiszowego CTRL+ALT+A automatycznie wyśle zaznaczone polecenie z menu. W przeciwnym razie nazwa polecenia zostanie wyświetlona użytkownikowi, wymagając kolejnego naciśnięcia klawisza Enter, aby je wysłać."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Menu: sortuj alfabetycznie"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Jeśli zaznaczone, polecenia w menu będą uporządkowane alfabetycznie."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Ustaw na 0, jeśli nie chcesz określać rozmiaru okna."
     },
@@ -486,9 +477,6 @@
     "chatgpt_btn_model": {
         "message": "Użyj bieżącego modelu"
     },
-    "SendingPrompt": {
-        "message": "Wysyłanie polecenia..."
-    },
     "AllowedValues": {
         "message": "Dozwolone wartości"
     },
@@ -503,9 +491,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Wygląda na to, że przynajmniej jedno z Twoich kont używa dodatku Owl for Exchange. Istnieje znany problem między Thunderbirdem a Owl, który jest obecnie rozwiązywany. Na ten moment możesz używać ThunderAI podczas pisania e-maili, ale nie podczas ich czytania."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Kliknij na wartość, aby ją ustawić."
     },
     "prompt_reply_full_text": {
         "message": "Odpowiedz na poniższy e-mail. Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu."
@@ -531,11 +516,8 @@
     "prompt_classify_full_text": {
         "message": "Sklasyfikuj poniższy tekst pod względem uprzejmości, serdeczności, formalności, stanowczości, obraźliwości, podając procent dla każdej kategorii. Odpowiedz wyłącznie kategorią i wynikiem, bez dodatkowych komentarzy ani innego tekstu."
     },
-    "prompt_summarize_this_full_text": {
-        "message": "Podsumuj poniższy e-mail w formie listy punktowanej."
-    },
     "prompt_translate_this_full_text": {
-        "message": "Przetłumacz poniższy e-mail na"
+        "message": "Przetłumacz poniższą wiadomość e-mail na język {%thunderai_translate_lang%}.\n\nZasady:\n- Przetłumacz zarówno temat, jak i treść wiadomości.\n- Zwróć wynik jako obiekt JSON z trzema polami: \"subject\", \"body\" i \"status\".\n- Jeśli tłumaczenie zostało wykonane, status wynosi 1.\n- Jeśli wiadomość e-mail jest napisana w jednym z tych języków \"{%thunderai_translate_exclude_lang%}\" lub w języku {%thunderai_translate_lang%}, zwróć pusty ciąg znaków dla treści i tematu oraz ustaw status na -1.\n- Nie dodawaj wyjaśnień, notatek ani żadnego tekstu poza formatem JSON.\n\nTemat wiadomości: {%mail_subject%}\n\nTreść wiadomości: {%mail_html_body%}\n\nWygeneruj odpowiedź wyłącznie w formacie JSON. Wynikiem powinien być tylko obiekt JSON. Oto przykład formatu JSON, którego należy użyć:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu."
@@ -688,7 +670,7 @@
         "message": "Dodaj nowe wydarzenie w kalendarzu"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Wyodrębnij wszystkie istotne szczegóły wymagane do wygenerowania wydarzenia w kalendarzu z poniższego tekstu. Wyodrębnione informacje powinny obejmować:\n- Tytuł wydarzenia\n- Datę i godzinę rozpoczęcia (w tym strefę czasową, jeśli została określona)\n- Datę i godzinę zakończenia (w tym strefę czasową, jeśli została określona)\n- Cały dzień (jeśli jest podany)\n- Uczestnicy\nUpewnij się, że dane są sformatowane w sposób jasny i spójny, tak aby można go bezpośrednio wykorzystać do utworzenia wydarzenia w kalendarzu.\nJeśli istnieją odniesienia do czasu względnego, pamiętaj, że data i godzina wysłania wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz ponownie datę i godzinę rozpoczęcia, stosując jako podstawę „{%current_datetime%}”.\nJeśli czas trwania nie jest określony, ustaw go na jedną godzinę.\nOto uczestnicy: {%author%}, {%recipients%}, {%cc_list%}. Jeśli jest obecny, wyklucz mój adres: {%account_email_address%}.\nJeśli nie możesz uzyskać co najmniej jednej z wymaganych informacji, w odpowiedzi wpisz pusty ciąg znaków.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, którego należy użyć:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Tutaj podsumowanie wydarzenia w kalendarzu\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOto tekst:\"{%mail_text_body_or_selected%}\""
+        "message": "Wyodrębnij wszystkie istotne szczegóły wymagane do wygenerowania wydarzenia w kalendarzu z poniższego tekstu. Wyodrębnione informacje powinny obejmować:\n- Tytuł wydarzenia\n- Datę i godzinę rozpoczęcia (w tym strefę czasową, jeśli została określona)\n- Datę i godzinę zakończenia (w tym strefę czasową, jeśli została określona)\n- Cały dzień (jeśli jest podany)\n- Uczestnicy\nUpewnij się, że dane są sformatowane w sposób jasny i spójny, tak aby można go bezpośrednio wykorzystać do utworzenia wydarzenia w kalendarzu.\nJeśli istnieją odniesienia do czasu względnego, pamiętaj, że data i godzina wysłania wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz ponownie datę i godzinę rozpoczęcia, stosując jako podstawę „{%current_datetime%}”.\nJeśli wydarzenie jest całodniowe, data zakończenia (endDate) musi przypadać na dzień po dacie rozpoczęcia (startDate), a godzina musi być ustawiona na \"T000000\".\nJeśli czas trwania nie jest określony, ustaw go na jedną godzinę.\nOto uczestnicy: {%author%}, {%recipients%}, {%cc_list%}. Jeśli jest obecny, wyklucz mój adres: {%account_email_address%}.\nJeśli nie możesz uzyskać co najmniej jednej z wymaganych informacji, w odpowiedzi wpisz pusty ciąg znaków.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, którego należy użyć:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Tutaj podsumowanie wydarzenia w kalendarzu\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOto tekst:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Dodaj nowe wydarzenie w kalendarzu z zaznaczonego tekstu"
@@ -756,7 +738,7 @@
     "Spam_Value": {
         "message": "Wartość spamu"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Domyślny język zgodnie z opcjami ThunderAI."
     },
     "prompt_spamfilter": {
@@ -829,7 +811,7 @@
         "message": "Zarządzaj ustawieniami filtra spamu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Przeanalizuj poniższy e-mail i określ, czy jest to spam, czy nie. Weź pod uwagę takie czynniki jak podejrzane słowa kluczowe, nadmierny język promocyjny, wprowadzające w błąd tematy, prośby o podanie danych osobowych i nietypowe adresy nadawców.\nPodaj wartość od 0 (nie spam) do 100 (spam) oraz wyjaśnienie nie dłuższe niż 10 słów.\nW przypadku braku danych wiadomości ustaw wartość na 0 (nie spam) i podaj powód.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dodawaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, który należy użyć:\n{\n\"spamValue\": <liczba całkowita od 0 do 100>,\n\"explanation\": \"Krótkie wyjaśnienie twojego rozumowania\"\n}\nOto informacje o e-mailu:\nNadawca: \"{%author%}\"\nTemat: \"{%mail_subject%}\"\nTreść HTML: \"{%mail_html_body%}\""
+        "message": "Przeanalizuj poniższy e-mail i określ, czy jest to spam, czy nie. Weź pod uwagę takie czynniki jak podejrzane słowa kluczowe, nadmierny język promocyjny, wprowadzające w błąd tematy, prośby o podanie danych osobowych i nietypowe adresy nadawców.\nPodaj wartość od 0 (nie spam) do 100 (spam) oraz wyjaśnienie nie dłuższe niż 10 słów.\nW przypadku braku danych wiadomości ustaw wartość na 0 (nie spam) i podaj powód.\nWygeneruj odpowiedź tylko w formacie JSON. Nie dodawaj żadnego dodatkowego tekstu ani wyjaśnień; podaj tylko JSON. Oto format, który należy użyć:\n{\n\"explanation\": \"Krótkie wyjaśnienie twojego rozumowania\",\n\"spamValue\": <liczba całkowita od 0 do 100>\n}\nOto informacje o e-mailu:\nNadawca: \"{%author%}\"\nTemat: \"{%mail_subject%}\"\nTreść HTML: \"{%mail_html_body%}\""
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "Jeśli wartość zwrócona przez AI przekroczy ten próg, e-mail zostanie przeniesiony do folderu spamu."
@@ -839,9 +821,6 @@
     },
     "spamfilter_no_reports": {
         "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie tylko dla bieżącej sesji."
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Dodaj tagi"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Widok zmian może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
@@ -872,9 +851,6 @@
     },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Wymuś konkretną strefę czasową"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analizuj pod kątem spamu"
     },
     "placeholder_account_email_address": {
         "message": "Adres email konta"

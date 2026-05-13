@@ -35,9 +35,6 @@
     "prompt_classify": {
         "message": "Clasifica"
     },
-    "prompt_summarize_this": {
-        "message": "Sumarizează"
-    },
     "prompt_translate_this": {
         "message": "Tradu"
     },

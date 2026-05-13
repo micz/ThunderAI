@@ -24,9 +24,6 @@
     "prompt_classify": {
         "message": "Klasificiraj"
     },
-    "prompt_summarize_this": {
-        "message": "Sažmi ovo"
-    },
     "prompt_translate_this": {
         "message": "Prevedi ovo"
     },
@@ -411,12 +408,6 @@
     "prefs_OptionText_dynamic_menu_force_enter_info": {
         "message": "Ako je označeno, korištenje tipkovničkog prečaca CTRL+ALT+A automatski će poslati istaknuti upit iz izbornika. U protivnom će korisniku biti prikazan naziv upita, koji će zahtijevati još jedan pritisak tipke Enter za slanje."
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Izbornik: redoslijed po abecedi"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Ako je označeno, upiti u izborniku bit će poredani abecednim redom."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Postavite na 0 ako ne želite odrediti veličinu prozora."
     },
@@ -486,9 +477,6 @@
     "chatgpt_btn_model": {
         "message": "Koristi trenutni model"
     },
-    "SendingPrompt": {
-        "message": "Slanje upita..."
-    },
     "AllowedValues": {
         "message": "Dopuštene vrijednosti"
     },
@@ -503,9 +491,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Čini se da barem jedan od vaših računa koristi dodatak Owl for Exchange. Postoji poznati problem između Thunderbirda i Owl, koji se trenutno rješava. Trenutačno možete koristiti ThunderAI dok sastavljate e-poruke, ali ne i dok ih čitate."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Pritisnite vrijednost da biste je postavili."
     },
     "prompt_reply_full_text": {
         "message": "Odgovori na sljedeću e-poruku. Odgovorit samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
@@ -531,11 +516,8 @@
     "prompt_classify_full_text": {
         "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta."
     },
-    "prompt_summarize_this_full_text": {
-        "message": "Sažmi sljedeću e-poruku u popis s točkama."
-    },
     "prompt_translate_this_full_text": {
-        "message": "Prevedi sljedeću e-poruku na"
+        "message": "Prevedite donju e-poštu na {%thunderai_translate_lang%}.\n\nPravila:\n- Prevedite i predmet i tijelo e-pošte.\n- Vratite rezultat kao JSON objekt s tri polja: \"subject\", \"body\" i \"status\".\n- Ako je prijevod izvršen, status je jedan 1.\n- Ako je e-pošta napisana na jednom od ovih jezika \"{%thunderai_translate_exclude_lang%}\" ili na jeziku {%thunderai_translate_lang%}, vratite prazan niz za tijelo i predmet i postavite status na -1.\n- Nemojte dodavati objašnjenja, bilješke ili bilo kakav tekst izvan JSON-a.\n\nPredmet e-pošte: {%mail_subject%}\n\nTijelo e-pošte: {%mail_html_body%}\n\nGenerirajte odgovor isključivo u JSON formatu. Izlaz treba biti samo JSON objekt. Evo primjera JSON formata koji treba koristiti:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
@@ -697,7 +679,7 @@
         "message": "Dodaj novi kalendarski događaj"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\n- Sudionici\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nOvo su sudionici: {%author%}, {%recipients%}, {%cc_list%}. Ako je prisutna, isključi moju adresu: {%account_email_address%}.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOvo je tekst:\"{%mail_text_body_or_selected%}\""
+        "message": "Izdvoji sve relevantne detalje potrebne za generiranje kalendarskog događaja iz sljedećeg teksta. Izdvojene informacije trebaju uključivati:\n- Naslov događaja\n- Datum i vrijeme početka (uključujući vremensku zonu, ako je navedeno)\n- Datum i vrijeme završetka (uključujući vremensku zonu, ako je navedeno)\n- Cijeli dan (ako je navedeno)\n- Sudionici\nOsiguraj da su podaci oblikovani jasno i dosljedno kako bi se mogli izravno koristiti za stvaranje kalendarskog događaja.\nAko postoje relativne vremenske napomene, smatraj da su datum i vrijeme e-poruke \"{%mail_datetime%}\". Izračunajte datum i vrijeme početka na temelju ove napomene. Ako su izračunati početni datum i vrijeme raniji od \"{%current_datetime%}\", ponovno izračunaj početni datum i vrijeme koristeći \"{%current_datetime%}\" kao osnovu.\nAko trajanje nije navedeno, postavi ga na jedan sat.\nOvo su sudionici: {%author%}, {%recipients%}, {%cc_list%}. Ako je prisutna, isključi moju adresu: {%account_email_address%}.\nAko je događaj cjelodnevni, **endDate** mora biti jedan dan nakon **startDate** s vremenom postavljenim na **\"T000000\"**.\nAko ne možeš dobiti jednu ili više potrebnih informacija, odgovori praznim nizom.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenja; pruži samo JSON. Ovo je format koji će se koristiti:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Sažetak kalendarskih događaja ovdje\",\n\"forceAllDay\": false\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nOvo je tekst:\"{%mail_text_body_or_selected%}\""
     },
     "prefs_OptionText_get_calendar_event": {
         "message": "Dodaj novi kalendarski događaj iz odabranog teksta"
@@ -759,7 +741,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Zadani potpis kako je određeno u mogućnostima ThunderAI."
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Zadani jezik kako je određeno u mogućnostima ThunderAI."
     },
     "prefs_OptionText_spamfilter": {
@@ -784,7 +766,7 @@
         "message": "Prepoznaj neželjenu poštu"
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nU slučaju nedostatka podataka poruke, postavite vrijednost na 0 (nije spam) i navedite razlog.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"spamValue\": <cijeli broj od 0 do 100>,\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\"\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
+        "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nU slučaju nedostatka podataka poruke, postavite vrijednost na 0 (nije spam) i navedite razlog.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n\"spamValue\": <cijeli broj od 0 do 100>\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Mogućnosti filtera neželjene pošte"

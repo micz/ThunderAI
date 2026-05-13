@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task'];
+export const special_prompts_with_integration = ['add_tags', 'spamfilter', 'summarize', 'get_calendar_event', 'get_task', 'translate'];
 
 export const integration_options_config = {
     chatgpt: {
@@ -31,7 +31,8 @@ export const integration_options_config = {
         model: '',
         num_ctx: 0,
         temperature: '',
-        think: false
+        think: false,
+        format_json: false
     },
     openai_comp: {
         host: '',
@@ -54,7 +55,8 @@ export const integration_options_config = {
         version: '2023-06-01',
         max_tokens: 4096,
         system_prompt: '',
-        temperature: ''
+        temperature: '',
+        extended_thinking_budget: 0
     }
 };
 
@@ -113,8 +115,8 @@ export const prefs_default = {
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
     dynamic_menu_force_enter: false,
-    dynamic_menu_order_alphabet: true,
     placeholders_use_default_value: false,
+    hide_thinking: true,
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
@@ -137,7 +139,18 @@ export const prefs_default = {
     spamfilter: false,
     spamfilter_threshold: 70,
     spamfilter_enabled_accounts: [],
+    spamfilter_skip_addresses: [],
+    spamfilter_skip_addressbook: true,
     spamfilter_show_msg_panel: true,
     summarize: false,
+    summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
+    summarize_display_mode: 'inline',    // 'inline' or 'webchat'
+    summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
+    summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
+    translate: true,
+    translate_auto: 0,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
+    translate_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
+    translate_lang: '',                  // target language, fallback on default_chatgpt_lang
+    translate_exclude_lang: '',          // languages to do not translate
     ...generated_prefs
 }

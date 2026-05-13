@@ -16,6 +16,7 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 4. **Placeholder format:** Placeholders in prompt text use the `{%placeholder_id%}` syntax (e.g., `{%mail_text_body_or_selected%}`).
 5. **No test suite:** There is no automated test framework. Testing is done manually in Thunderbird.
 6. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
+7. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 
 ## Directory Map
 

@@ -1,6 +1,6 @@
 /*
  *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
- *  Copyright (C) 2024 - 2025  Mic (m@micz.it)
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, integration_options_config } from '../../options/mzta-options-default.js';
+import {
+  prefs_default,
+  integration_options_config
+} from '../../options/mzta-options-default.js';
 import { taLogger } from "../../js/mzta-logger.js";
 import {
     getSpecialPrompts,
@@ -28,7 +31,6 @@ import {
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 import {
-  getAccountsList,
   normalizeStringList,
   isAPIKeyValue,
   setTomSelectBorder
@@ -74,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".option-input").forEach(element => {
         element.addEventListener("change", saveOptions);
       });
+    document.getElementById('summarize_auto').addEventListener('change', updateDisplayModeConstraint);
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
@@ -178,6 +181,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Methods to manage options, derived from: /options/mzta-options.js
 
+function updateDisplayModeConstraint() {
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const display_mode_el = document.getElementById('summarize_display_mode');
+  const autoVal = String(summarize_auto_el.value);
+  if (autoVal === '2' || autoVal === '3') {
+    display_mode_el.value = 'inline';
+    display_mode_el.disabled = true;
+    browser.storage.sync.set({ summarize_display_mode: 'inline' });
+  } else if (autoVal === '0') {
+    display_mode_el.disabled = true;
+  } else {
+    display_mode_el.disabled = false;
+  }
+}
+
 function saveOptions(e) {
   e.preventDefault();
   let options = {};
@@ -195,8 +213,11 @@ function saveOptions(e) {
         options[element.id] = element.value.trim();
         break;
       case 'select-one':
-        // console.log(">>>>>>>>>> Saving option [select-one]: " + element.id + " = " + element.value);
-        options[element.id] = element.value;
+        if (element.id === 'summarize_auto') {
+          options[element.id] = parseInt(element.value, 10);
+        } else {
+          options[element.id] = element.value;
+        }
         break;
       case 'textarea':
         options[element.id] = normalizeStringList(element.value);
@@ -232,10 +253,16 @@ async function restoreOptions() {
           break;
         default:
         if (element.tagName === 'SELECT') {
-            let default_select_value = '';
-            const restoreValue = result[element.id] || default_select_value;
+            let default_select_value = 0;
+            if (element.id === 'summarize_auto') {
+              default_select_value = prefs_default.summarize_auto;
+            }
+            if (element.id === 'summarize_display_mode') {
+              default_select_value = prefs_default.summarize_display_mode;
+            }
+            const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
-            let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
             if (element.tomselect) {
               if (!optionExists && restoreValue !== '') {
                 element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
@@ -249,7 +276,7 @@ async function restoreOptions() {
               }
               element.value = restoreValue;
               if (element.value === '') {
-                element.selectedIndex = -1;
+                element.selectedIndex = 0;
               }
             }
         }else{
@@ -283,4 +310,5 @@ async function restoreOptions() {
   }
 
   setCurrentChoice(getting);
+  updateDisplayModeConstraint();
 }

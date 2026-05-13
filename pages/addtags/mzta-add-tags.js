@@ -30,7 +30,7 @@ import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js
 import {
   addTags_getExclusionList,
   addTags_setExclusionList
-} from "../../js/mzta-addatags-exclusion-list.js";
+} from "../../js/mzta-addtags-exclusion-list.js";
 import {
   getAccountsList,
   normalizeStringList,

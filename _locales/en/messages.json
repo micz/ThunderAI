@@ -35,12 +35,8 @@
     "message": "Classify",
     "description": ""
   },
-  "prompt_summarize_this": {
-    "message": "Summarize this",
-    "description": ""
-  },
   "prompt_translate_this": {
-    "message": "Translate this",
+    "message": "Translate",
     "description": ""
   },
   "prompt_this": {
@@ -203,6 +199,22 @@
     "message": "Composing an email",
     "description": ""
   },
+  "show_in": {
+    "message": "Show in",
+    "description": ""
+  },
+  "show_in_popup": {
+    "message": "Popup only",
+    "description": ""
+  },
+  "show_in_context": {
+    "message": "Context menu only",
+    "description": ""
+  },
+  "show_in_both": {
+    "message": "Both",
+    "description": ""
+  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""
@@ -234,6 +246,10 @@
   "chatgpt_win_close": {
     "message": "Close",
     "description": ""
+  },
+  "webchat_save_as_summary": {
+    "message": "Save as Summary",
+    "description": "Button label in the webchat window to save the AI response as a message summary"
   },
   "chatgpt_textarea_not_found_error": {
     "message": "It seems that the ChatGPT page is taking too long to load. If it finishes loading, click the button on the right. If the problem persists, please check the service status.",
@@ -327,6 +343,35 @@
     "message": "Manage your data placeholders",
     "description": ""
   },
+  "prefs_storage_title": {
+    "message": "Storage",
+    "description": "Title for storage management section in options"
+  },
+  "prefs_storage_info": {
+    "message": "The storage is used to save information about spam score, summaries and translations of each message.",
+    "description": "Info text for storage management section in options"
+  },
+  "prefs_storage_size": {
+    "message": "Storage size",
+    "description": "Label for storage size display"
+  },
+  "prefs_storage_clear_button": {
+    "message": "Clear Storage",
+    "description": "Button to clear all stored message data"
+  },
+  "prefs_storage_clear_confirm": {
+    "message": "Are you sure you want to clear all stored data (summaries, spam reports, translations)? This action cannot be undone.",
+    "description": "Confirmation dialog for clearing storage"
+  },
+  "prefs_storage_clear_done": {
+    "message": "$COUNT$ records removed.",
+    "description": "Message shown after storage is cleared",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "prefsInfoTitle": {
     "message": "Important Information",
     "description": ""
@@ -353,6 +398,14 @@
   },
   "prefsInfoDesc_6": {
     "message": "You can change the shortcut clicking on the cogwheel icon at the top right of this page and choosing \"Manage Extension Shortcut\".",
+    "description": ""
+  },
+  "prefsInfoDesc_7": {
+    "message": "To use the Google Gemini API, you need a Google Gemini API Key and must choose a model.",
+    "description": ""
+  },
+  "prefsInfoDesc_8": {
+    "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
     "description": ""
   },
   "prefsDonation_1": {
@@ -571,14 +624,6 @@
     "message": "If checked, using the keyboard shortcut CTRL+ALT+A will automatically send the highlighted prompt from the menu. Otherwise, the prompt name will be displayed to the user, requiring another press of the Enter key to send it.",
     "description": ""
   },
-  "prefs_OptionText_dynamic_menu_order_alphabet": {
-    "message": "Menu: order alphabetically",
-    "description": ""
-  },
-  "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-    "message": "If checked, the prompts in the menu will be ordered alphabetically.",
-    "description": ""
-  },
   "prefs_OptionText_chatgpt_win_dims_info": {
     "message": "Set to 0 if you don't want to specify the window size.",
     "description": ""
@@ -625,6 +670,10 @@
   },
   "placeholder_mail_headers": {
     "message": "Mail headers",
+    "description": ""
+  },
+  "placeholder_mail_full_headers": {
+    "message": "All mail headers",
     "description": ""
   },
   "placeholder_selected_text": {
@@ -675,6 +724,18 @@
     "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
     "description": ""
   },
+  "prefs_OptionText_hide_thinking": {
+    "message": "Collapse thinking block by default",
+    "description": ""
+  },
+  "prefs_OptionText_hide_thinking_info": {
+    "message": "Controls the initial state of the thinking block shown above the answer. If checked, the block is collapsed by default and can be opened with a click. If unchecked, the block is open by default and can be collapsed with a click. The thinking content is always preserved.",
+    "description": ""
+  },
+  "prefs_OptionText_thinking_summary": {
+    "message": "Thinking",
+    "description": ""
+  },
   "prefs_OptionText_max_prompt_length" : {
     "message": "Max prompt length",
     "description": ""
@@ -711,10 +772,6 @@
     "message": "Use the current model",
     "description": ""
   },
-  "SendingPrompt": {
-    "message": "Sending prompt...",
-    "description": ""
-  },
   "AllowedValues": {
     "message": "Allowed values",
     "description": ""
@@ -737,10 +794,6 @@
   },
   "prefs_OptionText_owl_warning": {
     "message": "It appears that at least one of your accounts is using the Owl for Exchange add-on. There is a known issue between Thunderbird and Owl, which is currently being addressed. At this time, you can use ThunderAI while composing emails, but not when reading them.",
-    "description": ""
-  },
-  "prefs_OptionText_chatgpt_web_model_tooltip": {
-    "message": "Click on a value to set it.",
     "description": ""
   },
   "prompt_reply_full_text": {
@@ -779,12 +832,8 @@
     "message": "Classify the following text in terms of Politeness, Warmth, Formality, Assertiveness, Offensiveness giving a percentage for each category. Reply with only the category and score with no extra comments or other text.",
     "description": ""
   },
-  "prompt_summarize_this_full_text": {
-    "message": "Summarize the following email into a bullet point list.",
-    "description": ""
-  },
   "prompt_translate_this_full_text": {
-    "message": "Translate the following email in",
+    "message": "Translate the email below into {%thunderai_translate_lang%}.\n\nRules:\n- Translate both the subject and the body.\n- Return the result as a JSON object with three fields: \"subject\", \"body\" and \"status\".\n- If the translation has been done the status is equal to 1.\n- If the email is written in one of these languages \"{%thunderai_translate_exclude_lang%}\" or in the {%thunderai_translate_lang%} language, return an empty string for the body and the subject and set the status to -1.\n- Do not add explanations, notes, or any text outside the JSON.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nGenerate a response in JSON format only. The output should be only a JSON object. Here is an example of the JSON format to be used:\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}",
     "description": ""
   },
   "prompt_this_full_text": {
@@ -800,7 +849,7 @@
     "description": ""
   },
   "prompt_add_tags": {
-    "message": "Add tags to this email",
+    "message": "Add tags",
     "description": ""
   },
   "prompt_add_tags_full_text": {
@@ -1032,7 +1081,7 @@
     "description": ""
   },
   "prompt_get_calendar_event_full_text": {
-    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
+    "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\"",
     "description": ""
   },
   "prompt_get_calendar_event_from_clipboard": {
@@ -1068,11 +1117,11 @@
     "description": ""
   },
   "prompt_summarize": {
-    "message": "Summarize this email or these emails",
+    "message": "Summarize",
     "description": ""
   },
   "prompt_summarize_full_text": {
-    "message": "You are an assistant that summarizes email conversations.\n\nGiven an email thread, produce a concise, accurate summary that captures:\n\n- The main topic or purpose of the conversation\n- Key decisions, conclusions, or agreements\n- Important questions, requests, or action items\n- Who is responsible for each action item (if stated)\n\nOmit greetings, signatures, quoted text, and redundant back-and-forth.\nDo not add assumptions or information not present in the emails.\n\nWrite the summary in clear, neutral language suitable for a busy professional.",
+    "message": "Provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n",
     "description": ""
   },
   "prompt_summarize_email_template": {
@@ -1279,8 +1328,16 @@
     "message": "Default signature as defined in ThunderAI options.",
     "description": ""
   },
-  "thunderai_def_lang": {
+  "placeholder_thunderai_def_lang": {
     "message": "Default language as defined in ThunderAI options.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_lang": {
+    "message": "The language to be used in the mail translations.",
+    "description": ""
+  },
+  "placeholder_thunderai_translate_exclude_lang": {
+    "message": "The languages code to do not translate when found.",
     "description": ""
   },
   "placeholder_mail_attachments_info": {
@@ -1332,11 +1389,11 @@
     "description": ""
   },
   "prompt_spamfilter" : {
-    "message" : "Detect spam emails",
+    "message" : "Analyze for spam",
     "description" : ""
   },
   "prompt_spamfilter_full_text" : {
-    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"spamValue\": <integer from 0 to 100>,\n\"explanation\": \"Brief explanation of your reasoning\"\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
+    "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
     "description" : ""
   },
   "SpamFilter_prompt_prefs_title": {
@@ -1388,15 +1445,47 @@
     "description": ""
   },
   "spamfilter_no_reports": {
-    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports for the current session only.",
+    "message": "No messages have screened for spam yet. Here you'll find a list of the last 100 spam reports.",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_title": {
+    "message": "Email address skip list",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline": {
+    "message": "Emails from these addresses will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "SpamFilter_skip_addresses_infoline2": {
+    "message": "Add one email address per line, or separated by a comma.",
+    "description": ""
+  },
+  "spamfilter_skip_addresses_explanation": {
+    "message": "The sender is in the email address antispam skip list.",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_skip_addressbook": {
+    "message": "Skip address books addresses",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+    "message": "If checked, emails from senders in your address books will not be sent to the AI for spam filtering.",
+    "description": ""
+  },
+  "spamfilter_skip_addressbook_explanation": {
+    "message": "The sender is a contact in the address book.",
+    "description": ""
+  },
+  "addressbook_permission_denied": {
+    "message": "Address book permission was denied. Please enable the feature again to grant permission.",
+    "description": ""
+  },
+  "addressbook_permission_error": {
+    "message": "Error requesting address book permission. Please try again.",
     "description": ""
   },
   "SpamReport_Title": {
     "message": "Spam Filter Reports",
-    "description": ""
-  },
-  "SpamReport_infoline": {
-    "message": "This information is saved only for the current session.",
     "description": ""
   },
   "Date": {
@@ -1443,18 +1532,6 @@
     "message": "No",
     "description": ""
   },
-  "context_menu_mzta-add-tags": {
-    "message": "Add tags",
-    "description": ""
-  },
-  "context_menu_mzta-spamfilter": {
-    "message": "Analyze for spam",
-    "description": ""
-  },
-  "context_menu_mzta-summarize": {
-    "message": "Summarize",
-    "description": ""
-  },
   "noActiveCalendar": {
     "message": "No editable calendar found!",
     "description": ""
@@ -1489,6 +1566,10 @@
   },
   "apiwebchat_receiving_data": {
     "message": "Receiving data",
+    "description": ""
+  },
+  "apiwebchat_done": {
+    "message": "Done!",
     "description": ""
   },
   "hyprland_warning": {
@@ -1572,7 +1653,7 @@
     "description": ""
   },
   "AccountSelector_Spamfilter": {
-    "message": "Choose the accounts where the spam filter is enabled",
+    "message": "Choose the accounts where the automatic spam filter is enabled",
     "description": ""
   },
   "prefs_OptionText_chatgpt_web_project": {
@@ -1659,6 +1740,14 @@
     "message": "The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens cannot exceed the model's context length.",
     "description": ""
   },
+  "prefs_OptionText_anthropic_extended_thinking_budget": {
+    "message": "Extended thinking budget (tokens)",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. When enabled, the temperature value is ignored by the Claude API.",
+    "description": ""
+  },
   "anthropic_empty_apikey": {
     "message": "You've not added an API Key for the Claude API. Please insert one in the options page.",
     "description": ""
@@ -1743,6 +1832,14 @@
   },
   "prefs_ollama_think_Info": {
     "message": "If checked, the Model will think before answering. This option works only with models that support the 'think' feature.",
+    "description": ""
+  },
+  "prefs_ollama_format_json": {
+    "message": "Force JSON output",
+    "description": ""
+  },
+  "prefs_ollama_format_json_Info": {
+    "message": "If checked, Ollama will be forced to return a valid JSON response. This option works only with models that support structured output.",
     "description": ""
   },
   "chatgpt_win_change_reply_type": {
@@ -1849,6 +1946,15 @@
     "message": "To use this feature, you need an API integration rather than the ChatGPT Web Integration. You can define a specific API in the feature settings page by first checking the checkbox above and then clicking the button on the left.",
     "description": ""
   },
+  "prefs_specific_api_indicator": {
+    "message": "Using $1",
+    "description": "Indicator near settings button when a special prompt uses a specific API.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
   "prefs_google_gemini_thinking_budget": {
     "message": "Thinking Budget",
     "description": ""
@@ -1885,6 +1991,26 @@
     "message": "You have denied the optional permission needed to fetch models for this integration.",
     "description": ""
   },
+  "prefs_OptionText_auto_summary": {
+    "message": "Enable automatic AI summarization for message previews",
+    "description": "Label for the option to enable automatic AI summarization of email messages"
+  },
+  "prefs_OptionText_auto_summary_Info": {
+      "message": "If checked, ThunderAI will automatically generate and display AI summaries above email messages when they are opened. Note that this means all messages you preview will immediately be sent to the configured AI service.",
+      "description": "Tooltip/info text explaining the automatic AI summarization option and its privacy implications"
+  },
+  "auto_summary_title": {
+      "message": "ThunderAI Summary",
+      "description": "Title heading shown above the automatically generated AI summary in the message pane"
+  },
+  "auto_summary_generating": {
+      "message": "Generating AI summary...",
+      "description": "Status message shown while the AI summary is being generated"
+  },
+  "auto_summary_failed": {
+      "message": "Failed to generate AI summary. Please confirm your settings and try again.",
+      "description": "Error message shown when the automatic AI summary generation fails"
+  },
   "customPrompts_export_include_api_settings": {
     "message": "Do you want to include the API settings in the export? Be aware that also the API Key will be saved in the file!",
     "description": ""
@@ -1913,8 +2039,244 @@
       "message": "Spam check in progress...",
       "description": ""
   },
+  "prefs_OptionText_summarize_auto": {
+      "message": "Auto-summarize messages",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_Info": {
+      "message": "Choose whether to automatically generate summaries when viewing messages. Requires an API-based connection (not ChatGPT Web).",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode": {
+      "message": "Display summary in",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_display_mode_Info": {
+      "message": "Choose where the summary result is displayed. Inline mode shows a summary banner directly in the message pane. Chat window mode opens the AI chat window.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_display_length": {
+      "message": "Max display length",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_display_length_Info": {
+      "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_strip_formatting": {
+      "message": "Strip formatting",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_strip_formatting_Info": {
+      "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
+      "description": ""
+  },
+  "summarize_see_more": {
+      "message": "See more",
+      "description": ""
+  },
+  "summarize_see_less": {
+      "message": "See less",
+      "description": ""
+  },
+  "summarize_title": {
+      "message": "ThunderAI Overview",
+      "description": ""
+  },
+  "get_ai_summary": {
+      "message": "AI Summary",
+      "description": ""
+  },
+  "summarize_collapse": {
+      "message": "Collapse summary",
+      "description": ""
+  },
+  "summarize_generating": {
+      "message": "Generating summary...",
+      "description": ""
+  },
+  "summarize_error": {
+      "message": "Failed to generate summary",
+      "description": ""
+  },
+  "summarize_click_to_generate": {
+      "message": "Click here to generate a summary",
+      "description": ""
+  },
+   "summarize_chatgpt_web_not_supported": {
+       "message": "Auto-summary requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+       "description": ""
+   },
+   "summarize_refresh": {
+       "message": "Refresh summary",
+       "description": ""
+   },
+   "spamfilter_refresh": {
+       "message": "Refresh spam report",
+       "description": ""
+   },
+   "spamfilter_delete": {
+       "message": "Delete spam report",
+       "description": ""
+   },
+   "summarize_delete": {
+       "message": "Delete summary",
+       "description": ""
+   },
+   "generic_error_dismiss": {
+       "message": "Dismiss",
+       "description": "Menu item to dismiss a generic error panel shown in the message display."
+   },
+  "prefs_OptionText_translate": {
+    "message": "Translate email",
+    "description": ""
+  },
+  "prefs_OptionText_translate_use_specific_integration_Info": {
+    "message": "If checked, the Model and API specified below will be used for translating email(s), regardless the one chosen in the ThunderAI options page.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_Info": {
+    "message": "If checked, adds a translate button in the message body.",
+    "description": ""
+  },
+  "prefs_OptionText_btnManageTranslateInfo": {
+    "message": "Manage translate settings",
+    "description": ""
+  },
+  "Translate_PageTitle": {
+    "message": "Manage Translation Settings",
+    "description": ""
+  },
+  "Translate_info_default": {
+    "message": "In this page you can modify the default prompt used to translate emails.",
+    "description": ""
+  },
+  "Translate_prompt_text_title": {
+    "message": "Current prompt text",
+    "description": ""
+  },
+  "Translate_prompt_prefs_title": {
+    "message": "Translation Options",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto": {
+    "message": "Auto-translate messages",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_disabled": {
+    "message": "Disabled",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_manual": {
+    "message": "Manual button only",
+    "description": ""
+  },
+  "prefs_OptionText_action_auto_automatic": {
+    "message": "When the email is opened",
+    "description": ""
+  },
+  "prefs_OptionText_translate_auto_Info": {
+    "message": "Choose when to translate messages: disabled, only when clicking the button, or automatically when opening a message.",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_inline": {
+    "message": "Message pane (inline)",
+    "description": ""
+  },
+  "prefs_OptionText_display_mode_webchat": {
+    "message": "Chat window",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length": {
+    "message": "Maximum length of displayed translation",
+    "description": ""
+  },
+  "prefs_OptionText_translate_max_display_length_Info": {
+    "message": "Maximum number of characters shown in the inline translation. 0 = no limit. When set, longer text is truncated with a \"See more\" toggle.",
+    "description": ""
+  },
+  "translate_see_more": {
+    "message": "See more",
+    "description": ""
+  },
+  "translate_see_less": {
+    "message": "See less",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang": {
+    "message": "Translation target language",
+    "description": ""
+  },
+  "prefs_OptionText_translate_lang_Info": {
+    "message": "Language to translate emails into. If empty, uses the default language setting.",
+    "description": ""
+  },
+  "prefs_OptionText_translate_exclude_lang": {
+    "message": "Exclude languages",
+    "description": ""
+  },
+  "prefs_OptionText_translate_exclude_lang_Info": {
+    "message": "Comma-separated list of language codes (e.g., en, fr, it) to skip for automatic translation. If the email is in one of these languages, it won't be translated automatically or the manual button won't be shown.",
+    "description": ""
+  },
+  "prefs_OptionText_Translate_main_prompt": {
+    "message": "The prompt describing the translation task:",
+    "description": ""
+  },
+  "translate_generating": {
+    "message": "Translating...",
+    "description": ""
+  },
+  "translate_click_to_generate": {
+    "message": "Click here to translate this email",
+    "description": ""
+  },
+  "get_ai_translation": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_chatgpt_web_not_supported": {
+    "message": "Auto-translation requires an API-based connection. Please configure an API connection in ThunderAI settings.",
+    "description": ""
+  },
+  "translate_refresh": {
+    "message": "Refresh translation",
+    "description": ""
+  },
+  "translate_delete": {
+    "message": "Delete translation",
+    "description": ""
+  },
+  "translate_banner_title": {
+    "message": "AI Translation",
+    "description": ""
+  },
+  "translate_error": {
+    "message": "Translation failed.",
+    "description": ""
+  },
+  "translate_no_language_configured": {
+    "message": "Translation language is not configured. Please set a language in the Translation settings or set a default language in the General settings.",
+    "description": ""
+  },
+  "translate_skipped": {
+    "message": "Translation skipped: Language excluded or identical to target.",
+    "description": "Shown in the translation banner when the email language matches the excluded or target language"
+  },
   "antispam_by": {
     "message": "Antispam by",
+    "description": ""
+  },
+  "spam_badge_tooltip": {
+    "message": "Spam score — Click to see the explanation",
+    "description": "Tooltip shown on the spam score badge in the toolbar"
+  },
+  "summary_by": {
+    "message": "Summary by",
+    "description": ""
+  },
+  "translate_by": {
+    "message": "Translation by",
     "description": ""
   },
   "prefs_THStats_1": {
@@ -1944,5 +2306,85 @@
   "prefs_chatgpt_win_position_info":{
     "message": "Leave empty to use the default position.",
     "description": ""
+  },
+  "prefs_OptionText_action_auto_batch": {
+    "message": "When the email is received",
+    "description": ""
+  },
+  "placeholder_string": {
+    "message": "Placeholder",
+    "description": ""
+  },
+  "menu_order_title": {
+    "message": "Menu Order",
+    "description": "Title for the menu order page"
+  },
+  "menu_order_popup_list_title": {
+    "message": "Popup Menu",
+    "description": "Header for the popup menu list in the menu order page"
+  },
+  "menu_order_context_list_title": {
+    "message": "Context Menu",
+    "description": "Header for the context menu list in the menu order page"
+  },
+  "menu_order_saved": {
+    "message": "Menu order saved!",
+    "description": "Message shown after saving menu order"
+  },
+  "menu_order_tab_reading": {
+    "message": "Reading",
+    "description": "Sub-tab label for reading view ordering"
+  },
+  "menu_order_tab_composing": {
+    "message": "Composing",
+    "description": "Sub-tab label for composing view ordering"
+  },
+  "menu_order_badge_default": {
+    "message": "Default",
+    "description": "Badge label for default prompts"
+  },
+  "menu_order_badge_special": {
+    "message": "Special",
+    "description": "Badge label for special prompts"
+  },
+  "menu_order_badge_custom": {
+    "message": "Custom",
+    "description": "Badge label for custom prompts"
+  },
+  "menu_order_type_reading": {
+    "message": "Reading",
+    "description": "Badge label for reading-only prompts"
+  },
+  "menu_order_type_composing": {
+    "message": "Composing",
+    "description": "Badge label for composing-only prompts"
+  },
+  "menu_order_type_always": {
+    "message": "Always",
+    "description": "Badge label for prompts shown in all contexts"
+  },
+  "menu_order_btn_label": {
+    "message": "Manage menu order settings",
+    "description": "Button label to open the menu order page from options"
+  },
+  "menu_order_info": {
+    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "description": "Info text for the menu order page"
+  },
+  "menu_order_active_items": {
+    "message": "Visible items",
+    "description": "Section header for active/visible menu items"
+  },
+  "menu_order_hidden_items": {
+    "message": "Hidden items",
+    "description": "Section header for hidden menu items"
+  },
+  "menu_order_icon_label": {
+    "message": "Choose an icon",
+    "description": "Label/tooltip for the context menu icon picker on the menu order page"
+  },
+  "menu_order_icon_none": {
+    "message": "(none)",
+    "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   }
 }

@@ -22,6 +22,33 @@
     integration_options_config
  } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
+
+ function validateAPIConfig(llm, prefs) {
+    switch (llm) {
+        case 'chatgpt_api':
+            if (!prefs.chatgpt_api_key) return browser.i18n.getMessage('chatgpt_empty_apikey');
+            if (!prefs.chatgpt_model)   return browser.i18n.getMessage('chatgpt_empty_model');
+            break;
+        case 'google_gemini_api':
+            if (!prefs.google_gemini_api_key) return browser.i18n.getMessage('google_gemini_empty_apikey');
+            if (!prefs.google_gemini_model)   return browser.i18n.getMessage('google_gemini_empty_model');
+            break;
+        case 'ollama_api':
+            if (!prefs.ollama_host)  return browser.i18n.getMessage('ollama_empty_host');
+            if (!prefs.ollama_model) return browser.i18n.getMessage('ollama_empty_model');
+            break;
+        case 'openai_comp_api':
+            if (!prefs.openai_comp_host)  return browser.i18n.getMessage('OpenAIComp_empty_host');
+            if (!prefs.openai_comp_model) return browser.i18n.getMessage('OpenAIComp_empty_model');
+            break;
+        case 'anthropic_api':
+            if (!prefs.anthropic_api_key) return browser.i18n.getMessage('anthropic_empty_apikey');
+            if (!prefs.anthropic_model)   return browser.i18n.getMessage('anthropic_empty_model');
+            if (!prefs.anthropic_version) return browser.i18n.getMessage('anthropic_empty_version');
+            break;
+    }
+    return null;
+ }
  
  export class mzta_specialCommand {
     
@@ -91,6 +118,15 @@
         }
 
         const prefs_api = await browser.storage.sync.get(prefsToGet);
+
+        if (!use_specific_api) {
+            const configError = validateAPIConfig(this.llm, prefs_api);
+            if (configError) {
+                const err = new Error(configError);
+                err.isConfigError = true;
+                throw err;
+            }
+        }
 
         let workerInitMessage = {
             type: 'init',

@@ -32,7 +32,7 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
 - Worker: `js/workers/model-worker-ollama.js`
-- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`
+- Settings keys: `ollama_host`, `ollama_model`, `ollama_num_ctx`, `ollama_temperature`, `ollama_think`, `ollama_format_json`
 - Requires CORS to be configured on the Ollama server
 
 ### OpenAI-Compatible (`openai_comp_api`)
@@ -49,7 +49,40 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
+- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). Thinking output arrives in the SSE stream as `content_block_delta` events with `delta.type === 'thinking_delta'` and is forwarded to the webchat UI as `newThinkingToken` messages, captured into a `thinkingAccumulator` in the worker and passed on `tokensDone`.
+
+## Thinking output in the webchat UI
+
+Two provider categories emit reasoning/thinking content:
+
+- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `MessagesArea.flushAccumulatingMessage()` strips these blocks from the rendered text and renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
+- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `MessagesArea` accumulates it and renders the same `<details>` block on final flush.
+
+The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
+
+## Configuration Validation
+
+For special prompts (`mzta_specialCommand`), required fields are validated in `initWorker()` (`js/mzta-special-commands.js`) **before** the worker is created. If a required field is empty, an `Error` with `isConfigError = true` is thrown. Validation covers:
+
+| Provider | Required fields |
+|----------|----------------|
+| `chatgpt_api` | `chatgpt_api_key`, `chatgpt_model` |
+| `google_gemini_api` | `google_gemini_api_key`, `google_gemini_model` |
+| `ollama_api` | `ollama_host`, `ollama_model` |
+| `openai_comp_api` | `openai_comp_host`, `openai_comp_model` |
+| `anthropic_api` | `anthropic_api_key`, `anthropic_model`, `anthropic_version` |
+
+Validation is skipped when `use_specific_api = true` (i.e., the prompt's own `api_type` overrides the global setting — credentials come from the prompt config, not global prefs).
+
+The `isConfigError` flag on the thrown error tells callers in `mzta-background.js` to display the error in the panel **without saving it to storage** — so the user can fix settings and retry cleanly.
+
+Feature-specific routing of `isConfigError`:
+
+- `summarize` / `translate` / `spamfilter`: the error is shown in their dedicated panel (summary / translation / spam panel) and **not** persisted to storage.
+- `add_tags`: it has **no dedicated panel**, so the error is routed to the **generic error panel** via `showGenericError(errMsg, source)` in `mzta-background.js`, which broadcasts a `showGenericError` message to all tabs. The content script `js/mzta-compose-script.js` renders it as `#mzta-generic-error` inside `#mzta-container`. The panel is dismissible and reusable by any future feature without its own UI.
+
+For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created (unchanged behavior).
 
 ## Web Worker Pattern
 

@@ -16,22 +16,68 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { prefs_default, getDynamicSettingValue } from '../options/mzta-options-default.js';
+import {
+  prefs_default,
+  getDynamicSettingValue
+} from '../options/mzta-options-default.js';
+
+import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
+
 const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
-export const ChatGPTWeb_models = ['gpt-5','gpt-5-instant','gpt-5-t-mini','gpt-5-thinking'];  // List of models available in ChatGPT Web
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
 export const getMenuContextDisplay = () => 'message_display_action_menu';
 
+export const contextMenuID_GetCalendarEvent = 'mzta-get-calendar-event';
+export const contextMenuID_GetCalendarEventFromClipboard = 'mzta-get-calendar-event-from-clipboard';
+export const contextMenuID_GetTask = 'mzta-get-task';
 export const contextMenuID_AddTags = 'mzta-add-tags';
 export const contextMenuID_Spamfilter = 'mzta-spamfilter';
 export const contextMenuID_Summarize = 'mzta-summarize';
+export const contextMenuID_Translate = 'mzta-translate';
 export const contextMenuIconsPath = {
-  [contextMenuID_AddTags]: 'moz-extension:images/autotags.png',
-  [contextMenuID_Spamfilter]: 'moz-extension:images/spamfilter.png',
-  [contextMenuID_Summarize]: 'moz-extension:images/summarize.png',
+  [contextMenuID_GetCalendarEvent]: 'moz-extension:images/context_menu/getcalendarevent.png',
+  [contextMenuID_GetCalendarEventFromClipboard]: 'moz-extension:images/context_menu/getcalendareventfromclipboard.png',
+  [contextMenuID_GetTask]: 'moz-extension:images/context_menu/gettask.png',
+  [contextMenuID_AddTags]: 'moz-extension:images/context_menu/autotags.png',
+  [contextMenuID_Spamfilter]: 'moz-extension:images/context_menu/spamfilter.png',
+  [contextMenuID_Summarize]: 'moz-extension:images/context_menu/summarize.png',
+  [contextMenuID_Translate]: 'moz-extension:images/context_menu/translate.png',
 };
+
+// Map from special prompt IDs to context menu IDs
+export const specialPromptToContextMenuID = {
+  'prompt_get_calendar_event': contextMenuID_GetCalendarEvent,
+  'prompt_get_calendar_event_from_clipboard': contextMenuID_GetCalendarEventFromClipboard,
+  'prompt_get_task': contextMenuID_GetTask,
+  'prompt_add_tags': contextMenuID_AddTags,
+  'prompt_spamfilter': contextMenuID_Spamfilter,
+  'prompt_summarize': contextMenuID_Summarize,
+  'prompt_translate_this': contextMenuID_Translate,
+};
+
+// const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
+const defaultContextMenuIcon = '';
+
+export function getContextMenuIcon(prompt) {
+  // Back-compat: accept a plain id string too
+  const promptId = (typeof prompt === 'string') ? prompt : prompt?.id;
+  const isSpecial = (typeof prompt === 'object' && prompt !== null) ? String(prompt.is_special) === '1' : true;
+
+  if (isSpecial) {
+    const contextMenuId = specialPromptToContextMenuID[promptId];
+    if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
+      return contextMenuIconsPath[contextMenuId];
+    }
+  }
+
+  if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
+    return 'moz-extension:' + customMenuIconsPath + prompt.custom_icon;
+  }
+
+  return defaultContextMenuIcon;
+}
 
 export function getLanguageDisplayName(languageCode) {
    const languageDisplay = new Intl.DisplayNames([languageCode], {type: 'language'});
@@ -228,13 +274,21 @@ export async function replaceBody(tabId, replyHtml) {
   await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
-export async function getMailHeader(curr_message, mail_header_id) {
+export async function getMailHeader(curr_message, mail_header_id = false) {
   let mail_header_value = "";
   let full_message = await browser.messages.getFull(curr_message.id);
   // console.log(">>>>>>>>>>>> getMailHeader full_message: " + JSON.stringify(full_message));
-  if(full_message.hasOwnProperty("headers") && Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
-    const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
-    mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+  if(full_message.hasOwnProperty("headers")) {
+    if(mail_header_id) {
+      if(Object.keys(full_message.headers).some(header => header.toLowerCase() === mail_header_id.toLowerCase())){
+        const raw_value = full_message.headers[Object.keys(full_message.headers).find(header => header.toLowerCase() === mail_header_id.toLowerCase())];
+        mail_header_value = Array.isArray(raw_value) ? raw_value.join(", ") : raw_value;
+      }
+    } else {
+      mail_header_value = Object.entries(full_message.headers)
+        .map(([key, value]) => key + ": " + (Array.isArray(value) ? value.join(", ") : value))
+        .join("\n");
+    }
   }
   // console.log(">>>>>>>>>>>> getMailHeader mail_header_value: " + mail_header_value)
   return mail_header_value;
@@ -349,46 +403,6 @@ export function getGPTWebModelString(model) {
     default:
       return model;
   }
-}
-
-export function getChatGPTWebModelsList_HTML(values, targetRowId) {
-  const rowElement = document.getElementById(targetRowId);
-  if (!rowElement) return;
-
-  // Clears any existing td elements
-  rowElement.innerHTML = '';
-
-  // First TD: label
-  const labelTd = document.createElement('td');
-  const label = document.createElement('i');
-  label.className = 'small_info';
-  const labelNobr = document.createElement('nobr');
-  labelNobr.textContent = browser.i18n.getMessage("AllowedValues") + ":";
-  label.appendChild(labelNobr);
-  labelTd.appendChild(label);
-
-  // Second TD: values
-  const valuesTd = document.createElement('td');
-  const valuesContainer = document.createElement('i');
-  valuesContainer.className = 'small_info';
-
-  values.forEach(value => {
-    const nbspBefore = document.createTextNode(' \u00A0 '); // " &nbsp; "
-    const valueNobr = document.createElement('nobr');
-    valueNobr.className = 'conntype_chatgpt_web_option';
-    valueNobr.textContent = value;
-    const nbspAfter = document.createTextNode(' \u00A0 ');
-
-    valuesContainer.appendChild(nbspBefore);
-    valuesContainer.appendChild(valueNobr);
-    valuesContainer.appendChild(nbspAfter);
-  });
-
-  valuesTd.appendChild(valuesContainer);
-
-  // Adds the td elements to the row
-  rowElement.appendChild(labelTd);
-  rowElement.appendChild(valuesTd);
 }
 
 export function openTab(url){
@@ -643,10 +657,11 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     get_calendar_event = false,
     get_calendar_event_from_clipboard = false,
     get_task = false,
+    spamfilter = false,
+    summarize = false,
+    translate = false,
     is_chatgpt_web = false
   } = args;
-  // The Antispam filter is not here, because this method is used only
-  // to reload the ThunderAI button menu, not the context menu
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
   if (is_chatgpt_web) {
@@ -660,12 +675,21 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   }
   if (get_calendar_event) {
     output.push('prompt_get_calendar_event');
-  }
-  if (get_calendar_event_from_clipboard) {
-    output.push('prompt_get_calendar_event_from_clipboard');
+    if (get_calendar_event_from_clipboard) {
+      output.push('prompt_get_calendar_event_from_clipboard');
+    }
   }
   if (get_task) {
     output.push('prompt_get_task');
+  }
+  if (spamfilter) {
+    output.push('prompt_spamfilter');
+  }
+  if (summarize) {
+    output.push('prompt_summarize');
+  }
+  if (translate) {
+    output.push('prompt_translate_this');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
   return output;
@@ -696,6 +720,16 @@ export function extractJsonObject(inputString) {
     throw new Error("Error extracting JSON object: " + error.message);
     return null;
   }
+}
+
+export function normalizeDateTimeString(str) {
+  if (!str || typeof str !== 'string') return null;
+  str = str.trim();
+  // Accept any non-digit separator (or none) between date/time components
+  const match = str.match(/^(\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(Z?)$/);
+  if (!match) return null;
+  const [, y, mo, d, h, mi, s, z] = match;
+  return `${y}${mo}${d}T${h}${mi}${s}${z}`;
 }
 
 export function isAPIKeyValue(id){
@@ -841,6 +875,15 @@ export async function getLocalStorageUsedSpace(){
   //let's use a workaround
   let customprompts_space = Object.entries(await browser.storage.local.get(["_custom_prompt", "_default_prompts_properties"])).map(([key, value]) => key.length + JSON.stringify(value).length).reduce((acc, x) => acc + x, 0)
   return formatBytes(customprompts_space);
+}
+
+export async function getCacheStorageUsedSpace(){
+  let all = await browser.storage.local.get(null);
+  let cacheSpace = Object.entries(all)
+    .filter(([key]) => key.startsWith('msg:'))
+    .map(([key, value]) => key.length + JSON.stringify(value).length)
+    .reduce((acc, x) => acc + x, 0);
+  return formatBytes(cacheSpace);
 }
 
 function formatBytes(bytes, decimals = 2) {

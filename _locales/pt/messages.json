@@ -113,9 +113,6 @@
     "customPrompts_form_label_Name": {
         "message": "Nome"
     },
-    "prompt_summarize_this": {
-        "message": "Resumir isto"
-    },
     "customPrompts_add_to_menu_composing": {
         "message": "A compor um email"
     },

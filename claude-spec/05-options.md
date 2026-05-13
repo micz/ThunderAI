@@ -24,7 +24,7 @@ chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature,
 ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
-anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature
+anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_extended_thinking_budget
 ```
 
 Plus the global connection selector:
@@ -35,7 +35,7 @@ use_specific_integration   (default: false)
 
 ### Special Prompt Integration Overrides
 
-The 5 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`) each get their own `use_specific_integration` and `connection_type` keys:
+The 6 special prompts (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) each get their own `use_specific_integration` and `connection_type` keys:
 
 ```
 {prefix}_use_specific_integration   (default: false)
@@ -64,8 +64,9 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Sort prompts alphabetically |
+| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
+| `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
 | `max_prompt_length` | `30000` | Max prompt string length |
 
 ### Feature Flags
@@ -95,6 +96,53 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `summarize` | `false` | Enable email summarization |
+| `summarize_auto` | `1` | Auto-summarize mode: `0` = disabled, `1` = manual (show "click to generate" button), `2` = automatic (generate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
+| `summarize_display_mode` | `'inline'` | Where to display summaries: `'inline'` = message pane banner, `'webchat'` = AI chat window. Note: `summarize_auto = 2` and `summarize_auto = 3` always use inline regardless of this setting. |
+| `summarize_max_display_length` | `0` | Maximum characters shown in inline summary before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+| `summarize_strip_formatting` | `false` | Strip HTML and Markdown formatting from AI-generated summaries, showing plain text only. |
+| `translate` | `true` | Enable email translation |
+| `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
+| `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
+| `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
+
+### Summarize Settings Page (`pages/summarize/`)
+
+The summarize settings page provides:
+
+1. **Specific integration checkbox** — enables per-feature API override (like other special prompts)
+2. **Auto-summarize dropdown** (`summarize_auto`) — three modes:
+   - `0` (Disabled) — no inline summaries
+   - `1` (Manual) — shows a "Click to generate summary" button in message display
+   - `2` (Automatic) — generates summary immediately when message is opened
+3. **Display mode dropdown** (`summarize_display_mode`) — controls where summaries are shown:
+   - `'inline'` — summary banner in the message pane (default)
+   - `'webchat'` — opens the AI chat window
+   - Note: `summarize_auto = 2` always generates inline regardless of this setting. Context menu summarize with multiple messages always falls back to webchat.
+4. **Max display length** (`summarize_max_display_length`) — number input, limits inline summary text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+5. **Strip formatting** (`summarize_strip_formatting`) — checkbox, removes HTML/Markdown formatting from AI summary responses, displaying plain text only. Default: off.
+6. **Three editable prompts** (used by context menu summarize and webchat mode):
+   - Summarize instruction prompt (`prompt_summarize`)
+   - Email template prompt (`prompt_summarize_email_template`)
+   - Email separator prompt (`prompt_summarize_email_separator`)
+   - Each has Save/Reset buttons and placeholder autocomplete
+   - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
+
+### Menu Order Page (`pages/menu_order/`)
+
+Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.
+
+### Translate Settings Page (`pages/translate/`)
+
+The translate settings page provides:
+
+1. **Specific integration checkbox** — enables per-feature API override (like other special prompts)
+2. **Auto-translate dropdown** (`translate_auto`) — three modes:
+   - `0` (Disabled) — no inline translations
+   - `1` (Manual) — shows a "Get AI Translation" button in message display
+   - `2` (Automatic) — generates translation immediately when message is opened
+3. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
+4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
+5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
 ## Adding a New Preference
 

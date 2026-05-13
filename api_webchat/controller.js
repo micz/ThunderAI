@@ -73,7 +73,7 @@ if (worker) {
         const integration_prefix = integration;
         const options_config = integration_options_config[integration];
         
-        let prefsToGet = { do_debug: prefs_default.do_debug };
+        let prefsToGet = { do_debug: prefs_default.do_debug, hide_thinking: prefs_default.hide_thinking };
         for (const key in options_config) {
             prefsToGet[`${integration_prefix}_${key}`] = prefs_default[`${integration_prefix}_${key}`];
         }
@@ -115,6 +115,9 @@ if (worker) {
             case 'anthropic': llmName = "Claude"; break;
         }
         messagesArea.setLLMName(llmName);
+        messagesArea.setHideThinking(!!prefs_api.hide_thinking);
+        
+        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
         document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
@@ -153,7 +156,8 @@ if (worker) {
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },
                 { key: 'max_tokens', labelKey: 'prefs_OptionText_anthropic_max_tokens', type: 'number_gt_zero' },
-                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' }
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'extended_thinking_budget', labelKey: 'prefs_OptionText_anthropic_extended_thinking_budget', type: 'number_gt_zero' }
             ]
         };
 
@@ -238,13 +242,17 @@ worker.onmessage = async function(event) {
             messagesArea.handleNewToken(payload.token);
             messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
             break;
+        case 'newThinkingToken':
+            messagesArea.handleNewThinkingToken(payload.token);
+            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
             messageInput.enableInput();
             break;
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
-            messageInput.enableInput();
+            messageInput.enableInput(false);
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -292,7 +300,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
-            messageInput.enableInput();
+            messageInput.enableInput(false);
             break;
     }
 });

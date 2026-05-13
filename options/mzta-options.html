@@ -117,12 +117,11 @@
       </tr>
       <tr>
         <td><label>
-          <span class="opt_title">__MSG_prefs_OptionText_dynamic_menu_order_alphabet__</span>
+          <span class="opt_title">__MSG_menu_order_title__</span>
         </label></td>
         <td>
           <label>
-            <input type="checkbox" id="dynamic_menu_order_alphabet" name="dynamic_menu_order_alphabet" class="option-input" />
-            &nbsp;<span>__MSG_prefs_OptionText_dynamic_menu_order_alphabet_info__</span>
+            <button id="btnMenuOrder">__MSG_menu_order_btn_label__</button>
           </label>
         </td>
       </tr>
@@ -150,6 +149,17 @@
       </tr>
       <tr>
         <td><label>
+          <span class="opt_title">__MSG_prefs_OptionText_hide_thinking__</span>
+        </label></td>
+        <td>
+          <label>
+            <input type="checkbox" id="hide_thinking" name="hide_thinking" class="option-input" />
+            &nbsp;<span>__MSG_prefs_OptionText_hide_thinking_info__</span>
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td><label>
           <span class="opt_title">__MSG_prefs_OptionText_composing_plain_text__</span>
         </label></td>
         <td>
@@ -172,7 +182,8 @@
       </tr>
       <tr class="add_tags_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_add_tags__</span>
-        <br><button id="btnManageTagsInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTagsInfo__</button></td>
+        <br><button id="btnManageTagsInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTagsInfo__</button>
+        <br><span class="specific_api_indicator" id="add_tags_specific_api_indicator"></span></td>
         <td>
           <label>
             <input type="checkbox" id="add_tags" name="add_tags" class="option-input" />
@@ -183,7 +194,8 @@
       </tr>
       <tr class="spamfilter_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter__</span>
-        <br><button id="btnManageSpamFilterInfo" class="btn_small">__MSG_prefs_OptionText_btnManageSpamFilterInfo__</button></td>
+        <br><button id="btnManageSpamFilterInfo" class="btn_small">__MSG_prefs_OptionText_btnManageSpamFilterInfo__</button>
+        <br><span class="specific_api_indicator" id="spamfilter_specific_api_indicator"></span></td>
         <td>
           <label>
             <input type="checkbox" id="spamfilter" name="spamfilter" class="option-input" />
@@ -194,7 +206,8 @@
       </tr>
       <tr class="summarize_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_summarize__</span>
-        <br><button id="btnManageSummarizeInfo" class="btn_small">__MSG_prefs_OptionText_btnManageSummarizeInfo__</button></td>
+        <br><button id="btnManageSummarizeInfo" class="btn_small">__MSG_prefs_OptionText_btnManageSummarizeInfo__</button>
+        <br><span class="specific_api_indicator" id="summarize_specific_api_indicator"></span></td>
         <td>
           <label>
             <input type="checkbox" id="summarize" name="summarize" class="option-input" />
@@ -203,9 +216,22 @@
           </label>
         </td>
       </tr>
+      <tr class="translate_tr">
+        <td><span class="opt_title">__MSG_prefs_OptionText_translate__</span>
+        <br><button id="btnManageTranslateInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTranslateInfo__</button>
+        <br><span class="specific_api_indicator" id="translate_specific_api_indicator"></span></td>
+        <td>
+          <label>
+            <input type="checkbox" id="translate" name="translate" class="option-input" />
+            __MSG_prefs_OptionText_translate_Info__
+            <br><span class="warn_API_needed" id="translate_warn_API_needed">__MSG_warn_API_needed__</span>
+          </label>
+        </td>
+      </tr>
       <tr class="get_calendar_event_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_get_calendar_event__</span>
-        <br><button id="btnManageCalendarEventInfo" class="btn_small">__MSG_prefs_OptionText_btnManageCalendarEventInfo__</button></td>
+        <br><button id="btnManageCalendarEventInfo" class="btn_small">__MSG_prefs_OptionText_btnManageCalendarEventInfo__</button>
+        <br><span class="specific_api_indicator" id="get_calendar_event_specific_api_indicator"></span></td>
         <td>
           <label>
             <input type="checkbox" id="get_calendar_event" name="get_calendar_event" class="option-input" />
@@ -215,7 +241,8 @@
       </tr>
       <tr class="get_task_tr">
         <td><span class="opt_title">__MSG_prefs_OptionText_get_task__</span>
-        <br><button id="btnManageTaskInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTaskInfo__</button></td>
+        <br><button id="btnManageTaskInfo" class="btn_small">__MSG_prefs_OptionText_btnManageTaskInfo__</button>
+        <br><span class="specific_api_indicator" id="get_task_specific_api_indicator"></span></td>
         <td>
           <label>
             <input type="checkbox" id="get_task" name="get_task" class="option-input" />
@@ -241,6 +268,14 @@
           </label>
         </td>
       </tr>
+      <tr>
+        <td><span class="opt_title">ThunderAI __MSG_prefs_storage_title__</span></td>
+        <td>
+          __MSG_prefs_storage_size__: <span id="cache_storage_size"></span>
+          &nbsp;<button id="btnClearCache" class="btn_small">__MSG_prefs_storage_clear_button__</button>
+          <br>__MSG_prefs_storage_info__
+        </td>
+      </tr>
     </table>
     <div id="btn_custom_prompts">
         <button id="btnManagePrompts">__MSG_prefs_OptionText_btnManagePrompts__</button>
@@ -253,7 +288,9 @@
         <span class="conntype_chatgpt_web">__MSG_prefsInfoDesc_1__<br></span>
         <span class="conntype_chatgpt_api">__MSG_prefsInfoDesc_2__<br></span>
         <span class="conntype_ollama_api">__MSG_prefsInfoDesc_3__ [<a href="https://micz.it/thunderbird-addon-thunderai/ollama-cors-information/">__MSG_more_info_string__</a>]<br></span>
-        <span class="conntype_openai_comp_api">__MSG_prefsInfoDesc_4__</span>
+        <span class="conntype_openai_comp_api">__MSG_prefsInfoDesc_4__<br></span>
+        <span class="conntype_google_gemini_api">__MSG_prefsInfoDesc_7__<br></span>
+        <span class="conntype_anthropic_api">__MSG_prefsInfoDesc_8__<br></span>
         <br><span>__MSG_prefsInfoDesc_5__
           <br>__MSG_prefsInfoDesc_6__</span>
       </p>

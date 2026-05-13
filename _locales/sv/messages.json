@@ -68,11 +68,8 @@
     "prefs_OptionText_chatgpt_win_width": {
         "message": "Bredd"
     },
-    "prompt_summarize_this": {
-        "message": "Sammanfatta detta"
-    },
     "prompt_translate_this": {
-        "message": "Översätt detta"
+        "message": "Översätt"
     },
     "more_info_string": {
         "message": "Mer information"
@@ -506,12 +503,6 @@
     "prefs_OptionText_dynamic_menu_force_enter": {
         "message": "Meny: skicka omedelbart prompt"
     },
-    "prefs_OptionText_dynamic_menu_order_alphabet": {
-        "message": "Meny: ordna alfabetiskt"
-    },
-    "prefs_OptionText_dynamic_menu_order_alphabet_info": {
-        "message": "Om markerat kommer promptar i menyn att ordnas alfabetiskt."
-    },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "Ställ in värdet till 0 om du inte vill ange fönsterstorleken."
     },
@@ -593,9 +584,6 @@
     "chatgpt_btn_model": {
         "message": "Använd den nuvarande modellen"
     },
-    "SendingPrompt": {
-        "message": "Skickar prompt..."
-    },
     "AllowedValues": {
         "message": "Tillåtna värden"
     },
@@ -613,9 +601,6 @@
     },
     "prefs_OptionText_owl_warning": {
         "message": "Det verkar som att minst ett av dina konton använder tillägget Owl for Exchange. Det finns ett känt problem mellan Thunderbird och Owl, vilket för närvarande åtgärdas. För närvarande kan du använda ThunderAI när du skriver e-postmeddelanden, men inte när du läser dem."
-    },
-    "prefs_OptionText_chatgpt_web_model_tooltip": {
-        "message": "Klicka på ett värde för att ställa in det."
     },
     "prompt_reply_full_text": {
         "message": "Svara på följande e-postmeddelande. Svara endast med den text som behövs och utan extra kommentarer eller annan text."
@@ -641,11 +626,8 @@
     "prompt_rewrite_formal_full_text": {
         "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
     },
-    "prompt_summarize_this_full_text": {
-        "message": "Sammanfatta följande e-postmeddelande i en punktlista."
-    },
     "prompt_translate_this_full_text": {
-        "message": "Översätt följande e-postmeddelande till"
+        "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"
     },
     "prompt_this_full_text": {
         "message": "Svara endast med den text som behövs och utan extra kommentarer eller annan text."
@@ -657,7 +639,7 @@
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att tillämpa taggar på e-postmeddelanden."
     },
     "prompt_add_tags": {
-        "message": "Lägg till taggar i det här e-postmeddelandet"
+        "message": "Lägg till taggar"
     },
     "prompt_proofread_this": {
         "message": "Korrekturläs detta e-postmeddelande"
@@ -734,7 +716,7 @@
     "prefs_OptionText_get_calendar_event": {
         "message": "Lägg till en ny kalenderhändelse från markerad text"
     },
-    "thunderai_def_lang": {
+    "placeholder_thunderai_def_lang": {
         "message": "Standardspråk som definierat i ThunderAI-alternativ."
     },
     "placeholder_mail_attachments_info": {
@@ -759,7 +741,7 @@
         "message": "Aktuell prompttext"
     },
     "prompt_spamfilter": {
-        "message": "Upptäck skräppostmeddelanden"
+        "message": "Analysera för skräppost"
     },
     "SpamFilter_prompt_prefs_title": {
         "message": "Alternativ för skräppostfilter"
@@ -802,12 +784,6 @@
     },
     "no_string": {
         "message": "Nej"
-    },
-    "context_menu_mzta-add-tags": {
-        "message": "Lägg till taggar"
-    },
-    "context_menu_mzta-spamfilter": {
-        "message": "Analysera för skräppost"
     },
     "noActiveCalendar": {
         "message": "Ingen redigerbar kalender hittades!"
@@ -1087,7 +1063,7 @@
         "message": "Tröskel skräppost"
     },
     "spamfilter_no_reports": {
-        "message": "Inga meddelanden har ännu granskats för skräppost. Här hittar du en lista över de senaste 100 skräppostrapporterna för den aktuella sessionen."
+        "message": "Inga meddelanden har ännu granskats för skräppost. Här hittar du en lista över de senaste 100 skräppostrapporter."
     },
     "SpamReport_Title": {
         "message": "Rapporter om skräppostfilter"
@@ -1213,7 +1189,7 @@
         "message": "Varje ändring sparas omedelbart."
     },
     "AccountSelector_Spamfilter": {
-        "message": "Välj de konton där skräppostfiltret är aktiverat"
+        "message": "Välj de konton där det automatiska skräppostfiltret är aktiverat"
     },
     "prefs_OptionText_chatgpt_web_project": {
         "message": "ChatGPT webbprojekt"
@@ -1279,22 +1255,22 @@
         "message": "Citerad text i meddelandets brödtext"
     },
     "prompt_get_calendar_event_full_text": {
-        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
+        "message": "Extrahera all relevant information som krävs för att generera en kalenderhändelse från följande text. Den extraherade informationen bör innehålla:\n- Händelsetitel\n- Startdatum och tid (inklusive tidszon, om angiven)\n- Slutdatum och tid (inklusive tidszon, om angiven)\n- Heldag (om angiven)\n- Deltagare\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en kalenderhändelse.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm varaktigheten inte anges, sätt den till en timme.\nDessa är deltagarna: {%author%}, {%recipients%}, {%cc_list%}. Om det finns, exkludera min adress: {%account_email_address%}.\nOm händelsen är en heldagshändelse måste endDate vara en dag efter startDate med tiden inställd på \"T000000\".\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"startDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"endDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Sammanfattning av kalenderhändelse här\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHär är texten: \"{%mail_text_body_or_selected%}\""
     },
     "prompt_get_task_full_text": {
         "message": "Extrahera alla relevanta detaljer som krävs för att generera en uppgift från följande text. Den extraherade informationen bör innehålla:\n- Förfallodatum och tid (inklusive tidszon, om angiven)\n- Uppgiftssammanfattning\n- Initialt datum och tid (inklusive tidszon, om angiven)\nSe till att informationen är tydligt och konsekvent formaterad så att den kan användas direkt för att skapa en uppgift.\nOm det finns relativa tidsreferenser, tänk på att datum och tid för e-postmeddelandet är \"{%mail_datetime%}\". Beräkna startdatum och tid baserat på denna referens. Om det beräknade startdatumet och tiden är tidigare än \"{%current_datetime%}\", beräkna om startdatumet och tiden med \"{%current_datetime%}\" som bas.\nOm du inte kan få en eller flera av de obligatoriska uppgifterna, vänligen svara med en tom sträng.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaringar; ange endast JSON. Här är formatet som ska användas:\n{\n\"InitialDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"dueDate\": \"ÅÅÅÅMMDDTHHMMSS\",\n\"summary\": \"Uppgiftssammanfattning här\"\n}\nOm det inte finns någon information om datumen, ta bort dem.\nHär är texten: \"{%selected_text%}\""
     },
     "prompt_spamfilter_full_text": {
-        "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"spamValue\": <heltal från 0 till 100>,\n\"explanation\": \"Kort förklaring av ditt resonemang\"\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
+        "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"explanation\": \"Kort förklaring av ditt resonemang\",\n\"spamValue\": <heltal från 0 till 100>\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
     },
     "Summarize_prompt_prefs_title": {
         "message": "Sammanfattningsalternativ"
     },
     "prompt_summarize": {
-        "message": "Sammanfatta det här e-postmeddelandet eller dessa e-postmeddelanden"
+        "message": "Sammanfatta"
     },
     "prompt_summarize_full_text": {
-        "message": "Du är en assistent som sammanfattar e-postkonversationer.\n\nMed tanke på en e-posttråd, skapa en kortfattad och korrekt sammanfattning som fångar:\n\n- Konversationens huvudämne eller syfte\n- Viktiga beslut, slutsatser eller överenskommelser\n- Viktiga frågor, förfrågningar eller åtgärdspunkter\n- Vem som är ansvarig för varje åtgärdspunkt (om det anges)\n\nUteslut hälsningar, signaturer, citat och överflödig fram-och-tillbaka-text.\nLägg inte till antaganden eller information som inte finns i e-postmeddelandena.\n\nSkriv sammanfattningen på ett tydligt och neutralt språk som passar en upptagen yrkesperson."
+        "message": "Ge en kortfattad sammanfattning av följande e-postmeddelanden. Sammanfattningen bör vara högst 3–5 meningar lång och fånga huvudpunkterna. Skriv i enkla stycken utan punktlistor, listor eller markdownformatering:\n\n"
     },
     "prompt_summarize_email_template": {
         "message": "Sammanfattningsmall för e-post"
@@ -1340,9 +1316,6 @@
     },
     "Summarize_prompt_text_title": {
         "message": "Aktuell prompttext"
-    },
-    "context_menu_mzta-summarize": {
-        "message": "Sammanfatta"
     },
     "CORS_alternative_2_new": {
         "message": "Tryck på knappen nedan för att ge den aktuella värden behörighet att undvika CORS-problem."
@@ -1410,9 +1383,6 @@
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
         "message": "Om markerat visas en panel med skräppostrapporten högst upp i meddelandet."
     },
-    "SpamReport_infoline": {
-        "message": "Denna information sparas endast för den aktuella sessionen."
-    },
     "prefs_OptionText_chatgpt_web_load_wait_time": {
         "message": "Väntetid för sidinläsning"
     },
@@ -1460,5 +1430,369 @@
     },
     "prefs_chatgpt_win_position_info": {
         "message": "Lämna tomt för att använda standardpositionen."
+    },
+    "webchat_save_as_summary": {
+        "message": "Spara som sammanfattning"
+    },
+    "prefs_storage_title": {
+        "message": "Lagring"
+    },
+    "prefs_storage_size": {
+        "message": "Lagringsstorlek"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Rensa lagring"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Är du säker på att du vill rensa all lagrad data (sammanfattningar, skräppostrapporter, översättningar)? Den här åtgärden kan inte ångras."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ register borttagna.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Aktivera automatisk AI-sammanfattning för förhandsgranskningar av meddelanden"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Om markerat kommer ThunderAI automatiskt att generera och visa AI-sammanfattningar ovanför e-postmeddelanden när de öppnas. Observera att detta innebär att alla meddelanden du förhandsgranskar omedelbart skickas till den konfigurerade AI-tjänsten."
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI sammanfattning"
+    },
+    "auto_summary_generating": {
+        "message": "Genererar AI-sammanfattning..."
+    },
+    "auto_summary_failed": {
+        "message": "Misslyckades att generera AI-sammanfattning. Bekräfta dina inställningar och försök igen."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Sammanfatta meddelanden automatiskt"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Välj om sammanfattningar ska genereras automatiskt när meddelanden visas. Kräver en API-baserad anslutning (inte ChatGPT Web)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Visa sammanfattning i"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Välj var sammanfattningsresultatet visas. I infogat läge visas en sammanfattningsbanderoll direkt i meddelandefönstret. I chattfönsterläget öppnas AI-chattfönstret."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Max skärmlängd"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Maximalt antal tecken som ska visas i den inbäddade sammanfattningen. Ange 0 för obegränsad gräns."
+    },
+    "summarize_see_more": {
+        "message": "Se mer"
+    },
+    "summarize_see_less": {
+        "message": "Se mindre"
+    },
+    "summarize_title": {
+        "message": "ThunderAI översikt"
+    },
+    "get_ai_summary": {
+        "message": "AI sammanfattning"
+    },
+    "summarize_collapse": {
+        "message": "Fäll in sammanfattning"
+    },
+    "summarize_generating": {
+        "message": "Genererar sammanfattning..."
+    },
+    "summarize_error": {
+        "message": "Misslyckades att generera sammanfattning"
+    },
+    "summarize_click_to_generate": {
+        "message": "Klicka här för att skapa en sammanfattning"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Autosammanfattning kräver en API-baserad anslutning. Konfigurera en API-anslutning i ThunderAI-inställningarna."
+    },
+    "summarize_refresh": {
+        "message": "Uppdatera sammanfattning"
+    },
+    "spamfilter_refresh": {
+        "message": "Uppdatera skräppostrapport"
+    },
+    "spamfilter_delete": {
+        "message": "Ta bort skräppostrapport"
+    },
+    "summarize_delete": {
+        "message": "Ta bort sammanfattning"
+    },
+    "summary_by": {
+        "message": "Sammanfattning av"
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "När e-postmeddelandet tas emot"
+    },
+    "prefs_storage_info": {
+        "message": "Lagringen används för att spara information om skräppostpoäng, sammanfattningar och översättningar av varje meddelande."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "Språket som ska användas i e-postöversättningarna."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Språkkoden ska inte översättas när den hittas."
+    },
+    "prefs_OptionText_translate": {
+        "message": "Översätt e-post"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Om markerat kommer modellen och API:et som anges nedan att användas för att översätta e-postmeddelanden, oavsett vilket som valts på ThunderAI-alternativsidan."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Om markerad läggs en översättningsknapp till i meddelandetexten."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Hantera översättningsinställningar"
+    },
+    "Translate_PageTitle": {
+        "message": "Hantera översättningsinställningar"
+    },
+    "Translate_info_default": {
+        "message": "På den här sidan kan du ändra standardprompten som används för att översätta e-postmeddelanden."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Aktuell prompttext"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Översättningsalternativ"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Översätt meddelanden automatiskt"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Inaktiverad"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Endast manuell knapp"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "När e-postmeddelandet öppnas"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Välj när meddelanden ska översättas: inaktiverad, endast när du klickar på knappen eller automatiskt när du öppnar ett meddelande."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Meddelandepanel (inbäddad)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Chattfönster"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Maximal längd på visad översättning"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Maximalt antal tecken som visas i den inbäddade översättningen. 0 = ingen gräns. När den är inställd avkortas längre text med en \"Visa mer\"-knapp."
+    },
+    "translate_see_more": {
+        "message": "Visa mer"
+    },
+    "translate_see_less": {
+        "message": "Visa mindre"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Översättningens målspråk"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Språk att översätta e-postmeddelanden till. Om tomt används standardspråkinställningen."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Uteslut språk"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Kommaavgränsad lista med språkkoder (t.ex. en, fr, it) som ska hoppas över för automatisk översättning. Om e-postmeddelandet är på ett av dessa språk kommer det inte att översättas automatiskt eller så visas inte den manuella knappen."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Prompten som beskriver översättningsuppgiften:"
+    },
+    "translate_generating": {
+        "message": "Översätter..."
+    },
+    "translate_click_to_generate": {
+        "message": "Klicka här för att översätta detta e-postmeddelande"
+    },
+    "get_ai_translation": {
+        "message": "AI-översättning"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Automatisk översättning kräver en API-baserad anslutning. Konfigurera en API-anslutning i ThunderAI-inställningarna."
+    },
+    "translate_refresh": {
+        "message": "Uppdatera översättning"
+    },
+    "translate_delete": {
+        "message": "Ta bort översättning"
+    },
+    "translate_banner_title": {
+        "message": "AI-översättning"
+    },
+    "translate_error": {
+        "message": "Översättning misslyckades."
+    },
+    "translate_no_language_configured": {
+        "message": "Översättningsspråket är inte konfigurerat. Ange ett språk i översättningsinställningarna eller ange ett standardspråk i de allmänna inställningarna."
+    },
+    "translate_skipped": {
+        "message": "Översättning hoppas över: Språk uteslutet eller identiskt med målet."
+    },
+    "spam_badge_tooltip": {
+        "message": "Skräppostpoäng — Klicka för att se förklaring"
+    },
+    "translate_by": {
+        "message": "Översättning av"
+    },
+    "placeholder_string": {
+        "message": "Platshållare"
+    },
+    "prefsInfoDesc_7": {
+        "message": "För att använda Google Gemini API behöver du en Google Gemini API-nyckel och måste välja en modell."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Tvinga fram JSON-utdata"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Om markerat kommer Ollama att tvingas returnera ett giltigt JSON-svar. Det här alternativet fungerar bara med modeller som stöder strukturerad utdata."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Använder $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_8": {
+        "message": "För att använda Claude API behöver du en Anthropic Claude API-nyckel och måste välja en modell."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Strimla formatering"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Ta bort HTML och Markdown formatering från den AI-genererade sammanfattningen, så att endast vanlig text visas."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Lista över e-postadresser att hoppa över"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "E-postmeddelanden från dessa adresser kommer inte att skickas till AI:n för skräppostfiltrering."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Lägg till en e-postadress per rad, eller separera med kommatecken."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Hoppa över adressböckernas adresser"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Om markerat kommer e-postmeddelanden från avsändare i dina adressböcker inte att skickas till AI:n för skräppostfiltrering."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Avsändaren är en kontakt i adressboken."
+    },
+    "addressbook_permission_denied": {
+        "message": "Adressboksbehörighet nekades. Aktivera funktionen igen för att ge behörighet."
+    },
+    "addressbook_permission_error": {
+        "message": "Fel vid begäran om behörighet till adressboken. Försök igen."
+    },
+    "apiwebchat_done": {
+        "message": "Klar!"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Alla e-postrubriker"
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Avsändaren finns i listan över e-postadresser som inte ska skickas med skräppost."
+    },
+    "show_in": {
+        "message": "Visa i"
+    },
+    "show_in_popup": {
+        "message": "Popup endast"
+    },
+    "show_in_context": {
+        "message": "Kontextmeny endast"
+    },
+    "show_in_both": {
+        "message": "Båda"
+    },
+    "menu_order_title": {
+        "message": "Menyordning"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Popup meny"
+    },
+    "menu_order_context_list_title": {
+        "message": "Kontextmeny"
+    },
+    "menu_order_saved": {
+        "message": "Menyordning sparad!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Läser"
+    },
+    "menu_order_tab_composing": {
+        "message": "Skriver"
+    },
+    "menu_order_badge_default": {
+        "message": "Standard"
+    },
+    "menu_order_badge_special": {
+        "message": "Special"
+    },
+    "menu_order_badge_custom": {
+        "message": "Anpassad"
+    },
+    "menu_order_type_reading": {
+        "message": "Läser"
+    },
+    "menu_order_type_composing": {
+        "message": "Skriver"
+    },
+    "menu_order_type_always": {
+        "message": "Alltid"
+    },
+    "menu_order_btn_label": {
+        "message": "Hantera menyordningsinställningar"
+    },
+    "menu_order_info": {
+        "message": "Dra och släpp objekt för att ändra ordningen på dem. Använd växlingsknappen för att visa eller dölja objekt i varje meny."
+    },
+    "menu_order_active_items": {
+        "message": "Synliga objekt"
+    },
+    "menu_order_hidden_items": {
+        "message": "Dolda objekt"
+    },
+    "menu_order_icon_label": {
+        "message": "Välj en ikon"
+    },
+    "menu_order_icon_none": {
+        "message": "(ingen)"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Fäll in tankeblock som standard"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Styr det initiala tillståndet för tankeblocket som visas ovanför svaret. Om markerat är blocket hopfällt som standard och kan öppnas med ett klick. Om det avmarkeras är blocket öppet som standard och kan hopfällas med ett klick. Tankeinnehållet bevaras alltid."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Tänker"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Utökad tankebudget (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Maximalt antal tokens som modellen kan spendera på utökat tänkande. Ställ in på 0 för att inaktivera utökat tänkande. När det är aktiverat ignoreras temperaturvärdet av Claude API."
+    },
+    "generic_error_dismiss": {
+        "message": "Avfärda"
     }
 }

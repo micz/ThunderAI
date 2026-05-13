@@ -130,6 +130,10 @@ _The language status represents the percentage of translated strings in the late
 - [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
 - [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
 - [Roundicons](https://www.flaticon.com/authors/roundicons) for the summarize context menu icon
+- [HideMau](https://www.flaticon.com/authors/hidemaru) for the ai summarize icon
+- [Hilmy Abiyyu A.](https://www.flaticon.com/authors/hilmy-abiyyu-a) for the ai translate and context menu icons
+- [bearicons](https://www.flaticon.com/authors/bearicons) for the empty context menu icon
+- [meaicon](https://www.flaticon.com/authors/meaicon) for the add task context menu icon
 
 
 <br>

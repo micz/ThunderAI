@@ -19,7 +19,6 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import {
     prefs_default,
-    getDynamicSettingValue,
     getDynamicSettingsDefaults
 } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
@@ -43,31 +42,28 @@ import {
     getMessages,
     getMailBody,
     extractJsonObject,
-    contextMenuID_AddTags,
-    contextMenuID_Spamfilter,
-    contextMenuID_Summarize,
-    contextMenuIconsPath,
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
     stripHtmlKeepLines,
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
     getConnectionType,
-    checkAPIIntegration,
     hasSpecificIntegration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
-import { 
+import {
     getSpamFilterPrompt,
-    getSpecialPrompts
+    migrateMenuOrderAlphabetic
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
+import { taSummaryStore } from './js/mzta-summarystore.js';
+import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
-} from './js/mzta-addatags-exclusion-list.js';
+} from './js/mzta-addtags-exclusion-list.js';
 
 browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
     // console.log(">>>>>>>>>>> onInstalled: " + JSON.stringify(reason) + ", previousVersion: " + previousVersion);
@@ -94,6 +90,9 @@ await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
+let spamReport = new taSpamReport(prefs_init.do_debug);
+let summaryStore = new taSummaryStore(prefs_init.do_debug);
+let translationStore = new taTranslationStore(prefs_init.do_debug);
 
 let special_prompts_ids = getActiveSpecialPromptsIDs({
     addtags: prefs_init.add_tags,
@@ -101,6 +100,9 @@ let special_prompts_ids = getActiveSpecialPromptsIDs({
     get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
     get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
     get_task: doGetSparkFeature(prefs_init.get_task),
+    spamfilter: prefs_init.spamfilter,
+    summarize: prefs_init.summarize,
+    translate: prefs_init.translate,
     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
   });
 
@@ -110,7 +112,7 @@ browser.composeScripts.register({
 
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/mzta-compose-script.js" }],
+    js: [{ file: "js/mzta-compose-script.js" }]
 });
 
 browser.contentScripts.register({
@@ -165,7 +167,7 @@ function preparePopupMenu(tab) {
 }
 
 async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type});
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
     let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
     let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
     let getTask = doGetSparkFeature(prefs_reload.get_task);
@@ -175,11 +177,32 @@ async function _reload_menus() {
         get_calendar_event: getCalendarEvent,
         get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
         get_task: getTask,
+        spamfilter: prefs_reload.spamfilter,
+        summarize: prefs_reload.summarize,
+        translate: prefs_reload.translate,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
       });
     menus.reload(special_prompts_ids);
     taLog.log("Reloading menus");
     return true;
+}
+
+async function _getActiveSpecialIds() {
+    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
+    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
+    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
+    let getTask = doGetSparkFeature(prefs_reload.get_task);
+    return getActiveSpecialPromptsIDs({
+        addtags: prefs_reload.add_tags,
+        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+        get_calendar_event: getCalendarEvent,
+        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+        get_task: getTask,
+        spamfilter: prefs_reload.spamfilter,
+        summarize: prefs_reload.summarize,
+        translate: prefs_reload.translate,
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+    });
 }
 
 async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
@@ -215,9 +238,197 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // handler function.
     if (message && message.hasOwnProperty("command")){
         switch (message.command) {
+            case 'initSummary':
+                async function _initSummary() {
+                    try {
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting });
+
+                        if (!prefs.summarize) return;
+
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+
+                        // Always show cached summary if available, regardless of summarize_auto
+                        let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
+                        if (cachedSummary && !cachedSummary.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+                            return;
+                        }
+
+                        if (await summaryStore.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                            return;
+                        }
+
+                        // If summarize_auto is disabled, don't show button or auto-generate
+                        if (prefs.summarize_auto === 0) return;
+
+                        // Auto mode (summarize_auto === 2) always generates inline
+                        if (prefs.summarize_auto === 2) {
+                            _generateSummaryForMessage(message.headerMessageId, tabId);
+                            return;
+                        }
+
+                        // Manual button mode (summarize_auto === 1)
+                        if (prefs.summarize_display_mode === 'inline') {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
+                        } else {
+                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId, webchat: true });
+                        }
+                    } catch (e) {
+                        taLog.error("Error in initSummary: " + e);
+                    }
+                }
+                _initSummary();
+                break;
+            case 'triggerSummaryGeneration':
+                async function _triggerSummaryGeneration(message) {
+                    let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                    await _generateSummaryForMessage(message.headerMessageId, tabId);
+                }
+                _triggerSummaryGeneration(message);
+                break;
+            case 'triggerSummaryWebchat':
+                async function _triggerSummaryWebchat(message) {
+                    let tabId = sender.tab.id;
+                    await _openSummaryWebchat(message.headerMessageId, tabId);
+                }
+                _triggerSummaryWebchat(message);
+                break;
+            case 'generate_summary':
+                async function _generate_summary(message) {
+                    await _generateSummaryForMessage(message.headerMessageId, message.tabId);
+                }
+                _generate_summary(message);
+                break;
+            case 'refreshSummary':
+                async function _refreshSummary(message) {
+                    let tabId = sender.tab.id;
+                    let prefs_refresh = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+                    if (prefs_refresh.summarize_display_mode === 'webchat') {
+                        await summaryStore.removeSummary(message.headerMessageId);
+                        await _openSummaryWebchat(message.headerMessageId, tabId);
+                    } else {
+                        // Fire the inline loading indicator immediately, before any await
+                        browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                        await summaryStore.removeSummary(message.headerMessageId);
+                        await _generateSummaryForMessage(message.headerMessageId, tabId);
+                    }
+                }
+                _refreshSummary(message);
+                break;
+            case 'removeSummary':
+                summaryStore.removeSummary(message.headerMessageId);
+                break;
+            case 'chatgpt_saveSummary':
+                async function _saveSummaryFromWebchat(msg) {
+                    try {
+                        let summaryHtml = msg.text.trim();
+                        let cleanedSummary = cleanSummaryText(msg.text);
+                        const summaryData = {
+                            summary: cleanedSummary,
+                            summary_html: summaryHtml,
+                            summary_date: new Date(),
+                            headerMessageId: msg.headerMessageId
+                        };
+                        await summaryStore.saveSummary(summaryData, msg.headerMessageId);
+                        let prefs_summary = await browser.storage.sync.get({
+                            summarize_max_display_length: prefs_default.summarize_max_display_length,
+                            summarize_strip_formatting: prefs_default.summarize_strip_formatting
+                        });
+                        try {
+                            browser.tabs.sendMessage(msg.tabId, {
+                                command: "showSummary",
+                                data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
+                            });
+                        } catch (e) {
+                            taLog.error("Error sending showSummary to tab: " + e);
+                        }
+                    } catch (error) {
+                        console.error("[ThunderAI] Error saving summary from webchat:", error);
+                    }
+                }
+                _saveSummaryFromWebchat(message);
+                break;
             // case 'chatgpt_open':
             //         openChatGPT(message.prompt,message.action,message.tabId);
             //         return true;
+            case 'initTranslation':
+                async function _initTranslation() {
+                    try {
+                        let tabId = sender.tab.id;
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length });
+
+                        if (!prefs.translate) return;
+
+                        let message = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!message) return;
+
+                        // Always show cached translation if available, regardless of translate_auto
+                        let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
+                        if (cachedTranslation && !cachedTranslation.error) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+                            return;
+                        }
+
+                        if (await translationStore.isProcessing(message.headerMessageId)) {
+                            browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                            return;
+                        }
+
+                        // If translate_auto is disabled, don't show button or auto-generate
+                        if (prefs.translate_auto === 0) return;
+
+                        // Auto mode (translate_auto === 2) always generates inline
+                        if (prefs.translate_auto === 2) {
+                            _generateTranslationForMessage(message.headerMessageId, tabId);
+                            return;
+                        }
+
+                        // Manual button mode (translate_auto === 1)
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                    } catch (e) {
+                        taLog.error("Error in initTranslation: " + e);
+                    }
+                }
+                _initTranslation();
+                break;
+            case 'triggerTranslationGeneration':
+                async function _triggerTranslationGeneration(message) {
+                    let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                    let prefs_tl = await browser.storage.sync.get({
+                        translate_lang: prefs_default.translate_lang,
+                        default_chatgpt_lang: prefs_default.default_chatgpt_lang
+                    });
+                    const lang_tl = prefs_tl.translate_lang || prefs_tl.default_chatgpt_lang || '';
+                    if (!lang_tl) {
+                        let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
+                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        return;
+                    }
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _triggerTranslationGeneration(message);
+                break;
+            case 'refreshTranslation':
+                async function _refreshTranslation(message) {
+                    let tabId = sender.tab.id;
+                    // Fire the inline loading indicator immediately, before any await
+                    browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+                    await translationStore.removeTranslation(message.headerMessageId);
+                    await _generateTranslationForMessage(message.headerMessageId, tabId);
+                }
+                _refreshTranslation(message);
+                break;
+            case 'removeTranslation':
+                translationStore.removeTranslation(message.headerMessageId);
+                break;
             case 'chatgpt_close':
                     async function _closeChatGptWindow(window_id) {
                         let prefs_close = await browser.storage.sync.get({chatgpt_win_save_position: prefs_default.chatgpt_win_save_position});
@@ -324,8 +535,26 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'reload_menus':
                 return _reload_menus();
                 break;
+            case 'get_active_special_ids':
+                return _getActiveSpecialIds();
+                break;
             case 'shortcut_do_prompt':
                 taLog.log("Executing shortcut, promptId: " + message.promptId);
+                if (message.promptId !== 'prompt_add_tags' && specialContextMenuActions[message.promptId]) {    //TODO Add an option here if you want the user to decide to use the autotagging also in the popup menu
+                    async function _shortcut_special() {
+                        let tabId = message.tabId;
+                        if (!tabId) {
+                            let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                            if (tabs.length === 0) return false;
+                            tabId = tabs[0].id;
+                        }
+                        let displayedMessage = await browser.messageDisplay.getDisplayedMessage(tabId);
+                        if (!displayedMessage) return false;
+                        taLog.log("Displayed message found.");
+                        return specialContextMenuActions[message.promptId]([displayedMessage]);
+                    }
+                    return _shortcut_special();
+                }
                 return menus.executeMenuAction(message.promptId);
                 break;
             case 'popup_menu_ready':
@@ -359,10 +588,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if (sender.tab.type !== 'messageDisplay' && sender.tab.type !== 'mail') return;
                         let message = await browser.messageDisplay.getDisplayedMessage(tabId);
                         if (!message) return;
-                        let report = await taSpamReport.loadReportData(message.headerMessageId);
+                        let report = await spamReport.loadReportData(message.headerMessageId);
                         if (report) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
-                        } else if (await taSpamReport.isProcessing(message.headerMessageId)) {
+                        } else if (await spamReport.isProcessing(message.headerMessageId)) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
                     } catch (e) {
@@ -372,15 +601,427 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 _checkSpamReport(sender.tab.id);
                 break;
             case 'removeSpamReport':
-                taSpamReport.removeReportData(message.headerMessageId);
+                spamReport.removeReportData(message.headerMessageId);
+                break;
+            case 'refreshSpamReport':
+                _generateSpamReportForMessage(message.headerMessageId);
                 break;
             default:
                 break;
         }
     }
-    // Return false if the message was not handled by this listener.
     return false;
 });
+
+// Clean summary text by stripping HTML, markdown, and formatting artifacts.
+// Used by both inline summary generation and webchat summary save.
+function cleanSummaryText(text) {
+    let cleaned = text.replace(/<\/?[^>]+(>|$)/g, '');  // strip HTML tags
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+    cleaned = cleaned.replace(/[\*#_~`]/g, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    cleaned = cleaned.replace(/^Summary:\s*/i, '');
+    return cleaned;
+}
+
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
+async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            summarize_max_display_length: prefs_default.summarize_max_display_length,
+            summarize_strip_formatting: prefs_default.summarize_strip_formatting,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedSummary = await summaryStore.loadSummary(headerMessageId);
+        if (cachedSummary && !cachedSummary.error) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+            return;
+        }
+
+        if (await summaryStore.isProcessing(headerMessageId)) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+            return;
+        }
+
+        await summaryStore.setProcessing(headerMessageId);
+        taWorkingStatus.startWorking();
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+
+        let message, fullMessage;
+        if (options.messageData) {
+            message = options.messageData.message;
+            fullMessage = options.messageData.fullMessage;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                await summaryStore.saveError(headerMessageId, "Message not found");
+                if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
+            message = messageResult.messages[0];
+            fullMessage = await browser.messages.getFull(message.id);
+        }
+
+        const connectionType = getConnectionType(prefs, {}, 'summarize');
+
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
+            await summaryStore.saveError(headerMessageId, errorMsg);
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            taWorkingStatus.stopWorking();
+            return;
+        }
+
+        const { promptText } = await taPromptUtils.buildSummaryPrompt([{ message, fullMessage }]);
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+        let cleanedSummary = cleanSummaryText(aiResponse);
+        const md = window.markdownit();
+        let summaryHtml = md.render(aiResponse);
+
+        const summaryData = {
+            summary: cleanedSummary,
+            summary_html: summaryHtml,
+            summary_date: new Date(),
+            headerMessageId: headerMessageId
+        };
+        await summaryStore.saveSummary(summaryData, headerMessageId);
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+        taWorkingStatus.stopWorking();
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating summary:", error);
+        if (!error.isConfigError) await summaryStore.saveError(headerMessageId, error.message || String(error));
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        taWorkingStatus.stopWorking();
+    }
+}
+
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
+async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            translate_lang: prefs_default.translate_lang,
+            translate_max_display_length: prefs_default.translate_max_display_length,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+
+        let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
+        if (cachedTranslation && !cachedTranslation.error) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+            return;
+        }
+
+        const lang = prefs.translate_lang || prefs.default_chatgpt_lang || '';
+        if (!lang) {
+            taLog.warn("Translation skipped: no language configured (translate_lang and default_chatgpt_lang are both empty).");
+            return;
+        }
+
+        if (await translationStore.isProcessing(headerMessageId)) {
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+            return;
+        }
+
+        await translationStore.setProcessing(headerMessageId);
+        taWorkingStatus.startWorking();
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslationGenerating" });
+
+        let fullMessage;
+        if (options.messageData) {
+            fullMessage = options.messageData.fullMessage;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                await translationStore.saveError(headerMessageId, "Message not found");
+                if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
+                taWorkingStatus.stopWorking();
+                return;
+            }
+            fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+        }
+
+        const connectionType = getConnectionType(prefs, {}, 'translate');
+
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
+            await translationStore.saveError(headerMessageId, errorMsg);
+            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            taWorkingStatus.stopWorking();
+            return;
+        }
+        const { promptText } = await taPromptUtils.buildTranslationPrompt(fullMessage);
+
+        const cmd = new mzta_specialCommand({
+            prompt: promptText,
+            llm: connectionType,
+            do_debug: prefs.do_debug,
+            config: {}
+        });
+
+        await cmd.initWorker();
+        const aiResponse = await cmd.sendPrompt();
+
+        let translatedBody = '';
+        let translatedSubject = '';
+        let translationStatus = '';
+        try {
+            const parsed = extractJsonObject(aiResponse);
+            translatedBody = parsed.body || '';
+            translatedSubject = parsed.subject || '';
+            translationStatus = String(parsed.status ?? '');
+        } catch (e) {
+            translatedBody = aiResponse;
+        }
+
+        const translationData = {
+            translated_text: translatedBody,
+            translated_subject: translatedSubject,
+            translation_status: translationStatus,
+            lang: lang,
+            headerMessageId: headerMessageId
+        };
+        await translationStore.saveTranslation(translationData, headerMessageId);
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
+        taWorkingStatus.stopWorking();
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating translation:", error);
+        if (!error.isConfigError) await translationStore.saveError(headerMessageId, error.message || String(error));
+        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
+        taWorkingStatus.stopWorking();
+    }
+}
+
+// options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
+// options.prefs: pass pre-fetched prefs to avoid re-querying
+// options.autoMove: if true, move spam messages to junk folder (default: false)
+async function _generateSpamReportForMessage(headerMessageId, options = {}) {
+    try {
+        let prefs = options.prefs || await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            do_debug: prefs_default.do_debug,
+            default_chatgpt_lang: prefs_default.default_chatgpt_lang,
+            spamfilter_threshold: prefs_default.spamfilter_threshold,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
+        });
+
+        await spamReport.removeReportData(headerMessageId);
+        await spamReport.setProcessing(headerMessageId);
+
+        await updateSpamPanel(headerMessageId, "showSpamCheckInProgress");
+
+        let message, curr_fullMessage, msg_text, body_text;
+
+        if (options.messageData) {
+            message = options.messageData.message;
+            curr_fullMessage = options.messageData.fullMessage;
+            msg_text = options.messageData.msg_text;
+            body_text = options.messageData.body_text;
+        } else {
+            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+            if (!messageResult || messageResult.messages.length === 0) {
+                let err_data = await spamReport.saveError(headerMessageId, "Message not found");
+                await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+                return { success: false };
+            }
+            message = messageResult.messages[0];
+            curr_fullMessage = await browser.messages.getFull(message.id);
+            msg_text = await getMailBody(curr_fullMessage);
+            body_text = htmlBodyToPlainText(msg_text.html);
+            if (body_text.length == 0) {
+                body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        // Extract sender email for skip checks
+        let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+
+        // Check if sender is in the skip addresses list
+        let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
+        if (skip_addresses.length > 0) {
+            if (senderEmail && skip_addresses.includes(senderEmail)) {
+                taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
+                let report_data = {};
+                report_data.report_date = new Date();
+                report_data.headerMessageId = headerMessageId;
+                report_data.spamValue = 0;
+                report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addresses_explanation');
+                report_data.subject = curr_fullMessage.headers.subject;
+                report_data.from = curr_fullMessage.headers.from;
+                report_data.message_date = new Date(message.date);
+                report_data.moved = false;
+                report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                spamReport.saveReportData(report_data, headerMessageId);
+                await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                return { success: true };
+            }
+        }
+
+        // Check if sender is in any address book
+        let skip_addressbook = options.skip_addressbook !== undefined
+            ? options.skip_addressbook
+            : (await browser.storage.sync.get({spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook})).spamfilter_skip_addressbook;
+        if (skip_addressbook && senderEmail) {
+            try {
+                let hasPermission = await browser.permissions.contains({ permissions: ["addressBooks"] });
+                if (hasPermission) {
+                    let matchingContacts = await browser.contacts.quickSearch({ searchString: senderEmail });
+                    let isInAddressBook = matchingContacts.some(contact => {
+                        let props = contact.properties;
+                        return (props.PrimaryEmail && props.PrimaryEmail.toLowerCase() === senderEmail) ||
+                               (props.SecondEmail && props.SecondEmail.toLowerCase() === senderEmail);
+                    });
+                    if (isInAddressBook) {
+                        taLog.log("Sender " + senderEmail + " is in the address book, skipping spam filter.");
+                        let report_data = {};
+                        report_data.report_date = new Date();
+                        report_data.headerMessageId = headerMessageId;
+                        report_data.spamValue = 0;
+                        report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addressbook_explanation');
+                        report_data.subject = curr_fullMessage.headers.subject;
+                        report_data.from = curr_fullMessage.headers.from;
+                        report_data.message_date = new Date(message.date);
+                        report_data.moved = false;
+                        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                        spamReport.saveReportData(report_data, headerMessageId);
+                        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+                        return { success: true };
+                    }
+                }
+            } catch (err) {
+                taLog.error("Error checking address book for sender: " + err);
+                // Fail open — continue with normal spam check
+            }
+        }
+
+        let curr_prompt_spamfilter = await getSpamFilterPrompt();
+        let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
+        let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
+            curr_prompt: curr_prompt_spamfilter,
+            curr_message: message,
+            chatgpt_lang: chatgpt_lang,
+            body_text: body_text,
+            subject_text: curr_fullMessage.headers.subject,
+            msg_text: msg_text
+        });
+        taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
+
+        let cmd_spamfilter = new mzta_specialCommand({
+            prompt: specialFullPrompt_spamfilter,
+            llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
+            custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
+            do_debug: prefs.do_debug,
+            config: curr_prompt_spamfilter
+        });
+        await cmd_spamfilter.initWorker();
+
+        let spamfilter_result = '';
+        taLog.log("Sending the prompt...");
+        try {
+            spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
+        } catch (err) {
+            console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
+            let err_data = await spamReport.saveError(headerMessageId, err.message || String(err));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
+        taLog.log("spamfilter_result: " + spamfilter_result);
+
+        let jsonObj = {};
+        taLog.log("Decoding the AI response...");
+        try {
+            jsonObj = extractJsonObject(spamfilter_result);
+        } catch (e) {
+            console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
+            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
+        taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
+
+        let report_data = {};
+        report_data.report_date = new Date();
+        report_data.headerMessageId = headerMessageId;
+        report_data.spamValue = jsonObj.spamValue;
+        report_data.explanation = jsonObj.explanation;
+        report_data.subject = curr_fullMessage.headers.subject;
+        report_data.from = curr_fullMessage.headers.from;
+        report_data.message_date = new Date(message.date);
+        report_data.moved = false;
+        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+
+        if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
+            taLog.log("Marking as spam [" + headerMessageId + "]");
+            messenger.messages.update(message.id, { junk: true });
+            let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
+            messenger.messages.move([message.id], spamFolder[0].id);
+            report_data.moved = true;
+            taLog.log("Marked as spam [" + headerMessageId + "]");
+        }
+
+        spamReport.saveReportData(report_data, headerMessageId);
+        await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
+        return { success: true };
+
+    } catch (error) {
+        console.error("[ThunderAI] Error generating spam report:", error);
+        if (error.isConfigError) {
+            await updateSpamPanel(headerMessageId, "showSpamReport", { spamValue: -999, explanation: error.message || String(error) });
+        } else {
+            let err_data = await spamReport.saveError(headerMessageId, error.message || String(error));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+        }
+        return { success: false };
+    }
+}
+
+async function _openSummaryWebchat(headerMessageId, tabId) {
+    try {
+        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
+        if (!messageResult || messageResult.messages.length === 0) {
+            console.error("[ThunderAI] _openSummaryWebchat: Message not found for headerMessageId:", headerMessageId);
+            return;
+        }
+
+        const curr_message = messageResult.messages[0];
+        const curr_message_full = await browser.messages.getFull(curr_message.id);
+
+        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), {}, 'summarize');
+        if (connectionType === 'chatgpt_web') {
+            const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
+            await summaryStore.saveError(headerMessageId, errorMsg);
+            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            return;
+        }
+
+        const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt([{ message: curr_message, fullMessage: curr_message_full }]);
+        promptInfo.headerMessageId = headerMessageId;
+        promptInfo.summaryTabId = tabId;
+
+        openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
+    } catch (error) {
+        console.error("[ThunderAI] Error opening summary webchat:", error);
+    }
+}
 
 // Listen for messages from ThunderAI-Sparks
 browser.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
@@ -814,13 +1455,16 @@ async function reload_pref_init(){
         add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
+        summarize_auto: prefs_default.summarize_auto,
+        translate: prefs_default.translate,
+        translate_auto: prefs_default.translate_auto,
         spamfilter_threshold: prefs_default.spamfilter_threshold,
         spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
         dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
         chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter;
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -842,6 +1486,9 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
                   });
                 menus.reload(special_prompts_ids);
@@ -859,8 +1506,11 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -876,8 +1526,11 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -893,8 +1546,71 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
-                  });                  
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'spamfilter' changes
+            if (changes.spamfilter) {
+                const newSpamfilter = changes.spamfilter.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: newSpamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'summarize' changes
+            if (changes.summarize) {
+                const newSummarize = changes.summarize.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: newSummarize,
+                    translate: prefs_init.translate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
+                menus.reload(special_prompts_ids);
+            }
+
+            // Process 'translate' changes
+            if (changes.translate) {
+                const newTranslate = changes.translate.newValue;
+                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
+                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
+                let getTask = doGetSparkFeature(prefs_init.get_task);
+                const special_prompts_ids = getActiveSpecialPromptsIDs({
+                    addtags: prefs_init.add_tags,
+                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
+                    get_calendar_event: getCalendarEvent,
+                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
+                    get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: newTranslate,
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                  });
                 menus.reload(special_prompts_ids);
             }
 
@@ -910,14 +1626,15 @@ function setupStorageChangeListener() {
                     get_calendar_event: getCalendarEvent,
                     get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
                     get_task: getTask,
+                    spamfilter: prefs_init.spamfilter,
+                    summarize: prefs_init.summarize,
+                    translate: prefs_init.translate,
                     is_chatgpt_web: (newConnectionType === "chatgpt_web")
-                  });                  
+                  });
                 menus.reload(special_prompts_ids);
             }
 
-            reload_pref_init().then(() => {
-                addContextMenuItems();
-            });
+            reload_pref_init();
         }
     });
 }
@@ -946,85 +1663,34 @@ function setupPermissionsRemovedListener() {
 setupPermissionsRemovedListener();
 
 // Menus handling
+await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
 menus.loadMenus(special_prompts_ids);
 
-// Context Menus
-function addContextMenu(menu_id) {
-    browser.menus.remove(menu_id);
-    browser.menus.create({
-        id: menu_id,
-        title: browser.i18n.getMessage("context_menu_" + menu_id),
-        contexts: ["message_list"],
-        icons: contextMenuIconsPath[menu_id],
-    });
-    taLog.log("Context menu added: " + menu_id);
-    // console.log(">>>>>>> contextMenuIconsPath[menu_id]: " + contextMenuIconsPath[menu_id]);
-}
+// Context menu click handling
+// Context menus are now created dynamically by mzta_Menus.loadContextMenus()
+// based on each prompt's show_in property. The menu item IDs use the format 'mzta-ctx-<prompt_id>'.
+// Special prompts (add_tags, spamfilter, summarize, translate) are routed to processEmails()
+// for batch processing. Regular prompts are executed via menus.executeMenuAction().
 
-function removeContextMenu(menu_id) {
-    browser.menus.remove(menu_id);
-    taLog.log("Context menu removed: " + menu_id);
-}
+const specialContextMenuActions = {
+    'prompt_add_tags': (messages) => processEmails({ messages, addTagsAuto: true }),
+    'prompt_spamfilter': (messages) => processEmails({ messages, spamFilter: true }),
+    'prompt_summarize': (messages) => processEmails({ messages, summarize: true }),
+    'prompt_translate_this': (messages) => processEmails({ messages, translate: true }),
+};
 
-function addContextMenuItems() {
-    let itemsToAdd = [];
+browser.menus.onClicked.addListener((info, tab) => {
+    const menuItemId = info.menuItemId;
+    if (typeof menuItemId !== 'string' || !menuItemId.startsWith('mzta-ctx-')) {
+        return;
+    }
+    const promptId = menuItemId.replace('mzta-ctx-', '');
 
-    // Add Context menu: Add tags
-    if(prefs_init.add_tags && checkAPIIntegration(prefs_init.connection_type, prefs_init.add_tags_use_specific_integration,prefs_init.add_tags_connection_type)){
-        itemsToAdd.push(contextMenuID_AddTags);
+    if (specialContextMenuActions[promptId]) {
+        specialContextMenuActions[promptId](getMessages(info.selectedMessages));
     } else {
-        removeContextMenu(contextMenuID_AddTags);
-    }
-
-    // Add Context menu: Spamfilter
-    if(prefs_init.spamfilter && checkAPIIntegration(prefs_init.connection_type, prefs_init.spamfilter_use_specific_integration,prefs_init.spamfilter_connection_type)){
-        itemsToAdd.push(contextMenuID_Spamfilter);
-    } else {
-        removeContextMenu(contextMenuID_Spamfilter);
-    }
-    
-    // Add Context menu: Summarize
-    if(prefs_init.summarize && checkAPIIntegration(prefs_init.connection_type, prefs_init.summarize_use_specific_integration, prefs_init.summarize_connection_type)) {
-        itemsToAdd.push(contextMenuID_Summarize);
-    } else {
-        removeContextMenu(contextMenuID_Summarize);
-    }
-
-    itemsToAdd.sort((a, b) => {
-        let titleA = browser.i18n.getMessage("context_menu_" + a);
-        let titleB = browser.i18n.getMessage("context_menu_" + b);
-        return titleA.localeCompare(titleB);
-    });
-
-    itemsToAdd.forEach(menu_id => {
-        addContextMenu(menu_id);
-    });
-}
-
-addContextMenuItems();
-
-// Listen for context menu item clicks
-browser.menus.onClicked.addListener( (info, tab) => {
-    let _add_tags = false
-    let _spamfilter = false
-    let _summarize = false;
-    if(info.menuItemId === contextMenuID_AddTags){
-        _add_tags = true;
-    }
-    if(info.menuItemId === contextMenuID_Spamfilter){
-        _spamfilter = true;
-    }
-    if(info.menuItemId === contextMenuID_Summarize) {
-        _summarize = true;
-    }
-    if(_add_tags || _spamfilter || _summarize){
-        processEmails({
-            messages: getMessages(info.selectedMessages),
-            addTagsAuto: _add_tags,
-            spamFilter: _spamfilter,
-            summarize: _summarize
-        });
+        menus.executeMenuAction(promptId);
     }
 });
 
@@ -1042,22 +1708,33 @@ const newEmailListener = (folder, messagesList) => {
     async function _newEmailListener(){
         let messages = getMessages(messagesList);
 
-        taSpamReport.logger = taLog;
-
         let add_tags_auto_enabled = prefs_init.add_tags && prefs_init.add_tags_auto;
 
         await processEmails({
             messages: messages,
             addTagsAuto: add_tags_auto_enabled,
-            spamFilter: prefs_init.spamfilter
+            spamFilter: prefs_init.spamfilter,
+            summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
+            translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
+            isAutoMode: true,
         });
 
         if(prefs_init.spamfilter){
-            taSpamReport.truncReportData();
+            spamReport.truncReportData();
         }
     }
 
     return _newEmailListener();
+}
+
+async function showGenericError(errMsg, source) {
+    let tabs = await browser.tabs.query({});
+    for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, {
+            command: "showGenericError",
+            data: { message: errMsg, source: source }
+        }).catch(() => {});
+    }
 }
 
 async function updateSpamPanel(messageId, command, data = null) {
@@ -1082,15 +1759,19 @@ async function processEmails(args) {
         messages,
         addTagsAuto = false,
         spamFilter = false,
-        summarize = false
+        summarize = false,
+        summarizeOnReceive = false,
+        translateOnReceive = false,
+        translate = false,
+        isAutoMode = false,
     } = args;
 
     taWorkingStatus.startWorking();
 
-    // We keep two different loops, one for addTagsAuto and spamFilter and one for summarize
-    // because summarize is never called when an email is received, but only when using the context menu item
+    // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
+    // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive || translate) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1102,10 +1783,15 @@ async function processEmails(args) {
             add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
+            spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
+            spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
         //  console.log(">>>>>>>>>>>>>>>> prefs_aats: " + JSON.stringify(prefs_aats));
+        let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
+        let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
+
         for await (let message of messages) {
             let curr_fullMessage = null;
             let msg_text = null;
@@ -1123,197 +1809,147 @@ async function processEmails(args) {
             }
     
             if (addTagsAuto) {
-                if(prefs_aats.add_tags_enabled_accounts.length > 0){
+                let skipAddTags = false;
+                if(isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
-                        continue;
+                        skipAddTags = true;
                     }
                 }
-                let specialFullPrompt_add_tags = '';
-                let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
-                let tags_full_list = await getTagsList();
-                //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
-                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
-                specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
-                    curr_prompt: curr_prompt_add_tags,
-                    curr_message: message,
-                    chatgpt_lang: chatgpt_lang,
-                    body_text: body_text,
-                    subject_text: curr_fullMessage.headers.subject,
-                    msg_text: msg_text,
-                    tags_full_list: tags_full_list
-                });
-                specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                taLog.log("Special prompt: " + specialFullPrompt_add_tags);
-                // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
-                let cmd_addTags = new mzta_specialCommand({
-                    prompt: specialFullPrompt_add_tags,
-                    llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
-                    custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
-                    do_debug: prefs_aats.do_debug,
-                    config: curr_prompt_add_tags
-                });
-                await cmd_addTags.initWorker();
-                let tags_current_email = [];
-                try {
-                    tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
-                } catch (err) {
-                    console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                if (!skipAddTags) {
+                    let specialFullPrompt_add_tags = '';
+                    let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
+                    let tags_full_list = await getTagsList();
+                    //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
+                    let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
+                    specialFullPrompt_add_tags = await taPromptUtils.preparePrompt({
+                        curr_prompt: curr_prompt_add_tags,
+                        curr_message: message,
+                        chatgpt_lang: chatgpt_lang,
+                        body_text: body_text,
+                        subject_text: curr_fullMessage.headers.subject,
+                        msg_text: msg_text,
+                        tags_full_list: tags_full_list
+                    });
+                    specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                    taLog.log("Special prompt: " + specialFullPrompt_add_tags);
+                    // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
+                    let cmd_addTags = new mzta_specialCommand({
+                        prompt: specialFullPrompt_add_tags,
+                        llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
+                        custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
+                        do_debug: prefs_aats.do_debug,
+                        config: curr_prompt_add_tags
+                    });
+                    let addTagsInitFailed = false;
+                    try {
+                        await cmd_addTags.initWorker();
+                    } catch (err) {
+                        addTagsInitFailed = true;
+                        if (err.isConfigError) {
+                            await showGenericError(err.message, browser.i18n.getMessage('prompt_add_tags') || 'Add tags');
+                        } else {
+                            console.error("[ThunderAI | Auto add_tags] initWorker error: ", err);
+                        }
+                    }
+                    if (!addTagsInitFailed) {
+                        let tags_current_email = [];
+                        try {
+                            tags_current_email = taPromptUtils.getTagsFromResponse(await cmd_addTags.sendPrompt(), prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
+                        } catch (err) {
+                            console.error("[ThunderAI | Auto add_tags] Error getting tags: ", err);
+                        }
+                        taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
+                        let _data = { messageId: message.id, tags: tags_current_email };
+                        _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
+                    }
                 }
-                taLog.log("tags_current_email: " + JSON.stringify(tags_current_email));
-                let _data = { messageId: message.id, tags: tags_current_email };
-                _assign_tags(_data, !prefs_aats.add_tags_auto_force_existing, prefs_aats.add_tags_exclusions_exact_match);
             }
     
             if (spamFilter) {
-                if(prefs_aats.spamfilter_enabled_accounts.length > 0){
+                let skipSpamFilter = false;
+                if(isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
-                        continue;
+                        skipSpamFilter = true;
                     }
                 }
+                if (!skipSpamFilter) {
+                    await _generateSpamReportForMessage(
+                        message.headerMessageId,
+                        {
+                            messageData: { message, fullMessage: curr_fullMessage, body_text, msg_text },
+                            prefs: prefs_aats,
+                            autoMove: true,
+                            skip_addresses: spamfilter_skip_addresses,
+                            skip_addressbook: spamfilter_skip_addressbook
+                        });
+                }
+            }
 
-                await taSpamReport.removeReportData(message.headerMessageId);
-                await taSpamReport.setProcessing(message.headerMessageId);
-                
-                await updateSpamPanel(message.headerMessageId, "showSpamCheckInProgress");
+            if (summarizeOnReceive) {
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+                taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId);
+                await _generateSummaryForMessage(message.headerMessageId, null, {
+                    messageData: { message, fullMessage: curr_fullMessage }
+                });
+            }
 
-                let curr_prompt_spamfilter = await getSpamFilterPrompt();
-                // console.log(">>>>>>>>>>>>> curr_prompt_spamfilter: " + JSON.stringify(curr_prompt_spamfilter));
-                let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
-                let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
-                    curr_prompt: curr_prompt_spamfilter,
-                    curr_message: message,
-                    chatgpt_lang: chatgpt_lang,
-                    body_text: body_text,
-                    subject_text: curr_fullMessage.headers.subject,
-                    msg_text: msg_text
+            if (translateOnReceive || translate) {
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+                let translateTabId = null;
+                if (translate) {
+                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    translateTabId = tabs[0].id;
+                }
+                taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
+                await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
+                    messageData: { fullMessage: curr_fullMessage }
                 });
-                taLog.log("Special prompt: " + specialFullPrompt_spamfilter);
-                // console.log(">>>>>>>> Special prompt for spamfilter: " + specialFullPrompt_spamfilter);
-                let cmd_spamfilter = new mzta_specialCommand({
-                    prompt: specialFullPrompt_spamfilter,
-                    llm: getConnectionType(prefs_aats, curr_prompt_spamfilter, 'spamfilter'),
-                    custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
-                    do_debug: prefs_aats.do_debug,
-                    config: curr_prompt_spamfilter
-                });
-                await cmd_spamfilter.initWorker();
-                let spamfilter_result = '';
-                taLog.log("Sending the prompt...");
-                try {
-                    spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
-                } catch (err) {
-                    console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, err.message || String(err));
-                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
-                    continue;
-                }
-                taLog.log("spamfilter_result: " + spamfilter_result);
-                let jsonObj = {};
-                taLog.log("Decoding the AI response...");
-                try {
-                    jsonObj = extractJsonObject(spamfilter_result);
-                } catch (e) {
-                    console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-                    let err_data = await taSpamReport.saveError(message.headerMessageId, e.message || String(e));
-                    await updateSpamPanel(message.headerMessageId, "showSpamReport", err_data);
-                    continue;
-                }
-                taLog.log("SpamFilter jsonObj: " + JSON.stringify(jsonObj));
-    
-                let report_data = {};
-                report_data.report_date = new Date();
-                report_data.headerMessageId = message.headerMessageId;
-                report_data.spamValue = jsonObj.spamValue;
-                report_data.explanation = jsonObj.explanation;
-                report_data.subject = curr_fullMessage.headers.subject;
-                report_data.from = curr_fullMessage.headers.from;
-                report_data.message_date = new Date(message.date);
-                report_data.moved = false;
-                report_data.SpamThreshold = prefs_init.spamfilter_threshold;
-    
-                if (jsonObj.spamValue >= prefs_init.spamfilter_threshold) {
-                    taLog.log("Marking as spam [" + message.headerMessageId + "]");
-                    messenger.messages.update(message.id, { junk: true });
-                    let spamFolder = await messenger.folders.query({ accountId: message.folder.accountId, specialUse: ['junk'] });
-                    messenger.messages.move([message.id], spamFolder[0].id);
-                    report_data.moved = true;
-                    taLog.log("Marked as spam [" + message.headerMessageId + "]");
-                }
-    
-                taSpamReport.saveReportData(report_data, message.headerMessageId);
-    
-                // Check if the message is currently displayed and update the banner
-                await updateSpamPanel(message.headerMessageId, "showSpamReport", report_data);
             }
         }
     }
 
     if (summarize) {
-        // we have three prompts, the actual assignment for the LLM, the email
-        // template prompt, and the email separator prompt
-        const specialPrompts = await getSpecialPrompts();
-        const prompt = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize');
-        const prompt_email = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_template');
-        const prompt_email_separator = specialPrompts.find((prompt) => prompt.id === 'prompt_summarize_email_separator');
-        
+        let summarize_prefs = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+
+        // Collect messages into array to check count
+        const messageArray = [];
+        for await (let msg of messages) {
+            messageArray.push(msg);
+        }
+
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        const chatgpt_lang = await taPromptUtils.getDefaultLang(prompt);
-    
-        // replace placeholders in the prompts the assignment prompt and email
-        // separator prompt do not have a message as context, so there is only
-        // limited things to replace
-        const prompt_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt,
-            chatgpt_lang: chatgpt_lang,
-        });
-        const prompt_email_separator_string = await taPromptUtils.preparePrompt({
-            curr_prompt: prompt_email_separator,
-            chatgpt_lang: chatgpt_lang,
-        });
-    
-        
-        // assemble all email messages into one string and add the assignment prompt
-        const messages_list = [];
-        for await (let curr_message of messages) {
-          
-            // extract body of current message as text
-            const curr_message_full = await browser.messages.getFull(curr_message.id);
-            const curr_body_full_html = await getMailBody(curr_message_full);
-            let curr_body_full_text = htmlBodyToPlainText(curr_body_full_html.html);
-            if( curr_body_full_text.length === 0) {
-                taLog.log("No HTML found in the message body, using plain text...");
-                curr_body_full_text = curr_message_full.text;
+        const tabId = tabs[0].id;
+
+        // Inline mode for single message: generate inline summary in the message pane
+        if (summarize_prefs.summarize_display_mode === 'inline' && messageArray.length === 1) {
+            // Fire the inline loading indicator immediately, before any heavy work
+            browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+
+            const msg = messageArray[0];
+            const fullMessage = await browser.messages.getFull(msg.id);
+            await _generateSummaryForMessage(msg.headerMessageId, tabId, {
+                messageData: { message: msg, fullMessage }
+            });
+        } else {
+            // Webchat mode, or inline with multiple messages (fallback to webchat)
+            const messageDataArray = [];
+            for (let curr_message of messageArray) {
+                const fullMessage = await browser.messages.getFull(curr_message.id);
+                messageDataArray.push({ message: curr_message, fullMessage });
             }
-            
-            messages_list.push(await taPromptUtils.preparePrompt({
-              curr_prompt: prompt_email,
-              curr_message: curr_message,
-              chatgpt_lang: chatgpt_lang,
-              body_text: curr_body_full_text,
-              subject_text: curr_message_full.headers.subject,
-              msg_text: curr_body_full_html,
-            }));
-        };
-        const messages_string = messages_list.join(prompt_email_separator_string);
-        
-        const full_prompt = prompt_string + prompt_email_separator_string + messages_string;
-        
-        // console.log(full_prompt);
-        
-        // send the prompt to the chat interface
-        openChatGPT(
-            full_prompt, 
-            prompt.action,
-            tabs[0].id,
-            prompt.name,
-            prompt.need_custom_text,
-            prompt
-        );
+            const { promptText, promptInfo } = await taPromptUtils.buildSummaryPrompt(messageDataArray);
+
+            openChatGPT(promptText, promptInfo.action, tabId, promptInfo.name, promptInfo.need_custom_text, promptInfo);
+        }
     }
 
     taWorkingStatus.stopWorking();

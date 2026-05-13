@@ -31,6 +31,7 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -83,7 +84,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
@@ -91,7 +93,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level Claude response parsing stuff
@@ -124,7 +127,11 @@ self.onmessage = async function(event) {
                     // Events handling
                     switch (parsedData.type) {
                         case 'content_block_delta':
-                            if (parsedData.delta && parsedData.delta.text) {
+                            if (parsedData.delta && parsedData.delta.type === 'thinking_delta' && typeof parsedData.delta.thinking === 'string') {
+                                const token = parsedData.delta.thinking;
+                                thinkingAccumulator += token;
+                                postMessage({ type: 'newThinkingToken', payload: { token } });
+                            } else if (parsedData.delta && typeof parsedData.delta.text === 'string') {
                                 const token = parsedData.delta.text;
                                 assistantResponseAccumulator += token;
                                 postMessage({ type: 'newToken', payload: { token } });
@@ -143,7 +150,8 @@ self.onmessage = async function(event) {
                             taLog.log("AI full response: " + assistantResponseAccumulator);
                             conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                             assistantResponseAccumulator = '';
-                            postMessage({ type: 'tokensDone' });
+                            postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                            thinkingAccumulator = '';
                             return; // end the loop
                     }
                 }

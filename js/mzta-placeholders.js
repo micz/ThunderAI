@@ -128,6 +128,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        id: 'mail_full_headers',
+        name: "__MSG_placeholder_mail_full_headers__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
         id: 'selected_text',
         name: "__MSG_placeholder_selected_text__",
         default_value: "",
@@ -247,6 +256,24 @@ const defaultPlaceholders = [
     {
         id: 'thunderai_def_lang',
         name: "__MSG_placeholder_thunderai_def_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'thunderai_translate_lang',
+        name: "__MSG_placeholder_thunderai_translate_lang__",
+        default_value: "",
+        type: 0,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'thunderai_translate_exclude_lang',
+        name: "__MSG_placeholder_thunderai_translate_exclude_lang__",
         default_value: "",
         type: 0,
         is_default: "1",
@@ -550,6 +577,9 @@ export const placeholdersUtils = {
                 case 'mail_headers':
                     finalSubs['mail_headers:' + currPH.custom_value] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(await getMailHeader(curr_message, currPH.custom_value)));
                     break;
+                case 'mail_full_headers':
+                    finalSubs['mail_full_headers'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(await getMailHeader(curr_message)));
+                    break;
                 case 'selected_text':
                     finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
                     break;
@@ -598,6 +628,14 @@ export const placeholdersUtils = {
                 case 'thunderai_def_lang':
                     let prefs_def_lang = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
                     finalSubs['thunderai_def_lang'] = placeholdersUtils.failSafePlaceholders(prefs_def_lang.default_chatgpt_lang);
+                    break;
+                case 'thunderai_translate_lang':
+                    let prefs_translate_lang = await browser.storage.sync.get({ translate_lang: prefs_default.translate_lang });
+                    finalSubs['thunderai_translate_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_lang.translate_lang);
+                    break;
+                case 'thunderai_translate_exclude_lang':
+                    let prefs_translate_exclude_lang = await browser.storage.sync.get({ translate_exclude_lang: prefs_default.translate_exclude_lang });
+                    finalSubs['thunderai_translate_exclude_lang'] = placeholdersUtils.failSafePlaceholders(prefs_translate_exclude_lang.translate_exclude_lang);
                     break;
                 case 'mail_attachments_info':
                     let attachments_info_string = "";

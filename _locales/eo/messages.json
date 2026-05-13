@@ -65,9 +65,6 @@
     "prompt_reply_advanced": {
         "message": "Respondu al ĉi tiu fadeno"
     },
-    "prompt_summarize_this": {
-        "message": "Resumu ĉi tion"
-    },
     "prompt_translate_this": {
         "message": "Traduku ĉi tion"
     },
