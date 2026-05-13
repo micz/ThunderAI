@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.6.0
+* Tom Select v2.6.1
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -1685,7 +1685,8 @@
 	  var init_textbox = () => {
 	    const data_raw = input.getAttribute(attr_data);
 	    if (!data_raw) {
-	      var value = input.value.trim() || '';
+	      var _input$value$trim, _input$value;
+	      var value = (_input$value$trim = input == null || (_input$value = input.value) == null ? void 0 : _input$value.trim()) != null ? _input$value$trim : '';
 	      if (!settings.allowEmptyOption && !value.length) return;
 	      const values = value.split(settings.delimiter);
 	      iterate(values, value => {
@@ -2024,13 +2025,6 @@
 	    self.close(false);
 	    self.inputState();
 	    self.isSetup = true;
-	    if (input.disabled) {
-	      self.disable();
-	    } else if (input.readOnly) {
-	      self.setReadOnly(true);
-	    } else {
-	      self.enable(); //sets tabIndex
-	    }
 	    self.on('change', this.onChange);
 	    addClasses(input, 'tomselected', 'ts-hidden-accessible');
 	    self.trigger('initialize');
@@ -2139,6 +2133,15 @@
 	    }) : self.settings;
 	    self.setupOptions(settings.options, settings.optgroups);
 	    self.setValue(settings.items || [], true); // silent prevents recursion
+
+	    if (self.input.disabled) {
+	      self.disable();
+	    } else if (self.input.readOnly) {
+	      self.setReadOnly(true);
+	    } else {
+	      self.enable(); //sets tabIndex
+	    }
+	    self.lastQuery = null; // so updated options will be displayed in dropdown
 	  }
 
 	  /**
@@ -2813,14 +2816,19 @@
 	    var self = this;
 	    if (self.isDisabled || self.isReadOnly) return;
 	    self.ignoreFocus = true;
-	    if (self.control_input.offsetWidth) {
-	      self.control_input.focus();
-	    } else {
-	      self.focus_node.focus();
-	    }
+	    const focusTarget = this.control_input.offsetWidth ? this.control_input : this.focus_node;
+	    focusTarget.focus();
 	    setTimeout(() => {
 	      self.ignoreFocus = false;
-	      self.onFocus();
+	      // Fix https://github.com/orchidjs/tom-select/issues/806
+	      // Only proceed if this instance's element is still the active element. If Edge autofill
+	      // (or anything else) has moved focus to a different element in the interim, calling
+	      // onFocus() here would steal focus back and restart the cascade loop.
+	      const root = focusTarget.getRootNode();
+	      if (root.activeElement !== focusTarget) {
+	        return;
+	      }
+	      this.onFocus();
 	    }, 0);
 	  }
 
