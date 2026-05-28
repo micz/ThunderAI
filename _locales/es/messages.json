@@ -21,7 +21,7 @@
         "message": "Reescribe de manera formal"
     },
     "prompt_translate_this": {
-        "message": "Traducir esto"
+        "message": "Traducir"
     },
     "prompt_classify": {
         "message": "Clasificar"
@@ -567,7 +567,7 @@
         "message": "Si está marcado, se incluirá un elemento en el menú para aplicar etiquetas a los correos electrónicos."
     },
     "prompt_add_tags": {
-        "message": "Agregar etiquetas a este correo electrónico"
+        "message": "Agregar etiquetas"
     },
     "prompt_add_tags_full_text": {
         "message": "Analiza el siguiente texto de correo electrónico y genera una matriz JSON de etiquetas que resuman su contenido. Utiliza temas, tópicos clave y descriptores relevantes como etiquetas. Asegúrate de que las etiquetas sean concisas y relevantes para el contenido del correo.\nTexto del correo: {%mail_text_body%}\nConsidera los siguientes detalles para el contexto:\n- Remitente: {%author%}\n- Destinatarios: {%recipients%}\n- Lista CC: {%cc_list%}\n- Asunto del correo: {%mail_subject%}\nPor favor, basa tus etiquetas en el texto y contexto del correo, ignorando información innecesaria o detalles triviales.\nGenera una respuesta solo en formato JSON. La salida debe ser únicamente una matriz JSON de etiquetas sin ningún comentario o texto adicional. Aquí tienes un ejemplo del formato JSON a usar:\n{\n\"tags\": [\"etiqueta1\", \"etiqueta2\", \"etiqueta3\", \"etiqueta4\", \"etiqueta5\"]\n}"
@@ -885,7 +885,7 @@
         "message": "Texto actual del prompt"
     },
     "prompt_spamfilter": {
-        "message": "Detectar correos spam"
+        "message": "Analizar para spam"
     },
     "prompt_spamfilter_full_text": {
         "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.\nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:\n{\n\"explanation\": \"Breve explicación de tu razonamiento\",\n\"spamValue\": <entero de 0 a 100>\n}\nAquí está la información del correo:\nRemitente: \"{%author%}\"\nAsunto: \"{%mail_subject%}\"\nCuerpo HTML: \"{%mail_html_body%}\""
@@ -1344,7 +1344,7 @@
         "message": "Opciones de resumen"
     },
     "prompt_summarize": {
-        "message": "Resumir este correo electrónico o estos correos electrónicos"
+        "message": "Resumir"
     },
     "prompt_summarize_full_text": {
         "message": "Proporcione un resumen conciso del siguiente mensaje(s) de correo electrónico. El resumen debe tener un máximo de 3 a 5 oraciones y capturar los puntos principales. Escriba en párrafos sencillos sin viñetas, listas o formato markdown:\n\n"
@@ -1710,5 +1710,89 @@
     },
     "prefs_OptionText_translate_max_display_length": {
         "message": "Longitud máxima de la traducción mostrada"
+    },
+    "show_in": {
+        "message": "Mostrar en"
+    },
+    "show_in_popup": {
+        "message": "Solo ventana emergente"
+    },
+    "show_in_context": {
+        "message": "Solo menú contextual"
+    },
+    "show_in_both": {
+        "message": "Ambos"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Colapsar bloque de pensamiento por defecto"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Controla el estado inicial del bloque de pensamiento que se muestra encima de la respuesta. Si está marcado, el bloque se colapsa por defecto y se puede abrir con un clic. Si no está marcado, el bloque está abierto por defecto y se puede colapsar con un clic. El contenido de pensamiento siempre se conserva."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Pensando"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Presupuesto de pensamiento extendido (tokens)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Máximo de tokens que el modelo puede gastar en pensamiento extendido. Configúralo en 0 para deshabilitar el pensamiento extendido. Cuando está habilitado, el valor de la temperatura es ignorado por la API de Claude."
+    },
+    "generic_error_dismiss": {
+        "message": "Descartar"
+    },
+    "menu_order_title": {
+        "message": "Orden del menú"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Menú emergente"
+    },
+    "menu_order_context_list_title": {
+        "message": "Menú contextual"
+    },
+    "menu_order_saved": {
+        "message": "¡Orden del menú guardado!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Leyendo"
+    },
+    "menu_order_tab_composing": {
+        "message": "Componiendo"
+    },
+    "menu_order_badge_default": {
+        "message": "Predeterminado"
+    },
+    "menu_order_badge_special": {
+        "message": "Especial"
+    },
+    "menu_order_badge_custom": {
+        "message": "Personalizado"
+    },
+    "menu_order_type_reading": {
+        "message": "Leyendo"
+    },
+    "menu_order_type_composing": {
+        "message": "Componiendo"
+    },
+    "menu_order_type_always": {
+        "message": "Siempre"
+    },
+    "menu_order_btn_label": {
+        "message": "Administrar configuraciones del orden del menú"
+    },
+    "menu_order_info": {
+        "message": "Arrastra y suelta elementos para reordenarlos. Usa el interruptor para mostrar u ocultar elementos en cada menú."
+    },
+    "menu_order_active_items": {
+        "message": "Elementos visibles"
+    },
+    "menu_order_hidden_items": {
+        "message": "Elementos ocultos"
+    },
+    "menu_order_icon_label": {
+        "message": "Elige un icono"
+    },
+    "menu_order_icon_none": {
+        "message": "(ninguno)"
     }
 }
