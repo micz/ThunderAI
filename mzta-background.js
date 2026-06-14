@@ -54,6 +54,8 @@ import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
     getSpamFilterPrompt,
+    getSummarizePrompt,
+    getTranslatePrompt,
     migrateMenuOrderAlphabetic
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
@@ -668,7 +670,8 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             fullMessage = await browser.messages.getFull(message.id);
         }
 
-        const connectionType = getConnectionType(prefs, {}, 'summarize');
+        const summarize_prompt = await getSummarizePrompt();
+        const connectionType = getConnectionType(prefs, summarize_prompt, 'summarize');
 
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
@@ -684,7 +687,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: {}
+            config: summarize_prompt
         });
 
         await cmd.initWorker();
@@ -759,7 +762,8 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
         }
 
-        const connectionType = getConnectionType(prefs, {}, 'translate');
+        const translate_prompt = await getTranslatePrompt();
+        const connectionType = getConnectionType(prefs, translate_prompt, 'translate');
 
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
@@ -774,7 +778,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: {}
+            config: translate_prompt
         });
 
         await cmd.initWorker();
@@ -1005,7 +1009,8 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
-        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), {}, 'summarize');
+        const summarize_prompt = await getSummarizePrompt();
+        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), summarize_prompt, 'summarize');
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
