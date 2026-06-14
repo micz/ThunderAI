@@ -1,17 +1,1798 @@
 {
     "extensionDescription": {
-        "message": "Használja a ChatGPT, Google Gemini, Claude vagy Ollama modelleket, hogy még jobbá tegye emailjeit!"
+        "message": "Használja a ChatGPT, Google Gemini, Claude vagy Ollama szolgáltatásokat e-mailjei hatékonyságának növelésére!"
     },
     "menu_title": {
-        "message": "MI"
+        "message": "AI"
     },
     "prompt_reply": {
-        "message": "Válasz erre az emailre"
+        "message": "Válasz erre az e-mailre"
     },
     "prompt_rewrite_polite": {
-        "message": "Újraírás udvariasabban"
+        "message": "Átfogalmazás udvarias stílusban"
     },
     "prompt_rewrite_formal": {
-        "message": "Újraírás formálisan"
+        "message": "Átfogalmazás hivatalos stílusban"
+    },
+    "prompt_lang": {
+        "message": "Válasz nyelve"
+    },
+    "prompt_reply_advanced": {
+        "message": "Válasz erre az üzenetszálra"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Válasz egyedi utasítással..."
+    },
+    "prompt_classify": {
+        "message": "Kategorizálás"
+    },
+    "prompt_translate_this": {
+        "message": "Fordítás"
+    },
+    "prompt_this": {
+        "message": "Utasítás küldése"
+    },
+    "prompt_selection_needed": {
+        "message": "A folytatáshoz ki kell jelölnie egy szövegrészt!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Utasítások kezelése"
+    },
+    "more_info_string": {
+        "message": "További információ"
+    },
+    "prompt_string": {
+        "message": "Utasítás (Prompt)"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Az alapértelmezett utasítások nem szerkeszthetők. Letilthatja őket, majd a szövegüket kimásolva és egy új utasításba beillesztve létrehozhat egy módosított verziót."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Az utasításokat importálhatja és exportálhatja. Az azonos azonosítóval (ID) rendelkező meglévő utasítások felülíródnak. Az új azonosítóval rendelkezők hozzáadásra kerülnek."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Ha minden helyes, az importálás után kattintson az 'Összes mentése' gombra."
+    },
+    "customPrompts_start_saving": {
+        "message": "Utasítások mentése..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Lista újraindexelése..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Utasítások szűrése..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Alapértelmezett utasítások mentése..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Egyedi utasítások mentése..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Menük újratöltése..."
+    },
+    "customPrompts_saved": {
+        "message": "Utasítások elmentve!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "Azonosító (ID)"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Egyedinek kell lennie, kisbetűkkel, szóközök nélkül"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Név"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Utasítás szövege"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Művelet"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Szövegkijelölés szükséges"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Aláírás mindig kerüljön hozzáadásra"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Kiegészítő szöveg bekérése"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Engedélyezve"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Szöveg-összehasonlító nézet engedélyezése"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "A szöveg-összehasonlító nézet akkor választható ki, ha a művelet \"Szöveg helyettesítése\"-re van állítva."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Kötelező mezők"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Szerkesztés"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Mégse"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Törlés"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Biztosan törölni szeretné ezt az elemet?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Nem mentett változtatások vannak!"
+    },
+    "btnSaveAll_string": {
+        "message": "Összes mentése"
+    },
+    "btnNew_string": {
+        "message": "Új hozzáadása"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Utasítás hozzáadása"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Hozzáadás a menühöz"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Mindig"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "E-mail olvasásakor"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "E-mail írásakor"
+    },
+    "show_in": {
+        "message": "Megjelenítés itt"
+    },
+    "show_in_popup": {
+        "message": "Csak felugró ablakban (Popup)"
+    },
+    "show_in_context": {
+        "message": "Csak a helyi menüben"
+    },
+    "show_in_both": {
+        "message": "Mindkettőben"
+    },
+    "customPrompts_close_button": {
+        "message": "Bezárás gomb"
+    },
+    "customPrompts_do_reply": {
+        "message": "Válaszadás"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Szöveg helyettesítése"
+    },
+    "chatgpt_win_working": {
+        "message": "Feldolgozás folyamatban..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Kész!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Jelölje ki a használni kívánt szöveget, majd kattintson a gombra."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "A kijelölt válasz használata"
+    },
+    "chatgpt_win_close": {
+        "message": "Bezárás"
+    },
+    "webchat_save_as_summary": {
+        "message": "Mentés összefoglalóként"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Úgy tűnik, a ChatGPT oldal betöltése túl sok időt vesz igénybe. Ha befejeződött a betöltés, kattintson a jobb oldali gombra. Ha a probléma továbbra is fennáll, kérjük, ellenőrizze a szolgáltatás állapotát."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Újra"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Kattintson a küldés gombra az utasítás elküldéséhez."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Nincs bejelentkezve a ChatGPT-be. Kérjük, jelentkezzen be a hitelesítő adataival, zárja be a ChatGPT ablakot, majd ismételje meg a műveletet. Ezt követően bejelentkezve marad."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Valamilyen okból nem ellenőrizhető, hogy a megfelelő modell van-e betöltve. A folytatáshoz nyomja meg a kék gombot."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Illessze be ide az utasításhoz tartozó kiegészítő szöveget."
+    },
+    "chatgpt_win_send": {
+        "message": "Küldés"
+    },
+    "chatgpt_force_completion": {
+        "message": "befejezés kényszerítése"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Kattintson ide az 'Utolsó válasz használata' gomb megjelenítéséhez, ha a ChatGPT már végzett a munkával, de a gomb nem jelent meg."
+    },
+    "msg_prompt_too_long": {
+        "message": "A megadott szöveg túl hosszú. Csökkentenie kell a hosszát."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Verzióinformációk"
+    },
+    "prefs_status_page": {
+        "message": "szolgáltatás állapota"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "AI csevegőablak méretei"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Magasság"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Szélesség"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Alapértelmezett aláírás neve"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "A válaszok alapértelmezett nyelve"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Válasz mindenkinek"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Válasz a feladónak"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Válasz típusa"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Ez az alapértelmezett választípus e-mailek megválaszolásakor. Később a válaszablakban módosíthatja."
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Saját utasítások kezelése"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Saját adat-helyőrzők kezelése"
+    },
+    "prefs_storage_title": {
+        "message": "Tárhely"
+    },
+    "prefs_storage_info": {
+        "message": "A tárhely az egyes üzenetek spampontszámainak, összefoglalóinak és fordításainak mentésére szolgál."
+    },
+    "prefs_storage_size": {
+        "message": "Tárhely mérete"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Tárhely kiürítése"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Biztosan törölni szeretné az összes tárolt adatot (összefoglalók, spam jelentések, fordítások)? Ez a művelet nem vonható vissza."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ rekord eltávolítva.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoTitle": {
+        "message": "Fontos információ"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Előfordulhat, hogy a ChatGPT webes felülete úgy változik, ami megszakítja a kiegészítő működését. Ellenőrizze az oldal alján található \"Szolgáltatás állapota\" linket. Ne feledje, hogy a ThunderAI első használatakor be kell jelentkeznie a ChatGPT-be."
+    },
+    "prefsInfoDesc_2": {
+        "message": "A ChatGPT API használatához egy OpenAI ChatGPT API-kulcsra van szükség, valamint ki kell választania egy modellt."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Az Ollama integráció használatához be kell állítania egy helyi Ollama szervert. Ha a szerver fut, adja meg a címét a kijelölt mezőben. A ThunderAI és az Ollama szerver közötti megfelelő kommunikáció érdekében ne felejtse el beállítani az OLLAMA_ORIGINS=moz-extension://* környezeti változót."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Az integráció használatához be kell állítania egy OpenAI API-kompatibilis helyi szervert, mint például az LM Studio. Ha a szerver fut, adja meg a címét a kijelölt mezőben. A ThunderAI és a helyi szerver közötti megfelelő kommunikáció érdekében ügyeljen a CORS-beállítások helyes konfigurálására."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Ne feledje, hogy a ThunderAI menüt a CTRL+ALT+A billentyűkombinációval is megnyithatja."
+    },
+    "prefsInfoDesc_6": {
+        "message": "A billentyűkombinációt módosíthatja, ha az oldal jobb felső sarkában lévő fogaskerék ikonra kattint, majd a \"Bővítmény billentyűparancsainak kezelése\" lehetőséget választja."
+    },
+    "prefsInfoDesc_7": {
+        "message": "A Google Gemini API használatához egy Google Gemini API-kulcsra van szükség, valamint ki kell választania egy modellt."
+    },
+    "prefsInfoDesc_8": {
+        "message": "A Claude API használatához egy Anthropic Claude API-kulcsra van szükség, valamint ki kell választania egy modellt."
+    },
+    "prefsDonation_1": {
+        "message": "Tetszik ez a kiegészítő?"
+    },
+    "prefsDonation_2": {
+        "message": "Fontolja meg a támogatását egy adománnyal!"
+    },
+    "backToOptionsText": {
+        "message": "Beállítások"
+    },
+    "TranslateText": {
+        "message": "Szeretne segíteni a kiegészítő lefordításában?"
+    },
+    "TranslateLink": {
+        "message": "Tudja meg, hogyan!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Összes utasítás exportálása"
+    },
+    "customPrompts_Import": {
+        "message": "Új utasítások importálása"
+    },
+    "importPrompts_confirmText": {
+        "message": "Új utasítások importálására készül."
+    },
+    "customPrompts_start_import": {
+        "message": "Egyedi utasítások importálásának indítása..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Egyedi utasítások importálása befejeződött! A módosítások mentéséhez kattintson az 'Összes mentése' gombra."
+    },
+    "importPrompts_invalidFile": {
+        "message": "Az importálni kívánt fájl nem érvényes egyedi utasításfájl."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "Az importálni kívánt fájl nem tartalmaz érvényes utasításokat."
+    },
+    "currently_used_prompt": {
+        "message": "Jelenleg használt utasítás neve"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Válasz nyelvének meghatározása az utasításban"
+    },
+    "prefs_Connection_type": {
+        "message": "Kapcsolat típusa"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "ChatGPT webes felület"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "ChatGPT API-kulcs"
+    },
+    "ChatGPT_Models": {
+        "message": "ChatGPT modellek"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "ChatGPT modellek listájának frissítése"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Hiba történt a ChatGPT modellek lekérése során"
+    },
+    "Loading": {
+        "message": "Betöltés..."
+    },
+    "error": {
+        "message": "ThunderAI Hiba!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Nem adott meg API-kulcsot a ChatGPT API-hoz. Kérjük, illesszen be egyet a beállítások oldalon."
+    },
+    "chatgpt_empty_model": {
+        "message": "Nem választott modellt a ChatGPT API-hoz. Kérjük, válasszon egyet a beállítások oldalon."
+    },
+    "chagpt_api_send_button": {
+        "message": "Használt modell"
+    },
+    "Debug": {
+        "message": "Hibakeresés (Debug)"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "A hibakereső rendszer aktiválása"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (Helyi LLM)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "OpenAI kompatibilis API"
+    },
+    "prefs_API_Host": {
+        "message": "Kiszolgáló címe (Host)"
+    },
+    "Ollama_Models": {
+        "message": "Ollama modellek"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Ollama modellek listájának frissítése"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Hiba történt az Ollama modellek lekérése során"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Nem találhatók modellek"
+    },
+    "ollama_empty_host": {
+        "message": "Nem adott meg kiszolgálócímet az Ollama API-hoz. Kérjük, adjon meg egyet a beállítások oldalon."
+    },
+    "ollama_empty_model": {
+        "message": "Nem választott modellt az Ollama API-hoz. Kérjük, válasszon egyet a beállítások oldalon."
+    },
+    "error_connection_interrupted": {
+        "message": "A szerverrel való kapcsolat váratlanul megszakadt"
+    },
+    "ollama_api_request_failed": {
+        "message": "Az Ollama API kérés sikertelen volt"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "An OpenAI ChatGPT API kérés sikertelen volt"
+    },
+    "WaitingServerResponse": {
+        "message": "Várakozás a szerver válaszára"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Például"
+    },
+    "OpenAIComp_Models": {
+        "message": "OpenAI kompatibilis API modellek"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "OpenAI kompatibilis modellek listájának frissítése"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Hiba történt az OpenAI kompatibilis modellek lekérése során"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Nem adott meg kiszolgálócímet az OpenAI kompatibilis API-hoz. Kérjük, adjon meg egyet a beállítások oldalon."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Nem választott modellt az OpenAI kompatibilis API-hoz. Kérjük, válasszon egyet a beállítások oldalon."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Az OpenAI kompatibilis API kérés sikertelen volt"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Csevegés neve"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Ez a név fog megjelenni az AI csevegőben."
+    },
+    "StorageSpace": {
+        "message": "Teljes elfoglalt tárhely"
+    },
+    "SearchPrompt": {
+        "message": "Utasítások keresése"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Menü: azonnali utasításküldés"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Ha be van jelölve, a CTRL+ALT+A billentyűparancs használata automatikusan elküldi a menüben kijelölt utasítást. Ellenkező esetben az utasítás neve csak megjelenik, és a küldéshez meg kell nyomni az Enter billentyűt."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Állítsa 0-ra, ha nem kívánja megadni az ablak méretét."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "OpenAI kompatibilis API-kulcs"
+    },
+    "Optional": {
+        "message": "Opcionális"
+    },
+    "OpenChatGPTTab": {
+        "message": "ChatGPT lap megnyitása"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "Ha bejelentkezési problémák merülnek fel a ThunderAI ablakban, nyissa meg a ChatGPT-t egy új lapon a jobb oldali gombbal, jelentkezzen be, majd zárja be a lapot és folytassa a ThunderAI használatát."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "A ChatGPT Web innen történő megnyitása alkalmazni fogja a modellhez, projekthez és Custom GPT-hez beállított konfigurációkat."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Levél törzsszövege"
+    },
+    "placeholder_mail_html_body": {
+        "message": "Levél HTML törzse"
+    },
+    "placeholder_mail_subject": {
+        "message": "Levél tárgya"
+    },
+    "placeholder_folder_name": {
+        "message": "Mappa neve"
+    },
+    "placeholder_folder_path": {
+        "message": "Mappa elérési útja"
+    },
+    "placeholder_mail_headers": {
+        "message": "Levél fejlécei"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Összes levélfejléc"
+    },
+    "placeholder_selected_text": {
+        "message": "Kijelölt szöveg"
+    },
+    "placeholder_selected_html": {
+        "message": "Kijelölt HTML"
+    },
+    "placeholder_additional_text": {
+        "message": "Kiegészítő szöveg"
+    },
+    "placeholder_junk_score": {
+        "message": "Levélszemét pontszám"
+    },
+    "placeholder_recipients": {
+        "message": "Címzettek"
+    },
+    "placeholder_cc_list": {
+        "message": "Másolatot kapnak (CC)"
+    },
+    "placeholder_author": {
+        "message": "Szerző/Feladó"
+    },
+    "placeholder_account_email_address": {
+        "message": "Fiók e-mail címe"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Levéltörzs vagy kijelölt szöveg"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Levéltörzs vagy kijelölt HTML"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Helyőrzők: alapértelmezett érték használata"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Ha be van jelölve, a helyőrzők az alapértelmezett értékekkel lesznek kitöltve, ha nincs megadva érték. Ellenkező esetben a helyőrzők érintetlenül maradnak."
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Gondolatmenet (thinking) blokk összecsukása alapértelmezetten"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "A válasz felett megjelenő gondolatmenet blokk kezdeti állapotát szabályozza. Ha be van jelölve, a blokk alapértelmezetten össze van csukva, és kattintással nyitható meg. Ha nincs bejelölve, alapértelmezetten nyitva van. A gondolati tartalom minden esetben megőrződik."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Gondolatmenet"
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Maximális utasításhossz"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Az utasításban használható karakterek maximális száma. Ennél hosszabb szöveg esetén hibaüzenet jelenik meg. Ez az érték a ChatGPT webes felületénél nem szerkeszthető. Állítsa nullára az ellenőrzés letiltásához."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "ChatGPT Web modell"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Ez a modell lesz kényszerítve a ChatGPT webes felületén. Ha nincs megadva vagy helytelen, a ChatGPT a weboldal alapértelmezett modelljét fogja beállítani. Ez a beállítás ingyenes ChatGPT fiókkal nem működik."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "ChatGPT Web ideiglenes csevegés"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Ha be van jelölve, az ideiglenes csevegés (temporary chat) lesz használva a ChatGPT webes felületén."
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Oldalbetöltési várakozási idő"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "A ChatGPT oldal betöltésére való várakozási idő ezredmásodpercben (ms), mielőtt a további tartalom betöltődne. Az alapértelmezett érték 1000 ms. Custom GPT vagy Projekt definiálása esetén további 1000 ms adódik ehhez az értékhez."
+    },
+    "chatgpt_btn_model": {
+        "message": "Aktuális modell használata"
+    },
+    "AllowedValues": {
+        "message": "Megengedett értékek"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "További adat-helyőrzőket is használhat."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "\"v1\" kompatibilitás megtartása"
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Ha be van jelölve, az API-hívások útvonalában megmarad a \"v1\" szegmens, például: \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Ide távoli szervercímet is beilleszthet."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Úgy tűnik, hogy legalább egy fiókja az Owl for Exchange kiegészítőt használja. Ismert probléma áll fenn a Thunderbird és az Owl között, amelynek javítása folyamatban van. Jelenleg a ThunderAI-t e-mailek írásakor használhatja, de olvasásukkor nem."
+    },
+    "prompt_reply_full_text": {
+        "message": "Válaszolj a következő e-mailre. A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Ne add hozzá a tárgysort a válaszhoz."
+    },
+    "reply_same_lang": {
+        "message": "Ugyanazon a nyelven válaszolj."
+    },
+    "sign_msg_as": {
+        "message": "Sign the message as"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Válaszolj a következő e-mailre: \\\"{%selected_text%}\\\", figyelembe véve, hogy ez a teljes e-mail üzenetszál: \\\"{%mail_html_body%}\\\". A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Válaszolj a következő e-mailre: \\\"{%mail_text_body%}\\\". Kiegészítő utasítás: {%additional_text%}. A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Fogalmazd át a következő szöveget udvariasabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Fogalmazd át a következő szöveget hivatalosabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_classify_full_text": {
+        "message": "Kategorizáld a következő szöveget az Udvariasság (Politeness), Kedvesség (Warmth), Hivatalos stílus (Formality), Határozottság (Assertiveness) és Sértő tartalom (Offensiveness) szempontjából, százalékos értéket adva mindegyik kategóriára. A válasz kizárólag a kategóriákat és a pontszámokat tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Fordítsd le az alábbi e-mailt a következő nyelvre: {%thunderai_translate_lang%}.\n\nSzabályok:\n- Fordítsd le a tárgyat és a levéltörzset is.\n- A választ egy JSON objektumként add vissza, három mezővel: \\\"subject\\\", \\\"body\\\" és \\\"status\\\".\\\n- Ha a fordítás sikeresen megtörtént, a status értéke legyen 1.\n- Ha az e-mail a következő nyelvek egyikén íródott: \\\"{%thunderai_translate_exclude_lang%}\\\", vagy már alapból a(z) {%thunderai_translate_lang%} nyelven van, adj vissza egy üres karakterláncot a body és a subject mezőkben, a status értékét pedig állítsd -1-re.\n- Ne adj hozzá magyarázatokat, megjegyzéseket vagy bármilyen egyéb szöveget a JSON-on kívül.\n\nMail subject: {%mail_subject%}\n\nMail body: {%mail_html_body%}\n\nKizárólag JSON formátumban generáld a választ. A kimenet csak egy JSON objektum lehet. Íme egy példa a használandó JSON formátumra:\n{\n\"subject\\\": \\\"subject translation\\\",\n\"body\\\": \\\"body translation\\\",\n\"status\\\": \\\"status result\\\"\n}"
+    },
+    "prompt_this_full_text": {
+        "message": "A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Címkék hozzáadása az e-mailekhez"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a címkék e-mailekre történő alkalmazásához."
+    },
+    "prompt_add_tags": {
+        "message": "Címkék hozzáadása"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Elemezd a következő e-mail szövegét, és generálj egy JSON tömböt a tartalmát összefoglaló címkékből. Címkeként használj témákat, kulcsfontosságú témaköröket és releváns leíró szavakat. Ügyelj arra, hogy a címkék tömörek és az e-mail tartalmához kapcsolódóak legyenek. A címkéket magyar nyelven hozd létre.\nEmail text: {%mail_text_body%}\nA kontextus érdekében vedd figyelembe a következő részleteket:\n- Feladó: {%author%}\n- Címzettek: {%recipients%}\n- Másolatot kapnak (CC list): {%cc_list%}\n- E-mail tárgya: {%mail_subject%}\nKérjük, hogy a címkéket az e-mail szövegére és kontextusára alapozd, figyelmen kívül hagyva a felesleges információkat vagy a triviális részleteket.\nKizárólag JSON formátumban válaszolj. A kimenet csak a címkék JSON tömbje legyen, minden egyéb megjegyzés vagy szöveg nélkül. Íme egy példa a használandó JSON formátumra:\n{\n\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\", \\\"tag3\\\", \\\"tag4\\\", \\\"tag5\\\"]\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "E-mail ellenőrzése (Korrektúra)"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Olvasd át a következő e-mailt, és javítsd ki a helyesírási vagy nyelvtani hibákat. A válasz kizárólag a javított szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül.\n\n\"{%mail_typed_text%}\""
+    },
+    "placeholder_tags_current_email": {
+        "message": "Levél címkéi"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Létező címkék"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Címkék maximális száma"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Az AI által javasolt címkék maximális száma. Állítsa 0-ra, ha nem szeretné korlátozni a címkék számát."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Címkék számának korlátozása erre"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Kizárt címkék elrejtése"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Ha be van jelölve, a kizárási listában szereplő címkék rejtve maradnak a megerősítő ablakban."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Címkebeállítások kezelése"
+    },
+    "AddTags_PageTitle": {
+        "message": "Címkebeállítások kezelése"
+    },
+    "AddTags_info_default": {
+        "message": "Ezen az oldalon módosíthatja az e-mailek címkézéséhez használt alapértelmezett utasítást, valamint kezelheti a kizárási listát."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Aktuális utasítás szövege"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Kizárási lista"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Ez azon címkék listája, amelyeket nem szabad az e-mailekhez adni."
+    },
+    "save": {
+        "message": "Mentés"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Ez a kijelentés hozzáadásra kerül az utasítás végéhez:"
+    },
+    "reset_default": {
+        "message": "Alapértelmezett visszaállítása"
+    },
+    "reset": {
+        "message": "Visszaállítás"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Soronként egy szót adjon meg, vagy vesszővel elválasztva."
+    },
+    "addtags_dialog_title": {
+        "message": "Címkék hozzáadása az e-mailhez"
+    },
+    "addtags_exclude_tag": {
+        "message": "Címke kizárása"
+    },
+    "addtags_no_tags_received": {
+        "message": "Nem érkezett címke az AI-tól."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Nem található érvényes címke a kizárási listával való szűrés után."
+    },
+    "thunderai_error_title": {
+        "message": "ThunderAI Hiba"
+    },
+    "thunderai_warning_title": {
+        "message": "ThunderAI Figyelmeztetés"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Nagy kezdőbetű"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Ha be van jelölve, a címkék kisbetűsek lesznek, kivéve a legelső betűt, ami nagybetűvé válik."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Címkézési opciók"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Ossza meg visszajelzését és segítsen a ThunderAI fejlesztésében!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Kattintson ide, csak egy percet vesz igénybe!"
+    },
+    "prefs_doc_title": {
+        "message": "Dokumentáció"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Beállítási útmutatók"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Egyedi utasítások oktatóanyag"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Üdvözlőoldal megnyitása"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Modell kézi megadása"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Adja meg a használni kívánt modell nevét."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Nyelv kényszerítése"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Ha be van jelölve, a címkék nyelve kötelezően egyezni fog a ThunderAI beállítási oldalán megadott nyelvvel (ha van ilyen)."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "A címkéket ezen a nyelven kell írni"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API-kulcs"
+    },
+    "GoogleGemini_Models": {
+        "message": "Google Gemini API modellek"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Google Gemini modellek listájának frissítése"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Hiba történt a Google Gemini modellek lekérése során"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Google Gemini API kérés sikertelen volt"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Nem adott meg API-kulcsot a Google Gemini API-hoz. Kérjük, illesszen be egyet a beállítások oldalon."
+    },
+    "google_gemini_empty_model": {
+        "message": "Nem választott modellt a Google Gemini API-hoz. Kérjük, válasszon egyet a beállítások oldalon."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Rendszerutasítás (System Instruction)"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "A rendszerutasítás beállításával további kontextust adhat a modellnek a feladat megértéséhez, személyre szabottabb válaszokat kaphat, és általános irányelveket szabhat meg az elküldött promptok felett."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Fejlesztői üzenetek (Developer Messages)"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "A fejlesztői üzenetek (korábban system prompt) beállításával további kontextust adhat a modellnek a feladat megértéséhez, személyre szabottabb válaszokat kaphat, és specifikus irányelveket szabhat meg az elküldött promptok felett."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Használhatja a {%tags_full_list%} adat-helyőrzőt az utasításban a rendelkezésre álló címkék listázásához. Megfelelő prompt segítségével kényszerítheti az AI-t, hogy csak a már meglévő címkék közül válasszon."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Beírt szöveg az idézett levéltörzs előtt"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Idézett szöveg a levéltörzsben"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Új naptári esemény hozzáadása"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Extract all relevant details required to generate a calendar event from the following text. The extracted information should include:\n- Event Title\n- Start Date and Time (including timezone, if specified)\n- End Date and Time (including timezone, if specified)\n- Full day (if mentioned)\n- Attendees\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a calendar event.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf the duration is not specified, set it to one hour.\nThese are the attendees: {%author%}, {%recipients%}, {%cc_list%}. If present, exclude my address: {%account_email_address%}.\nIf the event is a full day event, endDate must be one day after startDate with time set to \"T000000\".\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Calendar event summary here\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nHere's the text:\"{%mail_text_body_or_selected%}\""
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Naptári esemény hozzáadása a vágólapról"
+    },
+    "clipboard_read_error": {
+        "message": "Nem sikerült olvasni a vágólapot. Kérjük, ellenőrizze a jogosultságokat."
+    },
+    "clipboard_empty_error": {
+        "message": "A vágólap üres. Kérjük, előbb másoljon valamilyen szöveget."
+    },
+    "clipboard_permission_denied": {
+        "message": "A vágólap-hozzáférés megtagadva. Kérjük, engedélyezze újra a funkciót a beállításokban a jogosultság megadásához."
+    },
+    "clipboard_permission_error": {
+        "message": "Hiba történt a vágólap-jogosultság kérése során. Kérjük, próbálja újra."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Naptári esemény kinyerése a vágólapról"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Egy extra menüpont megjelenítése, amellyel a vágólapra másolt szövegből naptári esemény hozható létre."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Összefoglalási opciók"
+    },
+    "prompt_summarize": {
+        "message": "Összefoglalás"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Provide a concise summary of the following email message(s). The summary should be 3-5 sentences maximum and capture the main points. Write in plain paragraphs without bullet points, lists, or markdown formatting:\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "E-mail sablon összefoglalása"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "From: {%author%}\nTo: {%recipients%}\nCC: {%cc_list%}\nSubject: {%mail_subject%}\nDate: {%mail_datetime%}\nAttachments:\n{%mail_attachments_info%}\n\nBody:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "E-mail elválasztó"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- NEXT EMAIL ----------\n\n"
+    },
+    "prompt_get_task": {
+        "message": "Új feladat hozzáadása"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Extract all relevant details required to generate a task from the following text. The extracted information should include:\n- Due Date and Time (including timezone, if specified)\n- Task summary\n- Initial Date and Time (including timezone, if specified)\nEnsure the data is formatted clearly and consistently so that it can be directly used for creating a task.\nIf there are relative time references, consider that the date and time of the email are \"{%mail_datetime%}\". Calculate the start date and time based on this reference. If the calculated start date and time are earlier than \"{%current_datetime%}\", recalculate the start date and time using \"{%current_datetime%}\" as the base.\nIf you're not able to get one or more of the required information, please respond with an empty string.\nGenerate a response in JSON format only. Do not include any additional text or explanations; provide only the JSON. Here is the format to be used:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Task summary here\"\n}\nIf there are no information about the dates, remove them.\nHere's the text:\"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Új naptári esemény létrehozása a kijelölt szövegből"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a naptári információk kijelölt szövegből történő kinyeréséhez."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Naptári események opciói"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Új feladat hozzáadása a kijelölt szövegből"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a feladat-információk kijelölt szövegből történő kinyeréséhez."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Feladatok opciói"
+    },
+    "Select_your_timezone": {
+        "message": "Válassza ki az időzónáját"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Megadott időzóna kényszerítése"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Ha be van jelölve, a megadott időzóna lesz kényszerítve a naptári eseményeknél és feladatoknál."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Naptári események beállításainak kezelése"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Naptári események beállításainak kezelése"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Ezen az oldalon módosíthatja a kijelölt szövegből naptári eseményt kinyerő alapértelmezett utasítást."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Aktuális utasítás szövege"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "Az utasítást tetszés szerint módosíthatja, de az AI-tól kapott válasznak kötelezően az alapértelmezett promptban meghatározott JSON formátumban kell lennie!"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Az utasítást tetszés szerint módosíthatja: az első mező a fő utasítás, a második mező az egyedi levelek sablonja. Az e-mailek listája a fő utasításhoz lesz hozzáfűzve. Az e-maileket a harmadik mezőben megadott elválasztó fogja elkülöníteni."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Az összes kijelölt e-mailen elvégzendő feladatot leíró fő utasítás:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Egyedi e-mail sablonja:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Az e-mailek közötti elválasztó:"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "A naptári események és feladatok funkciók használatához kérjük, telepítse a ThunderAI Sparks kiegészítőt."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "A naptári események és feladatok funkciók használatához kérjük, telepítse a ThunderAI Sparks kiegészítő frissített verzióját."
+    },
+    "GetTask_PageTitle": {
+        "message": "Feladatbeállítások kezelése"
+    },
+    "GetTask_info_default": {
+        "message": "Ezen az oldalon módosíthatja a kijelölt szövegből feladatot kinyerő alapértelmezett utasítást."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Feladatbeállítások kezelése"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Töltse le a ThunderAI Sparks-ot most!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Az e-mail dátuma és ideje"
+    },
+    "placeholder_current_datetime": {
+        "message": "A jelenlegi dátum és idő"
+    },
+    "calendar_getting_data_error": {
+        "message": "Hiba történt a naptáradatok lekérése során"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Hiba történt a naptáresemény-ablak megnyitásakor"
+    },
+    "task_getting_data_error": {
+        "message": "Hiba történt a feladatadatok lekérése során"
+    },
+    "task_opening_dialog_error": {
+        "message": "Hiba történt a feladatablak megnyitásakor"
+    },
+    "no_valid_data_received": {
+        "message": "Nem érkezett érvényes adat az AI-tól."
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Címkék automatikus hozzáadása"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Ha be van jelölve, az AI automatikusan címkéket rendel az újonnan érkező e-mailekhez."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Az oldal alján válassza ki, hogy melyik fióknál kívánja aktiválni ezt a funkciót."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Csak létező címkék kényszerítése"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Ha be van jelölve, az AI csak a már meglévő címkéket használhatja, és nem hoz létre újakat."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Kizárólag ezen címkék használata"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Ha be van jelölve, az AI csak az alábbi listában szereplő címkéket fogja használni."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "A listának legalább egy címkét tartalmaznia kell. Soronként egyet adjon meg, vagy vesszővel elválasztva."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Csak az ebben a vesszővel elválasztott listában szereplő címkéket használd"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Címkézés csak az Beérkezett üzenetek (Inbox) mappában"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Ha be van jelölve, az AI csak a Beérkezett üzenetek mappába érkező e-maileket fogja automatikusan címkézni."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Ha be van jelölve, az alább megadott Modell és API lesz használva a címkézéshez, függetlenül a ThunderAI fő beállításainál kiválasztottól."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Ha be van jelölve, az alább megadott Modell és API lesz használva a naptári események létrehozásához, függetlenül a ThunderAI fő beállításainál kiválasztottól."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "A ThunderAI beállításaiban meghatározott alapértelmezett aláírás."
+    },
+    "placeholder_thunderai_def_lang": {
+        "message": "A ThunderAI beállításaiban meghatározott alapértelmezett nyelv."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "A levélfordításokhoz használandó célnyelv."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Azon nyelvek kódjai, amelyeket észlelések esetén nem kell lefordítani."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Információk az e-mailben található mellékletekről"
+    },
+    "empty": {
+        "message": "Ez a helyőrző nem ad hozzá szöveget, de megakadályozza, hogy a levéltörzs automatikusan a prompt végére legyen fűzve."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Automatikus spamszűrő"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Ha be van jelölve, a ThunderAI automatikusan a Levélszemét (Spam) mappába mozgatja a kéretlen leveleket."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Spamszűrő beállításainak kezelése"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "E-mail összefoglalása"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Ha be van jelölve, az alább megadott Modell és API lesz használva az e-mailek összefoglalásához, függetlenül a ThunderAI fő beállításainál kiválasztottól."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Ha be van jelölve, egy összefoglalás opciót ad hozzá a helyi menühöz."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Összefoglalási beállítások kezelése"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Spamszűrő beállításainak kezelése"
+    },
+    "SpamFilter_info_default": {
+        "message": "Ezen az oldalon módosíthatja a spam e-mailek észlelésére használt alapértelmezett utasítást."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Aktuális utasítás szövege"
+    },
+    "prompt_spamfilter": {
+        "message": "Spam-elemzés"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Spamszűrő opciói"
+    },
+    "Summarize_PageTitle": {
+        "message": "Összefoglalási beállítások kezelése"
+    },
+    "Summarize_info_default": {
+        "message": "Ezen az oldalon módosíthatja az e-mailek összefoglalásához használt alapértelmezett utasítást."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Aktuális utasítás szövege"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Specifikus Modell és API használata"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Ha be van jelölve, az alább megadott Modell és API lesz használva a spamszűréshez, függetlenül a ThunderAI fő beállításainál kiválasztottól."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Spam küszöbérték"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Ha az AI által visszaadott érték meghaladja ezt a küszöböt, az e-mail a Levélszemét (Spam) mappába kerül."
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Spam-jelentés panel megjelenítése"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Ha be van jelölve, egy spam-jelentést tartalmazó panel jelenik meg az üzenet tetején."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "A spam küszöbérték túl alacsony! Ez valószínűleg túl sok legitim levelet fog spamnek jelölni!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "A spam küszöbérték nulla! Ezzel minden levelet spamként fog megjelölni!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Még nem történt spam-ellenőrzés az üzeneteken. Itt találja majd a legutóbbi 100 spam-jelentés listáját."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Kihagyandó e-mail címek listája"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Az itt szereplő címekről érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Soronként egy e-mail címet adjon meg, vagy vesszővel elválasztva."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "A feladó szerepel a spamszűrésből kihagyandó címek listáján."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Címjegyzékben szereplők kihagyása"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Ha be van jelölve, a címjegyzékeiben szereplő kontaktoktól érkező e-mailek nem lesznek elküldve az AI-nak spamszűrésre."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "A feladó egy meglévő kapcsolat a címjegyzékben."
+    },
+    "addressbook_permission_denied": {
+        "message": "Címjegyzék-hozzáférés megtagadva. Kérjük, engedélyezze újra a funkciót a jogosultság megadásához."
+    },
+    "addressbook_permission_error": {
+        "message": "Hiba történt a címjegyzék-jogosultság kérése során. Kérjük, próbálja újra."
+    },
+    "SpamReport_Title": {
+        "message": "Spamszűrő jelentések"
+    },
+    "Date": {
+        "message": "Dátum"
+    },
+    "From": {
+        "message": "Feladó"
+    },
+    "Subject": {
+        "message": "Tárgy"
+    },
+    "Spam_Value": {
+        "message": "Spam érték"
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Legitim (Valid)"
+    },
+    "Moved_to_Spam": {
+        "message": "Spam mappába helyezve"
+    },
+    "Explanation": {
+        "message": "Indoklás"
+    },
+    "Report_Date": {
+        "message": "Jelentés dátuma"
+    },
+    "yes_string": {
+        "message": "Igen"
+    },
+    "no_string": {
+        "message": "Nem"
+    },
+    "noActiveCalendar": {
+        "message": "Nem található szerkeszthető naptár!"
+    },
+    "btn_show_differences": {
+        "message": "Eltérések mutatása"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Különbségek az eredeti és a módosított szöveg között"
+    },
+    "apiwebchat_you": {
+        "message": "Ön"
+    },
+    "apiwebchat_info": {
+        "message": "Információ"
+    },
+    "apiwebchat_error": {
+        "message": "Hiba"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Ezen válasz használata"
+    },
+    "apiwebchat_stopping": {
+        "message": "Leállítás"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Adatok fogadása"
+    },
+    "apiwebchat_done": {
+        "message": "Kész!"
+    },
+    "hyprland_warning": {
+        "message": "Ha problémát tapasztal az AI csevegőablak megnyitásakor, próbálja meg a magasság és szélesség értékeit 0-ra állítani. Ez a hiba Linux alatt bizonyos környezetekben fordulhat elő, például Hyprland használatakor."
+    },
+    "remember_CORS": {
+        "message": "Ne feledje, be kell állítania a CORS-beállításokat a szerveren!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Az OpenAI kompatibilis API használata igényelheti a CORS-beállítások konfigurálását a szerveren."
+    },
+    "CORS_alternative_1": {
+        "message": "Problémák adódtak a CORS beállításával?"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Nyomja meg az alábbi gombot, hogy engedélyt adjon az aktuális hostnak, elkerülve a CORS problémákat."
+    },
+    "CORS_give_host_perm": {
+        "message": "Engedély megadása az aktuális hostnak"
+    },
+    "CORS_localhost_warn": {
+        "message": "Ha a localhost vagy 127.0.0.1 címeket használja, mert az AI szerver a saját PC-jén fut, az <all_urls> jogosultság szükséges."
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Írás sima szöveges (plain text) formátumban"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Jelölje be ezt az opciót, ha az e-maileket nem HTML, hanem sima szöveges formátumban írja."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Nincs kijelölt szöveg. Szeretné beilleszteni az AI válaszát az e-mail elejére?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Kontextus tokenek száma (num_ctx)"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Az Ollama API-hoz használandó kontextus tokenek száma. Állítsa 0-ra, ha nem szeretné paraméterként átadni a szervernek."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "A ChatGPT Web integráció használatához meg kell adnia a szükséges jogosultságot."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "A Claude API integráció használatához meg kell adnia a szükséges jogosultságot."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "Az OpenAI API integráció használatához meg kell adnia a szükséges jogosultságot."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Kattintson ide egy új lap megnyitásához és kövesse az utasításokat."
+    },
+    "ask_integration_permission_2": {
+        "message": "Kattintson ide a folytatáshoz."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Jogosultság megadva. Kattintson ide a lap bezárásához és a főablakhoz való visszatéréshez."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Válassza ki azokat a fiókokat, ahol az automatikus címkézés engedélyezett"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Minden változtatás azonnal mentésre kerül."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Válassza ki azokat a fiókokat, ahol az automatikus spamszűrő engedélyezett"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "ChatGPT Web projekt"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Ez a projekt (Project) lesz kényszerítve a ChatGPT webes felületén."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "ChatGPT Web Custom GPT"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Ez a Custom GPT lesz kényszerítve a ChatGPT webes felületén."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Ennek a következő formában kell lennie:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "A pontos értéket a böngésző címsorában találja, amikor megnyitja a kapcsolódó ChatGPT oldalt."
+    },
+    "customPrompts_Properties": {
+        "message": "Tulajdonságok"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "További tulajdonságok megjelenítése"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "További tulajdonságok elrejtése"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Kiegészítő tulajdonságok"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Ha egy projekt (Project) van megadva a beállításokban vagy egy promptban, az felülírja a Custom GPT beállítást."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Ha egy projekt van megadva a beállításokban vagy egy promptban, az ideiglenes csevegés (temporary chat) nem lesz használva."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "Claude API-kulcs"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Claude API"
+    },
+    "Anthropic_Models": {
+        "message": "Claude modellek"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Claude modellek listájának frissítése"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Hiba történt a Claude modellek lekérése során"
+    },
+    "Anthropic_Version": {
+        "message": "Claude API verzió"
+    },
+    "Anthropic_Version_Info": {
+        "message": "KÖTELEZŐ. Ne változtassa meg ezt az értéket, kivéve, ha pontosan tudja, mit csinál. További információ:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Maximális token szám (Max Tokens)"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "A válasz generálásakor felhasználható tokenek maximális száma. Az utasítás (prompt) tokeneinek és a max_tokens összegének értéke nem haladhatja meg a modell kontextusablakának hosszát."
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Kiterjesztett gondolkodási keret (tokenek)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Azon tokenek maximális száma, amit a modell kiterjesztett gondolkodásra (extended thinking) fordíthat. Állítsa 0-ra a kikapcsolásához. Ha engedélyezve van, a Claude API figyelmen kívül hagyja a temperature (hőmérséklet) értéket."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Nem adott meg API-kulcsot a Claude API-hoz. Kérjük, illesszen be egyet a beállítások oldalon."
+    },
+    "anthropic_empty_model": {
+        "message": "Nem választott modellt a Claude API-hoz. Kérjük, válasszon egyet a beállítások oldalon."
+    },
+    "anthropic_empty_version": {
+        "message": "Nem adott meg verzió karakterláncot a Claude API-hoz. Kérjük, adjon meg egyet a beállítások oldalon."
+    },
+    "anthropic_api_request_failed": {
+        "message": "A Claude API kérés sikertelen volt"
+    },
+    "_api_connecting": {
+        "message": "Kapcsolódási kísérlet a(z) $api_string$ szolgáltatáshoz az alábbi konfigurációval...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Modell"
+    },
+    "_api_connecting_host": {
+        "message": "Kiszolgáló (Host)"
+    },
+    "_api_connecting_version": {
+        "message": "Verzió"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Elérhető szolgáltatások"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Válasszon egyet az OpenAI kompatibilis API-hoz elérhető szolgáltatások közül, vagy adjon meg egyet manuálisan."
+    },
+    "Custom": {
+        "message": "Egyedi"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Biztosan alkalmazni szeretné a(z) \"$config_name$\" konfigurációt?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Ha kijelöl egy szövegrészt, az AI csak azt a részt fogja figyelembe venni."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Tárhely használata"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Ha be van jelölve, a csevegéseit tárolni fogja az OpenAI."
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "A mintavételi hőmérséklet értéke 0 és 2 között. A magasabb értékek (pl. 0.8) véletlenszerűbbé és kreatívabbá teszik a kimenetet, míg az alacsonyabbak (pl. 0.2) fókuszáltabbá és determinisztikusabbá."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "A modell hőmérséklete. A hőmérséklet növelésével a modell kreatívabban válaszol. Az alapértelmezett érték 0.8. Ajánlott a 0 és 1 közötti értékek használata."
+    },
+    "prefs_ollama_think": {
+        "message": "Gondolkodás engedélyezése"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Ha be van jelölve, a modell átgondolja a választ a kiküldés előtt. Ez a funkció csak az olyan modellekkel működik, amelyek támogatják a 'think' tulajdonságot."
+    },
+    "prefs_ollama_format_json": {
+        "message": "JSON kimenet kényszerítése"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Ha be van jelölve, az Ollama kényszerítve lesz, hogy érvényes JSON választ adjon vissza. Ez a funkció csak a strukturált kimenetet (structured output) támogató modellekkel működik."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Kattintson ide a választípus módosításához"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Kizárások pontos egyezése"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Ha be van jelölve, a kizárási listában szereplő szavaknak pontosan egyezniük kell a címkékkel. Ellenkező esetben akkor is szűrésre kerülnek, ha a címke részét képezik."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Adat-helyőrzők kezelése"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Az alapértelmezett adat-helyőrzőket automatikus kiegészítéssel (autocomplete) is használhatja, pont úgy, mint az egyedi utasítások írásakor."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Ezen az oldalon olyan egyedi adat-helyőrzőket (data placeholders) határozhat meg, amelyeket felhasználhat az egyedi utasításaiban."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Azonos azonosítóval (ID) rendelkező meglévő adat-helyőrzők felülíródnak. Az új azonosítóval rendelkezők hozzáadásra kerülnek."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Összes egyedi adat-helyőrző exportálása"
+    },
+    "customDataPH_Import": {
+        "message": "Új adat-helyőrzők importálása"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Adat-helyőrző szövege"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Egyedi adat-helyőrzők mentése..."
+    },
+    "customDataPH_saved": {
+        "message": "Egyedi adat-helyőrzők elmentve!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Adat-helyőrző hozzáadása"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Új egyedi adat-helyőrzők importálására készül."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Egyedi adat-helyőrzők importálásának indítása..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Egyedi adat-helyőrzők importálása befejeződött! A változtatások mentéséhez kattintson az 'Összes mentése' gombra."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "Az importálni kívánt fájl nem egy érvényes egyedi adat-helyőrző fájl."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "Az importálni kívánt fájl nem tartalmaz érvényes egyedi adat-helyőrzőket."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Használható a menühöz adott utasításokban"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Kérjük, vegye figyelembe, hogy az AI válaszában található <br> tagek soremeléssel lesznek helyettesítve."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Modell-lista törlése"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Biztosan törölni szeretné a modellek listáját? Ez a művelet nem vonható vissza."
+    },
+    "prefs_api_temperature": {
+        "message": "Hőmérséklet (Temperature)"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "A mintavételi hőmérséklet értéke 0 és 2 között. A magasabb értékek (pl. 0.8) véletlenszerűbbé teszik a kimenetet, míg az alacsonyabbak (pl. 0.2) fókuszáltabbá és determinisztikusabbá."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Úgy tűnik, nem állapítható meg, hogy a ChatGPT befejezte-e a munkát. Kattintson ide a folyamat kényszerített lezárásához."
+    },
+    "warn_API_needed": {
+        "message": "A funkció használatához API integráció szükséges a ChatGPT Web integráció helyett. Konkrét API-t a funkció beállítási oldalán határozhat meg, ha először bejelöli a fenti jelölőnégyzetet, majd a bal oldali gombra kattint."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "$1 használatával",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Gondolkodási keret (Thinking Budget)"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Határozza meg a gondolkodásra fordítandó tokenek számát. Hagyja üresen ezt a mezőt, ha a kiválasztott modell nem támogatja a gondolkodást, vagy ha az alapértelmezett módszert szeretné használni. Írjon be 0-t a gondolkodás letiltásához, vagy -1-et a dinamikus gondolkodás engedélyezéséhez."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Ennek a paraméternek 0.0 és 2.0 közötti számnak kell lennie. A kimenet véletlenszerűségét szabályozza. Az alapértelmezett érték modelltől függően változik. Hagyja üresen, ha nem kívánja elküldeni ezt a paramétert az API-hívásban."
+    },
+    "SelectAll": {
+        "message": "Összes kijelölése"
+    },
+    "DeselectAll": {
+        "message": "Kijelölés megszüntetése"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "Rendszerprompt (System Prompt)"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Javíthatja a Claude teljesítményét egy Rendszerprompt használatával, amellyel szerepkört adhat neki. Ez a technika (szerep-promptolás) a leghatékonyabb módja a Claude irányításának. A megfelelő szerepkörrel a Claude egy általános asszisztensből az Ön virtuális szakértőjévé válhat."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "A válaszba vitt véletlenszerűség mértéke. Alapértelmezése 1.0. Értéke 0.0 és 1.0 között mozoghat. Használjon 0.0-hoz közeli értéket analitikus / feleletválasztós feladatokhoz, és 1.0-hoz közelit a kreatív és generatív feladatokhoz. Megjegyzés: a kimenet még 0.0-s értéknél sem lesz teljesen determinisztikus."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Megtagadta a modellek lekéréséhez szükséges opcionális jogosultságot ehhez az integrációhoz."
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Automatikus AI-összefoglalás engedélyezése az üzenet-előnézeteknél"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Ha be van jelölve, a ThunderAI automatikusan generálja és megjeleníti az AI-összefoglalókat az e-mailek felett, amikor megnyitja őket. Vegye figyelembe, hogy ez azt jelenti, hogy minden megtekintett üzenet azonnal elküldésre kerül a beállított AI szolgáltatásnak."
+    },
+    "auto_summary_title": {
+        "message": "ThunderAI Összefoglaló"
+    },
+    "auto_summary_generating": {
+        "message": "AI-összefoglaló generálása..."
+    },
+    "auto_summary_failed": {
+        "message": "Nem sikerült az AI-összefoglaló generálása. Kérjük, ellenőrizze a beállításokat, majd próbálja újra."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Szeretné az API-beállításokat is belefoglalni az exportálásba? Vegye figyelembe, hogy az API-kulcs is mentésre kerül a fájlban!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Ne kérje a szöveg kijelölését"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Ha be van jelölve, nincs szükség szövegrész kijelölésére. A teljes levéltörzs felhasználásra kerül a naptári esemény kinyeréséhez."
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "Az utasításnak tartalmaznia kell a {%mail_text_body_or_selected%} vagy a {%mail_html_body_or_selected%} helyőrzőt a funkció engedélyezéséhez. Kérjük, adja hozzá az egyik helyőrzőt a promthoz, vagy állítsa vissza az alapértelmezettre."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Másolás"
+    },
+    "copy_text": {
+        "message": "másolás"
+    },
+    "spam_check_in_progress": {
+        "message": "Spam-ellenőrzés folyamatban..."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Üzenetek automatikus összefoglalása"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Válassza ki, hogy automatikusan generálódjanak-e összefoglalók az üzenetek megtekintésekor. API-alapú kapcsolatot igényel (a ChatGPT Web felülettel nem működik)."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Összefoglaló megjelenítése itt"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Válassza ki, hol jelenjen meg az összefoglaló eredménye. Az integrált (inline) mód egy összefoglaló sávot mutat közvetlenül az üzenetpanelen. A csevegőablak mód megnyitja az AI csevegőablakot."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Maximális megjelenítési hossz"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Az integrált összefoglalóban megjeleníthető karakterek maximális száma. Állítsa 0-ra a korlátozás kikapcsolásához."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Formázás eltávolítása"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Eltávolítja a HTML és Markdown formázásokat az AI által generált összefoglalóból, így csak sima szöveg jelenik meg."
+    },
+    "summarize_see_more": {
+        "message": "Mutass többet"
+    },
+    "summarize_see_less": {
+        "message": "Mutass kevesebbet"
+    },
+    "summarize_title": {
+        "message": "ThunderAI Áttekintés"
+    },
+    "get_ai_summary": {
+        "message": "AI Összefoglaló"
+    },
+    "summarize_collapse": {
+        "message": "Összefoglaló összecsukása"
+    },
+    "summarize_generating": {
+        "message": "Összefoglaló generálása..."
+    },
+    "summarize_error": {
+        "message": "Nem sikerült az összefoglaló generálása"
+    },
+    "summarize_click_to_generate": {
+        "message": "Kattintson ide az összefoglaló generálásához"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Az automatikus összefoglaláshoz API-alapú kapcsolat szükséges. Kérjük, konfiguráljon egy API kapcsolatot a ThunderAI beállításaiban."
+    },
+    "summarize_refresh": {
+        "message": "Összefoglaló frissítése"
+    },
+    "spamfilter_refresh": {
+        "message": "Spam-jelentés frissítése"
+    },
+    "spamfilter_delete": {
+        "message": "Spam-jelentés törlése"
+    },
+    "summarize_delete": {
+        "message": "Összefoglaló törlése"
+    },
+    "generic_error_dismiss": {
+        "message": "Elvetés"
+    },
+    "prefs_OptionText_translate": {
+        "message": "E-mail fordítása"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Ha be van jelölve, az alább megadott Modell és API lesz használva a levelek fordításához, függetlenül a ThunderAI fő beállításainál kiválasztottól."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Ha be van jelölve, egy fordítás gombot helyez el az üzenet törzsében."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Fordítási beállítások kezelése"
+    },
+    "Translate_PageTitle": {
+        "message": "Fordítási beállítások kezelése"
+    },
+    "Translate_info_default": {
+        "message": "Ezen az oldalon módosíthatja az e-mailek fordításához használt alapértelmezett utasítást."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Aktuális utasítás szövege"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Fordítási opciók"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Üzenetek automatikus fordítása"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Letiltva"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Csak manuális gomb"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Az e-mail megnyitásakor"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Válassza ki az üzenetek fordításának idejét: letiltva, csak a gombra kattintva, vagy automatikusan az üzenet megnyitásakor."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Üzenetpanel (beágyazott)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Csevegőablak"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Megjelenített fordítás maximális hossza"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "A beágyazott fordításban megjeleníthető karakterek maximális száma. 0 = nincs korlát. Ha be van állítva, a hosszabb szövegeket egy \"Mutass többet\" gombbal csonkolja a rendszer."
+    },
+    "translate_see_more": {
+        "message": "Mutass többet"
+    },
+    "translate_see_less": {
+        "message": "Mutass kevesebbet"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Fordítás célnyelve"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "A nyelv, amire az e-maileket le szeretné fordítani. Ha üresen hagyja, az alapértelmezett nyelvbeállítást használja."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Kizárt nyelvek"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Vesszővel elválasztott nyelvügynökségi kódok listája (pl. en, fr, it), amelyeket ki kell hagyni az automatikus fordításból. Ha az e-mail a felsorolt nyelvek egyikén íródott, nem lesz automatikusan lefordítva, illetve a manuális gomb sem jelenik meg."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "A fordítási feladatot leíró utasítás:"
+    },
+    "translate_generating": {
+        "message": "Fordítás folyamatban..."
+    },
+    "translate_click_to_generate": {
+        "message": "Kattintson ide az e-mail lefordításához"
+    },
+    "get_ai_translation": {
+        "message": "AI Fordítás"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Az automatikus fordításhoz API-alapú kapcsolat szükséges. Kérjük, konfiguráljon egy API kapcsolatot a ThunderAI beállításaiban."
+    },
+    "translate_refresh": {
+        "message": "Fordítás frissítése"
+    },
+    "translate_delete": {
+        "message": "Fordítás törlése"
+    },
+    "translate_banner_title": {
+        "message": "AI Fordítás"
+    },
+    "translate_error": {
+        "message": "A fordítás sikertelen volt."
+    },
+    "translate_no_language_configured": {
+        "message": "A fordítás nyelve nincs konfigurálva. Kérjük, állítson be egy nyelvet a Fordítási beállításoknál, vagy adjon meg egy alapértelmezett nyelvet az Általános beállításoknál."
+    },
+    "translate_skipped": {
+        "message": "Fordítás kihagyva: A nyelv a kizárási listán szerepel, vagy megegyezik a célnyelvvel."
+    },
+    "antispam_by": {
+        "message": "Spamszűrés biztosítja"
+    },
+    "spam_badge_tooltip": {
+        "message": "Spam pontszám — Kattintson az indoklás megtekintéséhez"
+    },
+    "summary_by": {
+        "message": "Összefoglaló biztosítja"
+    },
+    "translate_by": {
+        "message": "Fordítás biztosítja"
+    },
+    "prefs_THStats_1": {
+        "message": "Szeretne látványos statisztikákat kapni az e-mailjeiről?"
+    },
+    "prefs_THStats_2": {
+        "message": "Kattintson ide! Próbálja ki a ThunderStats-ot!"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "AI csevegőablak pozíciója"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Fent"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Balra"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Az ablak pozíciójának automatikus mentése a bezárás gomb használatakor."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Hagyja üresen az alapértelmezett pozíció használatához."
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Az e-mail beérkezésekor"
+    },
+    "placeholder_string": {
+        "message": "Helyőrző"
+    },
+    "menu_order_title": {
+        "message": "Menüsorrend"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Felugró menü (Popup)"
+    },
+    "menu_order_context_list_title": {
+        "message": "Helyi menü (Context)"
+    },
+    "menu_order_saved": {
+        "message": "Menüsorrend elmentve!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Olvasás"
+    },
+    "menu_order_tab_composing": {
+        "message": "Írás"
+    },
+    "menu_order_badge_default": {
+        "message": "Alapértelmezett"
+    },
+    "menu_order_badge_special": {
+        "message": "Speciális"
+    },
+    "menu_order_badge_custom": {
+        "message": "Egyedi"
+    },
+    "menu_order_type_reading": {
+        "message": "Olvasás"
+    },
+    "menu_order_type_composing": {
+        "message": "Írás"
+    },
+    "menu_order_type_always": {
+        "message": "Mindig"
+    },
+    "menu_order_btn_label": {
+        "message": "Menüsorrend beállításainak kezelése"
+    },
+    "menu_order_info": {
+        "message": "Húzza és ejtse (drag and drop) az elemeket az átrendezésükhöz. A kapcsoló segítségével megjelenítheti vagy elrejtheti az egyes elemeket a menükben."
+    },
+    "menu_order_active_items": {
+        "message": "Látható elemek"
+    },
+    "menu_order_hidden_items": {
+        "message": "Rejtett elemek"
+    },
+    "menu_order_icon_label": {
+        "message": "Ikon kiválasztása"
+    },
+    "menu_order_icon_none": {
+        "message": "(nincs)"
     }
 }
