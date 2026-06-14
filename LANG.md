@@ -5,6 +5,7 @@ en
 es
 fr
 hr
+hu
 it
 ja
 pl
