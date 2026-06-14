@@ -2,7 +2,11 @@
 
 
 
-
+<h2>Version 4.1.1 - ??/??/2026</h2>
+      <ul>
+        <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
+        <li>...</li>
+      </ul>
 <h2>Version 4.1.0 - 13/05/2026</h2>
       <ul>
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
