@@ -4,6 +4,7 @@
 
 <h2>Version 4.1.1 - ??/??/2026</h2>
       <ul>
+        <li>Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
         <li>...</li>
       </ul>
