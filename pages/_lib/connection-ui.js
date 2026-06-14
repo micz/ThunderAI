@@ -1119,27 +1119,33 @@ export async function initializeSpecificIntegrationUI({
   const conntype_row = document.getElementById(conntype_select_id + '_tr');
   const conntype_end_el = document.getElementById('connection_ui_end');
 
-  // Helper to update prompt
-  const _updatePrompt = async () => {
-      let conntype = conntype_el.value;
-      
-      let prompt = await loadPrompt(promptId);
-      if(!prompt) return;
+  // Helper to update prompt.
+  // Serialized through _updatePromptQueue so concurrent callers can't interleave
+  // their load-modify-save and persist a stale/wrong value.
+  let _updatePromptQueue = Promise.resolve();
+  const _updatePrompt = () => {
+      _updatePromptQueue = _updatePromptQueue.then(async () => {
+          let conntype = conntype_el.value;
 
-      prompt.api_type = conntype;
+          let prompt = await loadPrompt(promptId);
+          if(!prompt) return;
 
-      for (const [integration, options] of Object.entries(integration_options_config)) {
-          for (const key of Object.keys(options)) {
-              let propName = `${integration}_${key}`;
-              let elementId = `${model_prefix}${propName}`;
-              let element = document.getElementById(elementId);
-              if (element) {
-                  prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
+          prompt.api_type = conntype;
+
+          for (const [integration, options] of Object.entries(integration_options_config)) {
+              for (const key of Object.keys(options)) {
+                  let propName = `${integration}_${key}`;
+                  let elementId = `${model_prefix}${propName}`;
+                  let element = document.getElementById(elementId);
+                  if (element) {
+                      prompt[propName] = (element.type === 'checkbox') ? element.checked : element.value;
+                  }
               }
           }
-      }
-      
-      await savePrompt(prompt);
+
+          await savePrompt(prompt);
+      }).catch(err => console.error('[ThunderAI | connection-ui] _updatePrompt failed', err));
+      return _updatePromptQueue;
   };
 
   // Helper for visibility
@@ -1175,7 +1181,12 @@ export async function initializeSpecificIntegrationUI({
       if (use_specific_integration_el.checked) await _updatePrompt();
   });
 
+  // The connection type select already has its own dedicated 'change' listener
+  // above; excluding it here avoids two concurrent async _updatePrompt() calls
+  // racing on the same load-modify-save of the prompt (which could persist the
+  // wrong api_type the first time the value is changed).
   document.querySelectorAll(".specific_integration_sub .option-input").forEach(element => {
+      if (element === conntype_el) return;
       element.addEventListener("change", async () => {
           if (use_specific_integration_el.checked) await _updatePrompt();
       });

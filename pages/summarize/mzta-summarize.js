@@ -56,8 +56,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         let integration = summarize_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
             for (const key of Object.keys(integration_options_config[integration])) {
-                if (summarize_prompt[key] !== undefined) {
-                    update_prefs[`summarize_${integration}_${key}`] = summarize_prompt[key];
+                const propName = `${integration}_${key}`;
+                if (summarize_prompt[propName] !== undefined) {
+                    update_prefs[`summarize_${propName}`] = summarize_prompt[propName];
                 }
             }
         }
