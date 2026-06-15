@@ -1810,5 +1810,11 @@
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "L'expéditeur figure dans la liste d'exclusion de l'antispam."
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "Lorsque le filtre anti-spam automatique est activé, il vérifie uniquement les messages reçus dans la boîte de réception et ignore les e-mails distribués dans d'autres dossiers."
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Exécuter uniquement sur la boîte de réception"
     }
 }
