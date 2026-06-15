@@ -5,7 +5,9 @@
 <h2>Version 4.1.1 - ??/??/2026</h2>
       <ul>
         <li><i>[All APIs]</i> In the API webchat is now possible to zoom the text using CTRL+ CTRL- and resetting the dimension with CTRL0 [<a href="https://github.com/micz/ThunderAI/issues/805">#805</a>].</li>
+        <li><i>[All APIs]</i> Added an option to execute the spamfilter on received emails only in the inbox folder [<a href="https://github.com/micz/ThunderAI/issues/792">#792</a>].</li>
         <li>Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
+        <li>Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
         <li>...</li>
       </ul>
