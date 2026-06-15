@@ -1802,7 +1802,10 @@ async function processEmails(args) {
             let curr_fullMessage = null;
             let msg_text = null;
             let body_text = '';
-    
+
+            // Auto add_tags and spam filter must never run on messages in a junk/spam folder.
+            let message_in_junk = (message.folder?.specialUse || []).includes('junk');
+
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
                 msg_text = await getMailBody(curr_fullMessage);
@@ -1816,7 +1819,11 @@ async function processEmails(args) {
     
             if (addTagsAuto) {
                 let skipAddTags = false;
-                if(isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
+                if(isAutoMode && message_in_junk){
+                    taLog.log("Message in junk folder, skipping add_tags...");
+                    skipAddTags = true;
+                }
+                if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
@@ -1876,7 +1883,11 @@ async function processEmails(args) {
     
             if (spamFilter) {
                 let skipSpamFilter = false;
-                if(isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
+                if(isAutoMode && message_in_junk){
+                    taLog.log("Message in junk folder, skipping spamfilter...");
+                    skipSpamFilter = true;
+                }
+                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
