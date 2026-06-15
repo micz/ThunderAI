@@ -1436,6 +1436,14 @@
     "message": "If checked, a panel with the spam report will be shown on top of the message.",
     "description": ""
   },
+  "prefs_OptionText_spamfilter_only_inbox": {
+    "message": "Run only on the inbox",
+    "description": ""
+  },
+  "prefs_OptionText_spamfilter_only_inbox_Info": {
+    "message": "When enabled, the automatic spam filter only checks messages received in the inbox folder and ignores mail delivered to other folders.",
+    "description": ""
+  },
   "spamfilter_threshold_too_low": {
     "message": "The spam threshold is too low! You will likely mark too much mails as spam!",
     "description": ""

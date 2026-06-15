@@ -1790,6 +1790,7 @@ async function processEmails(args) {
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
             spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
             spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
+            spamfilter_only_inbox: prefs_default.spamfilter_only_inbox,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
@@ -1879,6 +1880,13 @@ async function processEmails(args) {
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
+                        skipSpamFilter = true;
+                    }
+                }
+                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_only_inbox){
+                    let specialUse = message.folder?.specialUse || [];
+                    if(!specialUse.includes('inbox')){
+                        taLog.log("Message not in inbox, skipping spamfilter (only-inbox mode)...");
                         skipSpamFilter = true;
                     }
                 }
