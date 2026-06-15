@@ -1810,5 +1810,11 @@
     },
     "menu_order_icon_none": {
         "message": "(nessuna)"
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Esegui solo nella cartella della posta in arrivo"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "Quando è abilitato, il filtro antispam automatico controlla solo i messaggi ricevuti nella cartella della posta in arrivo e ignora i messaggi recapitati in altre cartelle."
     }
 }
