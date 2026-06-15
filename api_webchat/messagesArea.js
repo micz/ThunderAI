@@ -139,7 +139,7 @@ messagesAreaStyle.textContent = `
     .split-button button {
       padding: 5px 0px 5px 10px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
 
     .split-button .dropdown-toggle {

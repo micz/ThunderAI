@@ -61,6 +61,15 @@ Two provider categories emit reasoning/thinking content:
 
 The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
 
+## Font zoom in the webchat UI
+
+The API webchat window supports keyboard font zoom, handled in `api_webchat/controller.js`:
+
+- **Ctrl/Cmd + `+`** (or `=`) increases, **Ctrl/Cmd + `-`** decreases, **Ctrl/Cmd + `0`** resets to 100%.
+- Zoom is applied by setting `document.documentElement.style.fontSize` as a percentage. Because text in the Shadow DOM components (`<messages-area>`, `<message-input>`) is sized in `rem`/`em`, it scales against the root `<html>` font-size across the Shadow DOM boundary. A few chrome elements that previously used absolute `px` font-sizes were converted to `rem` so they scale too.
+- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.sync` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
+- The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
+
 ## Configuration Validation
 
 For special prompts (`mzta_specialCommand`), required fields are validated in `initWorker()` (`js/mzta-special-commands.js`) **before** the worker is created. If a required field is empty, an `Error` with `isConfigError = true` is thrown. Validation covers:

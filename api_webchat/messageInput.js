@@ -121,7 +121,7 @@ messagesInputStyle.textContent = `
     #mzta-custom_textarea{
         color:black;
         padding:5px;
-        font-size:15px;
+        font-size:0.9375rem;
         width:100%;
         box-sizing: border-box;
         resize: vertical;
@@ -130,7 +130,7 @@ messagesInputStyle.textContent = `
         text-align:center;
         width:100%;
         padding-bottom:10px;
-        font-size:15px;
+        font-size:0.9375rem;
     }
     #mzta-custom_info span{
         font-size:0.8em;
@@ -139,7 +139,7 @@ messagesInputStyle.textContent = `
         position: absolute;
         bottom: 5px;
         right: 10px;
-        font-size: 12px;
+        font-size: 0.75rem;
         color: #ccc;
     }
     #mzta-custom_btn{
