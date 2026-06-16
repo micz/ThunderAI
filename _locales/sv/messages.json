@@ -1794,5 +1794,11 @@
     },
     "generic_error_dismiss": {
         "message": "Avfärda"
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Kör endast på inkorgen"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "När det är aktiverat kontrollerar det automatiska skräppostfiltret endast meddelanden som tas emot i inkorgen och ignorerar e-post som levereras till andra mappar."
     }
 }
