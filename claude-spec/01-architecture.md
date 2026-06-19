@@ -150,6 +150,29 @@ taTranslationStore.saveTranslation()
 [later] user opens the message → initTranslation → cache hit → showTranslation instantly
 ```
 
+### Stale-result guard (rapid message switching)
+
+Inline summary/translation generation is asynchronous: there can be a multi-second gap
+between when the background reads the displayed message (to start generation) and when the
+AI result is ready to be sent back to the message-display tab. If the user clicks through
+several messages quickly, the same tab may already be displaying a different email by the
+time an earlier result arrives — without a check, the result would render on the wrong
+message, producing a flicker of unrelated summaries/translations before the correct one.
+
+To prevent this, every **terminal "show result" send** (`showSummary`, `showTranslation`,
+`showSpamReport`, and the manual `showSummaryButton` / `showTranslationButton`) goes through
+the `_sendIfCurrent(tabId, headerMessageId, payload)` helper in `mzta-background.js`. It
+re-queries `browser.messageDisplay.getDisplayedMessage(tabId)` immediately before sending and
+**drops the message** if the tab no longer displays the expected `headerMessageId`. The
+already-saved cache is unaffected, so revisiting the message later shows the correct result
+on cache hit. This generalizes the same displayed-message check already used by
+`updateSpamPanel()`.
+
+The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGenerating`,
+`showSpamCheckInProgress`) are intentionally **not** guarded — they are not keyed to a
+specific result, are idempotent in the content script, and are quickly replaced; guarding
+them would add latency without preventing wrong-content display.
+
 ## Key Modules
 
 | File | Role |
