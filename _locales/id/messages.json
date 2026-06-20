@@ -1,0 +1,1804 @@
+{
+    "extensionDescription": {
+        "message": "Gunakan ChatGPT, Google Gemini, Claude, atau Ollama untuk menyempurnakan email Anda!"
+    },
+    "menu_title": {
+        "message": "AI"
+    },
+    "prompt_lang": {
+        "message": "Balas dalam"
+    },
+    "prompt_reply": {
+        "message": "Balas email ini"
+    },
+    "prompt_reply_advanced": {
+        "message": "Balas utas ini"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Balas dengan perintah..."
+    },
+    "prompt_rewrite_polite": {
+        "message": "Tulis ulang dengan sopan"
+    },
+    "prompt_rewrite_formal": {
+        "message": "Tulis ulang secara formal"
+    },
+    "prompt_classify": {
+        "message": "Klasifikasikan"
+    },
+    "prompt_translate_this": {
+        "message": "Terjemahkan"
+    },
+    "prompt_this": {
+        "message": "Buat prompt untuk ini"
+    },
+    "prompt_selection_needed": {
+        "message": "Untuk melanjutkan, Anda perlu memilih teks terlebih dahulu!"
+    },
+    "customPrompts_managePrompts": {
+        "message": "Kelola Prompt"
+    },
+    "more_info_string": {
+        "message": "Info lebih lanjut"
+    },
+    "prompt_string": {
+        "message": "Prompt"
+    },
+    "customPrompts_managePrompts_info_default": {
+        "message": "Prompt bawaan tidak dapat diedit. Anda dapat menonaktifkannya, lalu menyalin teks prompt dan menempelkannya ke prompt baru untuk membuat versi yang dimodifikasi."
+    },
+    "customPrompts_managePrompts_info_default_2": {
+        "message": "Anda dapat mengimpor dan mengekspor prompt. Prompt yang sudah ada dengan ID yang sama akan ditimpa. Prompt dengan ID baru akan ditambahkan."
+    },
+    "customPrompts_managePrompts_info_default_3": {
+        "message": "Jika semuanya sudah benar, setelah impor klik tombol 'Save All'."
+    },
+    "customPrompts_start_saving": {
+        "message": "Menyimpan prompt..."
+    },
+    "customPrompts_reindexing_list": {
+        "message": "Mengindeks ulang daftar..."
+    },
+    "customPrompts_filtering_prompts": {
+        "message": "Memfilter prompt..."
+    },
+    "customPrompts_saving_default_prompts": {
+        "message": "Menyimpan prompt bawaan..."
+    },
+    "customPrompts_saving_custom_prompts": {
+        "message": "Menyimpan prompt kustom..."
+    },
+    "customPrompts_reloading_menus": {
+        "message": "Memuat ulang menu..."
+    },
+    "customPrompts_saved": {
+        "message": "Prompt berhasil disimpan!"
+    },
+    "customPrompts_form_label_ID": {
+        "message": "ID"
+    },
+    "customPrompts_form_label_ID_rules": {
+        "message": "Harus unik, huruf kecil, dan tanpa spasi"
+    },
+    "customPrompts_form_label_Name": {
+        "message": "Nama"
+    },
+    "customPrompts_form_label_Text": {
+        "message": "Teks Prompt"
+    },
+    "customPrompts_form_label_Action": {
+        "message": "Tindakan"
+    },
+    "customPrompts_form_label_need_selected": {
+        "message": "Perlu memilih teks"
+    },
+    "customPrompts_form_label_need_signature": {
+        "message": "Selalu tambahkan tanda tangan"
+    },
+    "customPrompts_form_label_need_custom_text": {
+        "message": "Minta teks tambahan"
+    },
+    "customPrompts_form_label_enabled": {
+        "message": "Diaktifkan"
+    },
+    "customPrompts_form_label_use_diff_viewer": {
+        "message": "Aktifkan penampil perbandingan teks"
+    },
+    "customPrompts_form_label_use_diff_viewer_title": {
+        "message": "Penampil perbandingan teks dapat dipilih ketika tindakan diatur ke \"Ganti teks\"."
+    },
+    "customPrompts_form_required_fields": {
+        "message": "Kolom wajib diisi"
+    },
+    "customPrompts_btnEdit": {
+        "message": "Edit"
+    },
+    "customPrompts_btnCancel": {
+        "message": "Batal"
+    },
+    "customPrompts_btnOK": {
+        "message": "OK"
+    },
+    "customPrompts_btnDelete": {
+        "message": "Hapus"
+    },
+    "customPrompts_btnDelete_confirmText": {
+        "message": "Apakah Anda yakin ingin menghapus item ini?"
+    },
+    "customPrompts_unsaved_changes": {
+        "message": "Ada perubahan yang belum disimpan!"
+    },
+    "btnSaveAll_string": {
+        "message": "Simpan Semua"
+    },
+    "btnNew_string": {
+        "message": "Tambah Baru"
+    },
+    "customPrompts_btnAddNewCommit": {
+        "message": "Tambahkan Prompt"
+    },
+    "customPrompts_add_to_menu": {
+        "message": "Tambahkan ke menu"
+    },
+    "customPrompts_add_to_menu_always": {
+        "message": "Selalu"
+    },
+    "customPrompts_add_to_menu_reading": {
+        "message": "Membaca email"
+    },
+    "customPrompts_add_to_menu_composing": {
+        "message": "Menulis email"
+    },
+    "show_in": {
+        "message": "Tampilkan di"
+    },
+    "show_in_popup": {
+        "message": "Hanya popup"
+    },
+    "show_in_context": {
+        "message": "Hanya menu konteks"
+    },
+    "show_in_both": {
+        "message": "Keduanya"
+    },
+    "customPrompts_close_button": {
+        "message": "Tombol tutup"
+    },
+    "customPrompts_do_reply": {
+        "message": "Lakukan balasan"
+    },
+    "customPrompts_substitute_text": {
+        "message": "Ganti teks"
+    },
+    "chatgpt_win_working": {
+        "message": "Sedang diproses..."
+    },
+    "chatgpt_win_job_completed": {
+        "message": "Selesai!"
+    },
+    "chatgpt_win_job_completed_select": {
+        "message": "Pilih teks yang ingin Anda gunakan lalu klik tombolnya."
+    },
+    "chatgpt_win_get_answer": {
+        "message": "Gunakan jawaban yang dipilih"
+    },
+    "chatgpt_win_close": {
+        "message": "Tutup"
+    },
+    "webchat_save_as_summary": {
+        "message": "Simpan sebagai Ringkasan"
+    },
+    "chatgpt_textarea_not_found_error": {
+        "message": "Sepertinya halaman ChatGPT memerlukan waktu terlalu lama untuk dimuat. Jika pemuatan selesai, klik tombol di sebelah kanan. Jika masalah berlanjut, silakan periksa status layanan."
+    },
+    "chatgpt_btn_retry": {
+        "message": "Coba lagi"
+    },
+    "chatgpt_sendbutton_not_found_error": {
+        "message": "Klik tombol kirim untuk mengirim prompt."
+    },
+    "chatgpt_user_not_logged_in": {
+        "message": "Anda belum masuk ke ChatGPT. Silakan masuk dengan kredensial Anda, tutup jendela ChatGPT, lalu ulangi tindakan yang tadi Anda coba. Setelah itu Anda akan tetap masuk."
+    },
+    "chatgpt_win_model_warning": {
+        "message": "Untuk suatu alasan, tidak memungkinkan memverifikasi apakah model yang benar sudah dimuat. Untuk saat ini, Anda dapat menekan tombol biru untuk melanjutkan."
+    },
+    "chatgpt_win_custom_text": {
+        "message": "Masukkan teks tambahan untuk prompt di sini."
+    },
+    "chatgpt_win_send": {
+        "message": "Kirim"
+    },
+    "chatgpt_force_completion": {
+        "message": "paksa selesaikan"
+    },
+    "chatgpt_force_completion_title": {
+        "message": "Klik di sini untuk menampilkan tombol 'Gunakan jawaban terakhir' jika ChatGPT telah selesai bekerja tetapi tombolnya belum muncul."
+    },
+    "msg_prompt_too_long": {
+        "message": "Teks yang Anda berikan terlalu panjang. Anda perlu menguranginya."
+    },
+    "prefs_OptionText_release_notes": {
+        "message": "Catatan Rilis"
+    },
+    "prefs_status_page": {
+        "message": "status layanan"
+    },
+    "prefs_OptionText_chatgpt_win_text": {
+        "message": "Dimensi jendela chat AI"
+    },
+    "prefs_OptionText_chatgpt_win_height": {
+        "message": "Tinggi"
+    },
+    "prefs_OptionText_chatgpt_win_width": {
+        "message": "Lebar"
+    },
+    "prefs_OptionText_default_sign_name": {
+        "message": "Nama tanda tangan bawaan"
+    },
+    "prefs_OptionText_default_chatgpt_lang": {
+        "message": "Bahasa bawaan untuk respons"
+    },
+    "prefs_OptionText_reply_all": {
+        "message": "Balas ke semua"
+    },
+    "prefs_OptionText_reply_sender": {
+        "message": "Balas ke pengirim"
+    },
+    "prefs_OptionText_reply_type": {
+        "message": "Jenis balasan"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Ini adalah jenis balasan bawaan yang akan digunakan saat membalas email. Anda dapat memilih jenis lainnya nanti di dialog balasan."
+    },
+    "prefs_OptionText_btnManagePrompts": {
+        "message": "Kelola prompt Anda"
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Kelola placeholder data Anda"
+    },
+    "prefs_storage_title": {
+        "message": "Penyimpanan"
+    },
+    "prefs_storage_info": {
+        "message": "Penyimpanan digunakan untuk menyimpan informasi tentang skor spam, ringkasan, dan terjemahan dari setiap pesan."
+    },
+    "prefs_storage_size": {
+        "message": "Ukuran penyimpanan"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Hapus Penyimpanan"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Apakah Anda yakin ingin menghapus semua data yang tersimpan (ringkasan, laporan spam, terjemahan)? Tindakan ini tidak dapat dibatalkan."
+    },
+    "prefs_storage_clear_done": {
+        "message": "$COUNT$ rekaman dihapus.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoTitle": {
+        "message": "Informasi Penting"
+    },
+    "prefsInfoDesc_1": {
+        "message": "Antarmuka web ChatGPT dapat saja berubah dengan cara yang menyebabkan add-on ini tidak berfungsi. Periksa halaman \"Status Layanan\" yang ditautkan di bagian bawah halaman ini. Selain itu, ingat bahwa saat pertama kali menggunakan ThunderAI, Anda perlu masuk ke ChatGPT."
+    },
+    "prefsInfoDesc_2": {
+        "message": "Untuk menggunakan ChatGPT API, Anda memerlukan API Key OpenAI ChatGPT dan harus memilih model."
+    },
+    "prefsInfoDesc_3": {
+        "message": "Untuk menggunakan integrasi dengan Ollama, Anda perlu menyiapkan server Ollama lokal. Setelah server berjalan, masukkan alamatnya pada kolom yang disediakan di dalam aplikasi. Agar komunikasi antara ThunderAI dan server Ollama berjalan dengan benar, ingat untuk menetapkan OLLAMA_ORIGINS=moz-extension://*."
+    },
+    "prefsInfoDesc_4": {
+        "message": "Untuk menggunakan integrasi ini, Anda perlu menyiapkan server lokal yang kompatibel dengan OpenAI API, seperti LM Studio. Setelah server berjalan, masukkan alamatnya pada kolom yang disediakan di dalam aplikasi. Agar komunikasi antara ThunderAI dan server lokal berjalan dengan benar, ingat untuk mengatur pengaturan CORS dengan tepat."
+    },
+    "prefsInfoDesc_5": {
+        "message": "Ingat bahwa Anda dapat membuka menu ThunderAI menggunakan pintasan keyboard CTRL+ALT+A."
+    },
+    "prefsInfoDesc_6": {
+        "message": "Anda dapat mengubah pintasan dengan mengeklik ikon roda gigi di kanan atas halaman ini dan memilih \"Manage Extension Shortcut\"."
+    },
+    "prefsInfoDesc_7": {
+        "message": "Untuk menggunakan Google Gemini API, Anda memerlukan API Key Google Gemini dan harus memilih model."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Untuk menggunakan Claude API, Anda memerlukan API Key Anthropic Claude dan harus memilih model."
+    },
+    "prefsDonation_1": {
+        "message": "Apakah Anda menyukai add-on ini?"
+    },
+    "prefsDonation_2": {
+        "message": "Pertimbangkan untuk memberikan donasi!"
+    },
+    "backToOptionsText": {
+        "message": "Opsi"
+    },
+    "TranslateText": {
+        "message": "Apakah Anda ingin membantu menerjemahkan add-on ini?"
+    },
+    "TranslateLink": {
+        "message": "Cari tahu caranya!"
+    },
+    "customPrompts_ExportAll": {
+        "message": "Ekspor semua prompt"
+    },
+    "customPrompts_Import": {
+        "message": "Impor prompt baru"
+    },
+    "importPrompts_confirmText": {
+        "message": "Anda akan mengimpor prompt baru."
+    },
+    "customPrompts_start_import": {
+        "message": "Memulai impor prompt kustom..."
+    },
+    "customPrompts_import_completed": {
+        "message": "Impor prompt kustom selesai! Anda perlu mengeklik tombol 'Save All' untuk menyimpan perubahan Anda."
+    },
+    "importPrompts_invalidFile": {
+        "message": "File yang Anda coba impor bukan file prompt kustom yang valid."
+    },
+    "importPrompts_invalidPrompts": {
+        "message": "File yang Anda coba impor tidak berisi prompt valid."
+    },
+    "currently_used_prompt": {
+        "message": "Nama prompt yang sedang digunakan"
+    },
+    "customprompts_form_label_define_response_lang": {
+        "message": "Tentukan bahasa respons di dalam prompt"
+    },
+    "prefs_Connection_type": {
+        "message": "Jenis Koneksi"
+    },
+    "prefs_Connection_type_ChatGPT_Web": {
+        "message": "Antarmuka Web ChatGPT"
+    },
+    "prefs_Connection_type_ChatGPT_API": {
+        "message": "ChatGPT OpenAI API"
+    },
+    "prefs_ChatGPT_API_Key": {
+        "message": "API Key ChatGPT"
+    },
+    "ChatGPT_Models": {
+        "message": "Model ChatGPT"
+    },
+    "ChatGPT_Models_Fetch": {
+        "message": "Perbarui daftar Model ChatGPT"
+    },
+    "ChatGPT_Models_Error_fetching": {
+        "message": "Terjadi kesalahan saat mencoba mengambil model ChatGPT"
+    },
+    "Loading": {
+        "message": "Memuat..."
+    },
+    "error": {
+        "message": "Kesalahan ThunderAI!"
+    },
+    "chatgpt_empty_apikey": {
+        "message": "Anda belum menambahkan API Key untuk ChatGPT API. Silakan masukkan di halaman opsi."
+    },
+    "chatgpt_empty_model": {
+        "message": "Anda belum memilih model untuk ChatGPT API. Silakan pilih di halaman opsi."
+    },
+    "chagpt_api_send_button": {
+        "message": "Menggunakan model"
+    },
+    "Debug": {
+        "message": "Debug"
+    },
+    "prefs_OptionText_do_debug_info": {
+        "message": "Aktifkan sistem debug"
+    },
+    "prefs_Connection_type_Ollama_API": {
+        "message": "Ollama API (LLM Lokal)"
+    },
+    "prefs_Connection_type_OpenAI_Comp_API": {
+        "message": "API Kompatibel OpenAI"
+    },
+    "prefs_API_Host": {
+        "message": "Alamat Host"
+    },
+    "Ollama_Models": {
+        "message": "Model Ollama"
+    },
+    "Ollama_Models_Fetch": {
+        "message": "Perbarui daftar Model Ollama"
+    },
+    "Ollama_Models_Error_fetching": {
+        "message": "Terjadi kesalahan saat mencoba mengambil model Ollama"
+    },
+    "API_Models_Error_NoModels": {
+        "message": "Tidak ada model ditemukan"
+    },
+    "ollama_empty_host": {
+        "message": "Anda belum menambahkan Alamat Host untuk Ollama API. Silakan masukkan di halaman opsi."
+    },
+    "ollama_empty_model": {
+        "message": "Anda belum memilih model untuk Ollama API. Silakan pilih di halaman opsi."
+    },
+    "error_connection_interrupted": {
+        "message": "Koneksi ke server terputus secara tidak terduga"
+    },
+    "ollama_api_request_failed": {
+        "message": "Permintaan ke Ollama API gagal"
+    },
+    "chatgpt_api_request_failed": {
+        "message": "Permintaan ke OpenAI ChatGPT API gagal"
+    },
+    "WaitingServerResponse": {
+        "message": "Menunggu respons server"
+    },
+    "prefs_API_Host_Info": {
+        "message": "Kurang lebih seperti"
+    },
+    "OpenAIComp_Models": {
+        "message": "Model API Kompatibel OpenAI"
+    },
+    "OpenAIComp_Models_Fetch": {
+        "message": "Perbarui daftar Model API Kompatibel OpenAI"
+    },
+    "OpenAIComp_Models_Error_fetching": {
+        "message": "Terjadi kesalahan saat mencoba mengambil model API Kompatibel OpenAI"
+    },
+    "OpenAIComp_empty_host": {
+        "message": "Anda belum menambahkan Alamat Host untuk API Kompatibel OpenAI. Silakan masukkan di halaman opsi."
+    },
+    "OpenAIComp_empty_model": {
+        "message": "Anda belum memilih model untuk API Kompatibel OpenAI. Silakan pilih di halaman opsi."
+    },
+    "OpenAIComp_api_request_failed": {
+        "message": "Permintaan ke API Kompatibel OpenAI gagal"
+    },
+    "prefs_OpenAIComp_ChatName": {
+        "message": "Nama Chat"
+    },
+    "prefs_OpenAIComp_ChatName_Info": {
+        "message": "Ini adalah nama yang akan digunakan di chat AI."
+    },
+    "StorageSpace": {
+        "message": "Total ruang penyimpanan yang digunakan"
+    },
+    "SearchPrompt": {
+        "message": "Cari prompt"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter": {
+        "message": "Menu: kirim prompt langsung"
+    },
+    "prefs_OptionText_dynamic_menu_force_enter_info": {
+        "message": "Jika dicentang, penggunaan pintasan keyboard CTRL+ALT+A akan otomatis mengirim prompt yang disorot dari menu. Jika tidak, nama prompt akan ditampilkan kepada pengguna, sehingga perlu menekan tombol Enter sekali lagi untuk mengirimnya."
+    },
+    "prefs_OptionText_chatgpt_win_dims_info": {
+        "message": "Atur ke 0 jika Anda tidak ingin menentukan ukuran jendela."
+    },
+    "prefs_OpenAIComp_API_Key": {
+        "message": "API Key OpenAI Comp"
+    },
+    "Optional": {
+        "message": "Opsional"
+    },
+    "OpenChatGPTTab": {
+        "message": "Buka Tab ChatGPT"
+    },
+    "OpenChatGPTTab_Info": {
+        "message": "Jika terjadi masalah login di jendela ThunderAI, buka ChatGPT di tab baru menggunakan tombol di sebelah kanan, masuk, lalu tutup tab tersebut dan lanjutkan menggunakan ThunderAI."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Membuka ChatGPT Web dari sini akan menerapkan pengaturan apa pun yang telah dikonfigurasi untuk model, project, dan Custom GPT."
+    },
+    "placeholder_mail_text_body": {
+        "message": "Isi email"
+    },
+    "placeholder_mail_html_body": {
+        "message": "Isi email HTML"
+    },
+    "placeholder_mail_subject": {
+        "message": "Subjek email"
+    },
+    "placeholder_folder_name": {
+        "message": "Nama folder"
+    },
+    "placeholder_folder_path": {
+        "message": "Path folder"
+    },
+    "placeholder_mail_headers": {
+        "message": "Header email"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Semua header email"
+    },
+    "placeholder_selected_text": {
+        "message": "Teks yang dipilih"
+    },
+    "placeholder_selected_html": {
+        "message": "HTML yang dipilih"
+    },
+    "placeholder_additional_text": {
+        "message": "Teks tambahan"
+    },
+    "placeholder_junk_score": {
+        "message": "Skor junk"
+    },
+    "placeholder_recipients": {
+        "message": "Penerima"
+    },
+    "placeholder_cc_list": {
+        "message": "Daftar CC"
+    },
+    "placeholder_author": {
+        "message": "Penulis"
+    },
+    "placeholder_account_email_address": {
+        "message": "Alamat email akun"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Isi email atau teks yang dipilih"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Isi email HTML atau HTML yang dipilih"
+    },
+    "prefs_OptionText_placeholders_use_default_value": {
+        "message": "Placeholder: gunakan nilai bawaan"
+    },
+    "prefs_OptionText_placeholders_use_default_value_info": {
+        "message": "Jika dicentang, placeholder akan diisi dengan nilai bawaan saat tidak ada nilai yang diberikan. Jika tidak, placeholder akan tetap dibiarkan di tempatnya."
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Ciutkan blok thinking secara bawaan"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Mengontrol status awal blok thinking yang ditampilkan di atas jawaban. Jika dicentang, blok akan diciutkan secara bawaan dan dapat dibuka dengan klik. Jika tidak dicentang, blok akan terbuka secara bawaan dan dapat diciutkan dengan klik. Konten thinking akan selalu dipertahankan."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Thinking"
+    },
+    "prefs_OptionText_max_prompt_length": {
+        "message": "Panjang maksimum prompt"
+    },
+    "prefs_OptionText_max_prompt_length_Info": {
+        "message": "Ini adalah jumlah maksimum karakter yang dapat digunakan dalam sebuah prompt. Jika melebihi, pesan kesalahan akan ditampilkan. Nilai ini tidak dapat diedit untuk Antarmuka Web ChatGPT. Atur ke nol untuk menonaktifkan pemeriksaan."
+    },
+    "prefs_OptionText_chatgpt_web_model": {
+        "message": "Model Web ChatGPT"
+    },
+    "prefs_OptionText_chatgpt_web_model_info": {
+        "message": "Ini adalah model yang akan dipaksakan untuk Antarmuka Web ChatGPT. Jika tidak ditentukan atau yang diberikan salah, model bawaan akan ditetapkan oleh ChatGPT di halaman web. Pengaturan ini tidak akan berfungsi dengan akun ChatGPT gratis."
+    },
+    "prefs_OptionText_chatgpt_web_tempchat": {
+        "message": "Chat sementara ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_tempchat_info": {
+        "message": "Jika dicentang, chat sementara akan digunakan di Antarmuka Web ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Waktu tunggu pemuatan halaman"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Waktu dalam milidetik untuk menunggu halaman ChatGPT dimuat sebelum memuat konten tambahan. Nilai bawaan adalah 1000 ms. Jika Custom GPT atau Project ditentukan, 1000 ms tambahan akan ditambahkan ke nilai ini."
+    },
+    "chatgpt_btn_model": {
+        "message": "Gunakan model saat ini"
+    },
+    "AllowedValues": {
+        "message": "Nilai yang diizinkan"
+    },
+    "prefs_OptionText_btnManagePrompts_infoline": {
+        "message": "Anda dapat menggunakan placeholder data tambahan."
+    },
+    "prefs_OptionText_openai_comp_use_v1": {
+        "message": "Pertahankan kompatibilitas \"v1\""
+    },
+    "prefs_OptionText_openai_comp_use_v1_info": {
+        "message": "Jika dicentang, segmen \"v1\" pada path panggilan API akan dipertahankan, seperti \"http://localhost:1234/v1/chat/completions\"."
+    },
+    "prefs_OptionText_openai_comp_info_remote": {
+        "message": "Anda juga dapat memasukkan alamat server jarak jauh di sini."
+    },
+    "prefs_OptionText_owl_warning": {
+        "message": "Tampaknya setidaknya salah satu akun Anda menggunakan add-on Owl for Exchange. Ada masalah yang sudah diketahui antara Thunderbird dan Owl, yang saat ini sedang ditangani. Untuk saat ini, Anda dapat menggunakan ThunderAI saat menulis email, tetapi tidak saat membacanya."
+    },
+    "prompt_reply_full_text": {
+        "message": "Balas email berikut. Balas hanya dengan teks yang diperlukan dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_reply_additional_text": {
+        "message": "Jangan tambahkan baris subjek ke dalam respons."
+    },
+    "reply_same_lang": {
+        "message": "Balas dalam bahasa yang sama."
+    },
+    "sign_msg_as": {
+        "message": "Tandatangani pesan sebagai"
+    },
+    "prompt_reply_advanced_full_text": {
+        "message": "Balas email berikut \"{%selected_text%}\", dengan mempertimbangkan bahwa ini adalah keseluruhan utas email \"{%mail_html_body%}\". Balas hanya dengan teks yang diperlukan dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Balas email berikut \"{%mail_text_body%}\". {%additional_text%}. Balas hanya dengan teks yang diperlukan dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_rewrite_full_text": {
+        "message": "Tulis ulang teks berikut agar lebih sopan. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_rewrite_formal_full_text": {
+        "message": "Tulis ulang teks berikut agar lebih formal. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_classify_full_text": {
+        "message": "Klasifikasikan teks berikut dalam hal Kesopanan, Kehangatan, Formalitas, Ketegasan, dan Ketersinggungan dengan memberikan persentase untuk setiap kategori. Balas hanya dengan kategori dan nilainya tanpa komentar tambahan atau teks lainnya."
+    },
+    "prompt_translate_this_full_text": {
+        "message": "Terjemahkan email di bawah ini ke dalam {%thunderai_translate_lang%}.\n\nAturan:\n- Terjemahkan subjek dan isi.\n- Kembalikan hasilnya sebagai objek JSON dengan tiga field: \"subject\", \"body\", dan \"status\".\n- Jika terjemahan berhasil dilakukan, status bernilai 1.\n- Jika email ditulis dalam salah satu bahasa berikut \"{%thunderai_translate_exclude_lang%}\" atau dalam bahasa {%thunderai_translate_lang%}, kembalikan string kosong untuk body dan subject, lalu set status ke -1.\n- Jangan tambahkan penjelasan, catatan, atau teks apa pun di luar JSON.\n\nSubjek email: {%mail_subject%}\n\nIsi email: {%mail_html_body%}\n\nBuat respons hanya dalam format JSON. Output harus berupa objek JSON saja. Berikut adalah contoh format JSON yang harus digunakan:\n{\n\"subject\": \"terjemahan subjek\",\n\"body\": \"terjemahan isi\",\n\"status\": \"hasil status\"\n}"
+    },
+    "prompt_this_full_text": {
+        "message": "Balas hanya dengan teks yang diperlukan dan tanpa komentar tambahan atau teks lainnya."
+    },
+    "prefs_OptionText_add_tags": {
+        "message": "Tambahkan tag ke email"
+    },
+    "prefs_OptionText_add_tags_Info": {
+        "message": "Jika dicentang, item akan disertakan dalam menu untuk menerapkan tag ke email."
+    },
+    "prompt_add_tags": {
+        "message": "Tambahkan tag"
+    },
+    "prompt_add_tags_full_text": {
+        "message": "Analisis teks email berikut dan hasilkan array JSON berisi tag yang merangkum isinya. Gunakan tema, topik utama, dan deskriptor yang relevan sebagai tag. Pastikan tag singkat dan relevan dengan isi email.\nTeks email: {%mail_text_body%}\nPertimbangkan detail berikut untuk konteks:\n- Pengirim: {%author%}\n- Penerima: {%recipients%}\n- Daftar CC: {%cc_list%}\n- Subjek email: {%mail_subject%}\nHarap buat tag berdasarkan teks dan konteks email, sambil mengabaikan informasi yang tidak perlu atau detail sepele.\nBuat respons hanya dalam format JSON. Output harus berupa array JSON tag saja tanpa komentar atau teks tambahan apa pun. Berikut adalah contoh format JSON yang harus digunakan:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
+    },
+    "prompt_proofread_this": {
+        "message": "Periksa email ini"
+    },
+    "prompt_proofread_this_full_text": {
+        "message": "Periksa email berikut dan perbaiki juga setiap kesalahan ejaan atau tata bahasa. Balas hanya dengan teks yang telah diperbaiki dan tanpa komentar tambahan atau teks lainnya.\n\n\"{%mail_typed_text%}\""
+    },
+    "placeholder_tags_current_email": {
+        "message": "Tag email"
+    },
+    "placeholder_tags_full_list": {
+        "message": "Tag yang ada"
+    },
+    "prefs_OptionText_add_tags_maxnum": {
+        "message": "Jumlah maksimum tag"
+    },
+    "prefs_OptionText_add_tags_maxnum_Info": {
+        "message": "Jumlah maksimum tag yang diusulkan oleh AI. Atur ke 0 jika Anda tidak ingin membatasi jumlah tag."
+    },
+    "prompt_add_tags_maxnum": {
+        "message": "Batasi jumlah tag menjadi"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions": {
+        "message": "Sembunyikan tag yang dikecualikan"
+    },
+    "prefs_OptionText_add_tags_hide_exclusions_Info": {
+        "message": "Jika dicentang, tag yang ada dalam daftar pengecualian akan disembunyikan di dialog konfirmasi."
+    },
+    "prefs_OptionText_btnManageTagsInfo": {
+        "message": "Kelola pengaturan tag"
+    },
+    "AddTags_PageTitle": {
+        "message": "Kelola Pengaturan Tag"
+    },
+    "AddTags_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk menambahkan tag ke email dan mengelola daftar pengecualian."
+    },
+    "AddTags_prompt_text_title": {
+        "message": "Teks prompt saat ini"
+    },
+    "AddTags_excl_list_title": {
+        "message": "Daftar pengecualian"
+    },
+    "AddTags_excl_list_infoline": {
+        "message": "Ini adalah daftar tag yang tidak boleh ditambahkan ke email."
+    },
+    "save": {
+        "message": "Simpan"
+    },
+    "addtags_info_additional_statements": {
+        "message": "Pernyataan ini akan ditambahkan di akhir prompt:"
+    },
+    "reset_default": {
+        "message": "Kembalikan ke bawaan"
+    },
+    "reset": {
+        "message": "Reset"
+    },
+    "addtags_excl_list_infoline2": {
+        "message": "Tambahkan satu kata per baris, atau dipisahkan dengan koma."
+    },
+    "addtags_dialog_title": {
+        "message": "Tambahkan tag ke email"
+    },
+    "addtags_exclude_tag": {
+        "message": "Kecualikan tag"
+    },
+    "addtags_no_tags_received": {
+        "message": "Tidak ada tag yang diterima dari AI."
+    },
+    "addtags_no_valid_tags": {
+        "message": "Tidak ditemukan tag yang valid setelah difilter dengan daftar pengecualian."
+    },
+    "thunderai_error_title": {
+        "message": "Kesalahan ThunderAI"
+    },
+    "thunderai_warning_title": {
+        "message": "Peringatan ThunderAI"
+    },
+    "prefs_OptionText_add_tags_first_uppercase": {
+        "message": "Huruf pertama kapital"
+    },
+    "prefs_OptionText_add_tags_first_uppercase_Info": {
+        "message": "Jika dicentang, label tag akan diatur menjadi huruf kecil dengan hanya huruf pertama yang kapital."
+    },
+    "AddTags_prompt_prefs_title": {
+        "message": "Opsi Tambahkan Tag"
+    },
+    "prefs_SurveyLinkText": {
+        "message": "Bagikan masukan Anda dan bantu meningkatkan ThunderAI!"
+    },
+    "prefs_SurveyLinkText2": {
+        "message": "Klik di sini, hanya perlu satu menit!"
+    },
+    "prefs_doc_title": {
+        "message": "Dokumentasi"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Panduan Penyiapan"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Tutorial Prompt Kustom"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Buka Halaman Selamat Datang"
+    },
+    "prefs_OpenAIComp_ForceModel": {
+        "message": "Masukkan model secara manual"
+    },
+    "OpenAIComp_force_model_ask": {
+        "message": "Masukkan nama model yang ingin Anda gunakan di sini."
+    },
+    "prefs_OptionText_add_tags_force_lang": {
+        "message": "Paksa bahasa"
+    },
+    "prefs_OptionText_add_tags_force_lang_Info": {
+        "message": "Jika dicentang, bahasa tag akan dipaksakan agar sesuai dengan bahasa yang ditentukan di halaman opsi ThunderAI, jika ada."
+    },
+    "prompt_add_tags_force_lang": {
+        "message": "Tag harus ditulis dalam"
+    },
+    "prefs_Connection_type_Google_Gemini_API": {
+        "message": "Google Gemini API"
+    },
+    "prefs_GoogleGemini_API_Key": {
+        "message": "API Key"
+    },
+    "GoogleGemini_Models": {
+        "message": "Model Google Gemini API"
+    },
+    "GoogleGemini_Models_Fetch": {
+        "message": "Perbarui daftar Model Google Gemini"
+    },
+    "GoogleGemini_Models_Error_fetching": {
+        "message": "Terjadi kesalahan saat mencoba mengambil model Google Gemini"
+    },
+    "google_gemini_api_request_failed": {
+        "message": "Permintaan ke Google Gemini API gagal"
+    },
+    "google_gemini_empty_apikey": {
+        "message": "Anda belum menambahkan API Key untuk Google Gemini API. Silakan masukkan di halaman opsi."
+    },
+    "google_gemini_empty_model": {
+        "message": "Anda belum memilih model untuk Google Gemini API. Silakan pilih di halaman opsi."
+    },
+    "GoogleGemini_SystemInstruction": {
+        "message": "Instruksi Sistem"
+    },
+    "GoogleGemini_SystemInstruction_Info": {
+        "message": "Saat Anda menetapkan instruksi sistem, Anda memberikan konteks tambahan kepada model untuk memahami tugas, memberikan respons yang lebih disesuaikan, dan mematuhi pedoman tertentu di atas prompt yang akan dikirim."
+    },
+    "ChatGPT_Developer_Messages": {
+        "message": "Pesan Developer"
+    },
+    "ChatGPT_Developer_Messages_Info": {
+        "message": "Saat Anda menetapkan pesan developer, Anda memberikan konteks tambahan kepada model untuk memahami tugas, memberikan respons yang lebih disesuaikan, dan mematuhi pedoman tertentu di atas prompt yang akan dikirim."
+    },
+    "prefs_OptionText_btnManagePrompts_infoline3": {
+        "message": "Anda dapat menggunakan placeholder data {%tags_full_list%} dalam prompt untuk mencantumkan tag yang tersedia. Dengan prompt yang sesuai, Anda kemudian dapat memaksa agar tag hanya dipilih dari daftar tag yang sudah ada."
+    },
+    "placeholder_mail_typed_text": {
+        "message": "Teks yang diketik sebelum isi email kutipan"
+    },
+    "placeholder_mail_quoted_text": {
+        "message": "Teks kutipan dalam isi email"
+    },
+    "prompt_get_calendar_event": {
+        "message": "Tambahkan acara kalender baru"
+    },
+    "prompt_get_calendar_event_full_text": {
+        "message": "Ekstrak semua detail relevan yang diperlukan untuk membuat acara kalender dari teks berikut. Informasi yang diekstrak harus mencakup:\n- Judul Acara\n- Tanggal dan Waktu Mulai (termasuk zona waktu, jika disebutkan)\n- Tanggal dan Waktu Selesai (termasuk zona waktu, jika disebutkan)\n- Sehari penuh (jika disebutkan)\n- Peserta\nPastikan data diformat dengan jelas dan konsisten agar dapat langsung digunakan untuk membuat acara kalender.\nJika ada referensi waktu relatif, anggap tanggal dan waktu email adalah \"{%mail_datetime%}\". Hitung tanggal dan waktu mulai berdasarkan acuan ini. Jika tanggal dan waktu mulai yang dihitung lebih awal dari \"{%current_datetime%}\", hitung ulang tanggal dan waktu mulai menggunakan \"{%current_datetime%}\" sebagai acuan.\nJika durasi tidak disebutkan, atur menjadi satu jam.\nIni adalah para peserta: {%author%}, {%recipients%}, {%cc_list%}. Jika ada, kecualikan alamat saya: {%account_email_address%}.\nJika acara merupakan acara sehari penuh, endDate harus satu hari setelah startDate dengan waktu diatur ke \"T000000\".\nJika Anda tidak dapat memperoleh satu atau lebih informasi yang diperlukan, silakan balas dengan string kosong.\nBuat respons hanya dalam format JSON. Jangan sertakan teks atau penjelasan tambahan apa pun; berikan hanya JSON. Berikut format yang harus digunakan:\n{\n\"startDate\": \"YYYYMMDDTHHMMSS\",\n\"endDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Ringkasan acara kalender di sini\",\n\"forceAllDay\": false,\n\"attendees\": [attendee1@example.com,attendee2@example.com,attendee3@example.com]\n}\nBerikut teksnya:\"{%mail_text_body_or_selected%}\""
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Tambahkan acara kalender dari clipboard"
+    },
+    "clipboard_read_error": {
+        "message": "Tidak dapat membaca clipboard. Silakan periksa izin."
+    },
+    "clipboard_empty_error": {
+        "message": "Clipboard kosong. Silakan salin beberapa teks terlebih dahulu."
+    },
+    "clipboard_permission_denied": {
+        "message": "Izin clipboard ditolak. Silakan aktifkan kembali fitur ini di pengaturan untuk memberikan izin."
+    },
+    "clipboard_permission_error": {
+        "message": "Terjadi kesalahan saat meminta izin clipboard. Silakan coba lagi."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Ambil acara kalender dari clipboard"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Tampilkan item menu tambahan untuk membuat acara kalender dari konten teks clipboard."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Opsi Ringkasan"
+    },
+    "prompt_summarize": {
+        "message": "Ringkas"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Berikan ringkasan singkat dari pesan email berikut. Ringkasan harus maksimal 3–5 kalimat dan menangkap poin-poin utama. Tulis dalam paragraf biasa tanpa bullet point, daftar, atau format markdown:\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "Template ringkasan email"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Dari: {%author%}\nKepada: {%recipients%}\nCC: {%cc_list%}\nSubjek: {%mail_subject%}\nTanggal: {%mail_datetime%}\nLampiran:\n{%mail_attachments_info%}\n\nIsi:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Pemisah email"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n---------- EMAIL BERIKUTNYA ----------\n\n"
+    },
+    "prompt_get_task": {
+        "message": "Tambahkan tugas baru"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Ekstrak semua detail relevan yang diperlukan untuk membuat tugas dari teks berikut. Informasi yang diekstrak harus mencakup:\n- Tanggal dan Waktu Jatuh Tempo (termasuk zona waktu, jika disebutkan)\n- Ringkasan tugas\n- Tanggal dan Waktu Awal (termasuk zona waktu, jika disebutkan)\nPastikan data diformat dengan jelas dan konsisten agar dapat langsung digunakan untuk membuat tugas.\nJika ada referensi waktu relatif, anggap tanggal dan waktu email adalah \"{%mail_datetime%}\". Hitung tanggal dan waktu mulai berdasarkan acuan ini. Jika tanggal dan waktu mulai yang dihitung lebih awal dari \"{%current_datetime%}\", hitung ulang tanggal dan waktu mulai menggunakan \"{%current_datetime%}\" sebagai acuan.\nJika Anda tidak dapat memperoleh satu atau lebih informasi yang diperlukan, silakan balas dengan string kosong.\nBuat respons hanya dalam format JSON. Jangan sertakan teks atau penjelasan tambahan apa pun; berikan hanya JSON. Berikut format yang harus digunakan:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Ringkasan tugas di sini\"\n}\nJika tidak ada informasi tentang tanggal, hapus field tersebut.\nBerikut teksnya:\"{%selected_text%}\""
+    },
+    "prefs_OptionText_get_calendar_event": {
+        "message": "Tambahkan acara kalender baru dari teks yang dipilih"
+    },
+    "prefs_OptionText_get_calendar_event_Info": {
+        "message": "Jika dicentang, item akan disertakan dalam menu untuk mengambil informasi acara kalender dari teks yang dipilih."
+    },
+    "get_calendar_event_prompt_prefs_title": {
+        "message": "Opsi Acara Kalender"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Tambahkan tugas baru dari teks yang dipilih"
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Jika dicentang, item akan disertakan dalam menu untuk mengambil informasi tugas dari teks yang dipilih."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Opsi Tugas"
+    },
+    "Select_your_timezone": {
+        "message": "Pilih zona waktu Anda"
+    },
+    "prefs_OptionText_calendar_enforce_timezone": {
+        "message": "Paksa zona waktu yang ditentukan"
+    },
+    "prefs_OptionText_calendar_enforce_timezone_Info": {
+        "message": "Jika dicentang, zona waktu yang ditentukan akan dipaksakan untuk acara kalender dan tugas."
+    },
+    "prefs_OptionText_btnManageCalendarEventInfo": {
+        "message": "Kelola pengaturan acara kalender"
+    },
+    "GetCalendarEvent_PageTitle": {
+        "message": "Kelola Pengaturan Acara Kalender"
+    },
+    "GetCalendarEvent_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk mengambil acara kalender dari teks yang dipilih."
+    },
+    "GetCalendarEvent_prompt_text_title": {
+        "message": "Teks prompt saat ini"
+    },
+    "prefs_OptionText_AdvancedPromptResponse_infoline2": {
+        "message": "Anda dapat mengubah prompt sesuka Anda, tetapi respons yang diterima dari AI harus dalam format JSON seperti yang ditentukan dalam prompt bawaan!"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Anda dapat mengubah prompt sesuka Anda, field pertama adalah prompt utama, field kedua adalah template untuk satu email. Daftar email akan ditambahkan ke prompt utama. Email akan dipisahkan oleh pemisah yang ditentukan pada field ketiga."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Prompt utama yang menjelaskan tugas yang akan dilakukan pada semua email yang dipilih:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Template untuk satu email:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Pemisah antar email:"
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_not_present": {
+        "message": "Untuk menggunakan fitur acara kalender dan tugas, silakan instal add-on ThunderAI Sparks."
+    },
+    "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
+        "message": "Untuk menggunakan fitur acara kalender dan tugas, silakan instal versi terbaru add-on ThunderAI Sparks."
+    },
+    "GetTask_PageTitle": {
+        "message": "Kelola Pengaturan Tugas"
+    },
+    "GetTask_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk mengambil tugas dari teks yang dipilih."
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": "Kelola pengaturan tugas"
+    },
+    "prefs_OptionText_download_now": {
+        "message": "Unduh ThunderAI Sparks sekarang!"
+    },
+    "placeholder_mail_datetime": {
+        "message": "Tanggal dan waktu email"
+    },
+    "placeholder_current_datetime": {
+        "message": "Tanggal dan waktu saat ini"
+    },
+    "calendar_getting_data_error": {
+        "message": "Kesalahan saat mengambil data acara kalender"
+    },
+    "calendar_opening_dialog_error": {
+        "message": "Kesalahan saat membuka dialog acara kalender"
+    },
+    "task_getting_data_error": {
+        "message": "Kesalahan saat mengambil data tugas"
+    },
+    "task_opening_dialog_error": {
+        "message": "Kesalahan saat membuka dialog tugas"
+    },
+    "no_valid_data_received": {
+        "message": "Tidak ada data valid yang diterima dari AI."
+    },
+    "prefs_OptionText_add_tags_auto": {
+        "message": "Tambahkan tag secara otomatis"
+    },
+    "prefs_OptionText_add_tags_auto_Info": {
+        "message": "Jika dicentang, AI akan secara otomatis menambahkan tag ke email yang baru diterima."
+    },
+    "prefs_OptionText_add_tags_auto_Info2": {
+        "message": "Pilih akun mana yang akan mengaktifkan fitur ini di bagian bawah halaman ini."
+    },
+    "prefs_OptionText_add_tags_auto_force_existing": {
+        "message": "Paksa tag yang sudah ada"
+    },
+    "prefs_OptionText_add_tags_auto_force_existing_Info": {
+        "message": "Jika dicentang, AI hanya akan menambahkan tag yang sudah ada dan tidak akan membuat tag baru."
+    },
+    "prefs_OptionText_add_tags_auto_uselist": {
+        "message": "Gunakan hanya tag ini"
+    },
+    "prefs_OptionText_add_tags_auto_uselist_Info": {
+        "message": "Jika dicentang, AI hanya akan menambahkan tag dari daftar di bawah ini."
+    },
+    "prefs_OptionText_add_tags_auto_uselist_list_Info": {
+        "message": "Daftar harus berisi setidaknya satu tag. Tambahkan satu tag per baris, atau dipisahkan dengan koma."
+    },
+    "prompt_add_tags_use_list": {
+        "message": "Gunakan hanya tag dalam daftar yang dipisahkan koma ini"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox": {
+        "message": "Tambahkan tag hanya ke email di kotak masuk"
+    },
+    "prefs_OptionText_add_tags_auto_only_inbox_Info": {
+        "message": "Jika dicentang, AI hanya akan menambahkan tag ke email yang diterima di folder kotak masuk."
+    },
+    "prefs_OptionText_add_tags_use_specific_integration_Info": {
+        "message": "Jika dicentang, Model dan API yang ditentukan di bawah akan digunakan untuk menambahkan tag ke email, terlepas dari yang dipilih di halaman opsi ThunderAI."
+    },
+    "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
+        "message": "Jika dicentang, Model dan API yang ditentukan di bawah akan digunakan untuk membuat acara kalender, terlepas dari yang dipilih di halaman opsi ThunderAI."
+    },
+    "placeholder_thunderai_def_sign": {
+        "message": "Tanda tangan bawaan sebagaimana ditentukan di opsi ThunderAI."
+    },
+    "placeholder_thunderai_def_lang": {
+        "message": "Bahasa bawaan sebagaimana ditentukan di opsi ThunderAI."
+    },
+    "placeholder_thunderai_translate_lang": {
+        "message": "Bahasa yang akan digunakan dalam terjemahan email."
+    },
+    "placeholder_thunderai_translate_exclude_lang": {
+        "message": "Kode bahasa yang tidak akan diterjemahkan jika ditemukan."
+    },
+    "placeholder_mail_attachments_info": {
+        "message": "Informasi tentang lampiran dalam email"
+    },
+    "empty": {
+        "message": "Placeholder ini tidak menambahkan teks apa pun, tetapi mencegah isi email ditambahkan secara otomatis di akhir prompt."
+    },
+    "prefs_OptionText_spamfilter": {
+        "message": "Filter Spam Otomatis"
+    },
+    "prefs_OptionText_spamfilter_Info": {
+        "message": "Jika dicentang, ThunderAI akan secara otomatis memindahkan email spam ke folder spam."
+    },
+    "prefs_OptionText_btnManageSpamFilterInfo": {
+        "message": "Kelola pengaturan filter spam"
+    },
+    "prefs_OptionText_summarize": {
+        "message": "Ringkas email"
+    },
+    "prefs_OptionText_summarize_use_specific_integration_Info": {
+        "message": "Jika dicentang, Model dan API yang ditentukan di bawah akan digunakan untuk merangkum email, terlepas dari yang dipilih di halaman opsi ThunderAI."
+    },
+    "prefs_OptionText_summarize_Info": {
+        "message": "Jika dicentang, tambahkan opsi ke menu konteks untuk merangkum email."
+    },
+    "prefs_OptionText_btnManageSummarizeInfo": {
+        "message": "Kelola pengaturan ringkasan"
+    },
+    "SpamFilter_PageTitle": {
+        "message": "Kelola Pengaturan Filter Spam"
+    },
+    "SpamFilter_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk mendeteksi email spam."
+    },
+    "SpamFilter_prompt_text_title": {
+        "message": "Teks prompt saat ini"
+    },
+    "prompt_spamfilter": {
+        "message": "Analisis untuk spam"
+    },
+    "prompt_spamfilter_full_text": {
+        "message": "Analisis email berikut dan tentukan apakah ini spam atau bukan. Pertimbangkan faktor-faktor seperti kata kunci mencurigakan, bahasa promosi yang berlebihan, baris subjek yang menyesatkan, permintaan informasi pribadi, dan alamat pengirim yang tidak biasa.\nBerikan nilai dari 0 (bukan spam) hingga 100 (spam) dan penjelasan tidak lebih dari 10 kata.\nJika data pesan tidak lengkap, tetapkan nilai ke 0 (bukan spam), dan berikan alasannya.\nBuat respons hanya dalam format JSON. Jangan sertakan teks atau penjelasan tambahan apa pun; berikan hanya JSON. Berikut format yang harus digunakan:\n{\n\"explanation\": \"Penjelasan singkat atas alasan Anda\",\n\"spamValue\": <bilangan bulat dari 0 hingga 100>\n}\nBerikut informasi emailnya:\nPengirim: \"{%author%}\"\nSubjek: \"{%mail_subject%}\"\nIsi HTML: \"{%mail_html_body%}\""
+    },
+    "SpamFilter_prompt_prefs_title": {
+        "message": "Opsi Filter Spam"
+    },
+    "Summarize_PageTitle": {
+        "message": "Kelola Pengaturan Ringkasan"
+    },
+    "Summarize_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk merangkum email."
+    },
+    "Summarize_prompt_text_title": {
+        "message": "Teks prompt saat ini"
+    },
+    "prefs_OptionText_use_specific_integration": {
+        "message": "Gunakan Model dan API tertentu"
+    },
+    "prefs_OptionText_spamfilter_use_specific_integration_Info": {
+        "message": "Jika dicentang, Model dan API yang ditentukan di bawah akan digunakan untuk filter spam, terlepas dari yang dipilih di halaman opsi ThunderAI."
+    },
+    "prefs_OptionText_spamfilter_threshold": {
+        "message": "Ambang spam"
+    },
+    "prefs_OptionText_spamfilter_threshold_Info": {
+        "message": "Jika nilai yang dikembalikan oleh AI berada di atas ambang ini, email akan dipindahkan ke folder spam."
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel": {
+        "message": "Tampilkan panel laporan spam"
+    },
+    "prefs_OptionText_spamfilter_show_msg_panel_Info": {
+        "message": "Jika dicentang, panel dengan laporan spam akan ditampilkan di atas pesan."
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Jalankan hanya di kotak masuk"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "Saat diaktifkan, filter spam otomatis hanya memeriksa pesan yang diterima di folder kotak masuk dan mengabaikan email yang dikirim ke folder lain."
+    },
+    "spamfilter_threshold_too_low": {
+        "message": "Ambang spam terlalu rendah! Anda kemungkinan akan menandai terlalu banyak email sebagai spam!"
+    },
+    "spamfilter_threshold_zero": {
+        "message": "Ambang spam adalah nol! Anda akan menandai semua email sebagai spam!"
+    },
+    "spamfilter_no_reports": {
+        "message": "Belum ada pesan yang diperiksa untuk spam. Di sini Anda akan menemukan daftar 100 laporan spam terakhir."
+    },
+    "SpamFilter_skip_addresses_title": {
+        "message": "Daftar lewati alamat email"
+    },
+    "SpamFilter_skip_addresses_infoline": {
+        "message": "Email dari alamat-alamat ini tidak akan dikirim ke AI untuk penyaringan spam."
+    },
+    "SpamFilter_skip_addresses_infoline2": {
+        "message": "Tambahkan satu alamat email per baris, atau pisahkan dengan koma."
+    },
+    "spamfilter_skip_addresses_explanation": {
+        "message": "Pengirim ada dalam daftar lewati alamat email antispam."
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook": {
+        "message": "Lewati alamat di buku alamat"
+    },
+    "prefs_OptionText_spamfilter_skip_addressbook_Info": {
+        "message": "Jika dicentang, email dari pengirim yang ada di buku alamat Anda tidak akan dikirim ke AI untuk penyaringan spam."
+    },
+    "spamfilter_skip_addressbook_explanation": {
+        "message": "Pengirim adalah kontak di buku alamat."
+    },
+    "addressbook_permission_denied": {
+        "message": "Izin buku alamat ditolak. Silakan aktifkan kembali fitur ini untuk memberikan izin."
+    },
+    "addressbook_permission_error": {
+        "message": "Terjadi kesalahan saat meminta izin buku alamat. Silakan coba lagi."
+    },
+    "SpamReport_Title": {
+        "message": "Laporan Filter Spam"
+    },
+    "Date": {
+        "message": "Tanggal"
+    },
+    "From": {
+        "message": "Dari"
+    },
+    "Subject": {
+        "message": "Subjek"
+    },
+    "Spam_Value": {
+        "message": "Nilai Spam"
+    },
+    "Spam": {
+        "message": "Spam"
+    },
+    "Valid": {
+        "message": "Valid"
+    },
+    "Moved_to_Spam": {
+        "message": "Dipindahkan ke Spam"
+    },
+    "Explanation": {
+        "message": "Penjelasan"
+    },
+    "Report_Date": {
+        "message": "Tanggal Laporan"
+    },
+    "yes_string": {
+        "message": "Ya"
+    },
+    "no_string": {
+        "message": "Tidak"
+    },
+    "noActiveCalendar": {
+        "message": "Tidak ditemukan kalender yang dapat diedit!"
+    },
+    "btn_show_differences": {
+        "message": "Tampilkan perbedaan"
+    },
+    "chatgpt_win_diff_title": {
+        "message": "Perbedaan antara teks asli dan teks yang dimodifikasi"
+    },
+    "apiwebchat_you": {
+        "message": "Anda"
+    },
+    "apiwebchat_info": {
+        "message": "Informasi"
+    },
+    "apiwebchat_error": {
+        "message": "Kesalahan"
+    },
+    "apiwebchat_use_this_answer": {
+        "message": "Gunakan jawaban ini"
+    },
+    "apiwebchat_stopping": {
+        "message": "Menghentikan"
+    },
+    "apiwebchat_receiving_data": {
+        "message": "Menerima data"
+    },
+    "apiwebchat_done": {
+        "message": "Selesai!"
+    },
+    "hyprland_warning": {
+        "message": "Jika Anda mengalami masalah saat membuka jendela chat AI, coba atur nilai tinggi dan lebar ke 0. Masalah ini dapat terjadi di Linux pada lingkungan tertentu, misalnya saat menggunakan Hyprland."
+    },
+    "remember_CORS": {
+        "message": "Ingat, Anda perlu mengatur pengaturan CORS di server!"
+    },
+    "maybe_CORS_openai_comp": {
+        "message": "Menggunakan API Kompatibel OpenAI mungkin memerlukan pengaturan CORS di server."
+    },
+    "CORS_alternative_1": {
+        "message": "Masalah mengatur CORS?"
+    },
+    "CORS_alternative_2_new": {
+        "message": "Tekan tombol di bawah untuk memberikan izin ke host saat ini agar terhindar dari masalah CORS."
+    },
+    "CORS_give_host_perm": {
+        "message": "Berikan izin ke host saat ini"
+    },
+    "CORS_localhost_warn": {
+        "message": "Jika Anda menggunakan localhost atau 127.0.0.1 karena server AI dihosting di PC Anda, izin <all_urls> diperlukan."
+    },
+    "prefs_OptionText_composing_plain_text": {
+        "message": "Menulis dalam teks biasa"
+    },
+    "prefs_OptionText_composing_plain_text_Info": {
+        "message": "Centang opsi ini jika Anda menulis email dalam format teks biasa."
+    },
+    "Replace_No_Selected_Text": {
+        "message": "Tidak ada teks yang dipilih, apakah Anda ingin menyisipkan respons AI di awal email?"
+    },
+    "prefs_ollama_num_ctx": {
+        "message": "Jumlah token konteks"
+    },
+    "prefs_ollama_num_ctx_Info": {
+        "message": "Jumlah token konteks yang digunakan untuk Ollama API. Atur ke 0 jika Anda tidak ingin mengirimkannya sebagai parameter ke server."
+    },
+    "ask_chatgptweb_permission_1": {
+        "message": "Untuk menggunakan integrasi ChatGPT Web, Anda perlu memberikan izin yang diperlukan."
+    },
+    "ask_anthropic_api_permission_1": {
+        "message": "Untuk menggunakan integrasi Claude API, Anda perlu memberikan izin yang diperlukan."
+    },
+    "ask_openai_api_permission_1": {
+        "message": "Untuk menggunakan integrasi OpenAI API, Anda perlu memberikan izin yang diperlukan."
+    },
+    "ask_integration_permission_2_popup": {
+        "message": "Klik di sini untuk membuka tab baru dan ikuti petunjuknya."
+    },
+    "ask_integration_permission_2": {
+        "message": "Klik di sini untuk melanjutkan."
+    },
+    "ask_integration_permission_ok": {
+        "message": "Izin diberikan. Anda dapat klik di sini untuk menutup tab ini dan kembali ke jendela utama."
+    },
+    "AccountSelector_AutoTags": {
+        "message": "Pilih akun yang mengaktifkan penandaan otomatis"
+    },
+    "AccountSelector_AutoTags_infoline": {
+        "message": "Setiap perubahan langsung disimpan."
+    },
+    "AccountSelector_Spamfilter": {
+        "message": "Pilih akun yang mengaktifkan filter spam otomatis"
+    },
+    "prefs_OptionText_chatgpt_web_project": {
+        "message": "Project ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_project_info": {
+        "message": "Ini adalah Project yang akan dipaksakan untuk Antarmuka Web ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt": {
+        "message": "Custom GPT ChatGPT Web"
+    },
+    "prefs_OptionText_chatgpt_web_custom_gpt_info": {
+        "message": "Ini adalah Custom GPT yang akan dipaksakan untuk Antarmuka Web ChatGPT."
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info": {
+        "message": "Formatnya harus seperti berikut:"
+    },
+    "prefs_OptionText_chatgpt_web_custom_data_info2": {
+        "message": "Anda dapat menemukan nilai yang benar di kolom URL browser saat membuka halaman ChatGPT terkait."
+    },
+    "customPrompts_Properties": {
+        "message": "Properti"
+    },
+    "customPrompts_show_additional_info": {
+        "message": "Tampilkan properti tambahan"
+    },
+    "customPrompts_hide_additional_info": {
+        "message": "Sembunyikan properti tambahan"
+    },
+    "customPrompts_show_additional_info_show": {
+        "message": "Properti tambahan"
+    },
+    "prefs_OptionText_CustomGPT_Warn": {
+        "message": "Jika Project ditentukan di opsi atau di prompt, pengaturan Custom GPT akan diabaikan."
+    },
+    "prefs_OptionText_Project_No_temporary_chat_warn": {
+        "message": "Jika Project ditentukan di opsi atau di prompt, chat sementara tidak akan digunakan."
+    },
+    "prefs_Anthropic_API_Key": {
+        "message": "API Key Claude"
+    },
+    "prefs_Connection_type_Anthropic_API": {
+        "message": "Claude API"
+    },
+    "Anthropic_Models": {
+        "message": "Model Claude"
+    },
+    "Anthropic_Models_Fetch": {
+        "message": "Perbarui daftar Model Claude"
+    },
+    "Anthropic_Models_Error_fetching": {
+        "message": "Terjadi kesalahan saat mencoba mengambil model Claude"
+    },
+    "Anthropic_Version": {
+        "message": "Versi Claude API"
+    },
+    "Anthropic_Version_Info": {
+        "message": "WAJIB. Jangan ubah nilai ini kecuali Anda benar-benar memahami apa yang Anda lakukan. Info lebih lanjut di:"
+    },
+    "prefs_OptionText_anthropic_max_tokens": {
+        "message": "Token Maksimum"
+    },
+    "prefs_OptionText_anthropic_max_tokens_Info": {
+        "message": "Jumlah maksimum token yang dapat dihasilkan dalam completion. Jumlah token prompt Anda ditambah max_tokens tidak boleh melebihi panjang konteks model."
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget": {
+        "message": "Anggaran extended thinking (token)"
+    },
+    "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
+        "message": "Jumlah maksimum token yang dapat digunakan model untuk extended thinking. Atur ke 0 untuk menonaktifkan extended thinking. Saat diaktifkan, nilai temperature akan diabaikan oleh Claude API."
+    },
+    "anthropic_empty_apikey": {
+        "message": "Anda belum menambahkan API Key untuk Claude API. Silakan masukkan di halaman opsi."
+    },
+    "anthropic_empty_model": {
+        "message": "Anda belum memilih model untuk Claude API. Silakan pilih di halaman opsi."
+    },
+    "anthropic_empty_version": {
+        "message": "Anda belum menambahkan string versi untuk Claude API. Silakan masukkan di halaman opsi."
+    },
+    "anthropic_api_request_failed": {
+        "message": "Permintaan ke Claude API gagal"
+    },
+    "_api_connecting": {
+        "message": "Mencoba terhubung ke $api_string$ menggunakan konfigurasi berikut...",
+        "placeholders": {
+            "api_string": {
+                "content": "$1"
+            }
+        }
+    },
+    "_api_connecting_model": {
+        "message": "Model"
+    },
+    "_api_connecting_host": {
+        "message": "Host"
+    },
+    "_api_connecting_version": {
+        "message": "Versi"
+    },
+    "prefs_OpenAIComp_AvailableServices": {
+        "message": "Layanan yang Tersedia"
+    },
+    "prefs_OpenAIComp_AvailableServices_Info": {
+        "message": "Pilih salah satu layanan yang tersedia untuk API Kompatibel OpenAI atau masukkan satu secara manual."
+    },
+    "Custom": {
+        "message": "Kustom"
+    },
+    "OpenAIComp_Configs_ConfirmApply": {
+        "message": "Apakah Anda yakin ingin menerapkan konfigurasi \"$config_name$\"?",
+        "placeholders": {
+            "config_name": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_selection_info": {
+        "message": "Jika Anda memilih sebagian teks, hanya bagian itu yang akan dipertimbangkan."
+    },
+    "ChatGPT_chatgpt_api_store": {
+        "message": "Gunakan penyimpanan"
+    },
+    "ChatGPT_chatgpt_api_store_info": {
+        "message": "Jika dicentang, chat Anda akan disimpan oleh OpenAI."
+    },
+    "prefs_chatgpt_api_temperature_Info": {
+        "message": "Suhu sampling yang digunakan, antara 0 dan 2. Nilai yang lebih tinggi seperti 0.8 akan membuat output lebih acak, sedangkan nilai yang lebih rendah seperti 0.2 akan membuatnya lebih fokus dan deterministik."
+    },
+    "prefs_ollama_temperature_Info": {
+        "message": "Suhu model. Menaikkan suhu akan membuat model menjawab lebih kreatif. Nilai bawaannya adalah 0.8. Disarankan menggunakan nilai antara 0 dan 1."
+    },
+    "prefs_ollama_think": {
+        "message": "Aktifkan thinking"
+    },
+    "prefs_ollama_think_Info": {
+        "message": "Jika dicentang, Model akan berpikir sebelum menjawab. Opsi ini hanya berfungsi dengan model yang mendukung fitur 'think'."
+    },
+    "prefs_ollama_format_json": {
+        "message": "Paksa output JSON"
+    },
+    "prefs_ollama_format_json_Info": {
+        "message": "Jika dicentang, Ollama akan dipaksa mengembalikan respons JSON yang valid. Opsi ini hanya berfungsi dengan model yang mendukung structured output."
+    },
+    "chatgpt_win_change_reply_type": {
+        "message": "Klik untuk mengubah jenis balasan"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match": {
+        "message": "Pencocokan eksak pengecualian"
+    },
+    "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
+        "message": "Jika dicentang, kata-kata dalam daftar pengecualian akan dicocokkan secara persis dengan tag. Jika tidak, pencocokan juga akan terjadi bila kata tersebut termasuk di dalam tag."
+    },
+    "customDataPH_manageDataPH": {
+        "message": "Kelola Placeholder Data"
+    },
+    "customDataPH_manageDataPH_info_default_3": {
+        "message": "Anda juga dapat menggunakan placeholder data bawaan dengan autocomplete, sama seperti saat menulis prompt kustom."
+    },
+    "customDataPH_manageDataPH_info_default": {
+        "message": "Di halaman ini, Anda dapat mendefinisikan placeholder data kustom untuk digunakan dalam prompt kustom Anda."
+    },
+    "customDataPH_manageDataPH_info_default_2": {
+        "message": "Placeholder data yang sudah ada dengan ID yang sama akan ditimpa. Placeholder dengan ID baru akan ditambahkan."
+    },
+    "customDataPH_ExportAll": {
+        "message": "Ekspor semua placeholder data kustom"
+    },
+    "customDataPH_Import": {
+        "message": "Impor placeholder data baru"
+    },
+    "customDataPH_form_label_Text": {
+        "message": "Teks Placeholder Data"
+    },
+    "customDataPH_saving_custom": {
+        "message": "Menyimpan placeholder data kustom..."
+    },
+    "customDataPH_saved": {
+        "message": "Placeholder data kustom berhasil disimpan!"
+    },
+    "customDataPH_btnAddNewCommit": {
+        "message": "Tambahkan Placeholder Data"
+    },
+    "importCustomDataPH_confirmText": {
+        "message": "Anda akan mengimpor placeholder data kustom baru."
+    },
+    "importCustomDataPH_start_import": {
+        "message": "Memulai impor placeholder data kustom..."
+    },
+    "importCustomDataPH_import_completed": {
+        "message": "Impor placeholder data kustom selesai! Anda perlu mengeklik tombol 'Save All' untuk menyimpan perubahan Anda."
+    },
+    "importCustomDataPH_invalidFile": {
+        "message": "File yang Anda coba impor bukan file placeholder data kustom yang valid."
+    },
+    "importCustomDataPH_invalidDataPHs": {
+        "message": "File yang Anda coba impor tidak berisi placeholder data kustom yang valid."
+    },
+    "customDataPH_add_to_menu": {
+        "message": "Dapat digunakan dalam prompt yang ditambahkan ke menu"
+    },
+    "prefs_OptionText_chatgpt_web_br_replace_info": {
+        "message": "Harap diperhatikan bahwa tag <br> apa pun dalam respons AI akan diganti dengan line break."
+    },
+    "prefs_OpenAIComp_ClearModelsList": {
+        "message": "Hapus Daftar Model"
+    },
+    "OpenAIComp_ClearModelsList_Confirm": {
+        "message": "Apakah Anda yakin ingin menghapus Daftar Model? Tindakan ini tidak dapat dibatalkan."
+    },
+    "prefs_api_temperature": {
+        "message": "Temperature"
+    },
+    "prefs_openai_comp_temperature_Info": {
+        "message": "Suhu sampling yang digunakan, antara 0 dan 2. Nilai yang lebih tinggi seperti 0.8 akan membuat output lebih acak, sedangkan nilai yang lebih rendah seperti 0.2 akan membuatnya lebih fokus dan deterministik."
+    },
+    "chatgpt_click_force_completion": {
+        "message": "Tampaknya tidak memungkinkan untuk mengetahui apakah ChatGPT sudah selesai. Klik di sini untuk memaksa penyelesaian pekerjaan."
+    },
+    "warn_API_needed": {
+        "message": "Untuk menggunakan fitur ini, Anda memerlukan integrasi API, bukan Integrasi ChatGPT Web. Anda dapat menentukan API khusus di halaman pengaturan fitur dengan terlebih dahulu mencentang kotak centang di atas lalu mengeklik tombol di sebelah kiri."
+    },
+    "prefs_specific_api_indicator": {
+        "message": "Menggunakan $1",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefs_google_gemini_thinking_budget": {
+        "message": "Thinking Budget"
+    },
+    "prefs_google_gemini_thinking_budget_Info": {
+        "message": "Tentukan jumlah token yang akan digunakan untuk thinking. Biarkan field ini kosong jika model yang dipilih tidak mendukung thinking atau jika Anda ingin menggunakan metode bawaan. Masukkan 0 untuk menonaktifkan thinking, atau -1 untuk mengaktifkan dynamic thinking."
+    },
+    "prefs_google_gemini_temperature_Info": {
+        "message": "Parameter ini harus berupa angka antara 0.0 dan 2.0. Parameter ini mengontrol tingkat keacakan output. Nilai bawaannya bervariasi tergantung model. Biarkan kosong agar parameter ini tidak disertakan dalam panggilan API."
+    },
+    "SelectAll": {
+        "message": "Pilih Semua"
+    },
+    "DeselectAll": {
+        "message": "Batalkan Pilih Semua"
+    },
+    "Anthropic_System_Prompt": {
+        "message": "System Prompt"
+    },
+    "Anthropic_System_Prompt_Info": {
+        "message": "Anda dapat meningkatkan performa Claude dengan menggunakan System Prompt untuk memberinya peran. Teknik ini, yang dikenal sebagai role prompting, adalah cara paling kuat untuk menggunakan system prompt dengan Claude. Peran yang tepat dapat mengubah Claude dari asisten umum menjadi pakar domain virtual Anda."
+    },
+    "prefs_anthropic_temperature_Info": {
+        "message": "Jumlah keacakan yang disuntikkan ke dalam respons. Nilai bawaan adalah 1.0. Rentangnya dari 0.0 hingga 1.0. Gunakan temperature yang mendekati 0.0 untuk tugas analitis / pilihan ganda, dan mendekati 1.0 untuk tugas kreatif dan generatif. Perlu dicatat bahwa bahkan dengan temperature 0.0, hasilnya tidak akan sepenuhnya deterministik."
+    },
+    "Optional_Permission_Denied_Model_Fetching": {
+        "message": "Anda telah menolak izin opsional yang diperlukan untuk mengambil model bagi integrasi ini."
+    },
+    "prefs_OptionText_auto_summary": {
+        "message": "Aktifkan peringkasan AI otomatis untuk pratinjau pesan"
+    },
+    "prefs_OptionText_auto_summary_Info": {
+        "message": "Jika dicentang, ThunderAI akan secara otomatis membuat dan menampilkan ringkasan AI di atas pesan email saat dibuka. Perlu diketahui bahwa ini berarti semua pesan yang Anda pratinjau akan langsung dikirim ke layanan AI yang dikonfigurasi."
+    },
+    "auto_summary_title": {
+        "message": "Ringkasan ThunderAI"
+    },
+    "auto_summary_generating": {
+        "message": "Membuat ringkasan AI..."
+    },
+    "auto_summary_failed": {
+        "message": "Gagal membuat ringkasan AI. Silakan periksa pengaturan Anda dan coba lagi."
+    },
+    "customPrompts_export_include_api_settings": {
+        "message": "Apakah Anda ingin menyertakan pengaturan API dalam ekspor? Perlu diketahui bahwa API Key juga akan disimpan di file!"
+    },
+    "prefs_OptionText_calendar_no_selection": {
+        "message": "Jangan minta memilih teks"
+    },
+    "prefs_OptionText_calendar_no_selection_Info": {
+        "message": "Jika dicentang, tidak perlu memilih teks. Isi pesan lengkap akan digunakan untuk mengambil acara kalender."
+    },
+    "prefs_OptionText_calendar_no_selection_missing_placeholder": {
+        "message": "Prompt harus berisi placeholder {%mail_text_body_or_selected%} atau {%mail_html_body_or_selected%} untuk mengaktifkan opsi ini. Silakan tambahkan salah satu placeholder tersebut ke prompt atau reset ke bawaan."
+    },
+    "customPrompts_btnCopy": {
+        "message": "Salin"
+    },
+    "copy_text": {
+        "message": "salin"
+    },
+    "spam_check_in_progress": {
+        "message": "Pemeriksaan spam sedang berlangsung..."
+    },
+    "prefs_OptionText_summarize_auto": {
+        "message": "Ringkas pesan secara otomatis"
+    },
+    "prefs_OptionText_summarize_auto_Info": {
+        "message": "Pilih apakah ringkasan akan dibuat secara otomatis saat melihat pesan. Memerlukan koneksi berbasis API, bukan ChatGPT Web."
+    },
+    "prefs_OptionText_summarize_display_mode": {
+        "message": "Tampilkan ringkasan di"
+    },
+    "prefs_OptionText_summarize_display_mode_Info": {
+        "message": "Pilih tempat hasil ringkasan ditampilkan. Mode inline menampilkan banner ringkasan langsung di panel pesan. Mode jendela chat membuka jendela chat AI."
+    },
+    "prefs_OptionText_summarize_max_display_length": {
+        "message": "Panjang tampilan maksimum"
+    },
+    "prefs_OptionText_summarize_max_display_length_Info": {
+        "message": "Jumlah maksimum karakter yang ditampilkan dalam ringkasan inline. Atur ke 0 untuk tanpa batas."
+    },
+    "prefs_OptionText_summarize_strip_formatting": {
+        "message": "Hapus pemformatan"
+    },
+    "prefs_OptionText_summarize_strip_formatting_Info": {
+        "message": "Hapus pemformatan HTML dan Markdown dari ringkasan buatan AI, sehingga hanya menampilkan teks biasa."
+    },
+    "summarize_see_more": {
+        "message": "Lihat selengkapnya"
+    },
+    "summarize_see_less": {
+        "message": "Lihat lebih sedikit"
+    },
+    "summarize_title": {
+        "message": "Ikhtisar ThunderAI"
+    },
+    "get_ai_summary": {
+        "message": "Ringkasan AI"
+    },
+    "summarize_collapse": {
+        "message": "Ciutkan ringkasan"
+    },
+    "summarize_generating": {
+        "message": "Membuat ringkasan..."
+    },
+    "summarize_error": {
+        "message": "Gagal membuat ringkasan"
+    },
+    "summarize_click_to_generate": {
+        "message": "Klik di sini untuk membuat ringkasan"
+    },
+    "summarize_chatgpt_web_not_supported": {
+        "message": "Ringkasan otomatis memerlukan koneksi berbasis API. Silakan konfigurasi koneksi API di pengaturan ThunderAI."
+    },
+    "summarize_refresh": {
+        "message": "Segarkan ringkasan"
+    },
+    "spamfilter_refresh": {
+        "message": "Segarkan laporan spam"
+    },
+    "spamfilter_delete": {
+        "message": "Hapus laporan spam"
+    },
+    "summarize_delete": {
+        "message": "Hapus ringkasan"
+    },
+    "generic_error_dismiss": {
+        "message": "Tutup"
+    },
+    "prefs_OptionText_translate": {
+        "message": "Terjemahkan email"
+    },
+    "prefs_OptionText_translate_use_specific_integration_Info": {
+        "message": "Jika dicentang, Model dan API yang ditentukan di bawah akan digunakan untuk menerjemahkan email, terlepas dari yang dipilih di halaman opsi ThunderAI."
+    },
+    "prefs_OptionText_translate_Info": {
+        "message": "Jika dicentang, tambahkan tombol terjemahkan di isi pesan."
+    },
+    "prefs_OptionText_btnManageTranslateInfo": {
+        "message": "Kelola pengaturan terjemahan"
+    },
+    "Translate_PageTitle": {
+        "message": "Kelola Pengaturan Terjemahan"
+    },
+    "Translate_info_default": {
+        "message": "Di halaman ini Anda dapat mengubah prompt bawaan yang digunakan untuk menerjemahkan email."
+    },
+    "Translate_prompt_text_title": {
+        "message": "Teks prompt saat ini"
+    },
+    "Translate_prompt_prefs_title": {
+        "message": "Opsi Terjemahan"
+    },
+    "prefs_OptionText_translate_auto": {
+        "message": "Terjemahkan pesan secara otomatis"
+    },
+    "prefs_OptionText_action_auto_disabled": {
+        "message": "Dinonaktifkan"
+    },
+    "prefs_OptionText_action_auto_manual": {
+        "message": "Hanya tombol manual"
+    },
+    "prefs_OptionText_action_auto_automatic": {
+        "message": "Saat email dibuka"
+    },
+    "prefs_OptionText_translate_auto_Info": {
+        "message": "Pilih kapan pesan diterjemahkan: dinonaktifkan, hanya saat tombol diklik, atau otomatis saat membuka pesan."
+    },
+    "prefs_OptionText_display_mode_inline": {
+        "message": "Panel pesan (inline)"
+    },
+    "prefs_OptionText_display_mode_webchat": {
+        "message": "Jendela chat"
+    },
+    "prefs_OptionText_translate_max_display_length": {
+        "message": "Panjang maksimum terjemahan yang ditampilkan"
+    },
+    "prefs_OptionText_translate_max_display_length_Info": {
+        "message": "Jumlah maksimum karakter yang ditampilkan dalam terjemahan inline. 0 = tanpa batas. Jika diatur, teks yang lebih panjang akan dipotong dengan tombol \"Lihat selengkapnya\"."
+    },
+    "translate_see_more": {
+        "message": "Lihat selengkapnya"
+    },
+    "translate_see_less": {
+        "message": "Lihat lebih sedikit"
+    },
+    "prefs_OptionText_translate_lang": {
+        "message": "Bahasa tujuan terjemahan"
+    },
+    "prefs_OptionText_translate_lang_Info": {
+        "message": "Bahasa untuk menerjemahkan email. Jika kosong, akan menggunakan pengaturan bahasa bawaan."
+    },
+    "prefs_OptionText_translate_exclude_lang": {
+        "message": "Kecualikan bahasa"
+    },
+    "prefs_OptionText_translate_exclude_lang_Info": {
+        "message": "Daftar kode bahasa yang dipisahkan koma (misalnya en, fr, it) untuk dilewati dalam terjemahan otomatis. Jika email menggunakan salah satu bahasa ini, email tidak akan diterjemahkan secara otomatis dan tombol manual juga tidak akan ditampilkan."
+    },
+    "prefs_OptionText_Translate_main_prompt": {
+        "message": "Prompt yang menjelaskan tugas terjemahan:"
+    },
+    "translate_generating": {
+        "message": "Menerjemahkan..."
+    },
+    "translate_click_to_generate": {
+        "message": "Klik di sini untuk menerjemahkan email ini"
+    },
+    "get_ai_translation": {
+        "message": "Terjemahan AI"
+    },
+    "translate_chatgpt_web_not_supported": {
+        "message": "Terjemahan otomatis memerlukan koneksi berbasis API. Silakan konfigurasi koneksi API di pengaturan ThunderAI."
+    },
+    "translate_refresh": {
+        "message": "Segarkan terjemahan"
+    },
+    "translate_delete": {
+        "message": "Hapus terjemahan"
+    },
+    "translate_banner_title": {
+        "message": "Terjemahan AI"
+    },
+    "translate_error": {
+        "message": "Terjemahan gagal."
+    },
+    "translate_no_language_configured": {
+        "message": "Bahasa terjemahan belum dikonfigurasi. Silakan atur bahasa di pengaturan Terjemahan atau atur bahasa bawaan di pengaturan Umum."
+    },
+    "translate_skipped": {
+        "message": "Terjemahan dilewati: bahasa dikecualikan atau sama dengan bahasa tujuan."
+    },
+    "antispam_by": {
+        "message": "Antispam oleh"
+    },
+    "spam_badge_tooltip": {
+        "message": "Skor spam — Klik untuk melihat penjelasannya"
+    },
+    "summary_by": {
+        "message": "Ringkasan oleh"
+    },
+    "translate_by": {
+        "message": "Terjemahan oleh"
+    },
+    "prefs_THStats_1": {
+        "message": "Ingin melihat statistik email Anda yang indah?"
+    },
+    "prefs_THStats_2": {
+        "message": "Klik di sini! Coba ThunderStats!"
+    },
+    "prefs_OptionText_chatgpt_win_pos_text": {
+        "message": "Posisi jendela chat AI"
+    },
+    "prefs_OptionText_chatgpt_win_top": {
+        "message": "Atas"
+    },
+    "prefs_OptionText_chatgpt_win_left": {
+        "message": "Kiri"
+    },
+    "prefs_chatgpt_win_save_position": {
+        "message": "Simpan posisi jendela secara otomatis saat menggunakan tombol tutup."
+    },
+    "prefs_chatgpt_win_position_info": {
+        "message": "Biarkan kosong untuk menggunakan posisi bawaan."
+    },
+    "prefs_OptionText_action_auto_batch": {
+        "message": "Saat email diterima"
+    },
+    "placeholder_string": {
+        "message": "Placeholder"
+    },
+    "menu_order_title": {
+        "message": "Urutan Menu"
+    },
+    "menu_order_popup_list_title": {
+        "message": "Menu Popup"
+    },
+    "menu_order_context_list_title": {
+        "message": "Menu Konteks"
+    },
+    "menu_order_saved": {
+        "message": "Urutan menu berhasil disimpan!"
+    },
+    "menu_order_tab_reading": {
+        "message": "Membaca"
+    },
+    "menu_order_tab_composing": {
+        "message": "Menulis"
+    },
+    "menu_order_badge_default": {
+        "message": "Bawaan"
+    },
+    "menu_order_badge_special": {
+        "message": "Khusus"
+    },
+    "menu_order_badge_custom": {
+        "message": "Kustom"
+    },
+    "menu_order_type_reading": {
+        "message": "Membaca"
+    },
+    "menu_order_type_composing": {
+        "message": "Menulis"
+    },
+    "menu_order_type_always": {
+        "message": "Selalu"
+    },
+    "menu_order_btn_label": {
+        "message": "Kelola pengaturan urutan menu"
+    },
+    "menu_order_info": {
+        "message": "Seret dan lepas item untuk mengubah urutannya. Gunakan toggle untuk menampilkan atau menyembunyikan item di setiap menu."
+    },
+    "menu_order_active_items": {
+        "message": "Item yang terlihat"
+    },
+    "menu_order_hidden_items": {
+        "message": "Item yang tersembunyi"
+    },
+    "menu_order_icon_label": {
+        "message": "Pilih ikon"
+    },
+    "menu_order_icon_none": {
+        "message": "(tidak ada)"
+    }
+}
