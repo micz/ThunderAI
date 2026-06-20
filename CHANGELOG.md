@@ -10,6 +10,7 @@
         <li>Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
         <li>Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane fpr the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
+        <li>Indonesian (id) translation added, thanks to <a href="https://github.com/arifpedia">Arif Budiman</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.0 - 13/05/2026</h2>

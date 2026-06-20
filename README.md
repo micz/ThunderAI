@@ -109,6 +109,7 @@ Are you using this addon in your Thunderbird?
 - German - Deutsch (de): Generated automatically <img src="https://micz.it/weblate/thunderai/de.svg">
 - Greek - Elliniká (Ελληνικά) (el): [ChristosK.](https://github.com/christoskaterini) <img src="https://micz.it/weblate/thunderai/el.svg">
 - Hungarian - Magyar (hu): [Roland S](https://hosted.weblate.org/user/simaphonesave/) <img src="https://micz.it/weblate/thunderai/hu.svg">
+- Indonesian - Bahasa Indonesia (id): [Arif Budiman](https://github.com/arifpedia) <img src="https://micz.it/weblate/thunderai/id.svg">
 - Italian - Italiano (it): [Mic](https://github.com/micz) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Japanese - Nihongo (日本語) (ja): [Taichi Ito](https://github.com/watya1) <img src="https://micz.it/weblate/thunderai/ja.svg">
 - Polish - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak) <img src="https://micz.it/weblate/thunderai/pl.svg">
