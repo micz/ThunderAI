@@ -2091,6 +2091,18 @@
       "message": "ThunderAI Overview",
       "description": ""
   },
+  "summarize_too_many_messages": {
+      "message": "You selected $SELECTED$ messages, but at most $MAX$ can be summarized at once. Please select fewer messages.",
+      "description": "Shown when the user tries to summarize more messages than the configured limit",
+      "placeholders": {
+          "selected": {
+              "content": "$1"
+          },
+          "max": {
+              "content": "$2"
+          }
+      }
+  },
   "get_ai_summary": {
       "message": "AI Summary",
       "description": ""

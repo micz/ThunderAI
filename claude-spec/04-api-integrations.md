@@ -116,6 +116,15 @@ mzta-background.js
 
 This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 
+### Worker Lifecycle & Timeout (`mzta_specialCommand`)
+
+`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance in its constructor. Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
+
+- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
+- **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+
+`processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch.
+
 ## Optional Permissions
 
 API calls require host permissions. These are declared as `optional_permissions` in `manifest.json` and requested at runtime:
