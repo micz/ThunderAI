@@ -25,7 +25,7 @@
         "message": "Klasyfikuj"
     },
     "prompt_translate_this": {
-        "message": "Przetłumacz to"
+        "message": "Przetłumacz"
     },
     "prompt_this": {
         "message": "Zapytaj o to"
@@ -529,7 +529,7 @@
         "message": "Jeśli zaznaczone, element zostanie uwzględniony w menu w celu zastosowania tagów do e-maili."
     },
     "prompt_add_tags": {
-        "message": "Dodaj tagi do tego e-maila"
+        "message": "Dodaj tagi"
     },
     "prompt_add_tags_full_text": {
         "message": "Przeanalizuj poniższy tekst e-maila i wygeneruj tablicę JSON z tagami podsumowującymi jego treść. Użyj tematów, kluczowych zagadnień i odpowiednich określeń jako tagów. Upewnij się, że tagi są zwięzłe i adekwatne do treści wiadomości.\nTekst e-maila: {%mail_text_body%}\nWeź pod uwagę następujące szczegóły w kontekście:\n- Nadawca: {%author%}\n- Odbiorcy: {%recipients%}\n- Lista DW: {%cc_list%}\n- Temat e-maila: {%mail_subject%}\nNa podstawie treści wiadomości i kontekstu wygeneruj tagi, pomijając zbędne informacje lub nieistotne szczegóły.\nWygeneruj odpowiedź wyłącznie w formacie JSON. Wynik powinien zawierać jedynie tablicę tagów w formacie JSON, bez dodatkowych komentarzy czy tekstu. Oto przykład wymaganego formatu:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -613,7 +613,7 @@
         "message": "Opcje dodawania tagów"
     },
     "prefs_SurveyLinkText": {
-        "message": "Podziel się swoją opinią i pomóż nam ulepszyć ThunderAI!"
+        "message": "Podziel się swoją opinią i pomóż ulepszyć ThunderAI!"
     },
     "prefs_SurveyLinkText2": {
         "message": "Kliknij tutaj, to zajmuje tylko minutę!"
@@ -676,7 +676,7 @@
         "message": "Dodaj nowe wydarzenie w kalendarzu z zaznaczonego tekstu"
     },
     "prefs_OptionText_get_calendar_event_Info": {
-        "message": "Jeśli zaznaczone, pozycja zostanie uwzględniona w menu, aby uzyskać informacje o wydarzeniu w kalendarzu z zaznaczonego tekstu."
+        "message": "Jeśli zaznaczone, opcja zostanie uwzględniona w menu, aby uzyskać informacje o wydarzeniu w kalendarzu z zaznaczonego tekstu."
     },
     "prefs_OptionText_btnManageCalendarEventInfo": {
         "message": "Zarządzaj ustawieniami wydarzeń w kalendarzu"
@@ -823,7 +823,7 @@
         "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie tylko dla bieżącej sesji."
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Widok zmian może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
+        "message": "Widok porównywania tekstów może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
     },
     "empty": {
         "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu prompta."
@@ -866,5 +866,160 @@
     },
     "placeholder_selected_html": {
         "message": "Zaznaczony HTML"
+    },
+    "prompt_reply_custom_command": {
+        "message": "Odpowiedz poleceniem..."
+    },
+    "prompt_string": {
+        "message": "Polecenie"
+    },
+    "show_in": {
+        "message": "Pokaż w"
+    },
+    "show_in_popup": {
+        "message": "Tylko w okienku popup"
+    },
+    "show_in_context": {
+        "message": "Tylko w menu kontekstowym"
+    },
+    "show_in_both": {
+        "message": "W obu"
+    },
+    "webchat_save_as_summary": {
+        "message": "Zapisz jako streszczenie"
+    },
+    "prefs_OptionText_reply_type_Info": {
+        "message": "Jest to domyślny typ odpowiedzi, który zostanie użyty podczas odpowiadania na wiadomość e-mail. Inny typ można wybrać później w oknie dialogowym odpowiedzi."
+    },
+    "prefs_OptionText_btnManageCustomDataPH": {
+        "message": "Zarządzaj symbolami zastępczymi (placeholderami) danych"
+    },
+    "prefs_storage_title": {
+        "message": "Pamięć"
+    },
+    "prefs_storage_info": {
+        "message": "Pamięć służy do przechowywania informacji dotyczących oceny spamu, streszczeń oraz tłumaczeń poszczególnych wiadomości."
+    },
+    "prefs_storage_size": {
+        "message": "Rozmiar pamięci"
+    },
+    "prefs_storage_clear_button": {
+        "message": "Wyczyść pamięć"
+    },
+    "prefs_storage_clear_confirm": {
+        "message": "Czy na pewno chcesz usunąć wszystkie zapisane dane (podsumowania, zgłoszenia spamu, tłumaczenia)? Tego działania nie da się cofnąć."
+    },
+    "prefs_storage_clear_done": {
+        "message": "Usunięto $COUNT$ rekordy/-ów.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "prefsInfoDesc_7": {
+        "message": "Aby korzystać z interfejsu API Google Gemini, potrzebny jest klucz API Google Gemini oraz należy wybrać model."
+    },
+    "prefsInfoDesc_8": {
+        "message": "Aby korzystać z interfejsu API Claude, potrzebny jest klucz API Anthropic Claude oraz należy wybrać model."
+    },
+    "OpenChatGPTTab_Info2": {
+        "message": "Otwarcie strony internetowej ChatGPT z tego miejsca spowoduje zastosowanie wszelkich skonfigurowanych ustawień dotyczących modelu, projektu i niestandardowego GPT."
+    },
+    "placeholder_mail_headers": {
+        "message": "Nagłówki wiadomości e-mail"
+    },
+    "placeholder_mail_full_headers": {
+        "message": "Wszystkie nagłówki wiadomości e-mail"
+    },
+    "placeholder_mail_text_body_or_selected": {
+        "message": "Treść wiadomości lub zaznaczony tekst"
+    },
+    "placeholder_mail_html_body_or_selected": {
+        "message": "Treść wiadomości lub wybrany kod HTML"
+    },
+    "prefs_OptionText_hide_thinking": {
+        "message": "Domyślnie ukrywaj blok myślowy"
+    },
+    "prefs_OptionText_hide_thinking_info": {
+        "message": "Określa stan początkowy bloku myśli wyświetlanego nad odpowiedzią. Jeśli opcja jest zaznaczona, blok jest domyślnie zwinięty i można go rozwinąć jednym kliknięciem. Jeśli opcja nie jest zaznaczona, blok jest domyślnie rozwinięty i można go zwinąć jednym kliknięciem. Treść bloku myśli jest zawsze zachowywana."
+    },
+    "prefs_OptionText_thinking_summary": {
+        "message": "Myślenie"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time": {
+        "message": "Czas oczekiwania na załadowanie strony"
+    },
+    "prefs_OptionText_chatgpt_web_load_wait_time_info": {
+        "message": "Czas w milisekundach, przez jaki należy czekać na załadowanie strony ChatGPT przed załadowaniem dodatkowej treści. Wartość domyślna to 1000 ms. Jeśli zdefiniowano niestandardowy model GPT lub projekt, do tej wartości zostanie dodane dodatkowe 1000 ms."
+    },
+    "prompt_reply_custom_command_full_text": {
+        "message": "Odpowiedz na poniższą wiadomość e-mail: „{%mail_text_body%}”. {%additional_text%}. W odpowiedzi podaj tylko niezbędny tekst, bez dodatkowych komentarzy ani innych treści."
+    },
+    "reset": {
+        "message": "Resetuj"
+    },
+    "prefs_doc_title": {
+        "message": "Dokumentacja"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "Instrukcje konfiguracji"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "Poradnik tworzenia własnych poleceń"
+    },
+    "prefs_doc_open_welcome": {
+        "message": "Otwórz stronę powitalną"
+    },
+    "prompt_get_calendar_event_from_clipboard": {
+        "message": "Dodaj wydarzenie ze schowka do kalendarza"
+    },
+    "clipboard_read_error": {
+        "message": "Nie można odczytać zawartości schowka. Sprawdź uprawnienia."
+    },
+    "clipboard_empty_error": {
+        "message": "Schowek jest pusty. Najpierw skopiuj jakiś tekst."
+    },
+    "clipboard_permission_denied": {
+        "message": "Odmówiono dostępu do schowka. Aby przyznać uprawnienia, należy ponownie włączyć tę funkcję w ustawieniach."
+    },
+    "clipboard_permission_error": {
+        "message": "Błąd podczas uzyskiwania uprawnień do schowka. Spróbuj ponownie."
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard": {
+        "message": "Pobierz wydarzenie ze schowka z kalendarza"
+    },
+    "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
+        "message": "Wyświetl dodatkową opcję w menu umożliwiającą tworzenie wydarzeń w kalendarzu na podstawie treści z schowka."
+    },
+    "Summarize_prompt_prefs_title": {
+        "message": "Opcje streszczania"
+    },
+    "prompt_summarize": {
+        "message": "Streść"
+    },
+    "prompt_summarize_full_text": {
+        "message": "Przedstaw zwięzłe streszczenie poniższych wiadomości e-mail. Streszczenie powinno liczyć maksymalnie 3–5 zdań i zawierać najważniejsze informacje. Napisz je w postaci zwykłych akapitów, bez punktorów, list ani formatowania Markdown:\n\n"
+    },
+    "prompt_summarize_email_template": {
+        "message": "Szablon wiadomości e-mail z podsumowaniem"
+    },
+    "prompt_summarize_email_template_full_text": {
+        "message": "Od: {%author%}\nDo: {%recipients%}\nCC: {%cc_list%}\nTemat: {%mail_subject%}\nData: {%mail_datetime%}\nZałączniki:\n{%mail_attachments_info%}\n\nTreść:\n{%mail_text_body%}"
+    },
+    "prompt_summarize_email_separator": {
+        "message": "Separator wiadomości e-mail"
+    },
+    "prompt_summarize_email_separator_full_text": {
+        "message": "\n\n------- NASTĘPNY EMAIL -------\n\n"
+    },
+    "prompt_get_task": {
+        "message": "Dodaj nowe zadanie"
+    },
+    "prompt_get_task_full_text": {
+        "message": "Wyodrębnij z poniższego tekstu wszystkie istotne dane niezbędne do utworzenia zadania. Wyodrębnione informacje powinny obejmować:\n- Termin i godzinę wykonania (wraz ze strefą czasową, jeśli została podana)\n- Opis zadania\n- Datę i godzinę rozpoczęcia (wraz ze strefą czasową, jeśli została podana)\nUpewnij się, że dane są sformatowane w sposób przejrzysty i spójny, tak aby można je było bezpośrednio wykorzystać do utworzenia zadania.\nJeśli występują względne odniesienia czasowe, należy przyjąć, że data i godzina wiadomości e-mail to „{%mail_datetime%}”. Oblicz datę i godzinę rozpoczęcia na podstawie tego odniesienia. Jeśli obliczona data i godzina rozpoczęcia są wcześniejsze niż „{%current_datetime%}”, oblicz je ponownie, przyjmując „{%current_datetime%}” jako punkt odniesienia.\nJeśli nie jesteś w stanie uzyskać jednej lub więcej wymaganych informacji, odpowiedz pustym ciągiem znaków.\nWygeneruj odpowiedź wyłącznie w formacie JSON. Nie dołączaj żadnego dodatkowego tekstu ani wyjaśnień; podaj wyłącznie dane JSON. Oto format, którego należy użyć:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Podsumowanie zadania\"\n}\nJeśli nie ma informacji o datach, usuń je.\nOto tekst: „{%selected_text%}”"
+    },
+    "prefs_OptionText_get_task": {
+        "message": "Dodaj nowe zadanie na podstawie zaznaczonego tekstu"
     }
 }
