@@ -9,7 +9,7 @@
         <li>Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
         <li>Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
         <li>Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane for the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
-        <li>Fix: ThunderAI no longer gets stuck in the loading state during batch processing (auto add-tags, spam filter, summarize, translate). API workers are now always terminated, a single failing message no longer aborts the whole batch, a configurable timeout aborts a hung request, and memory usage stays stable on large selections.</li>
+        <li>Fix: during batch processing (auto add-tags, spam filter, summarize, translate) improved memory usage on large selections [<a href="https://github.com/micz/ThunderAI/issues/791">#791</a>].</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
         <li>Indonesian (id) translation added, thanks to <a href="https://github.com/arifpedia">Arif Budiman</a>.</li>
         <li>...</li>

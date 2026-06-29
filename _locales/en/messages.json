@@ -744,6 +744,14 @@
     "message": "This is the maximum number of characters that can be used in a prompt. Otherwise, an error message will be displayed. The value is not editable for the ChatGPT Web Interface. Set it to zero to disable the check.",
     "description": ""
   },
+  "prefs_OptionText_special_command_timeout" : {
+    "message": "Special command timeout (ms)",
+    "description": ""
+  },
+  "prefs_OptionText_special_command_timeout_Info" : {
+    "message": "Time in milliseconds before a hung AI request (auto add-tags, spam filter, summarize, translate) is aborted. Increase it if you use slow local models. This applies only to API-based connections, not to the ChatGPT Web Interface.",
+    "description": ""
+  },
   "prefs_OptionText_chatgpt_web_model": {
     "message": "ChatGPT Web Model",
     "description": ""
@@ -2069,6 +2077,14 @@
   },
   "prefs_OptionText_summarize_max_display_length_Info": {
       "message": "Maximum number of characters to display in the inline summary. Set to 0 for no limit.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_messages": {
+      "message": "Max messages",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_max_messages_Info": {
+      "message": "Maximum number of messages that can be summarized at once in webchat mode. Above this limit the operation is blocked with a warning. Set to 0 for no limit.",
       "description": ""
   },
   "prefs_OptionText_summarize_strip_formatting": {
