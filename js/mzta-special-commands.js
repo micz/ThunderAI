@@ -23,6 +23,10 @@
  } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
 
+ // Fallback timeout (ms) for a special command if the special_command_timeout
+ // preference is unavailable. Kept generous to accommodate slow local models.
+ const SPECIAL_COMMAND_TIMEOUT_DEFAULT = 120000;
+
  function validateAPIConfig(llm, prefs) {
     switch (llm) {
         case 'chatgpt_api':
@@ -59,6 +63,7 @@
     logger = null;
     do_debug = false;
     config = {};
+    timeout_ms = SPECIAL_COMMAND_TIMEOUT_DEFAULT;
 
     constructor(args = {}) {
         let {
@@ -119,6 +124,12 @@
 
         const prefs_api = await browser.storage.sync.get(prefsToGet);
 
+        // Load the configurable timeout used to abort a hung worker in sendPrompt().
+        const prefs_timeout = await browser.storage.sync.get({ special_command_timeout: prefs_default.special_command_timeout });
+        if (Number.isFinite(prefs_timeout.special_command_timeout) && prefs_timeout.special_command_timeout > 0) {
+            this.timeout_ms = prefs_timeout.special_command_timeout;
+        }
+
         if (!use_specific_api) {
             const configError = validateAPIConfig(this.llm, prefs_api);
             if (configError) {
@@ -157,7 +168,15 @@
     }
 
     sendPrompt(){
-        return new Promise((resolve, reject) => {
+        const promise = new Promise((resolve, reject) => {
+            // Abort the worker if it never replies (e.g. a hung network connection),
+            // so the caller's queue is not stuck waiting forever. Cleared on any outcome.
+            let timeoutId = setTimeout(() => {
+                this.logger.error("Special command timed out after " + this.timeout_ms + " ms");
+                reject(new Error(`[ThunderAI] Special command timed out after ${this.timeout_ms} ms`));
+            }, this.timeout_ms);
+            const clearTimer = () => { clearTimeout(timeoutId); };
+
             // Event listeners for worker messages
             this.worker.onmessage = (event) => {
                 const { type, payload } = event.data;
@@ -169,10 +188,12 @@
                         this.full_message += payload.token;
                         break;
                     case 'tokensDone':
+                        clearTimer();
                         this.logger.log("tokensDone: " + this.full_message);
                         resolve(this.full_message); // Resolve the promise with the full message
                         break;
                     case 'error':
+                        clearTimer();
                         console.error('[ThunderAI] Error from API worker:', payload);
                         reject(new Error(`[ThunderAI] Error from API worker: ${payload}`)); // Use a single error object
                         break;
@@ -180,8 +201,9 @@
                         console.error('[ThunderAI] Unknown event type from API worker:', type);
                 }
             };
-            
+
             this.worker.onerror = (error) => {
+                clearTimer();
                 console.error('[ThunderAI] Worker Error Details:');
                 console.error('Message:', error.message);
                 console.error('Filename:', error.filename);
@@ -195,9 +217,25 @@
             // console.log('[ThunderAI] Sending prompt to worker:', this.prompt);
             this.worker.postMessage({ type: 'chatMessage', message: this.prompt });
         } catch (error) {
+            clearTimer();
             console.error('[ThunderAI] Failed to send message to worker:', error);
             reject(error);
         }
         });
+        // Always terminate the worker once the prompt settles (success, error or timeout),
+        // so workers are not leaked across batch processing. .finally() preserves the
+        // resolved value / rejection unchanged.
+        return promise.finally(() => this.dispose());
+    }
+
+    // Terminate the worker and release its reference. Safe to call multiple times.
+    // After dispose() the instance must not be reused — callers create a fresh
+    // mzta_specialCommand per prompt.
+    dispose() {
+        if (this.worker) {
+            this.worker.terminate();
+            this.worker = null;
+            this.logger.log("[dispose] worker terminated");
+        }
     }
  }

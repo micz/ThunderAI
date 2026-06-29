@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         element.addEventListener("change", saveOptions);
       });
     document.getElementById('summarize_auto').addEventListener('change', updateDisplayModeConstraint);
+    document.getElementById('reset_summarize_max_messages').addEventListener('click', resetSummarizeMaxMessages);
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
@@ -197,6 +198,12 @@ function updateDisplayModeConstraint() {
   }
 }
 
+function resetSummarizeMaxMessages(){
+  let summarize_max_messages = document.getElementById('summarize_max_messages');
+  summarize_max_messages.value = prefs_default.summarize_max_messages;
+  browser.storage.sync.set({summarize_max_messages: prefs_default.summarize_max_messages});
+}
+
 function saveOptions(e) {
   e.preventDefault();
   let options = {};
@@ -243,6 +250,7 @@ async function restoreOptions() {
           let default_number_value = 0;
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
+          if(element.id == 'summarize_max_messages') default_number_value = prefs_default.summarize_max_messages;
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':

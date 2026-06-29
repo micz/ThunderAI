@@ -1784,6 +1784,11 @@ async function processEmails(args) {
 
     taWorkingStatus.startWorking();
 
+    // Wrap the whole body so taWorkingStatus.stopWorking() always runs, even on a throw
+    // (OOM, failed getFull, missing active tab, ...). Otherwise WorkingLevel stays > 0
+    // and the toolbar icon would be stuck in the loading state forever.
+    try {
+
     // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
 
@@ -1809,10 +1814,19 @@ async function processEmails(args) {
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
+        // Process in small chunks, yielding to the event loop between chunks so the
+        // garbage collector can reclaim memory and the UI stays responsive on large selections.
+        const CHUNK_SIZE = 5;
+        let processedCount = 0;
+
         for await (let message of messages) {
             let curr_fullMessage = null;
             let msg_text = null;
             let body_text = '';
+
+            // Isolate per-message errors: a single problematic message must not abort the
+            // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
+            try {
 
             // Auto add_tags and spam filter must never run on messages in a junk/spam folder.
             let message_in_junk = (message.folder?.specialUse || []).includes('junk');
@@ -1942,18 +1956,39 @@ async function processEmails(args) {
                 let translateTabId = null;
                 if (translate) {
                     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    translateTabId = tabs[0].id;
+                    if (tabs.length > 0) {
+                        translateTabId = tabs[0].id;
+                    }
                 }
                 taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
                 await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
                     messageData: { fullMessage: curr_fullMessage }
                 });
             }
+
+            } catch (err) {
+                taLog.error("Error processing message " + (message?.headerMessageId || message?.id) + ", skipping: " + (err?.message || err));
+                continue;
+            } finally {
+                // Release heavy per-message references so they can be garbage-collected.
+                curr_fullMessage = null;
+                msg_text = null;
+                body_text = '';
+            }
+
+            // Give the event loop (and GC) some breathing room every CHUNK_SIZE messages.
+            processedCount++;
+            if (processedCount % CHUNK_SIZE === 0) {
+                await new Promise(r => setTimeout(r, 0));
+            }
         }
     }
 
     if (summarize) {
-        let summarize_prefs = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+        let summarize_prefs = await browser.storage.sync.get({
+            summarize_display_mode: prefs_default.summarize_display_mode,
+            summarize_max_messages: prefs_default.summarize_max_messages,
+        });
 
         // Collect messages into array to check count
         const messageArray = [];
@@ -1962,6 +1997,10 @@ async function processEmails(args) {
         }
 
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length === 0) {
+            taLog.error("[ThunderAI] Summarize aborted: no active tab available.");
+            return;
+        }
         const tabId = tabs[0].id;
 
         // Inline mode for single message: generate inline summary in the message pane
@@ -1975,7 +2014,17 @@ async function processEmails(args) {
                 messageData: { message: msg, fullMessage }
             });
         } else {
-            // Webchat mode, or inline with multiple messages (fallback to webchat)
+            // Webchat mode, or inline with multiple messages (fallback to webchat).
+            // Cap the number of messages to avoid building an unbounded prompt (memory / token blow-up).
+            let max_messages = summarize_prefs.summarize_max_messages;
+            if (Number.isFinite(max_messages) && max_messages > 0 && messageArray.length > max_messages) {
+                taLog.error("[ThunderAI] Summarize aborted: " + messageArray.length + " messages selected, limit is " + max_messages + ".");
+                await showGenericError(
+                    browser.i18n.getMessage('summarize_too_many_messages', [String(messageArray.length), String(max_messages)]),
+                    browser.i18n.getMessage('summarize_title')
+                );
+                return;
+            }
             const messageDataArray = [];
             for (let curr_message of messageArray) {
                 const fullMessage = await browser.messages.getFull(curr_message.id);
@@ -1987,7 +2036,9 @@ async function processEmails(args) {
         }
     }
 
-    taWorkingStatus.stopWorking();
+    } finally {
+        taWorkingStatus.stopWorking();
+    }
 }
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
