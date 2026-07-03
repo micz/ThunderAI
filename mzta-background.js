@@ -62,6 +62,7 @@ import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
+import { taBatchController } from './js/mzta-batch-controller.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
@@ -92,6 +93,7 @@ await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
+taBatchController.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
@@ -165,6 +167,9 @@ function preparePopupMenu(tab) {
         default:
             break;
     }
+    // Snapshot of the batch processing state, so the popup can offer a "Stop processing"
+    // button when a batch (auto add-tags / spamfilter / summarize / translate) is running.
+    output.batchStatus = taBatchController.getStatus();
     return output;
 }
 
@@ -604,6 +609,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSpamReport':
                 _generateSpamReportForMessage(message.headerMessageId);
                 break;
+            case 'batch_status':
+                return Promise.resolve(taBatchController.getStatus());
+            case 'cancel_batch':
+                taBatchController.requestCancel();
+                return Promise.resolve({ ok: true });
             default:
                 break;
         }
@@ -1783,6 +1793,7 @@ async function processEmails(args) {
     } = args;
 
     taWorkingStatus.startWorking();
+    taBatchController.beginBatch();
 
     // Wrap the whole body so taWorkingStatus.stopWorking() always runs, even on a throw
     // (OOM, failed getFull, missing active tab, ...). Otherwise WorkingLevel stays > 0
@@ -1820,6 +1831,13 @@ async function processEmails(args) {
         let processedCount = 0;
 
         for await (let message of messages) {
+            // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
+            // if the user requested a stop. All break paths fall through to the outer finally.
+            if (taBatchController.isCancelled()) {
+                taLog.log("[ThunderAI] Batch processing cancelled by user, stopping.");
+                break;
+            }
+
             let curr_fullMessage = null;
             let msg_text = null;
             let body_text = '';
@@ -1977,14 +1995,19 @@ async function processEmails(args) {
             }
 
             // Give the event loop (and GC) some breathing room every CHUNK_SIZE messages.
+            taBatchController.tick();
             processedCount++;
             if (processedCount % CHUNK_SIZE === 0) {
                 await new Promise(r => setTimeout(r, 0));
+                if (taBatchController.isCancelled()) {
+                    taLog.log("[ThunderAI] Batch processing cancelled by user (between chunks), stopping.");
+                    break;
+                }
             }
         }
     }
 
-    if (summarize) {
+    if (summarize && !taBatchController.isCancelled()) {
         let summarize_prefs = await browser.storage.sync.get({
             summarize_display_mode: prefs_default.summarize_display_mode,
             summarize_max_messages: prefs_default.summarize_max_messages,
@@ -2027,6 +2050,10 @@ async function processEmails(args) {
             }
             const messageDataArray = [];
             for (let curr_message of messageArray) {
+                if (taBatchController.isCancelled()) {
+                    taLog.log("[ThunderAI] Summarize cancelled by user, stopping.");
+                    return;
+                }
                 const fullMessage = await browser.messages.getFull(curr_message.id);
                 messageDataArray.push({ message: curr_message, fullMessage });
             }
@@ -2038,6 +2065,7 @@ async function processEmails(args) {
 
     } finally {
         taWorkingStatus.stopWorking();
+        taBatchController.endBatch();
     }
 }
 

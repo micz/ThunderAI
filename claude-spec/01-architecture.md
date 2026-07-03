@@ -173,6 +173,42 @@ The transient *loading* indicators (`showSummaryGenerating`, `showTranslationGen
 specific result, are idempotent in the content script, and are quickly replaced; guarding
 them would add latency without preventing wrong-content display.
 
+### Batch cancellation (`taBatchController`)
+
+Batch email processing (`processEmails` — auto add-tags, spam filter, summarize, translate,
+run both on-receive and from the context menu) can iterate over a large selection and run for
+a long time. `js/mzta-batch-controller.js` provides a cooperative way for the user to stop it.
+
+It is a singleton mirroring `taWorkingStatus`, exposing a **single global "cancel all" flag**
+plus a **progress counter**:
+
+- `beginBatch()` / `endBatch()` — called at the start of `processEmails` and in its `finally`.
+  A `_activeBatches` counter allows overlapping batches; the cancel flag and `processed`
+  counter are reset only when the **last** active batch exits, so a single cancel request is
+  honored by every overlapping batch and never leaks into a future one.
+- `requestCancel()` / `isCancelled()` — set/read the global flag.
+- `tick()` / `processed` — increments the "N processed" counter shown in the popup.
+- `isWorking()` / `getStatus()` — report `{ working, processed, cancelRequested }`.
+
+**Scope decision:** `isWorking()` tracks its own `_activeBatches` counter, **not**
+`taWorkingStatus.WorkingLevel`. Standalone operations (e.g. a single inline summary via
+`_generateSummaryForMessage`) also drive `WorkingLevel` but are not cancellable batches — so
+the popup's "Stop processing" button must not appear for them.
+
+**Cooperative check points** in `processEmails`: at the top of the `for await` message loop
+(before the heavy `getFull`), after the between-chunks `setTimeout(0)` yield, and inside the
+separate `summarize` block (before each `getFull` and before opening the webchat). All
+`break`/`return` paths fall through to the existing `finally`, so `stopWorking()` +
+`endBatch()` always run.
+
+**Abort latency (v1):** cancellation is checked *between* messages, so the message currently
+in flight finishes first — bounded by `special_command_timeout` (default 120s). There is no
+mid-request worker termination in v1.
+
+The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); see
+[04-api-integrations.md](04-api-integrations.md) for the `batch_status` / `cancel_batch`
+runtime messages and the `preparePopupMenu` payload.
+
 ## Key Modules
 
 | File | Role |
@@ -193,7 +229,8 @@ them would add latency without preventing wrong-content display.
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
 | `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
 | `js/mzta-translationstore.js` | Translation-specific storage wrapper (`taTranslationStore` class) with caching, truncation, and processing-state tracking |
-| `js/mzta-working-status.js` | Visual status indicator during AI processing |
+| `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
+| `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
 | `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
 

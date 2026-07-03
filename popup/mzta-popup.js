@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     i18n.updateDocument();
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
+
+    // If a batch email processing job is running, show a "Stop processing" banner.
+    setupBatchStopBanner(reponse.batchStatus);
+
     let tabId = reponse.lastShortcutTabId;
     tabType = reponse.lastShortcutTabType;
     let filtering = reponse.lastShortcutFiltering;
@@ -273,6 +277,59 @@ async function sendPrompt(prompt_id, tabId){
  taLog.log("sendPrompt: " + prompt_id);
  browser.runtime.sendMessage({command: "shortcut_do_prompt", tabId: tabId, promptId: prompt_id});
  window.close();
+}
+
+// Show/hide the "Stop processing" banner based on the batch status snapshot.
+// When a batch (auto add-tags / spamfilter / summarize / translate) is running,
+// the button lets the user request a cooperative cancellation of the running jobs.
+function setupBatchStopBanner(batchStatus){
+ const banner = document.getElementById('mzta_batch_stop');
+ if(!banner){
+   return;
+ }
+ if(!batchStatus || !batchStatus.working){
+   banner.style.display = 'none';
+   return;
+ }
+
+ const btn = document.getElementById('mzta_batch_stop_btn');
+ const progress = document.getElementById('mzta_batch_progress');
+
+ const renderProgress = (count) => {
+   if(progress){
+     progress.textContent = browser.i18n.getMessage('batch_progress_x', [String(count || 0)]);
+   }
+ };
+
+ renderProgress(batchStatus.processed);
+ banner.style.display = 'block';
+
+ // Poll the background for progress while the popup stays open.
+ let pollId = setInterval(async () => {
+   try {
+     const status = await browser.runtime.sendMessage({command: "batch_status"});
+     if(!status || !status.working){
+       clearInterval(pollId);
+       banner.style.display = 'none';
+       return;
+     }
+     renderProgress(status.processed);
+   } catch(e) {
+     clearInterval(pollId);
+   }
+ }, 1000);
+ window.addEventListener('unload', () => clearInterval(pollId), { once: true });
+
+ if(btn){
+   btn.addEventListener('click', async () => {
+     btn.disabled = true;
+     btn.textContent = browser.i18n.getMessage('batch_stopping');
+     clearInterval(pollId);
+     await browser.runtime.sendMessage({command: "cancel_batch"});
+     // Cancellation is cooperative; the popup can close immediately.
+     window.close();
+   });
+ }
 }
 
 function filterPromptsForTab(prompts_data, filtering){

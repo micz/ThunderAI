@@ -2123,6 +2123,27 @@
       "message": "AI Summary",
       "description": ""
   },
+  "batch_stop_processing": {
+      "message": "Stop processing",
+      "description": "Label of the button, shown in the popup, that stops the running email processing jobs"
+  },
+  "batch_stopping": {
+      "message": "Stopping...",
+      "description": "Label shown on the stop button after the user requested to stop the running email processing jobs"
+  },
+  "batch_stop_tooltip": {
+      "message": "Stop the running email processing jobs (auto add-tags, spam filter, summarize, translate)",
+      "description": "Tooltip of the stop button in the popup"
+  },
+  "batch_progress_x": {
+      "message": "$COUNT$ messages processed",
+      "description": "Progress indicator shown in the popup while a batch of emails is being processed",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
   "summarize_collapse": {
       "message": "Collapse summary",
       "description": ""
