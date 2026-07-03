@@ -43,14 +43,21 @@ export const taBatchController = {
     // Mark the end of a batch. The cancel flag and progress counter are reset only
     // when the LAST active batch exits, so a single cancel request is honored by all
     // overlapping batches and never leaks into a future batch.
+    //
+    // Returns a snapshot taken BEFORE the reset, so the caller can show a "stopped after
+    // N messages" notice exactly once (when lastExit && cancelled). `processed` is captured
+    // here because it is zeroed on the last-batch reset.
     endBatch(){
         this._activeBatches--;
-        if(this._activeBatches <= 0){
+        const lastExit = this._activeBatches <= 0;
+        const result = { lastExit: lastExit, cancelled: this._cancelRequested, processed: this.processed };
+        if(lastExit){
             this._activeBatches = 0;
             this._cancelRequested = false;
             this.processed = 0;
         }
         this.taLog.log("[taBatchController] endBatch, activeBatches: " + this._activeBatches);
+        return result;
     },
 
     // Ask all active batches to stop at their next cooperative checkpoint.

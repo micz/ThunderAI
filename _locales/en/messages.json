@@ -2144,6 +2144,19 @@
           }
       }
   },
+  "batch_stopped_notice": {
+      "message": "Email processing stopped. $COUNT$ messages were processed.",
+      "description": "Notice shown after the user stopped the running email processing jobs, reporting how many messages were processed before stopping",
+      "placeholders": {
+          "count": {
+              "content": "$1"
+          }
+      }
+  },
+  "batch_stop_source": {
+      "message": "Batch stop",
+      "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"
+  },
   "summarize_collapse": {
       "message": "Collapse summary",
       "description": ""

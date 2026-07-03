@@ -1763,6 +1763,17 @@ async function showGenericError(errMsg, source) {
     }
 }
 
+// Like showGenericError(), but renders a blue informational panel (not an error).
+async function showGenericInfo(infoMsg, source) {
+    let tabs = await browser.tabs.query({});
+    for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, {
+            command: "showGenericInfo",
+            data: { message: infoMsg, source: source }
+        }).catch(() => {});
+    }
+}
+
 async function updateSpamPanel(messageId, command, data = null) {
     if (prefs_init.spamfilter_show_msg_panel) {
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -2065,7 +2076,16 @@ async function processEmails(args) {
 
     } finally {
         taWorkingStatus.stopWorking();
-        taBatchController.endBatch();
+        // endBatch() returns a snapshot taken before the counters are reset. When the last
+        // active batch exits because the user requested a cancel, notify how many messages
+        // were processed before stopping.
+        const batchResult = taBatchController.endBatch();
+        if (batchResult.lastExit && batchResult.cancelled) {
+            await showGenericInfo(
+                browser.i18n.getMessage('batch_stopped_notice', [String(batchResult.processed)]),
+                browser.i18n.getMessage('batch_stop_source')
+            );
+        }
     }
 }
 
