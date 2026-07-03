@@ -1800,5 +1800,28 @@
     },
     "prefs_OptionText_spamfilter_only_inbox_Info": {
         "message": "När det är aktiverat kontrollerar det automatiska skräppostfiltret endast meddelanden som tas emot i inkorgen och ignorerar e-post som levereras till andra mappar."
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Specialkommando timeout (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Tid i millisekunder innan en AI-begäran som har hängt sig (automatisk tillägg av taggar, spamfilter, sammanfattning, översättning) avbryts. Öka den om du använder långsamma lokala modeller. Detta gäller endast API-baserade anslutningar, inte ChatGPT-webbgränssnittet."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Max antal meddelanden"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Maximalt antal meddelanden som kan sammanfattas samtidigt i webbchattläge. Över denna gräns blockeras åtgärden med en varning. Ställ in på 0 för ingen gräns."
+    },
+    "summarize_too_many_messages": {
+        "message": "Du valde $SELECTED$ meddelanden, men högst $MAX$ kan sammanfattas på en gång. Vänligen välj färre meddelanden.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
     }
 }
