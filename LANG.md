@@ -10,6 +10,7 @@ id
 it
 ja
 pl
+pt
 pt-br
 ru
 sv

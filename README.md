@@ -113,12 +113,13 @@ Are you using this addon in your Thunderbird?
 - Italian - Italiano (it): [Mic](https://github.com/micz) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Japanese - Nihongo (日本語) (ja): [Taichi Ito](https://github.com/watya1) <img src="https://micz.it/weblate/thunderai/ja.svg">
 - Polish - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak), [Michał Stankiewicz](https://github.com/stankiewiczmichal) <img src="https://micz.it/weblate/thunderai/pl.svg">
+- Português - Portuguese (pt): [Silvério Santos](https://github.com/SantosSi), [Afonso Nóbrega](https://hosted.weblate.org/user/nobrega8/)</a>, [Antonio Lucena de Faria](https://hosted.weblate.org/user/alucenafaria/), <img src="https://micz.it/weblate/thunderai/pt.svg">
 - Russian - Russkiy (русский) (ru): [Maksim](https://hosted.weblate.org/user/law820314/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://hosted.weblate.org/user/gerardo.sobarzo/), [Andrés Rendón Hernández](https://hosted.weblate.org/user/arendon/), [Erick Limon](https://hosted.weblate.org/user/ErickLimonG/) <img src="https://micz.it/weblate/thunderai/es.svg">
 - Swedish - Svenska (sv): [Andreas Pettersson](https://hosted.weblate.org/user/Andy_tb/), [Luna Jernberg](https://hosted.weblate.org/user/bittin1ddc447d824349b2/) <img src="https://micz.it/weblate/thunderai/sv.svg">
 <br>
 
-Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)  <br>
+Do you want to help translate this addon? [Find out how!](https://micz.it/thunderbird-addon-thunderai/translate/)<br>
 _The language status represents the percentage of translated strings in the latest stable release._
 
 
