@@ -1800,5 +1800,56 @@
     },
     "menu_order_icon_none": {
         "message": "(tidak ada)"
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Batas waktu perintah khusus (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Waktu dalam milidetik sebelum permintaan AI yang macet (penambahan tag otomatis, filter spam, ringkas, terjemahkan) dihentikan. Tingkatkan nilainya jika Anda menggunakan model lokal yang lambat. Ini hanya berlaku untuk koneksi berbasis API, bukan untuk Antarmuka Web ChatGPT."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Maksimum pesan"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Jumlah maksimum pesan yang dapat diringkas sekaligus dalam mode webchat. Di atas batas ini, operasi akan diblokir dengan peringatan. Atur ke 0 untuk tanpa batas."
+    },
+    "summarize_too_many_messages": {
+        "message": "Anda memilih $SELECTED$ pesan, tetapi maksimal hanya $MAX$ yang dapat diringkas sekaligus. Silakan pilih lebih sedikit pesan.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "batch_stop_processing": {
+        "message": "Hentikan pemrosesan"
+    },
+    "batch_stopping": {
+        "message": "Menghentikan..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Hentikan tugas pemrosesan email yang sedang berjalan (penambahan tag otomatis, filter spam, ringkas, terjemahkan)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ pesan diproses",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "Pemrosesan email dihentikan. $COUNT$ pesan telah diproses.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Hentikan batch"
     }
 }
