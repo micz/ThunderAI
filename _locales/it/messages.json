@@ -1816,5 +1816,56 @@
     },
     "prefs_OptionText_spamfilter_only_inbox_Info": {
         "message": "Quando è abilitato, il filtro antispam automatico controlla solo i messaggi ricevuti nella cartella della posta in arrivo e ignora i messaggi recapitati in altre cartelle."
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Timeout dei comandi speciali (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Tempo in millisecondi prima che una richiesta AI bloccata (aggiunta automatica di tag, filtro spam, riassunto, traduzione) venga interrotta. Aumenta questo valore se utilizzi modelli locali lenti. Si applica solo alle connessioni basate su API, non all'interfaccia web di ChatGPT."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Massimo numeri di messaggi"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Numero massimo di messaggi che possono essere riassunti contemporaneamente nella modalità webchat. Al di sopra di questo limite l'operazione viene bloccata con un messaggio di avviso. Imposta a 0 per nessun limite."
+    },
+    "summarize_too_many_messages": {
+        "message": "Hai selezionato $SELECTED$ messaggi, ma ne possono essere riassunti al massimo $MAX$ contemporaneamente. Per favore, seleziona meno messaggi.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "batch_stop_processing": {
+        "message": "Interrompi elaborazione"
+    },
+    "batch_stopping": {
+        "message": "Interruzione..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Interrompi i processi di elaborazione email in corso (aggiunta automatica di tag, filtro spam, riassunto, traduzione)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ messaggi elaborati",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "Elaborazione email interrotta. Sono stati processati $COUNT$ messaggi.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Interruzione"
     }
 }
