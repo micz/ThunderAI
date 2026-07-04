@@ -6,14 +6,14 @@
       <ul>
         <li><i>[All APIs]</i> In the API webchat is now possible to zoom the text using CTRL+ CTRL- and resetting the dimension with CTRL0 [<a href="https://github.com/micz/ThunderAI/issues/805">#805</a>].</li>
         <li><i>[All APIs]</i> Added an option to execute the spamfilter on received emails only in the inbox folder [<a href="https://github.com/micz/ThunderAI/issues/792">#792</a>].</li>
-        <li>Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
-        <li>Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
-        <li>Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane for the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
-        <li>Fix: during batch processing (auto add-tags, spam filter, summarize, translate) improved memory usage on large selections [<a href="https://github.com/micz/ThunderAI/issues/791">#791</a>].</li>
-        <li>It is now possible to stop the running email processing jobs (auto add-tags, spam filter, summarize, translate) from the ThunderAI toolbar popup [<a href="https://github.com/micz/ThunderAI/issues/790">#790</a>].</li>
+        <li><i>[All APIs]</i> Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
+        <li><i>[All APIs]</i> Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
+        <li><i>[All APIs]</i> Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane for the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
+        <li><i>[All APIs]</i> Fix: during batch processing (auto add-tags, spam filter, summarize, translate) improved memory usage on large selections [<a href="https://github.com/micz/ThunderAI/issues/791">#791</a>].</li>
+        <li><i>[All APIs]</i> It is now possible to stop the running email processing jobs (auto add-tags, spam filter, summarize, translate) from the ThunderAI toolbar popup [<a href="https://github.com/micz/ThunderAI/issues/790">#790</a>].</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
         <li>Indonesian (id) translation added, thanks to <a href="https://github.com/arifpedia">Arif Budiman</a>.</li>
-        <li>Portuguese (pt) translation added, thanks to <a href="https://github.com/SantosSi">Silvério Santos</a>, <a href="https://hosted.weblate.org/user/nobrega8/">Afonso Nóbrega</a>, <a href="https://hosted.weblate.org/user/alucenafaria/">Antonio Lucena de Faria</a>.</li>
+        <li>Portuguese (pt) translation added, thanks to <a href="https://hosted.weblate.org/user/nobrega8/">Afonso Nóbrega</a>, <a href="https://hosted.weblate.org/user/alucenafaria/">Antonio Lucena de Faria</a>, <a href="https://github.com/SantosSi">Silvério Santos</a>.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.0 - 13/05/2026</h2>
