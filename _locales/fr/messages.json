@@ -1816,5 +1816,56 @@
     },
     "prefs_OptionText_spamfilter_only_inbox": {
         "message": "Exécuter uniquement sur la boîte de réception"
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Temps mort de la commande spéciale (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Temps (en millisecondes) avant l'annulation d'une requête IA bloquée (balisage automatique, filtre anti-spam, résumé, traduction). Augmentez cette valeur si vous utilisez des modèles locaux lents. Cela s'applique uniquement aux connexions via API, et non à l'interface web de ChatGPT."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Nombre max. de messages"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Nombre maximum de messages pouvant être résumés en une seule fois en mode webchat. Au-delà de cette limite, l'opération est bloquée et un avertissement s'affiche. Définissez sur 0 pour n'appliquer aucune limite."
+    },
+    "summarize_too_many_messages": {
+        "message": "Vous avez sélectionné $SELECTED$ messages, mais un maximum de $MAX$ peut être résumé en une seule fois. Veuillez sélectionner moins de messages.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "batch_stop_processing": {
+        "message": "Arrêter le traitement"
+    },
+    "batch_stopping": {
+        "message": "Arrêt en cours..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Arrêter les tâches de traitement d'e-mails en cours (balisage automatique, filtre anti-spam, résumé, traduction)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ messages traités",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "Traitement des e-mails arrêté. $COUNT$ messages ont été traités.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Arrêt par lot"
     }
 }

@@ -1816,5 +1816,56 @@
     },
     "prefs_OptionText_spamfilter_only_inbox_Info": {
         "message": "Wenn der automatische Spam-Filter aktiviert ist, überprüft er nur Nachrichten, die im Posteingang eingehen, und ignoriert E-Mails, die in anderen Ordnern zugestellt werden."
+    },
+    "prefs_OptionText_special_command_timeout": {
+        "message": "Spezialbefehl Zeitüberschreitung (ms)"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Zeit in Millisekunden, bevor eine hängende KI-Anfrage (automatisches Hinzufügen von Tags, Spam-Filter, Zusammenfassen, Übersetzen) abgebrochen wird. Erhöhen Sie diesen Wert, wenn Sie langsame lokale Modelle verwenden. Dies gilt nur für API-basierte Verbindungen, nicht für die ChatGPT-Weboberfläche."
+    },
+    "prefs_OptionText_summarize_max_messages": {
+        "message": "Maximale Anzahl an Nachrichten"
+    },
+    "prefs_OptionText_summarize_max_messages_Info": {
+        "message": "Maximale Anzahl von Nachrichten, die im Webchat-Modus auf einmal zusammengefasst werden können. Oberhalb dieses Limits wird der Vorgang mit einer Warnung blockiert. Setzen Sie den Wert auf 0 für kein Limit."
+    },
+    "summarize_too_many_messages": {
+        "message": "Sie haben $SELECTED$ Nachrichten ausgewählt, aber es können maximal $MAX$ auf einmal zusammengefasst werden. Bitte wählen Sie weniger Nachrichten aus.",
+        "placeholders": {
+            "selected": {
+                "content": "$1"
+            },
+            "max": {
+                "content": "$2"
+            }
+        }
+    },
+    "batch_stop_processing": {
+        "message": "Verarbeitung stoppen"
+    },
+    "batch_stopping": {
+        "message": "Wird abgebrochen..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Stoppen Sie i laufenden E-Mail-Verarbeitungsaufträge (automatisches Hinzufügen von Tags, Spam-Filter, Zusammenfassen, Übersetzen)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ Nachrichten verarbeitet",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "E-Mail-Verarbeitung gestoppt. $COUNT$ Nachrichten wurden verarbeitet.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Batch-Stopp"
     }
 }
