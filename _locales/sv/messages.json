@@ -1823,5 +1823,33 @@
                 "content": "$2"
             }
         }
+    },
+    "batch_stop_processing": {
+        "message": "Stoppa bearbetning"
+    },
+    "batch_stopping": {
+        "message": "Stoppar..."
+    },
+    "batch_stop_tooltip": {
+        "message": "Stoppa pågående e-postbearbetningsjobb (automatisk tillägg av taggar, skräppostfilter, sammanfattning, översättning)"
+    },
+    "batch_progress_x": {
+        "message": "$COUNT$ meddelanden bearbetade",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stopped_notice": {
+        "message": "E-postbearbetningen har stoppats. $COUNT$ meddelanden har bearbetats.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "batch_stop_source": {
+        "message": "Batchstopp"
     }
 }
