@@ -1021,5 +1021,44 @@
     },
     "prefs_OptionText_get_task": {
         "message": "Dodaj nowe zadanie na podstawie zaznaczonego tekstu"
+    },
+    "prefs_OptionText_special_command_timeout_Info": {
+        "message": "Czas w milisekundach przed przerwaniem zawieszonego żądania AI (automatyczne dodawanie znaczników, filtr spamu, podsumowanie, tłumaczenie). Zwiększ go, jeśli używasz wolnych modeli lokalnych. Odnosi się to tylko do połączeń opartych na API, a nie do interfejsu webowego ChatGPT."
+    },
+    "prefs_OptionText_get_task_Info": {
+        "message": "Jeśli opcja jest zaznaczona, przycisk zostanie dodany do menu, co umożliwi pobranie informacji o zadaniu z zaznaczonego tekstu."
+    },
+    "get_task_prompt_prefs_title": {
+        "message": "Opcje zadań"
+    },
+    "prefs_OptionText_Summarize_infoline2": {
+        "message": "Możesz dowolnie modyfikować polecenie. Pierwsze pole to główne polecenie, a drugie pole to szablon dla pojedynczej wiadomości. Lista wiadomości zostanie dołączona do głównego polecenia. Wiadomości zostaną oddzielone separatorem określonym w trzecim polu."
+    },
+    "prefs_OptionText_Summarize_main_prompt": {
+        "message": "Główny prompt opisujący zadanie, które ma zostać wykonane na wszystkich zaznaczonych wiadomościach e-mail:"
+    },
+    "prefs_OptionText_Summarize_email_template": {
+        "message": "Szablon dla pojedynczej wiadomości:"
+    },
+    "prefs_OptionText_Summarize_email_separator": {
+        "message": "Separator między wiadomościami:"
+    },
+    "GetTask_PageTitle": {
+        "message": ""
+    },
+    "GetTask_info_default": {
+        "message": ""
+    },
+    "prefs_OptionText_btnManageTaskInfo": {
+        "message": ""
+    },
+    "task_getting_data_error": {
+        "message": ""
+    },
+    "task_opening_dialog_error": {
+        "message": ""
+    },
+    "no_valid_data_received": {
+        "message": ""
     }
 }
