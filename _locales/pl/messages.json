@@ -1042,23 +1042,5 @@
     },
     "prefs_OptionText_Summarize_email_separator": {
         "message": "Separator między wiadomościami:"
-    },
-    "GetTask_PageTitle": {
-        "message": ""
-    },
-    "GetTask_info_default": {
-        "message": ""
-    },
-    "prefs_OptionText_btnManageTaskInfo": {
-        "message": ""
-    },
-    "task_getting_data_error": {
-        "message": ""
-    },
-    "task_opening_dialog_error": {
-        "message": ""
-    },
-    "no_valid_data_received": {
-        "message": ""
     }
 }
