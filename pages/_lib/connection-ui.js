@@ -560,18 +560,20 @@ export async function injectConnectionUI({
   </tr>
   `;
 
-  const template = document.createElement('template');
-  template.innerHTML = tpl.trim();
-  const frag = template.content;
+  // Parse the static template with DOMParser instead of innerHTML (Thunderbird
+  // review requirement — .innerHTML is not permitted). The rows are wrapped in a
+  // <table> so the HTML parser keeps the bare <tr> elements (they would be
+  // discarded otherwise). Content is fully static/trusted; __MSG_ tokens are
+  // localized afterwards by i18n.updateDocument().
+  const parsed = new DOMParser().parseFromString(`<table>${tpl.trim()}</table>`, 'text/html');
+  const rows = parsed.querySelectorAll('tr');
 
   const parent = anchorTr.parentElement;
-  const nodes = Array.from(frag.childNodes);
   let last = anchorTr;
-  nodes.forEach(node => {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      parent.insertBefore(node, last.nextSibling);
-      last = node;
-    }
+  rows.forEach(row => {
+    const node = document.importNode(row, true);
+    parent.insertBefore(node, last.nextSibling);
+    last = node;
   });
 
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
@@ -1322,7 +1324,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
     { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
   ];
 
-  conntype_select.innerHTML = '';
+  conntype_select.replaceChildren();
 
   for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     const optionEl = document.createElement('option');
