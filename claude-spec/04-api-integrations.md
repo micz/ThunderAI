@@ -56,8 +56,10 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 
 Two provider categories emit reasoning/thinking content:
 
-- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `MessagesArea.flushAccumulatingMessage()` strips these blocks from the rendered text and renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
-- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `MessagesArea` accumulates it and renders the same `<details>` block on final flush.
+- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
+- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush.
+
+See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
 The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
 
