@@ -3,7 +3,7 @@
         "message": "ChatGPT、Google Gemini、Claude、Ollama を使ってメールを強化しましょう!"
     },
     "menu_title": {
-        "message": "AI"
+        "message": "ThunderAI"
     },
     "prompt_lang": {
         "message": "返信する"

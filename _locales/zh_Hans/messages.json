@@ -48,7 +48,7 @@
         "message": "使用 ChatGPT、Google Gemini、Claude 或 Ollama 来提升你的电子邮件！"
     },
     "menu_title": {
-        "message": "AI"
+        "message": "ThunderAI"
     },
     "prompt_translate_this": {
         "message": "翻译这个"

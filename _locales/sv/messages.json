@@ -3,7 +3,7 @@
         "message": "Använd ChatGPT, Google Gemini, Claude eller Ollama för att förbättra dina e-postmeddelanden!"
     },
     "menu_title": {
-        "message": "AI"
+        "message": "ThunderAI"
     },
     "customPrompts_btnEdit": {
         "message": "Redigera"
