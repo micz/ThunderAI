@@ -23,6 +23,7 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
 import { renderDiff } from './diffViewer.js';
+import { renderThinkingBlock } from './thinkingBlock.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -529,20 +530,8 @@ class MessagesArea extends HTMLElement {
             // Prepend thinking block (if any). hide_thinking controls the initial
             // open/collapsed state: true -> collapsed, false -> open. Users can always
             // toggle with a click.
-            if (combinedThinking) {
-                const details = document.createElement('details');
-                details.classList.add('thinking-block');
-                if (!this.hideThinking) details.open = true;
-                const summary = document.createElement('summary');
-                summary.textContent = browser.i18n.getMessage('prefs_OptionText_thinking_summary') || 'Thinking';
-                const content = document.createElement('div');
-                content.classList.add('thinking-content');
-                content.textContent = combinedThinking;
-                details.appendChild(summary);
-                details.appendChild(content);
-                this.accumulatingMessageEl.appendChild(details);
-            }
-    
+            renderThinkingBlock(this.accumulatingMessageEl, combinedThinking, this.hideThinking);
+
             // Append new nodes
             Array.from(doc.body.childNodes).forEach(node => {
                 this.accumulatingMessageEl.appendChild(node);
