@@ -24,6 +24,7 @@ import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
 import { renderDiff } from './diffViewer.js';
 import { renderThinkingBlock } from './thinkingBlock.js';
+import { StreamingMessage } from './streamingMessage.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -175,7 +176,10 @@ class MessagesArea extends HTMLElement {
     constructor() {
         super();
         this.accumulatingMessageEl = null;
-        this.thinkingAccumulator = '';
+        // Owns the streaming/parsing state for the current bot response. A new
+        // instance is created per response (see handleNewToken) and finalized in
+        // handleTokensDone, so each turn's flushed HTML snapshot is isolated.
+        this._streaming = null;
         this.hideThinking = false;
 
         const shadowRoot = this.attachShadow({ mode: 'open' });
@@ -211,18 +215,31 @@ class MessagesArea extends HTMLElement {
         this.hideThinking = !!val;
     }
 
+    _ensureStreaming() {
+        if (!this._streaming) {
+            this._streaming = new StreamingMessage();
+        }
+        return this._streaming;
+    }
+
     handleNewThinkingToken(token) {
-        this.thinkingAccumulator += token;
+        // Thinking tokens can arrive before the first content token (e.g. Anthropic
+        // extended thinking), so ensure the streaming state exists.
+        this._ensureStreaming().handleNewThinkingToken(token);
     }
 
     async handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
         await this.addActionButtons(promptData);
         this.addDivider();
+        // Response finished: retire this turn's streaming state so the next
+        // response starts a fresh instance with its own isolated HTML snapshot.
+        this._streaming = null;
     }
 
     appendUserMessage(messageText, type="user") {
         this.fullTextHTML = "";
+        this._streaming = null;   // new turn: reset any streaming state
         // console.log("[ThunderAI] appendUserMessage: " + messageText);
         const header = document.createElement('h2');
         let source = browser.i18n.getMessage("apiwebchat_you");
@@ -283,6 +300,10 @@ class MessagesArea extends HTMLElement {
         if (!this.accumulatingMessageEl) {
             this.createNewAccumulatingMessage();
         }
+
+        // Feed the raw token to the streaming state (source of truth for parsing)
+        // and also render the fading token span for live display.
+        this._ensureStreaming().handleNewToken(token);
 
         const newTokenElement = document.createElement('span');
         newTokenElement.classList.add('token');
@@ -477,43 +498,19 @@ class MessagesArea extends HTMLElement {
 
     flushAccumulatingMessage() {
         if (this.accumulatingMessageEl) {
-            // Collect all tokens in a full text
-            let fullText = '';
-            this.accumulatingMessageEl.querySelectorAll('.token').forEach(tokenEl => {
-                fullText += tokenEl.textContent;
-            });
-
-            // If an unterminated <think> block is present (mid-stream), defer the
-            // markdown render until the closing tag arrives — tokens stay in the DOM
-            // as raw fading spans, but the partial <think> content is never sent
-            // through markdown-it or promoted to the final thinking block.
-            const openThink = fullText.match(/<think>/i);
-            const closeThink = fullText.match(/<\/think>/i);
-            if (openThink && !closeThink) {
+            // Delegate the token→HTML parsing pipeline to the streaming state.
+            // A null result means the flush was deferred (unterminated <think>
+            // mid-stream): leave the DOM tokens and accumulator untouched.
+            const result = this._ensureStreaming().flush();
+            if (result === null) {
                 return;
             }
 
-            // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip them from fullText.
-            let inlineThinking = '';
-            const thinkRegex = /<think>([\s\S]*?)<\/think>/gi;
-            let match;
-            while ((match = thinkRegex.exec(fullText)) !== null) {
-                inlineThinking += (inlineThinking ? '\n' : '') + match[1];
-            }
-            fullText = fullText.replace(thinkRegex, '').replace(/^\s+/, '');
+            const { html, thinkingText, fullTextHTML } = result;
 
-            // Combined thinking content: worker-side (Anthropic) + inline (<think> tags)
-            let combinedThinking = this.thinkingAccumulator;
-            if (inlineThinking) {
-                combinedThinking += (combinedThinking ? '\n' : '') + inlineThinking;
-            }
-            this.thinkingAccumulator = '';
-
-            // Convert Markdown to DOM nodes using the markdown-it library
-            const md = window.markdownit();
-            const html = md.render(fullText);
-
-            this.fullTextHTML += html;
+            // Keep the immutable snapshot readers (addActionButtons /
+            // save-as-summary / diff) working: mirror the response-wide snapshot.
+            this.fullTextHTML = fullTextHTML;
 
             // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
 
@@ -530,13 +527,13 @@ class MessagesArea extends HTMLElement {
             // Prepend thinking block (if any). hide_thinking controls the initial
             // open/collapsed state: true -> collapsed, false -> open. Users can always
             // toggle with a click.
-            renderThinkingBlock(this.accumulatingMessageEl, combinedThinking, this.hideThinking);
+            renderThinkingBlock(this.accumulatingMessageEl, thinkingText, this.hideThinking);
 
             // Append new nodes
             Array.from(doc.body.childNodes).forEach(node => {
                 this.accumulatingMessageEl.appendChild(node);
             });
-  
+
             this.accumulatingMessageEl = null;
         }
     }
