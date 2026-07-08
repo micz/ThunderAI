@@ -16,6 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { svgFromString, DROPDOWN_ARROW_SVG } from './svgIcons.js';
+
 // <split-button> encapsulates the "use this answer" action button used by
 // <messages-area>. It owns a main button (label + optional info line + click
 // handler) and an OPTIONAL single dropdown option (label + click handler).
@@ -219,16 +221,7 @@ class SplitButton extends HTMLElement {
     }
 
     _buildArrowIcon() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 20 20');
-        svg.setAttribute('width', '16');
-        svg.setAttribute('height', '16');
-        svg.setAttribute('fill', 'currentColor');
-        svg.setAttribute('stroke-width', '2');
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M19 9l-7 7-7-7');
-        svg.appendChild(path);
-        return svg;
+        return svgFromString(DROPDOWN_ARROW_SVG);
     }
 
     _onWindowClick(e) {
