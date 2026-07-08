@@ -22,6 +22,7 @@
 
 import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
+import { renderDiff } from './diffViewer.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
@@ -458,41 +459,16 @@ class MessagesArea extends HTMLElement {
     }
 
     appendDiffViewer(originalText, newText) {
-        const wordDiff = Diff.diffWords(originalText, newText);
-
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', 'bot');
 
-        // Iterate over each part of the diff to create the HTML output
-        wordDiff.forEach(part => {
-            // Split part.value by <br> (handling <br>, <br/>, <br />)
-            const brRegex = /(<br\s*\/?>)/gi;
-            const segments = part.value.split(brRegex);
-
-            segments.forEach(segment => {
-            if (segment.match(brRegex)) {
-                // It's a <br>, add a real <br> element
-                messageElement.appendChild(document.createElement("br"));
-            } else if (segment.length > 0) {
-                const diffElement = document.createElement("span");
-                if (part.added) {
-                diffElement.className = "added";
-                diffElement.textContent = segment;
-                } else if (part.removed) {
-                diffElement.className = "removed";
-                diffElement.textContent = segment;
-                } else {
-                diffElement.textContent = segment;
-                }
-                messageElement.appendChild(diffElement);
-            }
-            });
-        });
+        // Delegate the diff-node building; page-level layout stays here.
+        renderDiff(messageElement, originalText, newText);
 
         const header = document.createElement('h2');
         header.textContent = browser.i18n.getMessage("chatgpt_win_diff_title");
         this.messages.appendChild(header);
-        
+
         this.messages.appendChild(messageElement);
         this.addDivider();
         this.scrollToBottom();
