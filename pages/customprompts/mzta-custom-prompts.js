@@ -333,6 +333,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         okBtn.addEventListener('click', handleConfirmClick);
         let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
         cancelBtn.addEventListener('click', handleCancelClick);
+        // Normalize the read-only connection/API info boxes for the new row, the
+        // same way loadPromptsList does at page load (a freshly added prompt has
+        // no connection specified, so these boxes must be hidden).
+        let newTr = document.querySelector(`tr[data-idnum="${curr_idnum}"]`);
+        if (newTr) {
+            toggleApiPropertiesShow(newTr);
+            toggleAdditionalPropertiesShow(newTr);
+        }
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
         document.getElementById('btnNew').disabled = false;
