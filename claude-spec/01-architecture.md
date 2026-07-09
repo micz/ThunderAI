@@ -244,7 +244,7 @@ Each file handles HTTP communication for one provider:
 | `google_gemini.js` | Google Gemini API |
 | `ollama.js` | Ollama (self-hosted) |
 | `openai_comp.js` | OpenAI-compatible APIs |
-| `openai_comp_configs.js` | Pre-configured providers (DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
+| `openai_comp_configs.js` | Pre-configured providers (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity) |
 | `openai_responses.js` | OpenAI Responses API |
 
 ## Web Workers (`js/workers/`)

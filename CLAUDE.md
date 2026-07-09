@@ -40,9 +40,12 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 │   ├── customdataplaceholders/
 │   ├── get-calendar-event/
 │   ├── get-task/
+│   ├── menu_order/         # Drag-and-drop reorder + visibility for popup/context menus
 │   ├── spamfilter/
 │   ├── summarize/
-│   └── onboarding/
+│   ├── translate/
+│   ├── onboarding/
+│   └── _lib/               # Shared libraries used by pages
 ├── popup/                  # Popup menu (shown on toolbar click)
 │   └── mzta-popup.html/.js/.css
 ├── _locales/               # Localization

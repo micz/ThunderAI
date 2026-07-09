@@ -39,7 +39,7 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
 - Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (DeepSeek, Grok, Mistral, OpenRouter, Perplexity)
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry)
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
