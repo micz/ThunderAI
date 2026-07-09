@@ -185,17 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
         // for the edit list items form
         document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
-            element.addEventListener('click', (e) => {
-                e.preventDefault();
-                let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
-                if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
-                    additionalInfoRow.style.display = 'block';
-                    e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
-                } else {
-                    additionalInfoRow.style.display = 'none';
-                    e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
-                }
-            });
+            element.addEventListener('click', handleChatGPTWebInfoToggleClick);
         });
         document.querySelectorAll('input.chatgpt_web_project_output').forEach(element => {
             element.addEventListener("input", validateCustomData_ChatGPTWeb);
@@ -207,17 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // for the edit list items form [API]
     document.querySelectorAll('.api_additional_info_toggle').forEach(element => {
-        element.addEventListener('click', (e) => {
-            e.preventDefault();
-            let additionalInfoRow = element.nextElementSibling;
-            if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
-                additionalInfoRow.style.display = 'block';
-                element.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
-            } else {
-                additionalInfoRow.style.display = 'none';
-                element.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
-            }
-        });
+        element.addEventListener('click', handleApiInfoToggleClick);
     });
 
     const chatgptWebAdditionalPropToggle = document.getElementById('chatgpt_web_additional_info_toggle');
@@ -340,6 +320,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (newTr) {
             toggleApiPropertiesShow(newTr);
             toggleAdditionalPropertiesShow(newTr);
+            // Attach the additional-info toggle listeners that are otherwise only
+            // wired up at page load, so the new row's [API]/[ChatGPT Web] panels
+            // are clickable without needing a save+reload first.
+            let apiToggle = newTr.querySelector('.api_additional_info_toggle');
+            if (apiToggle) apiToggle.addEventListener('click', handleApiInfoToggleClick);
+            if (prefs.connection_type == 'chatgpt_web') {
+                let cgwToggle = newTr.querySelector('.chatgpt_web_additional_info_toggle');
+                if (cgwToggle) cgwToggle.addEventListener('click', handleChatGPTWebInfoToggleClick);
+                newTr.querySelectorAll('input.chatgpt_web_project_output, input.chatgpt_web_custom_gpt_output').forEach(element => {
+                    element.addEventListener("input", validateCustomData_ChatGPTWeb);
+                });
+            }
         }
         // console.log('>>>>>>>>>>>>> deleteBtn: ' + JSON.stringify(deleteBtn));
         // console.log('>>>>>>>>>>>>> newItem: ' + JSON.stringify(newItem));
@@ -747,6 +739,34 @@ function toggleAdditionalPropertiesShow(tr) {
         chatGPTWebModel_show.parentNode.style.display = 'none';
         chatGPTWebProject_show.parentNode.style.display = 'none';
         chatGPTWebCustomGPT_show.parentNode.style.display = 'none';
+    }
+}
+
+// Click handler for the per-row [API] additional info toggle. Defined at module
+// scope so it can be attached both at page load and to rows added at runtime.
+function handleApiInfoToggleClick(e) {
+    e.preventDefault();
+    const element = e.currentTarget;
+    let additionalInfoRow = element.nextElementSibling;
+    if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+        additionalInfoRow.style.display = 'block';
+        element.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [API]';
+    } else {
+        additionalInfoRow.style.display = 'none';
+        element.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [API]';
+    }
+}
+
+// Click handler for the per-row [ChatGPT Web] additional info toggle.
+function handleChatGPTWebInfoToggleClick(e) {
+    e.preventDefault();
+    let additionalInfoRow = e.target.closest('td').querySelector('.chatgpt_web_additional_info');
+    if (additionalInfoRow.style.display === 'none' || additionalInfoRow.style.display === '') {
+        additionalInfoRow.style.display = 'block';
+        e.target.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' [ChatGPT Web]';
+    } else {
+        additionalInfoRow.style.display = 'none';
+        e.target.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
     }
 }
 
