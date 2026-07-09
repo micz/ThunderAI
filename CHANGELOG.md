@@ -16,7 +16,7 @@
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
         <li>Indonesian (id) translation added, thanks to <a href="https://github.com/arifpedia">Arif Budiman</a>.</li>
         <li>Portuguese (pt) translation added, thanks to <a href="https://hosted.weblate.org/user/nobrega8/">Afonso Nóbrega</a>, <a href="https://hosted.weblate.org/user/alucenafaria/">Antonio Lucena de Faria</a>, <a href="https://github.com/SantosSi">Silvério Santos</a>.</li>
-        <li>...</li>
+        <li>Minor bugs fixed.</li>
       </ul>
 <h2>Version 4.1.0 - 13/05/2026</h2>
       <ul>
