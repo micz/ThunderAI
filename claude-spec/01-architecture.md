@@ -209,6 +209,64 @@ The UI trigger lives in the toolbar popup (`popup/mzta-popup.html/.js/.css`); se
 [04-api-integrations.md](04-api-integrations.md) for the `batch_status` / `cancel_batch`
 runtime messages and the `preparePopupMenu` payload.
 
+## API WebChat (`api_webchat/`)
+
+The interactive chat window used by every API provider (not ChatGPT Web) lives in
+`api_webchat/`. It is a standalone extension page (`index.html`) built from two native
+Web Components with Shadow DOM and a controller that wires them to a per-provider Web
+Worker. No framework, no build step; plain ES6 modules under the strict default MV2 CSP.
+
+### Component structure
+
+```
+index.html
+  ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
+  ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status logger
+  └── controller.js                        — DI / worker wiring (see below)
+```
+
+`controller.js` is the "DI" layer: it reads the `llm` / `prompt_id` URL params, resolves
+the provider prefs, spins up the correct `js/workers/model-worker-*.js`, injects the worker
+into both components (`messagesArea.init()`, `messageInput.init()`,
+`messageInput.setMessagesArea()`), sends the worker `init` message, and translates
+worker/runtime messages into component method calls. It owns the module-level `promptData`
+(set once by `api_send`) and the Ctrl+/Ctrl-/Ctrl+0 font-zoom.
+
+### Streaming data flow
+
+```
+Worker → controller.js → components
+  messageSent      → messageInput.handleMessageSent()
+  newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
+  newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage)
+  tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons → divider)
+  error            → messagesArea.appendBotMessage(payload,'error')
+
+background → controller.js (browser.runtime commands)
+  api_send             → set promptData; send prompt (or show custom-text field)
+  api_send_custom_text → merge custom text into the prompt, then send
+  api_error            → render an error bot message
+```
+
+Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
+returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
+text to `renderThinkingBlock`. The answer-text snapshot is what the "use this answer" /
+"save as summary" / diff buttons close over — one instance per turn keeps each turn's
+buttons tied to their own response.
+
+### Files
+
+| File | Role |
+|------|------|
+| `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: conversation transcript, action buttons, orchestrates the render helpers below |
+| `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, status logger, custom-text flow |
+| `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
+| `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
+| `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
+| `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
+| `api_webchat/svgIcons.js` | Trusted static inline-SVG icon strings + `svgFromString()` helper (CSP-safe, dependency-free) |
+
 ## Key Modules
 
 | File | Role |
