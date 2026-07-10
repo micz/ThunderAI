@@ -11,6 +11,7 @@
         <li><i>[All APIs]</i> Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane for the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
         <li><i>[All APIs]</i> Fix: during batch processing (auto add-tags, spam filter, summarize, translate) improved memory usage on large selections [<a href="https://github.com/micz/ThunderAI/issues/791">#791</a>].</li>
         <li><i>[All APIs]</i> It is now possible to stop the running email processing jobs (auto add-tags, spam filter, summarize, translate) from the ThunderAI toolbar popup [<a href="https://github.com/micz/ThunderAI/issues/790">#790</a>].</li>
+        <li><i>[Ollama API]</i> The thinking block is correctly handled and reported on the webchat. The thinking parameter must be enabled.</li>
         <li><i>[ChatGPT Web]</i> Fix: correctly getting if the response is complete.</li>
         <li>Fix: Tables row ordering icons are now visible.</li>
         <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
