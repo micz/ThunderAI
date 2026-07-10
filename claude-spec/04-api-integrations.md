@@ -56,8 +56,8 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 
 Two provider categories emit reasoning/thinking content:
 
-- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
-- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush.
+- **OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
+- **Ollama / Anthropic**: thinking is captured in the worker as a dedicated field (`message.thinking` for Ollama, `thinking_delta` events for Anthropic) and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush. Ollama's reasoning is enabled by the `ollama_think` pref, which sets `think: true` on the request.
 
 See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
