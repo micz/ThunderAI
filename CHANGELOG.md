@@ -2,7 +2,7 @@
 
 
 
-<h2>Version 4.1.1 - ??/??/2026</h2>
+<h2>Version 4.1.1 - 19/07/2026</h2>
       <ul>
         <li><i>[All APIs]</i> In the API webchat is now possible to zoom the text using CTRL+ CTRL- and resetting the dimension with CTRL0 [<a href="https://github.com/micz/ThunderAI/issues/805">#805</a>].</li>
         <li><i>[All APIs]</i> Added an option to execute the spamfilter on received emails only in the inbox folder [<a href="https://github.com/micz/ThunderAI/issues/792">#792</a>].</li>
