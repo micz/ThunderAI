@@ -54,12 +54,15 @@ import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
     getSpamFilterPrompt,
+    getSummarizePrompt,
+    getTranslatePrompt,
     migrateMenuOrderAlphabetic
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
 import { taTranslationStore } from './js/mzta-translationstore.js';
 import { taWorkingStatus } from './js/mzta-working-status.js';
+import { taBatchController } from './js/mzta-batch-controller.js';
 import {
     addTags_getExclusionList,
     checkExcludedTag
@@ -90,6 +93,7 @@ await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
 taWorkingStatus.taLog = taLog;
+taBatchController.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
@@ -163,6 +167,9 @@ function preparePopupMenu(tab) {
         default:
             break;
     }
+    // Snapshot of the batch processing state, so the popup can offer a "Stop processing"
+    // button when a batch (auto add-tags / spamfilter / summarize / translate) is running.
+    output.batchStatus = taBatchController.getStatus();
     return output;
 }
 
@@ -252,7 +259,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // Always show cached summary if available, regardless of summarize_auto
                         let cachedSummary = await summaryStore.loadSummary(message.headerMessageId);
                         if (cachedSummary && !cachedSummary.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+                            await _sendIfCurrent(tabId, message.headerMessageId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
                             return;
                         }
 
@@ -272,9 +279,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                         // Manual button mode (summarize_auto === 1)
                         if (prefs.summarize_display_mode === 'inline') {
-                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
+                            await _sendIfCurrent(tabId, message.headerMessageId, { command: "showSummaryButton", headerMessageId: message.headerMessageId });
                         } else {
-                            browser.tabs.sendMessage(tabId, { command: "showSummaryButton", headerMessageId: message.headerMessageId, webchat: true });
+                            await _sendIfCurrent(tabId, message.headerMessageId, { command: "showSummaryButton", headerMessageId: message.headerMessageId, webchat: true });
                         }
                     } catch (e) {
                         taLog.error("Error in initSummary: " + e);
@@ -339,14 +346,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             summarize_max_display_length: prefs_default.summarize_max_display_length,
                             summarize_strip_formatting: prefs_default.summarize_strip_formatting
                         });
-                        try {
-                            browser.tabs.sendMessage(msg.tabId, {
-                                command: "showSummary",
-                                data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
-                            });
-                        } catch (e) {
-                            taLog.error("Error sending showSummary to tab: " + e);
-                        }
+                        await _sendIfCurrent(msg.tabId, msg.headerMessageId, {
+                            command: "showSummary",
+                            data: { ...summaryData, maxDisplayLength: prefs_summary.summarize_max_display_length, stripFormatting: prefs_summary.summarize_strip_formatting }
+                        });
                     } catch (error) {
                         console.error("[ThunderAI] Error saving summary from webchat:", error);
                     }
@@ -370,7 +373,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // Always show cached translation if available, regardless of translate_auto
                         let cachedTranslation = await translationStore.loadTranslation(message.headerMessageId);
                         if (cachedTranslation && !cachedTranslation.error) {
-                            browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+                            await _sendIfCurrent(tabId, message.headerMessageId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
                             return;
                         }
 
@@ -389,7 +392,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
 
                         // Manual button mode (translate_auto === 1)
-                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        await _sendIfCurrent(tabId, message.headerMessageId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
                     } catch (e) {
                         taLog.error("Error in initTranslation: " + e);
                     }
@@ -409,7 +412,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if (!lang_tl) {
                         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
                         browser.tabs.sendMessage(tabId, { command: "sendAlert", curr_tab_type: tabs[0].type, message: browser.i18n.getMessage('translate_no_language_configured') });
-                        browser.tabs.sendMessage(tabId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
+                        await _sendIfCurrent(tabId, message.headerMessageId, { command: "showTranslationButton", headerMessageId: message.headerMessageId });
                         return;
                     }
                     await _generateTranslationForMessage(message.headerMessageId, tabId);
@@ -590,7 +593,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         if (!message) return;
                         let report = await spamReport.loadReportData(message.headerMessageId);
                         if (report) {
-                            browser.tabs.sendMessage(tabId, { command: "showSpamReport", data: report });
+                            await _sendIfCurrent(tabId, message.headerMessageId, { command: "showSpamReport", data: report });
                         } else if (await spamReport.isProcessing(message.headerMessageId)) {
                             browser.tabs.sendMessage(tabId, { command: "showSpamCheckInProgress" });
                         }
@@ -606,6 +609,11 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'refreshSpamReport':
                 _generateSpamReportForMessage(message.headerMessageId);
                 break;
+            case 'batch_status':
+                return Promise.resolve(taBatchController.getStatus());
+            case 'cancel_batch':
+                taBatchController.requestCancel();
+                return Promise.resolve({ ok: true });
             default:
                 break;
         }
@@ -626,6 +634,21 @@ function cleanSummaryText(text) {
 
 // tabId is optional — if null, runs silently (background pre-cache, no UI update)
 // options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
+// Send a "show result" message to a tab only if it still displays the expected message.
+// Prevents a slow, stale AI result (summary/translation/button) from rendering on a
+// different email after the user has rapidly clicked through several messages.
+// Mirrors the displayed-message guard already used by updateSpamPanel().
+async function _sendIfCurrent(tabId, headerMessageId, payload) {
+    try {
+        if (!tabId) return;
+        const current = await browser.messageDisplay.getDisplayedMessage(tabId);
+        if (!current || current.headerMessageId !== headerMessageId) return; // stale — drop
+        browser.tabs.sendMessage(tabId, payload);
+    } catch (e) {
+        taLog.error("Error in _sendIfCurrent: " + e);
+    }
+}
+
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -639,7 +662,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 
         let cachedSummary = await summaryStore.loadSummary(headerMessageId);
         if (cachedSummary && !cachedSummary.error) {
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { ...cachedSummary, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
             return;
         }
 
@@ -660,7 +683,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
             if (!messageResult || messageResult.messages.length === 0) {
                 await summaryStore.saveError(headerMessageId, "Message not found");
-                if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: "Message not found" } });
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: "Message not found" } });
                 taWorkingStatus.stopWorking();
                 return;
             }
@@ -668,12 +691,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             fullMessage = await browser.messages.getFull(message.id);
         }
 
-        const connectionType = getConnectionType(prefs, {}, 'summarize');
+        const summarize_prompt = await getSummarizePrompt();
+        const connectionType = getConnectionType(prefs, summarize_prompt, 'summarize');
 
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
             taWorkingStatus.stopWorking();
             return;
         }
@@ -684,7 +708,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: {}
+            config: summarize_prompt
         });
 
         await cmd.initWorker();
@@ -700,13 +724,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             headerMessageId: headerMessageId
         };
         await summaryStore.saveSummary(summaryData, headerMessageId);
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { ...summaryData, maxDisplayLength: prefs.summarize_max_display_length, stripFormatting: prefs.summarize_strip_formatting } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
         console.error("[ThunderAI] Error generating summary:", error);
         if (!error.isConfigError) await summaryStore.saveError(headerMessageId, error.message || String(error));
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: error.message || "Failed to generate summary" } });
         taWorkingStatus.stopWorking();
     }
 }
@@ -726,7 +750,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
 
         let cachedTranslation = await translationStore.loadTranslation(headerMessageId);
         if (cachedTranslation && !cachedTranslation.error) {
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { ...cachedTranslation, maxDisplayLength: prefs.translate_max_display_length } });
             return;
         }
 
@@ -752,19 +776,20 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
             if (!messageResult || messageResult.messages.length === 0) {
                 await translationStore.saveError(headerMessageId, "Message not found");
-                if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
+                await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
                 taWorkingStatus.stopWorking();
                 return;
             }
             fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
         }
 
-        const connectionType = getConnectionType(prefs, {}, 'translate');
+        const translate_prompt = await getTranslatePrompt();
+        const connectionType = getConnectionType(prefs, translate_prompt, 'translate');
 
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
             await translationStore.saveError(headerMessageId, errorMsg);
-            if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: errorMsg } });
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
             taWorkingStatus.stopWorking();
             return;
         }
@@ -774,7 +799,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             prompt: promptText,
             llm: connectionType,
             do_debug: prefs.do_debug,
-            config: {}
+            config: translate_prompt
         });
 
         await cmd.initWorker();
@@ -800,13 +825,13 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
             headerMessageId: headerMessageId
         };
         await translationStore.saveTranslation(translationData, headerMessageId);
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { ...translationData, maxDisplayLength: prefs.translate_max_display_length } });
         taWorkingStatus.stopWorking();
 
     } catch (error) {
         console.error("[ThunderAI] Error generating translation:", error);
         if (!error.isConfigError) await translationStore.saveError(headerMessageId, error.message || String(error));
-        if (tabId) browser.tabs.sendMessage(tabId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
+        await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: error.message || "Failed to generate translation" } });
         taWorkingStatus.stopWorking();
     }
 }
@@ -1005,11 +1030,12 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
         const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
-        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), {}, 'summarize');
+        const summarize_prompt = await getSummarizePrompt();
+        const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), summarize_prompt, 'summarize');
         if (connectionType === 'chatgpt_web') {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
-            browser.tabs.sendMessage(tabId, { command: "showSummary", data: { error: true, message: errorMsg } });
+            await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
             return;
         }
 
@@ -1737,6 +1763,17 @@ async function showGenericError(errMsg, source) {
     }
 }
 
+// Like showGenericError(), but renders a blue informational panel (not an error).
+async function showGenericInfo(infoMsg, source) {
+    let tabs = await browser.tabs.query({});
+    for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, {
+            command: "showGenericInfo",
+            data: { message: infoMsg, source: source }
+        }).catch(() => {});
+    }
+}
+
 async function updateSpamPanel(messageId, command, data = null) {
     if (prefs_init.spamfilter_show_msg_panel) {
         let tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -1767,6 +1804,12 @@ async function processEmails(args) {
     } = args;
 
     taWorkingStatus.startWorking();
+    taBatchController.beginBatch();
+
+    // Wrap the whole body so taWorkingStatus.stopWorking() always runs, even on a throw
+    // (OOM, failed getFull, missing active tab, ...). Otherwise WorkingLevel stays > 0
+    // and the toolbar icon would be stuck in the loading state forever.
+    try {
 
     // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
@@ -1785,6 +1828,7 @@ async function processEmails(args) {
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
             spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses,
             spamfilter_skip_addressbook: prefs_default.spamfilter_skip_addressbook,
+            spamfilter_only_inbox: prefs_default.spamfilter_only_inbox,
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']),
             do_debug: prefs_default.do_debug,
         });
@@ -1792,11 +1836,30 @@ async function processEmails(args) {
         let spamfilter_skip_addresses = prefs_aats.spamfilter_skip_addresses;
         let spamfilter_skip_addressbook = prefs_aats.spamfilter_skip_addressbook;
 
+        // Process in small chunks, yielding to the event loop between chunks so the
+        // garbage collector can reclaim memory and the UI stays responsive on large selections.
+        const CHUNK_SIZE = 5;
+        let processedCount = 0;
+
         for await (let message of messages) {
+            // Cooperative cancellation: bail out before doing any heavy work (getFull, ...)
+            // if the user requested a stop. All break paths fall through to the outer finally.
+            if (taBatchController.isCancelled()) {
+                taLog.log("[ThunderAI] Batch processing cancelled by user, stopping.");
+                break;
+            }
+
             let curr_fullMessage = null;
             let msg_text = null;
             let body_text = '';
-    
+
+            // Isolate per-message errors: a single problematic message must not abort the
+            // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
+            try {
+
+            // Auto add_tags and spam filter must never run on messages in a junk/spam folder.
+            let message_in_junk = (message.folder?.specialUse || []).includes('junk');
+
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
                 msg_text = await getMailBody(curr_fullMessage);
@@ -1810,7 +1873,11 @@ async function processEmails(args) {
     
             if (addTagsAuto) {
                 let skipAddTags = false;
-                if(isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
+                if(isAutoMode && message_in_junk){
+                    taLog.log("Message in junk folder, skipping add_tags...");
+                    skipAddTags = true;
+                }
+                if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
@@ -1870,10 +1937,21 @@ async function processEmails(args) {
     
             if (spamFilter) {
                 let skipSpamFilter = false;
-                if(isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
+                if(isAutoMode && message_in_junk){
+                    taLog.log("Message in junk folder, skipping spamfilter...");
+                    skipSpamFilter = true;
+                }
+                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.spamfilter_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for spamfilter, skipping...");
+                        skipSpamFilter = true;
+                    }
+                }
+                if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_only_inbox){
+                    let specialUse = message.folder?.specialUse || [];
+                    if(!specialUse.includes('inbox')){
+                        taLog.log("Message not in inbox, skipping spamfilter (only-inbox mode)...");
                         skipSpamFilter = true;
                     }
                 }
@@ -1907,18 +1985,44 @@ async function processEmails(args) {
                 let translateTabId = null;
                 if (translate) {
                     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    translateTabId = tabs[0].id;
+                    if (tabs.length > 0) {
+                        translateTabId = tabs[0].id;
+                    }
                 }
                 taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
                 await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
                     messageData: { fullMessage: curr_fullMessage }
                 });
             }
+
+            } catch (err) {
+                taLog.error("Error processing message " + (message?.headerMessageId || message?.id) + ", skipping: " + (err?.message || err));
+                continue;
+            } finally {
+                // Release heavy per-message references so they can be garbage-collected.
+                curr_fullMessage = null;
+                msg_text = null;
+                body_text = '';
+            }
+
+            // Give the event loop (and GC) some breathing room every CHUNK_SIZE messages.
+            taBatchController.tick();
+            processedCount++;
+            if (processedCount % CHUNK_SIZE === 0) {
+                await new Promise(r => setTimeout(r, 0));
+                if (taBatchController.isCancelled()) {
+                    taLog.log("[ThunderAI] Batch processing cancelled by user (between chunks), stopping.");
+                    break;
+                }
+            }
         }
     }
 
-    if (summarize) {
-        let summarize_prefs = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
+    if (summarize && !taBatchController.isCancelled()) {
+        let summarize_prefs = await browser.storage.sync.get({
+            summarize_display_mode: prefs_default.summarize_display_mode,
+            summarize_max_messages: prefs_default.summarize_max_messages,
+        });
 
         // Collect messages into array to check count
         const messageArray = [];
@@ -1927,6 +2031,10 @@ async function processEmails(args) {
         }
 
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length === 0) {
+            taLog.error("[ThunderAI] Summarize aborted: no active tab available.");
+            return;
+        }
         const tabId = tabs[0].id;
 
         // Inline mode for single message: generate inline summary in the message pane
@@ -1940,9 +2048,23 @@ async function processEmails(args) {
                 messageData: { message: msg, fullMessage }
             });
         } else {
-            // Webchat mode, or inline with multiple messages (fallback to webchat)
+            // Webchat mode, or inline with multiple messages (fallback to webchat).
+            // Cap the number of messages to avoid building an unbounded prompt (memory / token blow-up).
+            let max_messages = summarize_prefs.summarize_max_messages;
+            if (Number.isFinite(max_messages) && max_messages > 0 && messageArray.length > max_messages) {
+                taLog.error("[ThunderAI] Summarize aborted: " + messageArray.length + " messages selected, limit is " + max_messages + ".");
+                await showGenericError(
+                    browser.i18n.getMessage('summarize_too_many_messages', [String(messageArray.length), String(max_messages)]),
+                    browser.i18n.getMessage('summarize_title')
+                );
+                return;
+            }
             const messageDataArray = [];
             for (let curr_message of messageArray) {
+                if (taBatchController.isCancelled()) {
+                    taLog.log("[ThunderAI] Summarize cancelled by user, stopping.");
+                    return;
+                }
                 const fullMessage = await browser.messages.getFull(curr_message.id);
                 messageDataArray.push({ message: curr_message, fullMessage });
             }
@@ -1952,7 +2074,19 @@ async function processEmails(args) {
         }
     }
 
-    taWorkingStatus.stopWorking();
+    } finally {
+        taWorkingStatus.stopWorking();
+        // endBatch() returns a snapshot taken before the counters are reset. When the last
+        // active batch exits because the user requested a cancel, notify how many messages
+        // were processed before stopping.
+        const batchResult = taBatchController.endBatch();
+        if (batchResult.lastExit && batchResult.cancelled) {
+            await showGenericInfo(
+                browser.i18n.getMessage('batch_stopped_notice', [String(batchResult.processed)]),
+                browser.i18n.getMessage('batch_stop_source')
+            );
+        }
+    }
 }
 
 browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);

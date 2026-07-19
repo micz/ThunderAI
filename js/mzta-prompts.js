@@ -710,6 +710,14 @@ export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
 }
 
+export async function getSummarizePrompt(){
+    return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_summarize');
+}
+
+export async function getTranslatePrompt(){
+    return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_translate_this');
+}
+
 export async function loadPrompt(id) {
     let allPrompts = await getPrompts(false,[],true);
     // console.log(">>>>>>>>>>>> loadPrompt id: " + id + " - allPrompts: " + JSON.stringify(allPrompts));

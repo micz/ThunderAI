@@ -20,6 +20,8 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
+import { svgFromString, SEND_ICON_SVG, STOP_ICON_SVG } from './svgIcons.js';
+
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
@@ -121,7 +123,7 @@ messagesInputStyle.textContent = `
     #mzta-custom_textarea{
         color:black;
         padding:5px;
-        font-size:15px;
+        font-size:0.9375rem;
         width:100%;
         box-sizing: border-box;
         resize: vertical;
@@ -130,7 +132,7 @@ messagesInputStyle.textContent = `
         text-align:center;
         width:100%;
         padding-bottom:10px;
-        font-size:15px;
+        font-size:0.9375rem;
     }
     #mzta-custom_info span{
         font-size:0.8em;
@@ -139,7 +141,7 @@ messagesInputStyle.textContent = `
         position: absolute;
         bottom: 5px;
         right: 10px;
-        font-size: 12px;
+        font-size: 0.75rem;
         color: #ccc;
     }
     #mzta-custom_btn{
@@ -177,45 +179,13 @@ messageInputTemplate.content.appendChild(inputField);
 
 const sendButton = document.createElement('button');
 sendButton.id = 'sendButton';
-
-const sendIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-sendIcon.setAttribute('width', '24');
-sendIcon.setAttribute('height', '24');
-sendIcon.setAttribute('viewBox', '0 0 24 24');
-sendIcon.setAttribute('fill', 'none');
-sendIcon.classList.add('text-white', 'dark:text-black');
-
-const sendPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-sendPath.setAttribute('d', 'M7 11L12 6L17 11M12 18V7');
-sendPath.setAttribute('stroke', 'currentColor');
-sendPath.setAttribute('stroke-width', '2');
-sendPath.setAttribute('stroke-linecap', 'round');
-sendPath.setAttribute('stroke-linejoin', 'round');
-
-sendIcon.appendChild(sendPath);
-sendButton.appendChild(sendIcon);
+sendButton.appendChild(svgFromString(SEND_ICON_SVG));
 messageInputTemplate.content.appendChild(sendButton);
 
 const stopButton = document.createElement('button');
 stopButton.id = 'stopButton';
 stopButton.style.display = 'none';
-
-const stopIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-stopIcon.setAttribute('width', '24');
-stopIcon.setAttribute('height', '24');
-stopIcon.setAttribute('viewBox', '0 0 24 24');
-stopIcon.setAttribute('fill', 'none');
-stopIcon.classList.add('text-white', 'dark:text-black');
-
-const stopRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-stopRect.setAttribute('x', '6');
-stopRect.setAttribute('y', '6');
-stopRect.setAttribute('width', '12');
-stopRect.setAttribute('height', '12');
-stopRect.setAttribute('fill', 'currentColor');
-
-stopIcon.appendChild(stopRect);
-stopButton.appendChild(stopIcon);
+stopButton.appendChild(svgFromString(STOP_ICON_SVG));
 messageInputTemplate.content.appendChild(stopButton);
 
 const statusLogger = document.createElement('div');

@@ -39,7 +39,7 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
 - Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (DeepSeek, Grok, Mistral, OpenRouter, Perplexity)
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry)
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`
@@ -56,10 +56,21 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 
 Two provider categories emit reasoning/thinking content:
 
-- **Ollama / OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `MessagesArea.flushAccumulatingMessage()` strips these blocks from the rendered text and renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
-- **Anthropic**: thinking is captured in the worker and posted to the controller as `newThinkingToken`. `MessagesArea` accumulates it and renders the same `<details>` block on final flush.
+- **OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
+- **Ollama / Anthropic**: thinking is captured in the worker as a dedicated field (`message.thinking` for Ollama, `thinking_delta` events for Anthropic) and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush. Ollama's reasoning is enabled by the `ollama_think` pref, which sets `think: true` on the request.
+
+See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
 The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
+
+## Font zoom in the webchat UI
+
+The API webchat window supports keyboard font zoom, handled in `api_webchat/controller.js`:
+
+- **Ctrl/Cmd + `+`** (or `=`) increases, **Ctrl/Cmd + `-`** decreases, **Ctrl/Cmd + `0`** resets to 100%.
+- Zoom is applied by setting `document.documentElement.style.fontSize` as a percentage. Because text in the Shadow DOM components (`<messages-area>`, `<message-input>`) is sized in `rem`/`em`, it scales against the root `<html>` font-size across the Shadow DOM boundary. A few chrome elements that previously used absolute `px` font-sizes were converted to `rem` so they scale too.
+- The level is clamped to **0.5–2.5** (step 0.1) and persisted in `browser.storage.sync` under the global `api_webchat_font_scale` pref (default `1.0`, in `options/mzta-options-default.js`). On window open the saved value is read and re-applied, so the zoom survives closing the window and is shared across all webchat windows and providers.
+- The `keydown` listener is registered on `document`; key events from inside the components bubble up (composed), so no per-component handler is needed.
 
 ## Configuration Validation
 
@@ -84,6 +95,14 @@ Feature-specific routing of `isConfigError`:
 
 For regular prompts (`openChatGPT()`), validation still happens inside the listener callback after the API webchat window is created (unchanged behavior).
 
+## Per-feature provider override (specific integration)
+
+Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summarize`, `get_calendar_event`, `get_task`, `translate`) can use a different provider than the global default. The override is **stored inside the feature's special prompt object** (not in standalone `{feature}_*` prefs): the settings UI (`_updatePrompt()` in `pages/_lib/connection-ui.js`) writes `prompt.api_type` plus prefixed config keys (e.g. `prompt.openai_comp_host`, `prompt.openai_comp_model`) and calls `savePrompt()`.
+
+For the override to take effect at runtime, the caller **must load that prompt object and pass it as `config`** to `mzta_specialCommand` — and pass the same prompt to `getConnectionType(prefs, prompt, '<feature>')`. `initWorker()` only sets `use_specific_api = true` (and therefore reads the prefixed host/model/etc. from `config`) when `config.api_type` is non-empty; otherwise it falls back to the **global** provider prefs. Passing `config: {}` silently ignores the override even when the connection *type* matches.
+
+Helpers: `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern.
+
 ## Web Worker Pattern
 
 For all API-based providers (everything except ChatGPT Web), the call goes through a Web Worker:
@@ -98,6 +117,35 @@ mzta-background.js
 ```
 
 This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
+
+### Worker Lifecycle & Timeout (`mzta_specialCommand`)
+
+`mzta_specialCommand` (`js/mzta-special-commands.js`) creates one Worker per instance in its constructor. Callers (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, auto add-tags in `mzta-background.js`) create a **fresh instance per prompt** — instances are never reused.
+
+- **Termination:** `sendPrompt()` always calls `dispose()` (via `Promise.finally`) once the prompt settles — on success, error, or timeout. `dispose()` calls `worker.terminate()` and nulls the reference. This prevents Worker leaks during batch processing, where one Worker would otherwise be created per message and never freed (a cause of out-of-memory hangs on large selections).
+- **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
+
+`processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch.
+
+### Batch cancellation (user-triggered stop)
+
+`processEmails()` can run for a long time on large selections. `js/mzta-batch-controller.js` (`taBatchController`) lets the user interrupt it cooperatively. See [01-architecture.md](01-architecture.md#batch-cancellation-tabatchcontroller) for the controller's design and check points.
+
+**Runtime messages** (handled in the `messenger.runtime.onMessage` switch in `mzta-background.js`):
+
+- `{ command: "batch_status" }` → returns `taBatchController.getStatus()` = `{ working, processed, cancelRequested }`.
+- `{ command: "cancel_batch" }` → calls `taBatchController.requestCancel()`, returns `{ ok: true }`. The running `processEmails` loop sees `isCancelled()` at its next checkpoint and `break`s out; the outer `finally` still runs `stopWorking()` + `endBatch()`.
+
+**Stopped notice:** `endBatch()` returns a snapshot `{ lastExit, cancelled, processed }` taken *before* the counters are reset (`processed` is zeroed on the last-batch reset). When `lastExit && cancelled`, the outer `finally` in `processEmails` shows a `showGenericInfo()` notice (`batch_stopped_notice`, "Email processing stopped. N messages were processed.") reporting how many messages completed before stopping. It renders in the message-display / compose content-script panel.
+
+**Generic panels (`showGenericError` / `showGenericInfo`):** `mzta-background.js` exposes two helpers that broadcast a panel to all tabs (the content script renders it only where injected — message-display / compose):
+- `showGenericError(msg, source)` → `{command: "showGenericError"}` → red panel (⚠), panel id `mzta-generic-error`.
+- `showGenericInfo(msg, source)` → `{command: "showGenericInfo"}` → blue informational panel (ℹ), panel id `mzta-generic-info`.
+Both use the same layout and a dismiss control; colors come from `_getThemeColors()` (`summaryErr` for errors, `info` for info). Cleared via `clearGenericError` / `clearGenericInfo`.
+
+**Popup payload:** `preparePopupMenu(tab)` adds `output.batchStatus = taBatchController.getStatus()` to the response of the existing `popup_menu_ready` message, so the popup gets the initial batch state without an extra round-trip. When `batchStatus.working` is true the popup shows a "Stop processing — N processed" banner and polls `batch_status` every ~1s while open.
+
+**Interaction with `mzta_specialCommand`:** v1 cancellation is checked *between* messages, so the in-flight worker prompt is allowed to finish first (bounded by `special_command_timeout`). There is no mid-request `dispose()` in v1; a future enhancement could register the active `mzta_specialCommand` with the controller and terminate its worker on cancel for an immediate abort.
 
 ## Optional Permissions
 

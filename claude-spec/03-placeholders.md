@@ -21,29 +21,43 @@ Example in a prompt: `"Summarize this email: {%mail_text_body_or_selected%}"`
 | `enabled` | number | `0` = disabled, `1` = enabled |
 | `text` | string | Content for custom placeholders only |
 
-## Built-in Placeholders (defined in `js/mzta-placeholders.js`)
+## Built-in Placeholders
 
-| ID | Description | Type |
-|----|-------------|------|
-| `mail_text_body` | Full plain text of the email | 0 |
-| `mail_html_body` | Full HTML of the email | 0 |
-| `mail_typed_text` | Text typed so far in compose window | 2 |
-| `mail_text_body_or_selected` | Plain text body, or selected text if any | 1 |
-| `mail_html_body_or_selected` | HTML body, or selected HTML if any | 1 |
-| `mail_selected_text` | Only the selected text | 1 |
-| `mail_selected_html` | Only the selected HTML | 1 |
-| `mail_subject` | Email subject line | 0 |
-| `mail_date` | Email date | 1 |
-| `mail_author` | Email sender | 0 |
-| `mail_recipients` | Email recipients | 0 |
-| `mail_tags` | Current tags on the email | 1 |
-| `mail_available_tags` | All available tags in Thunderbird | 1 |
-| `identity_name` | Current identity display name | 0 |
-| `identity_email` | Current identity email address | 0 |
-| `identity_signature` | Current identity signature | 0 |
-| `additional_text[id]` | User input field (dynamic, shows input in popup) | 0 |
-| `mail_header:name` | Any email header by name (dynamic) | 1 |
-| `mail_full_headers` | All mail headers (key: value format, newline-separated) | 1 |
+Defined in `js/mzta-placeholders.js` as the `defaultPlaceholders` array — that
+array is the source of truth for IDs. Listed here in source order. `Dyn` marks
+placeholders with `is_dynamic: "1"` (take a parameter after `:`).
+
+| ID | Description | Type | Dyn |
+|----|-------------|------|-----|
+| `mail_text_body` | Full plain text of the email | 0 | |
+| `mail_html_body` | Full HTML of the email | 0 | |
+| `mail_typed_text` | Text typed so far in compose window | 2 | |
+| `mail_quoted_text` | Quoted text in the compose window | 2 | |
+| `mail_subject` | Email subject line | 0 | |
+| `mail_folder_name` | Name of the folder containing the email | 1 | |
+| `mail_folder_path` | Full path of the folder containing the email | 1 | |
+| `mail_headers` | A specific email header by name (dynamic) | 1 | ✓ |
+| `mail_full_headers` | All mail headers (key: value format, newline-separated) | 1 | |
+| `selected_text` | Only the selected text | 0 | |
+| `selected_html` | Only the selected HTML | 0 | |
+| `additional_text` | User input field (dynamic, shows input in popup) | 0 | ✓ |
+| `junk_score` | Junk score of the email | 1 | |
+| `recipients` | Email recipients (To) | 0 | |
+| `cc_list` | Email CC recipients | 0 | |
+| `author` | Email sender | 0 | |
+| `mail_datetime` | Email date and time | 1 | |
+| `current_datetime` | Current date and time | 0 | |
+| `account_email_address` | Email address of the current account/identity | 0 | |
+| `tags_current_email` | Tags currently on the email | 0 | |
+| `tags_full_list` | All available tags in Thunderbird | 0 | |
+| `thunderai_def_sign` | Default signature name (`default_sign_name` pref) | 0 | |
+| `thunderai_def_lang` | Default response language (`default_chatgpt_lang` pref) | 0 | |
+| `thunderai_translate_lang` | Target translation language (`translate_lang` pref) | 0 | |
+| `thunderai_translate_exclude_lang` | Language to exclude from translation | 0 | |
+| `empty` | Empty string (placeholder that resolves to nothing) | 0 | |
+| `mail_attachments_info` | Information about the email's attachments | 1 | |
+| `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
+| `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
 
 ## Dynamic Placeholders
 
@@ -51,7 +65,7 @@ Dynamic placeholders use a colon separator to pass a parameter:
 
 ```
 {%additional_text:my_field_id%}   →  shows an input field labelled "my_field_id" in the popup
-{%mail_header:x-spam-score%}      →  fetches the X-Spam-Score header value
+{%mail_headers:x-spam-score%}     →  fetches the X-Spam-Score header value
 ```
 
 The `is_dynamic: "1"` property signals this behavior in the placeholder definition.

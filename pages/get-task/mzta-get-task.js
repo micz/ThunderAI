@@ -53,8 +53,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let integration = get_task_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
-                 if (get_task_prompt[key] !== undefined) {
-                     update_prefs[`get_task_${integration}_${key}`] = get_task_prompt[key];
+                 const propName = `${integration}_${key}`;
+                 if (get_task_prompt[propName] !== undefined) {
+                     update_prefs[`get_task_${propName}`] = get_task_prompt[propName];
                  }
              }
         }

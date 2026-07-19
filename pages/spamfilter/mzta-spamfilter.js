@@ -61,8 +61,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let integration = spamfilter_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
-                 if (spamfilter_prompt[key] !== undefined) {
-                     update_prefs[`spamfilter_${integration}_${key}`] = spamfilter_prompt[key];
+                 const propName = `${integration}_${key}`;
+                 if (spamfilter_prompt[propName] !== undefined) {
+                     update_prefs[`spamfilter_${propName}`] = spamfilter_prompt[propName];
                  }
              }
         }

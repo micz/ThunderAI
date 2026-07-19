@@ -92,6 +92,7 @@ async function restoreOptions() {
           let default_number_value = 0;
           if(element.id == 'chatgpt_win_height') default_number_value = prefs_default.chatgpt_win_height;
           if(element.id == 'chatgpt_win_width') default_number_value = prefs_default.chatgpt_win_width;
+          if(element.id == 'special_command_timeout') default_number_value = prefs_default.special_command_timeout;
           element.value = result[element.id] ?? default_number_value;
           break;
         case 'text':
@@ -305,6 +306,12 @@ function resetMaxPromptLength(){
   browser.storage.sync.set({max_prompt_length: prefs_default.max_prompt_length});
 }
 
+function resetSpecialCommandTimeout(){
+  let specialCommandTimeout = document.getElementById('special_command_timeout');
+  specialCommandTimeout.value = prefs_default.special_command_timeout;
+  browser.storage.sync.set({special_command_timeout: prefs_default.special_command_timeout});
+}
+
 async function updateCacheSize() {
   let size = await getCacheStorageUsedSpace();
   document.getElementById('cache_storage_size').textContent = size;
@@ -483,6 +490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
+  document.getElementById('reset_special_command_timeout').addEventListener('click', resetSpecialCommandTimeout);
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });

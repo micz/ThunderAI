@@ -3,7 +3,7 @@
         "message": "Χρησιμοποιήστε το ChatGPT, το Google Gemini, το Claude ή το Ollama για να βελτιώσετε τα email σας!"
     },
     "menu_title": {
-        "message": "AI"
+        "message": "ThunderAI"
     },
     "prompt_lang": {
         "message": "Απάντηση σε"
@@ -1794,5 +1794,11 @@
     },
     "menu_order_icon_none": {
         "message": "(τίποτα)"
+    },
+    "prefs_OptionText_spamfilter_only_inbox": {
+        "message": "Εκτέλεση μόνο στα εισερχόμενα"
+    },
+    "prefs_OptionText_spamfilter_only_inbox_Info": {
+        "message": "Όταν είναι ενεργοποιημένο, το αυτόματο φίλτρο ανεπιθύμητης αλληλογραφίας ελέγχει μόνο τα μηνύματα που λαμβάνονται στον φάκελο εισερχομένων και αγνοεί την αλληλογραφία που παραδίδεται σε άλλους φακέλους."
     }
 }

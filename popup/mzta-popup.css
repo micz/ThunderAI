@@ -64,6 +64,44 @@ body {
     background-color: #cfe9ff;
   }
   
+  #mzta_batch_stop{
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 4px 2px 6px 2px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #e9e9e9;
+  }
+
+  #mzta_batch_stop_btn{
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #d9534f;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #mzta_batch_stop_btn:hover{
+    background-color: #c9302c;
+  }
+
+  #mzta_batch_stop_btn:disabled{
+    background-color: #b0b0b0;
+    cursor: default;
+  }
+
+  #mzta_batch_progress{
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #555555;
+  }
+
   #ask_chatgpt_web_perm, #ask_anthropic_api_perm, #ask_openai_api_perm{
     display: none;
     max-width: 20em;
@@ -113,4 +151,12 @@ body {
     .special_prompt{
         background-color: #353542;
       }
+
+    #mzta_batch_stop{
+        border-bottom: 1px solid #444444;
+    }
+
+    #mzta_batch_progress{
+        color: #bbbbbb;
+    }
   }

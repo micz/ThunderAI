@@ -31,6 +31,7 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 
 self.onmessage = async function(event) {
     switch (event.data.type) {
@@ -84,7 +85,8 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
-                        postMessage({ type: 'tokensDone' });
+                        postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                        thinkingAccumulator = '';
 
                         break;
                     }
@@ -93,7 +95,8 @@ self.onmessage = async function(event) {
                         taLog.log("AI full response: " + assistantResponseAccumulator);
                         conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                         assistantResponseAccumulator = '';
-                        postMessage({ type: 'tokensDone' });
+                        postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                        thinkingAccumulator = '';
                         break;
                     }
                     // lots of low-level Ollama response parsing stuff
@@ -124,7 +127,12 @@ self.onmessage = async function(event) {
             
                     for (const parsedLine of parsedLines) {
                         const { message } = parsedLine;
-                        const { content } = message;
+                        const { content, thinking } = message;
+                        // Update the UI with the new thinking content
+                        if (thinking) {
+                            thinkingAccumulator += thinking;
+                            postMessage({ type: 'newThinkingToken', payload: { token: thinking } });
+                        }
                         // Update the UI with the new content
                         if (content) {
                             assistantResponseAccumulator += content;

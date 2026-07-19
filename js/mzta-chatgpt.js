@@ -87,8 +87,12 @@ async function chatgpt_isIdle() {
             }, 100);});}
 
 function chatgpt_getRegenerateButton() {
-    for (const mainSVG of document.querySelectorAll('main svg.icon')) {
-        if (mainSVG.querySelector('path[d^="M3.502 16.6663V13"]') || mainSVG.querySelector('path[d^="M3.06957"]') || mainSVG.querySelector('path[d^="M10.9153 1.83987L11.2942 1.88772L11.4749"]') || document.querySelector("button[data-testid=good-response-turn-action-button]")){ // regen icon or thumb-up icon found
+    let first_try = [...document.querySelectorAll('use')]
+                        .find(u => u.getAttribute('href')?.includes('#' + 'ec66f0'))
+                        ?.closest('button') || null;
+    if(first_try != null) return first_try;
+    for (const mainSVG of document.querySelectorAll('.cursor-pointer')) {
+        if (mainSVG.querySelector('path[d^="M3.502 16.666v-3.333c0-.367.298-.665.665"]') || mainSVG.querySelector('path[d^="M3.502 16.6663V13"]') || mainSVG.querySelector('path[d^="M3.06957"]') || mainSVG.querySelector('path[d^="M10.9153 1.83987L11.2942 1.88772L11.4749"]') || document.querySelector("button[data-testid=good-response-turn-action-button]")){ // regen icon or thumb-up icon found
             //console.log(">>>>>>>>>> found regen icon!");
             return mainSVG.parentNode.parentNode;
         }

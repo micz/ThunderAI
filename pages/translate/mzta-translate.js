@@ -54,8 +54,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         let integration = translate_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
             for (const key of Object.keys(integration_options_config[integration])) {
-                if (translate_prompt[key] !== undefined) {
-                    update_prefs[`translate_${integration}_${key}`] = translate_prompt[key];
+                const propName = `${integration}_${key}`;
+                if (translate_prompt[propName] !== undefined) {
+                    update_prefs[`translate_${propName}`] = translate_prompt[propName];
                 }
             }
         }

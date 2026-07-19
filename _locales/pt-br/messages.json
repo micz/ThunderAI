@@ -4,7 +4,7 @@
         "description": "Description of the extension."
     },
     "menu_title": {
-        "message": "IA"
+        "message": "ThunderAI"
     },
     "prompt_lang": {
         "message": "Responda em"

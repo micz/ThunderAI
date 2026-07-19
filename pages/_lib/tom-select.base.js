@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.6.1
+* Tom Select v2.6.2
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -3676,7 +3676,7 @@
 
 	        // marking empty option as selected can break validation
 	        // fixes https://github.com/orchidjs/tom-select/issues/303
-	        if (option_el != empty_option || has_selected > 0) {
+	        if (option_el != empty_option || has_selected > 0 || self.settings.mode == 'multi') {
 	          option_el.selected = true;
 	        }
 	        return option_el;

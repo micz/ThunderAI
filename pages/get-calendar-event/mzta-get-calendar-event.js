@@ -53,8 +53,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let integration = get_calendar_event_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
-                 if (get_calendar_event_prompt[key] !== undefined) {
-                     update_prefs[`get_calendar_event_${integration}_${key}`] = get_calendar_event_prompt[key];
+                 const propName = `${integration}_${key}`;
+                 if (get_calendar_event_prompt[propName] !== undefined) {
+                     update_prefs[`get_calendar_event_${propName}`] = get_calendar_event_prompt[propName];
                  }
              }
         }

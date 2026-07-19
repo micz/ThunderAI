@@ -53,6 +53,7 @@ function _getThemeColors(spamValue, spamThreshold) {
         spamLoading: { bg: isDark ? '#003366' : '#e6f2ff', text: isDark ? '#cce5ff' : '#004085', border: isDark ? '#004085' : '#b8daff' },
         summary:     { bg: isDark ? '#2a2a2a' : '#f0f0f0', text: isDark ? '#e0e0e0' : '#333', border: isDark ? '#444' : '#ddd' },
         summaryErr:  { bg: isDark ? '#3a1a1a' : '#f7e6e6', text: isDark ? '#ffcccc' : '#660000', border: '#660000' },
+        info:        { bg: isDark ? '#003366' : '#e6f2ff', text: isDark ? '#cce5ff' : '#004085', border: isDark ? '#004085' : '#b8daff' },
         translation: { bg: isDark ? '#1a2e2a' : '#e8f5e9', text: isDark ? '#c8e6c9' : '#1b5e20', border: isDark ? '#2e5740' : '#a5d6a7' },
         translErr:   { bg: isDark ? '#3a1a1a' : '#f7e6e6', text: isDark ? '#ffcccc' : '#660000', border: '#660000' },
         linkColor:   isDark ? '#6db3f2' : '#1a5fa8',
@@ -131,7 +132,7 @@ function _removeToolbarItem(id) {
 }
 
 const _PANEL_ORDER = [
-    'mzta-generic-error',
+    'mzta-generic-error', 'mzta-generic-info',
     'mzta-spam-check-progress', 'mzta-spam-report-banner',
     'mzta-translation-generating', 'mzta-translation-banner',
     'mzta-summary-generating', 'mzta-summary-banner'
@@ -911,6 +912,53 @@ switch (message.command) {
 
     case "clearGenericError": {
       _removePanel('mzta-generic-error');
+      return Promise.resolve(true);
+    }
+
+    case "showGenericInfo": {
+      const { message: infoMsg, source } = message.data || {};
+      const colors = _getThemeColors();
+      const ic = colors.info;
+
+      const panel = document.createElement('div');
+      panel.style.cssText = `background-color: ${ic.bg}; color: ${ic.text}; padding: 0.5rem; border-radius: 4px; border: 1px solid ${ic.border}; font-size: 14px; display: flex; align-items: flex-start; gap: 8px;`;
+
+      const icon = document.createElement('span');
+      icon.textContent = '🛈';
+      icon.style.cssText = 'font-size: 16px; flex-shrink: 0; line-height: 1.4;';
+
+      const textWrap = document.createElement('div');
+      textWrap.style.cssText = 'flex: 1; min-width: 0; line-height: 1.4;';
+
+      const prefix = document.createElement('strong');
+      prefix.textContent = `[ThunderAI${source ? ' | ' + source : ''}] `;
+      const body = document.createElement('span');
+      body.textContent = infoMsg || '';
+      textWrap.appendChild(prefix);
+      textWrap.appendChild(body);
+
+      const rightGroup = document.createElement('span');
+      rightGroup.style.cssText = 'display: flex; align-items: center; gap: 5px; margin-left: auto;';
+      const dismissMenu = createThreeDotsMenu(colors.isDark, [
+          {
+              icon: '×',
+              label: browser.i18n.getMessage("generic_error_dismiss") || 'Dismiss',
+              hoverColor: '#004085',
+              onClick: () => { _removePanel('mzta-generic-info'); }
+          }
+      ], { bg: ic.bg, border: ic.border, text: ic.text });
+      rightGroup.appendChild(dismissMenu);
+
+      panel.appendChild(icon);
+      panel.appendChild(textWrap);
+      panel.appendChild(rightGroup);
+
+      _addPanel('mzta-generic-info', panel);
+      return Promise.resolve(true);
+    }
+
+    case "clearGenericInfo": {
+      _removePanel('mzta-generic-info');
       return Promise.resolve(true);
     }
 

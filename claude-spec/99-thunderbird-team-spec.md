@@ -306,7 +306,7 @@ console.log(data.file.name);
 
 **1. No Build Tools**
 - Include 3rd party libraries directly (don't use webpack, rollup, etc.)
-- Include a `VENDOR.md` file documenting all 3rd party libraries with links to exact versions (not "latest"). Example: https://webextension-api.thunderbird.net/en/mv2/guides/vcard.html
+- Include a `VENDORS.md` file documenting all 3rd party libraries with links to exact versions (not "latest"). Example: https://webextension-api.thunderbird.net/en/mv2/guides/vcard.html
 
 **2. Permissions**
 - Only request permissions you actually need
@@ -333,7 +333,7 @@ Before providing any code, verify ALL of these:
 - [ ] Used 3rd party libraries or API methods for parsing — minimize manual string parsing or regex
 - [ ] Used 3rd party libraries are the most recent stable version
 - [ ] Event listeners registered at file scope (NOT inside init function)
-- [ ] VENDOR.md includes ALL dependencies with exact version URLs
+- [ ] VENDORS.md includes ALL dependencies with exact version URLs
 - [ ] Used `browser_specific_settings` (NOT deprecated `applications`)
 - [ ] Included proper error handling
 - [ ] Code has comments explaining the approach
@@ -362,7 +362,7 @@ For EACH 3rd party library included in the project:
 |---------|------|-------------|------------------|
 | ical.js | lib/ical.js | ES6 default | `import ICAL from "./lib/ical.js"` |
 
-- [ ] Update VENDOR.md with the correct file path and version URL
+- [ ] Update VENDORS.md with the correct file path and version URL
 
 ---
 

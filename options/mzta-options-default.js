@@ -114,9 +114,11 @@ export const prefs_default = {
     chatgpt_web_project: '',
     chatgpt_web_custom_gpt: '',
     chatgpt_web_load_wait_time: 1000,
+    special_command_timeout: 120000,   // ms before a hung special command (API worker) is aborted
     dynamic_menu_force_enter: false,
     placeholders_use_default_value: false,
     hide_thinking: true,
+    api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,
@@ -142,9 +144,11 @@ export const prefs_default = {
     spamfilter_skip_addresses: [],
     spamfilter_skip_addressbook: true,
     spamfilter_show_msg_panel: true,
+    spamfilter_only_inbox: false,   // If true, auto spam filter runs only on inbox folders
     summarize: false,
     summarize_auto: 1,                   // 0: disabled, 1: manual button, 2: automatic on message open, 3: generate on email receive
     summarize_display_mode: 'inline',    // 'inline' or 'webchat'
+    summarize_max_messages: 20,          // max number of messages summarized at once (webchat mode); above this the user is warned and the operation is blocked
     summarize_max_display_length: 0,     // 0 = no limit, otherwise max chars shown inline
     summarize_strip_formatting: false,   // strip HTML/markdown formatting from AI summary
     translate: true,

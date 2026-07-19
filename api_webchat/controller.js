@@ -39,6 +39,48 @@ let promptData = null;
 const messageInput = document.querySelector('message-input');
 const messagesArea = document.querySelector('messages-area');
 
+// --- Font zoom (Ctrl+ / Ctrl- / Ctrl+0), persisted across windows ---
+const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5, ZOOM_STEP = 0.1, ZOOM_DEFAULT = 1.0;
+let currentZoom = ZOOM_DEFAULT;
+
+function applyZoom(scale) {
+    document.documentElement.style.fontSize = (scale * 100) + '%';
+}
+
+function setZoom(scale) {
+    // clamp and round to avoid floating point drift
+    scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(scale * 10) / 10));
+    currentZoom = scale;
+    applyZoom(scale);
+    browser.storage.sync.set({ api_webchat_font_scale: scale });
+}
+
+// Load the saved zoom level and apply it as soon as possible.
+(async () => {
+    const { api_webchat_font_scale } = await browser.storage.sync.get({ api_webchat_font_scale: prefs_default.api_webchat_font_scale });
+    currentZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, api_webchat_font_scale));
+    applyZoom(currentZoom);
+})();
+
+document.addEventListener('keydown', (event) => {
+    if (!(event.ctrlKey || event.metaKey)) return;
+    switch (event.key) {
+        case '+':
+        case '=':
+            event.preventDefault();
+            setZoom(currentZoom + ZOOM_STEP);
+            break;
+        case '-':
+            event.preventDefault();
+            setZoom(currentZoom - ZOOM_STEP);
+            break;
+        case '0':
+            event.preventDefault();
+            setZoom(ZOOM_DEFAULT);
+            break;
+    }
+});
+
 //console.log(">>>>>>>>>> controller.js DOMContentLoaded");
 
 // console.log(">>>>>>>>>>> llm: " + llm);

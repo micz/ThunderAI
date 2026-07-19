@@ -7,6 +7,23 @@
   <body>
     <div id="miczBackPrefs"><a href="mzta-options.html">__MSG_backToOptionsText__</a></div>
     <div id="miczRelNotes"><h1>ThunderAI Release Notes</h1>
+      <h2>Version 4.1.1 - 19/07/2026</h2>
+      <ul>
+        <li><i>[All APIs]</i> In the API webchat is now possible to zoom the text using CTRL+ CTRL- and resetting the dimension with CTRL0 [<a href="https://github.com/micz/ThunderAI/issues/805">#805</a>].</li>
+        <li><i>[All APIs]</i> Added an option to execute the spamfilter on received emails only in the inbox folder [<a href="https://github.com/micz/ThunderAI/issues/792">#792</a>].</li>
+        <li><i>[All APIs]</i> Fix: correctly using the specific API and Model for the special prompts [<a href="https://github.com/micz/ThunderAI/issues/804">#804</a>].</li>
+        <li><i>[All APIs]</i> Fix: no more auto spamfilter or autotagging in spam folders emails.</li>
+        <li><i>[All APIs]</i> Fix: correctly displaying the elaboration result related to the current email, even when the user is waiting on the message pane for the result and many emails are in elaboration [<a href="https://github.com/micz/ThunderAI/issues/806">#806</a>].</li>
+        <li><i>[All APIs]</i> Fix: during batch processing (auto add-tags, spam filter, summarize, translate) improved memory usage on large selections [<a href="https://github.com/micz/ThunderAI/issues/791">#791</a>].</li>
+        <li><i>[All APIs]</i> It is now possible to stop the running email processing jobs (auto add-tags, spam filter, summarize, translate) from the ThunderAI toolbar popup [<a href="https://github.com/micz/ThunderAI/issues/790">#790</a>].</li>
+        <li><i>[Ollama API]</i> The thinking block is correctly handled and reported on the webchat. The thinking parameter must be enabled.</li>
+        <li><i>[ChatGPT Web]</i> Fix: correctly getting if the response is complete.</li>
+        <li>Fix: Tables row ordering icons are now visible.</li>
+        <li>Hungarian (hu) translation added, thanks to <a href="https://hosted.weblate.org/user/simaphonesave/">Roland S</a>.</li>
+        <li>Indonesian (id) translation added, thanks to <a href="https://github.com/arifpedia">Arif Budiman</a>.</li>
+        <li>Portuguese (pt) translation added, thanks to <a href="https://hosted.weblate.org/user/nobrega8/">Afonso Nóbrega</a>, <a href="https://hosted.weblate.org/user/alucenafaria/">Antonio Lucena de Faria</a>, <a href="https://github.com/SantosSi">Silvério Santos</a>.</li>
+        <li>Minor bugs fixed.</li>
+      </ul>
       <h2>Version 4.1.0 - 13/05/2026</h2>
       <ul>
         <li>Antispam information are now permanently saved for each message [<a href="https://github.com/micz/ThunderAI/issues/675">#675</a>].</li>
@@ -534,12 +551,10 @@
       <ul>
         <li>Minor improvements.</li>
       </ul>
-
       <h2>Version 1.1.1 - 22/05/2024</h2>
       <ul>
         <li>Improved handling of CSS in the ChatGPT web interface.</li>
       </ul>
-
       <h2>Version 1.1.0 - 21/05/2024</h2>
       <ul>
         <li>A prompt can be configured to request additional text from the user.</li>
@@ -550,41 +565,34 @@
         <li>French translation added.</li>
         <li>Log messages improved.</li>
       </ul>
-
       <h2>Version 1.0.10 - 17/05/2024</h2>
         <ul>
           <li>Now using the new URL chatgpt.com.</li>
           <li>More improvements in handling the ChatGPT web interface.</li>
         </ul>
-
       <h2>Version 1.0.9 - 16/05/2024</h2>
         <ul>
           <li>Improved handling of different versions of the ChatGPT web interface.</li>
         </ul>
-
       <h2>Version 1.0.8 - 15/05/2024</h2>
         <ul>
           <li>Fixed changes in the ChatGPT web interface [<a href="https://github.com/micz/ThunderAI/issues/57">#57</a>, <a href="https://github.com/micz/ThunderAI/issues/62">#62</a>].</li>
           <li>Correctly handling the model ChatGPT-4o.</li>
         </ul>
-
       <h2>Version 1.0.7 - 09/05/2024</h2>
         <ul>
           <li>Improved the reply prompt to exclude comments and other text beside the mail text.</li>
           <li>Correctly keeping the signature in a reply even if it's above the quoted email [<a href="https://github.com/micz/ThunderAI/issues/45">#45</a>].</li>
         </ul>
-
         <h2>Version 1.0.6 - 08/05/2024</h2>
         <ul>
           <li>Correctly handling a change in the ChatGPT web interface [<a href="https://github.com/micz/ThunderAI/issues/43">#43</a>].</li>
           <li>Added a button to force the completion to display the 'Use last answer' button if ChatGPT has finished its work but the button has not appeared.</li>
         </ul>
-
         <h2>Version 1.0.5 - 03/05/2024</h2>
         <ul>
           <li>Fixed the handling of ChatGPT-4 in a large window [<a href="https://github.com/micz/ThunderAI/issues/38">#38</a>].</li>
         </ul>
-
         <h2>Version 1.0.4 - 01/05/2024</h2>
         <ul>
           <li>Stripping the quotation marks from the response.</li>
@@ -592,12 +600,10 @@
           <li>Now closing the compose window after unsaved text modifications implemented by ChatGPT triggers the usual warning message [<a href="https://github.com/micz/ThunderAI/issues/30">#30</a>].</li>
           <li>Updated the "Important Information" section on the options page, as it is no longer possible to disable the ChatGPT chat history.</li>
         </ul>
-
         <h2>Version 1.0.3 - 27/04/2024</h2>
         <ul>
           <li>Using the right identity when replying to a message [<a href="https://github.com/micz/ThunderAI/issues/31">#31</a>].</li>
         </ul>
-
         <h2>Version 1.0.2 - 18/04/2024</h2>
         <ul>
           <li>New standard menus.</li>
@@ -606,7 +612,6 @@
           <li>Added an option to choose between GPT-3.5 and GPT-4 Models [<a href="https://github.com/micz/ThunderAI/issues/27">#27</a>].</li>
           <li>Added a link to the <a href="https://micz.it/thunderbird-addon-thunderai/status/">Status Page</a>, to check if there are known issues in interacting with the ChatGPT web interface.</li>
         </ul>
-
         <h2>Version 1.0.1 - 13/04/2024</h2>
         <ul>
           <li>Italian addon description fixed.</li>
@@ -615,7 +620,6 @@
           <li>Fixed a bug in the compose window. Now is correctly used only the selected text.</li>
           <li>If the prompt is more than 30.000 characters, do not proceed and give a message to the user.</li>
         </ul>
-
         <h2>Version 1.0 - 05/04/2024</h2>
         <ul>
           <li>First release.</li>
