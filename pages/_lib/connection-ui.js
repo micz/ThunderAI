@@ -189,10 +189,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_Models_Fetch__</button>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
@@ -254,10 +257,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_Models_Fetch__</button>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
@@ -327,10 +333,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Models_Fetch__</button>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+      </div>
     </td>
   </tr>
    <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
@@ -445,10 +454,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_Models_Fetch__</button>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
@@ -495,10 +507,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
-      <label>
-        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
-      </label>
+      <div class="models_fetch_row">
+        <label class="models_fetch_select">
+          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
+        </label>
+        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Models_Fetch__</button>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span>
+      </div>
     </td>
   </tr>
   <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">

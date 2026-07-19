@@ -484,10 +484,6 @@
     "message": "ChatGPT Models",
     "description": ""
   },
-  "ChatGPT_Models_Fetch": {
-    "message": "Update ChatGPT Models list",
-    "description": ""
-  },
   "ChatGPT_Models_Error_fetching": {
     "message": "Error trying to fetch ChatGPT models",
     "description": ""
@@ -536,9 +532,9 @@
     "message": "Ollama Models",
     "description": ""
   },
-  "Ollama_Models_Fetch": {
-    "message": "Update Ollama Models list",
-    "description": ""
+  "Models_Fetch": {
+    "message": "Update list",
+    "description": "Label of the button that fetches/updates the available models list for an AI provider"
   },
   "Ollama_Models_Error_fetching": {
     "message": "Error trying to fetch Ollama models",
@@ -578,10 +574,6 @@
   },
   "OpenAIComp_Models": {
     "message": "OpenAI Compatible API Models",
-    "description": ""
-  },
-  "OpenAIComp_Models_Fetch": {
-    "message": "Update OpenAI Compatible API Models list",
     "description": ""
   },
   "OpenAIComp_Models_Error_fetching": {
@@ -1034,10 +1026,6 @@
   },
   "GoogleGemini_Models": {
     "message": "Google Gemini API Models",
-    "description": ""
-  },
-  "GoogleGemini_Models_Fetch": {
-    "message": "Update Google Gemini Models list",
     "description": ""
   },
   "GoogleGemini_Models_Error_fetching": {
@@ -1730,10 +1718,6 @@
   },
   "Anthropic_Models": {
     "message": "Claude Models",
-    "description": ""
-  },
-  "Anthropic_Models_Fetch": {
-    "message": "Update Claude Models list",
     "description": ""
   },
   "Anthropic_Models_Error_fetching": {
