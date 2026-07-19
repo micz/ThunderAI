@@ -221,6 +221,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     background: transparent;
     color: var(--text);
     font-weight: 600;
+    text-align: center;
 }
 #mzta_card button.btn_primary {
     background: var(--accent);
@@ -229,10 +230,14 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     font-weight: 700;
 }
 .btn_small {
-    font-size: 0.8em !important;
+    font-size: 0.9em !important;
     padding: 5px 9px !important;
     border-radius: 7px !important;
     font-weight: 600;
+}
+
+.btn_no_border{
+    border: none !important;
 }
 
 /* Manage buttons region */
