@@ -265,7 +265,7 @@ buttons tied to their own response.
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
 | `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
 | `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
-| `api_webchat/svgIcons.js` | Trusted static inline-SVG icon strings + `svgFromString()` helper (CSP-safe, dependency-free) |
+| `api_webchat/svgIcons.js` | Inline-SVG icon builders (`buildSendIcon`/`buildStopIcon`/`buildDropdownArrowIcon`) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML` |
 
 ## Key Modules
 

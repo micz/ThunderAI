@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { svgFromString, SEND_ICON_SVG, STOP_ICON_SVG } from './svgIcons.js';
+import { buildSendIcon, buildStopIcon } from './svgIcons.js';
 
 const messageInputTemplate = document.createElement('template');
 
@@ -179,13 +179,13 @@ messageInputTemplate.content.appendChild(inputField);
 
 const sendButton = document.createElement('button');
 sendButton.id = 'sendButton';
-sendButton.appendChild(svgFromString(SEND_ICON_SVG));
+sendButton.appendChild(buildSendIcon());
 messageInputTemplate.content.appendChild(sendButton);
 
 const stopButton = document.createElement('button');
 stopButton.id = 'stopButton';
 stopButton.style.display = 'none';
-stopButton.appendChild(svgFromString(STOP_ICON_SVG));
+stopButton.appendChild(buildStopIcon());
 messageInputTemplate.content.appendChild(stopButton);
 
 const statusLogger = document.createElement('div');

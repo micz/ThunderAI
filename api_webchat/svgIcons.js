@@ -16,41 +16,75 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Small dependency-free helper to build static icon elements from trusted,
-// hardcoded SVG string constants — replacing verbose createElementNS chains.
+// Small dependency-free builders for static icon elements, constructed
+// programmatically via createElementNS (no string parsing, no innerHTML).
 //
-// The strings below are compile-time constants (no interpolation, no user or
-// network data), so parsing them via <template>.innerHTML is safe under the
-// strict default MV2 CSP: it involves no eval and injects no dynamic markup.
-// This is intentionally NOT a template library (uhtml/lit-html): those assume
-// a build step and their CSP behavior under the addons.thunderbird.net review
-// policy is unverified. These icons are static and built once.
+// The addons.thunderbird.net review policy does not permit .innerHTML, so
+// icons are built directly as DOM nodes in the SVG namespace — the same
+// pattern used by the createReplyTo*Icon helpers in js/mzta-chatgpt.js. This
+// is CSP-safe (no eval, no dynamic markup) and dependency-free. These icons
+// are static and built once per button.
 
-function svgFromString(svgString) {
-    const template = document.createElement('template');
-    // Trusted static constant only — see module note above.
-    template.innerHTML = svgString.trim();
-    // Import into this document so the node isn't owned by the (inert)
-    // <template> content document.
-    return document.importNode(template.content.firstElementChild, true);
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Create an SVG-namespaced element and apply the given attributes.
+function el(tag, attrs) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [key, value] of Object.entries(attrs)) {
+        node.setAttribute(key, value);
+    }
+    return node;
 }
 
 // Send icon (message-input send button).
-export const SEND_ICON_SVG = `
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white dark:text-black">
-  <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+export function buildSendIcon() {
+    const svg = el('svg', {
+        width: '24',
+        height: '24',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        class: 'text-white dark:text-black',
+    });
+    svg.appendChild(el('path', {
+        d: 'M7 11L12 6L17 11M12 18V7',
+        stroke: 'currentColor',
+        'stroke-width': '2',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+    }));
+    return svg;
+}
 
 // Stop icon (message-input stop button).
-export const STOP_ICON_SVG = `
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white dark:text-black">
-  <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
-</svg>`;
+export function buildStopIcon() {
+    const svg = el('svg', {
+        width: '24',
+        height: '24',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        class: 'text-white dark:text-black',
+    });
+    svg.appendChild(el('rect', {
+        x: '6',
+        y: '6',
+        width: '12',
+        height: '12',
+        fill: 'currentColor',
+    }));
+    return svg;
+}
 
 // Dropdown arrow (split-button toggle).
-export const DROPDOWN_ARROW_SVG = `
-<svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" stroke-width="2">
-  <path d="M19 9l-7 7-7-7"/>
-</svg>`;
-
-export { svgFromString };
+export function buildDropdownArrowIcon() {
+    const svg = el('svg', {
+        viewBox: '0 0 20 20',
+        width: '16',
+        height: '16',
+        fill: 'currentColor',
+        'stroke-width': '2',
+    });
+    svg.appendChild(el('path', {
+        d: 'M19 9l-7 7-7-7',
+    }));
+    return svg;
+}
