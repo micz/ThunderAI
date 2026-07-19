@@ -79,31 +79,6 @@ input, select, button, textarea { font-family: inherit; }
     box-sizing: border-box;
 }
 
-/* Header bar */
-#mzta_header {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--line);
-}
-#mzta_header .logo_tile {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 12px;
-    flex: none;
-}
-#mzta_header .logo_tile img { width: 30px; height: 30px; border-radius: 8px; }
-#mzta_header .app_name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.1; }
-#mzta_header .app_sub { font-size: 11.5px; color: var(--dim); }
-
 /* Top links bar */
 #mzta_top_links {
     padding: 15px 20px;
