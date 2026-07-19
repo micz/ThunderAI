@@ -133,6 +133,7 @@ input, select, button, textarea { font-family: inherit; }
 #thstats {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 9px;
     font-size: 12px;
     color: var(--dim);
