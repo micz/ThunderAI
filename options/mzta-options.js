@@ -136,10 +136,23 @@ function getConnectionTypeLabel(value) {
   return value;
 }
 
+// Per-provider base tint colours (same palette used in mzta-options.css and
+// documented in the design). Used to colour the per-feature "specific API"
+// indicator pill. A direct map is used (rather than reading a row's computed
+// background) because the connection rows are now visually restyled and no
+// longer carry a solid per-provider background.
+const CONN_TINT_RGB = {
+  chatgpt_web:       '180, 83, 14',
+  chatgpt_api:       '10, 83, 214',
+  google_gemini_api: '150, 120, 12',
+  anthropic_api:     '168, 20, 80',
+  ollama_api:        '31, 122, 46',
+  openai_comp_api:   '122, 43, 191',
+};
+
 function getConnectionTypeColor(value) {
-  const row = document.querySelector(`tr.conntype_${value}`);
-  if (row) return getComputedStyle(row).backgroundColor;
-  return '';
+  const rgb = CONN_TINT_RGB[value];
+  return rgb ? `rgb(${rgb})` : '';
 }
 
 function getContrastTextColor(bgColor) {

@@ -278,10 +278,96 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     background: var(--tint-accent, var(--accent));
 }
 
-/* The connection-ui rows are injected into this table (Fase 1). */
-#connection_ui_table { width: 100%; border-collapse: collapse; }
-#connection_ui_table td { vertical-align: top; padding: 4px 2px; }
-#connection_ui_table td:first-child { width: 40%; }
+/* ---------------------------------------------------------------------------
+   CONNECTION-UI RESTYLE (options page only)
+   The shared connection-ui.js still emits <tr>/<td> rows (unchanged, so the 6
+   feature pages keep working). Here — scoped to #connection_ui_table — we make
+   those rows *render* as modern stacked fields (label above, full-width field)
+   using CSS display overrides. Nothing structural changes.
+   --------------------------------------------------------------------------- */
+#connection_ui_table,
+#connection_ui_table tbody {
+    display: block;
+    width: 100%;
+    border-collapse: collapse;
+}
+/* Each injected <tr> becomes a stacked field block with a subtle separator. */
+#connection_ui_table tr {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+    background: transparent !important;   /* panel already carries the tint */
+}
+#connection_ui_table tr:first-child { border-top: none; padding-top: 0; }
+/* label cell on top, field cell below — both full width */
+#connection_ui_table td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 0;
+}
+#connection_ui_table td:first-child { margin-bottom: 6px; }
+/* the connection-type select row keeps label + control readable */
+#connection_ui_table .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+#connection_ui_table .small_info,
+#connection_ui_table i { font-size: 11.5px; color: var(--dim); font-style: normal; }
+/* inputs/selects/textarea full width inside the panel */
+#connection_ui_table input[type="text"],
+#connection_ui_table input[type="password"],
+#connection_ui_table input[type="number"],
+#connection_ui_table select,
+#connection_ui_table textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+    outline: none;
+}
+#connection_ui_table textarea { min-height: 70px; resize: vertical; }
+/* connection-ui.css forces label{width:-moz-available}; keep it inside the panel */
+#connection_ui_table label { display: block; }
+/* model-fetch buttons / CORS buttons look like the tinted secondary buttons */
+#connection_ui_table button {
+    background: transparent;
+    color: var(--tint-accent, var(--accent));
+    border: 1px solid var(--tint-border, var(--fieldLine));
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 6px;
+}
+#connection_ui_table .btn_small {
+    padding: 5px 9px !important;
+    border-radius: 7px !important;
+}
+/* TomSelect model dropdowns fill the panel width and match the field look */
+#connection_ui_table .ts-wrapper { width: 100%; }
+#connection_ui_table .ts-control {
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
+    min-height: 38px;
+    color: var(--text);
+}
+/* CORS warning rows keep a distinct amber note look */
+#connection_ui_table tr[id$="_cors_warning"] td {
+    background: rgba(201, 118, 10, .08);
+    border: 1px solid rgba(201, 118, 10, .28);
+    border-radius: 9px;
+    padding: 11px 12px;
+    font-size: 11.5px;
+    color: var(--warning);
+    line-height: 1.5;
+    text-align: left;
+}
 
 .api_key-container { position: relative; display: flex; align-items: center; }
 .toggle-icon { cursor: pointer; margin-left: 5px; }
