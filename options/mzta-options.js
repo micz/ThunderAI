@@ -177,7 +177,7 @@ function disable_MaxPromptLength(){
   let conntype_select = document.getElementById("connection_type");
   maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
-  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
+  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
 }
 
 function disable_AddTags(prefs_opt){
@@ -277,26 +277,49 @@ async function disable_GetCalendarEvent(){
   get_task.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
+    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
   });
   let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
   get_task_tr_elements.forEach(get_task_tr => {
-    get_task_tr.style.display = get_task.disabled ? 'none' : 'table-row';
+    get_task_tr.style.display = get_task.disabled ? 'none' : '';
   });
-  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : '';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
+
+const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
 function updateDescription(){
   let conntype_select = document.getElementById("connection_type");
   let conntype = conntype_select.value;
   let desc = document.getElementById("miczDescription");
-  const types = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-  for(let t of types){
+  for(let t of CONN_TYPES){
     desc.querySelectorAll(".conntype_" + t).forEach(el => {
       el.style.display = (conntype === t) ? "" : "none";
     });
+  }
+  // Tint the Important Information accent bar to the selected provider.
+  for(let t of CONN_TYPES){
+    desc.classList.toggle("tint_" + t, conntype === t);
+  }
+}
+
+// Re-tint the connection panel (border/background/pill) and set the provider
+// pill name to match the selected connection type.
+function updateConnPanelTint(){
+  let conntype_select = document.getElementById("connection_type");
+  if(!conntype_select) return;
+  let conntype = conntype_select.value;
+  let panel = document.getElementById("mzta_conn_panel");
+  if(panel){
+    for(let t of CONN_TYPES){
+      panel.classList.toggle("tint_" + t, conntype === t);
+    }
+  }
+  let pillName = document.getElementById("mzta_conn_pill_name");
+  if(pillName){
+    pillName.textContent = getConnectionTypeLabel(conntype);
   }
 }
 
@@ -332,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const accountList = await messenger.accounts.list(false);
   if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
     taLog.log('OWL detected, displaying the warning.');
-    document.getElementById('owl_warning').style.display = 'table-row';
+    document.getElementById('owl_warning').style.display = 'block';
   }
 
   i18n.updateDocument();
@@ -465,9 +488,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
   conntype_select.addEventListener("change", updateDescription);
+  conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
   updateDescription();
+  updateConnPanelTint();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
@@ -492,6 +517,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
   document.getElementById('reset_special_command_timeout').addEventListener('click', resetSpecialCommandTimeout);
 
+  // App-level "Advanced options" disclosure (purely UI, no pref persisted)
+  let adv_toggle = document.getElementById('mzta_adv_toggle');
+  let adv_panel = document.getElementById('mzta_adv_panel');
+  adv_toggle.addEventListener('click', () => {
+    let expanded = adv_toggle.getAttribute('aria-expanded') === 'true';
+    adv_toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    adv_panel.classList.toggle('hidden', expanded);
+  });
+
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
   });
@@ -511,7 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   browser.runtime.getPlatformInfo().then(info => {
     taLog.log("OS: " + info.os);
     if ((info.os === "linux")&&(prefs_opt.chatgpt_win_height!=0)&&(prefs_opt.chatgpt_win_width!=0)){
-      document.getElementById('hyprland_warning').style.display = 'table-row';
+      document.getElementById('hyprland_warning').style.display = 'block';
     }
   });
 

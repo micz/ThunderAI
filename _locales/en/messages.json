@@ -2456,5 +2456,33 @@
   "menu_order_icon_none": {
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
+  },
+  "prefs_settings_subtitle": {
+    "message": "Settings",
+    "description": "Subtitle shown under the ThunderAI name in the options page header"
+  },
+  "prefs_disclaimer": {
+    "message": "LLM models are known to sometimes generate incorrect information. Also, depending on the AI model provider you choose your data might be used for training new models or other purposes. Use at your own risk.",
+    "description": "Disclaimer note shown at the top of the options page body"
+  },
+  "prefs_ConnectionSettingsTitle": {
+    "message": "Connection Settings",
+    "description": "Section eyebrow for the connection settings panel on the options page"
+  },
+  "prefs_BasicsSettingsTitle": {
+    "message": "Basics Settings",
+    "description": "Section eyebrow for the basic settings on the options page"
+  },
+  "prefs_FeaturesTitle": {
+    "message": "Features",
+    "description": "Section eyebrow for the features list on the options page"
+  },
+  "prefs_FeaturesSubtitle": {
+    "message": "Turn on what you need. Fine-tune each from its own settings screen.",
+    "description": "Sub-line under the Features section eyebrow on the options page"
+  },
+  "prefs_advanced_options": {
+    "message": "Advanced options",
+    "description": "Label of the app-level advanced options disclosure on the options page"
   }
 }
