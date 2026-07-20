@@ -4,7 +4,7 @@
 
 **Only ever modify `_locales/en/messages.json`.**
 
-All other locale files (`de`, `fr`, `it`, `es`, `zh_Hans`, `zh_Hant`, `pl`, `ru`, `pt-br`, `sv`, `el`, `cs`, `hr`, `ja`, `nb_NO`) are managed by translators through [Weblate](https://hosted.weblate.org/). Never edit them manually.
+All other locale files (everything under `_locales/` except `en`) are managed by translators through [Weblate](https://hosted.weblate.org/). Never edit them manually.
 
 ## Message File Format
 
@@ -69,23 +69,34 @@ Example:
 }
 ```
 
-## Supported Languages (16)
+## Supported Languages
+
+The authoritative list is the set of directories under `_locales/` (source of truth — do not duplicate it here as a static count, it changes as Weblate adds languages). As of writing:
 
 | Code | Language |
 |------|----------|
 | `en` | English (source) |
+| `bg` | Bulgarian |
+| `cs` | Czech |
 | `de` | German |
+| `el` | Greek |
+| `eo` | Esperanto |
 | `es` | Spanish |
 | `fr` | French |
-| `it` | Italian |
-| `pl` | Polish |
-| `ru` | Russian |
-| `pt-br` | Brazilian Portuguese |
-| `sv` | Swedish |
-| `el` | Greek |
-| `cs` | Czech |
 | `hr` | Croatian |
+| `hu` | Hungarian |
+| `id` | Indonesian |
+| `it` | Italian |
 | `ja` | Japanese |
 | `nb_NO` | Norwegian Bokmål |
+| `nl` | Dutch |
+| `pl` | Polish |
+| `pt` | Portuguese |
+| `pt-br` | Brazilian Portuguese |
+| `ro` | Romanian |
+| `ru` | Russian |
+| `sk` | Slovak (directory present, no translated strings yet) |
+| `sv` | Swedish |
+| `tr` | Turkish |
 | `zh_Hans` | Chinese Simplified |
 | `zh_Hant` | Chinese Traditional |
