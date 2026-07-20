@@ -336,6 +336,18 @@ function updateConnPanelTint(){
   }
 }
 
+// Collapse the per-connection advanced disclosure back to its default state
+// (advanced fields hidden, button reads "Show advanced options").
+function resetConnAdv(){
+  let btn = document.getElementById('mzta_conn_adv_btn');
+  let label = document.getElementById('mzta_conn_adv_label');
+  let table = document.getElementById('connection_ui_table');
+  if(!btn || !label || !table) return;
+  btn.setAttribute('aria-expanded', 'false');
+  table.classList.add('hide_adv');
+  label.textContent = browser.i18n.getMessage('prefs_conn_show_advanced');
+}
+
 function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
@@ -538,6 +550,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     adv_toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
     adv_panel.classList.toggle('hidden', expanded);
   });
+
+  // Per-connection "Show advanced options" disclosure (purely UI, no pref
+  // persisted). Advanced field rows are tagged conn_adv in the shared template;
+  // the .hide_adv class on the table hides them via CSS, so it does not clash
+  // with the inline display that showConnectionOptions() sets per provider.
+  let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
+  let conn_adv_label = document.getElementById('mzta_conn_adv_label');
+  let conn_ui_table = document.getElementById('connection_ui_table');
+  conn_adv_btn.addEventListener('click', () => {
+    let expanded = conn_adv_btn.getAttribute('aria-expanded') === 'true';
+    conn_adv_btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    conn_ui_table.classList.toggle('hide_adv', expanded);
+    conn_adv_label.textContent = browser.i18n.getMessage(
+      expanded ? 'prefs_conn_show_advanced' : 'prefs_conn_hide_advanced');
+  });
+  // Start collapsed and reset to collapsed whenever the connection type changes.
+  resetConnAdv();
+  document.getElementById('connection_type').addEventListener('change', resetConnAdv);
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });

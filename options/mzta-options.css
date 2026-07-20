@@ -478,6 +478,12 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     border-radius: 8px;
     margin-top: 14px;
 }
+/* Collapsed state: hide advanced-tier rows. !important wins over the inline
+   display:'' that showConnectionOptions() sets on provider rows. */
+#connection_ui_table.hide_adv tr.conn_adv { display: none !important; }
+/* Chevron rotates when the disclosure is expanded. */
+#mzta_conn_adv_btn .chev svg { transition: transform .2s; }
+#mzta_conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
 
 /* ===========================================================================
    FEATURE TOGGLE SWITCHES

@@ -148,6 +148,43 @@ The translate settings page provides:
 4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
 5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
 
+### Connection Settings Panel — Advanced Options Disclosure
+
+The main options page (`options/mzta-options.html`) wraps the injected connection
+fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** and
+**advanced**:
+
+- **Core** fields (always visible) — the minimum for a working connection: API key /
+  host, model, and API version. Rendered normally.
+- **Advanced** fields (hidden by default) — fine-tuning such as temperature, system
+  prompt, max tokens, context window, thinking budget, JSON format, store-on-server,
+  `/v1` suffix, ChatGPT Web model/project/etc.
+
+**Field tiering.** In the shared template inside `injectConnectionUI()`
+(`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
+`conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
+The `conn_adv` class is inert on the 6 feature pages (they render no toggle button).
+
+**The toggle.** A full-width outline button `#mzta_conn_adv_btn` sits directly below the
+`#connection_ui_table`, inside the tinted panel. Its style is defined in
+`options/mzta-options.css` (uses the per-provider `--tint-border` / `--tint-accent`,
+falling back to `--fieldLine` / `--accent`); its chevron rotates 180° when expanded via
+the `[aria-expanded="true"]` attribute.
+
+**Show/hide mechanism.** Collapsing is CSS-driven: `#connection_ui_table.hide_adv
+tr.conn_adv { display: none !important; }`. The `!important` is required because
+`showConnectionOptions()` (`connection-ui.js`) sets an **inline** `display` per provider
+on every `conntype_*` row when the connection type changes; the CSS class layers on top
+of that inline style without the two clashing.
+
+**JS wiring** (`options/mzta-options.js`): `resetConnAdv()` adds `hide_adv`, sets
+`aria-expanded="false"`, and restores the "Show advanced options" label. It is called
+once after injection (start collapsed) and on every `connection_type` `change` event
+(reset to collapsed on provider switch). The button's `click` handler toggles `hide_adv`,
+flips `aria-expanded`, and swaps the label between `prefs_conn_show_advanced` /
+`prefs_conn_hide_advanced`. State is **purely local UI** — no preference is persisted, so
+reopening the options page always starts collapsed.
+
 ## Adding a New Preference
 
 1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`

@@ -101,7 +101,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
     </label></td>
@@ -112,7 +112,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
       <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/PROJECT-ID-PROJECT-NAME/project</b>
@@ -125,7 +125,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</span>
       <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/CUSTOM-GPT-ID</b>
@@ -139,7 +139,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
@@ -152,7 +152,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_load_wait_time__</span>
     </label></td>
@@ -198,7 +198,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -211,7 +211,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
@@ -224,7 +224,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
@@ -266,7 +266,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -279,7 +279,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_google_gemini_thinking_budget__</span>
@@ -293,7 +293,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_GoogleGemini_SystemInstruction__</span>
@@ -342,7 +342,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+   <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -355,7 +355,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_think__</span>
     </label></td>
@@ -366,7 +366,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_format_json__</span>
     </label></td>
@@ -377,7 +377,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
     </label></td>
@@ -388,7 +388,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_AvailableServices__</span>
     </label></td>
@@ -420,7 +420,7 @@ export async function injectConnectionUI({
         <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_openai_comp_use_v1__</span>
     </label></td>
@@ -463,7 +463,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_ChatName__</span>
     </label></td>
@@ -474,7 +474,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -516,7 +516,7 @@ export async function injectConnectionUI({
       </div>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -529,7 +529,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
@@ -555,7 +555,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
       <label>
@@ -564,7 +564,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_extended_thinking_budget__</span></td>
     <td>
       <label>
