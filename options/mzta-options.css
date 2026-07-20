@@ -31,6 +31,16 @@
     --accent: #0a68ff;
     --success: #1f8a5b;
     --warning: #c9760a;
+
+    /* ThunderStats (green) tint */
+    --statsAccent: #1f8a46;
+    --statsBg: rgba(31, 138, 70, .07);
+    --statsBorder: rgba(31, 138, 70, .30);
+
+    /* Disclaimer (amber) tint */
+    --warnColor: #c9760a;
+    --warnBg: rgba(201, 118, 10, .07);
+    --warnBorder: rgba(201, 118, 10, .28);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +53,16 @@
         --field: #1c1b23;
         --fieldLine: rgba(255, 255, 255, .15);
         --accent: #4c9dff;
+
+        /* ThunderStats (green) tint */
+        --statsAccent: #54c07a;
+        --statsBg: rgba(31, 138, 70, .16);
+        --statsBorder: rgba(31, 138, 70, .45);
+
+        /* Disclaimer (amber) tint */
+        --warnColor: #e6a94a;
+        --warnBg: rgba(201, 118, 10, .14);
+        --warnBorder: rgba(201, 118, 10, .40);
     }
 }
 
@@ -79,13 +99,15 @@ input, select, button, textarea { font-family: inherit; }
     box-sizing: border-box;
 }
 
-/* Top links bar */
+/* ===========================================================================
+   HEADER BLOCK (variant "1e") — documentation & resources
+   =========================================================================== */
 #mzta_top_links {
-    padding: 15px 20px;
     border-bottom: 1px solid var(--line);
     display: flex;
     flex-direction: column;
-    gap: 11px;
+    gap: 16px;
+    padding: 20px 22px;
 }
 .mzta_eyebrow {
     font-size: 11px;
@@ -94,31 +116,105 @@ input, select, button, textarea { font-family: inherit; }
     text-transform: uppercase;
     color: var(--dim);
 }
-.doc_title { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
-.doc_links {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 18px;
-    font-size: 12.5px;
-    margin-top: 7px;
-}
-.doc_welcome { margin-top: 4px; font-size: 12.5px; }
 
+/* Row 1 — heading + feedback */
+.mzta_hdr_row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+#mzta_survey { font-size: 12px; color: var(--dim); line-height: 1.4; }
+#mzta_survey a { font-weight: 600; }
+
+/* Row 2 — documentation cards */
+.mzta_doc_cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+.mzta_doc_card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 13px;
+    border: 1px solid var(--fieldLine);
+    background: var(--field);
+    border-radius: 11px;
+    text-decoration: none;
+}
+.mzta_doc_card svg { stroke: var(--accent); }
+.mzta_doc_card_label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+}
+.mzta_doc_card:hover {
+    text-decoration: none;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--field));
+}
+
+/* Row 3 — ThunderStats promo card */
 #thstats {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 9px;
-    font-size: 12px;
-    color: var(--dim);
-    background: var(--field);
-    border: 1px solid var(--fieldLine);
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 11px;
+    border: 1px solid var(--statsBorder);
+    background: var(--statsBg);
+    text-decoration: none;
+}
+#thstats:hover {
+    text-decoration: none;
+    border-color: var(--statsAccent);
+}
+.thstats_tile {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
     border-radius: 9px;
-    padding: 9px 12px;
+    background: var(--statsAccent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.thstats_tile img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+.thstats_text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
     line-height: 1.4;
 }
-#thstats img { height: 1.1em; vertical-align: middle; }
-#mzta_survey { font-size: 12px; color: var(--dim); line-height: 1.4; }
+.thstats_chev {
+    flex: 0 0 auto;
+    stroke: var(--statsAccent);
+}
+
+/* Row 4 — LLM disclaimer strip */
+#mzta_disclaimer {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--warnBorder);
+    background: var(--warnBg);
+    font-size: 11.5px;
+    color: var(--dim);
+    line-height: 1.5;
+}
+.mzta_disclaimer_icon {
+    flex: 0 0 auto;
+    stroke: var(--warnColor);
+    margin-top: 1px;
+}
 
 /* Card body — plain block so children always fill the full width */
 #mzta_body {
@@ -127,17 +223,6 @@ input, select, button, textarea { font-family: inherit; }
 }
 #mzta_body > * { margin-bottom: 24px; }
 #mzta_body > *:last-child { margin-bottom: 0; }
-
-/* Disclaimer note */
-#mzta_disclaimer {
-    font-size: 12px;
-    color: var(--dim);
-    background: var(--field);
-    border: 1px solid var(--fieldLine);
-    border-radius: 9px;
-    padding: 12px 13px;
-    line-height: 1.5;
-}
 
 /* Body sections stretch to full width (avoid flex min-content collapse) */
 .mzta_section { width: 100%; box-sizing: border-box; }

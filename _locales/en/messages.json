@@ -973,11 +973,11 @@
     "description": ""
   },
   "prefs_SurveyLinkText": {
-    "message": "Share your feedback and help improve ThunderAI!",
+    "message": "Enjoying ThunderAI?",
     "description": ""
   },
   "prefs_SurveyLinkText2": {
-    "message": "Click here, it only takes a minute!",
+    "message": "Share your feedback",
     "description": ""
   },
   "prefs_doc_title": {
@@ -2338,7 +2338,7 @@
     "description": ""
   },
   "prefs_THStats_2": {
-    "message": "Click here! Try ThunderStats!",
+    "message": "Try ThunderStats!",
     "description": ""
   },
   "prefs_OptionText_chatgpt_win_pos_text":{
@@ -2446,7 +2446,7 @@
     "description": "Subtitle shown under the ThunderAI name in the options page header"
   },
   "prefs_disclaimer": {
-    "message": "LLM models are known to sometimes generate incorrect information. Also, depending on the AI model provider you choose your data might be used for training new models or other purposes. Use at your own risk.",
+    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models. Use at your own risk.",
     "description": "Disclaimer note shown at the top of the options page body"
   },
   "prefs_ConnectionSettingsTitle": {

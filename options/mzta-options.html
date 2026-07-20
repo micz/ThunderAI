@@ -10,21 +10,44 @@
 
       <!-- TOP LINKS -->
       <div id="mzta_top_links">
-        <div id="mzta_survey">
-          __MSG_prefs_SurveyLinkText__
-          <a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__</a>
+
+        <!-- Row 1 — heading + feedback -->
+        <div class="mzta_hdr_row1">
+          <span class="mzta_eyebrow">__MSG_prefs_doc_title__</span>
+          <span id="mzta_survey">__MSG_prefs_SurveyLinkText__ <a href="https://forms.gle/1qK2wcbuhaRzhwyt9">__MSG_prefs_SurveyLinkText2__ &rsaquo;</a></span>
         </div>
-        <div>
-          <span class="doc_title">__MSG_prefs_doc_title__</span>
-          <div class="doc_links">
-            <a id="link_doc_guides" href="#">__MSG_prefs_doc_setup_guide__</a>
-            <a id="link_doc_tutorial" href="#">__MSG_prefs_doc_custom_prompt_tutorial__</a>
-            <a href="#" id="btn_welcome">__MSG_prefs_doc_open_welcome__</a>
-          </div>
+
+        <!-- Row 2 — documentation cards -->
+        <div class="mzta_doc_cards">
+          <a id="link_doc_guides" href="#" class="mzta_doc_card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span class="mzta_doc_card_label">__MSG_prefs_doc_setup_guide__</span>
+          </a>
+          <a id="link_doc_tutorial" href="#" class="mzta_doc_card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span class="mzta_doc_card_label">__MSG_prefs_doc_custom_prompt_tutorial__</span>
+          </a>
+          <a id="btn_welcome" href="#" class="mzta_doc_card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21v-6h6v6"></path></svg>
+            <span class="mzta_doc_card_label">__MSG_prefs_doc_open_welcome__</span>
+          </a>
         </div>
-        <div id="thstats">
-          <span>__MSG_prefs_THStats_1__ <a href="https://addons.thunderbird.net/it/thunderbird/addon/thunderstats/">__MSG_prefs_THStats_2__ <img src="/images/thunderstats.png"></a></span>
+
+        <!-- Row 3 — ThunderStats promo card -->
+        <a id="thstats" href="https://addons.thunderbird.net/it/thunderbird/addon/thunderstats/">
+          <span class="thstats_tile">
+            <img src="/images/thunderstats.png" alt="ThunderStats">
+          </span>
+          <span class="thstats_text">__MSG_prefs_THStats_1__ __MSG_prefs_THStats_2__</span>
+          <svg class="thstats_chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+
+        <!-- Row 4 — LLM disclaimer strip -->
+        <div id="mzta_disclaimer">
+          <svg class="mzta_disclaimer_icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span>__MSG_prefs_disclaimer__</span>
         </div>
+
       </div>
 
       <!-- BODY -->
@@ -33,9 +56,6 @@
         <!-- Warnings -->
         <div id="owl_warning" class="warning">__MSG_prefs_OptionText_owl_warning__ <a href="https://micz.it/thunderbird-addon-thunderai/owl/">__MSG_more_info_string__</a></div>
         <div id="hyprland_warning" class="warning" style="text-align:center;"><b>__MSG_hyprland_warning__</b></div>
-
-        <!-- DISCLAIMER -->
-        <div id="mzta_disclaimer">__MSG_prefs_disclaimer__</div>
 
         <!-- CONNECTION SETTINGS (colour-coded panel) -->
         <div class="mzta_section">
