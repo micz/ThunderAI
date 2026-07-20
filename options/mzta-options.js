@@ -197,6 +197,14 @@ function disable_MaxPromptLength(){
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
 }
 
+// Show the "Manage settings" link for a feature only when its flag is enabled;
+// hide it entirely otherwise (previously it was only disabled/greyed out).
+function setFeatureManageVisibility(btn, visible){
+  if(!btn) return;
+  btn.style.display = visible ? '' : 'none';
+  btn.disabled = visible ? '' : 'disabled';
+}
+
 function disable_AddTags(prefs_opt){
   let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
@@ -208,10 +216,7 @@ function disable_AddTags(prefs_opt){
   // console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
   add_tags.checked = add_tags_disabled ? false : add_tags.checked;
   let add_tags_checked_original = add_tags.checked;
-  if(!add_tags.checked){
-    let add_tags_info_btn = document.getElementById('btnManageTagsInfo');
-    add_tags_info_btn.disabled = 'disabled';
-  }
+  setFeatureManageVisibility(document.getElementById('btnManageTagsInfo'), add_tags.checked);
   let add_tags_warn_API_needed = document.getElementById('add_tags_warn_API_needed');
   add_tags_warn_API_needed.style.display = (add_tags_disabled) ? 'inline-block' : 'none';
   if(add_tags_checked_original != add_tags.checked){
@@ -229,10 +234,7 @@ function disable_SpamFilter(prefs_opt){
   let spamfilter_disabled = (getConnectionType(tempPrefs, null, 'spamfilter') === "chatgpt_web");
   let spamfilter_checked_original = spamfilter.checked;
   spamfilter.checked = spamfilter_disabled ? false : spamfilter.checked;
-  if(!spamfilter.checked){
-    let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
-    spamfilter_info_btn.disabled = 'disabled';
-  }
+  setFeatureManageVisibility(document.getElementById('btnManageSpamFilterInfo'), spamfilter.checked);
   let spamfilter_warn_API_needed = document.getElementById('spamfilter_warn_API_needed');
   spamfilter_warn_API_needed.style.display = (spamfilter_disabled) ? 'inline-block' : 'none';
   if(spamfilter_checked_original != spamfilter.checked){
@@ -250,10 +252,7 @@ function disable_Summarize(prefs_opt){
   let summarize_disabled = (getConnectionType(tempPrefs, null, 'summarize') === "chatgpt_web");
   let summarize_checked_original = summarize.checked;
   summarize.checked = summarize_disabled ? false : summarize.checked;
-  if(!summarize.checked){
-    let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
-    summarize_info_btn.disabled = 'disabled';
-  }
+  setFeatureManageVisibility(document.getElementById('btnManageSummarizeInfo'), summarize.checked);
   let summarize_warn_API_needed = document.getElementById('summarize_warn_API_needed');
   summarize_warn_API_needed.style.display = (summarize_disabled) ? 'inline-block' : 'none';
   if(summarize_checked_original != summarize.checked){
@@ -271,10 +270,7 @@ function disable_Translate(prefs_opt){
   let translate_disabled = (getConnectionType(tempPrefs, null, 'translate') === "chatgpt_web");
   let translate_checked_original = translate.checked;
   translate.checked = translate_disabled ? false : translate.checked;
-  if(!translate.checked){
-    let translate_info_btn = document.getElementById('btnManageTranslateInfo');
-    translate_info_btn.disabled = 'disabled';
-  }
+  setFeatureManageVisibility(document.getElementById('btnManageTranslateInfo'), translate.checked);
   let translate_warn_API_needed = document.getElementById('translate_warn_API_needed');
   translate_warn_API_needed.style.display = (translate_disabled) ? 'inline-block' : 'none';
   if(translate_checked_original != translate.checked){
@@ -455,15 +451,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
-          addtags_info_btn.disabled = 'disabled';
+          setFeatureManageVisibility(addtags_info_btn, false);
           browser.storage.sync.set({add_tags: false});
         }
       }
     }
     _addtags_el_change();
-    addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(addtags_info_btn, event.target.checked);
   });
-  addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(addtags_info_btn, addtags_el.checked);
 
   let spamfilter_el = document.getElementById('spamfilter');
   let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
@@ -473,43 +469,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         let granted = await messenger.permissions.request({ permissions: ["messagesMove", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
-          spamfilter_info_btn.disabled = 'disabled';
+          setFeatureManageVisibility(spamfilter_info_btn, false);
           browser.storage.sync.set({spamfilter: false});
         }
       }
     }
     _spamfilter_el_change();
-    spamfilter_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(spamfilter_info_btn, event.target.checked);
   });
-  spamfilter_info_btn.disabled = spamfilter_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
   summarize_el.addEventListener('click', (event) => {
-    summarize_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(summarize_info_btn, event.target.checked);
   });
-  summarize_info_btn.disabled = summarize_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(summarize_info_btn, summarize_el.checked);
 
   let translate_el = document.getElementById('translate');
   let translate_info_btn = document.getElementById('btnManageTranslateInfo');
   translate_el.addEventListener('click', (event) => {
-    translate_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(translate_info_btn, event.target.checked);
   });
-  translate_info_btn.disabled = translate_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(translate_info_btn, translate_el.checked);
 
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
-    get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(get_calendar_event_info_btn, event.target.checked);
   });
-  get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(get_calendar_event_info_btn, get_calendar_event_el.checked);
 
   let get_task_el = document.getElementById('get_task');
   let get_task_info_btn = document.getElementById('btnManageTaskInfo');
   get_task_el.addEventListener('click', (event) => {
-    get_task_info_btn.disabled = event.target.checked ? '' : 'disabled';
+    setFeatureManageVisibility(get_task_info_btn, event.target.checked);
   });
-  get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
+  setFeatureManageVisibility(get_task_info_btn, get_task_el.checked);
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     openTab('/pages/customprompts/mzta-custom-prompts.html');
