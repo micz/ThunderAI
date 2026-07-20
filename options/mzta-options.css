@@ -29,12 +29,13 @@
     --field: #f7f8fa;
     --fieldLine: rgba(0, 0, 0, .16);
     --accent: #0a68ff;
+    --accentLight: #0a68ff0f;
     --success: #1f8a5b;
     --warning: #c9760a;
 
     /* ThunderStats (green) tint */
-    --statsAccent: #1f8a46;
-    --statsBg: rgba(31, 138, 70, .07);
+    --statsAccent: #1f8a464f;
+    --statsBg: rgba(31, 138, 70, .04);
     --statsBorder: rgba(31, 138, 70, .30);
 
     /* Disclaimer (amber) tint */
@@ -52,16 +53,17 @@
         --line: rgba(255, 255, 255, .10);
         --field: #1c1b23;
         --fieldLine: rgba(255, 255, 255, .15);
-        --accent: #4c9dff;
+        --accent: #2c5e9b;
+        --accentLight: #4c9dff21;
 
         /* ThunderStats (green) tint */
-        --statsAccent: #54c07a;
+        --statsAccent: #54c07a75;
         --statsBg: rgba(31, 138, 70, .16);
         --statsBorder: rgba(31, 138, 70, .45);
 
         /* Disclaimer (amber) tint */
         --warnColor: #e6a94a;
-        --warnBg: rgba(201, 118, 10, .14);
+        --warnBg: rgba(201, 118, 10, 0.06)
         --warnBorder: rgba(201, 118, 10, .40);
     }
 }
@@ -192,6 +194,11 @@ input, select, button, textarea { font-family: inherit; }
     color: var(--text);
     line-height: 1.4;
 }
+.thstats_text_action{
+    font-weight: bold;
+    text-decoration: underline;
+    font-style: italic;
+}
 .thstats_chev {
     flex: 0 0 auto;
     stroke: var(--statsAccent);
@@ -288,6 +295,9 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     color: #fff;
     border: none;
     font-weight: 700;
+}
+#mzta_card button.btn_secondary {
+    background: var(--accentLight);
 }
 .btn_small {
     font-size: 0.9em !important;
