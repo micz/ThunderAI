@@ -169,9 +169,13 @@ input, select, button, textarea { font-family: inherit; }
     background: var(--statsBg);
     text-decoration: none;
 }
+#thstats {
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
 #thstats:hover {
     text-decoration: none;
     border-color: var(--statsAccent);
+    background: color-mix(in srgb, var(--statsAccent) 12%, var(--statsBg));
 }
 .thstats_tile {
     flex: 0 0 auto;
@@ -289,6 +293,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     color: var(--text);
     font-weight: 600;
     text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 #mzta_card button.btn_primary {
     background: var(--accent);
@@ -296,8 +301,14 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     border: none;
     font-weight: 700;
 }
+#mzta_card button.btn_primary:hover {
+    background: color-mix(in srgb, #000 12%, var(--accent));
+}
 #mzta_card button.btn_secondary {
     background: var(--accentLight);
+}
+#mzta_card button.btn_secondary:hover {
+    background: color-mix(in srgb, var(--accent) 15%, var(--accentLight));
 }
 .btn_small {
     font-size: 0.9em !important;
