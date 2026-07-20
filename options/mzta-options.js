@@ -337,15 +337,27 @@ function updateConnPanelTint(){
 }
 
 // Collapse the per-connection advanced disclosure back to its default state
-// (advanced fields hidden, button reads "Show advanced options").
+// (advanced panel hidden). Mirrors the app-level disclosure: static label,
+// panel toggled below the button.
 function resetConnAdv(){
   let btn = document.getElementById('mzta_conn_adv_btn');
-  let label = document.getElementById('mzta_conn_adv_label');
-  let table = document.getElementById('connection_ui_table');
-  if(!btn || !label || !table) return;
+  let panel = document.getElementById('connection_ui_adv_table');
+  if(!btn || !panel) return;
   btn.setAttribute('aria-expanded', 'false');
-  table.classList.add('hide_adv');
-  label.textContent = browser.i18n.getMessage('prefs_conn_show_advanced');
+  panel.classList.add('hidden');
+}
+
+// The advanced rows were moved out of #connection_ui_table into
+// #connection_ui_adv_table, so showConnectionOptions() (which is scoped to the
+// core table's tbody) no longer toggles their per-provider visibility. Mirror
+// that logic here for the advanced table: show only the selected provider's rows.
+function showAdvConnectionOptions(){
+  let advTable = document.getElementById('connection_ui_adv_table');
+  let conntype = document.getElementById('connection_type');
+  if(!advTable || !conntype) return;
+  advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {
+    tr.style.display = tr.classList.contains('conntype_' + conntype.value) ? '' : 'none';
+  });
 }
 
 // ---- Connection test status strip (Options page only) --------------------
@@ -421,7 +433,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectId: 'connection_type',
     taLog: taLog
   });
-  
+
+  // Relocate the advanced connection rows into a separate table that sits below
+  // the "Advanced options" disclosure button, so expanding it opens the fields
+  // BELOW the button (button stays fixed) — mirroring the app-level disclosure.
+  // showConnectionOptions() queries the whole #mzta_conn_panel, so per-provider
+  // visibility still works after the move.
+  let conn_adv_body = document.querySelector('#connection_ui_adv_table tbody');
+  if(conn_adv_body){
+    document.querySelectorAll('#connection_ui_table tr.conn_adv').forEach(tr => conn_adv_body.appendChild(tr));
+  }
+  // Keep the moved advanced rows in sync with the selected provider (see comment
+  // on showAdvConnectionOptions). The initial call happens after restoreOptions()
+  // sets the saved provider, next to the showConnectionOptions() init call below.
+  document.getElementById('connection_type').addEventListener('change', showAdvConnectionOptions);
+
   await restoreOptions();
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
@@ -566,6 +592,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
+  showAdvConnectionOptions();
   updateDescription();
   updateConnPanelTint();
   disable_MaxPromptLength();
@@ -601,19 +628,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     adv_panel.classList.toggle('hidden', expanded);
   });
 
-  // Per-connection "Show advanced options" disclosure (purely UI, no pref
-  // persisted). Advanced field rows are tagged conn_adv in the shared template;
-  // the .hide_adv class on the table hides them via CSS, so it does not clash
-  // with the inline display that showConnectionOptions() sets per provider.
+  // Per-connection "Advanced options" disclosure (purely UI, no pref persisted).
+  // Advanced field rows are tagged conn_adv in the shared template and were moved
+  // above into #connection_ui_adv_table, which sits below this button. Toggling
+  // the .hidden class opens the advanced fields BELOW the button (button stays
+  // fixed), mirroring the app-level disclosure; the label stays static.
   let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
-  let conn_adv_label = document.getElementById('mzta_conn_adv_label');
+  let conn_adv_panel = document.getElementById('connection_ui_adv_table');
   let conn_ui_table = document.getElementById('connection_ui_table');
   conn_adv_btn.addEventListener('click', () => {
     let expanded = conn_adv_btn.getAttribute('aria-expanded') === 'true';
     conn_adv_btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    conn_ui_table.classList.toggle('hide_adv', expanded);
-    conn_adv_label.textContent = browser.i18n.getMessage(
-      expanded ? 'prefs_conn_show_advanced' : 'prefs_conn_hide_advanced');
+    conn_adv_panel.classList.toggle('hidden', expanded);
   });
   // Start collapsed and reset to collapsed whenever the connection type changes.
   resetConnAdv();
@@ -624,8 +650,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   refreshConnTestVisibility();
   document.getElementById('connection_type').addEventListener('change', refreshConnTestVisibility);
   // Any edit to a connection field invalidates a prior result → back to idle.
+  // The advanced fields now live in a separate table, so listen on both.
   conn_ui_table.addEventListener('input', () => setConnTestState('idle'));
   conn_ui_table.addEventListener('change', () => setConnTestState('idle'));
+  conn_adv_panel.addEventListener('input', () => setConnTestState('idle'));
+  conn_adv_panel.addEventListener('change', () => setConnTestState('idle'));
   let conn_test_link = document.getElementById('mzta_conn_test_link');
   conn_test_link.addEventListener('click', async (e) => {
     e.preventDefault();

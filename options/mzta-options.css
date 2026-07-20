@@ -368,18 +368,23 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* ---------------------------------------------------------------------------
    CONNECTION-UI RESTYLE (options page only)
    The shared connection-ui.js still emits <tr>/<td> rows (unchanged, so the 6
-   feature pages keep working). Here — scoped to #connection_ui_table — we make
-   those rows *render* as modern stacked fields (label above, full-width field)
-   using CSS display overrides. Nothing structural changes.
+   feature pages keep working). Here — scoped to #connection_ui_table and the
+   advanced-fields table #connection_ui_adv_table (where the conn_adv rows are
+   moved at runtime) — we make those rows *render* as modern stacked fields
+   (label above, full-width field) using CSS display overrides. Nothing
+   structural changes.
    --------------------------------------------------------------------------- */
 #connection_ui_table,
-#connection_ui_table tbody {
+#connection_ui_table tbody,
+#connection_ui_adv_table,
+#connection_ui_adv_table tbody {
     display: block;
     width: 100%;
     border-collapse: collapse;
 }
 /* Each injected <tr> becomes a stacked field block with a subtle separator. */
-#connection_ui_table tr {
+#connection_ui_table tr,
+#connection_ui_adv_table tr {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -387,25 +392,39 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     border-top: 1px solid var(--line);
     background: transparent !important;   /* panel already carries the tint */
 }
+/* Core table: its first row is the always-visible connection-type select, so
+   drop its top border/padding. NOT applied to the advanced table — there the
+   structural first row is hidden for most providers, and the visible first row
+   must keep its top padding to separate it from the disclosure button. */
 #connection_ui_table tr:first-child { border-top: none; padding-top: 0; }
 /* label cell on top, field cell below — both full width */
-#connection_ui_table td {
+#connection_ui_table td,
+#connection_ui_adv_table td {
     display: block;
     width: 100% !important;
     box-sizing: border-box;
     padding: 0;
 }
-#connection_ui_table td:first-child { margin-bottom: 6px; }
+#connection_ui_table td:first-child,
+#connection_ui_adv_table td:first-child { margin-bottom: 6px; }
 /* the connection-type select row keeps label + control readable */
-#connection_ui_table .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+#connection_ui_table .opt_title,
+#connection_ui_adv_table .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
 #connection_ui_table .small_info,
-#connection_ui_table i { font-size: 11.5px; color: var(--dim); font-style: normal; }
+#connection_ui_table i,
+#connection_ui_adv_table .small_info,
+#connection_ui_adv_table i { font-size: 11.5px; color: var(--dim); font-style: normal; }
 /* inputs/selects/textarea full width inside the panel */
 #connection_ui_table input[type="text"],
 #connection_ui_table input[type="password"],
 #connection_ui_table input[type="number"],
 #connection_ui_table select,
-#connection_ui_table textarea {
+#connection_ui_table textarea,
+#connection_ui_adv_table input[type="text"],
+#connection_ui_adv_table input[type="password"],
+#connection_ui_adv_table input[type="number"],
+#connection_ui_adv_table select,
+#connection_ui_adv_table textarea {
     width: 100%;
     box-sizing: border-box;
     padding: 9px 11px;
@@ -416,11 +435,14 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     border-radius: 8px;
     outline: none;
 }
-#connection_ui_table textarea { min-height: 70px; resize: vertical; }
+#connection_ui_table textarea,
+#connection_ui_adv_table textarea { min-height: 70px; resize: vertical; }
 /* connection-ui.css forces label{width:-moz-available}; keep it inside the panel */
-#connection_ui_table label { display: block; }
+#connection_ui_table label,
+#connection_ui_adv_table label { display: block; }
 /* model-fetch buttons / CORS buttons look like the tinted secondary buttons */
-#connection_ui_table button {
+#connection_ui_table button,
+#connection_ui_adv_table button {
     background: transparent;
     color: var(--tint-accent, var(--accent));
     border: 1px solid var(--tint-border, var(--fieldLine));
@@ -431,13 +453,16 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     cursor: pointer;
     margin-bottom: 6px;
 }
-#connection_ui_table .btn_small {
+#connection_ui_table .btn_small,
+#connection_ui_adv_table .btn_small {
     padding: 5px 9px !important;
     border-radius: 7px !important;
 }
 /* TomSelect model dropdowns fill the panel width and match the field look */
-#connection_ui_table .ts-wrapper { width: 100%; }
-#connection_ui_table .ts-control {
+#connection_ui_table .ts-wrapper,
+#connection_ui_adv_table .ts-wrapper { width: 100%; }
+#connection_ui_table .ts-control,
+#connection_ui_adv_table .ts-control {
     background: var(--field);
     border: 1px solid var(--fieldLine);
     border-radius: 8px;
@@ -445,7 +470,8 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     color: var(--text);
 }
 /* CORS warning rows keep a distinct amber note look */
-#connection_ui_table tr[id$="_cors_warning"] td {
+#connection_ui_table tr[id$="_cors_warning"] td,
+#connection_ui_adv_table tr[id$="_cors_warning"] td {
     background: rgba(201, 118, 10, .08);
     border: 1px solid rgba(201, 118, 10, .28);
     border-radius: 9px;
@@ -460,13 +486,16 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .toggle-icon { cursor: pointer; margin-left: 5px; }
 .toggle-icon img { width: 16px; height: 16px; vertical-align: middle; }
 
-/* Per-connection advanced toggle button */
+/* Per-connection advanced toggle button — mirrors the app-level #mzta_adv_toggle
+   (gear icon + "Advanced options" label, chevron on the right) but keeps the
+   per-provider tint accent. The advanced fields expand below it (button stays
+   fixed) via #connection_ui_adv_table. */
 #mzta_conn_adv_btn {
     width: 100%;
     box-sizing: border-box;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 8px;
     background: transparent;
     border: 1.5px solid var(--tint-border, var(--fieldLine));
@@ -478,10 +507,10 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     border-radius: 8px;
     margin-top: 14px;
 }
-/* Collapsed state: hide advanced-tier rows. !important wins over the inline
-   display:'' that showConnectionOptions() sets on provider rows. */
-#connection_ui_table.hide_adv tr.conn_adv { display: none !important; }
+/* Advanced fields table sits below the button; hidden while collapsed. */
+#connection_ui_adv_table.hidden { display: none; }
 /* Chevron rotates when the disclosure is expanded. */
+#mzta_conn_adv_btn .chev { display: inline-flex; }
 #mzta_conn_adv_btn .chev svg { transition: transform .2s; }
 #mzta_conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
 
