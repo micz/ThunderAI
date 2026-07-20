@@ -2479,5 +2479,57 @@
   },
   "prefs_privacy_more_info":{
     "message": "Click here for more info about privacy"
+  },
+  "connTest_idle": {
+    "message": "Connection not tested yet",
+    "description": "Connection test status strip: initial state before any test has run"
+  },
+  "connTest_testing": {
+    "message": "Testing connection…",
+    "description": "Connection test status strip: state while the connectivity check is in progress"
+  },
+  "connTest_ok": {
+    "message": "Connected — $API$ reachable",
+    "description": "Connection test status strip: success state; $API$ is the provider name",
+    "placeholders": {
+      "api": {
+        "content": "$1",
+        "example": "Anthropic Claude"
+      }
+    }
+  },
+  "connTest_error": {
+    "message": "Error — $DETAIL$",
+    "description": "Connection test status strip: error state; $DETAIL$ is the error message",
+    "placeholders": {
+      "detail": {
+        "content": "$1",
+        "example": "401 — invalid API key"
+      }
+    }
+  },
+  "connTest_error_auth": {
+    "message": "Authentication failed — check your API key",
+    "description": "Connection test status strip: error message for a 401/403 authentication failure"
+  },
+  "connTest_error_network": {
+    "message": "Network error — endpoint unreachable",
+    "description": "Connection test status strip: error message when the endpoint cannot be reached (network/CORS)"
+  },
+  "connTest_error_timeout": {
+    "message": "Timed out — no response from the endpoint",
+    "description": "Connection test status strip: error message when the request exceeds the timeout"
+  },
+  "connTest_link_test": {
+    "message": "Test now",
+    "description": "Connection test status strip: action link to run the test (idle state)"
+  },
+  "connTest_link_retest": {
+    "message": "Re-test",
+    "description": "Connection test status strip: action link to run the test again (success state)"
+  },
+  "connTest_link_retry": {
+    "message": "Retry",
+    "description": "Connection test status strip: action link to run the test again (error state)"
   }
 }

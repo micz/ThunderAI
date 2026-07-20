@@ -185,6 +185,38 @@ flips `aria-expanded`, and swaps the label between `prefs_conn_show_advanced` /
 `prefs_conn_hide_advanced`. State is **purely local UI** — no preference is persisted, so
 reopening the options page always starts collapsed.
 
+### Connection Settings Panel — Connection Test Status Strip
+
+Below the advanced-options button, inside `#mzta_conn_panel`, a status strip
+(`#mzta_conn_test`, class `conn_test_strip`) offers a lightweight, **non-persistent**
+connectivity check for the selected provider. **Options page only** — the strip is
+static markup in `options/mzta-options.html`, not part of the shared connection UI, so
+it does not appear on the feature pages.
+
+**Visibility.** Shown only for connection types with a testable endpoint — every type
+except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` toggles
+`display` on load and on every `connection_type` change.
+
+**States** (driven by `data-state` on `#mzta_conn_test`, styled in
+`options/mzta-options.css`): `idle` (grey dot, "Connection not tested yet", link "Test
+now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
+connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
+"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
+`setConnTestState(state, message)` updates dot/text/link; i18n keys are `connTest_*` in
+`_locales/en/messages.json`.
+
+**Reset to idle** happens on `connection_type` change and on any `input`/`change` inside
+`#connection_ui_table` (editing key/host/model/version invalidates a prior result).
+
+**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses each
+provider class' existing `fetchModels()`** (the same call the "Fetch models" buttons use)
+— no URL/header/auth logic is duplicated. `getTestableConnection(connType)` returns a
+registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`);
+`runConnectionTest(connType)` requests the needed host permission (mirroring the
+fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style timeout
+(`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
+timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
+
 ## Adding a New Preference
 
 1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`

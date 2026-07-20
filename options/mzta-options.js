@@ -39,6 +39,10 @@ import {
   showConnectionOptions,
   updateWarnings
 } from '../pages/_lib/connection-ui.js';
+import {
+  isTestableConnection,
+  runConnectionTest
+} from '../js/mzta-connection-test.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -348,6 +352,56 @@ function resetConnAdv(){
   label.textContent = browser.i18n.getMessage('prefs_conn_show_advanced');
 }
 
+// ---- Connection test status strip (Options page only) --------------------
+// Non-persistent connectivity check. Reuses the provider fetchModels() logic via
+// js/mzta-connection-test.js; reads the current form values and saves nothing.
+
+// Show the strip only for connection types that have a testable endpoint
+// (everything except ChatGPT Web). Resets to idle when shown/hidden.
+function refreshConnTestVisibility(){
+  let strip = document.getElementById('mzta_conn_test');
+  if(!strip) return;
+  let connType = document.getElementById('connection_type')?.value;
+  if(isTestableConnection(connType)){
+    strip.style.display = 'flex';
+  }else{
+    strip.style.display = 'none';
+  }
+  setConnTestState('idle');
+}
+
+// Update the strip's visual state, status text and action link.
+// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
+function setConnTestState(state, message){
+  let strip = document.getElementById('mzta_conn_test');
+  let textEl = document.getElementById('mzta_conn_test_text');
+  let linkEl = document.getElementById('mzta_conn_test_link');
+  if(!strip || !textEl || !linkEl) return;
+  strip.setAttribute('data-state', state);
+  switch(state){
+    case 'loading':
+      textEl.textContent = browser.i18n.getMessage('connTest_testing');
+      linkEl.style.display = 'none';
+      break;
+    case 'ok':
+      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
+      linkEl.style.display = '';
+      break;
+    case 'error':
+      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
+      linkEl.style.display = '';
+      break;
+    case 'idle':
+    default:
+      textEl.textContent = browser.i18n.getMessage('connTest_idle');
+      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
+      linkEl.style.display = '';
+      break;
+  }
+}
+
 function resetMaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   maxPromptLength.value = prefs_default.max_prompt_length;
@@ -568,6 +622,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Start collapsed and reset to collapsed whenever the connection type changes.
   resetConnAdv();
   document.getElementById('connection_type').addEventListener('change', resetConnAdv);
+
+  // Connection test status strip: show for testable types, reset on any field change,
+  // and run the (non-persistent) connectivity check when the action link is clicked.
+  refreshConnTestVisibility();
+  document.getElementById('connection_type').addEventListener('change', refreshConnTestVisibility);
+  // Any edit to a connection field invalidates a prior result → back to idle.
+  conn_ui_table.addEventListener('input', () => setConnTestState('idle'));
+  conn_ui_table.addEventListener('change', () => setConnTestState('idle'));
+  let conn_test_link = document.getElementById('mzta_conn_test_link');
+  conn_test_link.addEventListener('click', async (e) => {
+    e.preventDefault();
+    let connType = document.getElementById('connection_type').value;
+    if(!isTestableConnection(connType)) return;
+    setConnTestState('loading');
+    let result = await runConnectionTest(connType);
+    if(result.status === 'ok'){
+      setConnTestState('ok', result.apiName);
+    }else{
+      setConnTestState('error', result.message);
+    }
+  });
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });

@@ -485,6 +485,51 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #mzta_conn_adv_btn .chev svg { transition: transform .2s; }
 #mzta_conn_adv_btn[aria-expanded="true"] .chev svg { transform: rotate(180deg); }
 
+/* Connection test status strip (Options page only). Matches field styling. */
+.conn_test_strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 9px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--text);
+}
+.conn_test_dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dim);
+}
+.conn_test_text { flex: 1 1 auto; line-height: 1.4; }
+.conn_test_link {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.conn_test_link:hover { text-decoration: underline; }
+/* State variants driven by data-state on #mzta_conn_test */
+#mzta_conn_test[data-state="ok"] .conn_test_dot { background: var(--success); }
+#mzta_conn_test[data-state="error"] .conn_test_dot { background: #d93025; }
+#mzta_conn_test[data-state="error"] .conn_test_text { color: #d93025; }
+/* Loading: turn the dot into a spinner (reuses the mztaspin keyframe). */
+#mzta_conn_test[data-state="loading"] .conn_test_dot {
+    background: transparent;
+    border: 2px solid var(--fieldLine);
+    border-top-color: var(--accent);
+    width: 12px;
+    height: 12px;
+    animation: mztaspin .8s linear infinite;
+}
+
 /* ===========================================================================
    FEATURE TOGGLE SWITCHES
    The checkbox keeps its id / class="option-input"; it is visually hidden and
