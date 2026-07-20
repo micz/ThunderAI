@@ -235,6 +235,18 @@ fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style t
 (`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
 timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
 
+### Feature "Manage settings" Links — Hidden vs. Disabled
+
+Each feature block on the main options page (Add Tags, Spam Filter, Summarize,
+Translate, Calendar Event, Task) has a "Manage settings" link/button (e.g.
+`btnManageTagsInfo`, `btnManageSpamFilterInfo`, ...) that opens the feature's dedicated
+settings page. When the feature's checkbox is unchecked, the button is fully **hidden**
+(`display: none`) rather than merely greyed out/disabled, via the shared helper
+`setFeatureManageVisibility(btn, visible)` in `options/mzta-options.js`. The helper sets
+both `style.display` and the `disabled` attribute together, and replaces all prior
+inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
+`disable_*()` re-evaluation, and on permission-request denial).
+
 ## Adding a New Preference
 
 1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`
