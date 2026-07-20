@@ -2468,5 +2468,8 @@
   "prefs_advanced_options": {
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
+  },
+  "prefs_privacy_more_info":{
+    "message": "Click here for more info about privacy"
   }
 }
