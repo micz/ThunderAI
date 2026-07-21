@@ -89,18 +89,23 @@ Dedicated page for reordering, enabling, and disabling menu items across both th
 
 Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
-- **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically, not draggable
+- **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
 
-**Toggle coordination** — flipping the checkbox updates the prompt's `show_in` with four-state logic:
+**Toggle coordination** — a prompt's `show_in` can be changed two equivalent ways, both routed through the same `computeShowIn(current, menuType, isOn)` transition table:
 - Popup ON: `"none"` → `"popup"`, `"context"` → `"both"`
 - Popup OFF: `"popup"` → `"none"`, `"both"` → `"context"`
 - Context ON: `"none"` → `"context"`, `"popup"` → `"both"`
 - Context OFF: `"context"` → `"none"`, `"both"` → `"popup"`
 
-**Drag and drop** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context` depending on which list is being sorted.
+1. **Checkbox** — flipping the per-row checkbox.
+2. **Drag between sections** — dragging a row from the Visible section into the Hidden section (or vice versa) of the same menu panel. Both sections are draggable and act as drop targets; the section the row lands in determines whether that menu is turned on (dropped into Visible) or off (dropped into Hidden). Dropping back into Visible also captures the drop position.
+
+**Auto-disable when hidden everywhere** — the `show_in` change is applied via `setPromptShowIn(prompt, newShowIn)`, which keeps `enabled` in sync: when `show_in` becomes `"none"` (hidden in all menus) the prompt is disabled (`enabled = "0"`) so it is removed from the live Thunderbird menus, while its full configuration is preserved. Making the prompt visible in any menu again re-enables it (`enabled = "1"`). Auto-disabled prompts stay on the page in the Hidden sections (dimmed, with a "Disabled" badge) so they can be dragged/toggled back.
+
+**Drag and drop (reorder)** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context`. Positions are only meaningful for the Visible section; reordering within Hidden has no effect.
 
 **Exclusions from the UI** (preserved on save so data is not lost):
-- Prompts with `enabled === 0` (disabled)
+- Prompts with `enabled === 0` **that are not hidden in all menus** (`show_in !== "none"`) — i.e. prompts disabled through other means (e.g. the Custom Prompts page). Prompts disabled *because* they are hidden everywhere (`enabled === 0` AND `show_in === "none"`) stay visible in the Hidden sections for reactivation.
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 

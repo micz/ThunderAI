@@ -85,9 +85,16 @@ async function loadAndRender() {
     );
     allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.some(e => e.id === p.id));
 
-    // Exclude disabled prompts (enabled=0) from the UI, preserve them for save
-    allDisabledPrompts = allPrompts.filter(p => String(p.enabled) === '0');
-    allPrompts = allPrompts.filter(p => String(p.enabled) !== '0');
+    // Exclude disabled prompts (enabled=0) from the UI, preserve them for save.
+    // Exception: prompts disabled *because* they are hidden in all menus
+    // (enabled=0 AND show_in='none') stay visible in the hidden lists so the
+    // user can drag/toggle them back to reactivate them. Prompts disabled
+    // through other means (e.g. the Custom Prompts page, still show_in != none)
+    // remain excluded and are preserved untouched on save.
+    allDisabledPrompts = allPrompts.filter(p =>
+        String(p.enabled) === '0' && (p.show_in || 'popup') !== 'none');
+    allPrompts = allPrompts.filter(p =>
+        !(String(p.enabled) === '0' && (p.show_in || 'popup') !== 'none'));
 
     // Resolve i18n names and assign initial position_context if missing
     let contextPos = 1;
@@ -151,7 +158,7 @@ function renderPopupList() {
     renderListItems(activeList, activeItems, 'popup', true);
     renderListItems(hiddenList, hiddenItems, 'popup', false);
 
-    initDragAndDrop(activeList, posKey);
+    initPanelDragAndDrop('popup', activeList, hiddenList, posKey);
 }
 
 // ==================== Render Context List ====================
@@ -178,7 +185,7 @@ function renderContextList() {
     renderListItems(activeList, activeItems, 'context', true);
     renderListItems(hiddenList, hiddenItems, 'context', false);
 
-    initDragAndDrop(activeList, 'position_context');
+    initPanelDragAndDrop('context', activeList, hiddenList, 'position_context');
 }
 
 // ==================== Render List Items ====================
@@ -189,8 +196,11 @@ function renderListItems(listEl, items, menuType, isActive) {
         const li = document.createElement('li');
         li.classList.add('sortable_item');
         li.dataset.id = prompt.id;
-        if (isActive) {
-            li.draggable = true;
+        li.dataset.menu = menuType;
+        li.dataset.active = isActive ? '1' : '0';
+        li.draggable = true;
+        if (String(prompt.enabled) === '0') {
+            li.classList.add('sortable_item_disabled');
         }
 
         // Drag handle
@@ -250,6 +260,15 @@ function renderListItems(listEl, items, menuType, isActive) {
             sourceBadge.textContent = browser.i18n.getMessage('menu_order_badge_custom');
         }
         li.appendChild(sourceBadge);
+
+        // Disabled badge: shown when the prompt is disabled because it is hidden
+        // in all menus (removed from every menu but kept for later reactivation)
+        if (String(prompt.enabled) === '0') {
+            const disabledBadge = document.createElement('span');
+            disabledBadge.classList.add('badge', 'badge_disabled');
+            disabledBadge.textContent = browser.i18n.getMessage('menu_order_badge_disabled');
+            li.appendChild(disabledBadge);
+        }
 
         listEl.appendChild(li);
     });
@@ -387,22 +406,39 @@ function openIconPopover(anchorEl, prompt) {
 
 // ==================== Toggle show_in ====================
 
-function toggleShowIn(prompt, menuType, isOn) {
-    const current = prompt.show_in || 'popup';
-
+// Pure transition table: given the current show_in value, which menu is being
+// toggled, and whether it is turned on, return the new show_in value.
+function computeShowIn(current, menuType, isOn) {
+    current = current || 'popup';
     if (menuType === 'popup') {
         if (isOn) {
-            prompt.show_in = (current === 'none') ? 'popup' : (current === 'context') ? 'both' : current;
-        } else {
-            prompt.show_in = (current === 'popup') ? 'none' : (current === 'both') ? 'context' : current;
+            return (current === 'none') ? 'popup' : (current === 'context') ? 'both' : current;
         }
-    } else { // context
-        if (isOn) {
-            prompt.show_in = (current === 'none') ? 'context' : (current === 'popup') ? 'both' : current;
-        } else {
-            prompt.show_in = (current === 'context') ? 'none' : (current === 'both') ? 'popup' : current;
-        }
+        return (current === 'popup') ? 'none' : (current === 'both') ? 'context' : current;
     }
+    // context
+    if (isOn) {
+        return (current === 'none') ? 'context' : (current === 'popup') ? 'both' : current;
+    }
+    return (current === 'context') ? 'none' : (current === 'both') ? 'popup' : current;
+}
+
+// Apply a show_in change and keep the prompt's enabled state in sync:
+// hidden in all menus (show_in='none') -> disable the prompt; shown again in
+// any menu -> reactivate it. This is the single place where the auto-disable /
+// re-enable rule lives (used by both the checkbox and the drag paths).
+function setPromptShowIn(prompt, newShowIn) {
+    prompt.show_in = newShowIn;
+    if (newShowIn === 'none') {
+        prompt.enabled = '0';
+    } else if (String(prompt.enabled) === '0') {
+        prompt.enabled = '1';
+    }
+}
+
+function toggleShowIn(prompt, menuType, isOn) {
+    const newShowIn = computeShowIn(prompt.show_in, menuType, isOn);
+    setPromptShowIn(prompt, newShowIn);
 
     markUnsaved();
     renderPopupList();
@@ -411,14 +447,23 @@ function toggleShowIn(prompt, menuType, isOn) {
 
 // ==================== Drag and Drop ====================
 
-function initDragAndDrop(listEl, positionKey) {
-    let draggedItem = null;
+// A drag can start in the active list and end in the hidden list (or vice
+// versa) of the same menu panel. Both lists share the same drag state so an
+// item can cross between them: dropping into the active list makes the prompt
+// visible in that menu, dropping into the hidden list removes it from that menu
+// (and disables the prompt if it becomes hidden everywhere).
+function initPanelDragAndDrop(menuType, activeList, hiddenList, positionKey) {
+    const state = { draggedItem: null };
+    wireDragList(activeList, true, menuType, positionKey, state);
+    wireDragList(hiddenList, false, menuType, positionKey, state);
+}
 
+function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
     listEl.addEventListener('dragstart', (e) => {
         const li = e.target.closest('.sortable_item');
         if (!li) return;
-        draggedItem = li;
-        draggedItem.classList.add('dragging');
+        state.draggedItem = li;
+        li.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', li.dataset.id);
     });
@@ -426,17 +471,17 @@ function initDragAndDrop(listEl, positionKey) {
     listEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        if (!draggedItem) return;
+        if (!state.draggedItem) return;
 
-        // Remove previous drag-over indicators
+        // Remove previous drag-over indicators across this list
         listEl.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 
         const afterElement = getDragAfterElement(listEl, e.clientY);
         if (afterElement) {
             afterElement.classList.add('drag-over');
-            listEl.insertBefore(draggedItem, afterElement);
+            listEl.insertBefore(state.draggedItem, afterElement);
         } else {
-            listEl.appendChild(draggedItem);
+            listEl.appendChild(state.draggedItem);
         }
     });
 
@@ -452,12 +497,41 @@ function initDragAndDrop(listEl, positionKey) {
     });
 
     listEl.addEventListener('dragend', () => {
-        if (draggedItem) {
-            draggedItem.classList.remove('dragging');
-            updatePositionsFromDOM(listEl, positionKey);
-            draggedItem = null;
+        const li = state.draggedItem;
+        if (!li) return;
+        li.classList.remove('dragging');
+        state.draggedItem = null;
+
+        // The list the item now physically lives in determines its new state.
+        const droppedInActive = li.parentElement === document.getElementById(
+            menuType === 'popup' ? 'popup_list' : 'context_list');
+        const wasActive = li.dataset.active === '1';
+
+        if (droppedInActive === wasActive) {
+            // Stayed within the same list: pure reorder. Positions are only
+            // meaningful for the active list.
+            if (droppedInActive) {
+                updatePositionsFromDOM(li.parentElement, positionKey);
+            }
             markUnsaved();
+            return;
         }
+
+        // Crossed between active and hidden: toggle this menu's visibility.
+        const prompt = allPrompts.find(p => p.id === li.dataset.id);
+        if (prompt) {
+            const newShowIn = computeShowIn(prompt.show_in, menuType, droppedInActive);
+            setPromptShowIn(prompt, newShowIn);
+        }
+        // If it landed in the active list, capture the drop position so the item
+        // keeps where the user dropped it (positions drive active-list order).
+        if (droppedInActive) {
+            updatePositionsFromDOM(li.parentElement, positionKey);
+        }
+        markUnsaved();
+        // Re-render so badges/checkboxes/positions and the item's section settle.
+        renderPopupList();
+        renderContextList();
     });
 }
 

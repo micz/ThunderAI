@@ -2405,6 +2405,10 @@
     "message": "Custom",
     "description": "Badge label for custom prompts"
   },
+  "menu_order_badge_disabled": {
+    "message": "Disabled",
+    "description": "Badge label for prompts that are disabled because they are hidden in all menus"
+  },
   "menu_order_type_reading": {
     "message": "Reading",
     "description": "Badge label for reading-only prompts"
@@ -2422,7 +2426,7 @@
     "description": "Button label to open the menu order page from options"
   },
   "menu_order_info": {
-    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu (the toggle does the same). A prompt hidden in every menu is disabled until you make it visible again.",
     "description": "Info text for the menu order page"
   },
   "menu_order_active_items": {
