@@ -434,9 +434,16 @@ function setPromptShowIn(prompt, newShowIn) {
 // visible in that menu, dropping into the hidden list removes it from that menu
 // (and disables the prompt if it becomes hidden everywhere).
 function initPanelDragAndDrop(menuType, activeList, hiddenList, positionKey) {
-    const state = { draggedItem: null };
+    const state = { draggedItem: null, afterElement: null };
     wireDragList(activeList, true, menuType, positionKey, state);
     wireDragList(hiddenList, false, menuType, positionKey, state);
+}
+
+// Remove any insertion indicators (top line / bottom-of-list line) from a list.
+function clearDropIndicators(listEl) {
+    listEl.querySelectorAll('.drag-over, .drag-over-end').forEach(el => {
+        el.classList.remove('drag-over', 'drag-over-end');
+    });
 }
 
 function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
@@ -444,41 +451,60 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
         const li = e.target.closest('.sortable_item');
         if (!li) return;
         state.draggedItem = li;
+        state.afterElement = null;
         li.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', li.dataset.id);
     });
 
+    // The dragged node is NOT moved during dragover: doing so on every mouse tick
+    // reorders the DOM live and feels sluggish. Instead we only show an insertion
+    // indicator and remember the target; the actual move happens on drop.
     listEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         if (!state.draggedItem) return;
 
-        // Remove previous drag-over indicators across this list
-        listEl.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        // Remove previous indicators across this list before drawing the new one.
+        clearDropIndicators(listEl);
 
         const afterElement = getDragAfterElement(listEl, e.clientY);
+        state.afterElement = afterElement || null;
         if (afterElement) {
+            // Insert before this element: line on its top edge.
             afterElement.classList.add('drag-over');
-            listEl.insertBefore(state.draggedItem, afterElement);
         } else {
-            listEl.appendChild(state.draggedItem);
+            // Insert at the end: line on the bottom edge of the last item (there is
+            // no following element to draw a top border on).
+            const items = listEl.querySelectorAll('.sortable_item:not(.dragging)');
+            const last = items[items.length - 1];
+            if (last) last.classList.add('drag-over-end');
         }
     });
 
     listEl.addEventListener('dragleave', (e) => {
         if (e.target.classList) {
-            e.target.classList.remove('drag-over');
+            e.target.classList.remove('drag-over', 'drag-over-end');
         }
     });
 
     listEl.addEventListener('drop', (e) => {
         e.preventDefault();
-        listEl.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        if (!state.draggedItem) return;
+        // Perform the real DOM move only now, once, at the drop position.
+        if (state.afterElement) {
+            listEl.insertBefore(state.draggedItem, state.afterElement);
+        } else {
+            listEl.appendChild(state.draggedItem);
+        }
+        clearDropIndicators(listEl);
     });
 
     listEl.addEventListener('dragend', () => {
         const li = state.draggedItem;
+        // Clear any indicator left behind if the drop happened outside a list.
+        clearDropIndicators(listEl);
+        state.afterElement = null;
         if (!li) return;
         li.classList.remove('dragging');
         state.draggedItem = null;

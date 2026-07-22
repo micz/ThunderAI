@@ -114,6 +114,10 @@
     border-top: 2px solid #409df3;
 }
 
+.sortable_item.drag-over-end {
+    border-bottom: 2px solid #409df3;
+}
+
 .drag_handle {
     cursor: grab;
     color: #999;
@@ -326,6 +330,10 @@
 
     .sortable_item.drag-over {
         border-top-color: #409df3;
+    }
+
+    .sortable_item.drag-over-end {
+        border-bottom-color: #409df3;
     }
 
     .drag_handle {
