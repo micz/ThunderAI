@@ -199,22 +199,6 @@
     "message": "Composing an email",
     "description": ""
   },
-  "show_in": {
-    "message": "Show in",
-    "description": ""
-  },
-  "show_in_popup": {
-    "message": "Popup only",
-    "description": ""
-  },
-  "show_in_context": {
-    "message": "Context menu only",
-    "description": ""
-  },
-  "show_in_both": {
-    "message": "Both",
-    "description": ""
-  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""
@@ -2405,10 +2389,6 @@
     "message": "Custom",
     "description": "Badge label for custom prompts"
   },
-  "menu_order_badge_disabled": {
-    "message": "Disabled",
-    "description": "Badge label for prompts that are disabled because they are hidden in all menus"
-  },
   "menu_order_type_reading": {
     "message": "Reading",
     "description": "Badge label for reading-only prompts"
@@ -2424,6 +2404,10 @@
   "menu_order_btn_label": {
     "message": "Manage menu order settings",
     "description": "Button label to open the menu order page from options"
+  },
+  "menu_position_btn_label": {
+    "message": "Menu position",
+    "description": "Button in the Custom Prompts editor that opens the Menu Order page and highlights this prompt"
   },
   "menu_order_info": {
     "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu. A prompt hidden in every menu is disabled until you make it visible again.",

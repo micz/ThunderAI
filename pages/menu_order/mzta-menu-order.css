@@ -263,15 +263,18 @@
     background: #f5f5f5;
 }
 
-/* Disabled prompts (hidden in all menus) */
-.badge_disabled {
-    background: #ffe0e0;
-    color: #b02020;
+/* Transient highlight applied when reached via the "Menu position" deep-link.
+   Uses the same accent as the drag-over indicator; the background pulse fades to
+   transparent so it reads well in both light and dark themes. */
+.sortable_item.mzta_highlight {
+    outline: 2px solid #409df3;
+    outline-offset: -2px;
+    animation: mzta_highlight_pulse 1.2s ease-out 2;
 }
 
-.sortable_item_disabled .item_name {
-    text-decoration: line-through;
-    color: #999;
+@keyframes mzta_highlight_pulse {
+    0% { background: rgba(64, 157, 243, 0.35); }
+    100% { background: transparent; }
 }
 
 /* Dark mode */
@@ -358,15 +361,6 @@
     .badge_type {
         background: #3d2800;
         color: #ffb74d;
-    }
-
-    .badge_disabled {
-        background: #4a1f1f;
-        color: #f0a0a0;
-    }
-
-    .sortable_item_disabled .item_name {
-        color: #888;
     }
 
     .item_icon_preview_editable {
