@@ -88,7 +88,7 @@ async function loadAndRender() {
     // Exclude disabled prompts (enabled=0) from the UI, preserve them for save.
     // Exception: prompts disabled *because* they are hidden in all menus
     // (enabled=0 AND show_in='none') stay visible in the hidden lists so the
-    // user can drag/toggle them back to reactivate them. Prompts disabled
+    // user can drag them back to reactivate them. Prompts disabled
     // through other means (e.g. the Custom Prompts page, still show_in != none)
     // remain excluded and are preserved untouched on save.
     allDisabledPrompts = allPrompts.filter(p =>
@@ -209,7 +209,7 @@ function renderListItems(listEl, items, menuType, isActive) {
         handle.textContent = '\u2630';
         li.appendChild(handle);
 
-        // Icon slot (context menu only) - between handle and toggle, to keep rows aligned
+        // Icon slot (context menu only) - between handle and name, to keep rows aligned
         if (menuType === 'context') {
             if (String(prompt.is_special) === '1') {
                 li.appendChild(buildSpecialIconDisplay(prompt));
@@ -217,16 +217,6 @@ function renderListItems(listEl, items, menuType, isActive) {
                 li.appendChild(buildIconPicker(prompt));
             }
         }
-
-        // Toggle checkbox
-        const toggle = document.createElement('input');
-        toggle.type = 'checkbox';
-        toggle.classList.add('item_toggle');
-        toggle.checked = isActive;
-        toggle.addEventListener('change', () => {
-            toggleShowIn(prompt, menuType, toggle.checked);
-        });
-        li.appendChild(toggle);
 
         // Name
         const nameSpan = document.createElement('span');
@@ -426,7 +416,7 @@ function computeShowIn(current, menuType, isOn) {
 // Apply a show_in change and keep the prompt's enabled state in sync:
 // hidden in all menus (show_in='none') -> disable the prompt; shown again in
 // any menu -> reactivate it. This is the single place where the auto-disable /
-// re-enable rule lives (used by both the checkbox and the drag paths).
+// re-enable rule lives (used by the drag path).
 function setPromptShowIn(prompt, newShowIn) {
     prompt.show_in = newShowIn;
     if (newShowIn === 'none') {
@@ -434,15 +424,6 @@ function setPromptShowIn(prompt, newShowIn) {
     } else if (String(prompt.enabled) === '0') {
         prompt.enabled = '1';
     }
-}
-
-function toggleShowIn(prompt, menuType, isOn) {
-    const newShowIn = computeShowIn(prompt.show_in, menuType, isOn);
-    setPromptShowIn(prompt, newShowIn);
-
-    markUnsaved();
-    renderPopupList();
-    renderContextList();
 }
 
 // ==================== Drag and Drop ====================
@@ -529,7 +510,7 @@ function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
             updatePositionsFromDOM(li.parentElement, positionKey);
         }
         markUnsaved();
-        // Re-render so badges/checkboxes/positions and the item's section settle.
+        // Re-render so badges/positions and the item's section settle.
         renderPopupList();
         renderContextList();
     });

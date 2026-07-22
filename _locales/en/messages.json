@@ -2426,7 +2426,7 @@
     "description": "Button label to open the menu order page from options"
   },
   "menu_order_info": {
-    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu (the toggle does the same). A prompt hidden in every menu is disabled until you make it visible again.",
+    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu. A prompt hidden in every menu is disabled until you make it visible again.",
     "description": "Info text for the menu order page"
   },
   "menu_order_active_items": {

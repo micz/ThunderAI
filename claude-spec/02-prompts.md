@@ -91,16 +91,15 @@ Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
 - **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
 
-**Toggle coordination** — a prompt's `show_in` can be changed two equivalent ways, both routed through the same `computeShowIn(current, menuType, isOn)` transition table:
+**Show/hide** — a prompt's `show_in` is changed by **dragging a row between the Visible and Hidden sections** of the same menu panel, routed through the `computeShowIn(current, menuType, isOn)` transition table:
 - Popup ON: `"none"` → `"popup"`, `"context"` → `"both"`
 - Popup OFF: `"popup"` → `"none"`, `"both"` → `"context"`
 - Context ON: `"none"` → `"context"`, `"popup"` → `"both"`
 - Context OFF: `"context"` → `"none"`, `"both"` → `"popup"`
 
-1. **Checkbox** — flipping the per-row checkbox.
-2. **Drag between sections** — dragging a row from the Visible section into the Hidden section (or vice versa) of the same menu panel. Both sections are draggable and act as drop targets; the section the row lands in determines whether that menu is turned on (dropped into Visible) or off (dropped into Hidden). Dropping back into Visible also captures the drop position.
+Both sections are draggable and act as drop targets; the section the row lands in determines whether that menu is turned on (dropped into Visible) or off (dropped into Hidden). Dropping back into Visible also captures the drop position.
 
-**Auto-disable when hidden everywhere** — the `show_in` change is applied via `setPromptShowIn(prompt, newShowIn)`, which keeps `enabled` in sync: when `show_in` becomes `"none"` (hidden in all menus) the prompt is disabled (`enabled = "0"`) so it is removed from the live Thunderbird menus, while its full configuration is preserved. Making the prompt visible in any menu again re-enables it (`enabled = "1"`). Auto-disabled prompts stay on the page in the Hidden sections (dimmed, with a "Disabled" badge) so they can be dragged/toggled back.
+**Auto-disable when hidden everywhere** — the `show_in` change is applied via `setPromptShowIn(prompt, newShowIn)`, which keeps `enabled` in sync: when `show_in` becomes `"none"` (hidden in all menus) the prompt is disabled (`enabled = "0"`) so it is removed from the live Thunderbird menus, while its full configuration is preserved. Making the prompt visible in any menu again re-enables it (`enabled = "1"`). Auto-disabled prompts stay on the page in the Hidden sections (dimmed, with a "Disabled" badge) so they can be dragged back.
 
 **Drag and drop (reorder)** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context`. Positions are only meaningful for the Visible section; reordering within Hidden has no effect.
 
