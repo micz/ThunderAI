@@ -325,7 +325,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #btn_custom_prompts { display: flex; flex-direction: column; gap: 9px; }
 .manage_row { display: flex; gap: 10px; flex-wrap: wrap; }
 .manage_row > button { flex: 1; min-width: 150px; }
-#btnManageCustomDataPH { align-self: center; min-width: 150px; padding-left: 52px !important; padding-right: 52px !important; }
+#btnMenuOrder { align-self: center; min-width: 150px; padding-left: 52px !important; padding-right: 52px !important; }
 
 /* ===========================================================================
    CONNECTION SETTINGS PANEL (colour-coded per provider — Fase 1 keeps the
