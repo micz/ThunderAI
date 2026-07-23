@@ -96,6 +96,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Colour the connection panel to match the selected provider, and hide the
+    // whole panel when "use specific integration" is off (no empty bordered box).
+    let get_task_conntype_el = document.getElementById('get_task_connection_type');
+    if (get_task_conntype_el) {
+        get_task_conntype_el.addEventListener('change', updateConnPanelTint);
+    }
+    get_task_use_specific_integration.addEventListener('change', updateConnPanelTint);
+    updateConnPanelTint();
+
     get_task_reset_btn.addEventListener('click', () => {
         get_task_textarea.value = browser.i18n.getMessage('prompt_get_task_full_text');
         get_task_reset_btn.disabled = true;
@@ -125,6 +134,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
+
+const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+
+// Tint the connection panel to match the selected connection type, set the
+// provider pill name, and hide the whole panel when "use specific integration"
+// is off. Scoped to the get_task prefix.
+function updateConnPanelTint() {
+  let conntype_select = document.getElementById("get_task_connection_type");
+  let panel = document.getElementById("mzta_conn_panel");
+  let use_specific = document.getElementById("get_task_use_specific_integration");
+  if (!panel) return;
+
+  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
+
+  if (!conntype_select) return;
+  let conntype = conntype_select.value;
+  for (let t of CONN_TYPES) {
+    panel.classList.toggle("tint_" + t, conntype === t);
+  }
+  let pillName = document.getElementById("mzta_conn_pill_name");
+  if (pillName) {
+    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
+    pillName.textContent = option ? option.textContent : conntype;
+  }
+}
 
 function saveOptions(e) {
   e.preventDefault();

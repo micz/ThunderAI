@@ -1,122 +1,75 @@
-#get_task_prompt_container{
-    width: 90%;
-    margin: 20px auto;
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   GET TASK PAGE — page-specific styles.
+   The shared design system (tokens, card shell, sections, fields, buttons,
+   connection panel, toggles) lives in ../_lib/mzta-design.css and is linked
+   before this file. Only the placeholder-autocomplete dropdown, the button
+   row and one connection-ui override remain here.
+   =========================================================================== */
+
+/* Connection-ui stacked layout override (see summarize page for rationale). */
+#connection_ui_table tr[style*="table-row"] {
+    display: block !important;
 }
 
-#get_task_prompt_text{
-    width: 100%;
-}
-
-.infoline{  
-    font-size: 0.8em;
-    font-style: italic;
-}
-
-.btn_div{
-    width: 100%;
+/* Save / reset button row */
+.btn_div {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
 }
 
-table#miczPrefs {
-    padding: 10px;
-    border-spacing: 0px;
-    width: 90%;
-    margin: 0px auto 40px auto;
-    border: 1px solid #ccc;
-}
-
-.get_task_table_title{
-    width: 90%;
-    margin: auto;
-}
-
-.section_title{
-    font-weight: bold;
-}
-
-table#miczPrefs td{
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    vertical-align: top;
-    padding: 2px;
-}
-
-table#miczPrefs tr:first-child td {
-    border-top: none;
-}
-  
-table#miczPrefs  tr:last-child td {
-    border-bottom: none;
-}
-
+/* Placeholder autocomplete dropdown (token-based) */
 .autocomplete-container {
     position: relative;
 }
-
 .autocomplete-list {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background-color: white;
-    border: 1px solid #ccc;
+    background-color: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 8px;
     z-index: 1000;
     max-height: 200px;
     overflow-y: auto;
     padding: 0;
-    margin: 0;
+    margin: 4px 0 0;
     list-style: none;
     font-size: small;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
 }
-
 .autocomplete-list li {
-    padding: 8px;
+    padding: 8px 11px;
     cursor: pointer;
+    color: var(--text);
 }
-
 .autocomplete-list li:hover {
-    background-color: #f0f0f0;
+    background-color: color-mix(in srgb, var(--accent) 12%, var(--field));
 }
-
 .autocomplete-list li.active {
-    background-color: #ddd;
+    background-color: color-mix(in srgb, var(--accent) 18%, var(--field));
 }
 
-.hidden {
-    display: none;
-}
-
-.unsaved{
-    color: red;
-}
-
-label:has(input[type="checkbox"]) {
-    cursor: pointer;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1C1B22;
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-    a:active { color: #66B1FF; }
-
-    .autocomplete-list {
-        background-color: #2E2F36;
-        border: 1px solid #2E2F36;
-    }
-    
-    .autocomplete-list li:hover {
-        background-color: #4c4e58;
-    }
-    
-    .autocomplete-list li.active {
-        background-color: #4c4e58;
-    }
+.unsaved {
+    color: #d93025;
 }
