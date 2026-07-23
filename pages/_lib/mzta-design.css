@@ -137,7 +137,7 @@ input, select, button, textarea { font-family: inherit; }
 /* Row 2 — documentation cards */
 .mzta_doc_cards {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
 }
 .mzta_doc_card {

@@ -253,6 +253,72 @@ fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style t
 (`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
 timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
 
+### Setup Wizard (`pages/setup-wizard/`)
+
+A guided **first-run flow** that walks a new user through the minimum needed to get
+working: **Choose your AI → Connect → Pick your tools → Done**. It does not replace the
+informational welcome page (`pages/onboarding/`); it complements it. The defining idea is
+that **each AI integration carries its own colour, applied from the very first choice** —
+picking a provider on step 0 tints the connection panel, the provider pill, and the finish
+badge through the rest of setup.
+
+**Files:** `pages/setup-wizard/mzta-setup-wizard.{html,js,css}`. It is a standalone
+WebExtension page (its own browser tab), not registered in `manifest.json`
+(`options_ui`/`default_popup` are unchanged); it is opened via `browser.tabs.create` from
+the entry points below.
+
+**Reuse over rebuild.** The wizard is an orchestration layer over existing pieces:
+- **Connection UI** — the Connect step injects the shared `injectConnectionUI()`
+  (`pages/_lib/connection-ui.js`) into `<table id="connection_ui_table">` inside
+  `#mzta_conn_panel`, exactly as the options page does (including moving the `.conn_adv`
+  rows into `#connection_ui_adv_table` and the `#mzta_conn_adv_btn` disclosure). The
+  injected `<select id="connection_type">` is **hidden** (`#connection_type_tr{display:none}`)
+  — the provider is chosen through the step-0 cards — but stays in the DOM because
+  `showConnectionOptions()` walks up from it.
+- **Connection test strip** — the same `#mzta_conn_test` markup + `refreshConnTestVisibility()`
+  / `setConnTestState()` logic as the options page, calling `isTestableConnection()` /
+  `runConnectionTest()` from `js/mzta-connection-test.js`.
+- **Tint system + toggles** — the per-provider `tint_*` classes / `--tint-*` tokens, the
+  provider pill, and the `.mzta_switch` feature toggles all come from
+  `pages/_lib/mzta-design.css` + `connection-ui.css`. The wizard CSS adds only its own
+  scaffold (432px card, step indicator, nav bar, provider cards, done badge) plus
+  `.wiz_provider_card.tint_<id>` rules mirroring the existing token values.
+
+**Step 0 — Choose your AI:** six provider cards built in JS from a local `PROVIDERS` array
+(ids/order match `CONN_TYPES`); names reuse `prefs_Connection_type_*`, tags use new
+`wizard_provider_tag_*` keys. Selecting a card sets the hidden select's value and dispatches
+`change` (so the shared UI reacts and `connection_type` persists via the same
+save-on-`change` path), then re-tints panel/badge/pill and recomputes the step sequence.
+
+**Provider-dependent sequence:** `chatgpt_web` skips the "Pick your tools" step
+(`[provider, connect, done]`); every other provider is `[provider, connect, tools, done]`.
+Nav walks sequence *positions*, never raw indices, so skipped steps are never landed on.
+"Finish setup" is the label on the second-to-last position, "Continue" otherwise.
+
+**Step 2 — Pick your tools:** only the four API-driven features (`add_tags`, `spamfilter`,
+`summarize`, `translate`) — the two Sparks features are omitted. Same toggle markup / ids as
+the options page, so they persist via the shared save-on-`change`.
+
+**Persistence:** the wizard writes the **same** storage keys as the options page
+(`connection_type`, the per-provider `*` fields, and the four feature flags) via
+`saveOptions`/`restoreOptions` copied from `options/mzta-options.js`. **No new preference.**
+
+**Entry points:**
+- **Onboarding banner** — a `#wizard_banner` at the top of `pages/onboarding/onboarding.html`
+  with a link (`#btn_launch_wizard`) that opens the wizard.
+- **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `#mzta_doc_cards`,
+  right of "Open Welcome Page". The grid moved to `repeat(auto-fit, minmax(150px,1fr))` in
+  `mzta-design.css` to accommodate it.
+- **Popup menu** — when the popup opens and the selected connection has no credentials,
+  `mzta-popup.js`'s `isConnectionConfigured(prefs)` returns false and the popup shows
+  `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list.
+  "Configured" = the required credential is set: `*_api_key` for the cloud APIs, `*_host`
+  for Ollama / OpenAI-compatible; `chatgpt_web` is always considered configured (its host
+  permission is handled by the existing permission banner).
+
+i18n keys for the wizard are `wizard_*` in `_locales/en/messages.json`; entry-point copy is
+`onboarding_wizard_banner_*`, `prefs_doc_setup_wizard_launch`, `popup_setup_wizard_*`.
+
 ### Feature "Manage settings" Links — Hidden vs. Disabled
 
 Each feature block on the main options page (Add Tags, Spam Filter, Summarize,

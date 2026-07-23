@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('link_doc_guides').href = getMiczItUrl('thunderbird-addon-thunderai/guides/');
     document.getElementById('link_doc_tutorial').href = getMiczItUrl('thunderbird-addon-thunderai/tutorial/');
+
+    document.getElementById('btn_launch_wizard').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await browser.tabs.create({ url: '/pages/setup-wizard/mzta-setup-wizard.html' });
+    });
+
     if(prefs.connection_type === 'chatgpt_web'){
         let permission_chatgpt = await messenger.permissions.contains({ origins: ["https://*.chatgpt.com/*"] });
         if(permission_chatgpt === false){

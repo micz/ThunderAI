@@ -219,6 +219,34 @@ h2 {
   transform: scale(1.05);
 }
 
+#wizard_banner {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 14px;
+  padding: 16px 20px;
+  margin-bottom: 1.5em;
+  background: light-dark(#e7f1ff, #1d2b40);
+  border: 1px solid #0a84ff;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  color: light-dark(#333, #f4f4f5);
+  z-index: 1;
+  position: relative;
+}
+#wizard_banner a {
+  color: #0a84ff;
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#wizard_banner a:hover {
+  text-decoration: underline;
+}
+
 #onboarding_doc_panel {
   position: absolute;
   top: 20px;

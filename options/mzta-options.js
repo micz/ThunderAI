@@ -673,6 +673,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
   });
 
+  document.getElementById('btn_setup_wizard').addEventListener('click', async () => {
+      await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
+  });
+
   // Cache management
   updateCacheSize();
 
