@@ -797,3 +797,184 @@ tr.conntype_anthropic_api,     tr.conntype_anthropic_api2     { background-color
     tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2 { background-color: rgb(72, 77, 3); }
     tr.conntype_anthropic_api,     tr.conntype_anthropic_api2     { background-color: rgb(83, 0, 35); }
 }
+
+/* ===========================================================================
+   FEATURE-PAGE SHELL (opt-in)
+   Feature settings pages (summarize, translate, spamfilter, …) open in their
+   own browser tab. Wrapping their <body> in class="mzta_feature_page" opts
+   into a centered, capped-width column on a light "desk" background with each
+   .mzta_section rendered as a distinct white card. The main options page does
+   NOT carry this class, so every rule here is scoped to body.mzta_feature_page
+   and leaves the options page untouched.
+   Reuses the existing design tokens (--desk, --panel, --line, --accent, …) so
+   dark mode is inherited for free — no hardcoded palette values.
+   =========================================================================== */
+
+/* Page background + centered, capped-width column */
+body.mzta_feature_page {
+    background: var(--desk);
+}
+body.mzta_feature_page #mzta_card {
+    max-width: 760px;
+    margin: 0 auto;
+    background: transparent;
+    padding: 0 24px 32px;
+    box-sizing: border-box;
+    overflow: visible;   /* allow the autocomplete dropdown to escape the card */
+}
+
+/* Below the column cap the padding keeps content off the edges automatically;
+   nothing forces a min-width, so no extra media query is needed. */
+
+/* --- Header block ------------------------------------------------------- */
+body.mzta_feature_page #mzta_top_links {
+    border-bottom: none;
+    gap: 4px;
+    padding: 28px 0 20px;
+}
+body.mzta_feature_page .mzta_hdr_row1 {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+body.mzta_feature_page .mzta_page_icon {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+body.mzta_feature_page .mzta_page_icon img { display: block; }
+body.mzta_feature_page .mzta_page_title {
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-transform: none;
+    color: var(--text);
+    line-height: 1.2;
+}
+body.mzta_feature_page .mzta_page_subtitle {
+    font-size: 13.5px;
+    color: var(--dim);
+    line-height: 1.5;
+    text-wrap: pretty;
+    margin: 0;
+}
+
+/* --- Cards -------------------------------------------------------------- */
+/* Each section becomes a rounded white card. Applies to ANY .mzta_section,
+   so extra sections / fields added later become cards with no special code. */
+body.mzta_feature_page #mzta_body {
+    padding: 0;
+}
+body.mzta_feature_page #mzta_body > * { margin-bottom: 24px; }
+body.mzta_feature_page #mzta_body > *:last-child { margin-bottom: 0; }
+body.mzta_feature_page .mzta_section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    box-sizing: border-box;
+}
+
+/* Section header: uppercase muted eyebrow + 3px vertical accent bar */
+body.mzta_feature_page .mzta_section > .mzta_eyebrow {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+/* Intro help text under a section header (e.g. the prompts section):
+   pull it up under the eyebrow, then space it before the first field. */
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help {
+    margin: -8px 0 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+/* --- Row separators ----------------------------------------------------- */
+/* Each stacked setting inside a card reads as a distinct row. The first row
+   after the section header/intro keeps no top border; subsequent rows get a
+   thin divider. .feature_row already carries a top border in the base sheet;
+   normalise its spacing here to match the field rows. */
+body.mzta_feature_page .mzta_section > .mzta_field,
+body.mzta_feature_page .mzta_section > .feature_row {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    margin-top: 18px;
+}
+/* First interactive row after the header/intro block: no divider. */
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .feature_row,
+body.mzta_feature_page .mzta_section > .mzta_help + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_help + .feature_row {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+/* The connection panel is its own bordered box — no extra divider above it. */
+body.mzta_feature_page .mzta_section > #mzta_conn_panel {
+    margin-top: 18px;
+}
+
+/* --- Typography (scoped up-sizing) ------------------------------------- */
+body.mzta_feature_page .opt_title { font-size: 15px; font-weight: 600; }
+body.mzta_feature_page .mzta_help,
+body.mzta_feature_page .feature_desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
+
+/* --- Selects / text fields --------------------------------------------- */
+body.mzta_feature_page #mzta_card select {
+    min-height: 40px;
+}
+body.mzta_feature_page #mzta_card textarea { line-height: 1.6; }
+
+/* --- Number fields: label/desc left, compact control right ------------- */
+body.mzta_feature_page .mzta_field_num {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+body.mzta_feature_page .mzta_field_num_text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+body.mzta_feature_page .mzta_field_num_ctrl {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+body.mzta_feature_page #mzta_card input[type="number"] {
+    width: 96px;
+    text-align: center;
+    flex: 0 0 auto;
+    max-width: none;   /* override .mzta_inline_row max-width from the page sheet */
+}
+
+/* --- Focus & hover states (new; scoped so options page is untouched) --- */
+body.mzta_feature_page #mzta_card input:focus,
+body.mzta_feature_page #mzta_card select:focus,
+body.mzta_feature_page #mzta_card textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    background: var(--panel);
+    outline: none;
+    transition: border-color .13s ease, box-shadow .13s ease, background .13s ease;
+}

@@ -8,15 +8,16 @@
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
-<body>
+<body class="mzta_feature_page">
     <div id="mzta_card">
 
         <!-- HEADER -->
         <div id="mzta_top_links">
             <div class="mzta_hdr_row1">
-                <span class="mzta_eyebrow">__MSG_Summarize_PageTitle__</span>
+                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
+                <span class="mzta_page_title">__MSG_Summarize_PageTitle__</span>
             </div>
-            <p class="mzta_help">__MSG_Summarize_info_default__</p>
+            <p class="mzta_page_subtitle mzta_help">__MSG_Summarize_info_default__</p>
         </div>
 
         <!-- BODY -->
@@ -73,20 +74,26 @@
                 </div>
 
                 <!-- max display length -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_summarize_max_display_length__</span>
-                    <input type="number" id="summarize_max_display_length" name="summarize_max_display_length" min="0" class="option-input" />
-                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_display_length_Info__</span>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_summarize_max_display_length__</span>
+                        <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_display_length_Info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="summarize_max_display_length" name="summarize_max_display_length" min="0" class="option-input" />
+                    </div>
                 </div>
 
                 <!-- max messages -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_summarize_max_messages__</span>
-                    <div class="mzta_inline_row">
-                        <input type="number" id="summarize_max_messages" name="summarize_max_messages" min="1" class="option-input" />
-                        <button type="button" id="reset_summarize_max_messages" class="btn_small btn_secondary">__MSG_reset_default__</button>
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_summarize_max_messages__</span>
+                        <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_messages_Info__</span>
                     </div>
-                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_messages_Info__</span>
+                    <div class="mzta_field_num_ctrl mzta_inline_row">
+                        <button type="button" id="reset_summarize_max_messages" class="btn_small btn_secondary">__MSG_reset_default__</button>
+                        <input type="number" id="summarize_max_messages" name="summarize_max_messages" min="1" class="option-input" />
+                    </div>
                 </div>
 
                 <!-- strip formatting -->
