@@ -1143,6 +1143,8 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                 </select>` +
                 `<span class="action hiddendata"></span>
+                <br><br>
+                <button class="btnMenuPositionItem">__MSG_menu_position_btn_label__</button>
               </td>
                 <td class="w17">
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
@@ -1174,8 +1176,6 @@ function loadPromptsList(values){
                 <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
                 <br><br>
                 <button class="btnCopyItem">__MSG_customPrompts_btnCopy__</button>
-                <br><br>
-                <button class="btnMenuPositionItem">__MSG_menu_position_btn_label__</button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
