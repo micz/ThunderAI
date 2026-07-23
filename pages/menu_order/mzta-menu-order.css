@@ -21,6 +21,35 @@
     padding-left: 40px;
 }
 
+#badge_legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin-bottom: 16px;
+    font-size: 0.82em;
+    color: #666;
+}
+
+.legend_group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+}
+
+.legend_group > strong {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.legend_item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
 #lists_container {
     display: flex;
     gap: 24px;
@@ -314,6 +343,10 @@
     }
 
     .section_label {
+        color: #999;
+    }
+
+    #badge_legend {
         color: #999;
     }
 

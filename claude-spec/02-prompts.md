@@ -92,6 +92,8 @@ Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
 - **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
 
+**Row badges** — each row shows two colored badges (rendered in `renderListItems()`): a **type** badge (`.badge_type`) with the value Always / Reading / Composing (from `type` `0`/`1`/`2`), and a **source** badge with the value Default / Special / Custom (`.badge_default` / `.badge_special` / `.badge_custom`, from `is_default` / `is_special`). A static **legend** near the top of the page (`#badge_legend` in the HTML) explains both badge groups; it reuses the same badge CSS classes and i18n labels so its swatches match the rows automatically.
+
 **Show/hide** — a prompt's `show_in` is changed by **dragging a row between the Visible and Hidden sections** of the same menu panel, routed through the `computeShowIn(current, menuType, isOn)` transition table:
 - Popup ON: `"none"` → `"popup"`, `"context"` → `"both"`
 - Popup OFF: `"popup"` → `"none"`, `"both"` → `"context"`

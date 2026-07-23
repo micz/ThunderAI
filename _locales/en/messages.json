@@ -2429,6 +2429,38 @@
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   },
+  "menu_order_legend_type": {
+    "message": "When shown:",
+    "description": "Heading for the type badge group in the menu order page legend"
+  },
+  "menu_order_legend_type_always": {
+    "message": "Shown both when reading and composing",
+    "description": "Legend description for the 'Always' type badge"
+  },
+  "menu_order_legend_type_reading": {
+    "message": "Shown only when reading a message",
+    "description": "Legend description for the 'Reading' type badge"
+  },
+  "menu_order_legend_type_composing": {
+    "message": "Shown only when composing a message",
+    "description": "Legend description for the 'Composing' type badge"
+  },
+  "menu_order_legend_source": {
+    "message": "Prompt type:",
+    "description": "Heading for the source badge group in the menu order page legend"
+  },
+  "menu_order_legend_source_default": {
+    "message": "Built-in prompt included with ThunderAI",
+    "description": "Legend description for the 'Default' source badge"
+  },
+  "menu_order_legend_source_special": {
+    "message": "Feature-backed prompt (e.g. tagging, calendar)",
+    "description": "Legend description for the 'Special' source badge"
+  },
+  "menu_order_legend_source_custom": {
+    "message": "Prompt you created",
+    "description": "Legend description for the 'Custom' source badge"
+  },
   "prefs_settings_subtitle": {
     "message": "Settings",
     "description": "Subtitle shown under the ThunderAI name in the options page header"
