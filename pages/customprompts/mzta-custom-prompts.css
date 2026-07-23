@@ -322,7 +322,15 @@ table .sort.desc { background-image: url(../../images/listjs-arrow-sort-active-u
 }
 
 /* ============================ Property switches ============================ */
-/* Style the existing Properties checkboxes as toggle switches (visual only). */
+/* The Properties cell renders each prompt flag from the same underlying
+   <input type="checkbox">, but in two visually distinct modes keyed off the
+   checkbox's `disabled` attribute (the read-only/edit flag toggled by
+   showItemRowEditor/hideItemRowEditor):
+     - EDIT (enabled)   -> interactive toggle switch (30x18, --accent on / --border2 off)
+     - READ-ONLY (disabled) -> static check/dash status icon (not clickable-looking)
+   A default prompt's `need_custom_text` stays enabled even in a read-only row, so
+   it correctly keeps the switch look — no special casing needed. */
+
 table.prompts_list td label:has(.need_selected),
 table.prompts_list td label:has(.need_signature),
 table.prompts_list td label:has(.need_custom_text),
@@ -337,10 +345,35 @@ table.prompts_list td label:has(.use_diff_viewer) {
     font-size: 13px;
 }
 
-/* A label whose switch is checked reads as active text. */
+/* A label whose property is active (on) reads as active text; this holds in both
+   modes (active = --text, inactive = --muted). */
 table.prompts_list td label:has(input:checked) { color: var(--text); }
 
-/* The switch track. */
+/* Read-only rows: wider icon-to-label gap and more vertical rhythm between rows.
+   The label text may wrap onto multiple lines; the status icon stays pinned to
+   the first line (top-aligned) instead of centering against the whole text block. */
+/* `need_selected` and `need_custom_text` wrap their checkbox + text in an inner
+   <span> (…_span, used for validation borders), so the flex layout must live on
+   that span rather than the label; the other three have the input as a direct
+   label child. Target both shapes. */
+table.prompts_list td label:has(input:disabled),
+table.prompts_list td label:has(input:disabled) .need_selected_span,
+table.prompts_list td label:has(input:disabled) .need_custom_text_span {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: default;
+    /* Match the first text line's height to the 20px icon so the two line up on
+       the first line; wrapped lines keep the same rhythm. */
+    line-height: 20px;
+}
+
+table.prompts_list td label:has(input:disabled) {
+    margin-bottom: 11px;
+}
+
+/* ---- Base switch track (applies to all states; the read-only :disabled rules
+   below override the relevant properties to draw the icon box instead). ---- */
 table.prompts_list td .need_selected,
 table.prompts_list td .need_signature,
 table.prompts_list td .need_custom_text,
@@ -395,13 +428,75 @@ table.prompts_list td input:checked.use_diff_viewer::after {
     left: 14px;
 }
 
+/* ---- Read-only (disabled) status icon box. Repaints the switch track as a
+   20x20 rounded box whose glyph is drawn via a mask so it inherits `color`.
+   These rules come after the switch rules, so they win for disabled inputs. ---- */
 table.prompts_list td input:disabled.need_selected,
 table.prompts_list td input:disabled.need_signature,
 table.prompts_list td input:disabled.need_custom_text,
 table.prompts_list td input:disabled.define_response_lang,
 table.prompts_list td input:disabled.use_diff_viewer {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: none;
     cursor: default;
-    opacity: .8;
+    opacity: 1;
+    /* inactive default: transparent box, muted outline + glyph */
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted2);
+}
+
+/* Draw the glyph via the ::after pseudo, colored by `currentColor` through the
+   mask so it tracks the box's `color` token (no hardcoded colors). */
+table.prompts_list td input:disabled.need_selected::after,
+table.prompts_list td input:disabled.need_signature::after,
+table.prompts_list td input:disabled.need_custom_text::after,
+table.prompts_list td input:disabled.define_response_lang::after,
+table.prompts_list td input:disabled.use_diff_viewer::after {
+    position: static;
+    top: auto;
+    left: auto;
+    width: 13px;
+    height: 13px;
+    border-radius: 0;
+    background: currentColor;
+    box-shadow: none;
+    transition: none;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 13px 13px;
+    mask-size: 13px 13px;
+    /* dash (Feather/Lucide "minus", stroke-width:3) */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+}
+
+/* active (on): success-tinted box + check glyph */
+table.prompts_list td input:disabled:checked.need_selected,
+table.prompts_list td input:disabled:checked.need_signature,
+table.prompts_list td input:disabled:checked.need_custom_text,
+table.prompts_list td input:disabled:checked.define_response_lang,
+table.prompts_list td input:disabled:checked.use_diff_viewer {
+    background: var(--ok-bg);
+    border: 1px solid var(--ok-border);
+    color: var(--ok-text);
+}
+
+table.prompts_list td input:disabled:checked.need_selected::after,
+table.prompts_list td input:disabled:checked.need_signature::after,
+table.prompts_list td input:disabled:checked.need_custom_text::after,
+table.prompts_list td input:disabled:checked.define_response_lang::after,
+table.prompts_list td input:disabled:checked.use_diff_viewer::after {
+    /* check (Feather/Lucide "check", stroke-width:3) */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
 }
 
 .field_title_s {
