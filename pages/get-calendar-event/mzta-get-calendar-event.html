@@ -3,55 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <title>ThunderAI - __MSG_GetCalendarEvent_PageTitle__</title>
-    <link rel="stylesheet" href="mzta-get-calendar-event.css">
-    <link rel="stylesheet" href="../_lib/connection-ui.css">
-    <link rel="icon" href="../../images/icon-16px.png">
+    <link rel="stylesheet" href="../_lib/mzta-design.css" />
+    <link rel="stylesheet" href="mzta-get-calendar-event.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
 </head>
-<body>
-    <div>
-        <h1 class="page_title">__MSG_GetCalendarEvent_PageTitle__</h1>
-        <p>__MSG_GetCalendarEvent_info_default__</p>
-    </div>
-    <div class="get_calendar_event_table_title section_title">__MSG_get_calendar_event_prompt_prefs_title__</div>
-    <table id="miczPrefs">
-          <tr class="get_calendar_event_tr specific_integration">
-            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
-            </td>
-            <td>
-              <label>
-                <input type="checkbox" id="get_calendar_event_use_specific_integration" name="get_calendar_event_use_specific_integration" class="option-input" />
-                __MSG_prefs_OptionText_get_calendar_event_use_specific_integration_Info__
-              </label>
-            </td>
-          </tr>
-          <tr id="connection_ui_anchor"></tr>
-          <tr id="connection_ui_end"><td colspan="2"></td></tr>
-          <tr class="get_calendar_event_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_calendar_no_selection__</span>
-            </td>
-            <td>
-              <label>
-                <input type="checkbox" id="calendar_no_selection" name="calendar_no_selection" class="option-input" />
-                __MSG_prefs_OptionText_calendar_no_selection_Info__
-              </label>
-            </td>
-          </tr>
-          <tr class="get_calendar_event_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_get_calendar_event_from_clipboard__</span>
-            </td>
-            <td>
-              <label>
-                <input type="checkbox" id="get_calendar_event_from_clipboard" name="get_calendar_event_from_clipboard" class="option-input" />
-                __MSG_prefs_OptionText_get_calendar_event_from_clipboard_Info__
-              </label>
-            </td>
-          </tr>
-          <tr class="get_calendar_event_tr">
-            <td><span  class="opt_title">__MSG_prefs_OptionText_calendar_enforce_timezone__</span></td>
-            <td>
-              <label>
-                <input type="checkbox" id="calendar_enforce_timezone" name="calendar_enforce_timezone" class="option-input" /> __MSG_prefs_OptionText_calendar_enforce_timezone_Info__
-                <br><label for="timezone">__MSG_Select_your_timezone__:</label>
+<body class="mzta_feature_page">
+    <div id="mzta_card">
+
+        <!-- HEADER -->
+        <div id="mzta_top_links">
+            <div class="mzta_hdr_row1">
+                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
+                <span class="mzta_page_title">__MSG_GetCalendarEvent_PageTitle__</span>
+            </div>
+            <p class="mzta_page_subtitle mzta_help">__MSG_GetCalendarEvent_info_default__</p>
+        </div>
+
+        <!-- BODY -->
+        <div id="mzta_body">
+
+            <!-- SETTINGS -->
+            <div class="mzta_section">
+                <div class="mzta_eyebrow">__MSG_get_calendar_event_prompt_prefs_title__</div>
+
+                <!-- specific integration toggle -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_get_calendar_event_use_specific_integration_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="get_calendar_event_use_specific_integration" name="get_calendar_event_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- connection panel (rows injected at runtime into the table) -->
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
+
+                <!-- no selection -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_calendar_no_selection__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_calendar_no_selection_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="calendar_no_selection" name="calendar_no_selection" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- from clipboard -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_get_calendar_event_from_clipboard__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_get_calendar_event_from_clipboard_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="get_calendar_event_from_clipboard" name="get_calendar_event_from_clipboard" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- enforce timezone -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_calendar_enforce_timezone__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_calendar_enforce_timezone_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="calendar_enforce_timezone" name="calendar_enforce_timezone" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- timezone select -->
+                <div class="mzta_field">
+                    <span class="opt_title">__MSG_Select_your_timezone__:</span>
                     <select id="calendar_timezone" name="calendar_timezone" class="option-input">
                         <option value=""></option>
                         <option value="Pacific/Midway">(UTC-11:00) Atol Midway</option>
@@ -84,21 +122,31 @@
                         <option value="Pacific/Tongatapu">(UTC+13:00) Nuku'alofa</option>
                         <option value="Pacific/Kiritimati">(UTC+14:00) Kiritimati</option>
                     </select>
-              </label>
-            </td>
-          </tr>
-    </table>
-    <div id="get_calendar_event_container">
-        <span class="section_title">__MSG_GetCalendarEvent_prompt_text_title__</span><span id="get_calendar_event_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
-        <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
-          <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b></span>
-        <br>
-        <div class="autocomplete-container">
-            <textarea id="get_calendar_event_prompt_text" rows="15"></textarea>
-            <ul class="autocomplete-list hidden"></ul>
+                </div>
+            </div>
+
+            <!-- PROMPT -->
+            <div class="mzta_section" id="get_calendar_event_container">
+                <div class="mzta_eyebrow">__MSG_GetCalendarEvent_prompt_text_title__<span id="get_calendar_event_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_prefs_OptionText_btnManagePrompts_infoline__
+                    <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
+                    <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
+                </p>
+                <div class="mzta_field">
+                    <div class="autocomplete-container">
+                        <textarea id="get_calendar_event_prompt_text" rows="15"></textarea>
+                        <ul class="autocomplete-list hidden"></ul>
+                    </div>
+                    <div id="get_calendar_event_info_additional_statements"></div>
+                    <div class="btn_div">
+                        <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                        <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        <div id="get_calendar_event_info_additional_statements"></div>
-        <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
     </div>
     <script src="mzta-get-calendar-event.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
