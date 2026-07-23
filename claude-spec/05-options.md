@@ -131,6 +131,12 @@ The summarize settings page provides:
    - Each has Save/Reset buttons and placeholder autocomplete
    - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
 
+**Visual design.** The page uses the shared design system (see "Shared Design System CSS" below): it is wrapped in `#mzta_card` / `#mzta_body`, settings are `.mzta_field` / `.feature_row` blocks, the two checkboxes render as `.mzta_switch` toggles, and Save/Reset buttons use `.btn_primary` / `.btn_secondary`. The specific-integration connection UI is injected (via `initializeSpecificIntegrationUI()`) into a `<table id="connection_ui_table">` inside `#mzta_conn_panel`. A small `updateConnPanelTint()` helper in `mzta-summarize.js` (mirroring the options-page one, but scoped to the `summarize_` prefix) colours the panel to the selected provider (`tint_*` class + `#mzta_conn_pill_name`) and hides the whole panel (`display:none`) when `summarize_use_specific_integration` is off, so no empty bordered box shows; it runs on load and on `change` of `summarize_connection_type` / the checkbox. The connection-type select stays a native `<select>` (only the model selects become TomSelect), so the `change` listeners fire normally. Because `_updateVisibility()` sets an inline `display:table-row` on visible connection rows, `mzta-summarize.css` re-asserts `#connection_ui_table tr[style*="table-row"] { display:block !important; }` so those rows still render as stacked fields — no change to the shared `connection-ui.js` is needed.
+
+### Shared Design System CSS (`pages/_lib/mzta-design.css`)
+
+The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), `#miczDescription`, `#mzta_footer`, `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
+
 ### Menu Order Page (`pages/menu_order/`)
 
 Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.
@@ -169,7 +175,7 @@ The `conn_adv` class is inert on the 6 feature pages (they render no toggle butt
 `#connection_ui_table`, inside the tinted panel. It mirrors the app-level
 `#mzta_adv_toggle`: gear icon + a static **"Advanced options"** label
 (`prefs_advanced_options`) on the left, chevron on the right (`justify-content:
-space-between`). Its style is defined in `options/mzta-options.css` (keeps the
+space-between`). Its style is defined in `pages/_lib/mzta-design.css` (keeps the
 per-provider `--tint-border` / `--tint-accent`, falling back to `--fieldLine` /
 `--accent`); its chevron rotates 180° when expanded via the `[aria-expanded="true"]`
 attribute.
@@ -216,7 +222,7 @@ except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` 
 `display` on load and on every `connection_type` change.
 
 **States** (driven by `data-state` on `#mzta_conn_test`, styled in
-`options/mzta-options.css`): `idle` (grey dot, "Connection not tested yet", link "Test
+`pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
 now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
 connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
 "Re-test"), `error` (red dot + red text with the error detail, link "Retry").
