@@ -131,6 +131,18 @@ The summarize settings page provides:
    - Each has Save/Reset buttons and placeholder autocomplete
    - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
 
+### Manage Custom Prompts Page (`pages/customprompts/`)
+
+The prompt CRUD screen: a single wide `<table class="prompts_list">` driven by List.js (columns ID, Name, Prompt Text, Menu, Properties, Actions), a hidden `#formNew` add-form, and Import/Export/Save All controls. Data model, storage routing, and the "Menu position" deep-link to the Menu Order page are documented in `claude-spec/02-prompts.md`.
+
+**Visual layout (design "1b")** is purely presentational and driven by CSS design tokens in `mzta-custom-prompts.css`:
+
+- **Theme** follows the OS/Thunderbird theme (no manual toggle). Colors are CSS custom properties defined on `:root` (light default) with a `@media (prefers-color-scheme: dark)` override — a single source of truth replacing the old scattered hardcoded colors. The `showYesNoDialog` export dialog no longer sets colors inline; `dialog.export` reads the tokens.
+- **Shell**: a `.page_wrap` centered column (`max-width:1440px`) wraps the header (eyebrow "ThunderAI" + `.page_title` + description), the `#import_export` stack, `#formNew`, and the card.
+- **Card** (`#all_prompts`): rounded panel containing the sticky toolbar (`#command_palette` — Save All / status / Add New), the table, and a footer `#list_footer` showing `#prompts_count` (`customPrompts_promptsCount` i18n key, `$COUNT$` placeholder). The `thead` sticks below the toolbar (`top: 54px`).
+- **Prompt Text** cell: `{%placeholder%}` tokens in the read-only `.text_show` spans are wrapped in `<span class="ph_chip">` by `decoratePromptText()` (runs after render and on every List.js `updated` event; idempotent via `data-phDecorated`). The chip wrapper is stripped by `sanitizeHtml()` on the cancel-restore path, so saved text stays clean.
+- **Properties** checkboxes (`.need_selected`, `.need_signature`, `.need_custom_text`, `.define_response_lang`, `.use_diff_viewer`) are styled as toggle switches via `appearance:none` + `::after` knob — **CSS only**; the checkbox classes, disabled logic, and `handleCheckboxChange` are unchanged.
+
 ### Menu Order Page (`pages/menu_order/`)
 
 Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.

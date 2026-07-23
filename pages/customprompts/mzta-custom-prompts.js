@@ -380,21 +380,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         return new Promise((resolve) => {
             const dialog = document.createElement('dialog');
             dialog.className = 'export';
-            // dialog.style.cssText = `
-            //     padding: 20px;
-            //     border: none;
-            //     border-radius: 8px;
-            //     background-color: var(--dialog-bg-color, #fff);
-            //     color: var(--dialog-text-color, #000);
-            //     max-width: 400px;
-            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            //     font-family: system-ui, -apple-system, sans-serif;
-            // `;
-            
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                 dialog.style.backgroundColor = '#2e2e2e';
-                 dialog.style.color = '#ffffff';
-            }
+            // Colors (incl. dark mode) come from the `dialog.export` rule in the
+            // stylesheet, which reads the shared design tokens.
 
             const text = document.createElement('p');
             text.textContent = message;
@@ -1045,6 +1032,26 @@ function handleCopyClick(e) {
 
 //========= handling an item in a row - END
 
+// Wrap {%placeholder%} tokens in the visible prompt text with a styled chip.
+// Only touches the read-only .text_show spans (never the editable textarea),
+// and is idempotent (skips spans already decorated).
+function decoratePromptText() {
+    document.querySelectorAll('#all_prompts .text_show').forEach(span => {
+        if (span.dataset.phDecorated === '1') return;
+        if (!/\{%[^%]+%\}/.test(span.innerHTML)) { span.dataset.phDecorated = '1'; return; }
+        span.innerHTML = span.innerHTML.replace(/\{%[^%]+%\}/g,
+            m => '<span class="ph_chip">' + m + '</span>');
+        span.dataset.phDecorated = '1';
+    });
+}
+
+// Keep the card footer prompt count in sync with the rendered list.
+function updatePromptsCount() {
+    const el = document.getElementById('prompts_count');
+    if (!el) return;
+    const count = promptsList ? promptsList.items.length : 0;
+    el.textContent = browser.i18n.getMessage('customPrompts_promptsCount', [String(count)]);
+}
 
 function loadPromptsList(values){
     // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
@@ -1209,6 +1216,16 @@ function loadPromptsList(values){
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
     promptsList = new List('all_prompts', options, values);
+
+    // Decorate the visible prompt text: wrap {%placeholder%} tokens in a code
+    // chip, and keep the footer prompt count in sync. Runs after the initial
+    // render and on every List.js re-render (sort / filter / add / remove).
+    decoratePromptText();
+    updatePromptsCount();
+    promptsList.on('updated', () => {
+        decoratePromptText();
+        updatePromptsCount();
+    });
 
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
