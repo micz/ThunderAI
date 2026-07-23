@@ -841,14 +841,17 @@ body.mzta_feature_page .mzta_page_icon {
     flex: 0 0 auto;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
-    background: var(--panel);
-    border: 1px solid var(--line);
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
-body.mzta_feature_page .mzta_page_icon img { display: block; }
+/* The app icon is not transparent (filled envelope artwork), so no white tile
+   around it — show it on its own to avoid a double frame. */
+body.mzta_feature_page .mzta_page_icon img {
+    display: block;
+    width: 34px;
+    height: 34px;
+}
 body.mzta_feature_page .mzta_page_title {
     font-size: 25px;
     font-weight: 700;
