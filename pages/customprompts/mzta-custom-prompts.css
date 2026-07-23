@@ -146,26 +146,100 @@ button:disabled {
     color: var(--text);
 }
 
-/* Per-row Edit / OK / Menu position — edit style. */
-.btnEditItem, .btnConfirmItem, .btnMenuPositionItem {
+/* Per-row action buttons — full-width, stacked, icon + label.
+   The <td> stays a table-cell (fixed table layout); buttons stack as
+   full-width blocks separated by margin. */
+.actions_cell {
+    vertical-align: top;
+}
+.actions_cell button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0 0 8px 0;
+}
+.actions_cell button:last-child {
+    margin-bottom: 0;
+}
+/* A button toggled off via .hiddendata must stay hidden — this selector
+   (0,1,1) matches the specificity of `.actions_cell button` above, and
+   coming later it wins, so display:flex does not resurface hidden buttons. */
+.actions_cell button.hiddendata {
+    display: none;
+}
+.actions_cell button svg,
+.btnMenuPositionItem svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+/* Children never become the click target, so handlers relying on e.target
+   being the <button> (e.target.parentNode.parentNode === tr) keep working
+   no matter where inside the button the user clicks. */
+.actions_cell button > *,
+.btnMenuPositionItem > * {
+    pointer-events: none;
+}
+
+/* Edit / OK — edit (tinted) style, same as Menu position. */
+.btnEditItem, .btnConfirmItem {
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    border: 1px solid var(--edit-border);
+}
+.btnEditItem:hover:not(:disabled),
+.btnConfirmItem:hover:not(:disabled) {
+    background: var(--edit-hover);
+    border-color: var(--edit-border);
+}
+
+/* Menu position — edit (tinted) style, pinned to the bottom of its cell.
+   The <td> stays a real table-cell (so table-layout:fixed keeps the column
+   width and the cell auto-stretches to the row height). To pin the button to
+   the bottom we position it absolutely against the cell: the <td> is the
+   positioning context, the inner content reserves space for the button with
+   bottom padding, and the button is anchored to the cell's bottom edge. This
+   avoids the height-percentage-resolution quirks that keep a flex/height:100%
+   inner column from stretching inside a table cell in Gecko. */
+.menu_cell {
+    vertical-align: top;
+    position: relative;
+    padding-bottom: 56px; /* reserve room for the absolutely-positioned button */
+}
+.menu_cell_inner {
+    display: block;
+}
+.menu_cell_inner .btnMenuPositionItem {
+    position: absolute;
+    left: 16px;   /* match the cell's horizontal padding */
+    right: 16px;
+    bottom: 14px; /* match the cell's vertical padding */
+    width: auto;
+}
+.btnMenuPositionItem {
     background: var(--edit-bg);
     color: var(--edit-text);
     border: 1px solid var(--edit-border);
     padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
 }
-.btnEditItem:hover:not(:disabled),
-.btnConfirmItem:hover:not(:disabled),
 .btnMenuPositionItem:hover:not(:disabled) {
     background: var(--edit-hover);
     border-color: var(--edit-border);
 }
 
-/* Per-row Delete — danger style. */
+/* Per-row Delete — danger (outline) style. */
 .btnDeleteItem {
     background: transparent;
     color: var(--del-text);
     border: 1px solid var(--del-border);
-    padding: 8px 12px;
 }
 .btnDeleteItem:hover:not(:disabled) {
     background: var(--del-hover-bg);
@@ -173,9 +247,16 @@ button:disabled {
     border-color: var(--del-border);
 }
 
-/* Per-row Copy / Cancel — neutral panel style. */
+/* Per-row Copy / Cancel — neutral outline style. */
 .btnCopyItem, .btnCancelItem {
-    padding: 8px 12px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+}
+.btnCopyItem:hover:not(:disabled),
+.btnCancelItem:hover:not(:disabled) {
+    background: var(--icon-hover-bg);
+    border-color: var(--border2);
 }
 
 /* ============================ Toolbar (command palette) ============================ */
