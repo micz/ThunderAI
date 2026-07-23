@@ -702,6 +702,21 @@ table.prompts_list td input:disabled:checked.use_diff_viewer::after {
 
 #chatgpt_web_additional_info td { vertical-align: top; }
 
+/* New-prompt form toggle: styled like the [API] toggle button (ID-targeted so it
+   doesn't pick up the class-based click handlers used by the edit-list rows). */
+#chatgpt_web_additional_info_toggle {
+    background: var(--cgw-bg);
+    color: var(--text);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    padding: 5px;
+    margin-top: 8px;
+}
+#chatgpt_web_additional_info_toggle:hover {
+    text-decoration: underline;
+}
+
 .chatgpt_web_additional_info_show {
     flex-direction: column;
     justify-content: space-between;
