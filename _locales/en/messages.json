@@ -420,6 +420,15 @@
     "message": "Import new prompts",
     "description": ""
   },
+  "customPrompts_promptsCount": {
+    "message": "$COUNT$ prompts",
+    "description": "Footer count of prompts shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
     "description": ""
