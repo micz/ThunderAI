@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="stylesheet" href="../pages/_lib/mzta-design.css">
     <link rel="stylesheet" href="mzta-options.css">
     <link rel="stylesheet" href="../pages/_lib/connection-ui.css">
   </head>
@@ -112,9 +113,9 @@
         <div id="btn_custom_prompts">
           <div class="manage_row">
             <button id="btnManagePrompts" class="btn_primary">__MSG_prefs_OptionText_btnManagePrompts__</button>
-            <button id="btnMenuOrder" class="btn_secondary">__MSG_menu_order_btn_label__</button>
+            <button id="btnManageCustomDataPH" class="btn_secondary">__MSG_prefs_OptionText_btnManageCustomDataPH__</button>
           </div>
-          <button id="btnManageCustomDataPH" class="btn_secondary">__MSG_prefs_OptionText_btnManageCustomDataPH__</button>
+          <button id="btnMenuOrder" class="btn_secondary">__MSG_menu_order_btn_label__</button>
         </div>
 
         <!-- FEATURES -->
@@ -124,10 +125,9 @@
 
           <div class="feature_row add_tags_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_add_tags__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_add_tags__<span class="specific_api_indicator" id="add_tags_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_add_tags_Info__</div>
               <button id="btnManageTagsInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageTagsInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="add_tags_specific_api_indicator"></span>
               <span class="warn_API_needed" id="add_tags_warn_API_needed">__MSG_warn_API_needed__</span>
             </div>
             <label class="mzta_switch">
@@ -138,10 +138,9 @@
 
           <div class="feature_row spamfilter_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_spamfilter__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_spamfilter__<span class="specific_api_indicator" id="spamfilter_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_Info__</div>
               <button id="btnManageSpamFilterInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageSpamFilterInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="spamfilter_specific_api_indicator"></span>
               <span class="warn_API_needed" id="spamfilter_warn_API_needed">__MSG_warn_API_needed__</span>
             </div>
             <label class="mzta_switch">
@@ -152,10 +151,9 @@
 
           <div class="feature_row summarize_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_summarize__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_summarize__<span class="specific_api_indicator" id="summarize_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_summarize_Info__</div>
               <button id="btnManageSummarizeInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageSummarizeInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="summarize_specific_api_indicator"></span>
               <span class="warn_API_needed" id="summarize_warn_API_needed">__MSG_warn_API_needed__</span>
             </div>
             <label class="mzta_switch">
@@ -166,10 +164,9 @@
 
           <div class="feature_row translate_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_translate__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_translate__<span class="specific_api_indicator" id="translate_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_translate_Info__</div>
               <button id="btnManageTranslateInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageTranslateInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="translate_specific_api_indicator"></span>
               <span class="warn_API_needed" id="translate_warn_API_needed">__MSG_warn_API_needed__</span>
             </div>
             <label class="mzta_switch">
@@ -180,10 +177,9 @@
 
           <div class="feature_row get_calendar_event_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_get_calendar_event__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_get_calendar_event__<span class="specific_api_indicator" id="get_calendar_event_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_get_calendar_event_Info__</div>
               <button id="btnManageCalendarEventInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageCalendarEventInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="get_calendar_event_specific_api_indicator"></span>
             </div>
             <label class="mzta_switch">
               <input type="checkbox" id="get_calendar_event" name="get_calendar_event" class="option-input" />
@@ -193,10 +189,9 @@
 
           <div class="feature_row get_task_tr">
             <div class="feature_info">
-              <div class="feature_name">__MSG_prefs_OptionText_get_task__</div>
+              <div class="feature_name">__MSG_prefs_OptionText_get_task__<span class="specific_api_indicator" id="get_task_specific_api_indicator"></span></div>
               <div class="feature_desc">__MSG_prefs_OptionText_get_task_Info__</div>
               <button id="btnManageTaskInfo" class="btn_no_border btn_small feature_manage">__MSG_prefs_OptionText_btnManageTaskInfo__ &rsaquo;</button>
-              <span class="specific_api_indicator" id="get_task_specific_api_indicator"></span>
             </div>
             <label class="mzta_switch">
               <input type="checkbox" id="get_task" name="get_task" class="option-input" />
