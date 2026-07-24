@@ -146,7 +146,7 @@ The prompt CRUD screen: a single wide `<table class="prompts_list">` driven by L
 
 ### Shared Design System CSS (`pages/_lib/mzta-design.css`)
 
-The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), `#miczDescription`, `#mzta_footer`, `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
+The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), the options-page bottom block (`#miczDescription` + `#mzta_info_guide`, `#mzta_info_row` with `#mzta_disclaimer` + `#mzta_shortcut_strip`, `#mzta_footer` — see "Options Page Bottom Block" below), `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
 
 #### Feature-Page Shell (opt-in `body.mzta_feature_page`)
 
@@ -263,6 +263,77 @@ registry entry (`makeClient` reading current form fields, `nameKey`, `requestPer
 fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style timeout
 (`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
 timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
+
+### Options Page Bottom Block (`#mzta_bottom`)
+
+Everything below the app-level "Advanced options" row is one wrapper `div#mzta_bottom`
+holding three parts in a vertical stack. It replaced five loose blocks (an "Important
+Information" `<h1>` eyebrow, the provider setup note with a bracketed `[More info]` link,
+a `CTRL+ALT+A` reminder sentence, the boxed LLM disclaimer, and a stacked footer). The
+wrapper takes the `#mzta_body > * { margin-bottom: 24px }` rhythm; the parts inside space
+themselves with their own `margin-top`.
+
+1. **Provider setup note** (`#miczDescription`) — headed by a plain
+   `div.mzta_eyebrow` (`prefs_info_pill`), matching every other section header on the
+   page. The box itself is **untinted**: only the body text carries the provider colour,
+   as a 3px `--tint-accent` left bar on the `.conntype_<provider> .info_specific` spans
+   (`prefsInfoDesc_1/2/3/4/7/8`). The single `#mzta_info_guide` link (`prefs_full_guide`)
+   is **moved inside the active provider's span** by `updateDescription()`, so it reads
+   inline at the end of that sentence instead of breaking onto its own line below the
+   accent bar. The element id is deliberately unchanged so `updateDescription()` keeps
+   working.
+2. **Disclaimer + shortcut row** (`#mzta_info_row`) — a `space-between` flex row, wrapping
+   on narrow windows:
+   - **LLM disclaimer** (`#mzta_disclaimer`) on the left, taking the free space
+     (`flex: 1 1 260px`). Now **borderless** (no `--warnBorder`/`--warnBg`; those tokens
+     are consequently unused, though still defined) — just the amber `--warnColor`
+     triangle glyph + `prefs_disclaimer_short` + the privacy link.
+   - **Keyboard-shortcut strip** (`#mzta_shortcut_strip`) at the right edge, keeping its
+     natural width (`flex: 0 0 auto`): a `--field` box with the `prefs_shortcut_label`
+     label and the `#mzta_shortcut_keys` `<kbd>` chips.
+3. **Footer** (`#mzta_footer`) — three **plain `<a>` links** on one centered `flex-wrap`
+   row (was a stacked column of `<div>`s, each with an introductory sentence before the
+   link). The lead-in sentences are gone: `TranslateText` + `TranslateLink` and
+   `prefsDonation_1` + `prefsDonation_2` are replaced by the single-label keys
+   `prefs_footer_translate` ("Translate the addon") and `prefs_footer_donate`
+   ("Make a donation"); release notes keeps `prefs_OptionText_release_notes`. The ids
+   `#miczTranslate` / `#miczDonation` / `#miczRelNotes` are preserved (now on the anchors),
+   and the donation URL was corrected from `http://` to `https://`.
+
+**Provider reactivity.** `updateDescription()` (`options/mzta-options.js`) does three
+things per provider, all driven by the existing `change` listener on `#connection_type`
+(plus one call at init): toggles the `.conntype_*` span visibility via inline `display`,
+toggles the `tint_*` class on `#miczDescription`, and moves `#mzta_info_guide` into the
+active span (idempotent — it only re-appends when the parent differs) while pointing it at
+`getMiczItUrl(CONN_GUIDE_PATH[conntype])`. `CONN_GUIDE_PATH` is **sparse on purpose** —
+only `chatgpt_web` (status page) and `ollama_api` (CORS page) have a dedicated
+documentation page, and the link is hidden (`display:none`) for the other four rather
+than falling back to a generic page.
+
+Note `.info_specific` must keep `display: block` in CSS, because `updateDescription()`
+reveals the active provider's text with `style.display = ""`, which falls back to the
+stylesheet value.
+
+**Tint tokens.** `#mzta_conn_panel` declares all four per-provider tint custom properties
+(`--tint-bg`/`--tint-border`/`--tint-pill`/`--tint-accent`); `#miczDescription` declares
+only `--tint-accent`, since the note is untinted apart from its left accent bar
+(`pages/_lib/mzta-design.css`).
+
+**Live keyboard shortcut.** `updateShortcutChips()` calls `browser.commands.getAll()`,
+finds `_thunderai__do_action`, and splits its `.shortcut` on `+` into one `<kbd>` per key,
+so the chips follow a user rebinding instead of showing a hard-coded string. This is the
+only `browser.commands` use in the codebase; the permission is implicit in the manifest
+`commands` key, so no manifest change was needed. The static `Ctrl`/`Alt`/`A` chips in the
+HTML are the fallback kept when the API throws, the command is missing, or the user has
+cleared the binding (empty `.shortcut`). It runs once at init — rebinding happens outside
+this page.
+
+**Retired i18n keys.** `prefsInfoTitle`, `prefs_status_page`, `prefsInfoDesc_5`,
+`prefsInfoDesc_6`, `prefs_disclaimer`, `TranslateText`, `TranslateLink`, `prefsDonation_1`,
+and `prefsDonation_2` are no longer referenced by this page but are **left in the locale
+files** — deleting them would churn all 16 Weblate-managed locales. New keys (English only,
+per the localization rule): `prefs_info_pill`, `prefs_full_guide`, `prefs_shortcut_label`,
+`prefs_disclaimer_short`, `prefs_footer_translate`, `prefs_footer_donate`.
 
 ### Feature "Manage settings" Links — Hidden vs. Disabled
 

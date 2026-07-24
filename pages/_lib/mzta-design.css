@@ -212,15 +212,12 @@ input, select, button, textarea { font-family: inherit; }
     stroke: var(--statsAccent);
 }
 
-/* LLM disclaimer strip */
+/* LLM disclaimer line — a quiet inline note, no box; on the options page it
+   shares a row with the keyboard-shortcut strip (see #mzta_info_row). */
 #mzta_disclaimer {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--warnBorder);
-    background: var(--warnBg);
+    gap: 8px;
     font-size: 11.5px;
     color: var(--dim);
     line-height: 1.5;
@@ -695,25 +692,83 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 
 /* ===========================================================================
-   IMPORTANT INFORMATION
+   BOTTOM BLOCK
+   Provider setup note · disclaimer + keyboard-shortcut row · footer.
+   The wrapper takes the #mzta_body > * rhythm; the parts below space
+   themselves with their own margin-top.
    =========================================================================== */
-#miczDescription { font-size: 12px; color: var(--text); line-height: 1.55; }
-#miczDescription h1 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
-#miczDescription p { margin: 0; }
-#miczDescription .info_specific { border-left: 3px solid var(--tint-accent, var(--accent)); padding-left: 11px; display: block; }
-#miczDescription .info_shared { color: var(--dim); display: block; margin-top: 9px; }
 
-/* ===========================================================================
-   FOOTER
-   =========================================================================== */
+/* --- Provider setup note ------------------------------------------------ */
+/* The section title matches the other section headers on the page; only the
+   body text carries the per-provider colour, as a left accent bar. */
+#miczDescription .mzta_eyebrow { display: block; margin-bottom: 10px; }
+#miczDescription p { margin: 0; }
+/* display:block is required here — updateDescription() reveals the active
+   provider's text with style.display = "", falling back to this value. */
+#miczDescription .info_specific {
+    display: block;
+    border-left: 3px solid var(--tint-accent, var(--accent));
+    padding-left: 11px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    transition: border-color .2s;
+}
+/* Sits inline at the end of the active provider's sentence (moved there by
+   updateDescription()), so it flows with the text rather than breaking below. */
+#mzta_info_guide {
+    margin-left: 5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* --- Disclaimer + shortcut row ------------------------------------------ */
+/* Disclaimer takes the free space on the left; the shortcut strip keeps its
+   natural width and sits at the right edge. Wraps on narrow windows. */
+#mzta_info_row {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+}
+#mzta_info_row > #mzta_disclaimer { flex: 1 1 260px; margin-top: 0; }
+
+/* --- Keyboard-shortcut strip -------------------------------------------- */
+#mzta_shortcut_strip {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 13px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 10px;
+}
+.mzta_shortcut_label { font-size: 12.5px; color: var(--dim); }
+#mzta_shortcut_keys { display: flex; gap: 4px; }
+#mzta_shortcut_keys kbd {
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+}
+
+/* --- Footer — plain centered links -------------------------------------- */
 #mzta_footer {
     border-top: 1px solid var(--line);
-    padding-top: 16px;
+    margin-top: 20px;
+    padding-top: 14px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 26px;
     font-size: 12px;
     color: var(--dim);
     line-height: 1.5;
@@ -750,7 +805,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #mzta_conn_panel.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-border: rgba(31,122,46,.40);  --tint-pill: rgba(31,122,46,.14);  --tint-accent: rgb(31,122,46); }
 #mzta_conn_panel.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-border: rgba(122,43,191,.40); --tint-pill: rgba(122,43,191,.14); --tint-accent: rgb(122,43,191); }
 
-/* Important-Information accent bar follows the same tint (set on #miczDescription) */
+/* Provider setup note — only the accent bar is tinted (set on #miczDescription) */
 #miczDescription.tint_chatgpt_web       { --tint-accent: rgb(180,83,14); }
 #miczDescription.tint_chatgpt_api       { --tint-accent: rgb(10,83,214); }
 #miczDescription.tint_google_gemini_api { --tint-accent: rgb(150,120,12); }

@@ -392,6 +392,30 @@
     "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
     "description": ""
   },
+  "prefs_info_pill": {
+    "message": "Important information",
+    "description": "Badge shown at the top of the provider setup callout, at the bottom of the options page."
+  },
+  "prefs_full_guide": {
+    "message": "Full guide",
+    "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
+  },
+  "prefs_shortcut_label": {
+    "message": "Open the ThunderAI menu with",
+    "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
+  },
+  "prefs_disclaimer_short": {
+    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models.",
+    "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
+  },
+  "prefs_footer_translate": {
+    "message": "Translate the addon",
+    "description": "Footer link at the bottom of the options page, opening the translation info page."
+  },
+  "prefs_footer_donate": {
+    "message": "Make a donation",
+    "description": "Footer link at the bottom of the options page, opening the donation page."
+  },
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""

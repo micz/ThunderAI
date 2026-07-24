@@ -28,13 +28,6 @@
 #btn_custom_prompts { display: flex; flex-direction: column; gap: 9px; }
 #btnMenuOrder { align-self: center; min-width: 150px; padding-left: 52px !important; padding-right: 52px !important; }
 
-/* Footer links */
-#miczTranslate, #miczDonation, #miczRelNotes { margin: 0; }
-#miczRelNotes { font-size: 11.5px; }
-
-/* service status link — shown inline after the ChatGPT Web info sentence */
-#miczStatusPage { text-transform: capitalize; }
-
 /* options-specific warnings */
 #owl_warning, #hyprland_warning { display: none; }
 
