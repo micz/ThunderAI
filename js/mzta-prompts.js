@@ -403,7 +403,7 @@ const specialPrompts = [
 ];
 
 
-export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
+export async function getPrompts(onlyReachable = false, includeSpecial = [], allSpecial = false){ // includeSpecial is an array of active special prompts ids
     const _defaultPrompts = await getDefaultPrompts_withProps();
     // console.log('>>>>>>>>>>>> getPrompts _defaultPrompts: ' + JSON.stringify(_defaultPrompts));
     const customPrompts = await getCustomPrompts();
@@ -426,8 +426,10 @@ export async function getPrompts(onlyEnabled = false, includeSpecial = [], allSp
         //     return isIncluded || isNotSpecial;
         //   });
     }
-    if(onlyEnabled){
-        output = output.filter(obj => obj.enabled != 0);
+    if(onlyReachable){
+        // Reachability is fully determined by show_in: a prompt with show_in === 'none'
+        // is in no menu and cannot be invoked by anything (the shortcut just opens the popup).
+        output = output.filter(obj => String(obj.show_in) !== 'none');
     }else{  // order only if we are not filtering, the filtering is for the menus and we are ordering there after i18n
         output.sort((a, b) => a.id.localeCompare(b.id));
     }
@@ -469,7 +471,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
+            let allowedKeys = ['id', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -504,9 +506,22 @@ export async function preparePromptsForImport(prompts){
             output.push(prompt);
         }
     });
+    // Backward-compat: old backups may still carry the removed `enabled` flag.
+    // Map enabled == 0 to show_in === 'none' and drop the field.
+    output.forEach(normalizeEnabledToShowIn);
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
+}
+
+// Backward-compat helper: the prompt `enabled` flag has been removed in favour of
+// show_in being the single source of truth. Map a legacy enabled == 0 to
+// show_in = 'none' (the "off" state), then drop the field entirely.
+export function normalizeEnabledToShowIn(prompt) {
+    if (prompt.enabled === 0 || prompt.enabled === "0") {
+        prompt.show_in = 'none';
+    }
+    delete prompt.enabled;
 }
 
 async function getDefaultPrompts_withProps() {
@@ -523,7 +538,6 @@ async function getDefaultPrompts_withProps() {
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.position_context = pos;
-            prompt.enabled = 1;
             pos++;
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [no prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
@@ -535,7 +549,6 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
-                prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
@@ -547,7 +560,6 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_display = pos;
                 prompt.position_compose = pos;
                 prompt.position_context = pos;
-                prompt.enabled = 1;
                 pos++;
             }
         })
@@ -597,7 +609,6 @@ export async function setDefaultPromptsProperties(prompts) {
             position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
             position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
             position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
-            enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
             need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
@@ -704,6 +715,46 @@ export async function migrateMenuOrderAlphabetic() {
     await setSpecialPrompts(visibleSpecialsToSave.concat(hiddenSpecialsToPreserve));
 
     await browser.storage.sync.set({ dynamic_menu_order_alphabet: false });
+}
+
+// One-time migration: the prompt `enabled` flag has been removed. show_in is now
+// the single source of truth for reachability. For every stored prompt across the
+// three stores: if it was disabled (enabled == 0) collapse it to show_in = 'none'
+// (its previous show_in is intentionally discarded — "off" becomes "none"), then
+// drop the enabled property. Guarded by a one-shot sync flag so it runs once;
+// also idempotent by construction (after it runs no `enabled` keys remain).
+export async function migrateEnabledToShowIn() {
+    const flag = await browser.storage.sync.get({ _migrated_enabled_to_showin: false });
+    if (flag._migrated_enabled_to_showin) {
+        return;
+    }
+
+    // Default prompt properties: object keyed by prompt id.
+    const dpp = await browser.storage.local.get({ _default_prompts_properties: null });
+    if (dpp._default_prompts_properties !== null) {
+        const props = dpp._default_prompts_properties;
+        Object.keys(props).forEach((id) => {
+            normalizeEnabledToShowIn(props[id]);
+        });
+        await browser.storage.local.set({ _default_prompts_properties: props });
+    }
+
+    // Custom prompts: array of full prompt objects.
+    const cp = await browser.storage.local.get({ _custom_prompt: null });
+    if (cp._custom_prompt !== null) {
+        cp._custom_prompt.forEach(normalizeEnabledToShowIn);
+        await setCustomPrompts(cp._custom_prompt);
+    }
+
+    // Special prompts: array of full prompt objects. Only strips enabled; the
+    // special "feature active" mechanism is untouched.
+    const sp = await browser.storage.local.get({ _special_prompts: null });
+    if (sp._special_prompts !== null) {
+        sp._special_prompts.forEach(normalizeEnabledToShowIn);
+        await setSpecialPrompts(sp._special_prompts);
+    }
+
+    await browser.storage.sync.set({ _migrated_enabled_to_showin: true });
 }
 
 export async function getSpamFilterPrompt(){

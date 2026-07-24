@@ -56,7 +56,8 @@ import {
     getSpamFilterPrompt,
     getSummarizePrompt,
     getTranslatePrompt,
-    migrateMenuOrderAlphabetic
+    migrateMenuOrderAlphabetic,
+    migrateEnabledToShowIn
 } from './js/mzta-prompts.js';
 import { taSpamReport } from './js/mzta-spamreport.js';
 import { taSummaryStore } from './js/mzta-summarystore.js';
@@ -81,6 +82,7 @@ browser.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
 
 await migrateCustomPromptsStorage();
 await migrateDefaultPromptsPropStorage();
+await migrateEnabledToShowIn();
 
 var original_html = '';
 var modified_html = '';

@@ -199,22 +199,6 @@
     "message": "Composing an email",
     "description": ""
   },
-  "show_in": {
-    "message": "Show in",
-    "description": ""
-  },
-  "show_in_popup": {
-    "message": "Popup only",
-    "description": ""
-  },
-  "show_in_context": {
-    "message": "Context menu only",
-    "description": ""
-  },
-  "show_in_both": {
-    "message": "Both",
-    "description": ""
-  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""
@@ -2421,8 +2405,12 @@
     "message": "Manage menu order settings",
     "description": "Button label to open the menu order page from options"
   },
+  "menu_position_btn_label": {
+    "message": "Menu position",
+    "description": "Button in the Custom Prompts editor that opens the Menu Order page and highlights this prompt"
+  },
   "menu_order_info": {
-    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu. A prompt hidden in every menu is disabled until you make it visible again.",
     "description": "Info text for the menu order page"
   },
   "menu_order_active_items": {
@@ -2440,6 +2428,38 @@
   "menu_order_icon_none": {
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
+  },
+  "menu_order_legend_type": {
+    "message": "When shown:",
+    "description": "Heading for the type badge group in the menu order page legend"
+  },
+  "menu_order_legend_type_always": {
+    "message": "Shown both when reading and composing",
+    "description": "Legend description for the 'Always' type badge"
+  },
+  "menu_order_legend_type_reading": {
+    "message": "Shown only when reading a message",
+    "description": "Legend description for the 'Reading' type badge"
+  },
+  "menu_order_legend_type_composing": {
+    "message": "Shown only when composing a message",
+    "description": "Legend description for the 'Composing' type badge"
+  },
+  "menu_order_legend_source": {
+    "message": "Prompt type:",
+    "description": "Heading for the source badge group in the menu order page legend"
+  },
+  "menu_order_legend_source_default": {
+    "message": "Built-in prompt included with ThunderAI",
+    "description": "Legend description for the 'Default' source badge"
+  },
+  "menu_order_legend_source_special": {
+    "message": "Feature-backed prompt (e.g. tagging, calendar)",
+    "description": "Legend description for the 'Special' source badge"
+  },
+  "menu_order_legend_source_custom": {
+    "message": "Prompt you created",
+    "description": "Legend description for the 'Custom' source badge"
   },
   "prefs_settings_subtitle": {
     "message": "Settings",

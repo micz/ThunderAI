@@ -37,7 +37,8 @@ import {
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     openTab,
-    setTomSelectBorder
+    setTomSelectBorder,
+    revealPromptInMenuOrder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -263,13 +264,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
-            enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
             api_type: document.getElementById('new_prompt_api_type').value,
-            show_in: document.getElementById('selectShowInNew').value,
+            // Placement is no longer chosen at creation: new prompts always start in
+            // the popup (the primary surface: toolbar button + shortcut both open it,
+            // and it respects `type`). Use the Menu Order page to move it afterwards.
+            show_in: 'popup',
         };
 
         switch(prefs.connection_type) {
@@ -313,6 +316,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         okBtn.addEventListener('click', handleConfirmClick);
         let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
         cancelBtn.addEventListener('click', handleCancelClick);
+        let menuPositionBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnMenuPositionItem`);
+        if (menuPositionBtn) menuPositionBtn.addEventListener('click', handleMenuPositionClick);
         // Normalize the read-only connection/API info boxes for the new row, the
         // same way loadPromptsList does at page load (a freshly added prompt has
         // no connection specified, so these boxes must be hidden).
@@ -664,8 +669,6 @@ function showItemRowEditor(tr) {
     tr.querySelector('.api_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
-    tr.querySelector('.show_in_output').style.display = 'inline';
-    tr.querySelector('.show_in_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'inline';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -691,8 +694,6 @@ function hideItemRowEditor(tr) {
     toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
-    tr.querySelector('.show_in_output').style.display = 'none';
-    tr.querySelector('.show_in_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'none';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -857,7 +858,6 @@ function handleCancelClick(e) {
     tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
     tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
-    tr.querySelector('.show_in_output').value = tr.querySelector('.show_in').innerText || 'popup';
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
     // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -884,14 +884,12 @@ function handleConfirmClick(e) {
     newValues.name = tr.querySelector('.name_output').value.trim();
     newValues.text = tr.querySelector('.text_output').value;
     newValues.type = tr.querySelector('.type_output').value;
-    newValues.show_in = tr.querySelector('.show_in_output').value;
     newValues.action = tr.querySelector('.action_output').value;
     newValues.need_selected = tr.querySelector('.need_selected').checked ? 1 : 0;
     newValues.need_signature = tr.querySelector('.need_signature').checked ? 1 : 0;
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
-    newValues.enabled = tr.querySelector('.enabled').checked ? 1 : 0;
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
     newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
@@ -911,8 +909,6 @@ function handleConfirmClick(e) {
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
-    tr.querySelector('.show_in').innerText = tr.querySelector('.show_in_output').value;
-    tr.querySelector('.show_in_show').innerText = tr.querySelector('.show_in_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
     if (newValues.api_type !== '') {
@@ -925,23 +921,27 @@ function handleConfirmClick(e) {
     setSomethingChanged();
 }
 
+// Open the Menu Order page and highlight this prompt there. Placement is owned by
+// that page now; this is the deep-link from the editor.
+function handleMenuPositionClick(e) {
+    e.preventDefault();
+    const tr = e.target.closest('tr');
+    const promptId = tr.querySelector('.id_output').value.trim().toLowerCase();
+    revealPromptInMenuOrder(promptId);
+}
+
 // Handle checkbox changes and log new state
 async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('enabled') || e.target.classList.contains('need_custom_text')) {
+    if (e.target.classList.contains('need_custom_text')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
             let item = promptsList.get('idnum', idnum);
             if (item && item.length > 0) {
-                if (e.target.classList.contains('enabled')) {
-                    item[0]._values.enabled = e.target.checked ? 1 : 0;
-                }
-                if (e.target.classList.contains('need_custom_text')) {
-                    item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
-                }
+                item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
             }
         }
     }
@@ -988,7 +988,6 @@ function handleCopyClick(e) {
     document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
     document.getElementById('txtTextNew').value = text;
     document.getElementById('selectTypeNew').value = type;
-    document.getElementById('selectShowInNew').value = tr.querySelector('.show_in_output').value || 'popup';
     document.getElementById('selectActionNew').value = action;
     
     document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
@@ -1057,7 +1056,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1082,18 +1081,6 @@ function loadPromptsList(values){
                     break;
                 case "2":
                     action_output = `__MSG_customPrompts_substitute_text__`;
-                    break;
-            }
-            let show_in_output = '';
-            switch(String(values.show_in || 'popup')){
-                case "popup":
-                    show_in_output = `__MSG_show_in_popup__`;
-                    break;
-                case "context":
-                    show_in_output = `__MSG_show_in_context__`;
-                    break;
-                case "both":
-                    show_in_output = `__MSG_show_in_both__`;
                     break;
             }
 
@@ -1143,17 +1130,11 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
-              <br><br>
-              <span class="field_title_s">__MSG_show_in__:</span>
-                <br>
-                <span class="show_in_show">` + show_in_output + `</span>
-                <select class="show_in_output hiddendata input_mod">
-                <option value="popup"` + ((values.show_in == "popup" || !values.show_in) ? ' selected':'') + `>__MSG_show_in_popup__</option>
-                <option value="context"` + ((values.show_in == "context") ? ' selected':'') + `>__MSG_show_in_context__</option>
-                <option value="both"` + ((values.show_in == "both") ? ' selected':'') + `>__MSG_show_in_both__</option>
-                </select>` +
+              <br><br>` +
+              // Placement (show_in) is no longer editable here — the Menu Order page
+              // owns it (reachable via the "Menu position" button). The value is still
+              // tracked in this hidden span so it is preserved across edits/saves.
                 `<span class="show_in hiddendata"></span>
-              <br><br>
               <span class="field_title_s">__MSG_customPrompts_form_label_Action__:</span>
                 <br><span class="action_show">` + action_output + `</span>
                 <select class="action_output hiddendata">
@@ -1162,6 +1143,8 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                 </select>` +
                 `<span class="action hiddendata"></span>
+                <br><br>
+                <button class="btnMenuPositionItem">__MSG_menu_position_btn_label__</button>
               </td>
                 <td class="w17">
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
@@ -1173,8 +1156,6 @@ function loadPromptsList(values){
                     <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
-                    <br>
-                    <label><input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__</label>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
@@ -1255,6 +1236,11 @@ function loadPromptsList(values){
         element.addEventListener('click', handleConfirmClick);
     });
 
+    let btnMenuPositionItem_elements = document.querySelectorAll(".btnMenuPositionItem");
+    btnMenuPositionItem_elements.forEach(element => {
+        element.addEventListener('click', handleMenuPositionClick);
+    });
+
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
     checkbox_elements.forEach(element => {
         element.addEventListener('change', handleCheckboxChange);
@@ -1310,7 +1296,6 @@ function clearFields() {
     document.getElementById('chatGPTWebProjectNew').value = '';
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
-    document.getElementById('selectShowInNew').value = 'popup';
     document.getElementById('selectActionNew').value = '0';
     document.getElementById('checkboxNeedSelectedNew').value = '0';
     document.getElementById('checkboxNeedSignatureNew').value = '0';
@@ -1369,7 +1354,6 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
             ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
-            ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }
 
