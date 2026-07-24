@@ -1875,6 +1875,15 @@
     "message": "Manage Data Placeholders",
     "description": ""
   },
+  "customDataPH_placeholdersCount": {
+    "message": "$COUNT$ data placeholders",
+    "description": "Footer count of data placeholders shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "customDataPH_manageDataPH_info_default_3": {
     "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
     "description": ""

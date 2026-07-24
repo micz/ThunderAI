@@ -7,7 +7,9 @@
     <link rel="icon" href="../../images/icon-16px.png">
 </head>
 <body>
+    <div class="page_wrap">
     <div>
+        <div class="page_eyebrow">ThunderAI</div>
         <h1 class="page_title">__MSG_customDataPH_manageDataPH__</h1>
         <p>__MSG_customDataPH_manageDataPH_info_default__
             <br>__MSG_customDataPH_manageDataPH_info_default_3__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
@@ -15,13 +17,8 @@
         </p>
     </div>
     <div id="import_export">
-        <button id="btnExportAll">__MSG_customDataPH_ExportAll__</button><br>
+        <button id="btnExportAll">__MSG_customDataPH_ExportAll__</button>
         <button id="btnImport">__MSG_customDataPH_Import__</button>
-    </div>
-    <div id="command_palette">
-      <button id="btnSaveAll" disabled>__MSG_btnSaveAll_string__</button>
-      <span id="msgDisplay"></span>
-      <button id="btnNew">__MSG_btnNew_string__</button>
     </div>
     <div id="formNew">
       <table class="width_all">
@@ -63,12 +60,18 @@
         <div class="go_right"><button id="btnAddNew" disabled>__MSG_customDataPH_btnAddNewCommit__</button></div>
     </div>
     <div id="all_custom_dataplaceholders">
+        <div id="command_palette">
+          <button id="btnSaveAll" disabled>__MSG_btnSaveAll_string__</button>
+          <span id="msgDisplay"></span>
+          <button id="btnNew">__MSG_btnNew_string__</button>
+        </div>
         <table class="prompts_list">
             <thead>
               <tr>
                 <th class="sort" data-sort="id">__MSG_customPrompts_form_label_ID__</th>
                 <th class="sort" data-sort="name">__MSG_customPrompts_form_label_Name__</th>
                 <th class="sort" data-sort="text">__MSG_customDataPH_form_label_Text__</th>
+                <th>&nbsp;</th>
 				<th>__MSG_customPrompts_Properties__</th>
                 <th>&nbsp;</th>
               </tr>
@@ -76,8 +79,10 @@
             <tbody class="list">
             </tbody>
           </table>
+        <div id="list_footer"><span id="ph_count"></span></div>
     </div>
     <div class="storage_space">__MSG_StorageSpace__: <span id="storage_space"></span></div>
+    </div>
     <script src="../_lib/list.js"></script>
     <script src="mzta-custom-dataplaceholders.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>

@@ -7,6 +7,7 @@
         <li>Redesigned the settings page to reduce visual complexity, moving advanced options to a dedicated section to improve the onboarding experience for new users [<a href="https://github.com/micz/ThunderAI/issues/739">#739</a>].</li>
         <li>A prompt's placement is now managed entirely from the Menu Order page: the "Show in" selector and the enabled checkbox have been removed from the prompt editor, which now shows a "Menu position" button that opens the Menu Order page and highlights the prompt. New prompts start visible in the popup menu [<a href="https://github.com/micz/ThunderAI/issues/824">#824</a>].</li>
         <li>The Custom Prompts page UI has been improved [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>The Data Placeholders page UI has been restyled to match the new Custom Prompts page design [<a href="https://github.com/micz/ThunderAI/issues/838">#838</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>

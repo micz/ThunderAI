@@ -243,8 +243,8 @@ function handleEditClick(e) {
     const tr = e.target.parentNode.parentNode;
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     e.target.style.display = 'none';    // Edit btn
-    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'flex';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'flex';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
@@ -293,8 +293,8 @@ function handleCancelClick(e) {
     e.target.style.display = 'none';    // Cancel btn
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
     tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
@@ -308,14 +308,19 @@ function handleConfirmClick(e) {
     e.target.style.display = 'none';    // Ok btn
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     // Update item data
     tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
     tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
-    tr.querySelector('.text_show').innerText = tr.querySelector('.text_output').value;
+    const text_show = tr.querySelector('.text_show');
+    text_show.innerText = tr.querySelector('.text_output').value;
 	tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
+    // The row is updated in place (no List.js re-render), so clear the decoration
+    // flag and re-run it to chip the placeholders in the freshly edited text.
+    delete text_show.dataset.phDecorated;
+    decoratePlaceholderText();
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
     setSomethingChanged();
@@ -329,6 +334,26 @@ function handleInputChange(e) {
 
 //========= handling an item in a row - END
 
+// Wrap {%placeholder%} tokens in the visible placeholder text with a styled chip.
+// Only touches the read-only .text_show spans (never the editable textarea),
+// and is idempotent (skips spans already decorated).
+function decoratePlaceholderText() {
+    document.querySelectorAll('#all_custom_dataplaceholders .text_show').forEach(span => {
+        if (span.dataset.phDecorated === '1') return;
+        if (!/\{%[^%]+%\}/.test(span.innerHTML)) { span.dataset.phDecorated = '1'; return; }
+        span.innerHTML = span.innerHTML.replace(/\{%[^%]+%\}/g,
+            m => '<span class="ph_chip">' + m + '</span>');
+        span.dataset.phDecorated = '1';
+    });
+}
+
+// Keep the card footer data placeholder count in sync with the rendered list.
+function updatePlaceholdersCount() {
+    const el = document.getElementById('ph_count');
+    if (!el) return;
+    const count = customDataPHsList ? customDataPHsList.items.length : 0;
+    el.textContent = browser.i18n.getMessage('customDataPH_placeholdersCount', [String(count)]);
+}
 
 function loadCustomDataPHsList(values){
     // console.log('>>>>>>>> loadCustomDataPHsList values: ' + JSON.stringify(values));
@@ -382,12 +407,11 @@ function loadCustomDataPHsList(values){
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
                 </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
+                <td class="actions_cell">
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -400,6 +424,13 @@ function loadCustomDataPHsList(values){
     // console.log('>>>>>>>>>>>>> values: ' + JSON.stringify(values));
 
     customDataPHsList = new List('all_custom_dataplaceholders', options, values);
+
+    decoratePlaceholderText();
+    updatePlaceholdersCount();
+    customDataPHsList.on('updated', () => {
+        decoratePlaceholderText();
+        updatePlaceholdersCount();
+    });
 
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
