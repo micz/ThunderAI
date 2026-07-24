@@ -1,289 +1,51 @@
-div#miczDescription{
-    padding:0px 15px 0px 15px;
-    font-size: 13px;
-}
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-div#miczDescription h1{
-    font-size: 15px;
-}
+/* ===========================================================================
+   OPTIONS PAGE — page-specific styles.
+   The shared design system (tokens, card shell, sections, fields, buttons,
+   connection panel, toggles, disclosures, tints) lives in
+   ../pages/_lib/mzta-design.css and is linked before this file.
+   Only rules unique to the options page remain here.
+   =========================================================================== */
 
-div#miczDonation{
-    width: 100%;
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-}
+/* Manage buttons region (options-specific layout) */
+#btn_custom_prompts { display: flex; flex-direction: column; gap: 9px; }
+#btnMenuOrder { align-self: center; min-width: 150px; padding-left: 52px !important; padding-right: 52px !important; }
 
-table#miczPrefs {
-    font-size: 13px;
-    padding: 10px;
-    border-spacing: 0px;
-}
+/* Footer links */
+#miczTranslate, #miczDonation, #miczRelNotes { margin: 0; }
+#miczRelNotes { font-size: 11.5px; }
 
-table#miczPrefs td{
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    vertical-align: top;
-    padding: 2px;
-}
+/* service status link — shown inline after the ChatGPT Web info sentence */
+#miczStatusPage { text-transform: capitalize; }
 
-table#miczPrefs tr:first-child td {
-    border-top: none;
-}
+/* options-specific warnings */
+#owl_warning, #hyprland_warning { display: none; }
 
-table#miczPrefs td.nb{
-    border-bottom: none;
-}
-
-table#miczPrefs td.nt{
-    border-top: none;
-}
-
-div#miczRelNotes{
-    position:absolute;
-    right: 0px;
-    bottom: 2px;
-    padding: 2px 5px 0px 0px;
-}
-
-div#miczStatusPage{
-    position:absolute;
-    left: 0px;
-    bottom: 2px;
-    padding: 2px 0px 0px 5px;
-    text-transform: capitalize;
-}
-
-div#miczDescription h1{
-    text-align: center;
-    margin-bottom: 0px;
-}
-
-div#miczDescription p{
-    text-align: justify;
-    margin-top: 0px;
-}
-
-input.win_prop{
-    width: 100px;
-}
-
-span.dims_label{
-    width: 75px;
-    display: inline-block;
-}
-
-#btn_custom_prompts{
-    text-align: center;
-    width: 100%;
-    margin: 10px 0px;
-}
-
-div#miczTranslate{
-    width: 100%;
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 1em;
-}
-
-.small_info{
-    font-size:smaller;
-}
-
-.warn_API_needed{
+#no_sparks {
     display: none;
-    font-weight: bold;
-}
-
-.specific_api_indicator{
-    display: none;
-    font-size: 0.75em;
-    margin-left: 0.5em;
-    margin-top: 3px;
-    padding: 0.35em 0.5em;
-    border-radius: 0.8em;
-}
-
-#no_sparks td{
     text-align: center;
-    padding: 1em !important;
-    background: #bbf7f1;
-}
-
-#owl_warning{
-    display: none;
-}
-
-#hyprland_warning{
-    display: none;
-}
-
-.warning{
-    color: white;
-    font-style: italic;
-    background-color: red;
-    border-radius: 4px;
-    padding: 3px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.warning a{
-    background-color: white;
-    padding:0px 3px;
-    border-radius: 4px;
-}
-
-#mzta_top_msg > td > div{
-    color: #212529;
-    font-style: italic;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    padding: 15px;
-    font-weight: bold;
-    text-align: center;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
-
-#mzta_top_msg div a{
-    color: #007BFF;
-}
-
-#mzta_top_msg div a:hover{
-    color: #FF6600;
-}
-
-#mzta_top_msg td{
-    border:0 !important;
-}
-
-#mzta_top_msg > td:first-child{
-    position: relative;
-}
-
-#mzta_top_msg > td:first-child > div{
-    position: absolute;
-    inset: 2px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-#mzta_doc_block{
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-}
-
-.doc_links{
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.doc_welcome{
-    border-top: 1px solid rgba(0,0,0,0.15);
-    padding-top: 6px;
-    width: 100%;
-    text-align: center;
-}
-
-.btn_small{
-    font-size: 0.8em;
-}
-
-.lightbold{
-    color: #292929;
-}
-
-label:has(input[type="checkbox"]) {
-    cursor: pointer;
-}
-
-#thstats div{
-    text-align: center;
-    padding: 10px !important;
-    border: 0 !important;
-    background: rgb(185, 238, 238);
-    font-weight: bold;
-    font-style: italic;
-    border-radius: 4px;
-}
-
-#thstats td{
-    border-top:0 !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: rgb(35, 34, 43);
-        color: rgb(251, 251, 254);
-    }
-    
-    a:link { color: #409EFF; }   
-    a:visited { color: #409EFF; }  
-    a:hover { color: #66B1FF; }   
-    a:active { color: #66B1FF; }
-    
-    tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
-        background-color: rgb(0, 0, 58);
-    }
-
-    tr.conntype_chatgpt_web,tr.conntype_chatgpt_web2{
-        background-color: rgb(39, 11, 0);
-    }
-
-    tr.conntype_ollama_api, tr.conntype_ollama_api2{
-        background-color: rgb(7, 58, 0);
-    }
-
-    tr.conntype_openai_comp_api, tr.conntype_openai_comp_api2{
-        background-color: rgb(89, 20, 129);
-    }
-
-    tr.conntype_google_gemini_api, tr.conntype_google_gemini_api2{
-        background-color: rgb(72, 77, 3);
-    }
-
-    tr.conntype_anthropic_api, tr.conntype_anthropic_api2{
-        background-color: rgb(83, 0, 35);
-    }
-
-    .api_key-container .toggle-icon img {
-        filter: invert(1);
-    }
-
-    #mzta_top_msg > td > div{
-        color:#EEEEEE;
-        background-color: #313131;
-    }
-
-    #mzta_top_msg div a{
-        color: #00ADB5;
-    }
-
-    #mzta_top_msg div a:hover{
-        color: #FF5722;
-    }
-
-    .doc_welcome{
-        border-top-color: rgba(255,255,255,0.15);
-    }
-
-    #no_sparks td{
-        background: #3b514f;
-    }
-
-    .lightbold{
-        color: #f3f3f3;
-    }
-
-    #thstats div{
-        background: rgb(41, 70, 70);
-    }
-
+    padding: 1em;
+    background: rgba(31, 138, 91, .12);
+    border: 1px solid rgba(31, 138, 91, .3);
+    border-radius: 9px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    margin-top: 5px;
 }

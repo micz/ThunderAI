@@ -484,10 +484,6 @@
     "message": "ChatGPT Models",
     "description": ""
   },
-  "ChatGPT_Models_Fetch": {
-    "message": "Update ChatGPT Models list",
-    "description": ""
-  },
   "ChatGPT_Models_Error_fetching": {
     "message": "Error trying to fetch ChatGPT models",
     "description": ""
@@ -536,9 +532,9 @@
     "message": "Ollama Models",
     "description": ""
   },
-  "Ollama_Models_Fetch": {
-    "message": "Update Ollama Models list",
-    "description": ""
+  "Models_Fetch": {
+    "message": "Update list",
+    "description": "Label of the button that fetches/updates the available models list for an AI provider"
   },
   "Ollama_Models_Error_fetching": {
     "message": "Error trying to fetch Ollama models",
@@ -578,10 +574,6 @@
   },
   "OpenAIComp_Models": {
     "message": "OpenAI Compatible API Models",
-    "description": ""
-  },
-  "OpenAIComp_Models_Fetch": {
-    "message": "Update OpenAI Compatible API Models list",
     "description": ""
   },
   "OpenAIComp_Models_Error_fetching": {
@@ -981,11 +973,11 @@
     "description": ""
   },
   "prefs_SurveyLinkText": {
-    "message": "Share your feedback and help improve ThunderAI!",
+    "message": "Enjoying ThunderAI?",
     "description": ""
   },
   "prefs_SurveyLinkText2": {
-    "message": "Click here, it only takes a minute!",
+    "message": "Share your feedback",
     "description": ""
   },
   "prefs_doc_title": {
@@ -1034,10 +1026,6 @@
   },
   "GoogleGemini_Models": {
     "message": "Google Gemini API Models",
-    "description": ""
-  },
-  "GoogleGemini_Models_Fetch": {
-    "message": "Update Google Gemini Models list",
     "description": ""
   },
   "GoogleGemini_Models_Error_fetching": {
@@ -1732,10 +1720,6 @@
     "message": "Claude Models",
     "description": ""
   },
-  "Anthropic_Models_Fetch": {
-    "message": "Update Claude Models list",
-    "description": ""
-  },
   "Anthropic_Models_Error_fetching": {
     "message": "Error trying to fetch Claude models",
     "description": ""
@@ -2354,7 +2338,7 @@
     "description": ""
   },
   "prefs_THStats_2": {
-    "message": "Click here! Try ThunderStats!",
+    "message": "Try ThunderStats!",
     "description": ""
   },
   "prefs_OptionText_chatgpt_win_pos_text":{
@@ -2456,5 +2440,96 @@
   "menu_order_icon_none": {
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
+  },
+  "prefs_settings_subtitle": {
+    "message": "Settings",
+    "description": "Subtitle shown under the ThunderAI name in the options page header"
+  },
+  "prefs_disclaimer": {
+    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models. Use at your own risk.",
+    "description": "Disclaimer note shown at the top of the options page body"
+  },
+  "prefs_ConnectionSettingsTitle": {
+    "message": "Connection Settings",
+    "description": "Section eyebrow for the connection settings panel on the options page"
+  },
+  "prefs_BasicsSettingsTitle": {
+    "message": "Basics Settings",
+    "description": "Section eyebrow for the basic settings on the options page"
+  },
+  "prefs_FeaturesTitle": {
+    "message": "Features",
+    "description": "Section eyebrow for the features list on the options page"
+  },
+  "prefs_FeaturesSubtitle": {
+    "message": "Turn on what you need. Fine-tune each from its own settings screen.",
+    "description": "Sub-line under the Features section eyebrow on the options page"
+  },
+  "prefs_advanced_options": {
+    "message": "Advanced options",
+    "description": "Label of the app-level advanced options disclosure on the options page"
+  },
+  "prefs_conn_show_advanced": {
+    "message": "Show advanced options",
+    "description": "Label of the per-connection advanced options disclosure button when collapsed"
+  },
+  "prefs_conn_hide_advanced": {
+    "message": "Hide advanced options",
+    "description": "Label of the per-connection advanced options disclosure button when expanded"
+  },
+  "prefs_privacy_more_info":{
+    "message": "Click here for more info about privacy"
+  },
+  "connTest_idle": {
+    "message": "Connection not tested yet",
+    "description": "Connection test status strip: initial state before any test has run"
+  },
+  "connTest_testing": {
+    "message": "Testing connection…",
+    "description": "Connection test status strip: state while the connectivity check is in progress"
+  },
+  "connTest_ok": {
+    "message": "Connected — $API$ reachable",
+    "description": "Connection test status strip: success state; $API$ is the provider name",
+    "placeholders": {
+      "api": {
+        "content": "$1",
+        "example": "Anthropic Claude"
+      }
+    }
+  },
+  "connTest_error": {
+    "message": "Error — $DETAIL$",
+    "description": "Connection test status strip: error state; $DETAIL$ is the error message",
+    "placeholders": {
+      "detail": {
+        "content": "$1",
+        "example": "401 — invalid API key"
+      }
+    }
+  },
+  "connTest_error_auth": {
+    "message": "Authentication failed — check your API key",
+    "description": "Connection test status strip: error message for a 401/403 authentication failure"
+  },
+  "connTest_error_network": {
+    "message": "Network error — endpoint unreachable",
+    "description": "Connection test status strip: error message when the endpoint cannot be reached (network/CORS)"
+  },
+  "connTest_error_timeout": {
+    "message": "Timed out — no response from the endpoint",
+    "description": "Connection test status strip: error message when the request exceeds the timeout"
+  },
+  "connTest_link_test": {
+    "message": "Test now",
+    "description": "Connection test status strip: action link to run the test (idle state)"
+  },
+  "connTest_link_retest": {
+    "message": "Re-test",
+    "description": "Connection test status strip: action link to run the test again (success state)"
+  },
+  "connTest_link_retry": {
+    "message": "Retry",
+    "description": "Connection test status strip: action link to run the test again (error state)"
   }
 }

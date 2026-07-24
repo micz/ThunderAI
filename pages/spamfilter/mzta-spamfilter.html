@@ -3,104 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <title>ThunderAI - __MSG_SpamFilter_PageTitle__</title>
-    <link rel="stylesheet" href="mzta-spamfilter.css">
-    <link rel="stylesheet" href="../_lib/connection-ui.css">
-    <link rel="icon" href="../../images/icon-16px.png">
+    <link rel="stylesheet" href="../_lib/mzta-design.css" />
+    <link rel="stylesheet" href="mzta-spamfilter.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
 </head>
-<body>
-    <div>
-        <h1 class="page_title">__MSG_SpamFilter_PageTitle__</h1>
-        <p>__MSG_SpamFilter_info_default__</p>
-    </div>
-    <div class="spamfilter_table_title section_title">__MSG_SpamFilter_prompt_prefs_title__</div>
-    <table id="miczPrefs">
-          <tr class="spamfilter_tr specific_integration">
-            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
-            </td>
-            <td>
-              <label>
-                <input type="checkbox" id="spamfilter_use_specific_integration" name="spamfilter_use_specific_integration" class="option-input" />
-                __MSG_prefs_OptionText_spamfilter_use_specific_integration_Info__
-              </label>
-            </td>
-          </tr>
-          <tr id="connection_ui_anchor"></tr>
-          <tr id="connection_ui_end"><td colspan="2"></td></tr>
-          <tr class="spamfilter_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter_threshold__</span></td>
-            <td>
-              <label>
-                <input type="number" id="spamfilter_threshold" name="spamfilter_threshold" min="0" max="100" class="option-input" /><span id="spamfilter_threshold_too_low">__MSG_spamfilter_threshold_too_low__</span>
-                <br>__MSG_prefs_OptionText_spamfilter_threshold_Info__
-              </label>
-            </td>
-          </tr>
-          <tr class="spamfilter_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter_show_msg_panel__</span></td>
-            <td>
-              <label>
-                <input type="checkbox" id="spamfilter_show_msg_panel" name="spamfilter_show_msg_panel" class="option-input" />
-                __MSG_prefs_OptionText_spamfilter_show_msg_panel_Info__
-              </label>
-            </td>
-          </tr>
-          <tr class="spamfilter_tr">
-            <td><span class="opt_title">__MSG_prefs_OptionText_spamfilter_only_inbox__</span></td>
-            <td>
-              <label>
-                <input type="checkbox" id="spamfilter_only_inbox" name="spamfilter_only_inbox" class="option-input" />
-                __MSG_prefs_OptionText_spamfilter_only_inbox_Info__
-              </label>
-            </td>
-          </tr>
+<body class="mzta_feature_page">
+    <div id="mzta_card">
 
-    </table>
-    <div id="spamfilter_container">
-        <span class="section_title">__MSG_SpamFilter_prompt_text_title__</span><span id="spamfilter_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
-        <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
-          <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b></span>
-        <br>
-        <div class="autocomplete-container">
-            <textarea id="spamfilter_prompt_text" rows="15"></textarea>
-            <ul class="autocomplete-list hidden"></ul>
+        <!-- HEADER -->
+        <div id="mzta_top_links">
+            <div class="mzta_hdr_row1">
+                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
+                <span class="mzta_page_title">__MSG_SpamFilter_PageTitle__</span>
+            </div>
+            <p class="mzta_page_subtitle mzta_help">__MSG_SpamFilter_info_default__</p>
         </div>
-        <div id="spamfilter_info_additional_statements"></div>
-        <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
-    </div>
-    <div id="account_selector_container">
-      <div id="account_selector_info"><span class="section_title">__MSG_AccountSelector_Spamfilter__</span>
-      <br><span class="infoline">__MSG_AccountSelector_AutoTags_infoline__</span></div>
-      <div id="account_selector_checkboxes"></div>
-      <button type="button" id="accounts_select_all">__MSG_SelectAll__</button>
-    <button type="button" id="accounts_deselect_all">__MSG_DeselectAll__</button>
-    </div>
-    <div id="spamfilter_skip_addresses_container">
-        <span class="section_title">__MSG_SpamFilter_skip_addresses_title__</span><span id="skip_addresses_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
-        <br><span class="infoline">__MSG_SpamFilter_skip_addresses_infoline__
-            <br>__MSG_SpamFilter_skip_addresses_infoline2__</span>
-        <br><textarea id="spamfilter_skip_addresses" rows="7"></textarea>
-        <div class="btn_div"><button id="btn_save_skip_addresses" disabled>__MSG_save__</button></div>
-        <br><label><input type="checkbox" id="spamfilter_skip_addressbook" name="spamfilter_skip_addressbook" /> <span class="opt_title">__MSG_prefs_OptionText_spamfilter_skip_addressbook__</span><br>__MSG_prefs_OptionText_spamfilter_skip_addressbook_Info__</label>
-    </div>
-    <div id="spamfitler_reports_container">
-      <div><span  class="section_title">__MSG_SpamReport_Title__</span></div>
-      <table id="report_data">
-          <thead>
-              <tr>
-                <th>Message_ID</th>
-                <th>__MSG_Date__</th>
-                <th>__MSG_From__</th>
-                <th>__MSG_Subject__</th>
-                <th>__MSG_Spam_Value__</th>
-                <th>__MSG_Moved_to_Spam__</th>
-                <th>__MSG_Explanation__</th>
-                <th>__MSG_Report_Date__</th>
-              </tr>
-          </thead>
-          <tbody id="report_data_body">
-              <!-- Rows will be inserted dynamically -->
-          </tbody>
-      </table>
+
+        <!-- BODY -->
+        <div id="mzta_body">
+
+            <!-- SETTINGS -->
+            <div class="mzta_section">
+                <div class="mzta_eyebrow">__MSG_SpamFilter_prompt_prefs_title__</div>
+
+                <!-- specific integration toggle -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_use_specific_integration_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter_use_specific_integration" name="spamfilter_use_specific_integration" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- connection panel (rows injected at runtime into the table) -->
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
+                    </div>
+                    <table id="connection_ui_table">
+                        <tr id="connection_ui_anchor"></tr>
+                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
+                    </table>
+                </div>
+
+                <!-- threshold -->
+                <div class="mzta_field mzta_field_num">
+                    <div class="mzta_field_num_text">
+                        <span class="opt_title">__MSG_prefs_OptionText_spamfilter_threshold__ <span id="spamfilter_threshold_too_low">__MSG_spamfilter_threshold_too_low__</span></span>
+                        <span class="mzta_help">__MSG_prefs_OptionText_spamfilter_threshold_Info__</span>
+                    </div>
+                    <div class="mzta_field_num_ctrl">
+                        <input type="number" id="spamfilter_threshold" name="spamfilter_threshold" min="0" max="100" class="option-input" />
+                    </div>
+                </div>
+
+                <!-- show msg panel -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_spamfilter_show_msg_panel__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_show_msg_panel_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter_show_msg_panel" name="spamfilter_show_msg_panel" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <!-- only inbox -->
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_spamfilter_only_inbox__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_only_inbox_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter_only_inbox" name="spamfilter_only_inbox" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- PROMPT -->
+            <div class="mzta_section" id="spamfilter_container">
+                <div class="mzta_eyebrow">__MSG_SpamFilter_prompt_text_title__<span id="spamfilter_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_prefs_OptionText_btnManagePrompts_infoline__
+                    <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
+                    <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
+                </p>
+                <div class="mzta_field">
+                    <div class="autocomplete-container">
+                        <textarea id="spamfilter_prompt_text" rows="15"></textarea>
+                        <ul class="autocomplete-list hidden"></ul>
+                    </div>
+                    <div id="spamfilter_info_additional_statements"></div>
+                    <div class="btn_div">
+                        <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
+                        <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACCOUNT SELECTOR -->
+            <div class="mzta_section" id="account_selector_container">
+                <div class="mzta_eyebrow">__MSG_AccountSelector_Spamfilter__</div>
+                <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
+                <div id="account_selector_checkboxes"></div>
+                <div class="btn_div" style="justify-content:flex-start;">
+                    <button type="button" id="accounts_select_all" class="btn_secondary btn_small">__MSG_SelectAll__</button>
+                    <button type="button" id="accounts_deselect_all" class="btn_secondary btn_small">__MSG_DeselectAll__</button>
+                </div>
+            </div>
+
+            <!-- SKIP ADDRESSES -->
+            <div class="mzta_section" id="spamfilter_skip_addresses_container">
+                <div class="mzta_eyebrow">__MSG_SpamFilter_skip_addresses_title__<span id="skip_addresses_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_SpamFilter_skip_addresses_infoline__
+                    <br>__MSG_SpamFilter_skip_addresses_infoline2__
+                </p>
+                <div class="mzta_field">
+                    <textarea id="spamfilter_skip_addresses" rows="7"></textarea>
+                    <div class="btn_div">
+                        <button id="btn_save_skip_addresses" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_spamfilter_skip_addressbook__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_skip_addressbook_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter_skip_addressbook" name="spamfilter_skip_addressbook" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div class="mzta_section" id="spamfitler_reports_container">
+                <div class="mzta_eyebrow">__MSG_SpamReport_Title__</div>
+                <div class="report_scroll">
+                    <table id="report_data">
+                        <thead>
+                            <tr>
+                                <th>Message_ID</th>
+                                <th>__MSG_Date__</th>
+                                <th>__MSG_From__</th>
+                                <th>__MSG_Subject__</th>
+                                <th>__MSG_Spam_Value__</th>
+                                <th>__MSG_Moved_to_Spam__</th>
+                                <th>__MSG_Explanation__</th>
+                                <th>__MSG_Report_Date__</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report_data_body">
+                            <!-- Rows will be inserted dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
     </div>
     <script src="mzta-spamfilter.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>
