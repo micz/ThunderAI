@@ -2635,7 +2635,7 @@
     "description": "Onboarding page: bold label of the first item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li1": {
-    "message": ": Use this to search for part of the prompt.",
+    "message": "Use this to search for part of the prompt.",
     "description": "Onboarding page: description of the first item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li2_b": {
@@ -2643,7 +2643,7 @@
     "description": "Onboarding page: bold label of the second item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li2": {
-    "message": ": Move through the prompts.",
+    "message": "Move through the prompts.",
     "description": "Onboarding page: description of the second item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li3_b": {
@@ -2651,7 +2651,7 @@
     "description": "Onboarding page: bold label of the third item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li3": {
-    "message": ": Press a number on the keyboard to choose the corresponding prompt.",
+    "message": "Press a number on the keyboard to choose the corresponding prompt.",
     "description": "Onboarding page: description of the third item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li4_b": {
@@ -2659,7 +2659,7 @@
     "description": "Onboarding page: bold label of the fourth item in the prompts menu usage list"
   },
   "onboarding_using_prompts_li4": {
-    "message": ": When you've picked the prompt you'd like, press enter to execute it.",
+    "message": "When you've picked the prompt you'd like, press enter to execute it.",
     "description": "Onboarding page: description of the fourth item in the prompts menu usage list"
   },
   "onboarding_using_prompts_3": {
@@ -2679,27 +2679,19 @@
     "description": "Onboarding page: alt text for the custom prompts management image"
   },
   "onboarding_custom_prompts_p1_1": {
-    "message": "From the options page you can open the ",
-    "description": "Onboarding page: text before the 'Custom Prompts' bold label in the custom prompts section"
-  },
-  "onboarding_custom_prompts_bold": {
-    "message": "Custom Prompts",
-    "description": "Onboarding page: bold 'Custom Prompts' label in the custom prompts section"
-  },
-  "onboarding_custom_prompts_p1_2": {
-    "message": " page.",
-    "description": "Onboarding page: text after the 'Custom Prompts' bold label in the custom prompts section"
+    "message": "From the options page you can open the Custom Prompts page.",
+    "description": "Onboarding page: first line of the custom prompts section"
   },
   "onboarding_custom_prompts_p1_3": {
     "message": "From there you can add your prompts, and also disable the default ones.",
     "description": "Onboarding page: line about adding and disabling prompts"
   },
   "onboarding_custom_prompts_p1_4": {
-    "message": "You can find more info ",
+    "message": "You can find more info",
     "description": "Onboarding page: text before the 'here' links in the custom prompts section"
   },
   "onboarding_custom_prompts_p2_1": {
-    "message": "While defining your own prompts you can also use ",
+    "message": "While defining your own prompts you can also use",
     "description": "Onboarding page: text before the 'data placeholders' bold label"
   },
   "onboarding_custom_prompts_bold_dp": {
@@ -2743,7 +2735,7 @@
     "description": "Onboarding page: bold label of the first item in the automatic features list"
   },
   "onboarding_automatic_features_li1": {
-    "message": ": automatically moves the email to the spam folder if it is detected as spam.",
+    "message": "automatically moves the email to the spam folder if it is detected as spam.",
     "description": "Onboarding page: description of the Auto Spam Filter feature"
   },
   "onboarding_automatic_features_li2_b": {
@@ -2751,7 +2743,7 @@
     "description": "Onboarding page: bold label of the second item in the automatic features list"
   },
   "onboarding_automatic_features_li2": {
-    "message": ": automatically assigns tags to the email.",
+    "message": "automatically assigns tags to the email.",
     "description": "Onboarding page: description of the Auto Tagging feature"
   },
   "onboarding_automatic_features_2": {
@@ -2759,16 +2751,12 @@
     "description": "Onboarding page: closing note about the options pages for automatic features"
   },
   "onboarding_footer_1": {
-    "message": "If you have any questions or suggestions, please open an issue on the ",
+    "message": "If you have any questions or suggestions, please open an issue on the",
     "description": "Onboarding page: footer text before the GitHub link"
   },
   "onboarding_footer_github": {
     "message": "GitHub page",
     "description": "Onboarding page: GitHub link text in the footer"
-  },
-  "onboarding_footer_2": {
-    "message": ".",
-    "description": "Onboarding page: trailing period after the GitHub link in the footer"
   },
   "onboarding_footer_3": {
     "message": "Do you enjoy ThunderAI?",
