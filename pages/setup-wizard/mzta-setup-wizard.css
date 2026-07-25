@@ -96,13 +96,16 @@ body {
     flex-direction: column;
     gap: 9px;
 }
-.wiz_provider_card {
+/* Scoped under #mzta_card to outrank the generic `#mzta_card button` rule in
+   mzta-design.css, which sets `background: transparent` and would otherwise
+   win on specificity (1-0-1 beats a bare class). */
+#mzta_card .wiz_provider_card {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 13px 14px;
     border: 1.5px solid var(--fieldLine);
-    background: var(--field);
+    background: var(--tint-bg-soft, var(--field));
     border-radius: 11px;
     cursor: pointer;
     text-align: left;
@@ -138,7 +141,7 @@ body {
     background: transparent;
 }
 /* Selected card: tint border/background + fill the radio with the tint accent */
-.wiz_provider_card.wiz_selected {
+#mzta_card .wiz_provider_card.wiz_selected {
     border-color: var(--tint-border, var(--accent));
     background: var(--tint-bg, var(--accentLight));
 }
@@ -151,13 +154,15 @@ body {
 
 /* Per-provider tint tokens for the provider cards (both themes). Mirrors the
    token values in connection-ui.css so the card colour matches the connection
-   panel colour for the same provider. */
-.wiz_provider_card.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.08);  --tint-border: rgba(180,83,14,.40);  --tint-accent: rgb(180,83,14); }
-.wiz_provider_card.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.08);  --tint-border: rgba(10,83,214,.40);  --tint-accent: rgb(10,83,214); }
-.wiz_provider_card.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.08); --tint-border: rgba(150,120,12,.40); --tint-accent: rgb(150,120,12); }
-.wiz_provider_card.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.08);  --tint-border: rgba(168,20,80,.40);  --tint-accent: rgb(168,20,80); }
-.wiz_provider_card.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-border: rgba(31,122,46,.40);  --tint-accent: rgb(31,122,46); }
-.wiz_provider_card.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-border: rgba(122,43,191,.40); --tint-accent: rgb(122,43,191); }
+   panel colour for the same provider.
+   --tint-bg-soft is the unselected card wash: same hue, roughly a third of the
+   alpha, so every card reads as colour-coded while selection still steps up. */
+.wiz_provider_card.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.08);  --tint-bg-soft: rgba(180,83,14,.035);  --tint-border: rgba(180,83,14,.40);  --tint-accent: rgb(180,83,14); }
+.wiz_provider_card.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.08);  --tint-bg-soft: rgba(10,83,214,.035);  --tint-border: rgba(10,83,214,.40);  --tint-accent: rgb(10,83,214); }
+.wiz_provider_card.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.08); --tint-bg-soft: rgba(150,120,12,.035); --tint-border: rgba(150,120,12,.40); --tint-accent: rgb(150,120,12); }
+.wiz_provider_card.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.08);  --tint-bg-soft: rgba(168,20,80,.035);  --tint-border: rgba(168,20,80,.40);  --tint-accent: rgb(168,20,80); }
+.wiz_provider_card.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-bg-soft: rgba(31,122,46,.035);  --tint-border: rgba(31,122,46,.40);  --tint-accent: rgb(31,122,46); }
+.wiz_provider_card.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-bg-soft: rgba(122,43,191,.035); --tint-border: rgba(122,43,191,.40); --tint-accent: rgb(122,43,191); }
 
 /* The injected connection-type <select> row is not shown in the wizard: the
    provider is chosen through the cards on step 0. The <select> stays in the
@@ -232,12 +237,12 @@ body {
 #wiz_step_done.tint_openai_comp_api   { --tint-accent: rgb(122,43,191); }
 
 @media (prefers-color-scheme: dark) {
-    .wiz_provider_card.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.20);  --tint-border: rgba(180,83,14,.55);  --tint-accent: rgb(222,177,140); }
-    .wiz_provider_card.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.20);  --tint-border: rgba(10,83,214,.55);  --tint-accent: rgb(120,171,244); }
-    .wiz_provider_card.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.20); --tint-border: rgba(150,120,12,.55); --tint-accent: rgb(208,194,140); }
-    .wiz_provider_card.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.20);  --tint-border: rgba(168,20,80,.55);  --tint-accent: rgb(216,150,177); }
-    .wiz_provider_card.tint_ollama_api        { --tint-bg: rgba(31,122,46,.20);  --tint-border: rgba(31,122,46,.55);  --tint-accent: rgb(154,196,161); }
-    .wiz_provider_card.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.20); --tint-border: rgba(122,43,191,.55); --tint-accent: rgb(195,163,226); }
+    .wiz_provider_card.tint_chatgpt_web       { --tint-bg: rgba(180,83,14,.20);  --tint-bg-soft: rgba(180,83,14,.09);  --tint-border: rgba(180,83,14,.55);  --tint-accent: rgb(222,177,140); }
+    .wiz_provider_card.tint_chatgpt_api       { --tint-bg: rgba(10,83,214,.20);  --tint-bg-soft: rgba(10,83,214,.09);  --tint-border: rgba(10,83,214,.55);  --tint-accent: rgb(120,171,244); }
+    .wiz_provider_card.tint_google_gemini_api { --tint-bg: rgba(150,120,12,.20); --tint-bg-soft: rgba(150,120,12,.09); --tint-border: rgba(150,120,12,.55); --tint-accent: rgb(208,194,140); }
+    .wiz_provider_card.tint_anthropic_api     { --tint-bg: rgba(168,20,80,.20);  --tint-bg-soft: rgba(168,20,80,.09);  --tint-border: rgba(168,20,80,.55);  --tint-accent: rgb(216,150,177); }
+    .wiz_provider_card.tint_ollama_api        { --tint-bg: rgba(31,122,46,.20);  --tint-bg-soft: rgba(31,122,46,.09);  --tint-border: rgba(31,122,46,.55);  --tint-accent: rgb(154,196,161); }
+    .wiz_provider_card.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.20); --tint-bg-soft: rgba(122,43,191,.09); --tint-border: rgba(122,43,191,.55); --tint-accent: rgb(195,163,226); }
 
     #wiz_step_done.tint_chatgpt_web       { --tint-accent: rgb(222,177,140); }
     #wiz_step_done.tint_chatgpt_api       { --tint-accent: rgb(120,171,244); }
