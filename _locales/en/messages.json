@@ -2533,7 +2533,7 @@
     "description": "Connection test status strip: action link to run the test again (error state)"
   },
   "wizard_title": {
-    "message": "ThunderAI Setup",
+    "message": "Setup Wizard",
     "description": "Title of the setup wizard page"
   },
   "wizard_step_provider_title": {
