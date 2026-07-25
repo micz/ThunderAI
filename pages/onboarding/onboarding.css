@@ -220,31 +220,47 @@ h2 {
 }
 
 #wizard_banner {
-  width: 100%;
+  /* Keep the whole box — border included — clear of the absolutely positioned
+     #onboarding_doc_panel, which is opaque and would otherwise cover the
+     banner's right edge. Shrinking the box (not just its padding) is what
+     keeps the border visible. */
+  width: auto;
+  align-self: stretch;
+  margin-inline-end: 230px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px 14px;
   padding: 16px 20px;
   margin-bottom: 1.5em;
-  background: light-dark(#e7f1ff, #1d2b40);
-  border: 1px solid #0a84ff;
+  background: light-dark(#e7f1ff, #16324f);
+  border: 1px solid light-dark(#0a84ff, #3a6ea5);
+  border-inline-start: 4px solid #0a84ff;
+  border-inline-end: 4px solid #0a84ff;
   border-radius: 10px;
-  text-align: center;
+  text-align: start;
   font-size: 16px;
   color: light-dark(#333, #f4f4f5);
   z-index: 1;
   position: relative;
 }
 #wizard_banner a {
-  color: #0a84ff;
+  color: light-dark(#0a84ff, #6cb4ff);
   font-weight: bold;
   text-decoration: none;
   white-space: nowrap;
 }
 #wizard_banner a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  #wizard_banner {
+    margin-inline-end: 0;
+    justify-content: center;
+    text-align: center;
+  }
 }
 
 #onboarding_doc_panel {

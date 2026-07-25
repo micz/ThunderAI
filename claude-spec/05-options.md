@@ -305,7 +305,16 @@ the options page, so they persist via the shared save-on-`change`.
 
 **Entry points:**
 - **Onboarding banner** — a `#wizard_banner` at the top of `pages/onboarding/onboarding.html`
-  with a link (`#btn_launch_wizard`) that opens the wizard.
+  with a link (`#btn_launch_wizard`) that opens the wizard. It shares its `.content` parent
+  with `#onboarding_doc_panel`, which is `position: absolute` (top-right, `z-index: 100`),
+  opaque, and therefore reserves no layout space. The banner is styled with a 4px `#0a84ff`
+  accent edge on **both** inline sides (1px border top/bottom), so its whole box — borders
+  included — must stay clear of the panel: it uses `margin-inline-end: 230px` plus
+  `width: auto` + `align-self: stretch` (needed because `.content` is a centering flex column,
+  where dropping `width: 100%` alone would shrink-wrap the banner) and start-aligned content.
+  A mere `padding-inline-end` would clear the text but leave the right accent edge hidden
+  behind the panel. An `@media (max-width: 700px)` block drops the margin and re-centers. Keep
+  that margin in sync if the doc panel's width or offsets change.
 - **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `#mzta_doc_cards`,
   right of "Open Welcome Page". The grid moved to `repeat(auto-fit, minmax(150px,1fr))` in
   `mzta-design.css` to accommodate it.
