@@ -135,10 +135,17 @@ input, select, button, textarea { font-family: inherit; }
 #mzta_survey a { font-weight: 600; }
 
 /* Row 2 — documentation cards */
+/* The four cards stay on a single row; below 500px they wrap two per row
+   (2×2) instead of ever stacking one per row. */
 .mzta_doc_cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
+}
+@media (max-width: 500px) {
+    .mzta_doc_cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 .mzta_doc_card {
     display: flex;

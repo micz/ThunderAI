@@ -315,9 +315,14 @@ the options page, so they persist via the shared save-on-`change`.
   A mere `padding-inline-end` would clear the text but leave the right accent edge hidden
   behind the panel. An `@media (max-width: 700px)` block drops the margin and re-centers. Keep
   that margin in sync if the doc panel's width or offsets change.
-- **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `#mzta_doc_cards`,
-  right of "Open Welcome Page". The grid moved to `repeat(auto-fit, minmax(150px,1fr))` in
-  `mzta-design.css` to accommodate it.
+- **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `.mzta_doc_cards`,
+  right of "Open Welcome Page". The grid is an explicit `repeat(4, minmax(0,1fr))` in
+  `mzta-design.css` so all four cards stay on one row, with an `@media (max-width: 500px)`
+  block dropping to `repeat(2, minmax(0,1fr))` (2×2) on narrow panes. It deliberately does
+  **not** use `auto-fit`, which produced unpredictable 3+1 splits and one-per-row stacking;
+  the `minmax(0, …)` floor keeps the longest label (`prefs_doc_setup_wizard_launch`) wrapping
+  inside its card instead of widening the track past the container. If a fifth card is ever
+  added, update both column counts.
 - **Popup menu** — when the popup opens and the selected connection has no credentials,
   `mzta-popup.js`'s `isConnectionConfigured(prefs)` returns false and the popup shows
   `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list.
