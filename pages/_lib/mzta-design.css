@@ -569,6 +569,31 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     animation: mztaspin .8s linear infinite;
 }
 
+/* --- Provider setup note ------------------------------------------------ */
+/* Last element inside #mzta_conn_panel, below the connection-test strip. It has
+   no heading of its own — the panel header already titles the whole block. Only
+   the body text carries the per-provider colour, as a left accent bar. */
+#miczDescription { margin-top: 14px; }
+#miczDescription p { margin: 0; }
+/* display:block is required here — updateDescription() reveals the active
+   provider's text with style.display = "", falling back to this value. */
+#miczDescription .info_specific {
+    display: block;
+    border-left: 3px solid var(--tint-accent, var(--accent));
+    padding-left: 11px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    transition: border-color .2s;
+}
+/* Sits inline at the end of the active provider's sentence (moved there by
+   updateDescription()), so it flows with the text rather than breaking below. */
+#mzta_info_guide {
+    margin-left: 5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 /* ===========================================================================
    FEATURE TOGGLE SWITCHES
    The checkbox keeps its id / class="option-input"; it is visually hidden and
@@ -693,34 +718,10 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 
 /* ===========================================================================
    BOTTOM BLOCK
-   Provider setup note · disclaimer + keyboard-shortcut row · footer.
+   Disclaimer + keyboard-shortcut row · footer.
    The wrapper takes the #mzta_body > * rhythm; the parts below space
    themselves with their own margin-top.
    =========================================================================== */
-
-/* --- Provider setup note ------------------------------------------------ */
-/* The section title matches the other section headers on the page; only the
-   body text carries the per-provider colour, as a left accent bar. */
-#miczDescription .mzta_eyebrow { display: block; margin-bottom: 10px; }
-#miczDescription p { margin: 0; }
-/* display:block is required here — updateDescription() reveals the active
-   provider's text with style.display = "", falling back to this value. */
-#miczDescription .info_specific {
-    display: block;
-    border-left: 3px solid var(--tint-accent, var(--accent));
-    padding-left: 11px;
-    font-size: 12.5px;
-    color: var(--text);
-    line-height: 1.55;
-    transition: border-color .2s;
-}
-/* Sits inline at the end of the active provider's sentence (moved there by
-   updateDescription()), so it flows with the text rather than breaking below. */
-#mzta_info_guide {
-    margin-left: 5px;
-    font-weight: 700;
-    white-space: nowrap;
-}
 
 /* --- Disclaimer + shortcut row ------------------------------------------ */
 /* Disclaimer takes the free space on the left; the shortcut strip keeps its
@@ -794,7 +795,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* ===========================================================================
    PER-PROVIDER TINT TOKENS (both themes)
    Derived from ThunderAI's conntype_* base colours; drives the connection
-   panel, provider pill, Important-Information accent bar.
+   panel, provider pill, provider setup note accent bar.
    lift(v) = round(v + (255-v)*0.55) for the dark-mode accent.
    =========================================================================== */
 /* Light */

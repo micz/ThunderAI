@@ -392,10 +392,6 @@
     "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
     "description": ""
   },
-  "prefs_info_pill": {
-    "message": "Important information",
-    "description": "Badge shown at the top of the provider setup callout, at the bottom of the options page."
-  },
   "prefs_full_guide": {
     "message": "Full guide",
     "description": "Link in the provider setup callout, opening the documentation page for the selected provider."

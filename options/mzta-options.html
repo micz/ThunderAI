@@ -79,6 +79,20 @@
               <span id="mzta_conn_test_text" class="conn_test_text">__MSG_connTest_idle__</span>
               <a href="#" id="mzta_conn_test_link" class="conn_test_link">__MSG_connTest_link_test__</a>
             </div>
+            <!-- Provider setup note (accent bar tinted with the selected provider's colour) -->
+            <div id="miczDescription">
+              <p>
+                <span class="conntype_chatgpt_web info_specific">__MSG_prefsInfoDesc_1__</span>
+                <span class="conntype_chatgpt_api info_specific">__MSG_prefsInfoDesc_2__</span>
+                <span class="conntype_ollama_api info_specific">__MSG_prefsInfoDesc_3__</span>
+                <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
+                <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
+                <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
+                <!-- Moved inline into the active provider's span by updateDescription(),
+                     which also sets the href and hides it when there is no guide. -->
+                <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -295,24 +309,8 @@
           </div>
         </div>
 
-        <!-- BOTTOM BLOCK: provider setup note · disclaimer + shortcut row · footer -->
+        <!-- BOTTOM BLOCK: disclaimer + shortcut row · footer -->
         <div id="mzta_bottom">
-
-          <!-- Provider setup note (accent bar tinted with the selected provider's colour) -->
-          <div id="miczDescription">
-            <div class="mzta_eyebrow">__MSG_prefs_info_pill__</div>
-            <p>
-              <span class="conntype_chatgpt_web info_specific">__MSG_prefsInfoDesc_1__</span>
-              <span class="conntype_chatgpt_api info_specific">__MSG_prefsInfoDesc_2__</span>
-              <span class="conntype_ollama_api info_specific">__MSG_prefsInfoDesc_3__</span>
-              <span class="conntype_openai_comp_api info_specific">__MSG_prefsInfoDesc_4__</span>
-              <span class="conntype_google_gemini_api info_specific">__MSG_prefsInfoDesc_7__</span>
-              <span class="conntype_anthropic_api info_specific">__MSG_prefsInfoDesc_8__</span>
-              <!-- Moved inline into the active provider's span by updateDescription(),
-                   which also sets the href and hides it when there is no guide. -->
-              <a id="mzta_info_guide" href="#" style="display:none;">__MSG_prefs_full_guide__ &rsaquo;</a>
-            </p>
-          </div>
 
           <!-- Disclaimer (left) + keyboard shortcut (right) on one row -->
           <div id="mzta_info_row">
