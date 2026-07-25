@@ -161,7 +161,7 @@ The custom data placeholder CRUD screen — structurally the sibling of the Mana
 
 ### Shared Design System CSS (`pages/_lib/mzta-design.css`)
 
-The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`, and the provider setup note `#miczDescription` + `#mzta_info_guide` that closes the panel), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), the options-page bottom block (`#mzta_info_row` with `#mzta_disclaimer` + `#mzta_shortcut_strip`, `#mzta_footer` — see "Options Page Bottom Block" below), `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
+The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`, and the provider setup note `#miczDescription` + `#mzta_info_guide` that closes the panel), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), the options-page bottom block (`#mzta_info_row` stacking `#mzta_disclaimer` above `#mzta_shortcut_strip`, `#mzta_footer` — see "Options Page Bottom Block" below), `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
 
 #### Feature-Page Shell (opt-in `body.mzta_feature_page`)
 
@@ -325,15 +325,21 @@ provider setup note has since moved into `#mzta_conn_panel` (see "Provider Setup
 above). The wrapper takes the `#mzta_body > * { margin-bottom: 24px }` rhythm; the parts
 inside space themselves with their own `margin-top`.
 
-1. **Disclaimer + shortcut row** (`#mzta_info_row`) — a `space-between` flex row, wrapping
-   on narrow windows:
-   - **LLM disclaimer** (`#mzta_disclaimer`) on the left, taking the free space
-     (`flex: 1 1 260px`). Now **borderless** (no `--warnBorder`/`--warnBg`; those tokens
-     are consequently unused, though still defined) — just the amber `--warnColor`
-     triangle glyph + `prefs_disclaimer_short` + the privacy link.
-   - **Keyboard-shortcut strip** (`#mzta_shortcut_strip`) at the right edge, keeping its
-     natural width (`flex: 0 0 auto`): a `--field` box with the `prefs_shortcut_label`
-     label and the `#mzta_shortcut_keys` `<kbd>` chips.
+1. **Disclaimer + shortcut stack** (`#mzta_info_row`) — a centered flex **column**
+   (`flex-direction: column; align-items: center`), so neither child is stretched to the
+   full card width:
+   - **LLM disclaimer** (`#mzta_disclaimer`) on the first line, sized to its own content
+     (`width: fit-content; max-width: 100%`) with `align-items: center` so the glyph
+     centres against the single line of text. It reads as one line whenever the card is
+     wide enough and still **wraps** rather than overflowing on narrow windows (no hard
+     `white-space: nowrap`, since the sentence is ~145 characters). Borderless (no
+     `--warnBorder`/`--warnBg`; those tokens are consequently unused, though still
+     defined) — just the amber `--warnColor` triangle glyph + `prefs_disclaimer_short` +
+     the privacy link.
+   - **Keyboard-shortcut strip** (`#mzta_shortcut_strip`) **below** the disclaimer, kept
+     at its natural shrink-to-fit width (`flex: 0 0 auto; align-self: center`) so it never
+     spans the full width: a `--field` box with the `prefs_shortcut_label` label and the
+     `#mzta_shortcut_keys` `<kbd>` chips.
 2. **Footer** (`#mzta_footer`) — three **plain `<a>` links** on one centered `flex-wrap`
    row (was a stacked column of `<div>`s, each with an introductory sentence before the
    link). The lead-in sentences are gone: `TranslateText` + `TranslateLink` and
