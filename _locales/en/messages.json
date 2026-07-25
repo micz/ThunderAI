@@ -2589,5 +2589,201 @@
   "connTest_link_retry": {
     "message": "Retry",
     "description": "Connection test status strip: action link to run the test again (error state)"
+  },
+  "onboarding_tab_title": {
+    "message": "Welcome to ThunderAI!",
+    "description": "Onboarding page: browser tab title"
+  },
+  "onboarding_welcome_1": {
+    "message": "Welcome to ThunderAI!",
+    "description": "Onboarding page: first line of the welcome paragraph"
+  },
+  "onboarding_welcome_2": {
+    "message": "This add-on is designed to enhance your email management with the power of AI.",
+    "description": "Onboarding page: second line of the welcome paragraph"
+  },
+  "onboarding_welcome_3": {
+    "message": "With ThunderAI, you can streamline your inbox, generate smart replies, summarize emails, automatically add tags and filter spam, and much more, all with the help of artificial intelligence.",
+    "description": "Onboarding page: third line of the welcome paragraph"
+  },
+  "onboarding_welcome_4": {
+    "message": "On this page, you'll find an overview of the key features available to help you make the most of ThunderAI.",
+    "description": "Onboarding page: fourth line of the welcome paragraph"
+  },
+  "onboarding_welcome_5": {
+    "message": "Get ready to experience a smarter, more efficient way to handle your emails!",
+    "description": "Onboarding page: fifth line of the welcome paragraph"
+  },
+  "onboarding_welcome_6": {
+    "message": "Let's see how to make best use of this add-on!",
+    "description": "Onboarding page: last line of the welcome paragraph"
+  },
+  "onboarding_using_prompts_title": {
+    "message": "Using Prompts",
+    "description": "Onboarding page: heading of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_alt": {
+    "message": "Prompts menu button",
+    "description": "Onboarding page: alt text for the prompts menu button image"
+  },
+  "onboarding_using_prompts_1": {
+    "message": "On each message, there is a button that will allow you to open the prompts menu.",
+    "description": "Onboarding page: intro line of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_2": {
+    "message": "Here you can choose the prompt in different ways:",
+    "description": "Onboarding page: line introducing the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1_b": {
+    "message": "Search box",
+    "description": "Onboarding page: bold label of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1": {
+    "message": ": Use this to search for part of the prompt.",
+    "description": "Onboarding page: description of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2_b": {
+    "message": "Down/Up Arrow",
+    "description": "Onboarding page: bold label of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2": {
+    "message": ": Move through the prompts.",
+    "description": "Onboarding page: description of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3_b": {
+    "message": "Press a number",
+    "description": "Onboarding page: bold label of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3": {
+    "message": ": Press a number on the keyboard to choose the corresponding prompt.",
+    "description": "Onboarding page: description of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4_b": {
+    "message": "Enter",
+    "description": "Onboarding page: bold label of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4": {
+    "message": ": When you've picked the prompt you'd like, press enter to execute it.",
+    "description": "Onboarding page: description of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_3": {
+    "message": "In the ThunderAI options page you could find some option regarding this menu.",
+    "description": "Onboarding page: closing note about the prompts menu options"
+  },
+  "onboarding_using_prompts_4": {
+    "message": "The first two prompts are special ones, that are available only when using an API integration. They work directly without opening the AI Chat webpage.",
+    "description": "Onboarding page: note about the first two special prompts working with API integrations"
+  },
+  "onboarding_custom_prompts_title": {
+    "message": "Defining your Custom Prompts",
+    "description": "Onboarding page: heading of the 'Defining your Custom Prompts' section"
+  },
+  "onboarding_custom_prompts_alt": {
+    "message": "Managing Custom Prompts",
+    "description": "Onboarding page: alt text for the custom prompts management image"
+  },
+  "onboarding_custom_prompts_p1_1": {
+    "message": "From the options page you can open the ",
+    "description": "Onboarding page: text before the 'Custom Prompts' bold label in the custom prompts section"
+  },
+  "onboarding_custom_prompts_bold": {
+    "message": "Custom Prompts",
+    "description": "Onboarding page: bold 'Custom Prompts' label in the custom prompts section"
+  },
+  "onboarding_custom_prompts_p1_2": {
+    "message": " page.",
+    "description": "Onboarding page: text after the 'Custom Prompts' bold label in the custom prompts section"
+  },
+  "onboarding_custom_prompts_p1_3": {
+    "message": "From there you can add your prompts, and also disable the default ones.",
+    "description": "Onboarding page: line about adding and disabling prompts"
+  },
+  "onboarding_custom_prompts_p1_4": {
+    "message": "You can find more info ",
+    "description": "Onboarding page: text before the 'here' link in the custom prompts section"
+  },
+  "onboarding_custom_prompts_p2_1": {
+    "message": "While defining your own prompts you can also use ",
+    "description": "Onboarding page: text before the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_bold_dp": {
+    "message": "data placeholders",
+    "description": "Onboarding page: bold 'data placeholders' label"
+  },
+  "onboarding_custom_prompts_p2_2": {
+    "message": ", that will be substituted with the corresponding information when using the prompt.",
+    "description": "Onboarding page: text after the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_p2_3": {
+    "message": "You can find more info ",
+    "description": "Onboarding page: text before the second 'here' link in the custom prompts section"
+  },
+  "onboarding_custom_prompts_p3_1": {
+    "message": "For example, you can use the placeholder ",
+    "description": "Onboarding page: text before the mail_subject placeholder example"
+  },
+  "onboarding_custom_prompts_p3_2": {
+    "message": " to refer to the subject of the email or ",
+    "description": "Onboarding page: text between the mail_subject and tags_current_email placeholder examples"
+  },
+  "onboarding_custom_prompts_p3_3": {
+    "message": " to refer to the tags of the current email.",
+    "description": "Onboarding page: text after the tags_current_email placeholder example"
+  },
+  "onboarding_link_here": {
+    "message": "here",
+    "description": "Onboarding page: 'here' link text used in the custom prompts section"
+  },
+  "onboarding_automatic_features_title": {
+    "message": "Automatic features",
+    "description": "Onboarding page: heading of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_alt": {
+    "message": "Auto spam filter",
+    "description": "Onboarding page: alt text for the automatic spam filter image"
+  },
+  "onboarding_automatic_features_1": {
+    "message": "There are also two automatic features available when using an API integration, which can be activated from the options page:",
+    "description": "Onboarding page: intro line of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_li1_b": {
+    "message": "Auto Spam Filter",
+    "description": "Onboarding page: bold label of the first item in the automatic features list"
+  },
+  "onboarding_automatic_features_li1": {
+    "message": ": automatically moves the email to the spam folder if it is detected as spam.",
+    "description": "Onboarding page: description of the Auto Spam Filter feature"
+  },
+  "onboarding_automatic_features_li2_b": {
+    "message": "Auto Tagging",
+    "description": "Onboarding page: bold label of the second item in the automatic features list"
+  },
+  "onboarding_automatic_features_li2": {
+    "message": ": automatically assigns tags to the email.",
+    "description": "Onboarding page: description of the Auto Tagging feature"
+  },
+  "onboarding_automatic_features_2": {
+    "message": "For each of these features, there is an options page to specify the settings and the custom prompt to be used.",
+    "description": "Onboarding page: closing note about the options pages for automatic features"
+  },
+  "onboarding_footer_1": {
+    "message": "If you have any questions or suggestions, please open an issue on the ",
+    "description": "Onboarding page: footer text before the GitHub link"
+  },
+  "onboarding_footer_github": {
+    "message": "GitHub page",
+    "description": "Onboarding page: GitHub link text in the footer"
+  },
+  "onboarding_footer_2": {
+    "message": ".",
+    "description": "Onboarding page: trailing period after the GitHub link in the footer"
+  },
+  "onboarding_footer_3": {
+    "message": "Do you enjoy ThunderAI?",
+    "description": "Onboarding page: footer question before the donation button"
+  },
+  "onboarding_footer_donate": {
+    "message": "Make a donation!",
+    "description": "Onboarding page: donation button label"
   }
 }
