@@ -1941,7 +1941,7 @@
         "message": "Da lì puoi aggiungere i tuoi prompt e anche disattivare quelli predefiniti."
     },
     "onboarding_custom_prompts_p1_4": {
-        "message": "Puoi trovare maggiori informazioni"
+        "message": "Puoi trovare maggiori informazioni qui."
     },
     "onboarding_custom_prompts_p2_1": {
         "message": "Mentre definisci i tuoi prompt puoi anche usare dei"
@@ -1962,9 +1962,6 @@
                 "content": "{%tags_current_email%}"
             }
         }
-    },
-    "onboarding_link_here": {
-        "message": "qui"
     },
     "onboarding_automatic_features_title": {
         "message": "Funzioni automatiche"
@@ -1991,15 +1988,12 @@
         "message": "Per ognuna di queste funzioni è presente una pagina delle opzioni per specificare le impostazioni e il prompt personalizzato da utilizzare."
     },
     "onboarding_footer_1": {
-        "message": "Per qualsiasi domanda o suggerimento, apri una issue sulla"
-    },
-    "onboarding_footer_github": {
-        "message": "pagina GitHub"
+        "message": "Per qualsiasi domanda o suggerimento, apri una issue sulla pagina GitHub."
     },
     "onboarding_footer_3": {
         "message": "Ti piace ThunderAI?"
     },
-    "onboarding_footer_donate": {
-        "message": "Fai una donazione!"
+    "prefs_footer_donate": {
+        "message": "Fai una donazione"
     }
 }

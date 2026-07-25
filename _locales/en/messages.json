@@ -2687,8 +2687,8 @@
     "description": "Onboarding page: line about adding and disabling prompts"
   },
   "onboarding_custom_prompts_p1_4": {
-    "message": "You can find more info",
-    "description": "Onboarding page: text before the 'here' links in the custom prompts section"
+    "message": "You can find more info here.",
+    "description": "Onboarding page: clickable 'more info' sentence in the custom prompts section (the whole sentence is a link)"
   },
   "onboarding_custom_prompts_p2_1": {
     "message": "While defining your own prompts you can also use",
@@ -2713,10 +2713,6 @@
         "content": "{%tags_current_email%}"
       }
     }
-  },
-  "onboarding_link_here": {
-    "message": "here",
-    "description": "Onboarding page: 'here' link text used in the custom prompts section"
   },
   "onboarding_automatic_features_title": {
     "message": "Automatic features",
@@ -2751,19 +2747,11 @@
     "description": "Onboarding page: closing note about the options pages for automatic features"
   },
   "onboarding_footer_1": {
-    "message": "If you have any questions or suggestions, please open an issue on the",
-    "description": "Onboarding page: footer text before the GitHub link"
-  },
-  "onboarding_footer_github": {
-    "message": "GitHub page",
-    "description": "Onboarding page: GitHub link text in the footer"
+    "message": "If you have any questions or suggestions, please open an issue on the GitHub page.",
+    "description": "Onboarding page: clickable footer sentence linking to the GitHub issues page (the whole sentence is a link)"
   },
   "onboarding_footer_3": {
     "message": "Do you enjoy ThunderAI?",
     "description": "Onboarding page: footer question before the donation button"
-  },
-  "onboarding_footer_donate": {
-    "message": "Make a donation!",
-    "description": "Onboarding page: donation button label"
   }
 }
