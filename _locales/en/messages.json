@@ -2515,7 +2515,7 @@
     "message": "Connection Settings",
     "description": "Section eyebrow for the connection settings panel on the options page"
   },
-  "prefs_BasicsSettingsTitle": {
+  "prefs_BasicSettingsTitle": {
     "message": "Basic Settings",
     "description": "Section eyebrow for the basic settings on the options page"
   },
