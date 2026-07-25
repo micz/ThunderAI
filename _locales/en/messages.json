@@ -2696,7 +2696,7 @@
   },
   "onboarding_custom_prompts_p1_4": {
     "message": "You can find more info ",
-    "description": "Onboarding page: text before the 'here' link in the custom prompts section"
+    "description": "Onboarding page: text before the 'here' links in the custom prompts section"
   },
   "onboarding_custom_prompts_p2_1": {
     "message": "While defining your own prompts you can also use ",
@@ -2710,21 +2710,17 @@
     "message": ", that will be substituted with the corresponding information when using the prompt.",
     "description": "Onboarding page: text after the 'data placeholders' bold label"
   },
-  "onboarding_custom_prompts_p2_3": {
-    "message": "You can find more info ",
-    "description": "Onboarding page: text before the second 'here' link in the custom prompts section"
-  },
-  "onboarding_custom_prompts_p3_1": {
-    "message": "For example, you can use the placeholder ",
-    "description": "Onboarding page: text before the mail_subject placeholder example"
-  },
-  "onboarding_custom_prompts_p3_2": {
-    "message": " to refer to the subject of the email or ",
-    "description": "Onboarding page: text between the mail_subject and tags_current_email placeholder examples"
-  },
-  "onboarding_custom_prompts_p3_3": {
-    "message": " to refer to the tags of the current email.",
-    "description": "Onboarding page: text after the tags_current_email placeholder example"
+  "onboarding_custom_prompts_p3": {
+    "message": "For example, you can use the placeholder $PH_SUBJECT$ to refer to the subject of the email or $PH_TAGS$ to refer to the tags of the current email.",
+    "description": "Onboarding page: example sentence in the custom prompts section. $PH_SUBJECT$ and $PH_TAGS$ are placeholder codes ({%mail_subject%} and {%tags_current_email%}).",
+    "placeholders": {
+      "ph_subject": {
+        "content": "{%mail_subject%}"
+      },
+      "ph_tags": {
+        "content": "{%tags_current_email%}"
+      }
+    }
   },
   "onboarding_link_here": {
     "message": "here",
