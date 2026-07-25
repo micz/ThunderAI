@@ -1867,5 +1867,139 @@
     },
     "batch_stop_source": {
         "message": "Interruzione"
+    },
+    "onboarding_tab_title": {
+        "message": "Benvenuto in ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Questo componente aggiuntivo è pensato per migliorare la gestione della tua posta con la potenza dell'IA."
+    },
+    "onboarding_welcome_3": {
+        "message": "Con ThunderAI puoi semplificare la tua casella di posta, generare risposte intelligenti, riassumere le email, aggiungere automaticamente etichette e filtrare lo spam, e molto altro, tutto con l'aiuto dell'intelligenza artificiale."
+    },
+    "onboarding_welcome_4": {
+        "message": "In questa pagina troverai una panoramica delle funzionalità chiave per sfruttare al meglio ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Preparati a scoprire un modo più intelligente ed efficiente di gestire le tue email!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Vediamo come sfruttare al meglio questo componente aggiuntivo!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Usare i prompt"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Pulsante del menu dei prompt"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "In ogni messaggio è presente un pulsante che ti permette di aprire il menu dei prompt."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Qui puoi scegliere il prompt in diversi modi:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Casella di ricerca"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "usala per cercare parte del prompt."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Frecce Giù/Su"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "scorri i prompt."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Premi un numero"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "premi un numero sulla tastiera per scegliere il prompt corrispondente."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Invio"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "una volta scelto il prompt desiderato, premi Invio per eseguirlo."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Nella pagina delle opzioni di ThunderAI puoi trovare alcune impostazioni relative a questo menu."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "I primi due prompt sono speciali e sono disponibili solo quando si usa un'integrazione API. Funzionano direttamente senza aprire la pagina web dell'IA Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definire i tuoi prompt personalizzati"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Gestione dei prompt personalizzati"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Dalla pagina delle opzioni puoi aprire la pagina dei Prompt personalizzati."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Da lì puoi aggiungere i tuoi prompt e anche disattivare quelli predefiniti."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Puoi trovare maggiori informazioni"
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Mentre definisci i tuoi prompt puoi anche usare dei"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "segnaposto di dati"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", che verranno sostituiti con le informazioni corrispondenti quando usi il prompt."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Ad esempio, puoi usare il segnaposto $PH_SUBJECT$ per fare riferimento all'oggetto dell'email oppure $PH_TAGS$ per fare riferimento alle etichette dell'email corrente.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_link_here": {
+        "message": "qui"
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Funzioni automatiche"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Filtro spam automatico"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Sono disponibili anche due funzioni automatiche quando si usa un'integrazione API, che possono essere attivate dalla pagina delle opzioni:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Filtro spam automatico"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "sposta automaticamente l'email nella cartella spam se viene rilevata come spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Assegnazione automatica delle etichette"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "assegna automaticamente le etichette all'email."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Per ognuna di queste funzioni è presente una pagina delle opzioni per specificare le impostazioni e il prompt personalizzato da utilizzare."
+    },
+    "onboarding_footer_1": {
+        "message": "Per qualsiasi domanda o suggerimento, apri una issue sulla"
+    },
+    "onboarding_footer_github": {
+        "message": "pagina GitHub"
+    },
+    "onboarding_footer_3": {
+        "message": "Ti piace ThunderAI?"
+    },
+    "onboarding_footer_donate": {
+        "message": "Fai una donazione!"
     }
 }
