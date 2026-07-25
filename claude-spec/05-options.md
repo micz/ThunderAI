@@ -275,14 +275,28 @@ the entry points below.
   injected `<select id="connection_type">` is **hidden** (`#connection_type_tr{display:none}`)
   — the provider is chosen through the step-0 cards — but stays in the DOM because
   `showConnectionOptions()` walks up from it.
+  **Text scale caveat:** `connection-ui.js` emits most field description text as a **bare
+  text node** inside `<label>` (after a `<br>`), not wrapped in `.small_info`/`<i>`, so the
+  sizing rule in `mzta-design.css` never reaches it and it falls back to the browser default
+  (~16px). In the wide options column this is barely noticeable; in the wizard's 432px card
+  it broke the layout. The wizard therefore sets `font-size`/`color` on
+  `#wiz_step_connect #connection_ui_table td` / `#connection_ui_adv_table td`, letting those
+  un-wrapped nodes inherit the small-text scale. Form controls are unaffected — the shared
+  sheet sizes inputs/selects/textarea directly, and TomSelect sizes `.ts-control` directly,
+  so neither inherits from the cell. Scoped to `#wiz_step_connect` so the options page and
+  feature pages are untouched. If `connection-ui.js` is ever changed to wrap that text
+  properly, this override can be dropped.
 - **Connection test strip** — the same `#mzta_conn_test` markup + `refreshConnTestVisibility()`
   / `setConnTestState()` logic as the options page, calling `isTestableConnection()` /
   `runConnectionTest()` from `js/mzta-connection-test.js`.
 - **Tint system + toggles** — the per-provider `tint_*` classes / `--tint-*` tokens, the
   provider pill, and the `.mzta_switch` feature toggles all come from
-  `pages/_lib/mzta-design.css` + `connection-ui.css`. The wizard CSS adds only its own
-  scaffold (432px card, step indicator, nav bar, provider cards, done badge) plus
-  `.wiz_provider_card.tint_<id>` rules mirroring the existing token values.
+  `pages/_lib/mzta-design.css` + `connection-ui.css`. The wizard CSS adds its own
+  scaffold (432px card, step indicator, nav bar, provider cards, done badge),
+  `.wiz_provider_card.tint_<id>` rules mirroring the existing token values, and the
+  connection-row typography override described in the Connection UI bullet above. Its type
+  scale is deliberately one step down from the feature pages to suit the narrow card:
+  16px step title / 12px subtitle / 13px provider name / 11.5px descriptions.
 
 **Step 0 — Choose your AI:** six provider cards built in JS from a local `PROVIDERS` array
 (ids/order match `CONN_TYPES`); names reuse `prefs_Connection_type_*`, tags use new
