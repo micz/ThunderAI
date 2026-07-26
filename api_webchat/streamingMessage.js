@@ -19,10 +19,10 @@
 // StreamingMessage owns the streaming/parsing state for ONE bot response
 // (one chat turn). It is a plain class — no custom element, no DOM ownership.
 // It accumulates raw tokens and thinking tokens, applies the unterminated
-// <think> guard, extracts inline <think>...</think> blocks, renders markdown
-// via markdown-it, and accrues the resulting HTML across the (possibly several)
-// flushes a single response can produce (the accumulating element is flushed
-// mid-stream on every '\n').
+// <think> guard, extracts inline <think>...</think> blocks (via the shared
+// stripThinkTags() helper in js/mzta-utils.js), renders markdown via markdown-it,
+// and accrues the resulting HTML across the (possibly several) flushes a single
+// response can produce (the accumulating element is flushed mid-stream on every '\n').
 //
 // A response can flush multiple times, so `fullTextHTML` accrues across flushes
 // within the instance and is exposed only as an IMMUTABLE STRING SNAPSHOT via
@@ -34,13 +34,16 @@
 // `window.markdownit` is the global from markdown-it.min.js, loaded as a classic
 // script in index.html before the module scripts.
 
+import { stripThinkTags } from '../js/mzta-utils.js';
+
 export class StreamingMessage {
 
     constructor() {
         // Raw text of the CURRENT accumulating segment (reset on each flush,
         // mirroring the original per-element token collection).
         this._segmentText = '';
-        // Thinking tokens fed by the worker (Anthropic); reset on each flush,
+        // Thinking tokens fed by the worker (any provider that exposes reasoning
+        // in a dedicated stream field); reset on each flush,
         // mirroring the original this.thinkingAccumulator behavior.
         this._thinkingAccumulator = '';
         // Rendered HTML accrued across flushes for this whole response.
@@ -84,16 +87,15 @@ export class StreamingMessage {
             return null;
         }
 
-        // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip them from fullText.
-        let inlineThinking = '';
-        const thinkRegex = /<think>([\s\S]*?)<\/think>/gi;
-        let match;
-        while ((match = thinkRegex.exec(fullText)) !== null) {
-            inlineThinking += (inlineThinking ? '\n' : '') + match[1];
-        }
-        fullText = fullText.replace(thinkRegex, '').replace(/^\s+/, '');
+        // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip them
+        // from fullText. Unterminated blocks are handled by the guard above, never here,
+        // so truncation is left off.
+        const stripped = stripThinkTags(fullText);
+        const inlineThinking = stripped.thinking;
+        fullText = stripped.text;
 
-        // Combined thinking content: worker-side (Anthropic) + inline (<think> tags)
+        // Combined thinking content: worker-side (Anthropic / Ollama / Gemini /
+        // OpenAI Comp / OpenAI Responses) + inline (<think> tags)
         let combinedThinking = this._thinkingAccumulator;
         if (inlineThinking) {
             combinedThinking += (combinedThinking ? '\n' : '') + inlineThinking;

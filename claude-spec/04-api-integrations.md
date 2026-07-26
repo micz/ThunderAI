@@ -58,18 +58,63 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
 - Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
-- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). Thinking output arrives in the SSE stream as `content_block_delta` events with `delta.type === 'thinking_delta'` and is forwarded to the webchat UI as `newThinkingToken` messages, captured into a `thinkingAccumulator` in the worker and passed on `tokensDone`.
+- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 
 ## Thinking output in the webchat UI
 
-Two provider categories emit reasoning/thinking content:
+**Detection is automatic and never gated by a preference.** Every API worker forwards
+reasoning content as soon as the corresponding field is present in the stream, so a
+model that reasons on its own — without the connection's thinking option being
+enabled — still shows its thinking block. The per-connection prefs
+(`ollama_think`, `google_gemini_thinking_budget`,
+`anthropic_extended_thinking_budget`) only *request* reasoning from the API; they
+never decide whether it is displayed.
 
-- **OpenAI Compatible**: thinking arrives inline in the normal token stream wrapped in `<think>…</think>` tags. `StreamingMessage.flush()` (in `api_webchat/streamingMessage.js`) strips these blocks from the rendered text; `renderThinkingBlock()` (in `api_webchat/thinkingBlock.js`) renders them as a `<details class="thinking-block">` prepended to the answer. If an unterminated `<think>` is detected mid-stream, the flush is deferred until the closing tag arrives.
-- **Ollama / Anthropic**: thinking is captured in the worker as a dedicated field (`message.thinking` for Ollama, `thinking_delta` events for Anthropic) and posted to the controller as `newThinkingToken`. `StreamingMessage` accumulates it and it is rendered into the same `<details>` block on final flush. Ollama's reasoning is enabled by the `ollama_think` pref, which sets `think: true` on the request.
+Reasoning reaches the UI over two transport paths, which can coexist for the same
+provider and are merged into one block:
+
+**1. Dedicated stream field → `newThinkingToken`.** The worker accumulates the
+content in a `thinkingAccumulator` (also sent on `tokensDone`) and posts each token
+to the controller. `StreamingMessage` accumulates them independently of content
+tokens, so thinking that arrives before the first content token is not lost.
+
+| Provider | Stream field / event |
+|----------|----------------------|
+| Anthropic | `content_block_delta` with `delta.type === 'thinking_delta'` → `delta.thinking` |
+| Ollama | `message.thinking` |
+| OpenAI Compatible | first present of `delta.reasoning_content` (DeepSeek, vLLM, SGLang), `delta.reasoning` (OpenRouter — string *or* object with `.text`), `delta.thinking` (some llama.cpp / LM Studio builds) |
+| Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer |
+| OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta` |
+
+**2. Inline `<think>…</think>` tags in the content stream.** Used by models that
+have no dedicated field (Ollama without `ollama_think`, several OpenAI-compatible
+servers). `StreamingMessage.flush()` extracts and strips these via the shared
+`stripThinkTags()` helper in `js/mzta-utils.js`. If an unterminated `<think>` is
+detected mid-stream, the flush is deferred until the closing tag arrives (that guard
+lives in `streamingMessage.js`, not in the helper).
+
+Both paths are combined into `combinedThinking` and rendered by
+`renderThinkingBlock()` (`api_webchat/thinkingBlock.js`) as a
+`<details class="thinking-block">` prepended to the answer. Nothing is rendered when
+there is no thinking content.
 
 See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
-The global `hide_thinking` pref (default `true`) controls the **initial open/collapsed state** of the thinking block: `true` → collapsed, `false` → open. The user can always toggle by clicking. Thinking content is never discarded. Other providers (Google Gemini, OpenAI Responses, ChatGPT Web) are not affected by this UI logic.
+The global `hide_thinking` pref (default `true`) controls **only the initial
+open/collapsed state** of the block: `true` → collapsed, `false` → open. The user can
+always toggle by clicking, and thinking content is never discarded. ChatGPT Web uses
+no API worker and is unaffected.
+
+### Thinking in special commands
+
+Special commands (`mzta_specialCommand`) *parse* the response instead of displaying
+it, so reasoning must never reach the resolved value:
+
+- `newThinkingToken` messages are explicitly discarded and never appended to `full_message`.
+- Inline `<think>` blocks are stripped from `full_message` with
+  `stripThinkTags(text, true)` before the promise resolves. The `true` flag also drops
+  a dangling unterminated `<think>` (a truncated reply) rather than handing raw
+  reasoning to the caller's parser.
 
 ## Font zoom in the webchat UI
 
