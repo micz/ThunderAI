@@ -1262,5 +1262,148 @@
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "この連携のモデルを取得するために必要なオプション権限が拒否されました。"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "ThunderAI を初めてご利用ですか? セットアップウィザードで AI の接続手順をご案内します。"
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "セットアップウィザードを起動"
+    },
+    "onboarding_tab_title": {
+        "message": "ThunderAI へようこそ!"
+    },
+    "onboarding_welcome_2": {
+        "message": "このアドオンは、AI の力でメール管理を強化するために設計されています。"
+    },
+    "onboarding_welcome_3": {
+        "message": "ThunderAI を使えば、人工知能のサポートにより、受信トレイの整理、スマートな返信の作成、メールの要約、タグの自動付与やスパムフィルタリングなど、さらに多くのことができます。"
+    },
+    "onboarding_welcome_4": {
+        "message": "このページでは、ThunderAI を最大限に活用するための主な機能の概要を紹介します。"
+    },
+    "onboarding_welcome_5": {
+        "message": "よりスマートで効率的なメール処理を体験する準備をしましょう!"
+    },
+    "onboarding_welcome_6": {
+        "message": "それでは、このアドオンを最もうまく活用する方法を見ていきましょう!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "プロンプトの使用"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "プロンプトメニューボタン"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "各メッセージには、プロンプトメニューを開くためのボタンがあります。"
+    },
+    "onboarding_using_prompts_2": {
+        "message": "ここでは、いくつかの方法でプロンプトを選択できます:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "検索ボックス"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "プロンプトの一部を検索するのに使用します。"
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "下/上矢印キー"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "プロンプト間を移動します。"
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "数字キーを押す"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "キーボードで数字を押して、対応するプロンプトを選択します。"
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter キー"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "実行したいプロンプトを選んだら、Enter キーを押して実行します。"
+    },
+    "onboarding_using_prompts_3": {
+        "message": "ThunderAI のオプションページには、このメニューに関する設定もあります。"
+    },
+    "onboarding_using_prompts_4": {
+        "message": "最初の 2 つのプロンプトは特別なもので、API 連携を使用している場合にのみ利用できます。AI チャットのウェブページを開かずに直接動作します。"
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "カスタムプロンプトの定義"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "カスタムプロンプトの管理"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "オプションページからカスタムプロンプトページを開くことができます。"
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "そこからプロンプトを追加したり、デフォルトのプロンプトを無効化したりできます。"
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "詳しい情報はこちらをご覧ください。"
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "独自のプロンプトを定義する際、"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "データプレースホルダー"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": "を使用することもできます。これは、プロンプトを使用する際に対応する情報に置き換えられます。"
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "例えば、プレースホルダー $PH_SUBJECT$ を使ってメールの件名を参照したり、$PH_TAGS$ を使って現在のメールのタグを参照したりできます。",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "自動機能"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "自動スパムフィルター"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "API 連携を使用している場合に利用できる自動機能が 2 つあり、オプションページから有効化できます:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "自動スパムフィルター"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "スパムと判定されたメールを自動的に迷惑メールフォルダーに移動します。"
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "自動タグ付け"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "メールに自動的にタグを割り当てます。"
+    },
+    "onboarding_automatic_features_2": {
+        "message": "これらの各機能には、設定や使用するカスタムプロンプトを指定するためのオプションページがあります。"
+    },
+    "onboarding_footer_1": {
+        "message": "ご質問やご提案があれば、GitHub ページで issue を開いてください。"
+    },
+    "onboarding_footer_3": {
+        "message": "ThunderAI をお気に召しましたか?"
+    },
+    "prefs_doc_title": {
+        "message": "ドキュメント"
+    },
+    "prefs_doc_setup_guide": {
+        "message": "セットアップガイド"
+    },
+    "prefs_doc_custom_prompt_tutorial": {
+        "message": "カスタムプロンプトチュートリアル"
+    },
+    "prefs_footer_donate": {
+        "message": "寄付する"
     }
 }
