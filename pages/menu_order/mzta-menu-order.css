@@ -130,6 +130,24 @@
     font-weight: bold;
 }
 
+/* Dot on the inactive sub-tab: the prompt highlighted via the "Menu position"
+   deep-link also appears in that view. The dot slot is always reserved (just
+   transparent when unused) so toggling it does not change the tab width. */
+.sub_tab::after {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-inline-start: 6px;
+    border-radius: 50%;
+    background: transparent;
+    vertical-align: middle;
+}
+
+.sub_tab.mzta_has_target::after {
+    background: #409df3;
+}
+
 .section_label {
     font-size: 0.85em;
     color: #666;

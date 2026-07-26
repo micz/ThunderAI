@@ -2391,6 +2391,10 @@
     "message": "Composing",
     "description": "Sub-tab label for composing view ordering"
   },
+  "menu_order_tab_dot_tooltip": {
+    "message": "The selected prompt also appears in this list",
+    "description": "Tooltip for the dot shown on a sub-tab when the highlighted prompt is present there too"
+  },
   "menu_order_badge_default": {
     "message": "Default",
     "description": "Badge label for default prompts"

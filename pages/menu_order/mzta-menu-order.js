@@ -141,12 +141,28 @@ async function loadAndRender() {
 function initSubTabs() {
     document.querySelectorAll('.sub_tab').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.sub_tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPopupView = btn.dataset.view;
+            setPopupView(btn.dataset.view);
             renderPopupList();
         });
     });
+}
+
+// Switch the popup panel to a sub-tab view, syncing the button state. Does not
+// render: callers decide when to re-render (the click handler renders the popup
+// list only, the deep-link path renders both panels).
+function setPopupView(view) {
+    currentPopupView = view;
+    document.querySelectorAll('.sub_tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === view);
+    });
+}
+
+// Whether a prompt shows up at all in a given popup sub-tab view. Single source
+// of truth for the type filtering used by both renderPopupList() and the
+// deep-link sub-tab logic: reading view shows type 0+1, composing view 0+2.
+function promptInPopupView(prompt, view) {
+    const allowedTypes = view === 'display' ? ['0', '1'] : ['0', '2'];
+    return allowedTypes.includes(String(prompt.type));
 }
 
 // ==================== Highlight (Menu position deep-link) ====================
@@ -159,6 +175,7 @@ function applyHighlight() {
     document.querySelectorAll('.sortable_item.mzta_highlight').forEach(el => {
         el.classList.remove('mzta_highlight');
     });
+    applyTabDots();
     if (!highlightTargetId) return;
     const matches = document.querySelectorAll(`.sortable_item[data-id="${CSS.escape(highlightTargetId)}"]`);
     matches.forEach(el => el.classList.add('mzta_highlight'));
@@ -167,19 +184,51 @@ function applyHighlight() {
     }
 }
 
+// Mark the inactive popup sub-tab with a dot when the highlighted prompt also
+// appears in that view (always the case for type 0 "always" prompts). Driven by
+// applyHighlight(), so the dot has exactly the same lifetime as the highlight.
+function applyTabDots() {
+    const target = highlightTargetId
+        ? allPrompts.find(p => p.id === highlightTargetId)
+        : undefined;
+    document.querySelectorAll('.sub_tab').forEach(btn => {
+        const show = target !== undefined &&
+            btn.dataset.view !== currentPopupView &&
+            promptInPopupView(target, btn.dataset.view);
+        btn.classList.toggle('mzta_has_target', show);
+        if (show) {
+            btn.title = browser.i18n.getMessage('menu_order_tab_dot_tooltip');
+        } else {
+            btn.removeAttribute('title');
+        }
+    });
+}
+
 // Clear the highlight and remove the class from the DOM.
 function clearHighlight() {
     highlightTargetId = null;
     document.querySelectorAll('.sortable_item.mzta_highlight').forEach(el => {
         el.classList.remove('mzta_highlight');
     });
+    applyTabDots();
 }
 
 // Set a prompt as the highlight target and re-render both panels so it is
 // applied. The highlight persists (applyHighlight re-adds it on every render)
 // until clearHighlight() is called (next highlight target or drag start).
+// When the target is not present in the current popup sub-tab but exists in the
+// other one (a composing-only prompt while Reading is active, or vice versa),
+// switch to that sub-tab first — otherwise the deep-link would produce no
+// visible feedback at all, as the row is not in the DOM.
 function highlightPrompt(promptId) {
     highlightTargetId = promptId;
+    const target = allPrompts.find(p => p.id === promptId);
+    if (target && !promptInPopupView(target, currentPopupView)) {
+        const otherView = currentPopupView === 'display' ? 'compose' : 'display';
+        if (promptInPopupView(target, otherView)) {
+            setPopupView(otherView);
+        }
+    }
     renderPopupList();
     renderContextList();
 }
@@ -189,8 +238,7 @@ function highlightPrompt(promptId) {
 function renderPopupList() {
     const posKey = currentPopupView === 'display' ? 'position_display' : 'position_compose';
     // Filter by type: reading view shows type 0+1, composing view shows type 0+2
-    const allowedTypes = currentPopupView === 'display' ? ['0', '1'] : ['0', '2'];
-    const typeFiltered = allPrompts.filter(p => allowedTypes.includes(String(p.type)));
+    const typeFiltered = allPrompts.filter(p => promptInPopupView(p, currentPopupView));
 
     const activeItems = typeFiltered.filter(p => {
         const showIn = p.show_in || 'popup';
