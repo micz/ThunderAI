@@ -1851,5 +1851,139 @@
     },
     "batch_stop_source": {
         "message": "Batchstopp"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Ny på ThunderAI? Låt inställningsguiden visa dig hur du ansluter din AI."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Starta inställningsguiden"
+    },
+    "onboarding_tab_title": {
+        "message": "Välkommen till ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Detta tillägg är designat för att förbättra din e-posthantering med kraften hos AI."
+    },
+    "onboarding_welcome_3": {
+        "message": "Med ThunderAI kan du organisera din inkorg, skapa smarta svar, sammanfatta e-postmeddelanden, automatiskt lägga till taggar och filtrera skräppost, och mycket mer, allt med hjälp av artificiell intelligens."
+    },
+    "onboarding_welcome_4": {
+        "message": "På den här sidan hittar du en översikt över de viktigaste funktionerna som finns tillgängliga för att hjälpa dig få ut det mesta av ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Gör dig redo att uppleva ett smartare och mer effektivt sätt att hantera dina e-postmeddelanden!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Låt oss se hur du får ut det mesta av detta tillägg!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Använda promptar"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Knapp för promptmeny"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "På varje meddelande finns en knapp som låter dig öppna promptmenyn."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Här kan du välja prompten på olika sätt:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Sökruta"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Använd den för att söka efter en del av prompten."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Pil ned/upp"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Navigera bland promptarna."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Tryck på en siffra"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Tryck på en siffra på tangentbordet för att välja motsvarande prompt."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Retur"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "När du har valt den prompt du vill ha, tryck på Retur för att köra den."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "På ThunderAI:s inställningssida kan du hitta några alternativ gällande denna meny."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "De två första promptarna är speciella och är endast tillgängliga när du använder en API-integration. De fungerar direkt utan att öppna AI-chattens webbsida."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definiera dina egna promptar"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Hantera egna promptar"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Från inställningssidan kan du öppna sidan för egna promptar."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Därifrån kan du lägga till dina egna promptar och även inaktivera standardpromptarna."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Du hittar mer information här."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "När du definierar dina egna promptar kan du också använda"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "dataplatshållare"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", som kommer att ersättas med motsvarande information när prompten används."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Du kan till exempel använda platshållaren $PH_SUBJECT$ för att referera till e-postmeddelandets ämne eller $PH_TAGS$ för att referera till det aktuella e-postmeddelandets taggar.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatiska funktioner"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatiskt skräppostfilter"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Det finns också två automatiska funktioner tillgängliga när du använder en API-integration, som kan aktiveras från inställningssidan:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatiskt skräppostfilter"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "flyttar automatiskt e-postmeddelandet till skräppostmappen om det identifieras som skräppost."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatisk taggning"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "tilldelar automatiskt taggar till e-postmeddelandet."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "För var och en av dessa funktioner finns en inställningssida för att ange inställningarna och den egna prompt som ska användas."
+    },
+    "onboarding_footer_1": {
+        "message": "Om du har några frågor eller förslag, vänligen öppna ett issue på GitHub-sidan."
+    },
+    "onboarding_footer_3": {
+        "message": "Gillar du ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Donera"
     }
 }
