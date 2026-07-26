@@ -1,3 +1,13 @@
+:root {
+    --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --text:#1a1c22;
+    --border2:#d3d6dc;
+    --accent:#0a6cff;
+    --save-bg:#eceef2;
+    --save-text:#a0a4ae;
+    --btn-tr: background .12s, border-color .12s, color .12s, box-shadow .12s;
+}
+
 .page_title {
     margin-bottom: 0px;
 }
@@ -5,20 +15,45 @@
 #command_palette {
     position: sticky;
     top: 0;
-    padding-top: 1px;
-    height: 26px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
     width: 100%;
     z-index: 90;
     margin-bottom: 16px;
     background-color: #ffffff;
 }
 
+/* Save All — quiet until there are changes. */
 #btnSaveAll {
-    float: left;
+    transition: var(--btn-tr);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 14px;
+    border-radius: 9px;
+    background: var(--save-bg);
+    color: var(--save-text);
+    border: 1px solid var(--border2);
+}
+
+#btnSaveAll:not(:disabled) {
+    color: var(--text);
+}
+
+#btnSaveAll:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+#btnSaveAll:disabled {
+    opacity: .5;
+    cursor: default;
 }
 
 #msgDisplay {
-    padding-left: 40px;
+    padding-left: 16px;
 }
 
 #badge_legend {
@@ -308,6 +343,14 @@
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
+    :root {
+        --text:#f2f2f7;
+        --border2:#3d3c45;
+        --accent:#45a1ff;
+        --save-bg:#2b2a33;
+        --save-text:#6f6f79;
+    }
+
     body {
         background-color: #1c1b22;
         color: rgb(251, 251, 254);
