@@ -1791,5 +1791,139 @@
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
         "message": "Vezměte prosím na vědomí, že veškeré značky <br> v odpovědi AI budou nahrazeny zalomením řádku."
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "S ThunderAI začínáte? Nechte se průvodcem nastavením provést připojením vaší AI."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Spustit průvodce nastavením"
+    },
+    "onboarding_tab_title": {
+        "message": "Vítejte v ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Tento doplněk je navržen tak, aby vylepšil správu vašich e-mailů pomocí síly AI."
+    },
+    "onboarding_welcome_3": {
+        "message": "S ThunderAI můžete zorganizovat doručenou poštu, vytvářet chytré odpovědi, shrnovat e-maily, automaticky přidávat štítky a filtrovat spam a mnoho dalšího, a to vše s pomocí umělé inteligence."
+    },
+    "onboarding_welcome_4": {
+        "message": "Na této stránce najdete přehled klíčových funkcí, které vám pomohou ThunderAI maximálně využít."
+    },
+    "onboarding_welcome_5": {
+        "message": "Připravte se na chytřejší a efektivnější způsob práce s e-maily!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Podívejme se, jak tento doplněk co nejlépe využít!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Používání promptů"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Tlačítko nabídky promptů"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "U každé zprávy je tlačítko, které vám umožní otevřít nabídku promptů."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Zde si můžete vybrat prompt různými způsoby:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Vyhledávací pole"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Použijte jej k vyhledání části promptu."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Šipka dolů/nahoru"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Pohyb mezi prompty."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Stiskněte číslo"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Stiskněte na klávesnici číslo pro výběr odpovídajícího promptu."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Jakmile si vyberete požadovaný prompt, stiskněte Enter pro jeho spuštění."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Na stránce možností ThunderAI najdete některé volby týkající se této nabídky."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "První dva prompty jsou speciální a jsou dostupné pouze při použití integrace API. Fungují přímo, aniž by otevíraly webovou stránku AI Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Definování vašich vlastních promptů"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Správa vlastních promptů"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Ze stránky možností můžete otevřít stránku vlastních promptů."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Odtamtud můžete přidávat své prompty a také zakázat výchozí."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Více informací najdete zde."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Při definování vlastních promptů můžete také použít"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "zástupné symboly dat"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", které budou při použití promptu nahrazeny odpovídajícími informacemi."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Můžete například použít zástupný symbol $PH_SUBJECT$ pro odkaz na předmět e-mailu nebo $PH_TAGS$ pro odkaz na štítky aktuálního e-mailu.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatické funkce"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatický filtr spamu"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Při použití integrace API jsou k dispozici také dvě automatické funkce, které lze aktivovat ze stránky možností:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatický filtr spamu"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "automaticky přesune e-mail do složky se spamem, pokud je rozpoznán jako spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatické štítkování"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "automaticky přiřadí e-mailu štítky."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Pro každou z těchto funkcí existuje stránka možností, kde můžete určit nastavení a vlastní prompt, který se má použít."
+    },
+    "onboarding_footer_1": {
+        "message": "Máte-li dotazy nebo návrhy, otevřete prosím issue na stránce GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Líbí se vám ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Darovat"
     }
 }
