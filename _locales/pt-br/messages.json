@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Use o ChatGPT, Goolge Gemini, Claude ou o Ollama para aprimorar seus e-mails!",
+    "message": "Use o ChatGPT, Google Gemini, Claude ou o Ollama para aprimorar seus e-mails!",
     "description": "Description of the extension."
   },
   "menu_title": {
@@ -121,7 +121,7 @@
     "message": "OK"
   },
   "customPrompts_btnDelete": {
-    "message": "Deletar"
+    "message": "Excluir"
   },
   "customPrompts_btnDelete_confirmText": {
     "message": "Você tem certeza de que deseja excluir este item?"
@@ -578,7 +578,7 @@
     "message": "Este é o modelo que será aplicado para a Interface Web do ChatGPT. Se nenhum for especificado ou um incorreto for fornecido, o modelo padrão será definido pelo ChatGPT na página web. Essa configuração não funcionará com uma conta gratuita do ChatGPT."
   },
   "prefs_OptionText_chatgpt_web_tempchat": {
-    "message": "Chat temporário Web do ChatGPT"
+    "message": "Chat temporário do ChatGPT Web"
   },
   "prefs_OptionText_chatgpt_web_tempchat_info": {
     "message": "Se marcado, o chat temporário será utilizado na Interface Web do ChatGPT."
@@ -668,7 +668,7 @@
     "message": "Tags existentes"
   },
   "prefs_OptionText_add_tags_maxnum": {
-    "message": "Número máximo de tags"
+    "message": "O número máximo de tags"
   },
   "prefs_OptionText_add_tags_maxnum_Info": {
     "message": "O número máximo de tags proposto pela IA. Defina como 0 se você não quiser limitar o número de tags."
