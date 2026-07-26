@@ -113,24 +113,7 @@ body {
     font-weight: bold;
     text-align: center;
     cursor: pointer;
-  }
-
-  #setup_wizard_prompt{
-    display: none;
-    max-width: 20em;
-    background-color: #0a84ff;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 16px;
-    text-align: center;
-  }
-  #setup_wizard_prompt a{
-    color: white;
-    font-weight: bold;
-    text-decoration: underline;
-    cursor: pointer;
-  }
+  }  
 
   @media (prefers-color-scheme: dark) {
 

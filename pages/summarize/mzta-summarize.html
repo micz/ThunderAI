@@ -3,165 +3,173 @@
 <head>
     <meta charset="UTF-8" />
     <title>ThunderAI - __MSG_Summarize_PageTitle__</title>
-    <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-summarize.css" />
-    <link rel="stylesheet" href="../_lib/connection-ui.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
-<body class="mzta_feature_page">
-    <div id="mzta_card">
+<body>
+    <div>
+        <h1 class="page_title">__MSG_Summarize_PageTitle__</h1>
+        <p>__MSG_Summarize_info_default__</p>
+    </div>
+    <div class="summarize_table_title section_title">__MSG_Summarize_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="summarize_tr specific_integration">
+            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="summarize_use_specific_integration" name="summarize_use_specific_integration" class="option-input" />
+                __MSG_prefs_OptionText_summarize_use_specific_integration_Info__
+              </label>
+            </td>
+          </tr>
+          <tr id="connection_ui_anchor"></tr>
+          <tr id="connection_ui_end"><td colspan="2"></td></tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_auto__</span></td>
+            <td>
+              <label>
+                <select id="summarize_auto" name="summarize_auto" class="option-input">
+                  <option value="0">__MSG_prefs_OptionText_action_auto_disabled__</option>
+                  <option value="1">__MSG_prefs_OptionText_action_auto_manual__</option>
+                  <option value="2">__MSG_prefs_OptionText_action_auto_automatic__</option>
+                  <option value="3">__MSG_prefs_OptionText_action_auto_batch__</option>
+                </select>
+                <br>__MSG_prefs_OptionText_summarize_auto_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_display_mode__</span></td>
+            <td>
+              <label>
+                <select id="summarize_display_mode" name="summarize_display_mode" class="option-input">
+                  <option value="inline">__MSG_prefs_OptionText_display_mode_inline__</option>
+                  <option value="webchat">__MSG_prefs_OptionText_display_mode_webchat__</option>
+                </select>
+                <br>__MSG_prefs_OptionText_summarize_display_mode_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_max_display_length__</span></td>
+            <td>
+              <label>
+                <input type="number" id="summarize_max_display_length" name="summarize_max_display_length" min="0" class="option-input" />
+                <br>__MSG_prefs_OptionText_summarize_max_display_length_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_max_messages__</span></td>
+            <td>
+              <label>
+                <input type="number" id="summarize_max_messages" name="summarize_max_messages" min="1" class="option-input" />
+                <button type="button" id="reset_summarize_max_messages" class="btn_small" style="margin-left:0.5em;">__MSG_reset_default__</button>
+                <br>__MSG_prefs_OptionText_summarize_max_messages_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="summarize_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_summarize_strip_formatting__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="summarize_strip_formatting" name="summarize_strip_formatting" class="option-input" />
+                __MSG_prefs_OptionText_summarize_strip_formatting_Info__
+              </label>
+            </td>
+          </tr>
+    </table>
 
-        <!-- HEADER -->
-        <div id="mzta_top_links">
-            <div class="mzta_hdr_row1">
-                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
-                <span class="mzta_page_title">__MSG_Summarize_PageTitle__</span>
-            </div>
-            <p class="mzta_page_subtitle mzta_help">__MSG_Summarize_info_default__</p>
+    <!-- PROMPTS -->
+    <div id="summarize_prompt_container">
+        <!--title and description-->
+        <span class="section_title">
+            __MSG_Summarize_prompt_text_title__
+        </span>
+        
+        <br>
+            
+        <span class="infoline">
+            __MSG_prefs_OptionText_btnManagePrompts_infoline__ 
+            <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">
+                __MSG_more_info_string__
+            </a>
+            
+            <br>
+                
+            <b>__MSG_prefs_OptionText_Summarize_infoline2__</b>
+        </span>
+        
+        <br>
+
+        <!--main prompt-->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_main_prompt__
+        </span>
+
+        <br>
+
+        <div class="autocomplete-container">
+            <textarea id="summarize_prompt_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
+        </div>
+        
+        <div id="summarize_info_additional_statements"></div>
+        <div class="btn_div">
+            <button id="btn_reset_prompt" disabled>
+                __MSG_reset_default__
+            </button>
+            <button id="btn_save_prompt" disabled>
+                __MSG_save__
+            </button>
+        </div>
+        
+        <!--email template-->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_email_template__
+        </span>
+
+        <br>
+
+        <div class="autocomplete-container">
+            <textarea id="summarize_email_template_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
+        </div>
+        
+        <div id="summarize_info_additional_statements"></div>
+        <div class="btn_div">
+            <button id="btn_reset_email_template" disabled>
+                __MSG_reset_default__
+            </button>
+            <button id="btn_save_email_template" disabled>
+                __MSG_save__
+            </button>
         </div>
 
-        <!-- BODY -->
-        <div id="mzta_body">
+        <!-- separator -->
+        <span class="infoline">
+            __MSG_prefs_OptionText_Summarize_email_separator__
+        </span>
 
-            <!-- SETTINGS -->
-            <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_Summarize_prompt_prefs_title__</div>
+        <br>
 
-                <!-- specific integration toggle -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_summarize_use_specific_integration_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="summarize_use_specific_integration" name="summarize_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- connection panel (rows injected at runtime into the table) -->
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
-                    </div>
-                    <table id="connection_ui_table">
-                        <tr id="connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-
-                <!-- summarize auto -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_summarize_auto__</span>
-                    <select id="summarize_auto" name="summarize_auto" class="option-input">
-                        <option value="0">__MSG_prefs_OptionText_action_auto_disabled__</option>
-                        <option value="1">__MSG_prefs_OptionText_action_auto_manual__</option>
-                        <option value="2">__MSG_prefs_OptionText_action_auto_automatic__</option>
-                        <option value="3">__MSG_prefs_OptionText_action_auto_batch__</option>
-                    </select>
-                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_auto_Info__</span>
-                </div>
-
-                <!-- display mode -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_summarize_display_mode__</span>
-                    <select id="summarize_display_mode" name="summarize_display_mode" class="option-input">
-                        <option value="inline">__MSG_prefs_OptionText_display_mode_inline__</option>
-                        <option value="webchat">__MSG_prefs_OptionText_display_mode_webchat__</option>
-                    </select>
-                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_display_mode_Info__</span>
-                </div>
-
-                <!-- max display length -->
-                <div class="mzta_field mzta_field_num">
-                    <div class="mzta_field_num_text">
-                        <span class="opt_title">__MSG_prefs_OptionText_summarize_max_display_length__</span>
-                        <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_display_length_Info__</span>
-                    </div>
-                    <div class="mzta_field_num_ctrl">
-                        <input type="number" id="summarize_max_display_length" name="summarize_max_display_length" min="0" class="option-input" />
-                    </div>
-                </div>
-
-                <!-- max messages -->
-                <div class="mzta_field mzta_field_num">
-                    <div class="mzta_field_num_text">
-                        <span class="opt_title">__MSG_prefs_OptionText_summarize_max_messages__</span>
-                        <span class="mzta_help">__MSG_prefs_OptionText_summarize_max_messages_Info__</span>
-                    </div>
-                    <div class="mzta_field_num_ctrl mzta_inline_row">
-                        <button type="button" id="reset_summarize_max_messages" class="btn_small btn_secondary">__MSG_reset_default__</button>
-                        <input type="number" id="summarize_max_messages" name="summarize_max_messages" min="1" class="option-input" />
-                    </div>
-                </div>
-
-                <!-- strip formatting -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_summarize_strip_formatting__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_summarize_strip_formatting_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="summarize_strip_formatting" name="summarize_strip_formatting" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- PROMPTS -->
-            <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_Summarize_prompt_text_title__</div>
-                <p class="mzta_help">
-                    __MSG_prefs_OptionText_btnManagePrompts_infoline__
-                    <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
-                    <br><b>__MSG_prefs_OptionText_Summarize_infoline2__</b>
-                </p>
-
-                <!-- main prompt -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_Summarize_main_prompt__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_prompt_text" rows="15"></textarea>
-                        <ul class="autocomplete-list hidden"></ul>
-                    </div>
-                    <div class="summarize_info_additional_statements"></div>
-                    <div class="btn_div">
-                        <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-
-                <!-- email template -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_Summarize_email_template__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_email_template_text" rows="15"></textarea>
-                        <ul class="autocomplete-list hidden"></ul>
-                    </div>
-                    <div class="summarize_info_additional_statements"></div>
-                    <div class="btn_div">
-                        <button id="btn_reset_email_template" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_email_template" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-
-                <!-- email separator -->
-                <div class="mzta_field">
-                    <span class="opt_title">__MSG_prefs_OptionText_Summarize_email_separator__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_email_separator_text" rows="7"></textarea>
-                        <ul class="autocomplete-list hidden"></ul>
-                    </div>
-                    <div class="summarize_info_additional_statements"></div>
-                    <div class="btn_div">
-                        <button id="btn_reset_email_separator" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_email_separator" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-
-            </div>
+        <div class="autocomplete-container">
+            <textarea id="summarize_email_separator_text" rows="7"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
         </div>
+        
+        <div id="summarize_info_additional_statements"></div>
+        <div class="btn_div">
+            <button id="btn_reset_email_separator" disabled>
+                __MSG_reset_default__
+            </button>
+            <button id="btn_save_email_separator" disabled>
+                __MSG_save__
+            </button>
+        </div>
+        
     </div>
     <script src="mzta-summarize.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>

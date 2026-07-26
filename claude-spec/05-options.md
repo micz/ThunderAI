@@ -2,7 +2,7 @@
 
 ## Overview
 
-Extension preferences are stored in `browser.storage.sync` (not `.local`) — defaults and the full list of valid keys are defined in `options/mzta-options-default.js`. A handful of large-payload keys (`_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions`) live in `browser.storage.local` instead, since `storage.sync` has a narrow quota — see [01-architecture.md](01-architecture.md#storage) for the sync→local migration.
+All extension preferences are stored in `browser.storage.local`. Defaults and the full list of valid keys are defined in `options/mzta-options-default.js`.
 
 ## Key Exports from `mzta-options-default.js`
 
@@ -21,7 +21,7 @@ Stored flat in `prefs_default` with `{provider}_{key}` naming:
 
 ```
 chatgpt_api_key, chatgpt_model, chatgpt_developer_messages, chatgpt_temperature, chatgpt_store
-ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think, ollama_format_json
+ollama_host, ollama_model, ollama_num_ctx, ollama_temperature, ollama_think
 openai_comp_host, openai_comp_model, openai_comp_api_key, openai_comp_use_v1, openai_comp_chat_name, openai_comp_temperature
 google_gemini_api_key, google_gemini_model, google_gemini_system_instruction, google_gemini_thinking_budget, google_gemini_temperature
 anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, anthropic_system_prompt, anthropic_temperature, anthropic_extended_thinking_budget
@@ -29,43 +29,9 @@ anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, ant
 
 Plus the global connection selector:
 ```
-connection_type   (default: '' — no connection selected yet)
+connection_type   (default: 'chatgpt_web')
 use_specific_integration   (default: false)
 ```
-
-**No connection selected (default).** `connection_type` intentionally defaults to the **empty
-string**: a new user is not given a provider they never chose. Instead the three entry points
-(popup, welcome page, options page) show a **blue** banner inviting them to run the
-[Setup Wizard](#setup-wizard-pagessetup-wizard). The shared predicate is
-`hasNoConnectionSelected(connection_type)` (`js/mzta-utils.js`) — use it instead of comparing to
-`''` inline. Consequences of the empty state:
-
-- **No special prompt is advertised.** `getActiveSpecialPromptsIDs()` takes a `no_connection` flag
-  and returns an empty list when set; every call site in `mzta-background.js` passes it next to the
-  existing `is_chatgpt_web`. Without this, an empty type would read as "some API is configured"
-  (every check compares only against `chatgpt_web`) and would surface features that cannot run.
-- **The connection select shows a placeholder.** `populateConnectionTypeOptions()`
-  (`pages/_lib/connection-ui.js`) prepends a **disabled** `<option value="">`
-  (`prefs_Connection_type_none`) for the *global* select only — the per-prompt selects
-  (`no_chatgpt_web: true`) already use an empty value to mean "inherit the global connection".
-  The placeholder is required because the select otherwise has no empty option, so an empty pref
-  would display the first provider (ChatGPT Web) and saving would silently persist it.
-  Accordingly `restoreOptions()` in `options/mzta-options.js` no longer falls back to
-  `'chatgpt_web'`, and its `selectedIndex = -1` branch excludes `connection_type`.
-- **Custom prompts require a specific integration**, exactly as with `chatgpt_web`
-  (`connection-ui.js`, the `use_specific_integration` force-check).
-- **The API-driven features are shown as unavailable**, but for a *different reason* than with
-  `chatgpt_web` — see "Feature Rows — Disabled vs. API-Needed" below. `disable_GetCalendarEvent()`
-  (which also covers `get_task`) and `disable_MaxPromptLength()` apply the same "ChatGPT Web or
-  nothing selected" rule to the raw select value; the two Sparks rows already hide themselves
-  entirely when disabled, and their `no_sparks` message is about Sparks, not about ChatGPT Web.
-- **Running a prompt alerts the user.** The `default:` case of `openChatGPT()`
-  (`mzta-background.js`) distinguishes "no connection" from "unknown type" and sends
-  `msg_no_connection_selected` via `sendAlert` instead of only logging.
-- **The red permission banners are unaffected**: they are keyed on an explicitly chosen
-  `chatgpt_web` / `anthropic_api` / `chatgpt_api`, so none of them can fire in the empty state.
-
-Existing installs are unaffected — the empty default only applies to users who never saved the pref.
 
 ### Special Prompt Integration Overrides
 
@@ -98,7 +64,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `chatgpt_web_custom_gpt` | `''` | Custom GPT URL |
 | `chatgpt_web_load_wait_time` | `1000` | Wait time (ms) for ChatGPT page |
 | `dynamic_menu_force_enter` | `false` | Force Enter to submit in popup |
-| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
+| `dynamic_menu_order_alphabet` | `true` | Internal migration flag only; no UI. **Not declared in `prefs_default`** — unlike every other preference, its default (`true`) is hardcoded in the `browser.storage.sync.get()` call in `js/mzta-prompts.js`, not in `options/mzta-options-default.js`. Like the other prefs it lives in `browser.storage.sync`. Set to `false` by `migrateMenuOrderAlphabetic()` on first boot after upgrade to bootstrap position-based ordering. See `claude-spec/02-prompts.md` for details. |
 | `placeholders_use_default_value` | `false` | Use placeholder defaults when empty |
 | `hide_thinking` | `true` | Controls the initial state of the thinking `<details>` block prepended above the answer: `true` = collapsed by default, `false` = open by default. The user can always toggle with a click; thinking content is never discarded. |
 | `max_prompt_length` | `30000` | Max prompt string length |
@@ -165,22 +131,6 @@ The summarize settings page provides:
    - Each has Save/Reset buttons and placeholder autocomplete
    - Default text comes from i18n strings (`prompt_summarize_full_text`, etc.)
 
-**Visual design.** The page uses the shared design system (see "Shared Design System CSS" below): it is wrapped in `#mzta_card` / `#mzta_body`, settings are `.mzta_field` / `.feature_row` blocks, the two checkboxes render as `.mzta_switch` toggles, and Save/Reset buttons use `.btn_primary` / `.btn_secondary`. Because the page opens in its own full-width browser tab, its `<body>` carries the opt-in **`mzta_feature_page`** class (see "Feature-Page Shell" below), which centers all content in a capped ~760px column on the light `--desk` background and renders each `.mzta_section` as a white rounded card with per-row dividers, a 3px blue section-header accent bar, larger label/help typography, blue focus rings on inputs/selects/textareas, and the two number inputs (`summarize_max_display_length`, `summarize_max_messages`) laid out as compact right-aligned controls (label/description left) via the `.mzta_field_num` wrapper. No form field id/name/value, listener, or persistence logic changes — the page still saves options on `change` and each prompt editor keeps its own Save/Reset buttons (there is no page-level save bar). The two number fields wrap their control in `.mzta_field_num_ctrl` (the max-messages one reuses `.mzta_inline_row` for the reset button + input group). The specific-integration connection UI is injected (via `initializeSpecificIntegrationUI()`) into a `<table id="connection_ui_table">` inside `#mzta_conn_panel`. A small `updateConnPanelTint()` helper in `mzta-summarize.js` (mirroring the options-page one, but scoped to the `summarize_` prefix) colours the panel to the selected provider (`tint_*` class + `#mzta_conn_pill_name`) and hides the whole panel (`display:none`) when `summarize_use_specific_integration` is off, so no empty bordered box shows; it runs on load and on `change` of `summarize_connection_type` / the checkbox. The connection-type select stays a native `<select>` (only the model selects become TomSelect), so the `change` listeners fire normally. Because `_updateVisibility()` sets an inline `display:table-row` on visible connection rows, `mzta-summarize.css` re-asserts `#connection_ui_table tr[style*="table-row"] { display:block !important; }` so those rows still render as stacked fields — no change to the shared `connection-ui.js` is needed.
-
-### Shared Design System CSS (`pages/_lib/mzta-design.css`)
-
-The design-system tokens and reusable components ("variant 2a") live in `pages/_lib/mzta-design.css`, linked by both `options/mzta-options.html` and `pages/summarize/mzta-summarize.html` (**before** each page's own stylesheet, so the page CSS can still override). It defines: the `:root` token block + dark-mode overrides (`--panel`, `--text`, `--dim`, `--line`, `--field`, `--fieldLine`, `--accent`, stats/warn tints), the card shell (`#mzta_card`, `#mzta_body`), header block, `.mzta_section` / `.mzta_eyebrow` / `.mzta_field` / `.mzta_help`, `#mzta_card`-scoped input/select/textarea/button styles (`.btn_primary`, `.btn_secondary`, `.btn_small`), the connection panel + injected-table restyle (`#mzta_conn_panel`, `#connection_ui_table`/`#connection_ui_adv_table`, `#mzta_conn_adv_btn`, `.conn_test_*`), the `.mzta_switch` toggle and `.feature_row`, the advanced-options disclosure (`#mzta_adv_toggle`/`#mzta_adv_panel`), `#miczDescription`, `#mzta_footer`, `.warning`, and the per-provider `tint_*` custom-property blocks (plus the legacy `tr.conntype_*` row-shading colours that `getConnectionTypeColor()` reads). `options/mzta-options.css` now holds only options-specific rules (`#btn_custom_prompts`, `#btnMenuOrder`, footer link ids, `#owl_warning`/`#hyprland_warning`, `#no_sparks`). Adding the design system to another feature page means: link this file first, wrap the page in `#mzta_card`/`#mzta_body`, and use the component classes.
-
-#### Feature-Page Shell (opt-in `body.mzta_feature_page`)
-
-Feature settings pages open in their own full-width browser tab, where stretching controls edge-to-edge hurts readability. Adding `class="mzta_feature_page"` to a page's `<body>` opts into a **shell** whose rules all live at the end of `pages/_lib/mzta-design.css`, every one scoped under `body.mzta_feature_page`. The **main options page does not carry this class**, so it is intentionally excluded and keeps its full-width layout — the shell is reusable across feature pages without touching the options page.
-
-All six special-prompt feature pages now adopt the shell: `pages/summarize/`, `pages/addtags/`, `pages/spamfilter/`, `pages/translate/`, `pages/get-calendar-event/`, and `pages/get-task/`. Each links `../_lib/mzta-design.css` **first**, wraps its content in `#mzta_card` / `#mzta_top_links` (icon + `.mzta_page_title` + `.mzta_page_subtitle`) / `#mzta_body`, renders every settings group as a `.mzta_section` card headed by `.mzta_eyebrow`, uses `.feature_row` + `.mzta_switch` toggles for checkboxes, `.mzta_field` (or `.mzta_field_num` for number inputs) for other controls, and `.btn_secondary`/`.btn_primary` for the per-editor Reset/Save buttons. The specific-integration connection UI is wrapped in `#mzta_conn_panel` / `<table id="connection_ui_table">` (preserving the `connection_ui_anchor` / `connection_ui_end` IDs required by `connection-ui.js`), and each page's JS gained a prefix-scoped `updateConnPanelTint()` (mirroring the summarize one) that tints the panel to the selected provider, sets `#mzta_conn_pill_name`, and hides the whole panel when the page's `<prefix>_use_specific_integration` checkbox is off. Each page's own CSS was slimmed to page-specific rules only (autocomplete dropdown, button row, one `#connection_ui_table tr[style*="table-row"]` override, plus genuinely unique bits such as spamfilter's `#report_data` grid / `#spamfilter_threshold_too_low`, addtags's account-selector and use-list styling). No element `id`/`name`/`.option-input` class changed, so all save-on-`change` and prompt persistence logic is intact.
-
-**addtags auto-toggle change.** In the old table layout, `mzta-add-tags.js` revealed the auto-tagging sub-rows (`add_tags_auto_only_inbox_tr`, `add_tags_auto_uselist_tr`) with `style.display = 'table-row'`. Those rows are now `.feature_row` flex blocks inside a card, so the JS was changed to set `style.display = ''` (revert to the CSS default) instead of `'table-row'`; the rows are hidden by default via the page CSS and toggled on when `add_tags_auto` is checked. The `account_selector_container` (now a `.mzta_section` card) is likewise toggled with `''`/`'none'`.
-
-The shell provides: a light `--desk` page background; a centered, `max-width: 760px` column (`#mzta_card` with `margin: 0 auto` + 24px side padding — below the cap it is naturally full-width-minus-padding, no media query needed); each `.mzta_section` rendered as a white rounded **card** (`--panel`, 12px radius, 24px padding, subtle shadow, 24px vertical gap); section headers (`.mzta_section > .mzta_eyebrow`) get a **3px vertical `--accent` bar**; stacked settings inside a card are separated by thin `--line` **row dividers** (the first row after the header/intro has none); up-sized **typography** (`.opt_title` 15px/600, help/`.feature_desc` 13.5px with `text-wrap: pretty`); a header block with a 25px page title, one-line subtitle, and a small app-icon tile (`.mzta_page_icon` / `.mzta_page_title` / `.mzta_page_subtitle`); **compact number fields** via `.mzta_field_num` (label/description left, ~96px centered input — or reset+input group — right); and **focus rings** (`--accent` border + a 3px `color-mix` accent glow, white background) on inputs/selects/textareas — the only focus styling in the design system, deliberately scoped so the options page is unaffected. All rules reuse existing tokens, so dark mode is inherited. It adds no save bar: pages persist on `change` and keep their per-editor Save/Reset buttons. A new feature page adopts the look by adding the class, giving the header the `.mzta_page_*` markup, and putting its settings in `.mzta_section` cards (number fields in `.mzta_field_num`).
-
 ### Menu Order Page (`pages/menu_order/`)
 
 Entry point from the options page via the "Menu Order" button (next to "Manage your prompts"). Provides drag-and-drop reordering and toggle-based visibility control for both the popup and the context menu. See `claude-spec/02-prompts.md` ("Menu Order Page") for the full behaviour, data flow, and exclusion rules.
@@ -197,276 +147,6 @@ The translate settings page provides:
 3. **Max display length** (`translate_max_display_length`) — number input, limits inline translation text to N characters. `0` = no limit. When truncated, a "See more"/"See less" toggle link is appended.
 4. **Target language** (`translate_lang`) — text input for the destination language. If empty, falls back to `default_chatgpt_lang`.
 5. **One editable prompt** — the translation instruction prompt (`prompt_translate_this`) with Save/Reset buttons and placeholder autocomplete. Default text comes from i18n string `prompt_translate_this_full_text`.
-
-Like the other feature pages, this page uses the shared design system + feature-page shell (see "Feature-Page Shell" above): two `.mzta_section` cards (settings + prompt), `.mzta_switch` toggle, `#mzta_conn_panel` connection UI with a `updateConnPanelTint()` helper, and `.mzta_field_num` for the max-display-length number input.
-
-### Connection Settings Panel — Advanced Options Disclosure
-
-The main options page (`options/mzta-options.html`) wraps the injected connection
-fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** and
-**advanced**:
-
-- **Core** fields (always visible) — the minimum for a working connection: API key /
-  host, model, and API version. Rendered normally.
-- **Advanced** fields (hidden by default) — fine-tuning such as temperature, system
-  prompt, max tokens, context window, thinking budget, JSON format, store-on-server,
-  `/v1` suffix, ChatGPT Web model/project/etc.
-
-**Field tiering.** In the shared template inside `injectConnectionUI()`
-(`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
-`conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages (they render no toggle button).
-
-**The toggle.** A full-width button `#mzta_conn_adv_btn` sits directly below the core
-`#connection_ui_table`, inside the tinted panel. It mirrors the app-level
-`#mzta_adv_toggle`: gear icon + a static **"Advanced options"** label
-(`prefs_advanced_options`) on the left, chevron on the right (`justify-content:
-space-between`). Its style is defined in `pages/_lib/mzta-design.css` (keeps the
-per-provider `--tint-border` / `--tint-accent`, falling back to `--fieldLine` /
-`--accent`); its chevron rotates 180° when expanded via the `[aria-expanded="true"]`
-attribute.
-
-**Show/hide mechanism.** The advanced rows are **moved at runtime** (options page only,
-right after `injectConnectionUI()` in `options/mzta-options.js`) out of
-`#connection_ui_table` and into a second table `#connection_ui_adv_table` that sits
-**below** the button. Because that table follows the button in the DOM, expanding it
-opens the advanced fields *below* the button (the button stays fixed) — exactly like the
-app-level disclosure. Collapsing is CSS-driven: `#connection_ui_adv_table.hidden {
-display: none; }`. Both tables share the same field-restyle CSS (the selectors list
-`#connection_ui_table` and `#connection_ui_adv_table` together).
-
-Per-provider visibility of the advanced rows is handled by an **options-page-only**
-helper `showAdvConnectionOptions()` (`options/mzta-options.js`). This is required because
-`showConnectionOptions()` (`connection-ui.js`) scopes its `conntype_*` toggling to the
-core table's tbody only (`select → label → td → tr → tbody`), so it does **not** reach
-rows moved into `#connection_ui_adv_table`. `showAdvConnectionOptions()` hides every
-`conntype_*` row in the advanced table and shows only the selected provider's; it is
-called at init (after `restoreOptions()` + `showConnectionOptions()`) and on every
-`connection_type` `change`. The shared `connection-ui.js` is intentionally left unchanged
-— widening its scope would break the Custom Prompts page, which hosts multiple connection
-blocks on one page.
-
-**JS wiring** (`options/mzta-options.js`): `resetConnAdv()` sets `aria-expanded="false"`
-and adds `.hidden` to `#connection_ui_adv_table`. It is called once after injection
-(start collapsed) and on every `connection_type` `change` event (reset to collapsed on
-provider switch). The button's `click` handler flips `aria-expanded` and toggles
-`.hidden` on the advanced table; the label is static (no swap). State is **purely local
-UI** — no preference is persisted, so reopening the options page always starts collapsed.
-The connection-test "back to idle" `input`/`change` listeners are bound to **both** tables
-so editing an advanced field also invalidates a prior test result.
-
-### Connection Settings Panel — Connection Test Status Strip
-
-Below the advanced-options button, inside `#mzta_conn_panel`, a status strip
-(`#mzta_conn_test`, class `conn_test_strip`) offers a lightweight, **non-persistent**
-connectivity check for the selected provider. **Options page only** — the strip is
-static markup in `options/mzta-options.html`, not part of the shared connection UI, so
-it does not appear on the feature pages.
-
-**Visibility.** Shown only for connection types with a testable endpoint — every type
-except `chatgpt_web` (which has no API endpoint). `refreshConnTestVisibility()` toggles
-`display` on load and on every `connection_type` change.
-
-**States** (driven by `data-state` on `#mzta_conn_test`, styled in
-`pages/_lib/mzta-design.css`): `idle` (grey dot, "Connection not tested yet", link "Test
-now"), `loading` (dot becomes a spinner via the `mztaspin` keyframe, "Testing
-connection…", link hidden), `ok` (green dot, "Connected — <API> reachable", link
-"Re-test"), `error` (red dot + red text with the error detail, link "Retry").
-`setConnTestState(state, message)` updates dot/text/link; i18n keys are `connTest_*` in
-`_locales/en/messages.json`.
-
-**Reset to idle** happens on `connection_type` change and on any `input`/`change` inside
-`#connection_ui_table` (editing key/host/model/version invalidates a prior result).
-
-**Test logic** lives in `js/mzta-connection-test.js` (shared helper). It **reuses each
-provider class' existing `fetchModels()`** (the same call the "Fetch models" buttons use)
-— no URL/header/auth logic is duplicated. `getTestableConnection(connType)` returns a
-registry entry (`makeClient` reading current form fields, `nameKey`, `requestPermission`);
-`runConnectionTest(connType)` requests the needed host permission (mirroring the
-fetch-models / CORS buttons), calls `fetchModels()` with a ~10s `Abort` -style timeout
-(`Promise.race`), and maps the `{ok, error, is_exception}` result to auth / network /
-timeout messages. It reads current (possibly unsaved) form values and **saves nothing**.
-
-### Setup Wizard (`pages/setup-wizard/`)
-
-A guided **first-run flow** that walks a new user through the minimum needed to get
-working: **Choose your AI → Connect → Pick your tools → Done**. It does not replace the
-informational welcome page (`pages/onboarding/`); it complements it. The defining idea is
-that **each AI integration carries its own colour, applied from the very first choice** —
-picking a provider on step 0 tints the connection panel, the provider pill, and the finish
-badge through the rest of setup.
-
-**Files:** `pages/setup-wizard/mzta-setup-wizard.{html,js,css}`. It is a standalone
-WebExtension page (its own browser tab), not registered in `manifest.json`
-(`options_ui`/`default_popup` are unchanged); it is opened via `browser.tabs.create` from
-the entry points below.
-
-**Reuse over rebuild.** The wizard is an orchestration layer over existing pieces:
-- **Connection UI** — the Connect step injects the shared `injectConnectionUI()`
-  (`pages/_lib/connection-ui.js`) into `<table id="connection_ui_table">` inside
-  `#mzta_conn_panel`, exactly as the options page does (including moving the `.conn_adv`
-  rows into `#connection_ui_adv_table` and the `#mzta_conn_adv_btn` disclosure). The
-  injected `<select id="connection_type">` is **hidden** (`#connection_type_tr{display:none}`)
-  — the provider is chosen through the step-0 cards — but stays in the DOM because
-  `showConnectionOptions()` walks up from it.
-  **Text scale caveat:** `connection-ui.js` emits most field description text as a **bare
-  text node** inside `<label>` (after a `<br>`), not wrapped in `.small_info`/`<i>`, so the
-  sizing rule in `mzta-design.css` never reaches it and it falls back to the browser default
-  (~16px). In the wide options column this is barely noticeable; in the wizard's 432px card
-  it broke the layout. The wizard therefore sets `font-size`/`color` on
-  `#wiz_step_connect #connection_ui_table td` / `#connection_ui_adv_table td`, letting those
-  un-wrapped nodes inherit the small-text scale. Form controls are unaffected — the shared
-  sheet sizes inputs/selects/textarea directly, and TomSelect sizes `.ts-control` directly,
-  so neither inherits from the cell. Scoped to `#wiz_step_connect` so the options page and
-  feature pages are untouched. If `connection-ui.js` is ever changed to wrap that text
-  properly, this override can be dropped.
-- **Connection test strip** — the same `#mzta_conn_test` markup + `refreshConnTestVisibility()`
-  / `setConnTestState()` logic as the options page, calling `isTestableConnection()` /
-  `runConnectionTest()` from `js/mzta-connection-test.js`.
-- **Tint system + toggles** — the per-provider `tint_*` classes / `--tint-*` tokens, the
-  provider pill, and the `.mzta_switch` feature toggles all come from
-  `pages/_lib/mzta-design.css` + `connection-ui.css`. The wizard CSS adds its own
-  scaffold (432px card, step indicator, nav bar, provider cards, done badge),
-  `.wiz_provider_card.tint_<id>` rules mirroring the existing token values, and the
-  connection-row typography override described in the Connection UI bullet above. Its type
-  scale is deliberately one step down from the feature pages to suit the narrow card:
-  16px step title / 12px subtitle / 13px provider name / 11.5px descriptions.
-
-**Step 0 — Choose your AI:** six provider cards built in JS from a local `PROVIDERS` array
-(ids/order match `CONN_TYPES`); names reuse `prefs_Connection_type_*`, tags use new
-`wizard_provider_tag_*` keys. Selecting a card sets the hidden select's value and dispatches
-`change` (so the shared UI reacts and `connection_type` persists via the same
-save-on-`change` path), then re-tints panel/badge/pill and recomputes the step sequence.
-
-**Nothing is preselected.** Because `connection_type` now defaults to empty, `state.provider`
-starts empty too and **no card is marked selected**. Critically, the boot handler must **not** call
-`selectProvider()` when there is no saved provider: that function dispatches a `change` on the
-hidden select, which would persist a `connection_type` the user never picked — merely *opening* the
-wizard would choose a provider for them. Step 0 shows only the provider cards, so no connection-UI
-setup is needed until the first card click, which calls `selectProvider()` itself. While
-`state.provider` is empty, `renderStep()` disables **"Continue"** and `goNext()` refuses to advance,
-so a provider-less wizard can never reach the Connect step. `restoreOptions()` leaves the hidden
-select unset (`selectedIndex = -1`) in this state, again persisting nothing.
-
-**Provider-dependent sequence:** `chatgpt_web` skips the "Pick your tools" step
-(`[provider, connect, done]`); every other provider is `[provider, connect, tools, done]`.
-Nav walks sequence *positions*, never raw indices, so skipped steps are never landed on.
-"Finish setup" is the label on the second-to-last position, "Continue" otherwise.
-
-**Step 2 — Pick your tools:** only the four API-driven features (`add_tags`, `spamfilter`,
-`summarize`, `translate`) — the two Sparks features are omitted. Same toggle markup / ids as
-the options page, so they persist via the shared save-on-`change`.
-
-**Persistence:** the wizard writes the **same** storage keys as the options page
-(`connection_type`, the per-provider `*` fields, and the four feature flags) via
-`saveOptions`/`restoreOptions` copied from `options/mzta-options.js`. **No new preference.**
-
-**Entry points:**
-- **Onboarding banner** — a `#wizard_banner` at the top of `pages/onboarding/onboarding.html`
-  with a link (`#btn_launch_wizard`) that opens the wizard. It shares its `.content` parent
-  with `#onboarding_doc_panel`, which is `position: absolute` (top-right, `z-index: 100`),
-  opaque, and therefore reserves no layout space. The banner is styled with a 4px `#0a84ff`
-  accent edge on **both** inline sides (1px border top/bottom), so its whole box — borders
-  included — must stay clear of the panel: it uses `margin-inline-end: 230px` plus
-  `width: auto` + `align-self: stretch` (needed because `.content` is a centering flex column,
-  where dropping `width: 100%` alone would shrink-wrap the banner) and start-aligned content.
-  A mere `padding-inline-end` would clear the text but leave the right accent edge hidden
-  behind the panel. An `@media (max-width: 700px)` block drops the margin and re-centers. Keep
-  that margin in sync if the doc panel's width or offsets change.
-  The banner is **always visible**; when no connection is selected at all, `onboarding.js` adds
-  `.wizard_banner_urgent` to give it more prominence (bold + a soft blue glow — still blue, since
-  nothing is broken). No permission banner can apply in that state.
-- **Options banner** — `#no_connection_banner`, with `#btn_options_setup_wizard`. It is the **first
-  child of `#mzta_card`, above `#mzta_top_links`** (the documentation block), so it is the first thing
-  a new user sees. Because `#mzta_card` has no padding of its own, the banner carries explicit
-  `margin: 20px 22px 0` matching the header block's horizontal padding, plus a `min-height: 64px` for
-  presence. Styled blue in `mzta-design.css` from the `--accent` / `--accentLight` tokens (so dark
-  mode is inherited) and deliberately **not** using `.warning`, which is red.
-  `display: none` by default; `updateNoConnectionBanner()` in `options/mzta-options.js` toggles the
-  `.shown` class on load and on every `connection_type` change. Both this link and the doc-card share
-  the local `openSetupWizard()` helper. The same function also **hides the per-connection "Advanced
-  options" disclosure** (`#mzta_conn_adv_btn`) while nothing is selected — every row it would reveal
-  belongs to a specific provider, so there is nothing to disclose — and calls `resetConnAdv()` so the
-  panel is collapsed (and `#connection_ui_adv_table` hidden) when a provider is eventually picked. It
-  is registered *after* the existing `resetConnAdv` / `refreshConnTestVisibility` change listeners, so
-  its re-hide always runs last.
-- **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `.mzta_doc_cards`,
-  right of "Open Welcome Page". The grid is an explicit `repeat(4, minmax(0,1fr))` in
-  `mzta-design.css` so all four cards stay on one row, with an `@media (max-width: 500px)`
-  block dropping to `repeat(2, minmax(0,1fr))` (2×2) on narrow panes. It deliberately does
-  **not** use `auto-fit`, which produced unpredictable 3+1 splits and one-per-row stacking;
-  the `minmax(0, …)` floor keeps the longest label (`prefs_doc_setup_wizard_launch`) wrapping
-  inside its card instead of widening the track past the container. If a fifth card is ever
-  added, update both column counts.
-- **Popup menu** — when the popup opens and the selected connection has no credentials,
-  `mzta-popup.js`'s `isConnectionConfigured(prefs)` returns false and the popup shows
-  `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list.
-  "Configured" = the required credential is set: `*_api_key` for the cloud APIs, `*_host`
-  for Ollama / OpenAI-compatible; `chatgpt_web` is always considered configured (its host
-  permission is handled by the existing permission banner). The function **first** returns
-  false when no connection is selected at all — otherwise the empty value would fall through
-  to the permissive `default:` case and the blue banner would never show.
-
-**Blue wizard banner vs. red permission banner.** They are mutually exclusive by construction:
-the blue banners mean *"you haven't chosen an AI yet"*, the red ones mean *"you chose this
-provider but haven't granted its host permission"*. The red banners
-(`#ask_chatgpt_web_perm` / `#ask_anthropic_api_perm` / `#ask_openai_api_perm` in the popup,
-`#chatgpt_web_permission` / `#anthropic_api_permission` / `#openai_api_permission` in onboarding)
-are keyed on an explicitly selected provider, so an empty `connection_type` never triggers them,
-and their behaviour is unchanged by the empty default.
-
-i18n keys for the wizard are `wizard_*` in `_locales/en/messages.json`; entry-point copy is
-`onboarding_wizard_banner_*`, `prefs_doc_setup_wizard_launch`, `popup_setup_wizard_*`,
-`options_no_connection_*`, plus `prefs_Connection_type_none` (select placeholder) and
-`msg_no_connection_selected` (runtime alert).
-
-### Feature Rows — Disabled vs. API-Needed
-
-The four API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
-Translate) are unusable in **two distinct** situations, which must be presented differently:
-
-| Effective connection | Toggle | `warn_API_needed` hint |
-|---|---|---|
-| `chatgpt_web` | unchecked, still clickable | **shown** |
-| *nothing selected* (`''`) | unchecked **and `disabled`** (greyed) | **hidden** |
-| any API | untouched | hidden |
-
-The `warn_API_needed` string explicitly says *"you need an API integration rather than the ChatGPT
-Web Integration"* — advice that only makes sense once ChatGPT Web has actually been chosen. With no
-connection selected it would be misleading (the blue setup-wizard banner already explains the real
-situation), so it stays hidden and the toggle is greyed out instead: there is nothing to enable the
-feature against yet.
-
-Because a greyed-out toggle alone doesn't say *why*, a note (`#features_no_connection_note`,
-`prefs_FeaturesNoConnection` — "Select an AI connection above to enable these features.") sits
-directly under the `prefs_FeaturesSubtitle` line and is shown by `updateNoConnectionBanner()` — the
-same function that drives the top banner and the advanced-options toggle — via a `.shown` class, so
-all three stay in sync on load and on every `connection_type` change. It is styled in `--accent`
-blue (informational, matching `#no_connection_banner`), not with the amber `.warn_API_needed`
-treatment.
-
-`getFeatureConnState(prefs_opt, prefix)` in `options/mzta-options.js` returns
-`{no_connection, disabled, show_api_warning}` from the *effective* connection (i.e. after
-`getConnectionType()` applies any per-feature `use_specific_integration` override — so a feature
-pointing at its own API stays enabled even when the global connection is empty).
-`disable_ApiFeature(prefs_opt, prefix, manageBtnId)` consumes it and does all the row work; the four
-`disable_AddTags` / `disable_SpamFilter` / `disable_Summarize` / `disable_Translate` functions are now
-one-line wrappers over it (they previously held four copies of the same body). The greyed-out look
-needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
-`opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
-either: a disabled checkbox fires no `click`.
-
-### Feature "Manage settings" Links — Hidden vs. Disabled
-
-Each feature block on the main options page (Add Tags, Spam Filter, Summarize,
-Translate, Calendar Event, Task) has a "Manage settings" link/button (e.g.
-`btnManageTagsInfo`, `btnManageSpamFilterInfo`, ...) that opens the feature's dedicated
-settings page. When the feature's checkbox is unchecked, the button is fully **hidden**
-(`display: none`) rather than merely greyed out/disabled, via the shared helper
-`setFeatureManageVisibility(btn, visible)` in `options/mzta-options.js`. The helper sets
-both `style.display` and the `disabled` attribute together, and replaces all prior
-inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
-`disable_*()` re-evaluation, and on permission-request denial).
 
 ## Adding a New Preference
 

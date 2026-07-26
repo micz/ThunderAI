@@ -79,20 +79,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     document.getElementById('summarize_auto').addEventListener('change', updateDisplayModeConstraint);
     document.getElementById('reset_summarize_max_messages').addEventListener('click', resetSummarizeMaxMessages);
-
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    // The connection select / checkbox are managed by initializeSpecificIntegrationUI;
-    // we only react to their changes here (no change to the shared connection-ui.js).
-    let summarize_conntype_el = document.getElementById('summarize_connection_type');
-    let summarize_use_specific_el = document.getElementById('summarize_use_specific_integration');
-    if (summarize_conntype_el) {
-        summarize_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    if (summarize_use_specific_el) {
-        summarize_use_specific_el.addEventListener('change', updateConnPanelTint);
-    }
-    updateConnPanelTint();
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
@@ -196,33 +182,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel (border/background/pill) to match the selected
-// connection type, set the provider pill name, and hide the whole panel when
-// the "use specific integration" checkbox is off. Mirrors updateConnPanelTint()
-// on the options page but scoped to the summarize prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("summarize_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("summarize_use_specific_integration");
-  if (!panel) return;
-
-  // Hide the whole panel (not just its rows) when specific integration is off.
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
-    pillName.textContent = option ? option.textContent : conntype;
-  }
-}
 
 function updateDisplayModeConstraint() {
   const summarize_auto_el = document.getElementById('summarize_auto');

@@ -337,7 +337,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 
 ## Storage
 
-Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) are read/written via `browser.storage.sync`, keyed by `prefs_default` in `options/mzta-options-default.js`. A small set of large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions` — live in `browser.storage.local` instead, because `storage.sync` has a narrow storage quota (see the one-time sync→local migration in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)).
+All preferences are stored via `browser.storage.local`. The keys and default values are defined in `options/mzta-options-default.js` (`prefs_default` export). Custom prompts and custom placeholders are stored separately in storage under their own keys.
 
 ### Per-Message Data Storage
 

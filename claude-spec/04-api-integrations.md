@@ -6,7 +6,6 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 
 | `connection_type` value | Provider |
 |------------------------|----------|
-| `''` (empty) | **No connection selected yet** — the default on a fresh install |
 | `chatgpt_web` | ChatGPT Web (no API key, opens browser window) |
 | `chatgpt_api` | OpenAI API (ChatGPT via API key) |
 | `ollama_api` | Ollama (self-hosted LLM) |
@@ -14,14 +13,7 @@ The active AI provider is controlled by the `connection_type` preference. Possib
 | `google_gemini_api` | Google Gemini API |
 | `anthropic_api` | Claude (Anthropic) API |
 
-The global default is the **empty string**: no provider is chosen for a new user, who is instead
-guided to the Setup Wizard. Test it with `hasNoConnectionSelected()` (`js/mzta-utils.js`) rather than
-comparing to `''` inline — and never assume "not `chatgpt_web`" implies "an API is configured". See
-[05-options.md](05-options.md#global-integration-settings) for the full behaviour of the empty state.
-
-Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override this via its own
-`{prefix}_connection_type` pref (whose own default is `chatgpt_api`, applied only when that prompt's
-`use_specific_integration` is on).
+The global default is `chatgpt_web`. Each special prompt (`add_tags`, `spamfilter`, etc.) can independently override this via its own `{prefix}_connection_type` pref.
 
 ## Provider Configuration
 
