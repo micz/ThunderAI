@@ -31,8 +31,7 @@ import {
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
   prepareOriginURL,
-  setTomSelectBorder,
-  hasNoConnectionSelected
+  setTomSelectBorder
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -102,7 +101,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_model__</span>
     </label></td>
@@ -113,7 +112,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_project__</span>
       <br><i class="small_info" id="chatgpt_web_project_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/PROJECT-ID-PROJECT-NAME/project</b>
@@ -126,7 +125,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__</span>
       <br><i class="small_info" id="chatgpt_web_custom_gpt_info">__MSG_prefs_OptionText_chatgpt_web_custom_data_info__ <b class="lightbold">/g/CUSTOM-GPT-ID</b>
@@ -140,7 +139,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_tempchat__</span>
     </label></td>
@@ -153,7 +152,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_web conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_chatgpt_web_load_wait_time__</span>
     </label></td>
@@ -190,16 +189,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <div class="models_fetch_row">
-        <label class="models_fetch_select">
-          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
-        </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span>
-      </div>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateChatGPTModels">__MSG_ChatGPT_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_model" class="option-input"></select>
+      </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -212,7 +208,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_chatgpt_api_store__</span>
@@ -225,7 +221,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_ChatGPT_Developer_Messages__</span>
@@ -258,16 +254,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <div class="models_fetch_row">
-        <label class="models_fetch_select">
-          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
-        </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span>
-      </div>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateGoogleGeminiModels">__MSG_GoogleGemini_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}google_gemini_model" class="option-input"></select>
+      </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -280,7 +273,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_google_gemini_thinking_budget__</span>
@@ -294,7 +287,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_google_gemini_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_GoogleGemini_SystemInstruction__</span>
@@ -334,16 +327,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <div class="models_fetch_row">
-        <label class="models_fetch_select">
-          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
-        </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span>
-      </div>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOllamaModels">__MSG_Ollama_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}ollama_model" class="option-input"></select>
+      </label>
     </td>
   </tr>
-   <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+   <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -356,7 +346,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_think__</span>
     </label></td>
@@ -367,7 +357,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_format_json__</span>
     </label></td>
@@ -378,7 +368,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_ollama_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_ollama_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ollama_num_ctx__ <i>[num_ctx]</i></span>
     </label></td>
@@ -389,7 +379,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_AvailableServices__</span>
     </label></td>
@@ -421,7 +411,7 @@ export async function injectConnectionUI({
         <br>__MSG_CORS_localhost_warn__
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OptionText_openai_comp_use_v1__</span>
     </label></td>
@@ -455,16 +445,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <div class="models_fetch_row">
-        <label class="models_fetch_select">
-          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
-        </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span>
-      </div>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateOpenAICompModels">__MSG_OpenAIComp_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_model" class="option-input"></select>
+      </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_OpenAIComp_ChatName__</span>
     </label></td>
@@ -475,7 +462,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_openai_comp_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -508,16 +495,13 @@ export async function injectConnectionUI({
       </label>
     </td>
     <td>
-      <div class="models_fetch_row">
-        <label class="models_fetch_select">
-          <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
-        </label>
-        <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Models_Fetch__</button>
-        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span>
-      </div>
+      <button id="${modelId_prefix ? `${modelId_prefix}` : ''}btnUpdateAnthropicModels">__MSG_Anthropic_Models_Fetch__</button> <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model_fetch_loading" style="display:none">__MSG_Loading__</span><br>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_model" class="option-input"></select>
+      </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_prefs_api_temperature__</span>
@@ -530,7 +514,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td>
       <label>
         <span class="opt_title">__MSG_Anthropic_System_Prompt__</span>
@@ -556,7 +540,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
       <label>
@@ -565,7 +549,7 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_extended_thinking_budget__</span></td>
     <td>
       <label>
@@ -1176,11 +1160,9 @@ export async function initializeSpecificIntegrationUI({
       if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
   };
 
-  // Check global connection type: when the global connection cannot run this
-  // prompt (ChatGPT Web) or no connection has been chosen yet, a per-prompt
-  // specific integration is mandatory.
-  let globalPrefs = await browser.storage.sync.get({ connection_type: prefs_default.connection_type });
-  if ((globalPrefs.connection_type === 'chatgpt_web') || hasNoConnectionSelected(globalPrefs.connection_type)) {
+  // Check global connection type
+  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
+  if (globalPrefs.connection_type === 'chatgpt_web') {
       use_specific_integration_el.checked = true;
       use_specific_integration_el.disabled = true;
   }
@@ -1243,12 +1225,7 @@ export function changeConnTypeRowColor(conntype_row, conntype_select) {
 }
 
 export function showConnectionOptions(conntype_select, modelId_prefix = '') {
-  // A visible row uses '' (empty) rather than 'table-row' so host pages can
-  // restyle the injected rows via CSS (e.g. the options page renders them as
-  // stacked <div>-like fields). On feature pages the rows sit in a real
-  // <table>, where '' falls back to the default <tr> = table-row. Hidden rows
-  // still use 'none'.
-  let chatgpt_web_display = '';
+  let chatgpt_web_display = 'table-row';
   let chatgpt_api_display = 'none';
   let ollama_api_display = 'none';
   let openai_comp_api_display = 'none';
@@ -1257,32 +1234,32 @@ export function showConnectionOptions(conntype_select, modelId_prefix = '') {
   let parent = conntype_select.parentElement.parentElement.parentElement;
   changeConnTypeRowColor(parent, conntype_select);
   if (conntype_select.value === "chatgpt_web") {
-    chatgpt_web_display = '';
+    chatgpt_web_display = 'table-row';
   }else{
     chatgpt_web_display = 'none';
   }
   if (conntype_select.value === "chatgpt_api") {
-    chatgpt_api_display = '';
+    chatgpt_api_display = 'table-row';
   }else{
     chatgpt_api_display = 'none';
   }
   if (conntype_select.value === "ollama_api") {
-    ollama_api_display = '';
+    ollama_api_display = 'table-row';
   }else{
     ollama_api_display = 'none';
   }
   if (conntype_select.value === "openai_comp_api") {
-    openai_comp_api_display = '';
+    openai_comp_api_display = 'table-row';
   }else{
     openai_comp_api_display = 'none';
   }
   if (conntype_select.value === "google_gemini_api") {
-    google_gemini_api_display = '';
+    google_gemini_api_display = 'table-row';
   }else{
     google_gemini_api_display = 'none';
   }
   if (conntype_select.value === "anthropic_api") {
-    anthropic_api_display = '';
+    anthropic_api_display = 'table-row';
   }else{
     anthropic_api_display = 'none';
   }
@@ -1349,18 +1326,6 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   conntype_select.replaceChildren();
 
-  // Global connection select only (no_chatgpt_web marks the per-prompt ones, where
-  // an empty value already means "inherit the global connection"): add a disabled
-  // placeholder so a fresh install, whose connection_type default is empty, shows
-  // "no connection selected" instead of silently displaying the first provider.
-  if (!no_chatgpt_web) {
-    const placeholderEl = document.createElement('option');
-    placeholderEl.value = "";
-    placeholderEl.disabled = true;
-    placeholderEl.textContent = browser.i18n.getMessage('prefs_Connection_type_none') || '---';
-    conntype_select.appendChild(placeholderEl);
-  }
-
   for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     const optionEl = document.createElement('option');
     optionEl.value = opt.value;
@@ -1370,7 +1335,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   if (options.some(o => o.value === prevValue)) {
     conntype_select.value = prevValue;
-  } else {
+  } else if (no_chatgpt_web) {
     conntype_select.value = "";
   }
 }

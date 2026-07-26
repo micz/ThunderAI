@@ -108,15 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let spamfilter_conntype_el = document.getElementById('spamfilter_connection_type');
-    if (spamfilter_conntype_el) {
-        spamfilter_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    spamfilter_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
-
     spamfilter_reset_btn.addEventListener('click', () => {
         spamfilter_textarea.value = browser.i18n.getMessage('prompt_spamfilter_full_text');
         spamfilter_reset_btn.disabled = true;
@@ -249,31 +240,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     loadSpamReport();
 });
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel to match the selected connection type, set the
-// provider pill name, and hide the whole panel when "use specific integration"
-// is off. Scoped to the spamfilter prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("spamfilter_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("spamfilter_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
-    pillName.textContent = option ? option.textContent : conntype;
-  }
-}
 
 function check_spamfilter_threshold(event) {
   let spamfilter_threshold_too_low = document.getElementById("spamfilter_threshold_too_low");

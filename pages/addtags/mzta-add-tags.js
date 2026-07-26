@@ -100,31 +100,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Colour the connection panel to match the selected provider, and hide the
-    // whole panel when "use specific integration" is off (no empty bordered box).
-    let add_tags_conntype_el = document.getElementById('add_tags_connection_type');
-    if (add_tags_conntype_el) {
-        add_tags_conntype_el.addEventListener('change', updateConnPanelTint);
-    }
-    add_tags_use_specific_integration.addEventListener('change', updateConnPanelTint);
-    updateConnPanelTint();
-
     let add_tags_auto_el = document.getElementById('add_tags_auto');
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
     let account_selector_container = document.getElementById('account_selector_container');
     let add_tags_auto_infoline = document.getElementById('add_tags_auto_infoline');
     let add_tags_auto_uselist_tr = document.getElementById('add_tags_auto_uselist_tr');
     add_tags_auto_el.addEventListener('click', (event) => {
-      add_tags_auto_only_inbox_tr.style.display = event.target.checked ? '' : 'none';
-      account_selector_container.style.display = event.target.checked ? '' : 'none';
+      add_tags_auto_only_inbox_tr.style.display = event.target.checked ? 'table-row' : 'none';
+      account_selector_container.style.display = event.target.checked ? 'block' : 'none';
       add_tags_auto_infoline.style.display = event.target.checked ? 'inline' : 'none';
-      add_tags_auto_uselist_tr.style.display = event.target.checked ? '' : 'none';
+      add_tags_auto_uselist_tr.style.display = event.target.checked ? 'table-row' : 'none';
 
     });
-    add_tags_auto_only_inbox_tr.style.display = add_tags_auto_el.checked ? '' : 'none';
-    account_selector_container.style.display = add_tags_auto_el.checked ? '' : 'none';
+    add_tags_auto_only_inbox_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
+    account_selector_container.style.display = add_tags_auto_el.checked ? 'block' : 'none';
     add_tags_auto_infoline.style.display = add_tags_auto_el.checked ? 'inline' : 'none';
-    add_tags_auto_uselist_tr.style.display = add_tags_auto_el.checked ? '' : 'none';
+    add_tags_auto_uselist_tr.style.display = add_tags_auto_el.checked ? 'table-row' : 'none';
 
     let add_tags_auto_uselist = document.getElementById('add_tags_auto_uselist');
     let add_tags_auto_uselist_list = document.getElementById('add_tags_auto_uselist_list');
@@ -275,32 +266,6 @@ async function updateAdditionalPromptStatements(){
 
 
 // Methods to manage options, derived from: /options/mzta-options.js
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
-
-// Tint the connection panel (border/background/pill) to match the selected
-// connection type, set the provider pill name, and hide the whole panel when
-// the "use specific integration" checkbox is off. Mirrors the summarize page,
-// scoped to the add_tags prefix.
-function updateConnPanelTint() {
-  let conntype_select = document.getElementById("add_tags_connection_type");
-  let panel = document.getElementById("mzta_conn_panel");
-  let use_specific = document.getElementById("add_tags_use_specific_integration");
-  if (!panel) return;
-
-  panel.style.display = (use_specific && use_specific.checked) ? "" : "none";
-
-  if (!conntype_select) return;
-  let conntype = conntype_select.value;
-  for (let t of CONN_TYPES) {
-    panel.classList.toggle("tint_" + t, conntype === t);
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if (pillName) {
-    const option = conntype_select.querySelector(`option[value="${conntype}"]`);
-    pillName.textContent = option ? option.textContent : conntype;
-  }
-}
 
 function saveOptions(e) {
   e.preventDefault();

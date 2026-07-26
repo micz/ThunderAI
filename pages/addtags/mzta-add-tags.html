@@ -3,214 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <title>ThunderAI - __MSG_AddTags_PageTitle__</title>
-    <link rel="stylesheet" href="../_lib/mzta-design.css" />
-    <link rel="stylesheet" href="mzta-add-tags.css" />
-    <link rel="stylesheet" href="../_lib/connection-ui.css" />
-    <link rel="icon" href="../../images/icon-16px.png" />
+    <link rel="stylesheet" href="mzta-add-tags.css">
+    <link rel="stylesheet" href="../_lib/connection-ui.css">
+    <link rel="icon" href="../../images/icon-16px.png">
 </head>
-<body class="mzta_feature_page">
-    <div id="mzta_card">
+<body>
+    <div>
+        <h1 class="page_title">__MSG_AddTags_PageTitle__</h1>
+        <p>__MSG_AddTags_info_default__</p>
+    </div>
+    <div class="addtags_table_title section_title">__MSG_AddTags_prompt_prefs_title__</div>
+    <table id="miczPrefs">
+          <tr class="add_tags_tr specific_integration">
+            <td><span class="opt_title">__MSG_prefs_OptionText_use_specific_integration__</span>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_use_specific_integration" name="add_tags_use_specific_integration" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_use_specific_integration_Info__
+              </label>
+            </td>
+          </tr>
+          <tr id="connection_ui_anchor"></tr>
+          <tr id="connection_ui_end"><td colspan="2"></td></tr>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_maxnum__</span></td>
+            <td>
+              <label>
+                <input type="number" id="add_tags_maxnum" name="add_tags_maxnum" class="option-input" />
+                <br>__MSG_prefs_OptionText_add_tags_maxnum_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_exclusions_exact_match__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_exclusions_exact_match" name="add_tags_exclusions_exact_match" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_exclusions_exact_match_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_hide_exclusions__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_hide_exclusions" name="add_tags_hide_exclusions" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_hide_exclusions_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_first_uppercase__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_first_uppercase" name="add_tags_first_uppercase" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_first_uppercase_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_force_lang__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_force_lang" name="add_tags_force_lang" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_force_lang_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr add_tags_auto">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_auto__</span>
+            <span class="infoline" id="add_tags_auto_infoline"><br>__MSG_prefs_OptionText_add_tags_auto_Info2__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_auto" name="add_tags_auto" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_auto_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr add_tags_auto add_tags_auto_sub" id="add_tags_auto_only_inbox_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_auto_only_inbox__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_auto_only_inbox" name="add_tags_auto_only_inbox" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_auto_only_inbox_Info__
+              </label>
+            </td>
+          </tr>
+          <tr class="add_tags_tr add_tags_auto add_tags_auto_sub" id="add_tags_auto_uselist_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_auto_uselist__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_auto_uselist" name="add_tags_auto_uselist" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_auto_uselist_Info__
+                <br/><span class="infoline">__MSG_prefs_OptionText_add_tags_auto_uselist_list_Info__</span>
+                <br/><textarea id="add_tags_auto_uselist_list" class="option-input" rows="7"></textarea>
+              </label>
+            </td>
+          </tr>
 
-        <!-- HEADER -->
-        <div id="mzta_top_links">
-            <div class="mzta_hdr_row1">
-                <span class="mzta_page_icon"><img src="../../images/icon-32px.png" alt="" width="28" height="28" /></span>
-                <span class="mzta_page_title">__MSG_AddTags_PageTitle__</span>
-            </div>
-            <p class="mzta_page_subtitle mzta_help">__MSG_AddTags_info_default__</p>
+          <tr class="add_tags_tr">
+            <td><span class="opt_title">__MSG_prefs_OptionText_add_tags_auto_force_existing__</span></td>
+            <td>
+              <label>
+                <input type="checkbox" id="add_tags_auto_force_existing" name="add_tags_auto_force_existing" class="option-input" />
+                __MSG_prefs_OptionText_add_tags_auto_force_existing_Info__
+              </label>
+            </td>
+          </tr>
+    </table>
+    <div id="addtags_prompt_container">
+        <span class="section_title">__MSG_AddTags_prompt_text_title__</span><span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
+        <br><span class="infoline">__MSG_prefs_OptionText_btnManagePrompts_infoline__ <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
+          <br>__MSG_prefs_OptionText_btnManagePrompts_infoline3__
+          <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b></span>
+        <br>
+        <div class="autocomplete-container">
+            <textarea id="addtags_prompt_text" rows="15"></textarea>
+            <ul class="autocomplete-list hidden"></ul>
         </div>
-
-        <!-- BODY -->
-        <div id="mzta_body">
-
-            <!-- SETTINGS -->
-            <div class="mzta_section">
-                <div class="mzta_eyebrow">__MSG_AddTags_prompt_prefs_title__</div>
-
-                <!-- specific integration toggle -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_use_specific_integration__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_use_specific_integration_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_use_specific_integration" name="add_tags_use_specific_integration" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- connection panel (rows injected at runtime into the table) -->
-                <div id="mzta_conn_panel">
-                    <div id="mzta_conn_panel_header">
-                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
-                        <span class="mzta_eyebrow">__MSG_prefs_ConnectionSettingsTitle__</span>
-                    </div>
-                    <table id="connection_ui_table">
-                        <tr id="connection_ui_anchor"></tr>
-                        <tr id="connection_ui_end"><td colspan="2"></td></tr>
-                    </table>
-                </div>
-
-                <!-- max num -->
-                <div class="mzta_field mzta_field_num">
-                    <div class="mzta_field_num_text">
-                        <span class="opt_title">__MSG_prefs_OptionText_add_tags_maxnum__</span>
-                        <span class="mzta_help">__MSG_prefs_OptionText_add_tags_maxnum_Info__</span>
-                    </div>
-                    <div class="mzta_field_num_ctrl">
-                        <input type="number" id="add_tags_maxnum" name="add_tags_maxnum" class="option-input" />
-                    </div>
-                </div>
-
-                <!-- exclusions exact match -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_exclusions_exact_match__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_exclusions_exact_match_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_exclusions_exact_match" name="add_tags_exclusions_exact_match" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- hide exclusions -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_hide_exclusions__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_hide_exclusions_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_hide_exclusions" name="add_tags_hide_exclusions" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- first uppercase -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_first_uppercase__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_first_uppercase_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_first_uppercase" name="add_tags_first_uppercase" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- force lang -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_force_lang__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_force_lang_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_force_lang" name="add_tags_force_lang" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- auto add tags -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_auto_Info__<span class="infoline" id="add_tags_auto_infoline"><br>__MSG_prefs_OptionText_add_tags_auto_Info2__</span></div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_auto" name="add_tags_auto" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- auto: only inbox (sub-row, toggled by JS) -->
-                <div class="feature_row add_tags_auto_sub" id="add_tags_auto_only_inbox_tr">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_only_inbox__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_auto_only_inbox_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_auto_only_inbox" name="add_tags_auto_only_inbox" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-
-                <!-- auto: use list (sub-row, toggled by JS) -->
-                <div class="mzta_field add_tags_auto_sub" id="add_tags_auto_uselist_tr">
-                    <div class="feature_row" style="border-top:none;padding-top:0;">
-                        <div class="feature_info">
-                            <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_uselist__</div>
-                            <div class="feature_desc">__MSG_prefs_OptionText_add_tags_auto_uselist_Info__<br><span class="infoline">__MSG_prefs_OptionText_add_tags_auto_uselist_list_Info__</span></div>
-                        </div>
-                        <label class="mzta_switch">
-                            <input type="checkbox" id="add_tags_auto_uselist" name="add_tags_auto_uselist" class="option-input" />
-                            <span class="track"></span>
-                        </label>
-                    </div>
-                    <textarea id="add_tags_auto_uselist_list" class="option-input" rows="7"></textarea>
-                </div>
-
-                <!-- auto: force existing -->
-                <div class="feature_row">
-                    <div class="feature_info">
-                        <div class="feature_name">__MSG_prefs_OptionText_add_tags_auto_force_existing__</div>
-                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_auto_force_existing_Info__</div>
-                    </div>
-                    <label class="mzta_switch">
-                        <input type="checkbox" id="add_tags_auto_force_existing" name="add_tags_auto_force_existing" class="option-input" />
-                        <span class="track"></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- PROMPT -->
-            <div class="mzta_section" id="addtags_prompt_container">
-                <div class="mzta_eyebrow">__MSG_AddTags_prompt_text_title__<span id="addtags_prompt_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">
-                    __MSG_prefs_OptionText_btnManagePrompts_infoline__
-                    <a href="https://micz.it/thunderbird-addon-thunderai/data-placeholders/">__MSG_more_info_string__</a>
-                    <br>__MSG_prefs_OptionText_btnManagePrompts_infoline3__
-                    <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
-                </p>
-                <div class="mzta_field">
-                    <div class="autocomplete-container">
-                        <textarea id="addtags_prompt_text" rows="15"></textarea>
-                        <ul class="autocomplete-list hidden"></ul>
-                    </div>
-                    <div id="addtags_info_additional_statements"></div>
-                    <div class="btn_div">
-                        <button id="btn_reset_prompt" class="btn_secondary" disabled>__MSG_reset_default__</button>
-                        <button id="btn_save_prompt" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- EXCLUSIONS LIST -->
-            <div class="mzta_section" id="addtags_excl_list_container">
-                <div class="mzta_eyebrow">__MSG_AddTags_excl_list_title__<span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
-                <p class="mzta_help">
-                    __MSG_AddTags_excl_list_infoline__
-                    <br>__MSG_AddTags_excl_list_infoline2__
-                </p>
-                <div class="mzta_field">
-                    <textarea id="addtags_excl_list" rows="15"></textarea>
-                    <div class="btn_div">
-                        <button id="btn_save_excl_list" class="btn_primary" disabled>__MSG_save__</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ACCOUNT SELECTOR -->
-            <div class="mzta_section" id="account_selector_container">
-                <div class="mzta_eyebrow">__MSG_AccountSelector_AutoTags__</div>
-                <p class="mzta_help" id="account_selector_info">__MSG_AccountSelector_AutoTags_infoline__</p>
-                <div id="account_selector_checkboxes"></div>
-                <div class="btn_div" style="justify-content:flex-start;">
-                    <button type="button" id="accounts_select_all" class="btn_secondary btn_small">__MSG_SelectAll__</button>
-                    <button type="button" id="accounts_deselect_all" class="btn_secondary btn_small">__MSG_DeselectAll__</button>
-                </div>
-            </div>
-
-        </div>
+        <div id="addtags_info_additional_statements"></div>
+        <div class="btn_div"><button id="btn_reset_prompt" disabled>__MSG_reset_default__</button><button id="btn_save_prompt" disabled>__MSG_save__</button></div>
+    </div>
+    <div id="addtags_excl_list_container">
+        <span class="section_title">__MSG_AddTags_excl_list_title__</span><span id="excl_list_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span>
+        <br><span class="infoline">__MSG_AddTags_excl_list_infoline__
+            <br>__MSG_AddTags_excl_list_infoline2__</span>
+        <br><textarea id="addtags_excl_list" rows="15"></textarea>
+        <div class="btn_div"><button id="btn_save_excl_list" disabled>__MSG_save__</button></div>
+    </div>
+    <div id="account_selector_container">
+      <div id="account_selector_info"><span class="section_title">__MSG_AccountSelector_AutoTags__</span>
+      <br><span class="infoline">__MSG_AccountSelector_AutoTags_infoline__</span></div>
+      <div id="account_selector_checkboxes"></div>
+      <button type="button" id="accounts_select_all">__MSG_SelectAll__</button>
+    <button type="button" id="accounts_deselect_all">__MSG_DeselectAll__</button>
     </div>
     <script src="mzta-add-tags.js" type="module"></script>
     <script src="../../js/mzta-i18n.js"></script>

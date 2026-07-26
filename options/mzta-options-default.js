@@ -108,10 +108,7 @@ export const prefs_default = {
     default_sign_name: '',
     reply_type: 'reply_all',
     composing_plain_text: false,
-    // Empty means "no AI connection selected yet": a new user is guided to the setup wizard
-    // instead of having a provider forced on them.
-    // Values: 'chatgpt_web', 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api', 'anthropic_api'
-    connection_type: '',
+    connection_type: 'chatgpt_web',     //Other values: 'chatgpt_api', 'ollama_api', 'openai_comp_api', 'google_gemini_api'
     chatgpt_web_model: '',
     chatgpt_web_tempchat: false,
     chatgpt_web_project: '',

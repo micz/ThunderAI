@@ -28,7 +28,6 @@ import {
   openTab,
   isAPIKeyValue,
   getConnectionType,
-  hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
   getCacheStorageUsedSpace
@@ -40,10 +39,6 @@ import {
   showConnectionOptions,
   updateWarnings
 } from '../pages/_lib/connection-ui.js';
-import {
-  isTestableConnection,
-  runConnectionTest
-} from '../js/mzta-connection-test.js';
 
 let taLog = new taLogger("mzta-options",true);
 
@@ -109,13 +104,9 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
-          // No fallback for connection_type: an empty value means "no connection
-          // selected yet" and must stay empty, so the placeholder option shows.
+          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
           element.value = result[element.id] || default_select_value;
-          // connection_type has a dedicated disabled placeholder option for the
-          // empty value, so let the assignment above select it; every other select
-          // has no empty option and must show a blank control instead.
-          if (element.value === '' && element.id != 'connection_type') {
+          if (element.value === '') {
             element.selectedIndex = -1;
           }
           if (element.tomselect) {
@@ -145,23 +136,10 @@ function getConnectionTypeLabel(value) {
   return value;
 }
 
-// Per-provider base tint colours (same palette used in mzta-options.css and
-// documented in the design). Used to colour the per-feature "specific API"
-// indicator pill. A direct map is used (rather than reading a row's computed
-// background) because the connection rows are now visually restyled and no
-// longer carry a solid per-provider background.
-const CONN_TINT_RGB = {
-  chatgpt_web:       '180, 83, 14',
-  chatgpt_api:       '10, 83, 214',
-  google_gemini_api: '150, 120, 12',
-  anthropic_api:     '168, 20, 80',
-  ollama_api:        '31, 122, 46',
-  openai_comp_api:   '122, 43, 191',
-};
-
 function getConnectionTypeColor(value) {
-  const rgb = CONN_TINT_RGB[value];
-  return rgb ? `rgb(${rgb})` : '';
+  const row = document.querySelector(`tr.conntype_${value}`);
+  if (row) return getComputedStyle(row).backgroundColor;
+  return '';
 }
 
 function getContrastTextColor(bgColor) {
@@ -197,77 +175,94 @@ function updateSpecificApiIndicators(prefs_opt) {
 function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
-  // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
-  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
+  maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : 'table-row';
 }
 
-// Show the "Manage settings" link for a feature only when its flag is enabled;
-// hide it entirely otherwise (previously it was only disabled/greyed out).
-function setFeatureManageVisibility(btn, visible){
-  if(!btn) return;
-  btn.style.display = visible ? '' : 'none';
-  btn.disabled = visible ? '' : 'disabled';
-}
-
-// Why an API-driven feature can't be used with the current connection:
-//   no_connection -> nothing selected yet (the setup wizard banner covers it)
-//   chatgpt_web   -> ChatGPT Web has no API
-// Both disable the feature, but only chatgpt_web shows the "switch to an API
-// integration" hint (warn_API_needed) — that text is about ChatGPT Web and would
-// be misleading when no provider has been chosen at all.
-function getFeatureConnState(prefs_opt, prefix){
+function disable_AddTags(prefs_opt){
+  let add_tags = document.getElementById('add_tags');
   let conntype_select = document.getElementById("connection_type");
   const tempPrefs = {
       connection_type: conntype_select.value,
       ...prefs_opt
   };
-  let effective = getConnectionType(tempPrefs, null, prefix);
-  let no_connection = hasNoConnectionSelected(effective);
-  return {
-    no_connection: no_connection,
-    disabled: no_connection || (effective === "chatgpt_web"),
-    show_api_warning: (effective === "chatgpt_web")
-  };
-}
-
-// Shared handling for the four API-driven feature rows (add_tags, spamfilter,
-// summarize, translate): they differ only by element ids.
-function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
-  let checkbox = document.getElementById(prefix);
-  if(!checkbox) return;
-  let state = getFeatureConnState(prefs_opt, prefix);
-
-  let checked_original = checkbox.checked;
-  checkbox.checked = state.disabled ? false : checkbox.checked;
-  // With no connection selected the toggle is greyed out: there is nothing to
-  // enable the feature against yet.
-  checkbox.disabled = state.no_connection;
-
-  setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
-  let warn = document.getElementById(prefix + '_warn_API_needed');
-  if(warn) warn.style.display = state.show_api_warning ? 'inline-block' : 'none';
-
-  if(checked_original != checkbox.checked){
-    browser.storage.sync.set({[prefix]: checkbox.checked});
+  let add_tags_disabled = (getConnectionType(tempPrefs, null, 'add_tags') === "chatgpt_web");
+  // console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
+  add_tags.checked = add_tags_disabled ? false : add_tags.checked;
+  let add_tags_checked_original = add_tags.checked;
+  if(!add_tags.checked){
+    let add_tags_info_btn = document.getElementById('btnManageTagsInfo');
+    add_tags_info_btn.disabled = 'disabled';
+  }
+  let add_tags_warn_API_needed = document.getElementById('add_tags_warn_API_needed');
+  add_tags_warn_API_needed.style.display = (add_tags_disabled) ? 'inline-block' : 'none';
+  if(add_tags_checked_original != add_tags.checked){
+    browser.storage.sync.set({add_tags: add_tags.checked});
   }
 }
 
-function disable_AddTags(prefs_opt){
-  disable_ApiFeature(prefs_opt, 'add_tags', 'btnManageTagsInfo');
-}
-
 function disable_SpamFilter(prefs_opt){
-  disable_ApiFeature(prefs_opt, 'spamfilter', 'btnManageSpamFilterInfo');
+  let spamfilter = document.getElementById('spamfilter');
+  let conntype_select = document.getElementById("connection_type");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let spamfilter_disabled = (getConnectionType(tempPrefs, null, 'spamfilter') === "chatgpt_web");
+  let spamfilter_checked_original = spamfilter.checked;
+  spamfilter.checked = spamfilter_disabled ? false : spamfilter.checked;
+  if(!spamfilter.checked){
+    let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
+    spamfilter_info_btn.disabled = 'disabled';
+  }
+  let spamfilter_warn_API_needed = document.getElementById('spamfilter_warn_API_needed');
+  spamfilter_warn_API_needed.style.display = (spamfilter_disabled) ? 'inline-block' : 'none';
+  if(spamfilter_checked_original != spamfilter.checked){
+    browser.storage.sync.set({spamfilter: spamfilter.checked});
+  }
 }
 
 function disable_Summarize(prefs_opt){
-  disable_ApiFeature(prefs_opt, 'summarize', 'btnManageSummarizeInfo');
+  let summarize = document.getElementById('summarize');
+  let conntype_select = document.getElementById("connection_type");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let summarize_disabled = (getConnectionType(tempPrefs, null, 'summarize') === "chatgpt_web");
+  let summarize_checked_original = summarize.checked;
+  summarize.checked = summarize_disabled ? false : summarize.checked;
+  if(!summarize.checked){
+    let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
+    summarize_info_btn.disabled = 'disabled';
+  }
+  let summarize_warn_API_needed = document.getElementById('summarize_warn_API_needed');
+  summarize_warn_API_needed.style.display = (summarize_disabled) ? 'inline-block' : 'none';
+  if(summarize_checked_original != summarize.checked){
+    browser.storage.sync.set({summarize: summarize.checked});
+  }
 }
 
 function disable_Translate(prefs_opt){
-  disable_ApiFeature(prefs_opt, 'translate', 'btnManageTranslateInfo');
+  let translate = document.getElementById('translate');
+  let conntype_select = document.getElementById("connection_type");
+  const tempPrefs = {
+      connection_type: conntype_select.value,
+      ...prefs_opt
+  };
+  let translate_disabled = (getConnectionType(tempPrefs, null, 'translate') === "chatgpt_web");
+  let translate_checked_original = translate.checked;
+  translate.checked = translate_disabled ? false : translate.checked;
+  if(!translate.checked){
+    let translate_info_btn = document.getElementById('btnManageTranslateInfo');
+    translate_info_btn.disabled = 'disabled';
+  }
+  let translate_warn_API_needed = document.getElementById('translate_warn_API_needed');
+  translate_warn_API_needed.style.display = (translate_disabled) ? 'inline-block' : 'none';
+  if(translate_checked_original != translate.checked){
+    browser.storage.sync.set({translate: translate.checked});
+  }
 }
 
 async function disable_GetCalendarEvent(){
@@ -278,155 +273,30 @@ async function disable_GetCalendarEvent(){
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
   let conntype_select = document.getElementById("connection_type");
-  // These features need an API: unavailable with ChatGPT Web and with no connection selected.
-  let conn_unusable = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
-  get_calendar_event.disabled = conn_unusable || !(is_spark_present == 1);
-  get_task.disabled = conn_unusable || !(is_spark_present == 1);
+  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
+  get_task.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
-    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
+    get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : 'table-row';
   });
   let get_task_tr_elements = document.querySelectorAll('.get_task_tr');
   get_task_tr_elements.forEach(get_task_tr => {
-    get_task_tr.style.display = get_task.disabled ? 'none' : '';
+    get_task_tr.style.display = get_task.disabled ? 'none' : 'table-row';
   });
-  no_sparks_tr.style.display = ((is_spark_present == 1) || conn_unusable) ? 'none' : '';
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : 'table-row';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
-
-const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
 function updateDescription(){
   let conntype_select = document.getElementById("connection_type");
   let conntype = conntype_select.value;
   let desc = document.getElementById("miczDescription");
-  for(let t of CONN_TYPES){
+  const types = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
+  for(let t of types){
     desc.querySelectorAll(".conntype_" + t).forEach(el => {
       el.style.display = (conntype === t) ? "" : "none";
     });
-  }
-  // Tint the Important Information accent bar to the selected provider.
-  for(let t of CONN_TYPES){
-    desc.classList.toggle("tint_" + t, conntype === t);
-  }
-}
-
-// Re-tint the connection panel (border/background/pill) and set the provider
-// pill name to match the selected connection type.
-function updateConnPanelTint(){
-  let conntype_select = document.getElementById("connection_type");
-  if(!conntype_select) return;
-  let conntype = conntype_select.value;
-  let panel = document.getElementById("mzta_conn_panel");
-  if(panel){
-    for(let t of CONN_TYPES){
-      panel.classList.toggle("tint_" + t, conntype === t);
-    }
-  }
-  let pillName = document.getElementById("mzta_conn_pill_name");
-  if(pillName){
-    pillName.textContent = getConnectionTypeLabel(conntype);
-  }
-}
-
-async function openSetupWizard(){
-  await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
-}
-
-// Show the blue "no AI connection selected" banner until the user picks a
-// provider. Informational, not a warning: nothing is broken on a fresh install,
-// the setup wizard is simply the way in.
-// Also hides the per-connection "Advanced options" disclosure, which has nothing
-// to disclose while no provider is selected (all its rows belong to a provider),
-// and shows a note in the Features section explaining why its toggles are greyed.
-function updateNoConnectionBanner(){
-  let conntype_select = document.getElementById("connection_type");
-  if(!conntype_select) return;
-  let no_conn = hasNoConnectionSelected(conntype_select.value);
-
-  let banner = document.getElementById('no_connection_banner');
-  if(banner) banner.classList.toggle('shown', no_conn);
-
-  let features_note = document.getElementById('features_no_connection_note');
-  if(features_note) features_note.classList.toggle('shown', no_conn);
-
-  let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
-  if(conn_adv_btn) conn_adv_btn.style.display = no_conn ? 'none' : '';
-  if(no_conn) resetConnAdv();   // collapse it, so it reopens closed once a provider is picked
-}
-
-// Collapse the per-connection advanced disclosure back to its default state
-// (advanced panel hidden). Mirrors the app-level disclosure: static label,
-// panel toggled below the button.
-function resetConnAdv(){
-  let btn = document.getElementById('mzta_conn_adv_btn');
-  let panel = document.getElementById('connection_ui_adv_table');
-  if(!btn || !panel) return;
-  btn.setAttribute('aria-expanded', 'false');
-  panel.classList.add('hidden');
-}
-
-// The advanced rows were moved out of #connection_ui_table into
-// #connection_ui_adv_table, so showConnectionOptions() (which is scoped to the
-// core table's tbody) no longer toggles their per-provider visibility. Mirror
-// that logic here for the advanced table: show only the selected provider's rows.
-function showAdvConnectionOptions(){
-  let advTable = document.getElementById('connection_ui_adv_table');
-  let conntype = document.getElementById('connection_type');
-  if(!advTable || !conntype) return;
-  advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {
-    tr.style.display = tr.classList.contains('conntype_' + conntype.value) ? '' : 'none';
-  });
-}
-
-// ---- Connection test status strip (Options page only) --------------------
-// Non-persistent connectivity check. Reuses the provider fetchModels() logic via
-// js/mzta-connection-test.js; reads the current form values and saves nothing.
-
-// Show the strip only for connection types that have a testable endpoint
-// (everything except ChatGPT Web). Resets to idle when shown/hidden.
-function refreshConnTestVisibility(){
-  let strip = document.getElementById('mzta_conn_test');
-  if(!strip) return;
-  let connType = document.getElementById('connection_type')?.value;
-  if(isTestableConnection(connType)){
-    strip.style.display = 'flex';
-  }else{
-    strip.style.display = 'none';
-  }
-  setConnTestState('idle');
-}
-
-// Update the strip's visual state, status text and action link.
-// state: 'idle' | 'loading' | 'ok' | 'error'. message: ok→api name, error→detail.
-function setConnTestState(state, message){
-  let strip = document.getElementById('mzta_conn_test');
-  let textEl = document.getElementById('mzta_conn_test_text');
-  let linkEl = document.getElementById('mzta_conn_test_link');
-  if(!strip || !textEl || !linkEl) return;
-  strip.setAttribute('data-state', state);
-  switch(state){
-    case 'loading':
-      textEl.textContent = browser.i18n.getMessage('connTest_testing');
-      linkEl.style.display = 'none';
-      break;
-    case 'ok':
-      textEl.textContent = browser.i18n.getMessage('connTest_ok', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retest');
-      linkEl.style.display = '';
-      break;
-    case 'error':
-      textEl.textContent = browser.i18n.getMessage('connTest_error', [message || '']);
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_retry');
-      linkEl.style.display = '';
-      break;
-    case 'idle':
-    default:
-      textEl.textContent = browser.i18n.getMessage('connTest_idle');
-      linkEl.textContent = browser.i18n.getMessage('connTest_link_test');
-      linkEl.style.display = '';
-      break;
   }
 }
 
@@ -453,21 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectId: 'connection_type',
     taLog: taLog
   });
-
-  // Relocate the advanced connection rows into a separate table that sits below
-  // the "Advanced options" disclosure button, so expanding it opens the fields
-  // BELOW the button (button stays fixed) — mirroring the app-level disclosure.
-  // showConnectionOptions() queries the whole #mzta_conn_panel, so per-provider
-  // visibility still works after the move.
-  let conn_adv_body = document.querySelector('#connection_ui_adv_table tbody');
-  if(conn_adv_body){
-    document.querySelectorAll('#connection_ui_table tr.conn_adv').forEach(tr => conn_adv_body.appendChild(tr));
-  }
-  // Keep the moved advanced rows in sync with the selected provider (see comment
-  // on showAdvConnectionOptions). The initial call happens after restoreOptions()
-  // sets the saved provider, next to the showConnectionOptions() init call below.
-  document.getElementById('connection_type').addEventListener('change', showAdvConnectionOptions);
-
+  
   await restoreOptions();
 
   varConnectionUI.permission_all_urls = await messenger.permissions.contains({ origins: ["<all_urls>"] })
@@ -476,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const accountList = await messenger.accounts.list(false);
   if(accountList.some(account => account.type.toLowerCase().includes('owl'))) {
     taLog.log('OWL detected, displaying the warning.');
-    document.getElementById('owl_warning').style.display = 'block';
+    document.getElementById('owl_warning').style.display = 'table-row';
   }
 
   i18n.updateDocument();
@@ -497,15 +353,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         granted = await messenger.permissions.request({ permissions: ["messagesTags", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
-          setFeatureManageVisibility(addtags_info_btn, false);
+          addtags_info_btn.disabled = 'disabled';
           browser.storage.sync.set({add_tags: false});
         }
       }
     }
     _addtags_el_change();
-    setFeatureManageVisibility(addtags_info_btn, event.target.checked);
+    addtags_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(addtags_info_btn, addtags_el.checked);
+  addtags_info_btn.disabled = addtags_el.checked ? '' : 'disabled';
 
   let spamfilter_el = document.getElementById('spamfilter');
   let spamfilter_info_btn = document.getElementById('btnManageSpamFilterInfo');
@@ -515,43 +371,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         let granted = await messenger.permissions.request({ permissions: ["messagesMove", "messagesUpdate"] });
         if (!granted) {
           event.target.checked = false;
-          setFeatureManageVisibility(spamfilter_info_btn, false);
+          spamfilter_info_btn.disabled = 'disabled';
           browser.storage.sync.set({spamfilter: false});
         }
       }
     }
     _spamfilter_el_change();
-    setFeatureManageVisibility(spamfilter_info_btn, event.target.checked);
+    spamfilter_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(spamfilter_info_btn, spamfilter_el.checked);
+  spamfilter_info_btn.disabled = spamfilter_el.checked ? '' : 'disabled';
 
   let summarize_el = document.getElementById('summarize');
   let summarize_info_btn = document.getElementById('btnManageSummarizeInfo');
   summarize_el.addEventListener('click', (event) => {
-    setFeatureManageVisibility(summarize_info_btn, event.target.checked);
+    summarize_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(summarize_info_btn, summarize_el.checked);
+  summarize_info_btn.disabled = summarize_el.checked ? '' : 'disabled';
 
   let translate_el = document.getElementById('translate');
   let translate_info_btn = document.getElementById('btnManageTranslateInfo');
   translate_el.addEventListener('click', (event) => {
-    setFeatureManageVisibility(translate_info_btn, event.target.checked);
+    translate_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(translate_info_btn, translate_el.checked);
+  translate_info_btn.disabled = translate_el.checked ? '' : 'disabled';
 
   let get_calendar_event_el = document.getElementById('get_calendar_event');
   let get_calendar_event_info_btn = document.getElementById('btnManageCalendarEventInfo');
   get_calendar_event_el.addEventListener('click', (event) => {
-    setFeatureManageVisibility(get_calendar_event_info_btn, event.target.checked);
+    get_calendar_event_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(get_calendar_event_info_btn, get_calendar_event_el.checked);
+  get_calendar_event_info_btn.disabled = get_calendar_event_el.checked ? '' : 'disabled';
 
   let get_task_el = document.getElementById('get_task');
   let get_task_info_btn = document.getElementById('btnManageTaskInfo');
   get_task_el.addEventListener('click', (event) => {
-    setFeatureManageVisibility(get_task_info_btn, event.target.checked);
+    get_task_info_btn.disabled = event.target.checked ? '' : 'disabled';
   });
-  setFeatureManageVisibility(get_task_info_btn, get_task_el.checked);
+  get_task_info_btn.disabled = get_task_el.checked ? '' : 'disabled';
   
   document.getElementById('btnManagePrompts').addEventListener('click', () => {
     openTab('/pages/customprompts/mzta-custom-prompts.html');
@@ -609,12 +465,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
   conntype_select.addEventListener("change", disable_GetCalendarEvent);
   conntype_select.addEventListener("change", updateDescription);
-  conntype_select.addEventListener("change", updateConnPanelTint);
 
   showConnectionOptions(conntype_select);
-  showAdvConnectionOptions();
   updateDescription();
-  updateConnPanelTint();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);
@@ -639,68 +492,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('reset_max_prompt_length').addEventListener('click', resetMaxPromptLength);
   document.getElementById('reset_special_command_timeout').addEventListener('click', resetSpecialCommandTimeout);
 
-  // App-level "Advanced options" disclosure (purely UI, no pref persisted)
-  let adv_toggle = document.getElementById('mzta_adv_toggle');
-  let adv_panel = document.getElementById('mzta_adv_panel');
-  adv_toggle.addEventListener('click', () => {
-    let expanded = adv_toggle.getAttribute('aria-expanded') === 'true';
-    adv_toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    adv_panel.classList.toggle('hidden', expanded);
-  });
-
-  // Per-connection "Advanced options" disclosure (purely UI, no pref persisted).
-  // Advanced field rows are tagged conn_adv in the shared template and were moved
-  // above into #connection_ui_adv_table, which sits below this button. Toggling
-  // the .hidden class opens the advanced fields BELOW the button (button stays
-  // fixed), mirroring the app-level disclosure; the label stays static.
-  let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
-  let conn_adv_panel = document.getElementById('connection_ui_adv_table');
-  let conn_ui_table = document.getElementById('connection_ui_table');
-  conn_adv_btn.addEventListener('click', () => {
-    let expanded = conn_adv_btn.getAttribute('aria-expanded') === 'true';
-    conn_adv_btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    conn_adv_panel.classList.toggle('hidden', expanded);
-  });
-  // Start collapsed and reset to collapsed whenever the connection type changes.
-  resetConnAdv();
-  document.getElementById('connection_type').addEventListener('change', resetConnAdv);
-
-  // Connection test status strip: show for testable types, reset on any field change,
-  // and run the (non-persistent) connectivity check when the action link is clicked.
-  refreshConnTestVisibility();
-  document.getElementById('connection_type').addEventListener('change', refreshConnTestVisibility);
-  // Any edit to a connection field invalidates a prior result → back to idle.
-  // The advanced fields now live in a separate table, so listen on both.
-  conn_ui_table.addEventListener('input', () => setConnTestState('idle'));
-  conn_ui_table.addEventListener('change', () => setConnTestState('idle'));
-  conn_adv_panel.addEventListener('input', () => setConnTestState('idle'));
-  conn_adv_panel.addEventListener('change', () => setConnTestState('idle'));
-  let conn_test_link = document.getElementById('mzta_conn_test_link');
-  conn_test_link.addEventListener('click', async (e) => {
-    e.preventDefault();
-    let connType = document.getElementById('connection_type').value;
-    if(!isTestableConnection(connType)) return;
-    setConnTestState('loading');
-    let result = await runConnectionTest(connType);
-    if(result.status === 'ok'){
-      setConnTestState('ok', result.apiName);
-    }else{
-      setConnTestState('error', result.message);
-    }
-  });
-
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
-  });
-
-  document.getElementById('btn_setup_wizard').addEventListener('click', openSetupWizard);
-
-  // "No connection selected" banner: shown until a provider is chosen.
-  updateNoConnectionBanner();
-  document.getElementById('connection_type').addEventListener('change', updateNoConnectionBanner);
-  document.getElementById('btn_options_setup_wizard').addEventListener('click', async (e) => {
-      e.preventDefault();
-      await openSetupWizard();
   });
 
   // Cache management
@@ -718,7 +511,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   browser.runtime.getPlatformInfo().then(info => {
     taLog.log("OS: " + info.os);
     if ((info.os === "linux")&&(prefs_opt.chatgpt_win_height!=0)&&(prefs_opt.chatgpt_win_width!=0)){
-      document.getElementById('hyprland_warning').style.display = 'block';
+      document.getElementById('hyprland_warning').style.display = 'table-row';
     }
   });
 

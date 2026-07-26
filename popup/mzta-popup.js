@@ -18,7 +18,6 @@
 
 import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
-import { hasNoConnectionSelected } from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
@@ -28,29 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let prefs = await browser.storage.sync.get({
       do_debug: prefs_default.do_debug,
       dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-      connection_type: prefs_default.connection_type,
-      chatgpt_api_key: prefs_default.chatgpt_api_key,
-      google_gemini_api_key: prefs_default.google_gemini_api_key,
-      anthropic_api_key: prefs_default.anthropic_api_key,
-      ollama_host: prefs_default.ollama_host,
-      openai_comp_host: prefs_default.openai_comp_host
+      connection_type: prefs_default.connection_type
     });
     taLog = new taLogger("mzta-popup",prefs.do_debug);
     i18n.updateDocument();
-
-    // If the selected connection has no credentials yet, offer the setup wizard
-    // instead of the prompts list. (ChatGPT Web needs only a host permission,
-    // handled by the dedicated permission banner below.)
-    if(!isConnectionConfigured(prefs)){
-        document.getElementById("mzta_search_banner").style.display = "none";
-        document.getElementById("setup_wizard_prompt").style.display = "block";
-        document.getElementById("btn_popup_setup_wizard").addEventListener("click", async (e) => {
-            e.preventDefault();
-            await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
-            window.close();
-        });
-        return;
-    }
     let reponse = await browser.runtime.sendMessage({command: "popup_menu_ready"});
     taLog.log("Preparing data to load the popup menu: " + JSON.stringify(reponse));
 
@@ -102,26 +82,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 }, { once: true });
-
-// Returns true when the selected connection type has the credentials it needs
-// to work. Used to offer the setup wizard from the popup when nothing has been
-// configured yet. ChatGPT Web has no credential (only a host permission, shown
-// by its own banner), so it's treated as "configured" here.
-function isConnectionConfigured(prefs){
-    // No connection chosen at all (fresh install): the wizard is the way in.
-    if(hasNoConnectionSelected(prefs.connection_type)){
-        return false;
-    }
-    switch(prefs.connection_type){
-        case 'chatgpt_api':        return !!(prefs.chatgpt_api_key || '').trim();
-        case 'google_gemini_api':  return !!(prefs.google_gemini_api_key || '').trim();
-        case 'anthropic_api':      return !!(prefs.anthropic_api_key || '').trim();
-        case 'ollama_api':         return !!(prefs.ollama_host || '').trim();
-        case 'openai_comp_api':    return !!(prefs.openai_comp_host || '').trim();
-        case 'chatgpt_web':
-        default:                   return true;
-    }
-}
 
 async function searchPrompt(allPrompts, tabId, tabType, filtering){
  taLog.log("tabType: " + tabType);
