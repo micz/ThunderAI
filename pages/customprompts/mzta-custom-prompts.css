@@ -346,12 +346,27 @@ table.prompts_list tbody tr:hover td {
     background: var(--rowhover);
 }
 
-/* Fixed column widths (ID, Name, Prompt Text, Menu, Properties, Actions). */
-table td.w08 { width: 8vw; }
-table td.w17 { width: 17vw; }
-table td.w19 { width: 19vw; }
-table td.w25 { width: 25vw; }
-table td.w40 { width: 40vw; }
+/* Column widths for the new-prompt form (auto table layout, so these are hints). */
+table td.w08 { width: 8%; }
+table td.w17 { width: 17%; }
+table td.w19 { width: 19%; }
+table td.w25 { width: 25%; }
+table td.w40 { width: 40%; }
+
+/* Column widths for the prompts list.
+   These MUST live on the <th>: under table-layout:fixed the browser reads column
+   widths from the first row only, which is the header row — widths declared on
+   the <td> of body rows are ignored outright.
+
+   The ratios are the original pre-restyle ones (8/8/40/8/17 + remainder), now as
+   percentages: the table sits inside .page_wrap (max-width 1440px) so vw units
+   would be measured against the viewport, not the actual container. */
+table.prompts_list th:nth-child(1) { width: 11%; } /* ID */
+table.prompts_list th:nth-child(2) { width: 11%; } /* Name */
+table.prompts_list th:nth-child(3) { width: 36%; } /* Prompt Text */
+table.prompts_list th:nth-child(4) { width: 15%; } /* Menu / Action */
+table.prompts_list th:nth-child(5) { width: 17%; } /* Properties */
+table.prompts_list th:nth-child(6) { width: 10%; } /* Actions */
 
 table.prompts_list td.properties { white-space: nowrap; }
 
@@ -360,10 +375,11 @@ table.prompts_list td.properties { white-space: nowrap; }
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--muted2);
+    word-wrap: anywhere;
 }
 
 /* Name cell — emphasized. */
-.name_show { font-weight: 600; }
+.name_show { font-weight: 600; word-wrap: anywhere; }
 
 .text_show, .name_show, .id_show, .type_show, .action_show { font-size: 13px; }
 
@@ -638,6 +654,19 @@ table.prompts_list td input:disabled:checked.use_diff_viewer::after {
 
 #txtIdNew, .id_output { text-transform: lowercase; }
 
+/* Edit mode in the list: these inputs have no declared width, so they fall back to
+   their intrinsic size (~20 characters) and overflow the narrow ID/Name/Menu
+   columns. Constrain them to the cell — box-sizing:border-box (set globally above)
+   keeps padding and border inside the 100%. */
+table.prompts_list .id_output,
+table.prompts_list .name_output,
+table.prompts_list .type_output,
+table.prompts_list .action_output {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
 .need_custom_text_span, .need_selected_span { padding-right: 2px; }
 
 /* ============================ Storage space ============================ */
@@ -747,9 +776,82 @@ input.input_additional[type="text"] {
     border-radius: 8px;
 }
 
+/* Expanded API panel (list rows). It is NOT clickable — only the toggle above it
+   is — and its content must read left-aligned, not centered. */
 .api_additional_info {
+    text-align: left;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* New-prompt form: the toggle row carries the .api_additional_info class while the
+   panel below carries the id (legacy id/class inversion in the markup), so restore
+   the toggle affordances by ID. */
+#api_additional_info_toggle {
     cursor: pointer;
     text-align: center;
+    padding: 5px;
+    margin-top: 0;
+}
+
+/* ---- Connection UI inside the per-row API panel ----
+   injectConnectionUI() emits a 2-column <tr> (label | controls). In the narrow
+   Prompt Text column that layout wraps badly, so we stack it: label on its own
+   line, select + Reset full-width underneath. Scoped to .api_additional_info so
+   the Options page keeps the standard two-column form. */
+.api_additional_info table {
+    width: 100%;
+    table-layout: fixed; /* don't let long option labels widen the panel */
+}
+
+.api_additional_info tr { display: block; }
+
+/* Specificity note: `table.prompts_list td` (0,1,2) sets padding/border on every
+   cell in the list, so these overrides need at least that weight — hence the
+   doubled class rather than a bare `.api_additional_info td`. The width:auto
+   likewise has to beat the td.w08/w17/w40 column rules that would otherwise
+   apply to these injected cells. */
+.api_additional_info.api_additional_info td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: none;
+}
+
+.api_additional_info.api_additional_info td:first-child {
+    margin-bottom: 4px;
+}
+
+.api_additional_info label { width: 100%; }
+
+.api_additional_info .opt_title {
+    white-space: nowrap;
+}
+
+/* select + Reset share the row; the select takes the slack. min-width:0 is
+   required or the select refuses to shrink below its intrinsic width (driven by
+   its longest <option>) and pushes the Reset button out of the panel. */
+.api_additional_info select.option-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* The injected inputs use width:-moz-available, which ignores the flex context
+   and overflows the panel. Cap them to the container instead. */
+.api_additional_info input.option-input[type="text"],
+.api_additional_info input.option-input[type="password"],
+.api_additional_info input.option-input[type="number"],
+.api_additional_info textarea.option-textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.api_additional_info tr[class*="conntype_"] {
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
 }
 
 .api_additional_info_toggle {
