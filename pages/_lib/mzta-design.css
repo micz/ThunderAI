@@ -1044,6 +1044,7 @@ body.mzta_feature_page .mzta_section > #mzta_conn_panel {
 
 /* --- Typography (scoped up-sizing) ------------------------------------- */
 body.mzta_feature_page .opt_title { font-size: 15px; font-weight: 600; }
+body.mzta_feature_page .opt_title_small { font-size: 13.5px; font-weight: normal; }
 body.mzta_feature_page .mzta_help,
 body.mzta_feature_page .feature_desc {
     font-size: 13.5px;
