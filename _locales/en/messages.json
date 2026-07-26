@@ -2523,6 +2523,10 @@
     "message": "Turn on what you need. Fine-tune each from its own settings screen.",
     "description": "Sub-line under the Features section eyebrow on the options page"
   },
+  "prefs_FeaturesNoConnection": {
+    "message": "Select an AI connection above to enable these features.",
+    "description": "Note shown under the Features subtitle while no AI connection has been selected, explaining why the toggles are disabled"
+  },
   "prefs_advanced_options": {
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
@@ -2590,6 +2594,127 @@
     "message": "Retry",
     "description": "Connection test status strip: action link to run the test again (error state)"
   },
+  "wizard_title": {
+    "message": "Setup Wizard",
+    "description": "Title of the setup wizard page"
+  },
+  "wizard_step_provider_title": {
+    "message": "Choose your AI",
+    "description": "Setup wizard step 0 heading"
+  },
+  "wizard_step_provider_sub": {
+    "message": "Each service has its own colour — you'll see it carried through the rest of setup.",
+    "description": "Setup wizard step 0 sub-line"
+  },
+  "wizard_step_connect_sub": {
+    "message": "Enter the credentials below and choose a model, then test the connection.",
+    "description": "Setup wizard step 1 (Connect) sub-line for API providers"
+  },
+  "wizard_step_connect_sub_web": {
+    "message": "Almost nothing to set up here.",
+    "description": "Setup wizard step 1 (Connect) sub-line for the ChatGPT Web interface"
+  },
+  "wizard_step_tools_title": {
+    "message": "Pick your tools",
+    "description": "Setup wizard step 2 heading"
+  },
+  "wizard_step_tools_sub": {
+    "message": "You can change any of these later in Settings.",
+    "description": "Setup wizard step 2 sub-line"
+  },
+  "wizard_done_title": {
+    "message": "You're all set",
+    "description": "Setup wizard done step heading"
+  },
+  "wizard_done_body": {
+    "message": "ThunderAI is ready. Right-click a message or open the compose window to try it. Tweak anything later in Settings.",
+    "description": "Setup wizard done step body text"
+  },
+  "wizard_run_again": {
+    "message": "Run through again",
+    "description": "Setup wizard done step: link to restart the wizard"
+  },
+  "wizard_connect_heading": {
+    "message": "Connect $PROVIDER$",
+    "description": "Setup wizard step 1 heading; $PROVIDER$ is the provider display name",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "Claude API"
+      }
+    }
+  },
+  "wizard_back": {
+    "message": "Back",
+    "description": "Setup wizard nav: go to the previous step"
+  },
+  "wizard_continue": {
+    "message": "Continue",
+    "description": "Setup wizard nav: advance to the next step"
+  },
+  "wizard_finish": {
+    "message": "Finish setup",
+    "description": "Setup wizard nav: label on the second-to-last step"
+  },
+  "wizard_provider_tag_chatgpt_web": {
+    "message": "No API key — sign in on first use",
+    "description": "Setup wizard provider card tag line for ChatGPT Web"
+  },
+  "wizard_provider_tag_chatgpt_api": {
+    "message": "Needs API key + model",
+    "description": "Setup wizard provider card tag line for ChatGPT OpenAI API"
+  },
+  "wizard_provider_tag_google_gemini_api": {
+    "message": "Needs API key + model",
+    "description": "Setup wizard provider card tag line for Google Gemini API"
+  },
+  "wizard_provider_tag_anthropic_api": {
+    "message": "Needs API key, model & version",
+    "description": "Setup wizard provider card tag line for Anthropic Claude API"
+  },
+  "wizard_provider_tag_ollama_api": {
+    "message": "Local server address + model",
+    "description": "Setup wizard provider card tag line for Ollama"
+  },
+  "wizard_provider_tag_openai_comp_api": {
+    "message": "Server address + model",
+    "description": "Setup wizard provider card tag line for OpenAI Compatible API"
+  },
+  "onboarding_wizard_banner_text": {
+    "message": "New to ThunderAI? Let the setup wizard walk you through connecting your AI.",
+    "description": "Onboarding page banner text inviting the user to launch the setup wizard"
+  },
+  "onboarding_wizard_banner_link": {
+    "message": "Launch the setup wizard",
+    "description": "Onboarding page banner link label that launches the setup wizard"
+  },
+  "prefs_doc_setup_wizard_launch": {
+    "message": "Setup Wizard",
+    "description": "Options page documentation card label that launches the setup wizard"
+  },
+  "popup_setup_wizard_text": {
+    "message": "ThunderAI isn't connected to an AI yet.",
+    "description": "Popup menu message shown when no AI connection is configured"
+  },
+  "popup_setup_wizard_link": {
+    "message": "Run the setup wizard",
+    "description": "Popup menu link label that opens the setup wizard"
+  },
+  "prefs_Connection_type_none": {
+    "message": "— Select an AI connection —",
+    "description": "Placeholder option of the connection type select, shown when no AI connection has been selected yet"
+  },
+  "options_no_connection_text": {
+    "message": "No AI connection selected yet. ThunderAI needs one to work.",
+    "description": "Options page banner text shown when no AI connection has been selected"
+  },
+  "options_no_connection_link": {
+    "message": "Run the setup wizard",
+    "description": "Options page banner link label that opens the setup wizard"
+  },
+  "msg_no_connection_selected": {
+    "message": "No AI connection selected. Open the ThunderAI options and run the setup wizard to choose one.",
+    "description": "Alert shown when a prompt is run but no AI connection has been selected"
   "onboarding_tab_title": {
     "message": "Welcome to ThunderAI!",
     "description": "Onboarding page: browser tab title and first line of the welcome paragraph"

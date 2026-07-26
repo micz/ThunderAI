@@ -9,6 +9,13 @@
   <body>
     <div id="mzta_card">
 
+      <!-- No AI connection selected yet: invite to the setup wizard (informational, not a warning).
+           Sits above the documentation block so it is the first thing a new user sees. -->
+      <div id="no_connection_banner">
+        <span>__MSG_options_no_connection_text__</span>
+        <a id="btn_options_setup_wizard" href="#">__MSG_options_no_connection_link__ &rsaquo;</a>
+      </div>
+
       <!-- TOP LINKS -->
       <div id="mzta_top_links">
 
@@ -31,6 +38,10 @@
           <a id="btn_welcome" href="#" class="mzta_doc_card">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21v-6h6v6"></path></svg>
             <span class="mzta_doc_card_label">__MSG_prefs_doc_open_welcome__</span>
+          </a>
+          <a id="btn_setup_wizard" href="#" class="mzta_doc_card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"></path></svg>
+            <span class="mzta_doc_card_label">__MSG_prefs_doc_setup_wizard_launch__</span>
           </a>
         </div>
 
@@ -136,6 +147,8 @@
         <div class="mzta_section">
           <div class="mzta_eyebrow">__MSG_prefs_FeaturesTitle__</div>
           <div class="mzta_section_sub">__MSG_prefs_FeaturesSubtitle__</div>
+          <!-- Shown by JS only while no AI connection is selected (features can't be enabled yet) -->
+          <div id="features_no_connection_note">__MSG_prefs_FeaturesNoConnection__</div>
 
           <div class="feature_row add_tags_tr">
             <div class="feature_info">

@@ -28,6 +28,7 @@ import {
   openTab,
   isAPIKeyValue,
   getConnectionType,
+  hasNoConnectionSelected,
   setTomSelectBorder,
   getMiczItUrl,
   getCacheStorageUsedSpace
@@ -108,9 +109,13 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
-          if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
+          // No fallback for connection_type: an empty value means "no connection
+          // selected yet" and must stay empty, so the placeholder option shows.
           element.value = result[element.id] || default_select_value;
-          if (element.value === '') {
+          // connection_type has a dedicated disabled placeholder option for the
+          // empty value, so let the assignment above select it; every other select
+          // has no empty option and must show a blank control instead.
+          if (element.value === '' && element.id != 'connection_type') {
             element.selectedIndex = -1;
           }
           if (element.tomselect) {
@@ -192,7 +197,8 @@ function updateSpecificApiIndicators(prefs_opt) {
 function disable_MaxPromptLength(){
   let maxPromptLength = document.getElementById('max_prompt_length');
   let conntype_select = document.getElementById("connection_type");
-  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web");
+  // API-only setting: irrelevant for ChatGPT Web and until a connection is chosen.
+  maxPromptLength.disabled = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
   let maxPromptLength_tr = document.getElementById('max_prompt_length_tr');
   maxPromptLength_tr.style.display = (maxPromptLength.disabled) ? 'none' : '';
 }
@@ -205,77 +211,63 @@ function setFeatureManageVisibility(btn, visible){
   btn.disabled = visible ? '' : 'disabled';
 }
 
-function disable_AddTags(prefs_opt){
-  let add_tags = document.getElementById('add_tags');
+// Why an API-driven feature can't be used with the current connection:
+//   no_connection -> nothing selected yet (the setup wizard banner covers it)
+//   chatgpt_web   -> ChatGPT Web has no API
+// Both disable the feature, but only chatgpt_web shows the "switch to an API
+// integration" hint (warn_API_needed) — that text is about ChatGPT Web and would
+// be misleading when no provider has been chosen at all.
+function getFeatureConnState(prefs_opt, prefix){
   let conntype_select = document.getElementById("connection_type");
   const tempPrefs = {
       connection_type: conntype_select.value,
       ...prefs_opt
   };
-  let add_tags_disabled = (getConnectionType(tempPrefs, null, 'add_tags') === "chatgpt_web");
-  // console.log('>>>>>>>>>>>>> add_tags_disabled: ' + add_tags_disabled);
-  add_tags.checked = add_tags_disabled ? false : add_tags.checked;
-  let add_tags_checked_original = add_tags.checked;
-  setFeatureManageVisibility(document.getElementById('btnManageTagsInfo'), add_tags.checked);
-  let add_tags_warn_API_needed = document.getElementById('add_tags_warn_API_needed');
-  add_tags_warn_API_needed.style.display = (add_tags_disabled) ? 'inline-block' : 'none';
-  if(add_tags_checked_original != add_tags.checked){
-    browser.storage.sync.set({add_tags: add_tags.checked});
+  let effective = getConnectionType(tempPrefs, null, prefix);
+  let no_connection = hasNoConnectionSelected(effective);
+  return {
+    no_connection: no_connection,
+    disabled: no_connection || (effective === "chatgpt_web"),
+    show_api_warning: (effective === "chatgpt_web")
+  };
+}
+
+// Shared handling for the four API-driven feature rows (add_tags, spamfilter,
+// summarize, translate): they differ only by element ids.
+function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
+  let checkbox = document.getElementById(prefix);
+  if(!checkbox) return;
+  let state = getFeatureConnState(prefs_opt, prefix);
+
+  let checked_original = checkbox.checked;
+  checkbox.checked = state.disabled ? false : checkbox.checked;
+  // With no connection selected the toggle is greyed out: there is nothing to
+  // enable the feature against yet.
+  checkbox.disabled = state.no_connection;
+
+  setFeatureManageVisibility(document.getElementById(manageBtnId), checkbox.checked);
+  let warn = document.getElementById(prefix + '_warn_API_needed');
+  if(warn) warn.style.display = state.show_api_warning ? 'inline-block' : 'none';
+
+  if(checked_original != checkbox.checked){
+    browser.storage.sync.set({[prefix]: checkbox.checked});
   }
+}
+
+function disable_AddTags(prefs_opt){
+  disable_ApiFeature(prefs_opt, 'add_tags', 'btnManageTagsInfo');
 }
 
 function disable_SpamFilter(prefs_opt){
-  let spamfilter = document.getElementById('spamfilter');
-  let conntype_select = document.getElementById("connection_type");
-  const tempPrefs = {
-      connection_type: conntype_select.value,
-      ...prefs_opt
-  };
-  let spamfilter_disabled = (getConnectionType(tempPrefs, null, 'spamfilter') === "chatgpt_web");
-  let spamfilter_checked_original = spamfilter.checked;
-  spamfilter.checked = spamfilter_disabled ? false : spamfilter.checked;
-  setFeatureManageVisibility(document.getElementById('btnManageSpamFilterInfo'), spamfilter.checked);
-  let spamfilter_warn_API_needed = document.getElementById('spamfilter_warn_API_needed');
-  spamfilter_warn_API_needed.style.display = (spamfilter_disabled) ? 'inline-block' : 'none';
-  if(spamfilter_checked_original != spamfilter.checked){
-    browser.storage.sync.set({spamfilter: spamfilter.checked});
-  }
+  disable_ApiFeature(prefs_opt, 'spamfilter', 'btnManageSpamFilterInfo');
 }
 
 function disable_Summarize(prefs_opt){
-  let summarize = document.getElementById('summarize');
-  let conntype_select = document.getElementById("connection_type");
-  const tempPrefs = {
-      connection_type: conntype_select.value,
-      ...prefs_opt
-  };
-  let summarize_disabled = (getConnectionType(tempPrefs, null, 'summarize') === "chatgpt_web");
-  let summarize_checked_original = summarize.checked;
-  summarize.checked = summarize_disabled ? false : summarize.checked;
-  setFeatureManageVisibility(document.getElementById('btnManageSummarizeInfo'), summarize.checked);
-  let summarize_warn_API_needed = document.getElementById('summarize_warn_API_needed');
-  summarize_warn_API_needed.style.display = (summarize_disabled) ? 'inline-block' : 'none';
-  if(summarize_checked_original != summarize.checked){
-    browser.storage.sync.set({summarize: summarize.checked});
-  }
+  disable_ApiFeature(prefs_opt, 'summarize', 'btnManageSummarizeInfo');
 }
 
 function disable_Translate(prefs_opt){
-  let translate = document.getElementById('translate');
-  let conntype_select = document.getElementById("connection_type");
-  const tempPrefs = {
-      connection_type: conntype_select.value,
-      ...prefs_opt
-  };
-  let translate_disabled = (getConnectionType(tempPrefs, null, 'translate') === "chatgpt_web");
-  let translate_checked_original = translate.checked;
-  translate.checked = translate_disabled ? false : translate.checked;
-  setFeatureManageVisibility(document.getElementById('btnManageTranslateInfo'), translate.checked);
-  let translate_warn_API_needed = document.getElementById('translate_warn_API_needed');
-  translate_warn_API_needed.style.display = (translate_disabled) ? 'inline-block' : 'none';
-  if(translate_checked_original != translate.checked){
-    browser.storage.sync.set({translate: translate.checked});
-  }
+  disable_ApiFeature(prefs_opt, 'translate', 'btnManageTranslateInfo');
 }
 
 async function disable_GetCalendarEvent(){
@@ -286,8 +278,10 @@ async function disable_GetCalendarEvent(){
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
   let conntype_select = document.getElementById("connection_type");
-  get_calendar_event.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
-  get_task.disabled = (conntype_select.value === "chatgpt_web") || !(is_spark_present == 1);
+  // These features need an API: unavailable with ChatGPT Web and with no connection selected.
+  let conn_unusable = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
+  get_calendar_event.disabled = conn_unusable || !(is_spark_present == 1);
+  get_task.disabled = conn_unusable || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
@@ -296,7 +290,7 @@ async function disable_GetCalendarEvent(){
   get_task_tr_elements.forEach(get_task_tr => {
     get_task_tr.style.display = get_task.disabled ? 'none' : '';
   });
-  no_sparks_tr.style.display = ((is_spark_present == 1) || (conntype_select.value === "chatgpt_web")) ? 'none' : '';
+  no_sparks_tr.style.display = ((is_spark_present == 1) || conn_unusable) ? 'none' : '';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
@@ -382,6 +376,32 @@ function updateConnPanelTint(){
   if(pillName){
     pillName.textContent = getConnectionTypeLabel(conntype);
   }
+}
+
+async function openSetupWizard(){
+  await browser.tabs.create({ url: "../pages/setup-wizard/mzta-setup-wizard.html" });
+}
+
+// Show the blue "no AI connection selected" banner until the user picks a
+// provider. Informational, not a warning: nothing is broken on a fresh install,
+// the setup wizard is simply the way in.
+// Also hides the per-connection "Advanced options" disclosure, which has nothing
+// to disclose while no provider is selected (all its rows belong to a provider),
+// and shows a note in the Features section explaining why its toggles are greyed.
+function updateNoConnectionBanner(){
+  let conntype_select = document.getElementById("connection_type");
+  if(!conntype_select) return;
+  let no_conn = hasNoConnectionSelected(conntype_select.value);
+
+  let banner = document.getElementById('no_connection_banner');
+  if(banner) banner.classList.toggle('shown', no_conn);
+
+  let features_note = document.getElementById('features_no_connection_note');
+  if(features_note) features_note.classList.toggle('shown', no_conn);
+
+  let conn_adv_btn = document.getElementById('mzta_conn_adv_btn');
+  if(conn_adv_btn) conn_adv_btn.style.display = no_conn ? 'none' : '';
+  if(no_conn) resetConnAdv();   // collapse it, so it reopens closed once a provider is picked
 }
 
 // Collapse the per-connection advanced disclosure back to its default state
@@ -720,6 +740,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btn_welcome').addEventListener('click', async () => {
       await browser.tabs.create({ url: "../pages/onboarding/onboarding.html" });
+  });
+
+  document.getElementById('btn_setup_wizard').addEventListener('click', openSetupWizard);
+
+  // "No connection selected" banner: shown until a provider is chosen.
+  updateNoConnectionBanner();
+  document.getElementById('connection_type').addEventListener('change', updateNoConnectionBanner);
+  document.getElementById('btn_options_setup_wizard').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await openSetupWizard();
   });
 
   // Cache management
