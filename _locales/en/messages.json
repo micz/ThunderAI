@@ -981,10 +981,6 @@
     "message": "If checked, the tags label will be set to lowercase letters with only the first letter uppercase.",
     "description": ""
   },
-  "AddTags_prompt_prefs_title": {
-    "message": "Add Tags Options",
-    "description": ""
-  },
   "prefs_SurveyLinkText": {
     "message": "Enjoying ThunderAI?",
     "description": ""
@@ -1121,10 +1117,6 @@
     "message": "Show an additional menu item to create calendar events from clipboard text content.",
     "description": ""
   },
-  "Summarize_prompt_prefs_title": {
-    "message": "Summarization Options",
-    "description": ""
-  },
   "prompt_summarize": {
     "message": "Summarize",
     "description": ""
@@ -1165,20 +1157,12 @@
     "message": "If checked, an item will be included in the menu to get calendar event information from selected text.",
     "description": ""
   },
-  "get_calendar_event_prompt_prefs_title": {
-    "message": "Calendar Events Options",
-    "description": ""
-  },
   "prefs_OptionText_get_task": {
     "message": "Add a new task from selected text",
     "description": ""
   },
   "prefs_OptionText_get_task_Info": {
     "message": "If checked, an item will be included in the menu to get task information from selected text.",
-    "description": ""
-  },
-  "get_task_prompt_prefs_title": {
-    "message": "Tasks Options",
     "description": ""
   },
   "Select_your_timezone": {
@@ -1404,10 +1388,6 @@
   "prompt_spamfilter_full_text" : {
     "message" : "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\"",
     "description" : ""
-  },
-  "SpamFilter_prompt_prefs_title": {
-    "message": "Spam Filter Options",
-    "description": ""
   },
   "Summarize_PageTitle": {
     "message": "Manage Summarize Settings",
@@ -2229,10 +2209,6 @@
   },
   "Translate_prompt_text_title": {
     "message": "Current prompt text",
-    "description": ""
-  },
-  "Translate_prompt_prefs_title": {
-    "message": "Translation Options",
     "description": ""
   },
   "prefs_OptionText_translate_auto": {

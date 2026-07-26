@@ -251,7 +251,8 @@ input, select, button, textarea { font-family: inherit; }
 #mzta_body label:not(#connection_ui_table label):not(.mzta_switch):not(.mzta_adv_check) { width: auto; }
 
 /* Section eyebrow inside body */
-.mzta_section > .mzta_eyebrow { margin-bottom: 13px; }
+.mzta_section > .mzta_eyebrow,
+.mzta_section > .mzta_prompt_title { margin-bottom: 13px; }
 .mzta_section_sub { font-size: 12px; color: var(--dim); margin-bottom: 6px; line-height: 1.45; }
 
 /* Divider */
@@ -259,6 +260,8 @@ input, select, button, textarea { font-family: inherit; }
 
 /* Generic labels / fields */
 .opt_title { font-size: 12px; font-weight: 700; color: var(--text); }
+/* Section title for the prompt-text blocks — sized like .opt_title. */
+.mzta_prompt_title { font-size: 12px; font-weight: 700; color: var(--text); }
 .mzta_field { display: flex; flex-direction: column; gap: 6px; }
 .mzta_field_row { display: flex; gap: 14px; }
 .mzta_field_row > .mzta_field { flex: 1; }
@@ -1008,9 +1011,20 @@ body.mzta_feature_page .mzta_section > .mzta_eyebrow {
     font-weight: 700;
     margin-bottom: 16px;
 }
+/* Prompt-text section title: same accent-bar treatment as the section
+   eyebrow, but sized like .opt_title (15px/600) instead of 12px/700. */
+body.mzta_feature_page .mzta_section > .mzta_prompt_title {
+    display: block;
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
 /* Intro help text under a section header (e.g. the prompts section):
    pull it up under the eyebrow, then space it before the first field. */
-body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help {
+body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_help,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_help {
     margin: -8px 0 16px;
     font-size: 13.5px;
     line-height: 1.5;
@@ -1028,9 +1042,15 @@ body.mzta_feature_page .mzta_section > .feature_row {
     padding-top: 18px;
     margin-top: 18px;
 }
-/* First interactive row after the header/intro block: no divider. */
+/* First interactive row after the header/intro block: no divider. The
+   :first-child pair covers headerless sections (the settings card on the
+   feature pages has no eyebrow), where the row itself opens the card. */
+body.mzta_feature_page .mzta_section > .mzta_field:first-child,
+body.mzta_feature_page .mzta_section > .feature_row:first-child,
 body.mzta_feature_page .mzta_section > .mzta_eyebrow + .mzta_field,
 body.mzta_feature_page .mzta_section > .mzta_eyebrow + .feature_row,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .mzta_field,
+body.mzta_feature_page .mzta_section > .mzta_prompt_title + .feature_row,
 body.mzta_feature_page .mzta_section > .mzta_help + .mzta_field,
 body.mzta_feature_page .mzta_section > .mzta_help + .feature_row {
     border-top: none;
