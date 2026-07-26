@@ -1851,5 +1851,139 @@
     },
     "batch_stop_source": {
         "message": "Hentikan batch"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Baru menggunakan ThunderAI? Biarkan wizard penyiapan memandu Anda menghubungkan AI Anda."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Luncurkan wizard penyiapan"
+    },
+    "onboarding_tab_title": {
+        "message": "Selamat datang di ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Add-on ini dirancang untuk menyempurnakan pengelolaan email Anda dengan kekuatan AI."
+    },
+    "onboarding_welcome_3": {
+        "message": "Dengan ThunderAI, Anda dapat merapikan kotak masuk, membuat balasan cerdas, meringkas email, menambahkan tag secara otomatis, menyaring spam, dan banyak lagi, semua dengan bantuan kecerdasan buatan."
+    },
+    "onboarding_welcome_4": {
+        "message": "Di halaman ini, Anda akan menemukan ikhtisar fitur utama yang tersedia untuk membantu Anda memanfaatkan ThunderAI secara maksimal."
+    },
+    "onboarding_welcome_5": {
+        "message": "Bersiaplah untuk mengalami cara yang lebih cerdas dan efisien dalam menangani email Anda!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Mari kita lihat cara memanfaatkan add-on ini secara maksimal!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Menggunakan Prompt"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Tombol menu prompt"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "Pada setiap pesan, ada tombol yang memungkinkan Anda membuka menu prompt."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Di sini Anda dapat memilih prompt dengan berbagai cara:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Kotak pencarian"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Gunakan ini untuk mencari sebagian prompt."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Panah Bawah/Atas"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Berpindah antar prompt."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Tekan angka"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Tekan angka pada keyboard untuk memilih prompt yang sesuai."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Setelah Anda memilih prompt yang diinginkan, tekan Enter untuk menjalankannya."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Di halaman opsi ThunderAI, Anda dapat menemukan beberapa opsi terkait menu ini."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Dua prompt pertama adalah prompt khusus yang hanya tersedia saat menggunakan integrasi API. Keduanya bekerja langsung tanpa membuka halaman web AI Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Menentukan Prompt Kustom Anda"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Mengelola Prompt Kustom"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Dari halaman opsi, Anda dapat membuka halaman Prompt Kustom."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Dari sana Anda dapat menambahkan prompt Anda sendiri, dan juga menonaktifkan prompt bawaan."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Anda dapat menemukan info lebih lanjut di sini."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Saat menentukan prompt Anda sendiri, Anda juga dapat menggunakan"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "placeholder data"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", yang akan diganti dengan informasi yang sesuai saat prompt digunakan."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Sebagai contoh, Anda dapat menggunakan placeholder $PH_SUBJECT$ untuk merujuk pada subjek email atau $PH_TAGS$ untuk merujuk pada tag email saat ini.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Fitur otomatis"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Filter spam otomatis"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Ada juga dua fitur otomatis yang tersedia saat menggunakan integrasi API, yang dapat diaktifkan dari halaman opsi:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Filter Spam Otomatis"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "secara otomatis memindahkan email ke folder spam jika terdeteksi sebagai spam."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Penandaan Otomatis"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "secara otomatis menetapkan tag pada email."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Untuk masing-masing fitur ini, tersedia halaman opsi untuk menentukan pengaturan dan prompt kustom yang akan digunakan."
+    },
+    "onboarding_footer_1": {
+        "message": "Jika Anda memiliki pertanyaan atau saran, silakan buka issue di halaman GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Apakah Anda menyukai ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Buat donasi"
     }
 }
