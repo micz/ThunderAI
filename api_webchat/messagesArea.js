@@ -28,26 +28,39 @@ import { StreamingMessage } from './streamingMessage.js';
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
 import {
     buildSparkleIcon, buildCopyIcon, buildCheckIcon, buildDiffIcon,
-    buildSaveIcon, buildUseAnswerIcon,
+    buildSaveIcon, buildUseAnswerIcon, buildScrollToBottomIcon,
 } from './svgIcons.js';
 const messagesAreaTemplate = document.createElement('template');
 
 const messagesAreaStyle = document.createElement('style');
 messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
+    /* Exactly one box here scrolls, and it is #messages. The host must not:
+       a wheel event over #messages bubbles up to it, so if both declared
+       overflow the transcript could end up scrolling in a box whose scrollTop
+       the stick-to-bottom logic below never reads. position:relative makes it
+       the containing block of the floating "scroll to latest" button. */
     :host {
         display: flex;
         flex-direction: column;
         height: 100%;
-        overflow-y: auto;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
     }
     #messages {
         display: flex;
         flex-direction: column;
-        min-height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
         padding: 18px 18px 8px;
         overflow-x: hidden;
         overflow-y: auto;
-        max-height: 100%;
+        overscroll-behavior: contain;
+        /* Firefox scroll anchoring fights the logic below: it tries to hold the
+           visual position while content grows, but flushAccumulatingMessage()
+           tears down and rebuilds the subtree an anchor may have picked, which
+           shows up as micro-jumps. While sticky we set scrollTop ourselves. */
+        overflow-anchor: none;
         box-sizing: border-box;
     }
 
@@ -264,6 +277,39 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         margin-top: 0.3em;
     }
 
+    /* ---- jump to latest ----
+       Shown exactly while auto-follow is off, i.e. whenever the transcript is
+       no longer tracking new content. Absolute against the host, so it stays
+       inside #appContainer's 768px column without any viewport math. */
+    #jumpToLatest {
+        position: absolute;
+        right: 18px;
+        bottom: 14px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--r-pill);
+        background: var(--surface);
+        color: var(--ink-2);
+        box-shadow: 0 2px 8px var(--shadow);
+        cursor: pointer;
+        transition: background .12s ease, border-color .12s ease;
+    }
+    #jumpToLatest:hover {
+        border-color: var(--border-strong);
+        background: var(--hover);
+        color: var(--ink);
+    }
+    /* Required: display:flex above would otherwise beat the UA [hidden] rule. */
+    #jumpToLatest[hidden] {
+        display: none;
+    }
+
     /* The token fade-in and the turn slide are decorative: with reduced motion
        the SHARED_BASE_CSS override collapses their duration, so make sure they
        still settle on the visible end state rather than at opacity 0. */
@@ -298,10 +344,24 @@ const messagesDiv = document.createElement('div');
 messagesDiv.id = 'messages';
 messagesAreaTemplate.content.appendChild(messagesDiv);
 
+// Label and icon are set per instance in the constructor: the icon builders
+// return live DOM nodes, which cannot be shared across template clones.
+const jumpButton = document.createElement('button');
+jumpButton.id = 'jumpToLatest';
+jumpButton.type = 'button';
+jumpButton.hidden = true;
+messagesAreaTemplate.content.appendChild(jumpButton);
+
 class MessagesArea extends HTMLElement {
 
     fullTextHTML = "";
     llmName = "LLM";
+
+    // Slack that still counts as "at the bottom". One line of body text
+    // (.875rem * 1.55 ~ 22px) is the useful unit: it absorbs the sub-pixel
+    // rounding of scrollHeight at the various font zoom levels, and the few
+    // pixels a token can add between the write and the scroll event it fires.
+    static BOTTOM_SLACK_PX = 24;
 
     constructor() {
         super();
@@ -321,10 +381,100 @@ class MessagesArea extends HTMLElement {
         // so a long conversation never accumulates identical bars.
         this._lastFullBarTurn = null;
 
+        // ---- stick-to-bottom ----
+        // True while the transcript should follow new content. It goes off as
+        // soon as the user scrolls away from the bottom, and back on when they
+        // return there or press the jump button. A long answer must not drag
+        // the view along while it is being read.
+        this._stickToBottom = true;
+        // Raised right before every programmatic scrollTop write and consumed
+        // by the scroll event it provokes: setting scrollTop fires a 'scroll'
+        // event indistinguishable from a user gesture, so without this latch
+        // the handler would read its own scroll and could unstick itself.
+        this._programmaticScroll = false;
+        // Handle of the rAF coalescing the per-token writes (_requestScroll).
+        this._scrollRaf = 0;
+        this._onMessagesScroll = this._onMessagesScroll.bind(this);
+        this._onUserScrollIntent = this._onUserScrollIntent.bind(this);
+
         const shadowRoot = this.attachShadow({ mode: 'open' });
         shadowRoot.appendChild(messagesAreaTemplate.content.cloneNode(true));
 
         this.messages = shadowRoot.querySelector('#messages');
+
+        this._jumpButton = shadowRoot.querySelector('#jumpToLatest');
+        const jumpLabel = browser.i18n.getMessage("apiwebchat_scroll_to_latest");
+        this._jumpButton.setAttribute('aria-label', jumpLabel);
+        this._jumpButton.title = jumpLabel;
+        this._jumpButton.appendChild(buildScrollToBottomIcon(16));
+        this._jumpButton.addEventListener('click', () => this.scrollToBottom());
+    }
+
+    // The listeners live here rather than in the constructor so they are
+    // symmetrical with disconnectedCallback. <messages-area> is already in the
+    // markup when this module is evaluated, so this runs during upgrade,
+    // before controller.js calls init().
+    connectedCallback() {
+        this.messages.addEventListener('scroll', this._onMessagesScroll, { passive: true });
+        // Gesture-level unstick. The scroll listener alone is nearly enough,
+        // but during a fast stream a wheel-up can be overwritten by the next
+        // token's write before the browser dispatches the scroll event.
+        this.messages.addEventListener('wheel', this._onUserScrollIntent, { passive: true });
+        this.messages.addEventListener('keydown', this._onUserScrollIntent, { passive: true });
+        // Window resizing and font zoom change scrollHeight without firing a
+        // scroll event: realign if we are still following.
+        this._resizeObs = new ResizeObserver(() => this._scrollIfSticky());
+        this._resizeObs.observe(this.messages);
+    }
+
+    disconnectedCallback() {
+        this.messages.removeEventListener('scroll', this._onMessagesScroll);
+        this.messages.removeEventListener('wheel', this._onUserScrollIntent);
+        this.messages.removeEventListener('keydown', this._onUserScrollIntent);
+        this._resizeObs?.disconnect();
+        if (this._scrollRaf) {
+            cancelAnimationFrame(this._scrollRaf);
+            this._scrollRaf = 0;
+        }
+    }
+
+    _distanceFromBottom() {
+        return this.messages.scrollHeight - this.messages.scrollTop - this.messages.clientHeight;
+    }
+
+    _isNearBottom() {
+        return this._distanceFromBottom() <= MessagesArea.BOTTOM_SLACK_PX;
+    }
+
+    _onMessagesScroll() {
+        if (this._programmaticScroll) {
+            // Our own write echoing back: consume the latch, leave the state.
+            this._programmaticScroll = false;
+            return;
+        }
+        this._setStickToBottom(this._isNearBottom());
+    }
+
+    _setStickToBottom(stick) {
+        if (this._stickToBottom === stick) { return; }
+        this._stickToBottom = stick;
+        this._updateJumpButton();
+    }
+
+    _onUserScrollIntent(event) {
+        if (event.type === 'wheel') {
+            if (event.deltaY < 0) { this._setStickToBottom(false); }
+            return;
+        }
+        // keydown. #messages is not focusable today so these never arrive, but
+        // the branch costs nothing and works the day a tabindex is added.
+        if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) {
+            this._setStickToBottom(false);
+        }
+    }
+
+    _updateJumpButton() {
+        this._jumpButton.hidden = this._stickToBottom;
     }
 
     // Open a model turn: wrapper + avatar + model name, and return the column
@@ -405,6 +555,10 @@ class MessagesArea extends HTMLElement {
     async handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
         await this.addActionButtons(promptData);
+        // The final flush and the action bar both grow the transcript. Only
+        // follow if the user is still at the bottom: if they scrolled up to
+        // read a long answer, do not yank them down to the buttons.
+        this._scrollIfSticky();
         // Response finished: retire this turn's streaming state so the next
         // response starts a fresh instance with its own isolated HTML snapshot,
         // and close the turn wrapper.
@@ -465,15 +619,49 @@ class MessagesArea extends HTMLElement {
         newTokenElement.textContent = token;
         this.accumulatingMessageEl.appendChild(newTokenElement);
 
-        this.scrollToBottom();
+        this._scrollIfSticky();
 
         if (token === '\n') {
             this.flushAccumulatingMessage();
         }
     }
 
+    // Force the bottom and re-arm following. This is what the call sites that
+    // represent an explicit user action use.
     scrollToBottom() {
-        this.messages.scrollTop = this.messages.scrollHeight;
+        this._setStickToBottom(true);
+        this._requestScroll();
+    }
+
+    // Scroll only if the user has not moved away. This is the streaming path.
+    _scrollIfSticky() {
+        if (this._stickToBottom) { this._requestScroll(); }
+    }
+
+    // Coalesce to one write per animation frame. Two wins: a fast stream stops
+    // doing a layout-flushing scrollTop write per token, and the write lands
+    // after the flush a '\n' token triggers - flushAccumulatingMessage() swaps
+    // token spans for rendered markdown and so changes the content height,
+    // which the old scroll-then-flush order left unaccounted for.
+    _requestScroll() {
+        if (this._scrollRaf) { return; }
+        this._scrollRaf = requestAnimationFrame(() => {
+            this._scrollRaf = 0;
+            this._scrollNow();
+        });
+    }
+
+    _scrollNow() {
+        const target = this.messages.scrollHeight - this.messages.clientHeight;
+        // Only latch when the write actually changes the value: when we are
+        // already at the bottom (the common case) no scroll event is fired, and
+        // a latch left raised would swallow the user's NEXT real scroll.
+        if (Math.abs(this.messages.scrollTop - target) < 1) { return; }
+        this._programmaticScroll = true;
+        // Always instant, never behavior:'smooth': smooth scrolling emits a
+        // long tail of scroll events the latch cannot pair one-to-one with its
+        // writes, and would unstick mid-animation.
+        this.messages.scrollTop = target;
     }
 
     // click callcback for the "use this answer" button
@@ -573,7 +761,8 @@ class MessagesArea extends HTMLElement {
         turnBody.appendChild(actionButtons);
         turnBody.appendChild(selectionInfo);
         this._lastFullBarTurn = turn;
-        this.scrollToBottom();
+        // No scroll here: handleTokensDone does it, and covers the paths where
+        // this method returns early (no promptData / no turn).
     }
 
     // Swap the full action bar of the previously-newest answer for the compact

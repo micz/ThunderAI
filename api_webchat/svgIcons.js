@@ -171,6 +171,11 @@ export function buildUseAnswerIcon(size = 15) {
     ]);
 }
 
+// Arrow down onto a line — "scroll to latest" in the transcript.
+export function buildScrollToBottomIcon(size = 16) {
+    return strokedIcon(size, ['M12 4v12M6.5 11.5L12 17l5.5-5.5'], '2');
+}
+
 // Close (X).
 export function buildCloseIcon(size = 15) {
     return strokedIcon(size, ['M6 6l12 12M18 6L6 18'], '2');

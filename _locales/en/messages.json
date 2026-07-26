@@ -1613,6 +1613,10 @@
     "message": "Answer actions",
     "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
   },
+  "apiwebchat_scroll_to_latest": {
+    "message": "Scroll to latest",
+    "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
+  },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""

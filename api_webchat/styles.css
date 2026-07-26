@@ -130,9 +130,12 @@ body {
     margin: 0 auto;
 }
 
+/* The scroller is #messages inside the shadow root, not the host. This rule
+   would otherwise win over the component's own :host declaration and give the
+   host a second scrollbox. */
 messages-area {
     flex-grow: 1;
-    overflow: auto;
+    overflow: hidden;
     min-height: 0;
 }
 

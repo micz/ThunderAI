@@ -313,6 +313,46 @@ Two invariants in `MessagesArea`, both easy to break:
   created, so it stays bound to that answer's own text rather than to whatever is on screen
   later.
 
+### Scrolling (stick-to-bottom)
+
+**Exactly one box scrolls: `#messages`** inside the `<messages-area>` shadow root. The host is
+`overflow: hidden` in *both* places that style it — `:host` in `messagesArea.js` and the
+light-DOM `messages-area` rule in `styles.css`, which wins on specificity, so both must agree.
+A `wheel` event over `#messages` bubbles to the host, so a second scrollbox there would leave
+the logic below reading a `scrollTop` that is not the one moving.
+
+The transcript **follows new content only while the user is already at the bottom**
+(`MessagesArea.BOTTOM_SLACK_PX`, 24px ≈ one line of body text, absorbs sub-pixel `scrollHeight`
+rounding across font-zoom levels). Scrolling up mid-stream freezes the view and reveals the
+floating `#jumpToLatest` button, which returns to the bottom and re-arms following; scrolling
+back to the bottom by hand re-arms it too.
+
+```
+scrollToBottom()    force the bottom + re-arm  → appendUserMessage, appendBotMessage,
+                                                 appendDiffViewer, #jumpToLatest click
+_scrollIfSticky()   follow only if still stuck → handleNewToken, handleTokensDone
+```
+
+Three details that are easy to reintroduce as bugs:
+
+- **`_programmaticScroll` must only be raised when the write changes the value.** Setting
+  `scrollTop` fires a `scroll` event indistinguishable from a user gesture, hence the latch —
+  but when already at the bottom (the common case) the write is a no-op and fires *nothing*, so
+  latching unconditionally would swallow the user's next real scroll.
+- **Writes are coalesced into one `requestAnimationFrame`.** Besides removing a layout-flushing
+  write per token, this makes the write land *after* the flush a `'\n'` token triggers —
+  `flushAccumulatingMessage()` swaps token spans for rendered markdown and so changes the
+  content height, which a scroll-then-flush order leaves unaccounted for.
+- **Instant scrolling only, never `behavior: 'smooth'`** — smooth emits a tail of scroll events
+  the latch cannot pair one-to-one with its writes, and unsticks mid-animation.
+
+`#messages` also sets `overflow-anchor: none`: Firefox scroll anchoring tries to hold the visual
+position as content grows, but the flush tears down and rebuilds the subtree an anchor may have
+picked, which surfaces as micro-jumps. A `ResizeObserver` on `#messages` re-follows after window
+resizes and font-zoom changes, which move `scrollHeight` without firing a `scroll` event.
+`addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also
+covers the paths where that method returns early.
+
 ### Files
 
 | File | Role |
@@ -320,13 +360,13 @@ Two invariants in `MessagesArea`, both easy to break:
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
 | `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
 | `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, orchestrates the render helpers below |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, stick-to-bottom scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
 | `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
 | `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
-| `api_webchat/svgIcons.js` | Inline-SVG icon builders (send/stop/dropdown, sparkle avatar, copy, check, diff, save, close, alert, spinner, dot) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML`; icons stroke in `currentColor` so they follow the tokens |
+| `api_webchat/svgIcons.js` | Inline-SVG icon builders (send/stop/dropdown, sparkle avatar, copy, check, diff, save, close, alert, spinner, dot, scroll-to-bottom) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML`; icons stroke in `currentColor` so they follow the tokens |
 
 ## Key Modules
 
