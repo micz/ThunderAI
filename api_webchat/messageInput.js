@@ -30,16 +30,30 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
     :host {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        /* flex-end, not center: the textarea grows upwards, so the send/stop
+           buttons must stay pinned to the bottom line rather than drifting to
+           the middle of a three-line field. */
+        align-items: flex-end;
         gap: 10px;
         padding: 12px 16px 16px;
         border-top: 1px solid var(--border);
     }
+    /* Heights are derived from line-height + vertical padding + borders:
+       one line = 1.125rem + 2*11px + 2*1px = 42px, matching #sendButton.
+       Three lines is the maximum, hence max-height = 42px + 2*1.125rem = 78px;
+       beyond that the field scrolls. Recompute both if any of those change. */
     #messageInputField {
         flex-grow: 1;
+        box-sizing: border-box;
         padding: 11px 14px;
         font: inherit;
         font-size: .875rem;
+        line-height: 1.125rem;
+        min-height: 42px;
+        max-height: 78px;
+        overflow-y: auto;
+        resize: none;
+        white-space: pre-wrap;
         border: 1px solid var(--border);
         border-radius: var(--r-lg);
         background: var(--surface);
@@ -78,14 +92,17 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
 
     /* Floating status pill: straddles the input field's top border instead of
        taking a row of its own. Anchored to the host, which is position:relative,
-       so the containing block is the host's padding box and top:0 sits just
-       under the border-top — above the padding. #messageInputField starts one
-       padding-top lower, hence top:12px; the translateY then centres the pill on
-       that border line whatever its height. Keep in sync with :host padding-top. */
+       so the containing block is the host's padding box. Anchored from the
+       bottom rather than the top because the textarea grows upwards: its top
+       border stays at padding-bottom + one-line height above the host's bottom
+       edge only while the field is one line tall, so we pin the pill to that
+       baseline and let the translateY centre it on the border line whatever the
+       pill's height. Keep in sync with :host padding-bottom and the field's
+       min-height. */
     #statusLogger{
         position: absolute;
-        top: 12px;
-        transform: translateY(-50%);
+        bottom: calc(16px + 42px - 1px);
+        transform: translateY(50%);
         right: 70px;
         z-index: 2;
         display: inline-flex;
@@ -212,9 +229,11 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
 
-const inputField = document.createElement('input');
-inputField.type = 'text';
+// A textarea, not an input: the field grows from one to three lines as the text
+// wraps (see the #messageInputField rule and _autoResize below), then scrolls.
+const inputField = document.createElement('textarea');
 inputField.id = 'messageInputField';
+inputField.rows = 1;
 inputField.placeholder = '';
 inputField.autocomplete = 'off';
 messageInputTemplate.content.appendChild(inputField);
@@ -291,6 +310,7 @@ class MessageInput extends HTMLElement {
         this._statusLoggerText = shadowRoot.querySelector('#statusLoggerText');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
+        this._messageInputField.addEventListener('input', this._autoResize.bind(this));
         this._sendButton.addEventListener('click', this._handleClick.bind(this));
         this._stopButton.addEventListener('click', this._handleStopClick.bind(this));
 
@@ -330,11 +350,13 @@ class MessageInput extends HTMLElement {
     handleMessageSent() {
         // console.log("[ThunderAI] handleMessageSent");
         this._messageInputField.value = '';
+        this._autoResize();
     }
 
     enableInput(showDone = true) {
         // console.log("[ThunderAI] enableInput");
         this._messageInputField.value = '';
+        this._autoResize();
         this._messageInputField.removeAttribute('disabled');
         this._sendButton.removeAttribute('disabled');
         this._sendButton.style.display = 'block';
@@ -433,10 +455,21 @@ class MessageInput extends HTMLElement {
         this._statusLogger.style.display = 'inline-flex';
     }
 
+    // Grow the field to fit its content, letting the CSS max-height cap it at
+    // three lines: clear the inline height first so shrinking works too, then
+    // measure. Must run after every programmatic .value change, not just on
+    // input, or the field stays tall after a long message is sent.
+    _autoResize() {
+        this._messageInputField.style.height = 'auto';
+        this._messageInputField.style.height = this._messageInputField.scrollHeight + 'px';
+    }
+
     _handleKeyDown(event) {
-        // Plain Enter is the long-standing way to send and stays as it is;
-        // Ctrl/Cmd+Enter is an additional accelerator.
-        if (event.key === 'Enter') {
+        // Plain Enter is the long-standing way to send and stays as it is; the
+        // preventDefault stops the textarea inserting a newline on the way out.
+        // Shift+Enter falls through and adds a line break instead.
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
             this._handleNewChatMessage();
         }
     }
@@ -464,6 +497,7 @@ class MessageInput extends HTMLElement {
         this._messageInputField.setAttribute('disabled', 'disabled');
         let messageContent = this._messageInputField.value;
         this._messageInputField.value = '';
+        this._autoResize();
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
@@ -473,6 +507,7 @@ class MessageInput extends HTMLElement {
 
     _setMessageInputValue(msg) {
         this._messageInputField.value = msg;
+        this._autoResize();
     }
 
     _showCustomTextField(custom_text_array){
