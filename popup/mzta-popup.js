@@ -18,6 +18,7 @@
 
 import { prefs_default } from "../options/mzta-options-default.js";
 import { taLogger } from "../js/mzta-logger.js";
+import { hasNoConnectionSelected } from "../js/mzta-utils.js";
 
 let menuSendImmediately = false;
 let taLog = console;
@@ -107,6 +108,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // configured yet. ChatGPT Web has no credential (only a host permission, shown
 // by its own banner), so it's treated as "configured" here.
 function isConnectionConfigured(prefs){
+    // No connection chosen at all (fresh install): the wizard is the way in.
+    if(hasNoConnectionSelected(prefs.connection_type)){
+        return false;
+    }
     switch(prefs.connection_type){
         case 'chatgpt_api':        return !!(prefs.chatgpt_api_key || '').trim();
         case 'google_gemini_api':  return !!(prefs.google_gemini_api_key || '').trim();

@@ -31,7 +31,8 @@ import {
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
   prepareOriginURL,
-  setTomSelectBorder
+  setTomSelectBorder,
+  hasNoConnectionSelected
 } from '../../js/mzta-utils.js';
 import { openAICompConfigs } from '../../js/api/openai_comp_configs.js';
 import {
@@ -1175,9 +1176,11 @@ export async function initializeSpecificIntegrationUI({
       if (conntype_row) changeConnTypeRowColor(conntype_row, conntype_el);
   };
 
-  // Check global connection type
-  let globalPrefs = await browser.storage.sync.get({ connection_type: 'chatgpt_web' });
-  if (globalPrefs.connection_type === 'chatgpt_web') {
+  // Check global connection type: when the global connection cannot run this
+  // prompt (ChatGPT Web) or no connection has been chosen yet, a per-prompt
+  // specific integration is mandatory.
+  let globalPrefs = await browser.storage.sync.get({ connection_type: prefs_default.connection_type });
+  if ((globalPrefs.connection_type === 'chatgpt_web') || hasNoConnectionSelected(globalPrefs.connection_type)) {
       use_specific_integration_el.checked = true;
       use_specific_integration_el.disabled = true;
   }
@@ -1346,6 +1349,18 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   conntype_select.replaceChildren();
 
+  // Global connection select only (no_chatgpt_web marks the per-prompt ones, where
+  // an empty value already means "inherit the global connection"): add a disabled
+  // placeholder so a fresh install, whose connection_type default is empty, shows
+  // "no connection selected" instead of silently displaying the first provider.
+  if (!no_chatgpt_web) {
+    const placeholderEl = document.createElement('option');
+    placeholderEl.value = "";
+    placeholderEl.disabled = true;
+    placeholderEl.textContent = browser.i18n.getMessage('prefs_Connection_type_none') || '---';
+    conntype_select.appendChild(placeholderEl);
+  }
+
   for (const opt of options.filter(o => !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     const optionEl = document.createElement('option');
     optionEl.value = opt.value;
@@ -1355,7 +1370,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   if (options.some(o => o.value === prevValue)) {
     conntype_select.value = prevValue;
-  } else if (no_chatgpt_web) {
+  } else {
     conntype_select.value = "";
   }
 }

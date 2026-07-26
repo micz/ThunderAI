@@ -18,7 +18,7 @@
 
 import { prefs_default } from '../../options/mzta-options-default.js';
 import { taLogger } from '../../js/mzta-logger.js';
-import { setTomSelectBorder } from '../../js/mzta-utils.js';
+import { setTomSelectBorder, hasNoConnectionSelected } from '../../js/mzta-utils.js';
 import {
   injectConnectionUI,
   varConnectionUI,
@@ -51,9 +51,11 @@ const CONN_TYPES = PROVIDERS.map(p => p.id);
 
 // Wizard state. `step` is the raw step index (0=provider, 1=connect,
 // 2=tools, 3=done); navigation walks the provider-specific sequence.
+// `provider` stays empty until the user picks a card: the wizard must never
+// persist a provider just because it was opened.
 let state = {
   step: 0,
-  provider: prefs_default.connection_type || 'chatgpt_web',
+  provider: prefs_default.connection_type,
 };
 
 function getProviderName(id) {
@@ -62,7 +64,8 @@ function getProviderName(id) {
 }
 
 // Step sequence is provider-dependent: ChatGPT Web skips the "Pick your tools"
-// step because it has no API-driven features.
+// step because it has no API-driven features. With no provider chosen yet the
+// full sequence is assumed (navigation past step 0 is blocked anyway).
 function getSequence() {
   return state.provider === 'chatgpt_web' ? [0, 1, 3] : [0, 1, 2, 3];
 }
@@ -113,6 +116,8 @@ async function restoreOptions() {
           let default_select_value = '';
           if (element.id === 'connection_type') default_select_value = state.provider;
           element.value = result[element.id] || default_select_value;
+          // Nothing chosen yet (fresh install): leave the select unset. It is
+          // hidden anyway, and restoring must never persist a provider.
           if (element.value === '') element.selectedIndex = -1;
           if (element.tomselect) {
             element.tomselect.setValue(element.value, true);
@@ -314,9 +319,13 @@ function renderStep() {
   next.classList.toggle('hidden', state.step === 3);
   // "Finish setup" on the second-to-last step of the sequence, else "Continue".
   next.textContent = browser.i18n.getMessage(pos === seq.length - 2 ? 'wizard_finish' : 'wizard_continue');
+  // Can't go past the provider step until a provider has actually been chosen.
+  next.disabled = (state.step === 0) && hasNoConnectionSelected(state.provider);
 }
 
 function goNext() {
+  // Nothing to configure until a provider is chosen.
+  if (state.step === 0 && hasNoConnectionSelected(state.provider)) return;
   let seq = getSequence();
   let pos = seq.indexOf(state.step);
   state.step = seq[Math.min(seq.length - 1, pos + 1)];
@@ -338,7 +347,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     connection_type: prefs_default.connection_type,
   });
   taLog = new taLogger('mzta-setup-wizard', prefs.do_debug);
-  state.provider = prefs.connection_type || 'chatgpt_web';
+  // Empty when nothing has been chosen yet: no provider card is preselected.
+  state.provider = prefs.connection_type;
 
   await injectConnectionUI({
     afterTrId: 'connection_ui_anchor',
@@ -404,8 +414,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderStep();
   });
 
-  // Initial render: apply the saved provider then show step 0.
-  selectProvider(state.provider);
+  // Initial render: apply the saved provider, if any, then show step 0.
+  // With no provider saved we must NOT call selectProvider(): it dispatches a
+  // 'change' on the hidden select, which would persist a connection_type the
+  // user never chose (just opening the wizard would pick one for them). Step 0
+  // only shows the provider cards, so no connection UI setup is needed yet —
+  // the first card click does it.
+  if (!hasNoConnectionSelected(state.provider)) {
+    selectProvider(state.provider);
+  }
   state.step = 0;
   renderStep();
 }, { once: true });

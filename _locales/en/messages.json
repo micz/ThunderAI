@@ -2465,6 +2465,10 @@
     "message": "Turn on what you need. Fine-tune each from its own settings screen.",
     "description": "Sub-line under the Features section eyebrow on the options page"
   },
+  "prefs_FeaturesNoConnection": {
+    "message": "Select an AI connection above to enable these features.",
+    "description": "Note shown under the Features subtitle while no AI connection has been selected, explaining why the toggles are disabled"
+  },
   "prefs_advanced_options": {
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
@@ -2637,5 +2641,21 @@
   "popup_setup_wizard_link": {
     "message": "Run the setup wizard",
     "description": "Popup menu link label that opens the setup wizard"
+  },
+  "prefs_Connection_type_none": {
+    "message": "— Select an AI connection —",
+    "description": "Placeholder option of the connection type select, shown when no AI connection has been selected yet"
+  },
+  "options_no_connection_text": {
+    "message": "No AI connection selected yet. ThunderAI needs one to work.",
+    "description": "Options page banner text shown when no AI connection has been selected"
+  },
+  "options_no_connection_link": {
+    "message": "Run the setup wizard",
+    "description": "Options page banner link label that opens the setup wizard"
+  },
+  "msg_no_connection_selected": {
+    "message": "No AI connection selected. Open the ThunderAI options and run the setup wizard to choose one.",
+    "description": "Alert shown when a prompt is run but no AI connection has been selected"
   }
 }

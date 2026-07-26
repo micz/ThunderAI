@@ -49,6 +49,7 @@ import {
     convertNewlinesToParagraphs,
     getConnectionType,
     hasSpecificIntegration,
+    hasNoConnectionSelected,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -107,7 +108,8 @@ let special_prompts_ids = getActiveSpecialPromptsIDs({
     spamfilter: prefs_init.spamfilter,
     summarize: prefs_init.summarize,
     translate: prefs_init.translate,
-    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
   });
 
 browser.composeScripts.register({
@@ -187,7 +189,8 @@ async function _reload_menus() {
         spamfilter: prefs_reload.spamfilter,
         summarize: prefs_reload.summarize,
         translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
+        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
       });
     menus.reload(special_prompts_ids);
     taLog.log("Reloading menus");
@@ -208,7 +211,8 @@ async function _getActiveSpecialIds() {
         spamfilter: prefs_reload.spamfilter,
         summarize: prefs_reload.summarize,
         translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web")
+        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
+        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
     });
 }
 
@@ -1431,7 +1435,15 @@ async function openChatGPT(promptText, action, curr_tabId, prompt_name = '', do_
         break;  // anthropic_api - END
 
         default:
-            taLog.error("Unknown API connection type: " + prefs.connection_type);
+            if(hasNoConnectionSelected(prefs.connection_type)){
+                // No AI connection chosen yet: tell the user instead of failing silently,
+                // and point them at the setup wizard.
+                taLog.error("No AI connection selected.");
+                let tabs_noconn = await browser.tabs.query({ active: true, currentWindow: true });
+                browser.tabs.sendMessage(curr_tabId, { command: "sendAlert", curr_tab_type: tabs_noconn[0].type, message: browser.i18n.getMessage('msg_no_connection_selected') });
+            }else{
+                taLog.error("Unknown API connection type: " + prefs.connection_type);
+            }
         break;
     }
 }
@@ -1515,7 +1527,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1535,7 +1548,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1555,7 +1569,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1575,7 +1590,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1595,7 +1611,8 @@ function setupStorageChangeListener() {
                     spamfilter: newSpamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1615,7 +1632,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: newSummarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1635,7 +1653,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: newTranslate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web")
+                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
                   });
                 menus.reload(special_prompts_ids);
             }
@@ -1655,7 +1674,8 @@ function setupStorageChangeListener() {
                     spamfilter: prefs_init.spamfilter,
                     summarize: prefs_init.summarize,
                     translate: prefs_init.translate,
-                    is_chatgpt_web: (newConnectionType === "chatgpt_web")
+                    is_chatgpt_web: (newConnectionType === "chatgpt_web"),
+                    no_connection: hasNoConnectionSelected(newConnectionType)
                   });
                 menus.reload(special_prompts_ids);
             }

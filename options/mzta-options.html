@@ -9,6 +9,13 @@
   <body>
     <div id="mzta_card">
 
+      <!-- No AI connection selected yet: invite to the setup wizard (informational, not a warning).
+           Sits above the documentation block so it is the first thing a new user sees. -->
+      <div id="no_connection_banner">
+        <span>__MSG_options_no_connection_text__</span>
+        <a id="btn_options_setup_wizard" href="#">__MSG_options_no_connection_link__ &rsaquo;</a>
+      </div>
+
       <!-- TOP LINKS -->
       <div id="mzta_top_links">
 
@@ -126,6 +133,8 @@
         <div class="mzta_section">
           <div class="mzta_eyebrow">__MSG_prefs_FeaturesTitle__</div>
           <div class="mzta_section_sub">__MSG_prefs_FeaturesSubtitle__</div>
+          <!-- Shown by JS only while no AI connection is selected (features can't be enabled yet) -->
+          <div id="features_no_connection_note">__MSG_prefs_FeaturesNoConnection__</div>
 
           <div class="feature_row add_tags_tr">
             <div class="feature_info">

@@ -255,6 +255,13 @@ h2 {
   text-decoration: underline;
 }
 
+/* No AI connection selected yet: same blue banner, just more prominent.
+   Deliberately not red — nothing is broken, the user simply has to choose. */
+#wizard_banner.wizard_banner_urgent {
+  font-weight: bold;
+  box-shadow: 0px 2px 12px 0px rgba(10, 132, 255, 0.25);
+}
+
 @media (max-width: 700px) {
   #wizard_banner {
     margin-inline-end: 0;

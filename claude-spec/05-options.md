@@ -29,9 +29,43 @@ anthropic_api_key, anthropic_model, anthropic_version, anthropic_max_tokens, ant
 
 Plus the global connection selector:
 ```
-connection_type   (default: 'chatgpt_web')
+connection_type   (default: '' — no connection selected yet)
 use_specific_integration   (default: false)
 ```
+
+**No connection selected (default).** `connection_type` intentionally defaults to the **empty
+string**: a new user is not given a provider they never chose. Instead the three entry points
+(popup, welcome page, options page) show a **blue** banner inviting them to run the
+[Setup Wizard](#setup-wizard-pagessetup-wizard). The shared predicate is
+`hasNoConnectionSelected(connection_type)` (`js/mzta-utils.js`) — use it instead of comparing to
+`''` inline. Consequences of the empty state:
+
+- **No special prompt is advertised.** `getActiveSpecialPromptsIDs()` takes a `no_connection` flag
+  and returns an empty list when set; every call site in `mzta-background.js` passes it next to the
+  existing `is_chatgpt_web`. Without this, an empty type would read as "some API is configured"
+  (every check compares only against `chatgpt_web`) and would surface features that cannot run.
+- **The connection select shows a placeholder.** `populateConnectionTypeOptions()`
+  (`pages/_lib/connection-ui.js`) prepends a **disabled** `<option value="">`
+  (`prefs_Connection_type_none`) for the *global* select only — the per-prompt selects
+  (`no_chatgpt_web: true`) already use an empty value to mean "inherit the global connection".
+  The placeholder is required because the select otherwise has no empty option, so an empty pref
+  would display the first provider (ChatGPT Web) and saving would silently persist it.
+  Accordingly `restoreOptions()` in `options/mzta-options.js` no longer falls back to
+  `'chatgpt_web'`, and its `selectedIndex = -1` branch excludes `connection_type`.
+- **Custom prompts require a specific integration**, exactly as with `chatgpt_web`
+  (`connection-ui.js`, the `use_specific_integration` force-check).
+- **The API-driven features are shown as unavailable**, but for a *different reason* than with
+  `chatgpt_web` — see "Feature Rows — Disabled vs. API-Needed" below. `disable_GetCalendarEvent()`
+  (which also covers `get_task`) and `disable_MaxPromptLength()` apply the same "ChatGPT Web or
+  nothing selected" rule to the raw select value; the two Sparks rows already hide themselves
+  entirely when disabled, and their `no_sparks` message is about Sparks, not about ChatGPT Web.
+- **Running a prompt alerts the user.** The `default:` case of `openChatGPT()`
+  (`mzta-background.js`) distinguishes "no connection" from "unknown type" and sends
+  `msg_no_connection_selected` via `sendAlert` instead of only logging.
+- **The red permission banners are unaffected**: they are keyed on an explicitly chosen
+  `chatgpt_web` / `anthropic_api` / `chatgpt_api`, so none of them can fire in the empty state.
+
+Existing installs are unaffected — the empty default only applies to users who never saved the pref.
 
 ### Special Prompt Integration Overrides
 
@@ -304,6 +338,16 @@ the entry points below.
 `change` (so the shared UI reacts and `connection_type` persists via the same
 save-on-`change` path), then re-tints panel/badge/pill and recomputes the step sequence.
 
+**Nothing is preselected.** Because `connection_type` now defaults to empty, `state.provider`
+starts empty too and **no card is marked selected**. Critically, the boot handler must **not** call
+`selectProvider()` when there is no saved provider: that function dispatches a `change` on the
+hidden select, which would persist a `connection_type` the user never picked — merely *opening* the
+wizard would choose a provider for them. Step 0 shows only the provider cards, so no connection-UI
+setup is needed until the first card click, which calls `selectProvider()` itself. While
+`state.provider` is empty, `renderStep()` disables **"Continue"** and `goNext()` refuses to advance,
+so a provider-less wizard can never reach the Connect step. `restoreOptions()` leaves the hidden
+select unset (`selectedIndex = -1`) in this state, again persisting nothing.
+
 **Provider-dependent sequence:** `chatgpt_web` skips the "Pick your tools" step
 (`[provider, connect, done]`); every other provider is `[provider, connect, tools, done]`.
 Nav walks sequence *positions*, never raw indices, so skipped steps are never landed on.
@@ -329,6 +373,23 @@ the options page, so they persist via the shared save-on-`change`.
   A mere `padding-inline-end` would clear the text but leave the right accent edge hidden
   behind the panel. An `@media (max-width: 700px)` block drops the margin and re-centers. Keep
   that margin in sync if the doc panel's width or offsets change.
+  The banner is **always visible**; when no connection is selected at all, `onboarding.js` adds
+  `.wizard_banner_urgent` to give it more prominence (bold + a soft blue glow — still blue, since
+  nothing is broken). No permission banner can apply in that state.
+- **Options banner** — `#no_connection_banner`, with `#btn_options_setup_wizard`. It is the **first
+  child of `#mzta_card`, above `#mzta_top_links`** (the documentation block), so it is the first thing
+  a new user sees. Because `#mzta_card` has no padding of its own, the banner carries explicit
+  `margin: 20px 22px 0` matching the header block's horizontal padding, plus a `min-height: 64px` for
+  presence. Styled blue in `mzta-design.css` from the `--accent` / `--accentLight` tokens (so dark
+  mode is inherited) and deliberately **not** using `.warning`, which is red.
+  `display: none` by default; `updateNoConnectionBanner()` in `options/mzta-options.js` toggles the
+  `.shown` class on load and on every `connection_type` change. Both this link and the doc-card share
+  the local `openSetupWizard()` helper. The same function also **hides the per-connection "Advanced
+  options" disclosure** (`#mzta_conn_adv_btn`) while nothing is selected — every row it would reveal
+  belongs to a specific provider, so there is nothing to disclose — and calls `resetConnAdv()` so the
+  panel is collapsed (and `#connection_ui_adv_table` hidden) when a provider is eventually picked. It
+  is registered *after* the existing `resetConnAdv` / `refreshConnTestVisibility` change listeners, so
+  its re-hide always runs last.
 - **Options doc-card** — a fourth `.mzta_doc_card` (`#btn_setup_wizard`) in `.mzta_doc_cards`,
   right of "Open Welcome Page". The grid is an explicit `repeat(4, minmax(0,1fr))` in
   `mzta-design.css` so all four cards stay on one row, with an `@media (max-width: 500px)`
@@ -342,10 +403,58 @@ the options page, so they persist via the shared save-on-`change`.
   `#setup_wizard_prompt` (a button opening the wizard) instead of the prompt list.
   "Configured" = the required credential is set: `*_api_key` for the cloud APIs, `*_host`
   for Ollama / OpenAI-compatible; `chatgpt_web` is always considered configured (its host
-  permission is handled by the existing permission banner).
+  permission is handled by the existing permission banner). The function **first** returns
+  false when no connection is selected at all — otherwise the empty value would fall through
+  to the permissive `default:` case and the blue banner would never show.
+
+**Blue wizard banner vs. red permission banner.** They are mutually exclusive by construction:
+the blue banners mean *"you haven't chosen an AI yet"*, the red ones mean *"you chose this
+provider but haven't granted its host permission"*. The red banners
+(`#ask_chatgpt_web_perm` / `#ask_anthropic_api_perm` / `#ask_openai_api_perm` in the popup,
+`#chatgpt_web_permission` / `#anthropic_api_permission` / `#openai_api_permission` in onboarding)
+are keyed on an explicitly selected provider, so an empty `connection_type` never triggers them,
+and their behaviour is unchanged by the empty default.
 
 i18n keys for the wizard are `wizard_*` in `_locales/en/messages.json`; entry-point copy is
-`onboarding_wizard_banner_*`, `prefs_doc_setup_wizard_launch`, `popup_setup_wizard_*`.
+`onboarding_wizard_banner_*`, `prefs_doc_setup_wizard_launch`, `popup_setup_wizard_*`,
+`options_no_connection_*`, plus `prefs_Connection_type_none` (select placeholder) and
+`msg_no_connection_selected` (runtime alert).
+
+### Feature Rows — Disabled vs. API-Needed
+
+The four API-driven feature rows on the main options page (Add Tags, Spam Filter, Summarize,
+Translate) are unusable in **two distinct** situations, which must be presented differently:
+
+| Effective connection | Toggle | `warn_API_needed` hint |
+|---|---|---|
+| `chatgpt_web` | unchecked, still clickable | **shown** |
+| *nothing selected* (`''`) | unchecked **and `disabled`** (greyed) | **hidden** |
+| any API | untouched | hidden |
+
+The `warn_API_needed` string explicitly says *"you need an API integration rather than the ChatGPT
+Web Integration"* — advice that only makes sense once ChatGPT Web has actually been chosen. With no
+connection selected it would be misleading (the blue setup-wizard banner already explains the real
+situation), so it stays hidden and the toggle is greyed out instead: there is nothing to enable the
+feature against yet.
+
+Because a greyed-out toggle alone doesn't say *why*, a note (`#features_no_connection_note`,
+`prefs_FeaturesNoConnection` — "Select an AI connection above to enable these features.") sits
+directly under the `prefs_FeaturesSubtitle` line and is shown by `updateNoConnectionBanner()` — the
+same function that drives the top banner and the advanced-options toggle — via a `.shown` class, so
+all three stay in sync on load and on every `connection_type` change. It is styled in `--accent`
+blue (informational, matching `#no_connection_banner`), not with the amber `.warn_API_needed`
+treatment.
+
+`getFeatureConnState(prefs_opt, prefix)` in `options/mzta-options.js` returns
+`{no_connection, disabled, show_api_warning}` from the *effective* connection (i.e. after
+`getConnectionType()` applies any per-feature `use_specific_integration` override — so a feature
+pointing at its own API stays enabled even when the global connection is empty).
+`disable_ApiFeature(prefs_opt, prefix, manageBtnId)` consumes it and does all the row work; the four
+`disable_AddTags` / `disable_SpamFilter` / `disable_Summarize` / `disable_Translate` functions are now
+one-line wrappers over it (they previously held four copies of the same body). The greyed-out look
+needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
+`opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
+either: a disabled checkbox fires no `click`.
 
 ### Feature "Manage settings" Links — Hidden vs. Disabled
 

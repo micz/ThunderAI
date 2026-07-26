@@ -635,6 +635,19 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 .mzta_switch input[type="checkbox"]:checked + .track::after { transform: translateX(16px); }
 .mzta_switch input[type="checkbox"]:disabled + .track { opacity: .5; cursor: default; }
 
+/* Note under the Features subtitle: explains why every feature toggle is greyed
+   out while no AI connection is selected. Blue/accent (informational, matching
+   #no_connection_banner), not the amber .warn_API_needed treatment. */
+#features_no_connection_note {
+    display: none;              /* shown by JS only when no connection is selected */
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+#features_no_connection_note.shown { display: block; }
+
 .warn_API_needed {
     display: none;
     font-weight: 600;
@@ -729,6 +742,36 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* ===========================================================================
    WARNINGS
    =========================================================================== */
+/* No AI connection selected yet — informational, blue: nothing is broken, the
+   user just has to choose a provider. Deliberately NOT styled like .warning.
+   Sits above #mzta_top_links as a direct child of #mzta_card, which has no
+   padding of its own, hence the explicit margins matching the header block. */
+#no_connection_banner {
+    display: none;              /* shown by JS only when no connection is selected */
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    min-height: 64px;
+    margin: 20px 22px 0;
+    padding: 18px 20px;
+    border: 1px solid var(--accent);
+    border-inline-start: 4px solid var(--accent);
+    border-radius: 10px;
+    background-color: var(--accentLight);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+#no_connection_banner.shown { display: flex; }
+#no_connection_banner a {
+    color: var(--accent);
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+#no_connection_banner a:hover { text-decoration: underline; }
+
 .warning {
     color: white;
     font-style: italic;
