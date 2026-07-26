@@ -76,11 +76,16 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         cursor: default;
     }
 
-    /* Floating status pill: sits over the input row instead of taking a row
-       of its own. Anchored to the host, which is position:relative. */
+    /* Floating status pill: straddles the input field's top border instead of
+       taking a row of its own. Anchored to the host, which is position:relative,
+       so the containing block is the host's padding box and top:0 sits just
+       under the border-top — above the padding. #messageInputField starts one
+       padding-top lower, hence top:12px; the translateY then centres the pill on
+       that border line whatever its height. Keep in sync with :host padding-top. */
     #statusLogger{
         position: absolute;
-        bottom: calc(100% - 6px);
+        top: 12px;
+        transform: translateY(-50%);
         right: 70px;
         z-index: 2;
         display: inline-flex;
