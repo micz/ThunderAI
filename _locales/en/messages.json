@@ -2715,6 +2715,7 @@
   "msg_no_connection_selected": {
     "message": "No AI connection selected. Open the ThunderAI options and run the setup wizard to choose one.",
     "description": "Alert shown when a prompt is run but no AI connection has been selected"
+  },
   "onboarding_tab_title": {
     "message": "Welcome to ThunderAI!",
     "description": "Onboarding page: browser tab title and first line of the welcome paragraph"
