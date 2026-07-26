@@ -729,7 +729,20 @@ table.prompts_list .action_output {
     text-decoration: underline;
 }
 
-#chatgpt_web_additional_info td { vertical-align: top; }
+/* New-prompt form panel: same warm background as its toggle. On a <tr> the
+   border-radius/padding are inert, so they go on the cells (outer corners only,
+   since the panel is split across two <td>s). */
+#chatgpt_web_additional_info td {
+    vertical-align: top;
+    background: var(--cgw-bg);
+    padding: 8px;
+}
+#chatgpt_web_additional_info td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+#chatgpt_web_additional_info td:last-child {
+    border-radius: 0 8px 8px 0;
+}
 
 /* New-prompt form toggle: styled like the [API] toggle button (ID-targeted so it
    doesn't pick up the class-based click handlers used by the edit-list rows). */
@@ -784,14 +797,36 @@ input.input_additional[type="text"] {
     margin-top: 8px;
 }
 
-/* New-prompt form: the toggle row carries the .api_additional_info class while the
-   panel below carries the id (legacy id/class inversion in the markup), so restore
-   the toggle affordances by ID. */
+/* New-prompt form: the toggle row is styled by ID only (the panel below carries the
+   .api_additional_info class). It must NOT take that class, or the list-row panel
+   rules below (`tr {display:block}` / `td {display:block; width:auto}`) would strip
+   its cell out of the table layout and shrink it to its text width. */
 #api_additional_info_toggle {
+    background: var(--api-bg);
+    color: var(--text);
+    border-radius: 8px;
     cursor: pointer;
     text-align: center;
     padding: 5px;
     margin-top: 0;
+}
+
+#api_additional_info_toggle:hover {
+    text-decoration: underline;
+}
+
+/* New-prompt form panel: same cool background as its toggle. The panel row keeps
+   its ID (not the .api_additional_info class), so it needs its own background. */
+#api_additional_info > td {
+    background: var(--api-bg);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+/* The inner connection-UI table must not paint over the panel background. */
+#api_additional_info table,
+#api_additional_info table td {
+    background: transparent;
 }
 
 /* ---- Connection UI inside the per-row API panel ----
