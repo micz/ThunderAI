@@ -335,8 +335,8 @@ Before providing any code, verify ALL of these:
 - [ ] Event listeners registered at file scope (NOT inside init function)
 - [ ] VENDORS.md includes ALL dependencies with exact version URLs
 - [ ] Used `browser_specific_settings` (NOT deprecated `applications`)
-- [ ] Included proper error handling
-- [ ] Code has comments explaining the approach
+- [ ] Error handling matches the surrounding code's style — not blanket try/catch everywhere (the existing codebase applies it selectively, where a failure is actually expected/handleable)
+- [ ] Comments follow repo convention: sparse, only where the *why* isn't obvious from the code (see root `CLAUDE.md`) — not a comment on every line
 - [ ] No hardcoded user-facing strings — use the i18n API (`_locales/en/messages.json` only)
 - [ ] Add-on fulfills all requirements in the "Add-on Review Requirements" section
 - [ ] All guidelines in "Important Guidelines for AI Assistants" are followed

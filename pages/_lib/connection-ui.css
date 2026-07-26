@@ -97,6 +97,31 @@ span.opt_title{
     font-size: 14.4px;
 }
 
+.models_fetch_row{
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.models_fetch_row .models_fetch_select{
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.models_fetch_row .models_fetch_select .ts-wrapper,
+.models_fetch_row .models_fetch_select select{
+    width: 100%;
+}
+
+.models_fetch_row button{
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin: 0 !important;
+}
+
 @media (prefers-color-scheme: dark) {
     tr.conntype_chatgpt_api, tr.conntype_chatgpt_api2{
         background-color: rgb(0, 0, 58) !important;

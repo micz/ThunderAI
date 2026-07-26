@@ -1,0 +1,147 @@
+<!doctype html>
+<!--
+  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>ThunderAI - __MSG_wizard_title__</title>
+    <link rel="stylesheet" href="../_lib/mzta-design.css" />
+    <link rel="stylesheet" href="../_lib/connection-ui.css" />
+    <link rel="stylesheet" href="mzta-setup-wizard.css" />
+    <link rel="icon" href="../../images/icon-16px.png" />
+</head>
+<body>
+    <div id="mzta_card">
+
+        <!-- STEP INDICATOR (dots + connectors injected at runtime) -->
+        <div id="wiz_steps"></div>
+
+        <!-- STEP BODY -->
+        <div class="wiz_step_body">
+
+            <!-- STEP 0 — Choose your AI -->
+            <div id="wiz_step_provider" class="wiz_step">
+                <h2 class="wiz_step_title">__MSG_wizard_step_provider_title__</h2>
+                <p class="wiz_step_sub">__MSG_wizard_step_provider_sub__</p>
+                <div id="wiz_provider_list"></div>
+            </div>
+
+            <!-- STEP 1 — Connect <Provider> -->
+            <div id="wiz_step_connect" class="wiz_step hidden">
+                <div id="mzta_conn_panel">
+                    <div id="mzta_conn_panel_header">
+                        <span id="mzta_conn_pill"><span class="pill_dot"></span><span id="mzta_conn_pill_name"></span></span>
+                    </div>
+                    <h2 class="wiz_step_title" id="wiz_connect_heading"></h2>
+                    <p class="wiz_step_sub" id="wiz_connect_sub"></p>
+                    <table id="connection_ui_table">
+                        <tbody>
+                            <tr id="connection_ui_anchor"></tr>
+                        </tbody>
+                    </table>
+                    <button id="mzta_conn_adv_btn" type="button" aria-expanded="false">
+                        <span style="display:flex;align-items:center;gap:9px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            __MSG_prefs_advanced_options__
+                        </span>
+                        <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                    </button>
+                    <table id="connection_ui_adv_table" class="hidden">
+                        <tbody></tbody>
+                    </table>
+                    <div id="mzta_conn_test" class="conn_test_strip" data-state="idle" style="display:none;">
+                        <span class="conn_test_dot"></span>
+                        <span id="mzta_conn_test_text" class="conn_test_text">__MSG_connTest_idle__</span>
+                        <a href="#" id="mzta_conn_test_link" class="conn_test_link">__MSG_connTest_link_test__</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 — Pick your tools -->
+            <div id="wiz_step_tools" class="wiz_step hidden">
+                <h2 class="wiz_step_title">__MSG_wizard_step_tools_title__</h2>
+                <p class="wiz_step_sub">__MSG_wizard_step_tools_sub__</p>
+
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_add_tags__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_add_tags_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="add_tags" name="add_tags" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_spamfilter__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_spamfilter_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="spamfilter" name="spamfilter" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_summarize__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_summarize_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="summarize" name="summarize" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_translate__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_translate_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="translate" name="translate" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- STEP 3 — Done -->
+            <div id="wiz_step_done" class="wiz_step hidden">
+                <div class="wiz_done">
+                    <div id="wiz_done_badge" class="wiz_done_badge">&#10003;</div>
+                    <h2 class="wiz_done_title">__MSG_wizard_done_title__</h2>
+                    <p class="wiz_done_body">__MSG_wizard_done_body__</p>
+                    <button id="wiz_restart" type="button" class="wiz_restart">__MSG_wizard_run_again__</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- NAV BAR -->
+        <div id="wiz_nav" class="wiz_nav">
+            <button id="wiz_back" type="button">__MSG_wizard_back__</button>
+            <button id="wiz_next" type="button" class="btn_primary">__MSG_wizard_continue__</button>
+        </div>
+
+    </div>
+    <script src="mzta-setup-wizard.js" type="module"></script>
+    <script src="../../js/mzta-i18n.js"></script>
+</body>
+</html>

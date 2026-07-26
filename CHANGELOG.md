@@ -2,6 +2,11 @@
 
 
 
+<h2>Version 4.2.0 - ??/??/2026</h2>
+      <ul>
+        <li>Redesigned the settings page to reduce visual complexity, moving advanced options to a dedicated section to improve the onboarding experience for new users [<a href="https://github.com/micz/ThunderAI/issues/739">#739</a>].</li>
+        <li>...</li>
+      </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>
       <ul>
         <li><i>[All APIs]</i> In the API webchat is now possible to zoom the text using CTRL+ CTRL- and resetting the dimension with CTRL0 [<a href="https://github.com/micz/ThunderAI/issues/805">#805</a>].</li>

@@ -660,10 +660,15 @@ export function getActiveSpecialPromptsIDs(args = {}) {
     spamfilter = false,
     summarize = false,
     translate = false,
-    is_chatgpt_web = false
+    is_chatgpt_web = false,
+    no_connection = false
   } = args;
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
+  // No AI connection chosen yet: no special prompt can work, so advertise none.
+  if (no_connection) {
+    return output;
+  }
   if (is_chatgpt_web) {
     if (addtags_api && addtags) {
       output.push('prompt_add_tags');
@@ -695,8 +700,11 @@ export function getActiveSpecialPromptsIDs(args = {}) {
   return output;
 }
 
-export function checkAPIIntegration(connection_type, use_specific_integration, specific_integration_conntype){
-  return (connection_type !== "chatgpt_web") || (use_specific_integration && (specific_integration_conntype != null) && (specific_integration_conntype !== ''));
+// True when the user has not chosen an AI connection yet (fresh install).
+// The default value of the connection_type pref is empty on purpose, so the
+// setup wizard can guide the first configuration instead of forcing a provider.
+export function hasNoConnectionSelected(connection_type){
+  return (connection_type == null) || (String(connection_type).trim() === '');
 }
 
 export function hasSpecificIntegration(use, conntype){
