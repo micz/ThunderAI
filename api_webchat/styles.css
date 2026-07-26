@@ -168,17 +168,62 @@ messages-area {
     color: var(--ink);
 }
 
+#appHeaderApi,
 #appHeaderModel {
     font-size: .6875rem;
     font-weight: 600;
-    color: var(--accent-soft-ink);
-    background: var(--accent-soft);
     padding: 3px 9px;
     border-radius: var(--r-pill);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* The API chip carries the provider colour, matching the connection pill on the
+   settings pages. Values are the per-provider tints from
+   pages/_lib/mzta-design.css — keep the two lists in sync. */
+#appHeaderApi {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--tint-accent, var(--ink-2));
+    background: var(--tint-pill, var(--hover));
+    border: 1px solid var(--tint-border, var(--border));
+    flex-shrink: 0;
+}
+
+#appHeaderApi .pill_dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tint-accent, var(--ink-3));
+    flex-shrink: 0;
+}
+
+#appHeaderApi.tint_chatgpt_api       { --tint-border: rgba(10,83,214,.40);  --tint-pill: rgba(10,83,214,.14);  --tint-accent: rgb(10,83,214); }
+#appHeaderApi.tint_google_gemini_api { --tint-border: rgba(150,120,12,.40); --tint-pill: rgba(150,120,12,.14); --tint-accent: rgb(150,120,12); }
+#appHeaderApi.tint_anthropic_api     { --tint-border: rgba(168,20,80,.40);  --tint-pill: rgba(168,20,80,.14);  --tint-accent: rgb(168,20,80); }
+#appHeaderApi.tint_ollama_api        { --tint-border: rgba(31,122,46,.40);  --tint-pill: rgba(31,122,46,.14);  --tint-accent: rgb(31,122,46); }
+#appHeaderApi.tint_openai_comp_api   { --tint-border: rgba(122,43,191,.40); --tint-pill: rgba(122,43,191,.14); --tint-accent: rgb(122,43,191); }
+
+#appHeaderModel {
+    color: var(--accent-soft-ink);
+    background: var(--accent-soft);
     max-width: 40%;
+}
+
+/* Lightened accents so the provider colour stays legible on a dark surface
+   (same lift(v) = round(v + (255-v)*0.55) values as mzta-design.css). */
+@media (prefers-color-scheme: dark) {
+    #appHeaderApi.tint_chatgpt_api       { --tint-border: rgba(10,83,214,.55);  --tint-pill: rgba(10,83,214,.30);  --tint-accent: rgb(120,171,244); }
+    #appHeaderApi.tint_google_gemini_api { --tint-border: rgba(150,120,12,.55); --tint-pill: rgba(150,120,12,.30); --tint-accent: rgb(208,194,140); }
+    #appHeaderApi.tint_anthropic_api     { --tint-border: rgba(168,20,80,.55);  --tint-pill: rgba(168,20,80,.30);  --tint-accent: rgb(216,150,177); }
+    #appHeaderApi.tint_ollama_api        { --tint-border: rgba(31,122,46,.55);  --tint-pill: rgba(31,122,46,.30);  --tint-accent: rgb(154,196,161); }
+    #appHeaderApi.tint_openai_comp_api   { --tint-border: rgba(122,43,191,.55); --tint-pill: rgba(122,43,191,.30); --tint-accent: rgb(195,163,226); }
+}
+
+#appHeaderApi[hidden] {
+    display: none;
 }
 
 #appHeaderModel:empty {

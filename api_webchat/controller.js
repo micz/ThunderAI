@@ -160,11 +160,28 @@ if (worker) {
         messagesArea.setLLMName(llmName);
         messagesArea.setHideThinking(!!prefs_api.hide_thinking);
 
-        // Header bar: the logo icon plus a static chip with the model in use.
-        // Every live state (waiting / streaming / done / error) belongs to the
-        // status pill above the input, so there is only one thing to keep in
-        // sync with the request lifecycle.
+        // Shared by the header chip and the startup info message below.
+        const api_strings = {
+            chatgpt: "ChatGPT API",
+            google_gemini: "Google Gemini API",
+            ollama: "Ollama API",
+            openai_comp: "OpenAI Compatible API",
+            anthropic: "Claude API"
+        };
+
+        // Header bar: the logo icon plus two static chips, the API in use and
+        // the model. Every live state (waiting / streaming / done / error)
+        // belongs to the status pill above the input, so there is only one
+        // thing to keep in sync with the request lifecycle.
         document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        const apiChip = document.getElementById('appHeaderApi');
+        if (api_strings[integration]) {
+            document.getElementById('appHeaderApiName').textContent = api_strings[integration];
+            // `llm` is the connection type (chatgpt_api, anthropic_api, …), the
+            // same key the settings pages tint their connection pill with.
+            apiChip.classList.add('tint_' + llm);
+            apiChip.hidden = false;
+        }
         document.getElementById('appHeaderModel').textContent = prefs_api[`${integration_prefix}_model`] || llmName;
 
         document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
@@ -252,14 +269,6 @@ if (worker) {
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         additional_text_elements.push(...getAdditionalMessages(integration, prefs_api));
 
-        const api_strings = {
-            chatgpt: "ChatGPT API",
-            google_gemini: "Google Gemini API",
-            ollama: "Ollama API",
-            openai_comp: "OpenAI Compatible API",
-            anthropic: "Claude API"
-        };
-        
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: api_strings[integration],
             model_string: prefs_api[`${integration_prefix}_model`],
