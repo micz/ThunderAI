@@ -1800,5 +1800,139 @@
     },
     "prefs_OptionText_spamfilter_only_inbox_Info": {
         "message": "Όταν είναι ενεργοποιημένο, το αυτόματο φίλτρο ανεπιθύμητης αλληλογραφίας ελέγχει μόνο τα μηνύματα που λαμβάνονται στον φάκελο εισερχομένων και αγνοεί την αλληλογραφία που παραδίδεται σε άλλους φακέλους."
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Νέοι στο ThunderAI; Αφήστε τον οδηγό ρύθμισης να σας καθοδηγήσει στη σύνδεση της τεχνητής νοημοσύνης σας."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Εκκίνηση οδηγού ρύθμισης"
+    },
+    "onboarding_tab_title": {
+        "message": "Καλώς ήρθατε στο ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Αυτό το πρόσθετο σχεδιάστηκε για να βελτιώσει τη διαχείριση του email σας με τη δύναμη της τεχνητής νοημοσύνης."
+    },
+    "onboarding_welcome_3": {
+        "message": "Με το ThunderAI, μπορείτε να οργανώσετε τα εισερχόμενά σας, να δημιουργείτε έξυπνες απαντήσεις, να κάνετε σύνοψη email, να προσθέτετε αυτόματα ετικέτες και να φιλτράρετε την ανεπιθύμητη αλληλογραφία, και πολλά άλλα, όλα με τη βοήθεια της τεχνητής νοημοσύνης."
+    },
+    "onboarding_welcome_4": {
+        "message": "Σε αυτή τη σελίδα, θα βρείτε μια επισκόπηση των βασικών λειτουργιών που είναι διαθέσιμες για να αξιοποιήσετε στο έπακρο το ThunderAI."
+    },
+    "onboarding_welcome_5": {
+        "message": "Ετοιμαστείτε να ζήσετε έναν πιο έξυπνο και αποδοτικό τρόπο διαχείρισης των email σας!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Ας δούμε πώς να αξιοποιήσετε στο έπακρο αυτό το πρόσθετο!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Χρήση προτροπών"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Κουμπί μενού προτροπών"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "Σε κάθε μήνυμα, υπάρχει ένα κουμπί που σας επιτρέπει να ανοίξετε το μενού προτροπών."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Εδώ μπορείτε να επιλέξετε την προτροπή με διάφορους τρόπους:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Πεδίο αναζήτησης"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Χρησιμοποιήστε το για να αναζητήσετε μέρος της προτροπής."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Βέλος κάτω/πάνω"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Πλοηγηθείτε στις προτροπές."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Πατήστε έναν αριθμό"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Πατήστε έναν αριθμό στο πληκτρολόγιο για να επιλέξετε την αντίστοιχη προτροπή."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Όταν επιλέξετε την προτροπή που θέλετε, πατήστε Enter για να την εκτελέσετε."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Στη σελίδα επιλογών του ThunderAI μπορείτε να βρείτε ορισμένες ρυθμίσεις σχετικά με αυτό το μενού."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Οι δύο πρώτες προτροπές είναι ειδικές και είναι διαθέσιμες μόνο όταν χρησιμοποιείτε μια ενσωμάτωση API. Λειτουργούν απευθείας χωρίς να ανοίξουν την ιστοσελίδα AI Chat."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Ορισμός των προσαρμοσμένων προτροπών σας"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Διαχείριση προσαρμοσμένων προτροπών"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Από τη σελίδα επιλογών μπορείτε να ανοίξετε τη σελίδα προσαρμοσμένων προτροπών."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Από εκεί μπορείτε να προσθέσετε τις προτροπές σας και επίσης να απενεργοποιήσετε τις προεπιλεγμένες."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Μπορείτε να βρείτε περισσότερες πληροφορίες εδώ."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Καθώς ορίζετε τις δικές σας προτροπές, μπορείτε επίσης να χρησιμοποιήσετε"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "placeholder δεδομένων"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": ", τα οποία θα αντικαθίστανται με τις αντίστοιχες πληροφορίες όταν χρησιμοποιείτε την προτροπή."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Για παράδειγμα, μπορείτε να χρησιμοποιήσετε το placeholder $PH_SUBJECT$ για να αναφερθείτε στο θέμα του email ή το $PH_TAGS$ για να αναφερθείτε στις ετικέτες του τρέχοντος email.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Αυτόματες λειτουργίες"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Αυτόματο φίλτρο ανεπιθύμητης αλληλογραφίας"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Υπάρχουν επίσης δύο αυτόματες λειτουργίες διαθέσιμες όταν χρησιμοποιείτε μια ενσωμάτωση API, οι οποίες μπορούν να ενεργοποιηθούν από τη σελίδα επιλογών:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Αυτόματο φίλτρο ανεπιθύμητης αλληλογραφίας"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "μετακινεί αυτόματα το email στον φάκελο ανεπιθύμητης αλληλογραφίας αν εντοπιστεί ως ανεπιθύμητο."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Αυτόματη προσθήκη ετικετών"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "αναθέτει αυτόματα ετικέτες στο email."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Για καθεμία από αυτές τις λειτουργίες, υπάρχει μια σελίδα επιλογών για να καθορίσετε τις ρυθμίσεις και την προσαρμοσμένη προτροπή που θα χρησιμοποιηθεί."
+    },
+    "onboarding_footer_1": {
+        "message": "Αν έχετε ερωτήσεις ή προτάσεις, παρακαλώ ανοίξτε ένα issue στη σελίδα GitHub."
+    },
+    "onboarding_footer_3": {
+        "message": "Σας αρέσει το ThunderAI;"
+    },
+    "prefs_footer_donate": {
+        "message": "Κάντε μια δωρεά"
     }
 }
