@@ -277,6 +277,32 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         margin-top: 0.3em;
     }
 
+    /* Live "Thinking..." indicator, shown while thinking tokens are streaming
+       in and removed as soon as flushAccumulatingMessage() renders the real
+       details.thinking-block. Styled as the same family as that block so the
+       swap does not read as a layout change: the spinner sits where the
+       <summary> disclosure triangle will be, and the label keeps its x position.
+       The motion lives in the animated SVG, so the row itself is static. */
+    .thinking-live {
+        display: flex;
+        align-items: center;
+        gap: 0.35em;
+        border-left: 3px solid var(--border-strong);
+        background: var(--surface-2);
+        padding: 0.3em 0.6em;
+        margin: 0 0 0.6em 0;
+        font-size: 0.9em;
+        font-weight: 600;
+        color: var(--ink-2);
+        border-radius: 4px;
+    }
+    .thinking-live .thinking-spinner {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        display: block;
+    }
+
     /* ---- jump to latest ----
        Shown exactly while auto-follow is off, i.e. whenever the transcript is
        no longer tracking new content. Absolute against the host, so it stays
@@ -371,6 +397,8 @@ class MessagesArea extends HTMLElement {
         // handleTokensDone, so each turn's flushed HTML snapshot is isolated.
         this._streaming = null;
         this.hideThinking = false;
+        // Live "Thinking..." placeholder element, while it is on screen.
+        this.thinkingLiveEl = null;
         // Wrapper of the turn currently being built. It must survive every
         // flush: a single response flushes on each '\n', so clearing it there
         // would start a fresh wrapper (and a second avatar) mid-answer. Only
@@ -527,6 +555,38 @@ class MessagesArea extends HTMLElement {
         body.appendChild(this.accumulatingMessageEl);
     }
 
+    // Live "Thinking..." indicator. It lives in the turn body, as a sibling of
+    // the accumulating message rather than inside it, so the flush cycle that
+    // rebuilds that element can neither orphan nor duplicate it. Idempotent:
+    // the append also moves an already attached node, which keeps the indicator
+    // last when thinking resumes after a segment has been rendered.
+    _showThinkingIndicator() {
+        const body = this._ensureBotTurnBody();
+        if (!this.thinkingLiveEl) {
+            this.thinkingLiveEl = document.createElement('div');
+            this.thinkingLiveEl.classList.add('thinking-live');
+            // The spinner takes the slot the <summary> disclosure triangle will
+            // occupy once the collapsible block replaces this row. The SVG is
+            // self-animated, so nothing here needs a CSS animation.
+            const spinner = document.createElement('img');
+            spinner.classList.add('thinking-spinner');
+            spinner.src = '../images/mzta-loading.svg';
+            spinner.alt = '';
+            const label = document.createElement('span');
+            label.textContent = (browser.i18n.getMessage('apiwebchat_thinking_in_progress') || 'Thinking') + '...';
+            this.thinkingLiveEl.appendChild(spinner);
+            this.thinkingLiveEl.appendChild(label);
+        }
+        body.appendChild(this.thinkingLiveEl);
+    }
+
+    _removeThinkingIndicator() {
+        if (this.thinkingLiveEl) {
+            this.thinkingLiveEl.remove();
+            this.thinkingLiveEl = null;
+        }
+    }
+
     init(worker) {
         this.worker = worker;
     }
@@ -550,10 +610,19 @@ class MessagesArea extends HTMLElement {
         // Thinking tokens can arrive before the first content token (e.g. Anthropic
         // extended thinking), so ensure the streaming state exists.
         this._ensureStreaming().handleNewThinkingToken(token);
+        // Live feedback while the reasoning streams in: the collapsible block
+        // only materializes at flush time, so without this the user would sit
+        // in front of an empty turn for the whole thinking phase.
+        this._showThinkingIndicator();
+        this._scrollIfSticky();
     }
 
     async handleTokensDone(promptData = null) {
         this.flushAccumulatingMessage();
+        // A response made only of thinking tokens never creates an accumulating
+        // message, so the flush above is a no-op and would leave the indicator
+        // spinning forever.
+        this._removeThinkingIndicator();
         await this.addActionButtons(promptData);
         // The final flush and the action bar both grow the transcript. Only
         // follow if the user is still at the bottom: if they scrolled up to
@@ -569,6 +638,7 @@ class MessagesArea extends HTMLElement {
     appendUserMessage(messageText, type="user") {
         this.fullTextHTML = "";
         this._streaming = null;   // new turn: reset any streaming state
+        this._removeThinkingIndicator();
         // A user message ends the previous model turn, so the next token
         // opens a fresh one.
         this._currentTurnEl = null;
@@ -591,6 +661,10 @@ class MessagesArea extends HTMLElement {
         // console.log("[ThunderAI] appendBotMessage: " + messageText);
 
         this.fullTextHTML = messageText;
+
+        // Terminal message (typically an error): it may abort a stream that was
+        // still thinking, so the indicator must not survive into the new turn.
+        this._removeThinkingIndicator();
 
         const label = this.llmName + (type=='error' ? " - " + browser.i18n.getMessage("apiwebchat_error") : "");
         const body = this._beginBotTurn(label, type);
@@ -993,6 +1067,12 @@ class MessagesArea extends HTMLElement {
             if (result === null) {
                 return;
             }
+
+            // Thinking is over for this segment: drop the live indicator now
+            // that the real block is about to be rendered, so the two are never
+            // on screen together. Deliberately after the deferred-flush return
+            // above, which must leave the indicator in place.
+            this._removeThinkingIndicator();
 
             const { html, thinkingText, fullTextHTML } = result;
 

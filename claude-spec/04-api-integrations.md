@@ -98,6 +98,29 @@ Both paths are combined into `combinedThinking` and rendered by
 `<details class="thinking-block">` prepended to the answer. Nothing is rendered when
 there is no thinking content.
 
+### Live "Thinking…" indicator
+
+The `<details>` block only materializes at flush time, so a long reasoning phase
+would otherwise leave an empty turn on screen. On every `newThinkingToken`,
+`handleNewThinkingToken()` calls `_showThinkingIndicator()`, which appends a
+`<div class="thinking-live">` to the current bot turn body: the animated
+`images/mzta-loading.svg` as an `<img>` in the slot the `<summary>` disclosure
+triangle will occupy, followed by `apiwebchat_thinking_in_progress` + a literal
+`...`. All the motion is inside the SVG, so the row itself carries no CSS
+animation (and needs no reduced-motion override). It is a **sibling** of the
+accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or
+duplicate it; re-appending also moves it back to the end when thinking resumes
+after a rendered segment.
+
+`_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
+after the deferred-flush early return (which must keep the indicator alive) and
+before `renderThinkingBlock()`, so the placeholder and the real block are never on
+screen together. It is also called from `handleTokensDone()` (a response made only
+of thinking tokens never creates an accumulating message, so the flush is a no-op),
+`appendUserMessage()`, and `appendBotMessage()` (error path). `hide_thinking` does
+not affect the indicator — it only governs the final block's initial state.
+Inline-`<think>` models never post `newThinkingToken` and so get no indicator.
+
 See the [API WebChat](01-architecture.md#api-webchat-api_webchat) section for the module structure behind this.
 
 The global `hide_thinking` pref (default `true`) controls **only the initial

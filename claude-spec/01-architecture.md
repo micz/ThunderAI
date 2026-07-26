@@ -239,7 +239,7 @@ worker/runtime messages into component method calls. It owns the module-level `p
 Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
-  newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage)
+  newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
   tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
   error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
