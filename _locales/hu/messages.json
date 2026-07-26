@@ -1794,5 +1794,139 @@
     },
     "menu_order_icon_none": {
         "message": "(nincs)"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Új a ThunderAI felhasználója? Hagyja, hogy a beállító varázsló végigvezesse az AI csatlakoztatásán."
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Beállító varázsló indítása"
+    },
+    "onboarding_tab_title": {
+        "message": "Üdvözli a ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Ez a kiegészítő az e-mailek kezelésének javítására lett tervezve az AI erejével."
+    },
+    "onboarding_welcome_3": {
+        "message": "A ThunderAI segítségével rendszerezheti a beérkező leveleit, intelligens válaszokat készíthet, összefoglalhatja az e-maileket, automatikusan címkéket adhat hozzá, szűrheti a spamet és sok mást is, mindezt a mesterséges intelligencia segítségével."
+    },
+    "onboarding_welcome_4": {
+        "message": "Ezen az oldalon áttekintést talál a legfontosabb funkciókról, amelyek segítségével a legtöbbet hozhatja ki a ThunderAI-ból."
+    },
+    "onboarding_welcome_5": {
+        "message": "Készüljön fel egy okosabb és hatékonyabb módra az e-mailek kezelésére!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Nézzük meg, hogyan használhatja a legtöbbet ebből a kiegészítőből!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Promptok használata"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Promptmenü gombja"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "Minden üzenetnél talál egy gombot, amellyel megnyithatja a promptmenüt."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Itt többféleképpen választhatja ki a promptot:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Keresőmező"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "Ezzel a prompt egy részére kereshet."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Lefelé/Felfelé nyíl"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "Lépegetés a promptok között."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Nyomjon meg egy számot"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "Nyomjon meg egy számot a billentyűzeten a megfelelő prompt kiválasztásához."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Enter"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "Ha kiválasztotta a kívánt promptot, nyomja meg az Enter gombot a futtatásához."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "A ThunderAI beállítási oldalán talál néhány, erre a menüre vonatkozó beállítást."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Az első két prompt különleges, és csak API-integráció használatakor érhető el. Közvetlenül működnek, anélkül, hogy megnyitnák az AI Chat weboldalát."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Saját promptok meghatározása"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Saját promptok kezelése"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "A beállítási oldalról megnyithatja a saját promptok oldalát."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Ott hozzáadhatja a saját promptjait, és letilthatja az alapértelmezetteket is."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "További információt itt talál."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Saját promptok meghatározásakor használhat"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "adat-placeholdereket"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": " is, amelyek a prompt használatakor a megfelelő információra lesznek helyettesítve."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Például használhatja a $PH_SUBJECT$ placeholdert az e-mail tárgyára való hivatkozáshoz, vagy a $PH_TAGS$ placeholdert az aktuális e-mail címkéire való hivatkozásához.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatikus funkciók"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatikus spamszűrő"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Két automatikus funkció is elérhető API-integráció használatakor, amelyek a beállítási oldalról aktiválhatók:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatikus spamszűrő"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "automatikusan áthelyezi az e-mailt a spam mappába, ha spamként észlel."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatikus címkézés"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "automatikusan címkéket rendel az e-mailhez."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Ezen funkciók mindegyikéhez tartozik egy beállítási oldal, ahol megadhatja a beállításokat és a használni kívánt egyéni promptot."
+    },
+    "onboarding_footer_1": {
+        "message": "Ha kérdése vagy javaslata van, nyisson egy issue-t a GitHub oldalon."
+    },
+    "onboarding_footer_3": {
+        "message": "Tetszik a ThunderAI?"
+    },
+    "prefs_footer_donate": {
+        "message": "Adományozás"
     }
 }
