@@ -1,33 +1,188 @@
-/* Global styles */
+/*
+ *  ThunderAI [https://micz.it/thunderbird-addon-thunderai/]
+ *  Copyright (C) 2024 - 2026  Mic (m@micz.it)
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* ===========================================================================
+   DESIGN TOKENS
+   Single source of truth for every colour in the webchat window.
+
+   The transcript, the input bar and the split button each live in their own
+   shadow root, so this stylesheet cannot select into them. Custom properties,
+   however, are inherited DOM properties and DO cross shadow boundaries: that
+   is the only theming channel available here, and the reason every component
+   style consumes var(--token) instead of declaring literal colours.
+
+   The theme follows Thunderbird/the system automatically; there is no manual
+   override. An override would need <html data-theme> applied before first
+   paint, which under the default MV2 CSP (no inline scripts) cannot be done
+   without a flash.
+
+   --accent matches pages/_lib/mzta-design.css so the whole add-on shares one
+   blue; keep the two in sync if either changes.
+   =========================================================================== */
+:root {
+    --accent: #0a68ff;
+
+    --bg: #e9ebef;
+    --surface: #ffffff;
+    --surface-2: #fbfcfd;
+    --hover: #f2f4f7;
+    --ink: #1a1d21;
+    --ink-2: #4b5563;
+    --ink-3: #9aa1ab;
+    --border: #e4e7eb;
+    --border-strong: #b9c0c9;
+    --code-bg: #dde1e7;
+
+    --accent-dark: color-mix(in srgb, var(--accent) 80%, #000);
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, #fff);
+    --accent-soft-ink: var(--accent-dark);
+
+    --ok-bg: #e6f6ec;
+    --ok-ink: #1a8a4d;
+    --info-bg: #e3f2fd;
+    --info-ink: #1565c0;
+    --info-border: #90caf9;
+    --err-bg: #fdeaea;
+    --err-ink: #c62828;
+    --err-border: #f3b6b6;
+
+    --shadow: rgba(20, 40, 80, .22);
+
+    --r-sm: 7px;
+    --r-md: 9px;
+    --r-lg: 11px;
+    --r-bubble: 14px;
+    --r-pill: 999px;
+
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Same desaturation applied by mzta-design.css in dark mode. */
+        --accent: #2c5e9b;
+
+        --bg: #17191c;
+        --surface: #1e2125;
+        --surface-2: #252a30;
+        --hover: #2a3037;
+        --ink: #e8eaed;
+        --ink-2: #a2a8b0;
+        --ink-3: #71777f;
+        --border: #2e343b;
+        --border-strong: #3d444d;
+        --code-bg: #2b3138;
+
+        --accent-dark: color-mix(in srgb, var(--accent) 78%, #000);
+        --accent-soft: color-mix(in srgb, var(--accent) 30%, var(--bg));
+        --accent-soft-ink: color-mix(in srgb, var(--accent) 55%, #fff);
+
+        --ok-bg: color-mix(in srgb, #1a8a4d 26%, var(--bg));
+        --ok-ink: #57d98a;
+        --info-bg: color-mix(in srgb, #2196f3 20%, var(--bg));
+        --info-ink: #7cc0ff;
+        --info-border: color-mix(in srgb, #2196f3 45%, var(--bg));
+        --err-bg: #3a1f22;
+        --err-ink: #f38b8b;
+        --err-border: #6b3034;
+
+        --shadow: rgba(0, 0, 0, .55);
+    }
+}
+
+/* ===========================================================================
+   PAGE SHELL
+   =========================================================================== */
 body {
-    font-family: Arial, sans-serif;
+    font-family: var(--font);
     margin: 0;
     padding: 0;
     display: flex;
-    justify-content: center; /* Center horizontally */
-    height: 100vh; /* Full viewport height */
+    justify-content: center;
+    height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    transition: background .25s ease, color .25s ease;
 }
 
 #appContainer {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Full height of the viewport */
-    max-width: 768px; /* Max width of 768px */
-    width: 100%; /* Use full width up to 768px */
-    margin: 0 auto; /* Center horizontally without affecting vertical alignment */
+    height: 100vh;
+    max-width: 768px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 messages-area {
     flex-grow: 1;
     overflow: auto;
+    min-height: 0;
 }
 
-/* Colors */
-:root {
-    --red: #ff0000;
-    --green: #00ff00;
-    --margin: 10px;
-    --padding: 10px;
+/* ===========================================================================
+   HEADER BAR
+   Light DOM, so it is styled directly from here.
+   =========================================================================== */
+#appHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    flex-shrink: 0;
+}
+
+#appHeaderLogo {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+}
+
+#appHeaderName {
+    font-size: .875rem;
+    font-weight: 650;
+    color: var(--ink);
+}
+
+#appHeaderModel {
+    font-size: .6875rem;
+    font-weight: 600;
+    color: var(--accent-soft-ink);
+    background: var(--accent-soft);
+    padding: 3px 9px;
+    border-radius: var(--r-pill);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40%;
+}
+
+#appHeaderModel:empty {
+    display: none;
 }
 
 /* Typography */
@@ -38,12 +193,4 @@ h1, h2, h3, h4, h5, h6 {
 
 p {
     margin: 0 0 10px 0;
-}
-
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: rgb(33, 33, 33);
-        color: rgb(236, 236, 236);
-    }
 }

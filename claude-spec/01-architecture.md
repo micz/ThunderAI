@@ -220,8 +220,9 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
+  ├── #appHeader                           — logo, product name, static model chip (light DOM)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
-  ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status logger
+  ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
 ```
 
@@ -239,8 +240,8 @@ Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
   newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage)
-  tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons → divider)
-  error            → messagesArea.appendBotMessage(payload,'error')
+  tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
+  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
 background → controller.js (browser.runtime commands)
   api_send             → set promptData; send prompt (or show custom-text field)
@@ -251,21 +252,74 @@ background → controller.js (browser.runtime commands)
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
 text to `renderThinkingBlock`. The answer-text snapshot is what the "use this answer" /
-"save as summary" / diff buttons close over — one instance per turn keeps each turn's
-buttons tied to their own response.
+"copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
+turn's buttons tied to their own response.
+
+### Theming
+
+Every colour in the window comes from a CSS custom property declared once on `:root` in
+`api_webchat/styles.css`, with a `@media (prefers-color-scheme: dark)` override. The theme
+follows Thunderbird/the system; **there is no manual override**, because applying one before
+first paint would need an inline `<head>` script, which the default MV2 CSP forbids.
+
+The three components each live in their own shadow root, which `styles.css` cannot select
+into. Custom properties are inherited DOM properties and *do* cross shadow boundaries, so
+they are the theming channel: component styles consume `var(--token)` and must never declare
+literal colours or their own `prefers-color-scheme` block. Rules that are not custom
+properties (focus rings, `@keyframes`, the reduced-motion opt-out, the shared button
+families) live in `api_webchat/sharedStyles.js` as CSS strings that each component
+concatenates into its own `<style>`.
+
+`--accent` mirrors `pages/_lib/mzta-design.css` so the whole add-on shares one blue.
+
+### Transcript DOM contract
+
+Every exchange is wrapped in a `.turn` element — the wrapper is what makes the per-answer
+toolbar possible, since `:hover` / `:focus-within` need a single element enclosing an answer
+and its buttons. There are no `<hr>` dividers; spacing separates the turns.
+
+```
+#messages
+  .turn.turn-user   → .bubble                        (accent bubble, right-aligned)
+  .turn.turn-info   → .message.info                  (full-width startup notice)
+  .turn.turn-bot    → .turn-head (avatar)
+                      .turn-body → .turn-name
+                                   .message.bot       (one per flushed block)
+                                   .turn-tools        (icon toolbar, earlier answers)
+                                   .action-bar        (full bar, newest answer)
+                                   .sel_info          (alongside the full bar)
+```
+
+Two invariants in `MessagesArea`, both easy to break:
+
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every `'\n'`, so
+  clearing it in `flushAccumulatingMessage()` would open a new wrapper — and render a second
+  avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
+  `handleTokensDone()` reset it. `appendDiffViewer()` can run against an older turn mid-session,
+  so it saves and restores the field around `_beginBotTurn()`.
+- **`_lastFullBarTurn` owns the only full action bar.** `addActionButtons()` calls
+  `_degradeFullActionBar()` first, so two full bars never coexist. `.action-bar` and
+  `.turn-tools` are mutually exclusive on a given turn — an answer showing the full bar needs
+  no icon toolbar, because every icon would duplicate a button already spelled out beside it.
+  Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
+  moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
+  created, so it stays bound to that answer's own text rather than to whatever is on screen
+  later.
 
 ### Files
 
 | File | Role |
 |------|------|
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: conversation transcript, action buttons, orchestrates the render helpers below |
-| `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, status logger, custom-text flow |
-| `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
+| `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
+| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, orchestrates the render helpers below |
+| `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
+| `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
 | `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
 | `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
-| `api_webchat/svgIcons.js` | Inline-SVG icon builders (`buildSendIcon`/`buildStopIcon`/`buildDropdownArrowIcon`) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML` |
+| `api_webchat/svgIcons.js` | Inline-SVG icon builders (send/stop/dropdown, sparkle avatar, copy, check, diff, save, close, alert, spinner, dot) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML`; icons stroke in `currentColor` so they follow the tokens |
 
 ## Key Modules
 

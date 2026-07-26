@@ -1589,6 +1589,30 @@
     "message": "Done!",
     "description": ""
   },
+  "apiwebchat_copy": {
+    "message": "Copy",
+    "description": "Button in the AI chat window that copies the answer to the clipboard"
+  },
+  "apiwebchat_copied": {
+    "message": "Copied",
+    "description": "Confirmation shown briefly after the answer has been copied to the clipboard"
+  },
+  "apiwebchat_copy_failed": {
+    "message": "Copy failed",
+    "description": "Shown when the answer could not be copied to the clipboard"
+  },
+  "apiwebchat_status_error": {
+    "message": "Error",
+    "description": "Status indicator in the AI chat window when the request failed"
+  },
+  "apiwebchat_show_options": {
+    "message": "Show options",
+    "description": "Accessible label for the arrow that opens the options menu of the main action button"
+  },
+  "apiwebchat_turn_tools": {
+    "message": "Answer actions",
+    "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
+  },
   "hyprland_warning": {
     "message": "If you're having trouble opening the AI chat window, try setting the height and width values to 0. This issue can occur on linux in certain environments, for example, when using Hyprland.",
     "description": ""

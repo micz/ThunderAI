@@ -24,6 +24,7 @@ import { prefs_default, integration_options_config } from '../options/mzta-optio
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
+import { buildChatBubbleIcon } from './svgIcons.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -158,8 +159,13 @@ if (worker) {
         }
         messagesArea.setLLMName(llmName);
         messagesArea.setHideThinking(!!prefs_api.hide_thinking);
-        
-        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
+
+        // Header bar: the logo icon plus a static chip with the model in use.
+        // Every live state (waiting / streaming / done / error) belongs to the
+        // status pill above the input, so there is only one thing to keep in
+        // sync with the request lifecycle.
+        document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        document.getElementById('appHeaderModel').textContent = prefs_api[`${integration_prefix}_model`] || llmName;
 
         document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
@@ -282,11 +288,11 @@ worker.onmessage = async function(event) {
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
-            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            messageInput.showStreamingStatus();
             break;
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
-            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            messageInput.showStreamingStatus();
             break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
@@ -295,6 +301,7 @@ worker.onmessage = async function(event) {
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
             messageInput.enableInput(false);
+            messageInput.showErrorStatus();
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -343,6 +350,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
             messageInput.enableInput(false);
+            messageInput.showErrorStatus();
             break;
     }
 });

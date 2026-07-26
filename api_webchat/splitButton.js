@@ -17,6 +17,7 @@
  */
 
 import { buildDropdownArrowIcon } from './svgIcons.js';
+import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 // <split-button> encapsulates the "use this answer" action button used by
 // <messages-area>. It owns a main button (label + optional info line + click
@@ -36,88 +37,103 @@ import { buildDropdownArrowIcon } from './svgIcons.js';
 const splitButtonTemplate = document.createElement('template');
 
 const splitButtonStyle = document.createElement('style');
-splitButtonStyle.textContent = `
+splitButtonStyle.textContent = SHARED_BASE_CSS + `
     :host {
       display: inline-flex;
-      /* Matches the original ".action-buttons button { margin: 0 10px }" spacing
-         that applied to the main button when it lived directly in the row. */
-      margin: 0 10px;
     }
     .split-button {
       display: inline-flex;
       position: relative;
-      font-family: sans-serif;
     }
 
     .split-button button {
-      padding: 5px 0px 5px 10px;
       cursor: pointer;
-      font-size: 0.875rem;
-      border: 1px outset buttonface;
+      font: inherit;
+      border: none;
+      transition: background .12s ease;
     }
 
     .split-button button.action_btn {
-      margin-right: 0;
-      border-top-left-radius: 5px;
-      border-bottom-left-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: var(--r-md) 0 0 var(--r-md);
+      font-size: .84375rem;
+      font-weight: 650;
+      line-height: 1.1;
+      text-align: left;
+    }
+
+    .split-button button.action_btn:hover {
+      background: var(--accent-dark);
+    }
+
+    /* No dropdown: the main button is rounded on both sides. */
+    :host([standalone]) .split-button button.action_btn {
+      border-radius: var(--r-md);
     }
 
     .split-button .dropdown-toggle {
-      border-left: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      margin-left:-1px;
-      border-top-right-radius: 5px;
-      border-bottom-right-radius: 5px;
-      padding:0;
+      padding: 0 9px;
+      background: var(--accent-dark);
+      color: #fff;
+      border-radius: 0 var(--r-md) var(--r-md) 0;
     }
 
-    .dropdown-toggle svg {
-      fill: #555;
-      margin-left: -4px;
+    .split-button .dropdown-toggle:hover {
+      background: color-mix(in srgb, var(--accent-dark) 85%, #000);
     }
 
     .action_btn_info {
-        font-size: 0.6rem;
-        color: gray;
+        font-size: .65625rem;
+        font-weight: 500;
+        opacity: .85;
         display: inline-block;
     }
 
     .dropdown-menu {
       position: absolute;
-      top: 2.55rem;
-      right:0;
+      top: calc(100% + 6px);
+      right: 0;
       display: none;
       flex-direction: column;
-      background-color: white;
-      border: 1px solid #ccc;
-      min-width: 160px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      min-width: 150px;
       z-index: 1000;
-      margin-top: 2px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      border-radius: 5px;
-      text-align: right;
-      width: -moz-available;
+      box-shadow: 0 10px 28px -8px var(--shadow);
+      border-radius: 10px;
+      padding: 5px;
     }
 
     .dropdown-menu button {
-      padding: 10px 14px;
-      border: none;
-      background-color: white;
-      text-align: right;
-      cursor: pointer;
-      font-size: 0.6rem;
-      color: gray;
+      padding: 9px 12px;
+      background: none;
+      text-align: left;
+      font-size: .8125rem;
+      color: var(--ink);
+      border-radius: var(--r-sm);
     }
 
     .dropdown-menu button:hover {
-      background-color: #f0f0f0;
+      background: var(--hover);
     }
 
     .dropdown-menu.show {
       display: flex;
+      animation: mztaDropdownIn .12s ease-out;
+    }
+
+    @keyframes mztaDropdownIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 `;
 splitButtonTemplate.content.appendChild(splitButtonStyle);
@@ -149,14 +165,17 @@ class SplitButton extends HTMLElement {
         // Bound so the exact same reference can be added in connectedCallback
         // and removed in disconnectedCallback.
         this._onWindowClick = this._onWindowClick.bind(this);
+        this._onWindowKeydown = this._onWindowKeydown.bind(this);
     }
 
     connectedCallback() {
         window.addEventListener('click', this._onWindowClick);
+        window.addEventListener('keydown', this._onWindowKeydown);
     }
 
     disconnectedCallback() {
         window.removeEventListener('click', this._onWindowClick);
+        window.removeEventListener('keydown', this._onWindowKeydown);
     }
 
     // Configure the main button.
@@ -180,11 +199,9 @@ class SplitButton extends HTMLElement {
         }
 
         if (standalone) {
-            // Without a dropdown toggle the main button is rounded on both sides.
-            // (Outer spacing is provided by :host margin, not the button itself.)
-            this._actionButton.style.paddingRight = '10px';
-            this._actionButton.style.borderTopRightRadius = '5px';
-            this._actionButton.style.borderBottomRightRadius = '5px';
+            // Without a dropdown toggle the main button is rounded on both
+            // sides; the :host([standalone]) rule handles the radius.
+            this.setAttribute('standalone', '');
         }
 
         if (onClick) {
@@ -199,7 +216,9 @@ class SplitButton extends HTMLElement {
         // Dropdown toggle button
         this._toggleBtn = document.createElement('button');
         this._toggleBtn.className = 'dropdown-toggle';
-        this._toggleBtn.setAttribute('aria-label', 'Show options');
+        this._toggleBtn.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_show_options'));
+        this._toggleBtn.setAttribute('aria-expanded', 'false');
+        this._toggleBtn.setAttribute('aria-haspopup', 'true');
         this._toggleBtn.appendChild(this._buildArrowIcon());
         this._container.appendChild(this._toggleBtn);
 
@@ -216,12 +235,27 @@ class SplitButton extends HTMLElement {
 
         this._toggleBtn.onclick = () => {
             this._dropdownJustOpened = true;
-            this._dropdown.classList.toggle('show');
+            this._setDropdownOpen(!this._dropdown.classList.contains('show'));
         };
+    }
+
+    // Single place that flips the menu, so aria-expanded can never drift out
+    // of sync with what is on screen.
+    _setDropdownOpen(open) {
+        if (!this._dropdown) { return; }
+        this._dropdown.classList.toggle('show', open);
+        this._toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
     _buildArrowIcon() {
         return buildDropdownArrowIcon();
+    }
+
+    _onWindowKeydown(e) {
+        if (e.key !== 'Escape') { return; }
+        if (!this._dropdown || !this._dropdown.classList.contains('show')) { return; }
+        this._setDropdownOpen(false);
+        this._toggleBtn.focus();
     }
 
     _onWindowClick(e) {
@@ -238,7 +272,7 @@ class SplitButton extends HTMLElement {
             // `window` from inside the shadow root are retargeted to the host,
             // so `this` is the right containment check.
             if (!this.contains(e.target)) {
-                this._dropdown.classList.remove('show');
+                this._setDropdownOpen(false);
             }
         }, 0);
     }

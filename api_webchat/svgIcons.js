@@ -36,39 +36,49 @@ function el(tag, attrs) {
     return node;
 }
 
-// Send icon (message-input send button).
-export function buildSendIcon() {
+// Build a stroked icon: the shape every icon here shares (square viewBox,
+// no fill, currentColor stroke with rounded joins), so each builder below is
+// just a size, a stroke weight and its path data.
+function strokedIcon(size, paths, strokeWidth = '1.8') {
     const svg = el('svg', {
-        width: '24',
-        height: '24',
+        width: String(size),
+        height: String(size),
         viewBox: '0 0 24 24',
         fill: 'none',
-        class: 'text-white dark:text-black',
+        'aria-hidden': 'true',
     });
-    svg.appendChild(el('path', {
-        d: 'M7 11L12 6L17 11M12 18V7',
-        stroke: 'currentColor',
-        'stroke-width': '2',
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-    }));
+    for (const d of paths) {
+        svg.appendChild(el('path', {
+            d: d,
+            stroke: 'currentColor',
+            'stroke-width': strokeWidth,
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+        }));
+    }
     return svg;
+}
+
+// Send icon (message-input send button).
+export function buildSendIcon() {
+    return strokedIcon(20, ['M7 11L12 6L17 11M12 18V7'], '2');
 }
 
 // Stop icon (message-input stop button).
 export function buildStopIcon() {
     const svg = el('svg', {
-        width: '24',
-        height: '24',
+        width: '20',
+        height: '20',
         viewBox: '0 0 24 24',
         fill: 'none',
-        class: 'text-white dark:text-black',
+        'aria-hidden': 'true',
     });
     svg.appendChild(el('rect', {
         x: '6',
         y: '6',
         width: '12',
         height: '12',
+        rx: '2',
         fill: 'currentColor',
     }));
     return svg;
@@ -76,15 +86,129 @@ export function buildStopIcon() {
 
 // Dropdown arrow (split-button toggle).
 export function buildDropdownArrowIcon() {
+    return strokedIcon(15, ['M6 9.5l6 6 6-6'], '2');
+}
+
+// Sparkle (avatar of a model turn).
+export function buildSparkleIcon() {
     const svg = el('svg', {
-        viewBox: '0 0 20 20',
-        width: '16',
-        height: '16',
-        fill: 'currentColor',
-        'stroke-width': '2',
+        width: '14',
+        height: '14',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
     });
     svg.appendChild(el('path', {
-        d: 'M19 9l-7 7-7-7',
+        d: 'M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3Z',
+        fill: 'currentColor',
+    }));
+    return svg;
+}
+
+// Chat bubble (header logo).
+export function buildChatBubbleIcon() {
+    const svg = el('svg', {
+        width: '13',
+        height: '13',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    svg.appendChild(el('path', {
+        d: 'M3 6.5C3 5.1 4.1 4 5.5 4h13C19.9 4 21 5.1 21 6.5v9c0 1.4-1.1 2.5-2.5 2.5H9l-5 3.5v-3.5H5.5C4.1 18 3 16.9 3 15.5v-9Z',
+        fill: 'currentColor',
+    }));
+    return svg;
+}
+
+// Copy to clipboard (two overlapping sheets).
+export function buildCopyIcon(size = 15) {
+    const svg = el('svg', {
+        width: String(size),
+        height: String(size),
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    svg.appendChild(el('rect', {
+        x: '9', y: '9', width: '11', height: '11', rx: '2.4',
+        stroke: 'currentColor',
+        'stroke-width': '1.8',
+    }));
+    svg.appendChild(el('path', {
+        d: 'M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1',
+        stroke: 'currentColor',
+        'stroke-width': '1.8',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+    }));
+    return svg;
+}
+
+// Check mark (copy confirmed, "done" status pill).
+export function buildCheckIcon(size = 15) {
+    return strokedIcon(size, ['M5 12.5l4.5 4.5L19 7'], '2.6');
+}
+
+// Differences (centre bar with chevrons).
+export function buildDiffIcon(size = 15) {
+    return strokedIcon(size, ['M12 4v16M6 8l-3 4 3 4M18 8l3 4-3 4']);
+}
+
+// Save (floppy-style outline) — "save as summary".
+export function buildSaveIcon(size = 15) {
+    return strokedIcon(size, [
+        'M5 3h11l3 3v15H5V3Z',
+        'M8 3v6h7V3M8 21v-7h8v7',
+    ]);
+}
+
+// Arrow into a box — "use this answer", icon-only variant.
+export function buildUseAnswerIcon(size = 15) {
+    return strokedIcon(size, [
+        'M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7',
+        'M15 4h5v5M20 4l-9 9',
+    ]);
+}
+
+// Close (X).
+export function buildCloseIcon(size = 15) {
+    return strokedIcon(size, ['M6 6l12 12M18 6L6 18'], '2');
+}
+
+// Exclamation in a circle — error status pill.
+export function buildAlertIcon(size = 13) {
+    const svg = strokedIcon(size, ['M12 7.5v5.5'], '2.4');
+    svg.appendChild(el('circle', {
+        cx: '12', cy: '12', r: '9',
+        stroke: 'currentColor',
+        'stroke-width': '1.8',
+    }));
+    svg.appendChild(el('circle', {
+        cx: '12', cy: '16.5', r: '1.1',
+        fill: 'currentColor',
+    }));
+    return svg;
+}
+
+// Three-quarter arc — streaming status pill. The caller spins it via CSS so
+// prefers-reduced-motion can switch the animation off.
+export function buildSpinnerIcon(size = 13) {
+    return strokedIcon(size, ['M12 3a9 9 0 1 0 9 9'], '2.6');
+}
+
+// Small filled dot — "waiting for the server" status pill.
+export function buildDotIcon(size = 7) {
+    const svg = el('svg', {
+        width: String(size),
+        height: String(size),
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    svg.appendChild(el('circle', {
+        cx: '12', cy: '12', r: '12',
+        fill: 'currentColor',
     }));
     return svg;
 }

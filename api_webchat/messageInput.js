@@ -20,74 +20,103 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon } from './svgIcons.js';
+import { buildSendIcon, buildStopIcon, buildSpinnerIcon, buildCheckIcon, buildAlertIcon, buildDotIcon } from './svgIcons.js';
+import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');
 
 const messagesInputStyle  = document.createElement('style');
-messagesInputStyle.textContent = `
+messagesInputStyle.textContent = SHARED_BASE_CSS + `
     :host {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 24px;
-        margin: var(--margin);
-        margin-bottom: 20px;
+        gap: 10px;
+        padding: 12px 16px 16px;
+        border-top: 1px solid var(--border);
     }
     #messageInputField {
         flex-grow: 1;
-        padding: 10px;
-        font-size: 1rem;
-        border: 1px solid lightgrey;
-        border-radius: 10px;
-        margin-right: var(--padding);
+        padding: 11px 14px;
+        font: inherit;
+        font-size: .875rem;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        color: var(--ink);
         outline: none;
+        transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    #messageInputField::placeholder {
+        color: var(--ink-3);
     }
     #messageInputField:focus {
-        border-color: darkgrey;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
     }
-    #sendButton {
-        width: 44px;
-        height: 36px;
-        cursor: pointer;
-        border-radius: 10px;
-        border: 1px outset buttonface;
-    }
-    #stopButton {
-        width: 44px;
-        height: 36px;
-        cursor: pointer;
-        border-radius: 10px;
-    }
-    #statusLogger{
-        font-size: 0.8rem;
-        position: absolute;
-        bottom: 1.5em;
-        right: 5em;
-        border: 1px solid lightgrey;
-        border-radius: 5px;
-        padding: 5px;
-        background: #F2F2F2;
+    #sendButton, #stopButton {
         display: flex;
         align-items: center;
-        gap: 3px;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        cursor: pointer;
+        border: none;
+        border-radius: var(--r-lg);
+        background: var(--accent);
+        color: #fff;
+        transition: background .12s ease;
     }
-    #statusLoggerImg{
-        display: none;
-        vertical-align: middle;
+    #sendButton:hover:not(:disabled), #stopButton:hover:not(:disabled) {
+        background: var(--accent-dark);
     }
-    #statusLoggerText{
+    #sendButton:disabled, #stopButton:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
+    /* Floating status pill: sits over the input row instead of taking a row
+       of its own. Anchored to the host, which is position:relative. */
+    #statusLogger{
+        position: absolute;
+        bottom: calc(100% - 6px);
+        right: 70px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: .75rem;
         font-weight: 600;
+        padding: 5px 11px;
+        border-radius: var(--r-pill);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--ink-2);
+        box-shadow: 0 6px 16px -8px var(--shadow);
+        white-space: nowrap;
+    }
+    #statusLoggerIcon{
+        display: inline-flex;
+        align-items: center;
     }
     #statusLogger.status-working{
-        border-color: #2196F3;
-        background: #E3F2FD;
-        color: #1565C0;
+        border-color: var(--info-border);
+        background: var(--info-bg);
+        color: var(--info-ink);
+    }
+    #statusLogger.status-working #statusLoggerIcon svg{
+        animation: mztaSpin .8s linear infinite;
     }
     #statusLogger.status-done{
-        border-color: #4CAF50;
-        background: #E8F5E9;
-        color: #2E7D32;
+        border-color: color-mix(in srgb, var(--ok-ink) 40%, var(--bg));
+        background: var(--ok-bg);
+        color: var(--ok-ink);
+    }
+    #statusLogger.status-error{
+        border-color: var(--err-border);
+        background: var(--err-bg);
+        color: var(--err-ink);
     }
     @keyframes statusFadeOut {
         from { opacity: 1; }
@@ -112,21 +141,32 @@ messagesInputStyle.textContent = `
         display:none;
         transform:translate(-50%,-50%);
         text-align:center;
-        background:#333;
-        color:white;
-        border:3px solid white;
+        background:var(--surface);
+        color:var(--ink);
+        border:1px solid var(--border);
+        box-shadow: 0 18px 44px -20px var(--shadow);
         box-sizing: border-box;
+        z-index: 10;
     }
     #mzta-custom_loading{
         height:50px;display:none;
     }
     #mzta-custom_textarea{
-        color:black;
+        color:var(--ink);
+        background:var(--surface-2);
+        border:1px solid var(--border);
+        border-radius:var(--r-sm);
         padding:5px;
+        font:inherit;
         font-size:0.9375rem;
         width:100%;
         box-sizing: border-box;
         resize: vertical;
+    }
+    #mzta-custom_textarea:focus{
+        outline:none;
+        border-color:var(--accent);
+        box-shadow:0 0 0 3px var(--accent-soft);
     }
     #mzta-custom_info{
         text-align:center;
@@ -142,30 +182,27 @@ messagesInputStyle.textContent = `
         bottom: 5px;
         right: 10px;
         font-size: 0.75rem;
-        color: #ccc;
+        color: var(--ink-3);
     }
     #mzta-custom_btn{
         margin-top:7px;
+        padding: 8px 14px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: var(--r-md);
+        font: inherit;
+        font-size: .8125rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background .12s ease;
     }
-    @media (prefers-color-scheme: dark) {
-        #messageInputField {
-            background-color: #303030;
-            color: #ffffff;
-        }
-        #statusLogger{
-            background: #212121;
-            color: #ffffff;
-        }
-        #statusLogger.status-working{
-            border-color: #64B5F6;
-            background: #1A3A5C;
-            color: #90CAF9;
-        }
-        #statusLogger.status-done{
-            border-color: #81C784;
-            background: #1B3D1E;
-            color: #A5D6A7;
-        }
+    #mzta-custom_btn:hover:not(:disabled){
+        background: var(--accent-dark);
+    }
+    #mzta-custom_btn:disabled, #mzta-custom_btn.disabled{
+        opacity: .45;
+        cursor: default;
     }
 `;
 messageInputTemplate.content.appendChild(messagesInputStyle);
@@ -191,10 +228,14 @@ messageInputTemplate.content.appendChild(stopButton);
 const statusLogger = document.createElement('div');
 statusLogger.id = 'statusLogger';
 statusLogger.style.display = 'none';
-const statusLoggerImg = document.createElement('img');
-statusLoggerImg.id = 'statusLoggerImg';
-statusLoggerImg.src = browser.runtime.getURL('/images/mzta-loading.svg');
-statusLogger.appendChild(statusLoggerImg);
+statusLogger.setAttribute('role', 'status');
+statusLogger.setAttribute('aria-live', 'polite');
+// The icon is rebuilt per state (dot / spinner / check / alert) rather than
+// being a static <img>, so it inherits currentColor from the pill and the
+// spin animation can be disabled by prefers-reduced-motion.
+const statusLoggerIcon = document.createElement('span');
+statusLoggerIcon.id = 'statusLoggerIcon';
+statusLogger.appendChild(statusLoggerIcon);
 const statusLoggerText = document.createElement('span');
 statusLoggerText.id = 'statusLoggerText';
 statusLogger.appendChild(statusLoggerText);
@@ -241,7 +282,7 @@ class MessageInput extends HTMLElement {
         this._sendButton = shadowRoot.querySelector('#sendButton');
         this._stopButton = shadowRoot.querySelector('#stopButton');
         this._statusLogger = shadowRoot.querySelector('#statusLogger');
-        this._statusLoggerImg = shadowRoot.querySelector('#statusLoggerImg');
+        this._statusLoggerIcon = shadowRoot.querySelector('#statusLoggerIcon');
         this._statusLoggerText = shadowRoot.querySelector('#statusLoggerText');
 
         this._messageInputField.addEventListener('keydown', this._handleKeyDown.bind(this));
@@ -313,19 +354,46 @@ class MessageInput extends HTMLElement {
             this._doneTimeout = null;
         }
         this._setStatusClass('status-' + state);
-        this._statusLogger.style.display = 'flex';
+        this._statusLogger.style.display = 'inline-flex';
     }
 
     hideStatusMessage() {
         this._statusLogger.style.display = 'none';
-        this._statusLoggerImg.style.display = 'none';
+        this._setStatusIcon(null);
         this._setStatusClass(null);
     }
 
     _setStatusClass(className) {
-        this._statusLogger.classList.remove('status-working', 'status-done', 'status-fadeout');
+        this._statusLogger.classList.remove('status-working', 'status-done', 'status-error', 'status-fadeout');
         if (className) {
             this._statusLogger.classList.add(className);
+        }
+    }
+
+    // Swap the pill's leading icon. Passing null clears it.
+    _setStatusIcon(buildIcon) {
+        this._statusLoggerIcon.textContent = '';
+        if (buildIcon) {
+            this._statusLoggerIcon.appendChild(buildIcon());
+        }
+    }
+
+    // Request sent, nothing back from the server yet.
+    showWaitingStatus() {
+        this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
+        this._setStatusIcon(buildDotIcon);
+        this.showStatusMessage('waiting');
+    }
+
+    // Tokens are arriving.
+    showStreamingStatus() {
+        this.setStatusMessage(browser.i18n.getMessage('apiwebchat_receiving_data') + '...');
+        // Only rebuild the spinner when we are not already streaming: this runs
+        // on every single token, and replacing the node each time would restart
+        // the CSS animation and leave the spinner frozen at frame 0.
+        if (!this._statusLogger.classList.contains('status-working')) {
+            this._setStatusIcon(buildSpinnerIcon);
+            this.showStatusMessage('working');
         }
     }
 
@@ -333,10 +401,10 @@ class MessageInput extends HTMLElement {
         if (this._doneTimeout) {
             clearTimeout(this._doneTimeout);
         }
-        this._statusLoggerImg.style.display = 'none';
         this.setStatusMessage(browser.i18n.getMessage('apiwebchat_done'));
+        this._setStatusIcon(buildCheckIcon);
         this._setStatusClass('status-done');
-        this._statusLogger.style.display = 'flex';
+        this._statusLogger.style.display = 'inline-flex';
 
         this._doneTimeout = setTimeout(() => {
             this._statusLogger.classList.add('status-fadeout');
@@ -347,7 +415,22 @@ class MessageInput extends HTMLElement {
         }, 1500);
     }
 
+    // Unlike "done", the error pill has no timeout: it stays until the next
+    // request replaces it, so a failure is never silently swallowed.
+    showErrorStatus(message = null) {
+        if (this._doneTimeout) {
+            clearTimeout(this._doneTimeout);
+            this._doneTimeout = null;
+        }
+        this.setStatusMessage(message || browser.i18n.getMessage('apiwebchat_status_error'));
+        this._setStatusIcon(buildAlertIcon);
+        this._setStatusClass('status-error');
+        this._statusLogger.style.display = 'inline-flex';
+    }
+
     _handleKeyDown(event) {
+        // Plain Enter is the long-standing way to send and stays as it is;
+        // Ctrl/Cmd+Enter is an additional accelerator.
         if (event.key === 'Enter') {
             this._handleNewChatMessage();
         }
@@ -379,9 +462,7 @@ class MessageInput extends HTMLElement {
         if (this.messagesAreaComponent) {
             this.messagesAreaComponent.appendUserMessage(messageContent);
         }
-        this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
-        this._statusLoggerImg.style.display = 'inline';
-        this.showStatusMessage();
+        this.showWaitingStatus();
         this.worker.postMessage({ type: 'chatMessage', message: messageContent });
     }
 
