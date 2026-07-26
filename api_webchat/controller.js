@@ -182,7 +182,12 @@ if (worker) {
             apiChip.classList.add('tint_' + llm);
             apiChip.hidden = false;
         }
-        document.getElementById('appHeaderModel').textContent = prefs_api[`${integration_prefix}_model`] || llmName;
+        // Model chip: "prompt name | model", dropping either half when missing.
+        const modelChip = document.getElementById('appHeaderModel');
+        const model_label = prefs_api[`${integration_prefix}_model`] || llmName;
+        const prompt_label = decodeURIComponent(prompt_name ?? '').trim();
+        modelChip.textContent = prompt_label ? `${prompt_label} | ${model_label}` : model_label;
+        modelChip.title = modelChip.textContent;
 
         document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 

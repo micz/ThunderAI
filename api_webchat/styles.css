@@ -193,6 +193,8 @@ messages-area {
     background: var(--tint-pill, var(--hover));
     border: 1px solid var(--tint-border, var(--border));
     flex-shrink: 0;
+    /* Pinned to the right edge of the header, away from the model chip. */
+    margin-left: auto;
 }
 
 #appHeaderApi .pill_dot {
@@ -212,7 +214,11 @@ messages-area {
 #appHeaderModel {
     color: var(--accent-soft-ink);
     background: var(--accent-soft);
-    max-width: 40%;
+    /* Holds "prompt name | model", so it needs more room than a bare model
+       name, but it must still yield to the API chip pinned on the right. */
+    max-width: 55%;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 /* Lightened accents so the provider colour stays legible on a dark surface
