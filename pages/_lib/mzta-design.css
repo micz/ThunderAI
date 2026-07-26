@@ -219,15 +219,12 @@ input, select, button, textarea { font-family: inherit; }
     stroke: var(--statsAccent);
 }
 
-/* LLM disclaimer strip */
+/* LLM disclaimer line — a quiet inline note, no box; on the options page it
+   shares a row with the keyboard-shortcut strip (see #mzta_info_row). */
 #mzta_disclaimer {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--warnBorder);
-    background: var(--warnBg);
+    gap: 8px;
     font-size: 11.5px;
     color: var(--dim);
     line-height: 1.5;
@@ -579,6 +576,31 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     animation: mztaspin .8s linear infinite;
 }
 
+/* --- Provider setup note ------------------------------------------------ */
+/* Last element inside #mzta_conn_panel, below the connection-test strip. It has
+   no heading of its own — the panel header already titles the whole block. Only
+   the body text carries the per-provider colour, as a left accent bar. */
+#miczDescription { margin-top: 14px; }
+#miczDescription p { margin: 0; }
+/* display:block is required here — updateDescription() reveals the active
+   provider's text with style.display = "", falling back to this value. */
+#miczDescription .info_specific {
+    display: block;
+    border-left: 3px solid var(--tint-accent, var(--accent));
+    padding-left: 11px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    transition: border-color .2s;
+}
+/* Sits inline at the end of the active provider's sentence (moved there by
+   updateDescription()), so it flows with the text rather than breaking below. */
+#mzta_info_guide {
+    margin-left: 5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 /* ===========================================================================
    FEATURE TOGGLE SWITCHES
    The checkbox keeps its id / class="option-input"; it is visually hidden and
@@ -715,25 +737,69 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 }
 
 /* ===========================================================================
-   IMPORTANT INFORMATION
+   BOTTOM BLOCK
+   Disclaimer + keyboard-shortcut stack · footer.
+   The wrapper takes the #mzta_body > * rhythm; the parts below space
+   themselves with their own margin-top.
    =========================================================================== */
-#miczDescription { font-size: 12px; color: var(--text); line-height: 1.55; }
-#miczDescription h1 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
-#miczDescription p { margin: 0; }
-#miczDescription .info_specific { border-left: 3px solid var(--tint-accent, var(--accent)); padding-left: 11px; display: block; }
-#miczDescription .info_shared { color: var(--dim); display: block; margin-top: 9px; }
 
-/* ===========================================================================
-   FOOTER
-   =========================================================================== */
-#mzta_footer {
-    border-top: 1px solid var(--line);
-    padding-top: 16px;
+/* --- Disclaimer + shortcut stack ---------------------------------------- */
+/* Two centered rows stacked vertically: the disclaimer on a single line, then
+   the shortcut strip below it, each only as wide as its own content. */
+#mzta_info_row {
+    margin-top: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 12px;
+}
+/* Sized to its own content so it reads as one line (icon + sentence + privacy
+   link) whenever the card is wide enough; it still wraps instead of overflowing
+   on narrow windows, hence align-items rather than a hard nowrap. */
+#mzta_info_row > #mzta_disclaimer {
+    align-items: center;
+    margin-top: 0;
+    width: fit-content;
+    max-width: 100%;
     text-align: center;
-    gap: 8px;
+}
+
+/* --- Keyboard-shortcut strip -------------------------------------------- */
+/* Shrink-to-fit and centred by the stack above — never full width. */
+#mzta_shortcut_strip {
+    align-self: center;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 13px;
+    background: var(--field);
+    border: 1px solid var(--fieldLine);
+    border-radius: 10px;
+}
+.mzta_shortcut_label { font-size: 12.5px; color: var(--dim); }
+#mzta_shortcut_keys { display: flex; gap: 4px; }
+#mzta_shortcut_keys kbd {
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+}
+
+/* --- Footer — plain centered links -------------------------------------- */
+#mzta_footer {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 26px;
     font-size: 12px;
     color: var(--dim);
     line-height: 1.5;
@@ -789,7 +855,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 /* ===========================================================================
    PER-PROVIDER TINT TOKENS (both themes)
    Derived from ThunderAI's conntype_* base colours; drives the connection
-   panel, provider pill, Important-Information accent bar.
+   panel, provider pill, provider setup note accent bar.
    lift(v) = round(v + (255-v)*0.55) for the dark-mode accent.
    =========================================================================== */
 /* Light */
@@ -800,7 +866,7 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
 #mzta_conn_panel.tint_ollama_api        { --tint-bg: rgba(31,122,46,.08);  --tint-border: rgba(31,122,46,.40);  --tint-pill: rgba(31,122,46,.14);  --tint-accent: rgb(31,122,46); }
 #mzta_conn_panel.tint_openai_comp_api   { --tint-bg: rgba(122,43,191,.08); --tint-border: rgba(122,43,191,.40); --tint-pill: rgba(122,43,191,.14); --tint-accent: rgb(122,43,191); }
 
-/* Important-Information accent bar follows the same tint (set on #miczDescription) */
+/* Provider setup note — only the accent bar is tinted (set on #miczDescription) */
 #miczDescription.tint_chatgpt_web       { --tint-accent: rgb(180,83,14); }
 #miczDescription.tint_chatgpt_api       { --tint-accent: rgb(10,83,214); }
 #miczDescription.tint_google_gemini_api { --tint-accent: rgb(150,120,12); }

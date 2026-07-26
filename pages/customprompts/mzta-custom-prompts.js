@@ -37,7 +37,8 @@ import {
     sanitizeHtml,
     validateCustomData_ChatGPTWeb,
     openTab,
-    setTomSelectBorder
+    setTomSelectBorder,
+    revealPromptInMenuOrder
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
 import {
@@ -263,13 +264,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
-            enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
             idnum: idnumMax + 1,
             api_type: document.getElementById('new_prompt_api_type').value,
-            show_in: document.getElementById('selectShowInNew').value,
+            // Placement is no longer chosen at creation: new prompts always start in
+            // the popup (the primary surface: toolbar button + shortcut both open it,
+            // and it respects `type`). Use the Menu Order page to move it afterwards.
+            show_in: 'popup',
         };
 
         switch(prefs.connection_type) {
@@ -313,6 +316,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         okBtn.addEventListener('click', handleConfirmClick);
         let cancelBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnCancelItem`);
         cancelBtn.addEventListener('click', handleCancelClick);
+        let menuPositionBtn = document.querySelector(`tr[data-idnum="${curr_idnum}"] button.btnMenuPositionItem`);
+        if (menuPositionBtn) menuPositionBtn.addEventListener('click', handleMenuPositionClick);
         // Normalize the read-only connection/API info boxes for the new row, the
         // same way loadPromptsList does at page load (a freshly added prompt has
         // no connection specified, so these boxes must be hidden).
@@ -375,21 +380,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         return new Promise((resolve) => {
             const dialog = document.createElement('dialog');
             dialog.className = 'export';
-            // dialog.style.cssText = `
-            //     padding: 20px;
-            //     border: none;
-            //     border-radius: 8px;
-            //     background-color: var(--dialog-bg-color, #fff);
-            //     color: var(--dialog-text-color, #000);
-            //     max-width: 400px;
-            //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            //     font-family: system-ui, -apple-system, sans-serif;
-            // `;
-            
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                 dialog.style.backgroundColor = '#2e2e2e';
-                 dialog.style.color = '#ffffff';
-            }
+            // Colors (incl. dark mode) come from the `dialog.export` rule in the
+            // stylesheet, which reads the shared design tokens.
 
             const text = document.createElement('p');
             text.textContent = message;
@@ -552,8 +544,8 @@ function handleEditClick(e) {
     // Show/Hide buttons
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     e.target.style.display = 'none';    // Edit btn
-    tr.querySelector('.btnConfirmItem').style.display = 'inline';   // Save btn
-    tr.querySelector('.btnCancelItem').style.display = 'inline';   // Cancel btn
+    tr.querySelector('.btnConfirmItem').style.display = 'flex';   // Save btn
+    tr.querySelector('.btnCancelItem').style.display = 'flex';   // Cancel btn
 //        tr.querySelector('.btnEditItem').style.display = 'none';   // Edit btn
     tr.querySelector('.btnCopyItem').style.display = 'none';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
@@ -664,8 +656,6 @@ function showItemRowEditor(tr) {
     tr.querySelector('.api_additional_info_show').style.display = 'none';
     tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
-    tr.querySelector('.show_in_output').style.display = 'inline';
-    tr.querySelector('.show_in_show').style.display = 'none';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'inline';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -691,8 +681,6 @@ function hideItemRowEditor(tr) {
     toggleAdditionalPropertiesShow(tr);
     tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
-    tr.querySelector('.show_in_output').style.display = 'none';
-    tr.querySelector('.show_in_show').style.display = 'inline';
     const action_output = tr.querySelector('.action_output')
     action_output.style.display = 'none';
     action_output.addEventListener('change', toggleDiffviewer);
@@ -849,15 +837,14 @@ function handleCancelClick(e) {
     e.target.style.display = 'none';    // Cancel btn
     tr.querySelector('.btnConfirmItem').style.display = 'none';   // Save btn
 //        tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = '';   // Copy btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
     tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
     tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     // tr.querySelector('.type_output').selectedOptions[0].text = tr.querySelector('.type_show').innerText;
-    tr.querySelector('.show_in_output').value = tr.querySelector('.show_in').innerText || 'popup';
     tr.querySelector('.action_output').value = tr.querySelector('.action').innerText;
     // tr.querySelector('.action_output').selectedOptions[0].text = tr.querySelector('.action_show').innerText;
     tr.querySelector('.chatgpt_web_model_output').value = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -884,14 +871,12 @@ function handleConfirmClick(e) {
     newValues.name = tr.querySelector('.name_output').value.trim();
     newValues.text = tr.querySelector('.text_output').value;
     newValues.type = tr.querySelector('.type_output').value;
-    newValues.show_in = tr.querySelector('.show_in_output').value;
     newValues.action = tr.querySelector('.action_output').value;
     newValues.need_selected = tr.querySelector('.need_selected').checked ? 1 : 0;
     newValues.need_signature = tr.querySelector('.need_signature').checked ? 1 : 0;
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
-    newValues.enabled = tr.querySelector('.enabled').checked ? 1 : 0;
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
     newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
@@ -905,14 +890,12 @@ function handleConfirmClick(e) {
 
 //        tr.querySelector('.btnConfirmItem').style.display = 'none';   // Ok btn
     tr.querySelector('.btnCancelItem').style.display = 'none';   // Cancel btn
-    tr.querySelector('.btnEditItem').style.display = 'inline';   // Edit btn
-    tr.querySelector('.btnCopyItem').style.display = 'inline';   // Copy btn
-    tr.querySelector('.btnDeleteItem').style.display = 'inline';   // Delete btn
+    tr.querySelector('.btnEditItem').style.display = '';   // Edit btn
+    tr.querySelector('.btnCopyItem').style.display = '';   // Copy btn
+    tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     // Update item data
     tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
-    tr.querySelector('.show_in').innerText = tr.querySelector('.show_in_output').value;
-    tr.querySelector('.show_in_show').innerText = tr.querySelector('.show_in_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
     if (newValues.api_type !== '') {
@@ -925,23 +908,27 @@ function handleConfirmClick(e) {
     setSomethingChanged();
 }
 
+// Open the Menu Order page and highlight this prompt there. Placement is owned by
+// that page now; this is the deep-link from the editor.
+function handleMenuPositionClick(e) {
+    e.preventDefault();
+    const tr = e.target.closest('tr');
+    const promptId = tr.querySelector('.id_output').value.trim().toLowerCase();
+    revealPromptInMenuOrder(promptId);
+}
+
 // Handle checkbox changes and log new state
 async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('enabled') || e.target.classList.contains('need_custom_text')) {
+    if (e.target.classList.contains('need_custom_text')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
             let item = promptsList.get('idnum', idnum);
             if (item && item.length > 0) {
-                if (e.target.classList.contains('enabled')) {
-                    item[0]._values.enabled = e.target.checked ? 1 : 0;
-                }
-                if (e.target.classList.contains('need_custom_text')) {
-                    item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
-                }
+                item[0]._values.need_custom_text = e.target.checked ? 1 : 0;
             }
         }
     }
@@ -988,7 +975,6 @@ function handleCopyClick(e) {
     document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
     document.getElementById('txtTextNew').value = text;
     document.getElementById('selectTypeNew').value = type;
-    document.getElementById('selectShowInNew').value = tr.querySelector('.show_in_output').value || 'popup';
     document.getElementById('selectActionNew').value = action;
     
     document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
@@ -1046,6 +1032,26 @@ function handleCopyClick(e) {
 
 //========= handling an item in a row - END
 
+// Wrap {%placeholder%} tokens in the visible prompt text with a styled chip.
+// Only touches the read-only .text_show spans (never the editable textarea),
+// and is idempotent (skips spans already decorated).
+function decoratePromptText() {
+    document.querySelectorAll('#all_prompts .text_show').forEach(span => {
+        if (span.dataset.phDecorated === '1') return;
+        if (!/\{%[^%]+%\}/.test(span.innerHTML)) { span.dataset.phDecorated = '1'; return; }
+        span.innerHTML = span.innerHTML.replace(/\{%[^%]+%\}/g,
+            m => '<span class="ph_chip">' + m + '</span>');
+        span.dataset.phDecorated = '1';
+    });
+}
+
+// Keep the card footer prompt count in sync with the rendered list.
+function updatePromptsCount() {
+    const el = document.getElementById('prompts_count');
+    if (!el) return;
+    const count = promptsList ? promptsList.items.length : 0;
+    el.textContent = browser.i18n.getMessage('customPrompts_promptsCount', [String(count)]);
+}
 
 function loadPromptsList(values){
     // console.log('>>>>>>>> loadPromptsList values: ' + JSON.stringify(values));
@@ -1057,7 +1063,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1082,18 +1088,6 @@ function loadPromptsList(values){
                     break;
                 case "2":
                     action_output = `__MSG_customPrompts_substitute_text__`;
-                    break;
-            }
-            let show_in_output = '';
-            switch(String(values.show_in || 'popup')){
-                case "popup":
-                    show_in_output = `__MSG_show_in_popup__`;
-                    break;
-                case "context":
-                    show_in_output = `__MSG_show_in_context__`;
-                    break;
-                case "both":
-                    show_in_output = `__MSG_show_in_both__`;
                     break;
             }
 
@@ -1134,7 +1128,7 @@ function loadPromptsList(values){
                         </table>
                     </div>
                 </td>
-                <td class="w08"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
+                <td class="w08 menu_cell"><div class="menu_cell_inner"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
                 <br>
                 <span class="type_show">` + type_output + `</span>
                 <select class="type_output hiddendata">
@@ -1143,17 +1137,11 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.type == "2") ? ' selected':'') + `>__MSG_customPrompts_add_to_menu_composing__</option>
               </select>` +
               `<span class="type hiddendata"></span>
-              <br><br>
-              <span class="field_title_s">__MSG_show_in__:</span>
-                <br>
-                <span class="show_in_show">` + show_in_output + `</span>
-                <select class="show_in_output hiddendata input_mod">
-                <option value="popup"` + ((values.show_in == "popup" || !values.show_in) ? ' selected':'') + `>__MSG_show_in_popup__</option>
-                <option value="context"` + ((values.show_in == "context") ? ' selected':'') + `>__MSG_show_in_context__</option>
-                <option value="both"` + ((values.show_in == "both") ? ' selected':'') + `>__MSG_show_in_both__</option>
-                </select>` +
+              <br><br>` +
+              // Placement (show_in) is no longer editable here — the Menu Order page
+              // owns it (reachable via the "Menu position" button). The value is still
+              // tracked in this hidden span so it is preserved across edits/saves.
                 `<span class="show_in hiddendata"></span>
-              <br><br>
               <span class="field_title_s">__MSG_customPrompts_form_label_Action__:</span>
                 <br><span class="action_show">` + action_output + `</span>
                 <select class="action_output hiddendata">
@@ -1162,7 +1150,8 @@ function loadPromptsList(values){
                 <option value="2"` + ((values.action == "2") ? ' selected':'') + `>__MSG_customPrompts_substitute_text__</option>
                 </select>` +
                 `<span class="action hiddendata"></span>
-              </td>
+                <button class="btnMenuPositionItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>__MSG_menu_position_btn_label__</span></button>
+              </div></td>
                 <td class="w17">
                     <label><span class="need_selected_span"><input type="checkbox" class="need_selected" disabled> __MSG_customPrompts_form_label_need_selected__</span></label>
                     <br>
@@ -1173,8 +1162,6 @@ function loadPromptsList(values){
                     <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
-                    <br>
-                    <label><input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__</label>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
@@ -1187,14 +1174,12 @@ function loadPromptsList(values){
                         <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type api_type_show">` + values.api_type + `</span></div>
                     </div>
                 </td>
-                <td>
-                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnEdit__</button>
-                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnCancel__</button>
-                <br><br>
-                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnOK__</button>
-                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `>__MSG_customPrompts_btnDelete__</button>
-                <br><br>
-                <button class="btnCopyItem">__MSG_customPrompts_btnCopy__</button>
+                <td class="actions_cell">
+                <button class="btnEditItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>__MSG_customPrompts_btnEdit__</span></button>
+                <button class="btnCancelItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>__MSG_customPrompts_btnCancel__</span></button>
+                <button class="btnConfirmItem hiddendata"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>__MSG_customPrompts_btnOK__</span></button>
+                <button class="btnCopyItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>__MSG_customPrompts_btnCopy__</span></button>
+                <button class="btnDeleteItem"` + ((values.is_default == 1) ? ' disabled':'') + `><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>__MSG_customPrompts_btnDelete__</span></button>
                </td>
             </tr>`;
             //console.log('>>>>>>>> values.name: ' + JSON.stringify(values.name));
@@ -1229,6 +1214,16 @@ function loadPromptsList(values){
 
     promptsList = new List('all_prompts', options, values);
 
+    // Decorate the visible prompt text: wrap {%placeholder%} tokens in a code
+    // chip, and keep the footer prompt count in sync. Runs after the initial
+    // render and on every List.js re-render (sort / filter / add / remove).
+    decoratePromptText();
+    updatePromptsCount();
+    promptsList.on('updated', () => {
+        decoratePromptText();
+        updatePromptsCount();
+    });
+
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
     btnEditItem_elements.forEach(element => {
@@ -1253,6 +1248,11 @@ function loadPromptsList(values){
     let btnConfirmItem_elements = document.querySelectorAll(".btnConfirmItem");
     btnConfirmItem_elements.forEach(element => {
         element.addEventListener('click', handleConfirmClick);
+    });
+
+    let btnMenuPositionItem_elements = document.querySelectorAll(".btnMenuPositionItem");
+    btnMenuPositionItem_elements.forEach(element => {
+        element.addEventListener('click', handleMenuPositionClick);
     });
 
     let checkbox_elements = document.querySelectorAll("input[type='checkbox']");
@@ -1310,7 +1310,6 @@ function clearFields() {
     document.getElementById('chatGPTWebProjectNew').value = '';
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
-    document.getElementById('selectShowInNew').value = 'popup';
     document.getElementById('selectActionNew').value = '0';
     document.getElementById('checkboxNeedSelectedNew').value = '0';
     document.getElementById('checkboxNeedSignatureNew').value = '0';
@@ -1369,7 +1368,6 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
             ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
-            ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }
 

@@ -418,6 +418,28 @@ export function openTab(url){
   })
 }
 
+// Open (or focus) the Menu Order page and ask it to highlight a specific prompt.
+// openTab dedups by exact URL and only focuses an already-open tab (it does not
+// re-run the page load), so we coordinate a refresh + highlight explicitly:
+//  - tab already open: focus it and send a message telling it to reload then highlight.
+//  - tab not open: stash the target in session storage and create the tab; the page
+//    reads and clears the stash after its initial load.
+// The bare URL is used for browser.tabs.create so openTab's dedup keeps working elsewhere.
+export async function revealPromptInMenuOrder(promptId) {
+  const path = '/pages/menu_order/mzta-menu-order.html';
+  const fullUrl = browser.runtime.getURL(path);
+  const tabs = await browser.tabs.query({ url: fullUrl });
+  if (tabs.length > 0) {
+    await browser.tabs.update(tabs[0].id, { active: true });
+    // Page is already loaded; ask it to refresh + highlight (it must reload first).
+    await browser.runtime.sendMessage({ command: 'menu_order_highlight', promptId });
+  } else {
+    // Stash the target so the page can pick it up after its initial load.
+    await browser.storage.session.set({ menu_order_highlight_target: promptId });
+    await browser.tabs.create({ url: fullUrl });
+  }
+}
+
 export function i18nConditionalGet(str) {
   // if we are getting a string that starts with '__MSG_' and ends with '__' we return the translated string
   // using the browser.i18n API

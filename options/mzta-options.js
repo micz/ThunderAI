@@ -297,6 +297,14 @@ async function disable_GetCalendarEvent(){
 
 const CONN_TYPES = ["chatgpt_web", "chatgpt_api", "ollama_api", "openai_comp_api", "google_gemini_api", "anthropic_api"];
 
+// Documentation page behind the "Full guide" link of the provider setup callout.
+// Sparse on purpose: only these providers have a dedicated page, so the link is
+// hidden for the others rather than pointing somewhere generic.
+const CONN_GUIDE_PATH = {
+  chatgpt_web: 'thunderbird-addon-thunderai/status/',
+  ollama_api:  'thunderbird-addon-thunderai/ollama-cors-information/',
+};
+
 function updateDescription(){
   let conntype_select = document.getElementById("connection_type");
   let conntype = conntype_select.value;
@@ -306,9 +314,49 @@ function updateDescription(){
       el.style.display = (conntype === t) ? "" : "none";
     });
   }
-  // Tint the Important Information accent bar to the selected provider.
+  // Tint the provider setup callout (border/background/pill) to the selected provider.
   for(let t of CONN_TYPES){
     desc.classList.toggle("tint_" + t, conntype === t);
+  }
+  // Point the "Full guide" link at the selected provider's page, or hide it.
+  // It is moved inside the active provider's span so it flows inline with that
+  // text (and stays within the tinted accent bar) instead of sitting below it.
+  let guide_link = document.getElementById("mzta_info_guide");
+  if(guide_link){
+    let guide_path = CONN_GUIDE_PATH[conntype];
+    if(guide_path){
+      let active_span = desc.querySelector(".conntype_" + conntype + ".info_specific");
+      if(active_span && guide_link.parentElement !== active_span){
+        active_span.appendChild(guide_link);
+      }
+      guide_link.href = getMiczItUrl(guide_path);
+      guide_link.style.display = "";
+    }else{
+      guide_link.style.display = "none";
+    }
+  }
+}
+
+// Show the real shortcut assigned to the ThunderAI menu command, so the chips
+// stay correct if the user rebinds it. The static Ctrl/Alt/A chips in the HTML
+// are kept as a fallback if the command is unavailable or has been cleared.
+async function updateShortcutChips(){
+  let keys_container = document.getElementById("mzta_shortcut_keys");
+  if(!keys_container) return;
+  try{
+    let commands = await browser.commands.getAll();
+    let command = commands.find(c => c.name === '_thunderai__do_action');
+    if(!command || !command.shortcut) return;
+    let keys = command.shortcut.split('+').map(k => k.trim()).filter(k => k !== '');
+    if(keys.length === 0) return;
+    keys_container.textContent = '';
+    for(let key of keys){
+      let kbd = document.createElement('kbd');
+      kbd.textContent = key;
+      keys_container.appendChild(kbd);
+    }
+  }catch(error){
+    console.error("[ThunderAI] Unable to read the menu keyboard shortcut: " + error);
   }
 }
 
@@ -615,6 +663,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   showAdvConnectionOptions();
   updateDescription();
   updateConnPanelTint();
+  updateShortcutChips();
   disable_MaxPromptLength();
   disable_AddTags(prefs_opt);
   disable_SpamFilter(prefs_opt);

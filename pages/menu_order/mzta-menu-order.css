@@ -21,6 +21,35 @@
     padding-left: 40px;
 }
 
+#badge_legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin-bottom: 16px;
+    font-size: 0.82em;
+    color: #666;
+}
+
+.legend_group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+}
+
+.legend_group > strong {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.legend_item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
 #lists_container {
     display: flex;
     gap: 24px;
@@ -114,6 +143,10 @@
     border-top: 2px solid #409df3;
 }
 
+.sortable_item.drag-over-end {
+    border-bottom: 2px solid #409df3;
+}
+
 .drag_handle {
     cursor: grab;
     color: #999;
@@ -124,13 +157,6 @@
 
 .drag_handle:active {
     cursor: grabbing;
-}
-
-.item_toggle {
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
 }
 
 .item_name {
@@ -261,13 +287,23 @@
     background: #fafafa;
 }
 
-.hidden_list .sortable_item .drag_handle {
-    visibility: hidden;
-}
-
 .hidden_list .sortable_item:hover {
     opacity: 0.8;
     background: #f5f5f5;
+}
+
+/* Transient highlight applied when reached via the "Menu position" deep-link.
+   Uses the same accent as the drag-over indicator; the background pulse fades to
+   transparent so it reads well in both light and dark themes. */
+.sortable_item.mzta_highlight {
+    outline: 2px solid #409df3;
+    outline-offset: -2px;
+    animation: mzta_highlight_pulse 1.2s ease-out 2;
+}
+
+@keyframes mzta_highlight_pulse {
+    0% { background: rgba(64, 157, 243, 0.35); }
+    100% { background: transparent; }
 }
 
 /* Dark mode */
@@ -310,6 +346,10 @@
         color: #999;
     }
 
+    #badge_legend {
+        color: #999;
+    }
+
     .hidden_section_label {
         border-top-color: #555;
     }
@@ -326,6 +366,10 @@
 
     .sortable_item.drag-over {
         border-top-color: #409df3;
+    }
+
+    .sortable_item.drag-over-end {
+        border-bottom-color: #409df3;
     }
 
     .drag_handle {

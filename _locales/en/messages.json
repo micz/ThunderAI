@@ -199,22 +199,6 @@
     "message": "Composing an email",
     "description": ""
   },
-  "show_in": {
-    "message": "Show in",
-    "description": ""
-  },
-  "show_in_popup": {
-    "message": "Popup only",
-    "description": ""
-  },
-  "show_in_context": {
-    "message": "Context menu only",
-    "description": ""
-  },
-  "show_in_both": {
-    "message": "Both",
-    "description": ""
-  },
   "customPrompts_close_button": {
     "message": "Close button",
     "description": ""
@@ -408,6 +392,26 @@
     "message": "To use the Claude API, you need an Anthropic Claude API Key and must choose a model.",
     "description": ""
   },
+  "prefs_full_guide": {
+    "message": "Full guide",
+    "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
+  },
+  "prefs_shortcut_label": {
+    "message": "Open the ThunderAI menu with",
+    "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
+  },
+  "prefs_disclaimer_short": {
+    "message": "LLM models can generate incorrect information, and your data may be used by the provider to train new models.",
+    "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
+  },
+  "prefs_footer_translate": {
+    "message": "Translate the addon",
+    "description": "Footer link at the bottom of the options page, opening the translation info page."
+  },
+  "prefs_footer_donate": {
+    "message": "Make a donation",
+    "description": "Footer link at the bottom of the options page, opening the donation page."
+  },
   "prefsDonation_1": {
     "message": "Do you like this addon?",
     "description": ""
@@ -435,6 +439,15 @@
   "customPrompts_Import": {
     "message": "Import new prompts",
     "description": ""
+  },
+  "customPrompts_promptsCount": {
+    "message": "$COUNT$ prompts",
+    "description": "Footer count of prompts shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
@@ -1858,6 +1871,15 @@
     "message": "Manage Data Placeholders",
     "description": ""
   },
+  "customDataPH_placeholdersCount": {
+    "message": "$COUNT$ data placeholders",
+    "description": "Footer count of data placeholders shown in the list",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "customDataPH_manageDataPH_info_default_3": {
     "message": "You can also use the default data placeholders with autocomplete, just like when writing custom prompts.",
     "description": ""
@@ -2421,8 +2443,12 @@
     "message": "Manage menu order settings",
     "description": "Button label to open the menu order page from options"
   },
+  "menu_position_btn_label": {
+    "message": "Menu position",
+    "description": "Button in the Custom Prompts editor that opens the Menu Order page and highlights this prompt"
+  },
   "menu_order_info": {
-    "message": "Drag and drop items to reorder them. Use the toggle to show or hide items in each menu.",
+    "message": "Drag and drop items to reorder them, or drag them between the Visible and Hidden sections to show or hide them in each menu. A prompt hidden in every menu is disabled until you make it visible again.",
     "description": "Info text for the menu order page"
   },
   "menu_order_active_items": {
@@ -2441,6 +2467,38 @@
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   },
+  "menu_order_legend_type": {
+    "message": "When shown:",
+    "description": "Heading for the type badge group in the menu order page legend"
+  },
+  "menu_order_legend_type_always": {
+    "message": "Shown both when reading and composing",
+    "description": "Legend description for the 'Always' type badge"
+  },
+  "menu_order_legend_type_reading": {
+    "message": "Shown only when reading a message",
+    "description": "Legend description for the 'Reading' type badge"
+  },
+  "menu_order_legend_type_composing": {
+    "message": "Shown only when composing a message",
+    "description": "Legend description for the 'Composing' type badge"
+  },
+  "menu_order_legend_source": {
+    "message": "Prompt type:",
+    "description": "Heading for the source badge group in the menu order page legend"
+  },
+  "menu_order_legend_source_default": {
+    "message": "Built-in prompt included with ThunderAI",
+    "description": "Legend description for the 'Default' source badge"
+  },
+  "menu_order_legend_source_special": {
+    "message": "Feature-backed prompt (e.g. tagging, calendar)",
+    "description": "Legend description for the 'Special' source badge"
+  },
+  "menu_order_legend_source_custom": {
+    "message": "Prompt you created",
+    "description": "Legend description for the 'Custom' source badge"
+  },
   "prefs_settings_subtitle": {
     "message": "Settings",
     "description": "Subtitle shown under the ThunderAI name in the options page header"
@@ -2453,8 +2511,8 @@
     "message": "Connection Settings",
     "description": "Section eyebrow for the connection settings panel on the options page"
   },
-  "prefs_BasicsSettingsTitle": {
-    "message": "Basics Settings",
+  "prefs_BasicSettingsTitle": {
+    "message": "Basic Settings",
     "description": "Section eyebrow for the basic settings on the options page"
   },
   "prefs_FeaturesTitle": {
@@ -2657,5 +2715,168 @@
   "msg_no_connection_selected": {
     "message": "No AI connection selected. Open the ThunderAI options and run the setup wizard to choose one.",
     "description": "Alert shown when a prompt is run but no AI connection has been selected"
+  "onboarding_tab_title": {
+    "message": "Welcome to ThunderAI!",
+    "description": "Onboarding page: browser tab title and first line of the welcome paragraph"
+  },
+  "onboarding_welcome_2": {
+    "message": "This add-on is designed to enhance your email management with the power of AI.",
+    "description": "Onboarding page: second line of the welcome paragraph"
+  },
+  "onboarding_welcome_3": {
+    "message": "With ThunderAI, you can streamline your inbox, generate smart replies, summarize emails, automatically add tags and filter spam, and much more, all with the help of artificial intelligence.",
+    "description": "Onboarding page: third line of the welcome paragraph"
+  },
+  "onboarding_welcome_4": {
+    "message": "On this page, you'll find an overview of the key features available to help you make the most of ThunderAI.",
+    "description": "Onboarding page: fourth line of the welcome paragraph"
+  },
+  "onboarding_welcome_5": {
+    "message": "Get ready to experience a smarter, more efficient way to handle your emails!",
+    "description": "Onboarding page: fifth line of the welcome paragraph"
+  },
+  "onboarding_welcome_6": {
+    "message": "Let's see how to make best use of this add-on!",
+    "description": "Onboarding page: last line of the welcome paragraph"
+  },
+  "onboarding_using_prompts_title": {
+    "message": "Using Prompts",
+    "description": "Onboarding page: heading of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_alt": {
+    "message": "Prompts menu button",
+    "description": "Onboarding page: alt text for the prompts menu button image"
+  },
+  "onboarding_using_prompts_1": {
+    "message": "On each message, there is a button that will allow you to open the prompts menu.",
+    "description": "Onboarding page: intro line of the 'Using Prompts' section"
+  },
+  "onboarding_using_prompts_2": {
+    "message": "Here you can choose the prompt in different ways:",
+    "description": "Onboarding page: line introducing the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1_b": {
+    "message": "Search box",
+    "description": "Onboarding page: bold label of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li1": {
+    "message": "Use this to search for part of the prompt.",
+    "description": "Onboarding page: description of the first item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2_b": {
+    "message": "Down/Up Arrow",
+    "description": "Onboarding page: bold label of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li2": {
+    "message": "Move through the prompts.",
+    "description": "Onboarding page: description of the second item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3_b": {
+    "message": "Press a number",
+    "description": "Onboarding page: bold label of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li3": {
+    "message": "Press a number on the keyboard to choose the corresponding prompt.",
+    "description": "Onboarding page: description of the third item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4_b": {
+    "message": "Enter",
+    "description": "Onboarding page: bold label of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_li4": {
+    "message": "When you've picked the prompt you'd like, press enter to execute it.",
+    "description": "Onboarding page: description of the fourth item in the prompts menu usage list"
+  },
+  "onboarding_using_prompts_3": {
+    "message": "In the ThunderAI options page you could find some option regarding this menu.",
+    "description": "Onboarding page: closing note about the prompts menu options"
+  },
+  "onboarding_using_prompts_4": {
+    "message": "The first two prompts are special ones, that are available only when using an API integration. They work directly without opening the AI Chat webpage.",
+    "description": "Onboarding page: note about the first two special prompts working with API integrations"
+  },
+  "onboarding_custom_prompts_title": {
+    "message": "Defining your Custom Prompts",
+    "description": "Onboarding page: heading of the 'Defining your Custom Prompts' section"
+  },
+  "onboarding_custom_prompts_alt": {
+    "message": "Managing Custom Prompts",
+    "description": "Onboarding page: alt text for the custom prompts management image"
+  },
+  "onboarding_custom_prompts_p1_1": {
+    "message": "From the options page you can open the Custom Prompts page.",
+    "description": "Onboarding page: first line of the custom prompts section"
+  },
+  "onboarding_custom_prompts_p1_3": {
+    "message": "From there you can add your prompts, and also disable the default ones.",
+    "description": "Onboarding page: line about adding and disabling prompts"
+  },
+  "onboarding_custom_prompts_p1_4": {
+    "message": "You can find more info here.",
+    "description": "Onboarding page: clickable 'more info' sentence in the custom prompts section (the whole sentence is a link)"
+  },
+  "onboarding_custom_prompts_p2_1": {
+    "message": "While defining your own prompts you can also use",
+    "description": "Onboarding page: text before the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_bold_dp": {
+    "message": "data placeholders",
+    "description": "Onboarding page: bold 'data placeholders' label"
+  },
+  "onboarding_custom_prompts_p2_2": {
+    "message": ", that will be substituted with the corresponding information when using the prompt.",
+    "description": "Onboarding page: text after the 'data placeholders' bold label"
+  },
+  "onboarding_custom_prompts_p3": {
+    "message": "For example, you can use the placeholder $PH_SUBJECT$ to refer to the subject of the email or $PH_TAGS$ to refer to the tags of the current email.",
+    "description": "Onboarding page: example sentence in the custom prompts section. $PH_SUBJECT$ and $PH_TAGS$ are placeholder codes ({%mail_subject%} and {%tags_current_email%}).",
+    "placeholders": {
+      "ph_subject": {
+        "content": "{%mail_subject%}"
+      },
+      "ph_tags": {
+        "content": "{%tags_current_email%}"
+      }
+    }
+  },
+  "onboarding_automatic_features_title": {
+    "message": "Automatic features",
+    "description": "Onboarding page: heading of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_alt": {
+    "message": "Auto spam filter",
+    "description": "Onboarding page: alt text for the automatic spam filter image"
+  },
+  "onboarding_automatic_features_1": {
+    "message": "There are also two automatic features available when using an API integration, which can be activated from the options page:",
+    "description": "Onboarding page: intro line of the 'Automatic features' section"
+  },
+  "onboarding_automatic_features_li1_b": {
+    "message": "Auto Spam Filter",
+    "description": "Onboarding page: bold label of the first item in the automatic features list"
+  },
+  "onboarding_automatic_features_li1": {
+    "message": "automatically moves the email to the spam folder if it is detected as spam.",
+    "description": "Onboarding page: description of the Auto Spam Filter feature"
+  },
+  "onboarding_automatic_features_li2_b": {
+    "message": "Auto Tagging",
+    "description": "Onboarding page: bold label of the second item in the automatic features list"
+  },
+  "onboarding_automatic_features_li2": {
+    "message": "automatically assigns tags to the email.",
+    "description": "Onboarding page: description of the Auto Tagging feature"
+  },
+  "onboarding_automatic_features_2": {
+    "message": "For each of these features, there is an options page to specify the settings and the custom prompt to be used.",
+    "description": "Onboarding page: closing note about the options pages for automatic features"
+  },
+  "onboarding_footer_1": {
+    "message": "If you have any questions or suggestions, please open an issue on the GitHub page.",
+    "description": "Onboarding page: clickable footer sentence linking to the GitHub issues page (the whole sentence is a link)"
+  },
+  "onboarding_footer_3": {
+    "message": "Do you enjoy ThunderAI?",
+    "description": "Onboarding page: footer question before the donation button"
   }
 }

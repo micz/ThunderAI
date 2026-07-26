@@ -26,15 +26,16 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 
 > **Note:** These numeric-looking properties are stored as **strings** (`"0"`/`"1"`/`"2"`) in the prompt objects in `js/mzta-prompts.js`, not as JS numbers. The prompt body lives in the `text` property (there is no `prompt` property).
 
+> **Reachability:** The popup and context menus are the only ways to invoke a prompt (the keyboard shortcut just opens the popup, which re-filters by `show_in`). Reachability is therefore fully determined by `show_in`: a prompt with `show_in === "none"` is in no menu and cannot be invoked. The old `enabled` (0/1) flag was removed — it was redundant with `show_in === "none"`. `getPrompts(onlyReachable = true, ...)` filters out prompts with `show_in === "none"`. See the `migrateEnabledToShowIn()` migration below for the one-time conversion of legacy data.
+
 ### User Properties (stored per-prompt in storage)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `enabled` | number | `0` = hidden, `1` = shown in menus |
 | `position_display` | number | Sort order for the popup menu in reading view |
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
-| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = hidden from all menus. Default: `"popup"` for default/custom prompts, `"both"` for special prompts |
+| `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
 | `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
 
 ### Per-Prompt API Override Properties
@@ -89,27 +90,34 @@ Dedicated page for reordering, enabling, and disabling menu items across both th
 
 Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
-- **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically, not draggable
+- **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
 
-**Toggle coordination** — flipping the checkbox updates the prompt's `show_in` with four-state logic:
+**Row badges** — each row shows two colored badges (rendered in `renderListItems()`): a **type** badge (`.badge_type`) with the value Always / Reading / Composing (from `type` `0`/`1`/`2`), and a **source** badge with the value Default / Special / Custom (`.badge_default` / `.badge_special` / `.badge_custom`, from `is_default` / `is_special`). A static **legend** near the top of the page (`#badge_legend` in the HTML) explains both badge groups; it reuses the same badge CSS classes and i18n labels so its swatches match the rows automatically.
+
+**Show/hide** — a prompt's `show_in` is changed by **dragging a row between the Visible and Hidden sections** of the same menu panel, routed through the `computeShowIn(current, menuType, isOn)` transition table:
 - Popup ON: `"none"` → `"popup"`, `"context"` → `"both"`
 - Popup OFF: `"popup"` → `"none"`, `"both"` → `"context"`
 - Context ON: `"none"` → `"context"`, `"popup"` → `"both"`
 - Context OFF: `"context"` → `"none"`, `"both"` → `"popup"`
 
-**Drag and drop** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context` depending on which list is being sorted.
+Both sections are draggable and act as drop targets; the section the row lands in determines whether that menu is turned on (dropped into Visible) or off (dropped into Hidden). Dropping back into Visible also captures the drop position.
+
+**Hidden everywhere** — the `show_in` change is applied via `setPromptShowIn(prompt, newShowIn)`, which only sets `prompt.show_in`. A prompt with `show_in === "none"` is in no menu (unreachable), while its full configuration is preserved. A non-special prompt with `show_in === "none"` appears in the **Hidden section of both panels** (popup and context), dimmed, so it can be dragged back into any menu — this is the recovery path. There is no separate "disabled" state or badge.
+
+**Drag and drop (reorder)** — native HTML5 DnD assigns sequential position numbers (1, 2, 3, ...) to `position_display`, `position_compose`, or `position_context`. Positions are only meaningful for the Visible section; reordering within Hidden has no effect. During the drag the other rows are **not** reordered live: the dragged node stays in place (dimmed) and only an insertion indicator line is shown (top edge of the target row, or bottom edge of the last row when dropping at the end); the actual DOM move happens once on `drop`. This avoids the sluggishness of moving the node on every `dragover` tick.
 
 **Exclusions from the UI** (preserved on save so data is not lost):
-- Prompts with `enabled === 0` (disabled)
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work.
 
 **Save flow**:
-1. Re-concat preserved prompts (disabled + hidden-specials + inactive-feature specials) with the UI-visible prompts
+1. Re-concat preserved prompts (hidden-specials + inactive-feature specials) with the UI-visible prompts
 2. Split by `is_default` / `is_special` and call `setDefaultPromptsProperties()`, `setCustomPrompts()`, `setSpecialPrompts()`
 3. Send `reload_menus` to the background to rebuild both menus
+
+**"Menu position" deep-link** — the Custom Prompts editor (see [05-options.md](05-options.md)) has a per-row **Menu position** button (`revealPromptInMenuOrder(promptId)` in `js/mzta-utils.js`), located in the row's "Add to menu" cell (pinned to the bottom of the cell, below the Type/Action selectors, via a `.menu_cell_inner` flex column), that opens/focuses the Menu Order page and highlights every instance of that prompt. If the tab is already open, a `menu_order_highlight` runtime message tells the page to reload then highlight (sequencing the reload before the highlight, and cancelling the pending `storage.onChanged` debounce so it does not wipe the highlight). If the tab is not open, the target id is stashed in `browser.storage.session` under `menu_order_highlight_target` and picked up (read-and-deleted) after the page's initial load. The highlight (blue outline) is applied via `highlightPrompt()` / module-state `highlightTargetId` and re-applied on every render so it survives sub-tab switches and re-renders. It **persists** until another `highlightPrompt()` targets a different prompt or a drag starts (`clearHighlight()` on `dragstart`) — it does not time out. A background pulse plays briefly on entry as a visual cue.
 
 ### Alphabetic-to-Position Migration
 
@@ -121,6 +129,15 @@ The `dynamic_menu_order_alphabet` preference (previously a user-facing option) h
 4. Sets `dynamic_menu_order_alphabet = false` in sync storage so the migration does not run again
 
 This ensures existing users upgrading from the previous alphabetical-default behaviour get the same visible ordering on first run, while subsequent launches keep whatever custom ordering the user has set.
+
+### Enabled-to-show_in Migration
+
+The `enabled` prompt flag was removed (`show_in` is now the single source of truth). `migrateEnabledToShowIn()` in `js/mzta-prompts.js` runs once at background startup (after the sync→local storage-relocation migrations), guarded by the one-shot sync flag `_migrated_enabled_to_showin`. Across all three stores (`_default_prompts_properties`, `_custom_prompt`, `_special_prompts`) it applies `normalizeEnabledToShowIn()` to every prompt:
+
+- if `enabled` is `0`/`"0"` → set `show_in = "none"` (the previous `show_in`, if any, is intentionally discarded — "off" collapses to "none"), then delete `enabled`
+- otherwise (`1`/`"1"`/absent) → just delete `enabled`
+
+It is idempotent: the flag short-circuits reruns, and after it runs no `enabled` keys remain. The same `normalizeEnabledToShowIn()` is also applied by `preparePromptsForImport()` so legacy backups carrying `enabled === 0` import as `show_in === "none"`; `enabled` is never emitted on export.
 
 ### Special Prompt Visibility Dependencies
 

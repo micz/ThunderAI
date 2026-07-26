@@ -44,8 +44,13 @@ function resolveSpecialIconPath(promptId) {
 
 let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
-let allDisabledPrompts = []; // default/custom prompts disabled (enabled=0), excluded from UI, preserved on save
 let currentPopupView = 'display'; // 'display' or 'compose'
+let highlightTargetId = null; // id of a prompt to visually highlight, null when none
+// The highlight (blue outline) persists until another highlightPrompt() call
+// targets a different prompt or a drag interaction starts — it does not time out.
+// Debounce shared between the storage.onChanged reloader and the highlight message
+// handler, so the latter can cancel a pending reload before doing its own.
+let reloadDebounce = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
@@ -55,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // If prompts are modified elsewhere (e.g. custom prompts page saving), reload this page's data.
     // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
-    let reloadDebounce = null;
     browser.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'local') return;
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
@@ -68,6 +72,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadAndRender();
         }, 200);
     });
+
+    // A "Menu position" deep-link (from the Custom Prompts editor) can ask this
+    // page to highlight a prompt. When the tab was already open, the message
+    // arrives here; sequence the reload before the highlight so a just-saved
+    // prompt is present in the DOM, and cancel any pending debounced reload so
+    // it does not wipe the highlight afterwards.
+    browser.runtime.onMessage.addListener((message) => {
+        if (message && message.command === 'menu_order_highlight') {
+            clearTimeout(reloadDebounce);
+            (async () => {
+                await loadAndRender();
+                highlightPrompt(message.promptId);
+            })();
+        }
+        return false; // fire-and-forget: do not keep the message channel open
+    });
+
+    // When the tab was just created by the deep-link, the target id was stashed
+    // in session storage before load. Pick it up (and clear it) now.
+    const stash = await browser.storage.session.get({ menu_order_highlight_target: null });
+    if (stash.menu_order_highlight_target) {
+        await browser.storage.session.remove('menu_order_highlight_target');
+        highlightPrompt(stash.menu_order_highlight_target);
+    }
 
     i18n.updateDocument();
 });
@@ -84,10 +112,6 @@ async function loadAndRender() {
         (String(p.is_special) === '1' && !activeSpecialIds.includes(p.id))
     );
     allPrompts = allPrompts.filter(p => !allExcludedSpecialPrompts.some(e => e.id === p.id));
-
-    // Exclude disabled prompts (enabled=0) from the UI, preserve them for save
-    allDisabledPrompts = allPrompts.filter(p => String(p.enabled) === '0');
-    allPrompts = allPrompts.filter(p => String(p.enabled) !== '0');
 
     // Resolve i18n names and assign initial position_context if missing
     let contextPos = 1;
@@ -125,6 +149,41 @@ function initSubTabs() {
     });
 }
 
+// ==================== Highlight (Menu position deep-link) ====================
+
+// Apply the current highlight target to every matching rendered item, in both
+// panels. Called at the tail of each render so the highlight survives re-renders
+// and sub-tab switches (only one popup sub-tab is in the DOM at a time, so
+// "highlight all instances" is achieved by re-applying on every render).
+function applyHighlight() {
+    document.querySelectorAll('.sortable_item.mzta_highlight').forEach(el => {
+        el.classList.remove('mzta_highlight');
+    });
+    if (!highlightTargetId) return;
+    const matches = document.querySelectorAll(`.sortable_item[data-id="${CSS.escape(highlightTargetId)}"]`);
+    matches.forEach(el => el.classList.add('mzta_highlight'));
+    if (matches.length > 0) {
+        matches[0].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+// Clear the highlight and remove the class from the DOM.
+function clearHighlight() {
+    highlightTargetId = null;
+    document.querySelectorAll('.sortable_item.mzta_highlight').forEach(el => {
+        el.classList.remove('mzta_highlight');
+    });
+}
+
+// Set a prompt as the highlight target and re-render both panels so it is
+// applied. The highlight persists (applyHighlight re-adds it on every render)
+// until clearHighlight() is called (next highlight target or drag start).
+function highlightPrompt(promptId) {
+    highlightTargetId = promptId;
+    renderPopupList();
+    renderContextList();
+}
+
 // ==================== Render Popup List ====================
 
 function renderPopupList() {
@@ -151,7 +210,11 @@ function renderPopupList() {
     renderListItems(activeList, activeItems, 'popup', true);
     renderListItems(hiddenList, hiddenItems, 'popup', false);
 
-    initDragAndDrop(activeList, posKey);
+    initPanelDragAndDrop('popup', activeList, hiddenList, posKey);
+
+    // Re-apply any active highlight after every render (this is how all instances
+    // of the target stay highlighted across sub-tab switches and re-renders).
+    applyHighlight();
 }
 
 // ==================== Render Context List ====================
@@ -178,7 +241,10 @@ function renderContextList() {
     renderListItems(activeList, activeItems, 'context', true);
     renderListItems(hiddenList, hiddenItems, 'context', false);
 
-    initDragAndDrop(activeList, 'position_context');
+    initPanelDragAndDrop('context', activeList, hiddenList, 'position_context');
+
+    // Re-apply any active highlight after every render (see renderPopupList).
+    applyHighlight();
 }
 
 // ==================== Render List Items ====================
@@ -189,9 +255,9 @@ function renderListItems(listEl, items, menuType, isActive) {
         const li = document.createElement('li');
         li.classList.add('sortable_item');
         li.dataset.id = prompt.id;
-        if (isActive) {
-            li.draggable = true;
-        }
+        li.dataset.menu = menuType;
+        li.dataset.active = isActive ? '1' : '0';
+        li.draggable = true;
 
         // Drag handle
         const handle = document.createElement('span');
@@ -199,7 +265,7 @@ function renderListItems(listEl, items, menuType, isActive) {
         handle.textContent = '\u2630';
         li.appendChild(handle);
 
-        // Icon slot (context menu only) - between handle and toggle, to keep rows aligned
+        // Icon slot (context menu only) - between handle and name, to keep rows aligned
         if (menuType === 'context') {
             if (String(prompt.is_special) === '1') {
                 li.appendChild(buildSpecialIconDisplay(prompt));
@@ -207,16 +273,6 @@ function renderListItems(listEl, items, menuType, isActive) {
                 li.appendChild(buildIconPicker(prompt));
             }
         }
-
-        // Toggle checkbox
-        const toggle = document.createElement('input');
-        toggle.type = 'checkbox';
-        toggle.classList.add('item_toggle');
-        toggle.checked = isActive;
-        toggle.addEventListener('change', () => {
-            toggleShowIn(prompt, menuType, toggle.checked);
-        });
-        li.appendChild(toggle);
 
         // Name
         const nameSpan = document.createElement('span');
@@ -387,77 +443,143 @@ function openIconPopover(anchorEl, prompt) {
 
 // ==================== Toggle show_in ====================
 
-function toggleShowIn(prompt, menuType, isOn) {
-    const current = prompt.show_in || 'popup';
-
+// Pure transition table: given the current show_in value, which menu is being
+// toggled, and whether it is turned on, return the new show_in value.
+function computeShowIn(current, menuType, isOn) {
+    current = current || 'popup';
     if (menuType === 'popup') {
         if (isOn) {
-            prompt.show_in = (current === 'none') ? 'popup' : (current === 'context') ? 'both' : current;
-        } else {
-            prompt.show_in = (current === 'popup') ? 'none' : (current === 'both') ? 'context' : current;
+            return (current === 'none') ? 'popup' : (current === 'context') ? 'both' : current;
         }
-    } else { // context
-        if (isOn) {
-            prompt.show_in = (current === 'none') ? 'context' : (current === 'popup') ? 'both' : current;
-        } else {
-            prompt.show_in = (current === 'context') ? 'none' : (current === 'both') ? 'popup' : current;
-        }
+        return (current === 'popup') ? 'none' : (current === 'both') ? 'context' : current;
     }
+    // context
+    if (isOn) {
+        return (current === 'none') ? 'context' : (current === 'popup') ? 'both' : current;
+    }
+    return (current === 'context') ? 'none' : (current === 'both') ? 'popup' : current;
+}
 
-    markUnsaved();
-    renderPopupList();
-    renderContextList();
+// Apply a show_in change (used by the drag path). show_in is the single source
+// of truth for reachability: show_in='none' means the prompt is in no menu.
+function setPromptShowIn(prompt, newShowIn) {
+    prompt.show_in = newShowIn;
 }
 
 // ==================== Drag and Drop ====================
 
-function initDragAndDrop(listEl, positionKey) {
-    let draggedItem = null;
+// A drag can start in the active list and end in the hidden list (or vice
+// versa) of the same menu panel. Both lists share the same drag state so an
+// item can cross between them: dropping into the active list makes the prompt
+// visible in that menu, dropping into the hidden list removes it from that menu
+// (and disables the prompt if it becomes hidden everywhere).
+function initPanelDragAndDrop(menuType, activeList, hiddenList, positionKey) {
+    const state = { draggedItem: null, afterElement: null };
+    wireDragList(activeList, true, menuType, positionKey, state);
+    wireDragList(hiddenList, false, menuType, positionKey, state);
+}
 
+// Remove any insertion indicators (top line / bottom-of-list line) from a list.
+function clearDropIndicators(listEl) {
+    listEl.querySelectorAll('.drag-over, .drag-over-end').forEach(el => {
+        el.classList.remove('drag-over', 'drag-over-end');
+    });
+}
+
+function wireDragList(listEl, isActiveList, menuType, positionKey, state) {
     listEl.addEventListener('dragstart', (e) => {
         const li = e.target.closest('.sortable_item');
         if (!li) return;
-        draggedItem = li;
-        draggedItem.classList.add('dragging');
+        clearHighlight(); // any transient highlight ends on the next drag interaction
+        state.draggedItem = li;
+        state.afterElement = null;
+        li.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', li.dataset.id);
     });
 
+    // The dragged node is NOT moved during dragover: doing so on every mouse tick
+    // reorders the DOM live and feels sluggish. Instead we only show an insertion
+    // indicator and remember the target; the actual move happens on drop.
     listEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        if (!draggedItem) return;
+        if (!state.draggedItem) return;
 
-        // Remove previous drag-over indicators
-        listEl.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        // Remove previous indicators across this list before drawing the new one.
+        clearDropIndicators(listEl);
 
         const afterElement = getDragAfterElement(listEl, e.clientY);
+        state.afterElement = afterElement || null;
         if (afterElement) {
+            // Insert before this element: line on its top edge.
             afterElement.classList.add('drag-over');
-            listEl.insertBefore(draggedItem, afterElement);
         } else {
-            listEl.appendChild(draggedItem);
+            // Insert at the end: line on the bottom edge of the last item (there is
+            // no following element to draw a top border on).
+            const items = listEl.querySelectorAll('.sortable_item:not(.dragging)');
+            const last = items[items.length - 1];
+            if (last) last.classList.add('drag-over-end');
         }
     });
 
     listEl.addEventListener('dragleave', (e) => {
         if (e.target.classList) {
-            e.target.classList.remove('drag-over');
+            e.target.classList.remove('drag-over', 'drag-over-end');
         }
     });
 
     listEl.addEventListener('drop', (e) => {
         e.preventDefault();
-        listEl.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        if (!state.draggedItem) return;
+        // Perform the real DOM move only now, once, at the drop position.
+        if (state.afterElement) {
+            listEl.insertBefore(state.draggedItem, state.afterElement);
+        } else {
+            listEl.appendChild(state.draggedItem);
+        }
+        clearDropIndicators(listEl);
     });
 
     listEl.addEventListener('dragend', () => {
-        if (draggedItem) {
-            draggedItem.classList.remove('dragging');
-            updatePositionsFromDOM(listEl, positionKey);
-            draggedItem = null;
+        const li = state.draggedItem;
+        // Clear any indicator left behind if the drop happened outside a list.
+        clearDropIndicators(listEl);
+        state.afterElement = null;
+        if (!li) return;
+        li.classList.remove('dragging');
+        state.draggedItem = null;
+
+        // The list the item now physically lives in determines its new state.
+        const droppedInActive = li.parentElement === document.getElementById(
+            menuType === 'popup' ? 'popup_list' : 'context_list');
+        const wasActive = li.dataset.active === '1';
+
+        if (droppedInActive === wasActive) {
+            // Stayed within the same list: pure reorder. Positions are only
+            // meaningful for the active list.
+            if (droppedInActive) {
+                updatePositionsFromDOM(li.parentElement, positionKey);
+            }
             markUnsaved();
+            return;
         }
+
+        // Crossed between active and hidden: toggle this menu's visibility.
+        const prompt = allPrompts.find(p => p.id === li.dataset.id);
+        if (prompt) {
+            const newShowIn = computeShowIn(prompt.show_in, menuType, droppedInActive);
+            setPromptShowIn(prompt, newShowIn);
+        }
+        // If it landed in the active list, capture the drop position so the item
+        // keeps where the user dropped it (positions drive active-list order).
+        if (droppedInActive) {
+            updatePositionsFromDOM(li.parentElement, positionKey);
+        }
+        markUnsaved();
+        // Re-render so badges/positions and the item's section settle.
+        renderPopupList();
+        renderContextList();
     });
 }
 
@@ -491,13 +613,9 @@ async function saveAll() {
     const msgDisplay = document.getElementById('msgDisplay');
     btnSaveAll.disabled = true;
 
-    const disabledDefaults = allDisabledPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
-    const disabledCustoms = allDisabledPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
-    const disabledSpecials = allDisabledPrompts.filter(p => String(p.is_special) === '1');
-
-    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1').concat(disabledDefaults);
-    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1').concat(disabledCustoms);
-    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(disabledSpecials).concat(allExcludedSpecialPrompts);
+    const defaultPromptsToSave = allPrompts.filter(p => String(p.is_default) === '1' && String(p.is_special) !== '1');
+    const customPromptsToSave = allPrompts.filter(p => String(p.is_default) === '0' && String(p.is_special) !== '1');
+    const specialPromptsToSave = allPrompts.filter(p => String(p.is_special) === '1').concat(allExcludedSpecialPrompts);
 
     await setDefaultPromptsProperties(defaultPromptsToSave);
     await setCustomPrompts(customPromptsToSave);

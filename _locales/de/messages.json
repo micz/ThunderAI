@@ -1867,5 +1867,130 @@
     },
     "batch_stop_source": {
         "message": "Batch-Stopp"
+    },
+    "onboarding_tab_title": {
+        "message": "Willkommen bei ThunderAI!"
+    },
+    "onboarding_welcome_2": {
+        "message": "Dieses Add-on wurde entwickelt, um Ihre E-Mail-Verwaltung mit der Kraft von KI zu verbessern."
+    },
+    "onboarding_welcome_3": {
+        "message": "Mit ThunderAI können Sie Ihren Posteingang optimieren, intelligente Antworten generieren, E-Mails zusammenfassen, automatisch Tags hinzufügen und Spam filtern und vieles mehr, alles mit Hilfe von künstlicher Intelligenz."
+    },
+    "onboarding_welcome_4": {
+        "message": "Auf dieser Seite finden Sie eine Übersicht über die wichtigsten Funktionen, um das Beste aus ThunderAI herauszuholen."
+    },
+    "onboarding_welcome_5": {
+        "message": "Machen Sie sich bereit, eine intelligentere und effizientere Art der E-Mail-Verwaltung kennenzulernen!"
+    },
+    "onboarding_welcome_6": {
+        "message": "Schauen wir uns an, wie Sie dieses Add-on am besten nutzen!"
+    },
+    "onboarding_using_prompts_title": {
+        "message": "Prompts verwenden"
+    },
+    "onboarding_using_prompts_alt": {
+        "message": "Prompts-Menü-Schaltfläche"
+    },
+    "onboarding_using_prompts_1": {
+        "message": "In jeder Nachricht gibt es eine Schaltfläche, mit der Sie das Prompts-Menü öffnen können."
+    },
+    "onboarding_using_prompts_2": {
+        "message": "Hier können Sie den Prompt auf verschiedene Arten auswählen:"
+    },
+    "onboarding_using_prompts_li1_b": {
+        "message": "Suchfeld"
+    },
+    "onboarding_using_prompts_li1": {
+        "message": "verwenden Sie es, um nach einem Teil des Prompts zu suchen."
+    },
+    "onboarding_using_prompts_li2_b": {
+        "message": "Pfeil nach unten/oben"
+    },
+    "onboarding_using_prompts_li2": {
+        "message": "navigieren Sie durch die Prompts."
+    },
+    "onboarding_using_prompts_li3_b": {
+        "message": "Zahl drücken"
+    },
+    "onboarding_using_prompts_li3": {
+        "message": "drücken Sie eine Zahl auf der Tastatur, um den entsprechenden Prompt auszuwählen."
+    },
+    "onboarding_using_prompts_li4_b": {
+        "message": "Eingabe"
+    },
+    "onboarding_using_prompts_li4": {
+        "message": "wenn Sie den gewünschten Prompt ausgewählt haben, drücken Sie die Eingabetaste, um ihn auszuführen."
+    },
+    "onboarding_using_prompts_3": {
+        "message": "Auf der ThunderAI-Optionsseite finden Sie einige Einstellungen zu diesem Menü."
+    },
+    "onboarding_using_prompts_4": {
+        "message": "Die ersten beiden Prompts sind speziell und nur verfügbar, wenn eine API-Integration verwendet wird. Sie funktionieren direkt, ohne die AI-Chat-Webseite zu öffnen."
+    },
+    "onboarding_custom_prompts_title": {
+        "message": "Eigene Prompts definieren"
+    },
+    "onboarding_custom_prompts_alt": {
+        "message": "Verwaltung eigener Prompts"
+    },
+    "onboarding_custom_prompts_p1_1": {
+        "message": "Über die Optionsseite können Sie die Seite für eigene Prompts öffnen."
+    },
+    "onboarding_custom_prompts_p1_3": {
+        "message": "Dort können Sie Ihre Prompts hinzufügen und auch die Standard-Prompts deaktivieren."
+    },
+    "onboarding_custom_prompts_p1_4": {
+        "message": "Weitere Informationen finden Sie hier."
+    },
+    "onboarding_custom_prompts_p2_1": {
+        "message": "Beim Definieren eigener Prompts können Sie auch"
+    },
+    "onboarding_custom_prompts_bold_dp": {
+        "message": "Datenplatzhalter"
+    },
+    "onboarding_custom_prompts_p2_2": {
+        "message": "verwenden, die bei der Nutzung des Prompts durch die entsprechenden Informationen ersetzt werden."
+    },
+    "onboarding_custom_prompts_p3": {
+        "message": "Beispielsweise können Sie den Platzhalter $PH_SUBJECT$ verwenden, um auf den Betreff der E-Mail zu verweisen, oder $PH_TAGS$, um auf die Tags der aktuellen E-Mail zu verweisen.",
+        "placeholders": {
+            "ph_subject": {
+                "content": "{%mail_subject%}"
+            },
+            "ph_tags": {
+                "content": "{%tags_current_email%}"
+            }
+        }
+    },
+    "onboarding_automatic_features_title": {
+        "message": "Automatische Funktionen"
+    },
+    "onboarding_automatic_features_alt": {
+        "message": "Automatischer Spam-Filter"
+    },
+    "onboarding_automatic_features_1": {
+        "message": "Es gibt außerdem zwei automatische Funktionen, die bei Verwendung einer API-Integration verfügbar sind und auf der Optionsseite aktiviert werden können:"
+    },
+    "onboarding_automatic_features_li1_b": {
+        "message": "Automatischer Spam-Filter"
+    },
+    "onboarding_automatic_features_li1": {
+        "message": "verschiebt die E-Mail automatisch in den Spam-Ordner, wenn sie als Spam erkannt wird."
+    },
+    "onboarding_automatic_features_li2_b": {
+        "message": "Automatisches Tagging"
+    },
+    "onboarding_automatic_features_li2": {
+        "message": "weist der E-Mail automatisch Tags zu."
+    },
+    "onboarding_automatic_features_2": {
+        "message": "Für jede dieser Funktionen gibt es eine Optionsseite, um die Einstellungen und den zu verwendenden benutzerdefinierten Prompt festzulegen."
+    },
+    "onboarding_footer_1": {
+        "message": "Wenn Sie Fragen oder Vorschläge haben, öffnen Sie bitte ein Issue auf der GitHub-Seite."
+    },
+    "onboarding_footer_3": {
+        "message": "Gefällt Ihnen ThunderAI?"
     }
 }
