@@ -633,7 +633,9 @@ class MessagesArea extends HTMLElement {
     }
 
     // "Copy": puts the answer on the clipboard WITHOUT closing the window, and
-    // confirms with a check for 1.5s. `iconOnly` builds the light-toolbar form.
+    // confirms with a check for 1.5s. Like the other action buttons it honours
+    // a text selection and copies only that part. `iconOnly` builds the
+    // light-toolbar form.
     _buildCopyButton(fullTextHTMLAtAssignment, iconOnly = false) {
         const label = browser.i18n.getMessage("apiwebchat_copy");
         let button;
@@ -654,7 +656,10 @@ class MessagesArea extends HTMLElement {
 
         let resetTimeout = null;
         button.addEventListener('click', async () => {
-            const plainText = stripHtmlTags(fullTextHTMLAtAssignment);
+            const selectedText = this.getCurrentSelectionText();
+            const plainText = selectedText !== ''
+                ? selectedText
+                : htmlToPlainText(fullTextHTMLAtAssignment);
             const ok = await copyTextToClipboard(plainText);
             const feedback = ok
                 ? browser.i18n.getMessage("apiwebchat_copied")
@@ -844,6 +849,15 @@ class MessagesArea extends HTMLElement {
         return '';
     }
 
+    // Selected text as plain text. Taken straight from the Selection rather
+    // than by stripping getCurrentSelectionHTML(), so entities in the rendered
+    // answer (&amp;, &lt;, &nbsp;, …) come out as the characters the user can
+    // actually see instead of their HTML escapes.
+    getCurrentSelectionText() {
+        const selection = window.getSelection();
+        return selection ? selection.toString() : '';
+    }
+
 }
 
 customElements.define('messages-area', MessagesArea);
@@ -851,6 +865,21 @@ customElements.define('messages-area', MessagesArea);
 
 function stripHtmlTags(htmlString) {
     return htmlString.replace(/<\/?[^>]+(>|$)/g, "");
+}
+
+// HTML → the text the user actually sees. Unlike stripHtmlTags() this parses
+// the markup, so entities are decoded (&amp; → &) instead of being copied as
+// their escape sequences, and <br>/</p> become real line breaks.
+function htmlToPlainText(htmlString) {
+    const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+    doc.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
+    // Block-level boundaries would otherwise run together into one long line.
+    doc.querySelectorAll('p, div, li, tr, h1, h2, h3, h4, h5, h6, pre, blockquote').forEach(el => {
+        el.appendChild(document.createTextNode('\n'));
+    });
+    return (doc.body.textContent || '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }
 
 // Clipboard write with a fallback for the (unlikely) case the async API is

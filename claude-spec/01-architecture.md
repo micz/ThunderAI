@@ -255,6 +255,13 @@ text to `renderThinkingBlock`. The answer-text snapshot is what the "use this an
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
 turn's buttons tied to their own response.
 
+Every one of those buttons honours a text selection and acts on just that part of the
+answer, falling back to the whole snapshot when nothing is selected. "Copy" writes **plain
+text**, so it reads the selection through `getCurrentSelectionText()` and converts the
+snapshot with `htmlToPlainText()` — which parses the markup, decoding entities (`&amp;` → `&`)
+and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
+is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
+
 ### Theming
 
 Every colour in the window comes from a CSS custom property declared once on `:root` in
