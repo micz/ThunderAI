@@ -214,8 +214,19 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         flex-wrap: wrap;
         margin-top: 16px;
     }
+    /* Resting outline so the button reads as a control before hover. The
+       tertiary base keeps a transparent 1px border, so this only recolors it
+       and adds no layout shift. --border is too faint to register against the
+       transcript background (the tertiary family has no --surface fill of its
+       own), hence --border-strong at rest and a further step on hover.
+       border-color is not in the tertiary transition, so it is added here. */
     .action-bar .close_btn {
         margin-left: auto;
+        border-color: var(--border-strong);
+        transition: background .12s ease, color .12s ease, border-color .12s ease;
+    }
+    .action-bar .close_btn:hover {
+        border-color: var(--ink-3);
     }
 
     /* ---- light toolbar (earlier answers only) ---- */
