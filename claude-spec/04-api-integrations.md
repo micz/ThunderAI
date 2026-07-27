@@ -112,12 +112,19 @@ accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or
 duplicate it; re-appending also moves it back to the end when thinking resumes
 after a rendered segment.
 
-The status pill's streaming state (`<message-input>`, `showStreamingStatus()`)
-uses `images/mzta-loading.svg` as an `<img>`, for the same reason: the
-SVG animates itself, so the pill needs no CSS animation and the icon centres
-itself inside the fixed-size `#statusLoggerIcon` box. The icon is only rebuilt on
-the transition *into* the streaming state — `showStreamingStatus()` runs on every
-token, and replacing the node each time would restart the SVG's animation.
+The status pill's two in-flight states follow the same pattern, each with its own
+self-animating SVG loaded as an `<img>`: `showWaitingStatus()` uses
+`images/mzta-waiting-server.svg` (a dot emitting expanding rings) and
+`showStreamingStatus()` uses `images/mzta-loading.svg` (three bouncing dots).
+Because the motion lives in the SVG, the pill carries no CSS animation and the
+icon centres itself inside the fixed-size `#statusLoggerIcon` box. Both icons are
+rebuilt only on the transition *into* their state — the show methods can be called
+repeatedly (`showStreamingStatus()` runs on every token), and replacing the node
+each time would restart the SVG's animation and freeze it at frame 0. The static
+states (`done` → check, `error` → alert) use the inline builders in `svgIcons.js`,
+which stroke in `currentColor`. `_setStatusClass()` clears **all** state classes,
+including `status-waiting`, so no in-flight styling can leak onto the done or
+error pill.
 
 `_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
 after the deferred-flush early return (which must keep the indicator alive) and

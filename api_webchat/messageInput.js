@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon, buildDotIcon } from './svgIcons.js';
+import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon } from './svgIcons.js';
 import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');
@@ -119,7 +119,7 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         white-space: nowrap;
     }
     /* Fixed-size centring box for the pill's leading icon. The states use
-       several icon sizes (dot 7, alert 13, check 15, loading 16), so the wrapper
+       several icon sizes (alert 13, check 15, waiting/loading 16), so the wrapper
        is sized to the largest and centres whatever it holds — that way swapping
        states never shifts the pill's height or the text beside it. */
     #statusLoggerIcon{
@@ -138,28 +138,22 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         flex: none;
     }
     /* Waiting keeps the neutral grey look, but states its border explicitly so
-       it reads as a framed pill rather than floating text, and pulses the dot to
-       show the request is still in flight. */
+       it reads as a framed pill rather than floating text. The in-flight motion
+       comes from mzta-waiting-server.svg's own SMIL animation (expanding rings),
+       so no CSS animation is needed here. */
     #statusLogger.status-waiting{
         border-color: color-mix(in srgb, var(--ink-3) 55%, var(--border));
         background: var(--surface-2);
         color: var(--ink-2);
-    }
-    @keyframes statusDotPulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: .35; transform: scale(.7); }
-    }
-    #statusLogger.status-waiting #statusLoggerIcon svg{
-        animation: statusDotPulse 1.1s ease-in-out infinite;
-        transform-origin: center;
     }
     #statusLogger.status-working{
         border-color: var(--info-border);
         background: var(--info-bg);
         color: var(--info-ink);
     }
-    /* mzta-loading.svg, the streaming indicator. Block display keeps it off the
-       text baseline so the flex wrapper can centre it. */
+    /* The two self-animating SVGs loaded as images: mzta-waiting-server.svg
+       (waiting) and mzta-loading.svg (streaming). Block display keeps them off
+       the text baseline so the flex wrapper can centre them. */
     #statusLoggerIcon img{
         display: block;
         flex: none;
@@ -290,9 +284,9 @@ statusLogger.id = 'statusLogger';
 statusLogger.style.display = 'none';
 statusLogger.setAttribute('role', 'status');
 statusLogger.setAttribute('aria-live', 'polite');
-// The icon is rebuilt per state (dot / spinner / check / alert) rather than
-// being a static <img>, so it inherits currentColor from the pill and the
-// spin animation can be disabled by prefers-reduced-motion.
+// The icon is rebuilt per state (waiting / streaming / check / alert) rather
+// than being a single static node: the inline SVGs (check, alert) inherit
+// currentColor from the pill, while the animated states load their own asset.
 const statusLoggerIcon = document.createElement('span');
 statusLoggerIcon.id = 'statusLoggerIcon';
 statusLogger.appendChild(statusLoggerIcon);
@@ -427,7 +421,7 @@ class MessageInput extends HTMLElement {
     }
 
     _setStatusClass(className) {
-        this._statusLogger.classList.remove('status-working', 'status-done', 'status-error', 'status-fadeout');
+        this._statusLogger.classList.remove('status-waiting', 'status-working', 'status-done', 'status-error', 'status-fadeout');
         if (className) {
             this._statusLogger.classList.add(className);
         }
@@ -452,11 +446,24 @@ class MessageInput extends HTMLElement {
         return img;
     }
 
+    // Waiting indicator: mzta-waiting-server.svg (a dot emitting expanding
+    // rings). Self-animating via SMIL, like the streaming spinner.
+    _buildWaitingImage() {
+        const img = document.createElement('img');
+        img.src = '../images/mzta-waiting-server.svg';
+        img.alt = '';
+        return img;
+    }
+
     // Request sent, nothing back from the server yet.
     showWaitingStatus() {
         this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
-        this._setStatusIcon(buildDotIcon);
-        this.showStatusMessage('waiting');
+        // Same guard as showStreamingStatus(): rebuilding the node restarts the
+        // SVG's own animation, so leave it alone if we are already waiting.
+        if (!this._statusLogger.classList.contains('status-waiting')) {
+            this._setStatusIcon(() => this._buildWaitingImage());
+            this.showStatusMessage('waiting');
+        }
     }
 
     // Tokens are arriving.

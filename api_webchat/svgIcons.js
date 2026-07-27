@@ -176,11 +176,6 @@ export function buildScrollToBottomIcon(size = 16) {
     return strokedIcon(size, ['M12 4v12M6.5 11.5L12 17l5.5-5.5'], '2');
 }
 
-// Close (X).
-export function buildCloseIcon(size = 15) {
-    return strokedIcon(size, ['M6 6l12 12M18 6L6 18'], '2');
-}
-
 // Exclamation in a circle — error status pill.
 export function buildAlertIcon(size = 13) {
     const svg = strokedIcon(size, ['M12 7.5v5.5'], '2.4');
@@ -191,22 +186,6 @@ export function buildAlertIcon(size = 13) {
     }));
     svg.appendChild(el('circle', {
         cx: '12', cy: '16.5', r: '1.1',
-        fill: 'currentColor',
-    }));
-    return svg;
-}
-
-// Small filled dot — "waiting for the server" status pill.
-export function buildDotIcon(size = 7) {
-    const svg = el('svg', {
-        width: String(size),
-        height: String(size),
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        'aria-hidden': 'true',
-    });
-    svg.appendChild(el('circle', {
-        cx: '12', cy: '12', r: '12',
         fill: 'currentColor',
     }));
     return svg;
