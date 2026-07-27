@@ -469,6 +469,9 @@ class MessagesArea extends HTMLElement {
         this._programmaticScroll = false;
         // Handle of the rAF coalescing the per-token writes (_requestScroll).
         this._scrollRaf = 0;
+        // Handle of the rAF coalescing the deferred jump button re-read
+        // (_confirmJumpButton).
+        this._confirmRaf = 0;
         this._onMessagesScroll = this._onMessagesScroll.bind(this);
         this._onUserScrollIntent = this._onUserScrollIntent.bind(this);
 
@@ -507,6 +510,20 @@ class MessagesArea extends HTMLElement {
             this._updateJumpButton();
         });
         this._resizeObs.observe(this.messages);
+        // Content growing does NOT resize #messages: it is a flex item with a
+        // height decided by the column and overflow:auto, so its own border box
+        // never moves and the observer above never fires for it. The transcript's
+        // height nevertheless decides whether there is anything below the fold,
+        // and it can grow with no scroll event and no frame of ours in flight -
+        // most visibly in handleTokensDone(), which appends the action bar after
+        // an await while the user sits at an anchored prompt with following
+        // already off, so the _scrollIfSticky() next to it is a no-op. Observing
+        // the turns is what turns that growth into a button refresh.
+        this._contentObs = new ResizeObserver(() => {
+            // Read-only: never write layout from here. See the note on
+            // _updateJumpButton() for why this cannot loop.
+            this._updateJumpButton();
+        });
     }
 
     disconnectedCallback() {
@@ -514,9 +531,14 @@ class MessagesArea extends HTMLElement {
         this.messages.removeEventListener('wheel', this._onUserScrollIntent);
         this.messages.removeEventListener('keydown', this._onUserScrollIntent);
         this._resizeObs?.disconnect();
+        this._contentObs?.disconnect();
         if (this._scrollRaf) {
             cancelAnimationFrame(this._scrollRaf);
             this._scrollRaf = 0;
+        }
+        if (this._confirmRaf) {
+            cancelAnimationFrame(this._confirmRaf);
+            this._confirmRaf = 0;
         }
     }
 
@@ -622,8 +644,30 @@ class MessagesArea extends HTMLElement {
     // says "take me to the end" - but a short answer leaves the anchored view
     // already at the true bottom, and then there is nothing to jump to. Asking
     // the scroller settles both cases with one rule.
+    //
+    // Must stay free of layout writes. #jumpToLatest is position:absolute
+    // against the host, outside #messages, so toggling it cannot resize any
+    // observed turn - which is the invariant that keeps _contentObs from
+    // feeding itself. Reserving space for the button by writing padding here
+    // (or setting an attribute a CSS rule keys off) would put a layout write
+    // inside the geometry that decides the button's own visibility: a textbook
+    // ResizeObserver oscillation.
     _updateJumpButton() {
         this._jumpButton.hidden = this._isNearBottom();
+    }
+
+    // One deferred re-read of the geometry, coalesced. _updateJumpButton() is
+    // always right for the DOM as it stands when it runs; this covers the window
+    // where the DOM is about to change again within the same task. Strictly
+    // read-only and self-cancelling, so it cannot feed itself - and it must
+    // never call _scrollNow()/_requestScroll(), which would build a
+    // measure-then-scroll loop together with _contentObs.
+    _confirmJumpButton() {
+        if (this._confirmRaf) { return; }
+        this._confirmRaf = requestAnimationFrame(() => {
+            this._confirmRaf = 0;
+            this._updateJumpButton();
+        });
     }
 
     // Open a model turn: wrapper + avatar + model name, and return the column
@@ -666,6 +710,10 @@ class MessagesArea extends HTMLElement {
     // the one frame before _updateAnchorSpacer() puts the order right again.
     _appendTurn(turn) {
         this.messages.insertBefore(turn, this._anchorSpacer);
+        // Any later growth inside this turn (the action bar appended after an
+        // await, the diff viewer, a thinking block expanding) has to reach
+        // _updateJumpButton(): see _contentObs in connectedCallback().
+        this._contentObs?.observe(turn);
     }
 
     // The column of the current model turn, opening one if needed.
@@ -752,6 +800,17 @@ class MessagesArea extends HTMLElement {
         // spinning forever.
         this._removeThinkingIndicator();
         await this.addActionButtons(promptData);
+        // The exchange is over, so the anchor has nothing left to hold: its job
+        // was to keep the view still while the answer streamed into it. Dropping
+        // it here is what lets the follow below reach the REAL bottom.
+        // _followTarget() otherwise clamps to the anchored position ("prompt at
+        // the top", or the answer's top a third down), and stops there - which
+        // in reply mode falls short of the action bar, because that bar is the
+        // tallest of the lot (two-line split button + visible .sel_info) and all
+        // of it lives below the anchored target. That is the "it never scrolls
+        // far enough to show the whole button bar" symptom, and it is why this
+        // has to happen before the follow, not after it.
+        this._setAnchor(null);
         // The final flush and the action bar both grow the transcript. Only
         // follow if the user is still at the bottom: if they scrolled up to
         // read a long answer, do not yank them down to the buttons.
@@ -928,6 +987,16 @@ class MessagesArea extends HTMLElement {
             // has grown since the last frame, so this is the only chance to
             // notice that the bottom is now (or no longer) in view.
             this._updateJumpButton();
+            // ...and again once the browser has laid out. Everything above reads
+            // geometry synchronously, which is right for whatever the DOM held at
+            // that instant - but an append made earlier in this same task (the
+            // action bar, the diff viewer) can still be pending style resolution,
+            // and _setAnchor(null) has just removed the spacer, which lets the
+            // browser clamp scrollTop on its own afterwards. That clamp is what
+            // brings us here with scrollTop already equal to the target: deciding
+            // "we are at the bottom" on that snapshot is how the button was left
+            // advertising a jump it had already made.
+            this._confirmJumpButton();
             return;
         }
         this._programmaticScroll = true;
@@ -938,6 +1007,9 @@ class MessagesArea extends HTMLElement {
         // The latch above makes _onMessagesScroll skip its own update, so the
         // post-write geometry has to be read here.
         this._updateJumpButton();
+        // Same reasoning as on the early-return path above: the write lands on
+        // the geometry as it is now, which a pending append can still change.
+        this._confirmJumpButton();
     }
 
     // click callcback for the "use this answer" button
@@ -1038,7 +1110,14 @@ class MessagesArea extends HTMLElement {
         turnBody.appendChild(selectionInfo);
         this._lastFullBarTurn = turn;
         // No scroll here: handleTokensDone does it, and covers the paths where
-        // this method returns early (no promptData / no turn).
+        // this method returns early (no promptData / no turn). The jump button is
+        // a different matter. This append is the largest single content growth of
+        // the whole exchange - in reply mode the split button carries a second
+        // text line and .sel_info becomes visible - it lands after the await
+        // above, and the _scrollIfSticky() that follows in handleTokensDone is a
+        // no-op while the user sits at the anchored prompt. Refresh here so the
+        // button's state is never left over from before the bar existed.
+        this._updateJumpButton();
     }
 
     // Swap the full action bar of the previously-newest answer for the compact

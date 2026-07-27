@@ -353,7 +353,8 @@ content below the prompt and one full viewport, and shrinks it to nothing as the
 into it. Consequences worth keeping straight:
 
 - It exists **only while an exchange is pinned** — `_setAnchor(null)` removes the node, so a
-  finished conversation never ends in dead space.
+  finished conversation never ends in dead space. `handleTokensDone()` is what normally retires it,
+  before its final follow; the user gestures that drop the anchor do it too.
 - **Turns are inserted before it**, via `_appendTurn()` (`insertBefore(turn, this._anchorSpacer)`;
   a null spacer makes that a plain append). Appending *past* the spacer would render the answer
   below a viewport-sized gap for the frame before the order is corrected.
@@ -371,6 +372,15 @@ Once the anchor position is reached the view **holds still** for the rest of the
 user regains bottom-following by scrolling to the bottom themselves or pressing `#jumpToLatest`
 — both drop the anchor.
 
+**`handleTokensDone()` drops the anchor before its final follow**, and the order matters. Once the
+answer is complete the anchor has nothing left to hold — its whole job was keeping the view still
+while the answer streamed into it — and while it is still set `_followTarget()` clamps to the
+anchored position and *stops there*. In reply mode that falls short of the action bar: it is the
+tallest bar of the lot (two-line split button + visible `.sel_info`) and all of it lives below the
+anchored target, so the view never scrolls far enough to show the whole bar and `#jumpToLatest`
+stays up pointing at it. Clearing the anchor first is what lets that last `_scrollIfSticky()` reach
+the real bottom.
+
 **`#jumpToLatest` visibility is decided on live geometry, never on the follow flags:**
 `_updateJumpButton()` is exactly `hidden = _isNearBottom()`. Keying it off state instead
 (`_stickToBottom && !_anchorTurnEl`) is the bug it replaced — a short anchored answer clamps
@@ -384,12 +394,19 @@ early-return when the value is unchanged, which during a stream is every frame:
 - `_scrollNow()` — on **both** paths: after the `scrollTop` write (the `_programmaticScroll`
   latch makes the resulting `scroll` event skip its own update), *and* on the no-write early
   return, which is the only signal available when content grew but the target did not move.
-- the `ResizeObserver` — unconditionally, not just via `_scrollIfSticky()`: growing the viewport
-  can bring the bottom into view, and while the user is scrolled up that call does nothing, so
-  no frame would otherwise run.
+- the scroller `ResizeObserver` — unconditionally, not just via `_scrollIfSticky()`: growing the
+  viewport can bring the bottom into view, and while the user is scrolled up that call does nothing,
+  so no frame would otherwise run.
+- the content `ResizeObserver` (`_contentObs`, one entry per turn) — because the scroller-level
+  observer is blind to exactly the growth that matters: `#messages` is a flex item whose height the
+  column decides, with `overflow-y: auto`, so **its own border box never moves when its content
+  grows** and it reports nothing. Without this, a content append with no scroll event and no frame
+  of ours in flight leaves the button showing whatever it showed before.
 - `_setAnchor()` — after `_updateAnchorSpacer()`, since the spacer changes `scrollHeight`.
+- `addActionButtons()` — see below.
 
 ```
+_setAnchor(null)    drop the anchor, no scroll         → handleTokensDone (before its follow)
 scrollToBottom()    real bottom, drop anchor, re-arm → appendBotMessage (terminal/error),
                                                        appendDiffViewer, #jumpToLatest click
 _resumeFollowing()  re-arm, keep the anchor          → appendUserMessage
@@ -397,7 +414,7 @@ _scrollIfSticky()   follow only if still stuck       → handleNewToken, handleT
                                                        handleNewThinkingToken, ResizeObserver
 ```
 
-Three details that are easy to reintroduce as bugs:
+Four details that are easy to reintroduce as bugs:
 
 - **`_programmaticScroll` must only be raised when the write changes the value.** Setting
   `scrollTop` fires a `scroll` event indistinguishable from a user gesture, hence the latch —
@@ -411,15 +428,33 @@ Three details that are easy to reintroduce as bugs:
   content height, which a scroll-then-flush order leaves unaccounted for.
 - **Instant scrolling only, never `behavior: 'smooth'`** — smooth emits a tail of scroll events
   the latch cannot pair one-to-one with its writes, and unsticks mid-animation.
+- **`_scrollNow()`'s no-write early return cannot decide the button on its own**, hence the deferred
+  `_confirmJumpButton()` re-read on both of its paths. The synchronous reads are right for whatever
+  the DOM held at that instant, but an append made earlier in the same task can still be pending
+  style resolution, and `_setAnchor(null)` removes the spacer, after which the *browser* clamps
+  `scrollTop` by itself. That clamp is what makes `scrollTop === target` and takes the early return —
+  so the jump button click used to write nothing at all and merely refresh a stale flag, which reads
+  as "the view moves a little, then the button vanishes".
 
 `#messages` also sets `overflow-anchor: none`: Firefox scroll anchoring tries to hold the visual
 position as content grows, but the flush tears down and rebuilds the subtree an anchor may have
 picked, which surfaces as micro-jumps. A `ResizeObserver` on `#messages` re-follows after window
 resizes and font-zoom changes, which move `scrollHeight` without firing a `scroll` event; it also
 invalidates the cached `padding-top` (`_padTopPx`) the anchor target is computed from — reading it
-with `getComputedStyle` on every frame of a stream would flush style for nothing.
-`addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also
-covers the paths where that method returns early.
+with `getComputedStyle` on every frame of a stream would flush style for nothing. A **second**
+observer, `_contentObs`, watches the turns instead of the scroller and is registered in
+`_appendTurn()` — the single insertion path for every turn — so later growth *inside* a turn also
+reaches `_updateJumpButton()`. Its callback, and `_confirmJumpButton()`, must stay **strictly
+read-only**: `_updateJumpButton()` only toggles `hidden` on a button that is `position:absolute`
+outside `#messages`, and that is the whole reason the observer cannot oscillate. Writing layout from
+either place — e.g. reserving bottom padding for the button — would put a layout write inside the
+geometry that decides that button's visibility.
+
+`addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also covers
+the paths where that method returns early — though it *does* refresh `#jumpToLatest`: its append is
+the largest single content growth of the exchange (in reply mode the split button gains a second text
+line and `.sel_info` becomes visible), it lands after an `await browser.storage.sync.get`, and the
+`_scrollIfSticky()` that follows it is a no-op while the user sits at the anchored prompt.
 
 ### Files
 
