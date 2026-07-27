@@ -26,7 +26,7 @@
 // of rules every component needs are exported as strings and concatenated
 // into each component's own <style>.textContent.
 
-// Focus rings, the spinner keyframes and the reduced-motion opt-out.
+// Focus rings and the reduced-motion opt-out.
 export const SHARED_BASE_CSS = `
     :host {
         font-family: var(--font);
@@ -34,9 +34,6 @@ export const SHARED_BASE_CSS = `
     :focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
-    }
-    @keyframes mztaSpin {
-        to { transform: rotate(360deg); }
     }
     @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {

@@ -196,12 +196,6 @@ export function buildAlertIcon(size = 13) {
     return svg;
 }
 
-// Three-quarter arc — streaming status pill. The caller spins it via CSS so
-// prefers-reduced-motion can switch the animation off.
-export function buildSpinnerIcon(size = 13) {
-    return strokedIcon(size, ['M12 3a9 9 0 1 0 9 9'], '2.6');
-}
-
 // Small filled dot — "waiting for the server" status pill.
 export function buildDotIcon(size = 7) {
     const svg = el('svg', {

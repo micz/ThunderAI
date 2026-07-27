@@ -112,6 +112,13 @@ accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or
 duplicate it; re-appending also moves it back to the end when thinking resumes
 after a rendered segment.
 
+The status pill's streaming state (`<message-input>`, `showStreamingStatus()`)
+reuses the same `images/mzta-loading.svg` as an `<img>`, for the same reason: the
+SVG animates itself, so the pill needs no CSS animation and the icon centres
+itself inside the fixed-size `#statusLoggerIcon` box. The icon is only rebuilt on
+the transition *into* the streaming state — `showStreamingStatus()` runs on every
+token, and replacing the node each time would restart the SVG's animation.
+
 `_removeThinkingIndicator()` swaps it out in `flushAccumulatingMessage()`, right
 after the deferred-flush early return (which must keep the indicator alive) and
 before `renderThinkingBlock()`, so the placeholder and the real block are never on

@@ -20,7 +20,7 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { buildSendIcon, buildStopIcon, buildSpinnerIcon, buildCheckIcon, buildAlertIcon, buildDotIcon } from './svgIcons.js';
+import { buildSendIcon, buildStopIcon, buildCheckIcon, buildAlertIcon, buildDotIcon } from './svgIcons.js';
 import { SHARED_BASE_CSS } from './sharedStyles.js';
 
 const messageInputTemplate = document.createElement('template');
@@ -118,17 +118,37 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         box-shadow: 0 6px 16px -8px var(--shadow);
         white-space: nowrap;
     }
+    /* Fixed-size centring box for the pill's leading icon. The states use
+       several icon sizes (dot 7, alert 13, check 15, loading 16), so the wrapper
+       is sized to the largest and centres whatever it holds — that way swapping
+       states never shifts the pill's height or the text beside it. */
     #statusLoggerIcon{
         display: inline-flex;
         align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 16px;
+        height: 16px;
+    }
+    /* Each icon keeps its own intrinsic width/height attributes; block display
+       drops the inline-baseline descender gap, and flex:none stops the flex
+       layout from stretching a small icon (the 7px dot) to the wrapper's size. */
+    #statusLoggerIcon svg{
+        display: block;
+        flex: none;
     }
     #statusLogger.status-working{
         border-color: var(--info-border);
         background: var(--info-bg);
         color: var(--info-ink);
     }
-    #statusLogger.status-working #statusLoggerIcon svg{
-        animation: mztaSpin .8s linear infinite;
+    /* mzta-loading.svg, the streaming indicator. Block display keeps it off the
+       text baseline so the flex wrapper can centre it. */
+    #statusLoggerIcon img{
+        display: block;
+        flex: none;
+        width: 16px;
+        height: 16px;
     }
     #statusLogger.status-done{
         border-color: color-mix(in srgb, var(--ok-ink) 40%, var(--bg));
@@ -405,6 +425,17 @@ class MessageInput extends HTMLElement {
         }
     }
 
+    // Streaming indicator: the shared mzta-loading.svg (three bouncing dots).
+    // The SVG animates itself via SMIL, so it needs no CSS animation and centres
+    // itself in whatever box it is given. Same asset as the "thinking" spinner
+    // in messagesArea.js.
+    _buildLoadingImage() {
+        const img = document.createElement('img');
+        img.src = '../images/mzta-loading.svg';
+        img.alt = '';
+        return img;
+    }
+
     // Request sent, nothing back from the server yet.
     showWaitingStatus() {
         this.setStatusMessage(browser.i18n.getMessage('WaitingServerResponse') + '...');
@@ -417,9 +448,9 @@ class MessageInput extends HTMLElement {
         this.setStatusMessage(browser.i18n.getMessage('apiwebchat_receiving_data') + '...');
         // Only rebuild the spinner when we are not already streaming: this runs
         // on every single token, and replacing the node each time would restart
-        // the CSS animation and leave the spinner frozen at frame 0.
+        // the SVG's own animation and leave the dots frozen at frame 0.
         if (!this._statusLogger.classList.contains('status-working')) {
-            this._setStatusIcon(buildSpinnerIcon);
+            this._setStatusIcon(() => this._buildLoadingImage());
             this.showStatusMessage('working');
         }
     }
