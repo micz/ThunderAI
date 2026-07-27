@@ -103,7 +103,7 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         position: absolute;
         bottom: calc(16px + 42px - 1px);
         transform: translateY(50%);
-        right: 70px;
+        right: 80px;
         z-index: 2;
         display: inline-flex;
         align-items: center;
