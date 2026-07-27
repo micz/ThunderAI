@@ -744,9 +744,14 @@ class MessagesArea extends HTMLElement {
             // The spinner takes the slot the <summary> disclosure triangle will
             // occupy once the collapsible block replaces this row. The SVG is
             // self-animated, so nothing here needs a CSS animation.
+            // This is the thinking-specific asset, deliberately not the shared
+            // mzta-loading.svg the status pill in messageInput.js uses, so the
+            // reasoning phase reads as distinct from a generic "loading". Its
+            // colour is baked into the file: an <img> cannot inherit
+            // currentColor, so the icon does not follow --ink-2 like the label.
             const spinner = document.createElement('img');
             spinner.classList.add('thinking-spinner');
-            spinner.src = '../images/mzta-loading.svg';
+            spinner.src = '../images/mzta-thinking.svg';
             spinner.alt = '';
             const label = document.createElement('span');
             label.textContent = (browser.i18n.getMessage('prefs_OptionText_thinking_summary') || 'Thinking') + '...';

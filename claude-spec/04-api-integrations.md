@@ -104,7 +104,7 @@ The `<details>` block only materializes at flush time, so a long reasoning phase
 would otherwise leave an empty turn on screen. On every `newThinkingToken`,
 `handleNewThinkingToken()` calls `_showThinkingIndicator()`, which appends a
 `<div class="thinking-live">` to the current bot turn body: the animated
-`images/mzta-loading.svg` as an `<img>` in the slot the `<summary>` disclosure
+`images/mzta-thinking.svg` as an `<img>` in the slot the `<summary>` disclosure
 triangle will occupy, followed by `prefs_OptionText_thinking_summary` + a literal
 `...`. All the motion is inside the SVG, so the row itself carries no CSS
 animation (and needs no reduced-motion override). It is a **sibling** of the
@@ -113,7 +113,7 @@ duplicate it; re-appending also moves it back to the end when thinking resumes
 after a rendered segment.
 
 The status pill's streaming state (`<message-input>`, `showStreamingStatus()`)
-reuses the same `images/mzta-loading.svg` as an `<img>`, for the same reason: the
+uses `images/mzta-loading.svg` as an `<img>`, for the same reason: the
 SVG animates itself, so the pill needs no CSS animation and the icon centres
 itself inside the fixed-size `#statusLoggerIcon` box. The icon is only rebuilt on
 the transition *into* the streaming state — `showStreamingStatus()` runs on every
