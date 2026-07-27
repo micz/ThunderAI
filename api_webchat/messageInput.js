@@ -137,6 +137,22 @@ messagesInputStyle.textContent = SHARED_BASE_CSS + `
         display: block;
         flex: none;
     }
+    /* Waiting keeps the neutral grey look, but states its border explicitly so
+       it reads as a framed pill rather than floating text, and pulses the dot to
+       show the request is still in flight. */
+    #statusLogger.status-waiting{
+        border-color: color-mix(in srgb, var(--ink-3) 55%, var(--border));
+        background: var(--surface-2);
+        color: var(--ink-2);
+    }
+    @keyframes statusDotPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: .35; transform: scale(.7); }
+    }
+    #statusLogger.status-waiting #statusLoggerIcon svg{
+        animation: statusDotPulse 1.1s ease-in-out infinite;
+        transform-origin: center;
+    }
     #statusLogger.status-working{
         border-color: var(--info-border);
         background: var(--info-bg);
