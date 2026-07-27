@@ -151,6 +151,15 @@ messages-area {
     border-bottom: 1px solid var(--border);
     background: var(--surface-2);
     flex-shrink: 0;
+    /* Anchor for the absolutely centred model chip below. */
+    position: relative;
+}
+
+#appHeaderBrand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 #appHeaderLogo {
@@ -214,11 +223,15 @@ messages-area {
 #appHeaderModel {
     color: var(--accent-soft-ink);
     background: var(--accent-soft);
-    /* Holds "prompt name | model", so it needs more room than a bare model
-       name, but it must still yield to the API chip pinned on the right. */
-    max-width: 55%;
-    flex-shrink: 1;
-    min-width: 0;
+    /* Centred on the header itself, not on the space left over between the
+       brand and the API chip, so its variable width never shifts the centre.
+       Taken out of the flex flow for that reason. */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Keeps the chip clear of the brand on the left and the API chip on the
+       right even at the narrowest window. */
+    max-width: calc(100% - 300px);
 }
 
 /* Lightened accents so the provider colour stays legible on a dark surface
