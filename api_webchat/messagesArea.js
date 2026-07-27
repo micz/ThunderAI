@@ -496,6 +496,10 @@ class MessagesArea extends HTMLElement {
         this._resizeObs = new ResizeObserver(() => {
             this._padTopPx = null;
             this._scrollIfSticky();
+            // Also when not following: growing the viewport can bring the bottom
+            // into view without any scroll event, and _scrollIfSticky() does
+            // nothing in that state so no frame would run to notice.
+            this._updateJumpButton();
         });
         this._resizeObs.observe(this.messages);
     }
@@ -530,12 +534,18 @@ class MessagesArea extends HTMLElement {
         // answer" - drop the anchor so the view resumes tracking the bottom.
         if (nearBottom) { this._setAnchor(null); }
         this._setStickToBottom(nearBottom);
+        // Unconditional: the two setters above are no-ops when the state is
+        // already what they are being set to, but the geometry the button
+        // reflects has just changed regardless.
+        this._updateJumpButton();
     }
 
+    // Pure state. The jump button no longer keys off this flag - it is decided
+    // on the live geometry by _updateJumpButton(), which the scroll handler,
+    // _scrollNow() and the resize observer each drive at the points where the
+    // geometry can actually have changed.
     _setStickToBottom(stick) {
-        if (this._stickToBottom === stick) { return; }
         this._stickToBottom = stick;
-        this._updateJumpButton();
     }
 
     _onUserScrollIntent(event) {
@@ -601,12 +611,14 @@ class MessagesArea extends HTMLElement {
         if (height !== reserved) { this._anchorSpacer.style.height = `${height}px`; }
     }
 
-    // Visible whenever there is content below the fold, which now includes the
-    // anchored case: the view is deliberately held at the prompt while a long
-    // answer streams past the bottom edge, and the button is how the user says
-    // "take me to the end" without hunting for the scrollbar.
+    // Visible whenever there is content below the fold. This is decided on the
+    // real geometry, not on the follow flags: while an exchange is anchored the
+    // view is deliberately held at the prompt and the button is how the user
+    // says "take me to the end" - but a short answer leaves the anchored view
+    // already at the true bottom, and then there is nothing to jump to. Asking
+    // the scroller settles both cases with one rule.
     _updateJumpButton() {
-        this._jumpButton.hidden = this._stickToBottom && !this._anchorTurnEl;
+        this._jumpButton.hidden = this._isNearBottom();
     }
 
     // Open a model turn: wrapper + avatar + model name, and return the column
@@ -906,12 +918,21 @@ class MessagesArea extends HTMLElement {
         // Only latch when the write actually changes the value: when we are
         // already at the bottom (the common case) no scroll event is fired, and
         // a latch left raised would swallow the user's NEXT real scroll.
-        if (Math.abs(this.messages.scrollTop - target) < 1) { return; }
+        if (Math.abs(this.messages.scrollTop - target) < 1) {
+            // No write, so no scroll event either - but the content around us
+            // has grown since the last frame, so this is the only chance to
+            // notice that the bottom is now (or no longer) in view.
+            this._updateJumpButton();
+            return;
+        }
         this._programmaticScroll = true;
         // Always instant, never behavior:'smooth': smooth scrolling emits a
         // long tail of scroll events the latch cannot pair one-to-one with its
         // writes, and would unstick mid-animation.
         this.messages.scrollTop = target;
+        // The latch above makes _onMessagesScroll skip its own update, so the
+        // post-write geometry has to be read here.
+        this._updateJumpButton();
     }
 
     // click callcback for the "use this answer" button

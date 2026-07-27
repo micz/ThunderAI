@@ -325,7 +325,9 @@ The transcript **follows new content only while the user has not read back**
 (`_stickToBottom`; `MessagesArea.BOTTOM_SLACK_PX`, 24px ≈ one line of body text, absorbs
 sub-pixel `scrollHeight` rounding across font-zoom levels). Scrolling up mid-stream freezes the
 view; the floating `#jumpToLatest` button returns to the bottom and re-arms following, and
-scrolling back to the bottom by hand re-arms it too.
+scrolling back to the bottom by hand re-arms it too. `_stickToBottom` is now *purely* that
+follow state — it no longer gates the button (see below), so `_setStickToBottom()` is a plain
+assignment with no early return.
 
 *Where* following aims depends on the **prompt anchor**. `appendUserMessage()` pins the exchange
 to the user turn it just created (`_setAnchor`; `info` notices do not pin — they are not
@@ -367,8 +369,25 @@ the *host*, and `offsetTop` there does not mean "distance into the scrolled cont
 
 Once the anchor position is reached the view **holds still** for the rest of the answer. The
 user regains bottom-following by scrolling to the bottom themselves or pressing `#jumpToLatest`
-— both drop the anchor. Because the held view leaves content below the fold, `#jumpToLatest` is
-visible whenever an anchor is set, not only when following is off.
+— both drop the anchor.
+
+**`#jumpToLatest` visibility is decided on live geometry, never on the follow flags:**
+`_updateJumpButton()` is exactly `hidden = _isNearBottom()`. Keying it off state instead
+(`_stickToBottom && !_anchorTurnEl`) is the bug it replaced — a short anchored answer clamps
+`_followTarget()` onto the ordinary bottom, so the view *is* at the bottom while an anchor is
+still set, and the button sat there advertising a jump with nowhere to go (clicking it only
+"worked" because `scrollToBottom()` cleared the anchor). Because the answer is geometric it has
+to be recomputed wherever the geometry can move, and the state setters are the wrong hook — they
+early-return when the value is unchanged, which during a stream is every frame:
+
+- `_onMessagesScroll()` — unconditionally, after the two setters (which may both be no-ops).
+- `_scrollNow()` — on **both** paths: after the `scrollTop` write (the `_programmaticScroll`
+  latch makes the resulting `scroll` event skip its own update), *and* on the no-write early
+  return, which is the only signal available when content grew but the target did not move.
+- the `ResizeObserver` — unconditionally, not just via `_scrollIfSticky()`: growing the viewport
+  can bring the bottom into view, and while the user is scrolled up that call does nothing, so
+  no frame would otherwise run.
+- `_setAnchor()` — after `_updateAnchorSpacer()`, since the spacer changes `scrollHeight`.
 
 ```
 scrollToBottom()    real bottom, drop anchor, re-arm → appendBotMessage (terminal/error),
@@ -383,7 +402,9 @@ Three details that are easy to reintroduce as bugs:
 - **`_programmaticScroll` must only be raised when the write changes the value.** Setting
   `scrollTop` fires a `scroll` event indistinguishable from a user gesture, hence the latch —
   but when already at the bottom (the common case) the write is a no-op and fires *nothing*, so
-  latching unconditionally would swallow the user's next real scroll.
+  latching unconditionally would swallow the user's next real scroll. The latch also means
+  `_onMessagesScroll()` returns early for our own writes, which is why `_scrollNow()` has to
+  refresh `#jumpToLatest` itself rather than relying on the scroll event to do it.
 - **Writes are coalesced into one `requestAnimationFrame`.** Besides removing a layout-flushing
   write per token, this makes the write land *after* the flush a `'\n'` token triggers —
   `flushAccumulatingMessage()` swaps token spans for rendered markdown and so changes the
