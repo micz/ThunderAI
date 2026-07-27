@@ -35,7 +35,8 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
-- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`
+- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`
+- **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty the key is omitted entirely, because models without reasoning support reject it. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `minimal` | `low` | `medium` | `high`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
 
 ### Ollama (`ollama_api`)
 - Module: `js/api/ollama.js`
@@ -67,8 +68,13 @@ reasoning content as soon as the corresponding field is present in the stream, s
 model that reasons on its own — without the connection's thinking option being
 enabled — still shows its thinking block. The per-connection prefs
 (`ollama_think`, `google_gemini_thinking_budget`,
-`anthropic_extended_thinking_budget`) only *request* reasoning from the API; they
-never decide whether it is displayed.
+`anthropic_extended_thinking_budget`, `chatgpt_reasoning_summary`) only *request*
+reasoning from the API; they never decide whether it is displayed.
+
+The OpenAI Responses API is the one case where the request pref is effectively
+mandatory: it returns no readable reasoning at all unless `chatgpt_reasoning_summary`
+is set, so with that pref empty the thinking block never appears no matter which
+model is selected.
 
 Reasoning reaches the UI over two transport paths, which can coexist for the same
 provider and are merged into one block:
@@ -84,7 +90,7 @@ tokens, so thinking that arrives before the first content token is not lost.
 | Ollama | `message.thinking` |
 | OpenAI Compatible | first present of `delta.reasoning_content` (DeepSeek, vLLM, SGLang), `delta.reasoning` (OpenRouter — string *or* object with `.text`), `delta.thinking` (some llama.cpp / LM Studio builds) |
 | Google Gemini | any `parts[]` entry with `thought === true`. **All** parts are iterated, not just `parts[0]`, because a thought part may come first and would otherwise be mixed into the answer |
-| OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta` |
+| OpenAI Responses | `response.reasoning_summary_text.delta` and `response.reasoning_text.delta`; as a fallback, the concatenated `item.summary[].text` of a `response.output_item.done` whose `item.type === 'reasoning'`, for models that deliver the summary in one piece instead of streaming deltas. The fallback only fires while `thinkingAccumulator` is still empty, so a summary already received as deltas is never emitted twice. `item.encrypted_content` is always ignored — it is not readable |
 
 **2. Inline `<think>…</think>` tags in the content stream.** Used by models that
 have no dedicated field (Ollama without `ollama_think`, several OpenAI-compatible

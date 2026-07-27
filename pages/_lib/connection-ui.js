@@ -47,6 +47,18 @@ export const varConnectionUI = {
   permission_openai_comp_host: false
 }
 
+// Selects that ship their own option for the empty value, either a disabled
+// placeholder (connection_type) or a meaningful "use the API default" entry (the
+// ChatGPT reasoning ones). When restoring an empty value these must keep that option
+// selected, unlike every other select which has to show a blank control instead.
+const selects_with_empty_option_suffixes = ['chatgpt_reasoning_summary', 'chatgpt_reasoning_effort'];
+
+export function hasEmptyValueOption(elementId = '') {
+  if (elementId === 'connection_type') return true;
+  // The per-prompt pages prefix every field id with e.g. "summarize_", so match on the suffix.
+  return selects_with_empty_option_suffixes.some((suffix) => elementId === suffix || elementId.endsWith(`_${suffix}`));
+}
+
 export async function injectConnectionUI({
     afterTrId = '',
     selectId = '',
@@ -222,6 +234,42 @@ export async function injectConnectionUI({
       <label>
         <input type="checkbox" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_store" class="option-input" />
         &nbsp;<span>__MSG_ChatGPT_chatgpt_api_store_info__</span>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_summary__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_summary" class="option-input">
+          <option value="">__MSG_prefs_OptionText_chatgpt_reasoning_disabled__</option>
+          <option value="auto">__MSG_prefs_OptionText_chatgpt_reasoning_summary_auto__</option>
+          <option value="detailed">__MSG_prefs_OptionText_chatgpt_reasoning_summary_detailed__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_reasoning_summary_Info__ <a href="https://platform.openai.com/docs/guides/reasoning">__MSG_more_info_string__</a>
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_reasoning_effort__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_reasoning_effort" class="option-input">
+          <option value="">__MSG_prefs_OptionText_chatgpt_reasoning_api_default__</option>
+          <option value="minimal">__MSG_prefs_OptionText_chatgpt_reasoning_effort_minimal__</option>
+          <option value="low">__MSG_prefs_OptionText_chatgpt_reasoning_effort_low__</option>
+          <option value="medium">__MSG_prefs_OptionText_chatgpt_reasoning_effort_medium__</option>
+          <option value="high">__MSG_prefs_OptionText_chatgpt_reasoning_effort_high__</option>
+        </select>
+        <br>__MSG_prefs_OptionText_chatgpt_reasoning_effort_Info__
       </label>
     </td>
   </tr>

@@ -27,6 +27,8 @@ export class OpenAI {
   temperature = '';
   stream = false;
   store = false;
+  reasoning_summary = '';
+  reasoning_effort = '';
 
   constructor({
     apiKey = '',
@@ -34,7 +36,9 @@ export class OpenAI {
     developer_messages = '',
     temperature = '',
     stream = false,
-    store = false
+    store = false,
+    reasoning_summary = '',
+    reasoning_effort = ''
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
@@ -42,6 +46,8 @@ export class OpenAI {
     this.temperature = temperature;
     this.stream = stream;
     this.store = store;
+    this.reasoning_summary = reasoning_summary;
+    this.reasoning_effort = reasoning_effort;
   }
 
 
@@ -90,14 +96,23 @@ export class OpenAI {
 
     const tempFloat = parseFloat(this.temperature);
 
-    let request_body = { 
-              model: this.model, 
+    // The reasoning object is sent only when at least one of its properties has been
+    // configured: models without reasoning support reject it, so an empty configuration
+    // must leave the request body untouched.
+    const reasoning_obj = {
+              ...(this.reasoning_summary != '' ? { 'summary': this.reasoning_summary } : {}),
+              ...(this.reasoning_effort != '' ? { 'effort': this.reasoning_effort } : {})
+          }
+
+    let request_body = {
+              model: this.model,
               input: input,
               stream: this.stream,
               store: this.store,
               ...(this.temperature != '' && !Number.isNaN(tempFloat) ? { 'temperature': tempFloat } : {}),
               ...(maxTokens > 0 ? { 'max_output_tokens': parseInt(maxTokens) } : {}),
-              ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {})
+              ...(previous_response_id && this.store ? { 'previous_response_id': previous_response_id } : {}),
+              ...(Object.keys(reasoning_obj).length > 0 ? { 'reasoning': reasoning_obj } : {})
           }
 
     if(this.developer_messages !== ''){

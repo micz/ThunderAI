@@ -24,7 +24,9 @@ export const integration_options_config = {
         model: '',
         developer_messages: '',
         temperature: '',
-        store: false
+        store: false,
+        reasoning_summary: '',
+        reasoning_effort: ''
     },
     ollama: {
         host: '',

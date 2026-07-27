@@ -38,7 +38,8 @@ import {
   injectConnectionUI,
   varConnectionUI,
   showConnectionOptions,
-  updateWarnings
+  updateWarnings,
+  hasEmptyValueOption
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -112,10 +113,10 @@ async function restoreOptions() {
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
           element.value = result[element.id] || default_select_value;
-          // connection_type has a dedicated disabled placeholder option for the
-          // empty value, so let the assignment above select it; every other select
-          // has no empty option and must show a blank control instead.
-          if (element.value === '' && element.id != 'connection_type') {
+          // connection_type and the ChatGPT reasoning selects have a dedicated option
+          // for the empty value, so let the assignment above select it; every other
+          // select has no empty option and must show a blank control instead.
+          if (element.value === '' && !hasEmptyValueOption(element.id)) {
             element.selectedIndex = -1;
           }
           if (element.tomselect) {

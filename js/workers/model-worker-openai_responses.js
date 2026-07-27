@@ -38,6 +38,11 @@ let previous_response_id = null;
 // Responses API exposes for the o-series / gpt-5 models, while some models emit
 // reasoning_text.delta instead. Either is forwarded as soon as it appears, with no
 // preference gating the detection.
+// A third source is handled below: models that do not stream those deltas still
+// deliver the summary inside the reasoning item of response.output_item.done. Note
+// that the summary is only ever populated when the request asks for it through the
+// chatgpt_reasoning_summary preference; without it the item carries just the opaque
+// encrypted_content, which cannot be displayed.
 const REASONING_DELTA_EVENTS = ['response.reasoning_summary_text.delta', 'response.reasoning_text.delta'];
 
 self.onmessage = async function(event) {
@@ -150,6 +155,17 @@ self.onmessage = async function(event) {
                 } else if (REASONING_DELTA_EVENTS.includes(parsedLine.type) && typeof parsedLine.delta === 'string' && parsedLine.delta !== '') {
                     thinkingAccumulator += parsedLine.delta;
                     postMessage({ type: 'newThinkingToken', payload: { token: parsedLine.delta } });
+                } else if (parsedLine.type === 'response.output_item.done' && parsedLine.item && parsedLine.item.type === 'reasoning' && thinkingAccumulator === '') {
+                    // Fallback for models that never stream the reasoning deltas: the whole
+                    // summary shows up at once here. Skipped when the accumulator already
+                    // holds streamed text, so the reasoning is never emitted twice.
+                    const summary_text = Array.isArray(parsedLine.item.summary)
+                        ? parsedLine.item.summary.map((part) => (part && typeof part.text === 'string') ? part.text : '').join('')
+                        : '';
+                    if (summary_text !== '') {
+                        thinkingAccumulator += summary_text;
+                        postMessage({ type: 'newThinkingToken', payload: { token: summary_text } });
+                    }
                 // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
                 //     previous_response_id = parsedLine.response.id;
                 } else if (parsedLine.type === 'response.failed' && parsedLine.response && parsedLine.response.error) {
