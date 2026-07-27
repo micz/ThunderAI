@@ -9,6 +9,7 @@
         <li>A prompt's placement is now managed entirely from the Menu Order page: the "Show in" selector and the enabled checkbox have been removed from the prompt editor, which now shows a "Menu position" button that opens the Menu Order page and highlights the prompt. New prompts start visible in the popup menu [<a href="https://github.com/micz/ThunderAI/issues/824">#824</a>].</li>
         <li>The Custom Prompts page UI has been improved [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
         <li>The Data Placeholders page UI has been restyled to match the new Custom Prompts page design [<a href="https://github.com/micz/ThunderAI/issues/838">#838</a>].</li>
+        <li><i>[OpenAI API]</i> The thinking block is correctly handled and reported on the webchat. The reasoning summary parameter must be set [<a href="https://github.com/micz/ThunderAI/issues/773">#773</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>
