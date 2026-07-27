@@ -105,7 +105,7 @@ would otherwise leave an empty turn on screen. On every `newThinkingToken`,
 `handleNewThinkingToken()` calls `_showThinkingIndicator()`, which appends a
 `<div class="thinking-live">` to the current bot turn body: the animated
 `images/mzta-loading.svg` as an `<img>` in the slot the `<summary>` disclosure
-triangle will occupy, followed by `apiwebchat_thinking_in_progress` + a literal
+triangle will occupy, followed by `prefs_OptionText_thinking_summary` + a literal
 `...`. All the motion is inside the SVG, so the row itself carries no CSS
 animation (and needs no reduced-motion override). It is a **sibling** of the
 accumulating message, not a child, so the per-`\n` flush cycle cannot orphan or

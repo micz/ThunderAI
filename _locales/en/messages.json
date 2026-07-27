@@ -741,10 +741,6 @@
     "message": "Thinking",
     "description": ""
   },
-  "apiwebchat_thinking_in_progress": {
-    "message": "Thinking",
-    "description": "Live indicator shown in the chat while the model is reasoning, before the collapsible thinking block is rendered. A literal '...' is appended to it in code."
-  },
   "prefs_OptionText_max_prompt_length" : {
     "message": "Max prompt length",
     "description": ""

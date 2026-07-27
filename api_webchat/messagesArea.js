@@ -749,7 +749,7 @@ class MessagesArea extends HTMLElement {
             spinner.src = '../images/mzta-loading.svg';
             spinner.alt = '';
             const label = document.createElement('span');
-            label.textContent = (browser.i18n.getMessage('apiwebchat_thinking_in_progress') || 'Thinking') + '...';
+            label.textContent = (browser.i18n.getMessage('prefs_OptionText_thinking_summary') || 'Thinking') + '...';
             this.thinkingLiveEl.appendChild(spinner);
             this.thinkingLiveEl.appendChild(label);
         }
