@@ -439,7 +439,7 @@ class MessageInput extends HTMLElement {
                 this.hideStatusMessage();
                 this.setStatusMessage('');
             }, 500);
-        }, 1500);
+        }, 3500);
     }
 
     // Unlike "done", the error pill has no timeout: it stays until the next
