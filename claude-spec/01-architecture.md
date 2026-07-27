@@ -313,7 +313,7 @@ Two invariants in `MessagesArea`, both easy to break:
   created, so it stays bound to that answer's own text rather than to whatever is on screen
   later.
 
-### Scrolling (stick-to-bottom)
+### Scrolling (prompt-anchored following)
 
 **Exactly one box scrolls: `#messages`** inside the `<messages-area>` shadow root. The host is
 `overflow: hidden` in *both* places that style it — `:host` in `messagesArea.js` and the
@@ -321,16 +321,61 @@ light-DOM `messages-area` rule in `styles.css`, which wins on specificity, so bo
 A `wheel` event over `#messages` bubbles to the host, so a second scrollbox there would leave
 the logic below reading a `scrollTop` that is not the one moving.
 
-The transcript **follows new content only while the user is already at the bottom**
-(`MessagesArea.BOTTOM_SLACK_PX`, 24px ≈ one line of body text, absorbs sub-pixel `scrollHeight`
-rounding across font-zoom levels). Scrolling up mid-stream freezes the view and reveals the
-floating `#jumpToLatest` button, which returns to the bottom and re-arms following; scrolling
-back to the bottom by hand re-arms it too.
+The transcript **follows new content only while the user has not read back**
+(`_stickToBottom`; `MessagesArea.BOTTOM_SLACK_PX`, 24px ≈ one line of body text, absorbs
+sub-pixel `scrollHeight` rounding across font-zoom levels). Scrolling up mid-stream freezes the
+view; the floating `#jumpToLatest` button returns to the bottom and re-arms following, and
+scrolling back to the bottom by hand re-arms it too.
+
+*Where* following aims depends on the **prompt anchor**. `appendUserMessage()` pins the exchange
+to the user turn it just created (`_setAnchor`; `info` notices do not pin — they are not
+prompts). While an anchor is set, `_followTarget()` aims at **the prompt at the top of the
+viewport** rather than at the bottom of the transcript, so the answer streams down into a still
+window instead of dragging the reader along line by line. Three clamps define it:
+
+- **Never past the content bottom.** A short exchange that already fits entirely is therefore a
+  no-op — the target collapses onto the ordinary bottom and nothing special happens.
+- **Never backwards** (`max(target, scrollTop)`): a growing answer can never push the prompt
+  back down into view.
+- **A tall prompt yields.** If putting the prompt flush at the top would leave the answer less
+  than two thirds of the window, the target instead puts the *answer's* top one third down —
+  prompt one third, answer two thirds (`PROMPT_MAX_VIEWPORT_SHARE = 1/3`, measured off the
+  answer turn, which is the anchor's `nextElementSibling`).
+
+**`#anchorSpacer` is what makes the anchor reachable at all.** Right after a prompt is sent the
+transcript is not tall enough to scroll it to the top — `scrollHeight - clientHeight` sits just
+past the prompt — so without reserved space the view would barely move (and the prompt would
+creep up only as the answer happened to grow). `_updateAnchorSpacer()` inserts a
+`flex: 0 0 auto` div as the **last** child of `#messages`, sized to the shortfall between the
+content below the prompt and one full viewport, and shrinks it to nothing as the answer grows
+into it. Consequences worth keeping straight:
+
+- It exists **only while an exchange is pinned** — `_setAnchor(null)` removes the node, so a
+  finished conversation never ends in dead space.
+- **Turns are inserted before it**, via `_appendTurn()` (`insertBefore(turn, this._anchorSpacer)`;
+  a null spacer makes that a plain append). Appending *past* the spacer would render the answer
+  below a viewport-sized gap for the frame before the order is corrected.
+- Its height is subtracted **arithmetically** (`offsetHeight`), never by collapsing it to 0 and
+  re-measuring: shrinking content mid-frame lets the browser clamp `scrollTop` and discard the
+  position being held. The write is also skipped when the value is unchanged.
+- `_scrollNow()` re-sizes it *before* computing the target, since `_followTarget()` clamps to a
+  `scrollHeight` that must already include the reservation.
+
+Positions are measured with `getBoundingClientRect()` deltas against `#messages`' own rect (plus
+`scrollTop`), not `offsetTop`: `#messages` is `position: static`, so the turns' `offsetParent` is
+the *host*, and `offsetTop` there does not mean "distance into the scrolled content".
+
+Once the anchor position is reached the view **holds still** for the rest of the answer. The
+user regains bottom-following by scrolling to the bottom themselves or pressing `#jumpToLatest`
+— both drop the anchor. Because the held view leaves content below the fold, `#jumpToLatest` is
+visible whenever an anchor is set, not only when following is off.
 
 ```
-scrollToBottom()    force the bottom + re-arm  → appendUserMessage, appendBotMessage,
-                                                 appendDiffViewer, #jumpToLatest click
-_scrollIfSticky()   follow only if still stuck → handleNewToken, handleTokensDone
+scrollToBottom()    real bottom, drop anchor, re-arm → appendBotMessage (terminal/error),
+                                                       appendDiffViewer, #jumpToLatest click
+_resumeFollowing()  re-arm, keep the anchor          → appendUserMessage
+_scrollIfSticky()   follow only if still stuck       → handleNewToken, handleTokensDone,
+                                                       handleNewThinkingToken, ResizeObserver
 ```
 
 Three details that are easy to reintroduce as bugs:
@@ -349,7 +394,9 @@ Three details that are easy to reintroduce as bugs:
 `#messages` also sets `overflow-anchor: none`: Firefox scroll anchoring tries to hold the visual
 position as content grows, but the flush tears down and rebuilds the subtree an anchor may have
 picked, which surfaces as micro-jumps. A `ResizeObserver` on `#messages` re-follows after window
-resizes and font-zoom changes, which move `scrollHeight` without firing a `scroll` event.
+resizes and font-zoom changes, which move `scrollHeight` without firing a `scroll` event; it also
+invalidates the cached `padding-top` (`_padTopPx`) the anchor target is computed from — reading it
+with `getComputedStyle` on every frame of a stream would flush style for nothing.
 `addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also
 covers the paths where that method returns early.
 
@@ -360,7 +407,7 @@ covers the paths where that method returns early.
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
 | `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
 | `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, stick-to-bottom scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |

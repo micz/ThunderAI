@@ -64,6 +64,19 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         box-sizing: border-box;
     }
 
+    /* Reserves the scrollback that lets the anchored prompt actually reach the
+       top of the viewport. Without it the transcript simply is not tall enough
+       to scroll that far while the answer is still short, and the prompt would
+       creep up only as the answer happened to grow. Height is set inline by
+       _updateAnchorSpacer() and the node is removed once no exchange is pinned,
+       so it never leaves dead space at the end of a finished conversation.
+       flex-shrink:0 matters: #messages is a flex column and would otherwise
+       collapse it. */
+    #anchorSpacer {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
     /* ---- turns ----
        Every exchange is wrapped in a .turn. The wrapper is what makes the
        per-answer toolbar possible: :hover / :focus-within need a single
@@ -389,6 +402,11 @@ class MessagesArea extends HTMLElement {
     // pixels a token can add between the write and the scroll event it fires.
     static BOTTOM_SLACK_PX = 24;
 
+    // Fraction of the viewport the anchored prompt is allowed to keep when it
+    // is too tall to leave the answer a comfortable share. Beyond that we push
+    // the prompt up until it holds a third and the answer gets the other two.
+    static PROMPT_MAX_VIEWPORT_SHARE = 1 / 3;
+
     constructor() {
         super();
         this.accumulatingMessageEl = null;
@@ -409,12 +427,25 @@ class MessagesArea extends HTMLElement {
         // so a long conversation never accumulates identical bars.
         this._lastFullBarTurn = null;
 
-        // ---- stick-to-bottom ----
+        // ---- following the conversation ----
         // True while the transcript should follow new content. It goes off as
         // soon as the user scrolls away from the bottom, and back on when they
         // return there or press the jump button. A long answer must not drag
         // the view along while it is being read.
         this._stickToBottom = true;
+        // The user turn the current exchange is pinned to, if any. While set,
+        // following aims at "prompt at the top of the viewport" instead of at
+        // the bottom of the transcript: the answer then grows downwards into a
+        // still view rather than dragging the reader along. Cleared when the
+        // anchor target has been reached (the transcript is long enough that
+        // the anchor no longer constrains anything) or when the user takes over.
+        this._anchorTurnEl = null;
+        // Spacer reserving the scrollback the anchor needs; see
+        // _updateAnchorSpacer(). Exists only while an exchange is pinned.
+        this._anchorSpacer = null;
+        // Cached #messages padding-top, in px. Invalidated on resize, which is
+        // also when font zoom changes it.
+        this._padTopPx = null;
         // Raised right before every programmatic scrollTop write and consumed
         // by the scroll event it provokes: setting scrollTop fires a 'scroll'
         // event indistinguishable from a user gesture, so without this latch
@@ -451,7 +482,10 @@ class MessagesArea extends HTMLElement {
         this.messages.addEventListener('keydown', this._onUserScrollIntent, { passive: true });
         // Window resizing and font zoom change scrollHeight without firing a
         // scroll event: realign if we are still following.
-        this._resizeObs = new ResizeObserver(() => this._scrollIfSticky());
+        this._resizeObs = new ResizeObserver(() => {
+            this._padTopPx = null;
+            this._scrollIfSticky();
+        });
         this._resizeObs.observe(this.messages);
     }
 
@@ -480,7 +514,11 @@ class MessagesArea extends HTMLElement {
             this._programmaticScroll = false;
             return;
         }
-        this._setStickToBottom(this._isNearBottom());
+        const nearBottom = this._isNearBottom();
+        // The user going all the way down themselves is an explicit "follow the
+        // answer" - drop the anchor so the view resumes tracking the bottom.
+        if (nearBottom) { this._setAnchor(null); }
+        this._setStickToBottom(nearBottom);
     }
 
     _setStickToBottom(stick) {
@@ -491,18 +529,73 @@ class MessagesArea extends HTMLElement {
 
     _onUserScrollIntent(event) {
         if (event.type === 'wheel') {
-            if (event.deltaY < 0) { this._setStickToBottom(false); }
+            if (event.deltaY < 0) { this._unfollow(); }
             return;
         }
         // keydown. #messages is not focusable today so these never arrive, but
         // the branch costs nothing and works the day a tabindex is added.
         if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) {
-            this._setStickToBottom(false);
+            this._unfollow();
         }
     }
 
+    // The user reads back: stop following, and forget the anchor so we do not
+    // pull them forward to it on the next token.
+    _unfollow() {
+        this._setAnchor(null);
+        this._setStickToBottom(false);
+    }
+
+    _setAnchor(turnEl) {
+        if (this._anchorTurnEl === turnEl) { return; }
+        this._anchorTurnEl = turnEl;
+        this._updateAnchorSpacer();
+        this._updateJumpButton();
+    }
+
+    // Size (or remove) the spacer that makes the anchor position reachable.
+    // While an exchange is pinned, everything from the prompt down must be able
+    // to fill a whole viewport, otherwise scrollTop simply cannot go far enough
+    // to put the prompt at the top. The spacer takes up the shortfall and
+    // shrinks to nothing as the answer grows into it.
+    _updateAnchorSpacer() {
+        if (!this._anchorTurnEl || !this._anchorTurnEl.isConnected) {
+            this._anchorSpacer?.remove();
+            this._anchorSpacer = null;
+            return;
+        }
+        if (!this._anchorSpacer) {
+            this._anchorSpacer = document.createElement('div');
+            this._anchorSpacer.id = 'anchorSpacer';
+            this._anchorSpacer.setAttribute('aria-hidden', 'true');
+        }
+        // Always last, so appends that landed after a previous sizing (the
+        // answer turn, the action bar) do not end up below the reserved space.
+        if (this.messages.lastElementChild !== this._anchorSpacer) {
+            this.messages.appendChild(this._anchorSpacer);
+        }
+        // The spacer's current height is subtracted arithmetically rather than by
+        // collapsing it to 0 and re-measuring: shrinking the content mid-frame
+        // lets the browser clamp scrollTop, which would throw away the very
+        // position we are trying to hold.
+        const reserved = this._anchorSpacer.offsetHeight;
+        const rootTop = this.messages.getBoundingClientRect().top;
+        const promptTop = this._anchorTurnEl.getBoundingClientRect().top - rootTop
+            + this.messages.scrollTop;
+        const realContentBelowPrompt = this.messages.scrollHeight - reserved - promptTop;
+        const shortfall = this.messages.clientHeight - realContentBelowPrompt;
+        const height = shortfall > 0 ? Math.ceil(shortfall) : 0;
+        // Skip no-op writes: this runs on every frame of a stream and each write
+        // to style.height dirties layout even when the value is unchanged.
+        if (height !== reserved) { this._anchorSpacer.style.height = `${height}px`; }
+    }
+
+    // Visible whenever there is content below the fold, which now includes the
+    // anchored case: the view is deliberately held at the prompt while a long
+    // answer streams past the bottom edge, and the button is how the user says
+    // "take me to the end" without hunting for the scrollbar.
     _updateJumpButton() {
-        this._jumpButton.hidden = this._stickToBottom;
+        this._jumpButton.hidden = this._stickToBottom && !this._anchorTurnEl;
     }
 
     // Open a model turn: wrapper + avatar + model name, and return the column
@@ -527,7 +620,7 @@ class MessagesArea extends HTMLElement {
         body.appendChild(name);
         turn.appendChild(body);
 
-        this.messages.appendChild(turn);
+        this._appendTurn(turn);
         this._currentTurnEl = turn;
         return body;
     }
@@ -536,8 +629,15 @@ class MessagesArea extends HTMLElement {
     _beginUserTurn(type) {
         const turn = document.createElement('div');
         turn.classList.add('turn', type === 'info' ? 'turn-info' : 'turn-user');
-        this.messages.appendChild(turn);
+        this._appendTurn(turn);
         return turn;
+    }
+
+    // Turns always go before the anchor spacer, never after it: appending past
+    // the reserved space would render the answer below a viewport-sized gap for
+    // the one frame before _updateAnchorSpacer() puts the order right again.
+    _appendTurn(turn) {
+        this.messages.insertBefore(turn, this._anchorSpacer);
     }
 
     // The column of the current model turn, opening one if needed.
@@ -654,7 +754,12 @@ class MessagesArea extends HTMLElement {
             messageElement.appendChild(textWithBrToFragment(messageText));
         }
         turn.appendChild(messageElement);
-        this.scrollToBottom();
+        // Pin the exchange to this prompt: the view scrolls until the prompt is
+        // at the top and then holds, so the answer fills a still window instead
+        // of dragging the reader down line by line. 'info' turns are notices,
+        // not prompts, and keep the plain bottom-following behaviour.
+        this._setAnchor(type === 'info' ? null : turn);
+        this._resumeFollowing();
     }
 
     appendBotMessage(messageText, type="bot") {
@@ -700,9 +805,17 @@ class MessagesArea extends HTMLElement {
         }
     }
 
-    // Force the bottom and re-arm following. This is what the call sites that
-    // represent an explicit user action use.
+    // Force the real bottom and re-arm following, dropping any prompt anchor.
+    // This is what the call sites that represent an explicit user action use.
     scrollToBottom() {
+        this._setAnchor(null);
+        this._setStickToBottom(true);
+        this._requestScroll();
+    }
+
+    // Re-arm following without touching the anchor: used by the call sites that
+    // are part of building a turn rather than an explicit "go to the end".
+    _resumeFollowing() {
         this._setStickToBottom(true);
         this._requestScroll();
     }
@@ -725,8 +838,60 @@ class MessagesArea extends HTMLElement {
         });
     }
 
+    // Where following should land right now. Without an anchor this is the plain
+    // bottom of the transcript. With one it is the position that puts the
+    // anchored prompt at the top of the viewport - but never past the bottom of
+    // the content, and never backwards: the view only ever moves down, so a
+    // growing answer cannot push the prompt back into view.
+    _followTarget() {
+        const bottom = this.messages.scrollHeight - this.messages.clientHeight;
+        if (!this._anchorTurnEl || !this._anchorTurnEl.isConnected) { return bottom; }
+
+        const clientHeight = this.messages.clientHeight;
+        // Measure with rects rather than offsetTop: the turns' offsetParent is
+        // the host (#messages is position:static), so offsetTop silently means
+        // something different from "distance into the scrolled content". A rect
+        // delta against #messages' own rect is unambiguous, and adding scrollTop
+        // converts it to the absolute scroll offset of the prompt.
+        const rootTop = this.messages.getBoundingClientRect().top;
+        const scrollTop = this.messages.scrollTop;
+        const offsetOf = (el) => el.getBoundingClientRect().top - rootTop + scrollTop;
+
+        // Back off by the padding so the prompt is not glued to the very edge.
+        // Cached: this runs on every animation frame of a stream, and
+        // getComputedStyle there would flush style for nothing.
+        if (this._padTopPx === null) {
+            this._padTopPx = parseFloat(getComputedStyle(this.messages).paddingTop) || 0;
+        }
+        let target = offsetOf(this._anchorTurnEl) - this._padTopPx;
+
+        // A prompt taller than its allowance would leave the answer less than
+        // two thirds of the window: keep scrolling until the answer's own top
+        // sits one third down, giving the prompt a third and the answer the rest.
+        const answerEl = this._anchorTurnEl.nextElementSibling;
+        if (answerEl && answerEl !== this._anchorSpacer) {
+            const answerTop = offsetOf(answerEl)
+                - (clientHeight * MessagesArea.PROMPT_MAX_VIEWPORT_SHARE);
+            if (answerTop > target) { target = answerTop; }
+        }
+
+        // Clamping to `bottom` is what makes a short answer a no-op: the whole
+        // exchange already fits, so there is nothing left to scroll to and the
+        // anchor is satisfied for good.
+        target = Math.min(target, bottom);
+        // Never backwards. Once the anchor position is reached the view holds
+        // still and the answer streams into it; the user stays in control of
+        // going further down (which re-arms plain bottom-following, see
+        // _onMessagesScroll).
+        return Math.max(target, this.messages.scrollTop);
+    }
+
     _scrollNow() {
-        const target = this.messages.scrollHeight - this.messages.clientHeight;
+        // Re-reserve first: the answer has grown since the last frame, so the
+        // shortfall the spacer covers has shrunk, and _followTarget clamps to a
+        // scrollHeight that must already account for it.
+        this._updateAnchorSpacer();
+        const target = this._followTarget();
         // Only latch when the write actually changes the value: when we are
         // already at the bottom (the common case) no scroll event is fired, and
         // a latch left raised would swallow the user's NEXT real scroll.
