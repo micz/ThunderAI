@@ -306,11 +306,16 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
        details.thinking-block. Styled as the same family as that block so the
        swap does not read as a layout change: the spinner sits where the
        <summary> disclosure triangle will be, and the label keeps its x position.
-       The motion lives in the animated SVG, so the row itself is static. */
+       The motion lives in the animated SVG, so the row itself is static.
+       The label gets an explicit line-height so its line box matches the 16px
+       spinner: with the default (normal) line-height the box is taller than the
+       glyphs and its asymmetric leading made the centered spinner read as
+       sitting slightly low next to the word. */
     .thinking-live {
         display: flex;
         align-items: center;
         gap: 0.35em;
+        line-height: 16px;
         border-left: 3px solid var(--border-strong);
         background: var(--surface-2);
         padding: 0.3em 0.6em;
