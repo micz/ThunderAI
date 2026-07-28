@@ -361,6 +361,47 @@ export function cleanupNewlines(text) {
   .trim();
 }
 
+// Extract and strip inline <think>...</think> blocks from a model response.
+// Some models emit their reasoning inline in the content stream instead of in a
+// dedicated API field (Ollama without ollama_think, several OpenAI-compatible
+// servers), so the reasoning must be separated from the answer regardless of any
+// connection preference.
+//
+// Returns { text, thinking }:
+//   text:     the response with every <think> block removed
+//   thinking: the extracted reasoning, multiple blocks joined by a newline ('' if none)
+//
+// `truncateUnterminated` handles a response that ends with an unclosed <think>
+// (a truncated reply): when true, everything from the dangling <think> onward is
+// dropped, so callers that parse the response never receive raw reasoning.
+// Streaming callers leave it false and instead defer the flush until the closing
+// tag arrives.
+export function stripThinkTags(text, truncateUnterminated = false) {
+  if (!text) {
+    return { text: '', thinking: '' };
+  }
+
+  let thinking = '';
+  const thinkRegex = /<think>([\s\S]*?)<\/think>/gi;
+  let match;
+  while ((match = thinkRegex.exec(text)) !== null) {
+    thinking += (thinking ? '\n' : '') + match[1];
+  }
+  let out = text.replace(thinkRegex, '');
+
+  // A <think> left open after the complete blocks were removed means the reply
+  // was cut off mid-reasoning.
+  if (truncateUnterminated) {
+    const dangling = out.search(/<think>/i);
+    if (dangling !== -1) {
+      thinking += (thinking ? '\n' : '') + out.slice(dangling).replace(/<think>/i, '');
+      out = out.slice(0, dangling);
+    }
+  }
+
+  return { text: out.replace(/^\s+/, ''), thinking: thinking };
+}
+
 export function convertNewlinesToBr(text) {
   return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
 }

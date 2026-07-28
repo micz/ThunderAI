@@ -31,7 +31,14 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 let previous_response_id = null;
+
+// Reasoning stream events: reasoning_summary_text.delta carries the summary the
+// Responses API exposes for the o-series / gpt-5 models, while some models emit
+// reasoning_text.delta instead. Either is forwarded as soon as it appears, with no
+// preference gating the detection.
+const REASONING_DELTA_EVENTS = ['response.reasoning_summary_text.delta', 'response.reasoning_text.delta'];
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -94,7 +101,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
@@ -102,7 +110,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
@@ -138,6 +147,9 @@ self.onmessage = async function(event) {
                 } else if (parsedLine.type === 'response.output_text.delta' && parsedLine.delta) {
                     assistantResponseAccumulator += parsedLine.delta;
                     postMessage({ type: 'newToken', payload: { token: parsedLine.delta } });
+                } else if (REASONING_DELTA_EVENTS.includes(parsedLine.type) && typeof parsedLine.delta === 'string' && parsedLine.delta !== '') {
+                    thinkingAccumulator += parsedLine.delta;
+                    postMessage({ type: 'newThinkingToken', payload: { token: parsedLine.delta } });
                 // } else if (parsedLine.type === 'response.completed' && parsedLine.response && parsedLine.response.id) {
                 //     previous_response_id = parsedLine.response.id;
                 } else if (parsedLine.type === 'response.failed' && parsedLine.response && parsedLine.response.error) {
@@ -147,6 +159,7 @@ self.onmessage = async function(event) {
                     postMessage({ type: 'error', payload: i18nStrings["chatgpt_api_request_failed"] + ": " + errorMessage });
                     reader.cancel();
                     assistantResponseAccumulator = '';
+                    thinkingAccumulator = '';
                     streamError = true;
                     break;
                 }

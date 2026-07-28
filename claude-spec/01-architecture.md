@@ -220,8 +220,9 @@ Worker. No framework, no build step; plain ES6 modules under the strict default 
 
 ```
 index.html
+  ├── #appHeader                           — logo, product name, static model chip (light DOM)
   ├── <messages-area>   (messagesArea.js)  — renders the conversation transcript
-  ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status logger
+  ├── <message-input>   (messageInput.js)  — input field, send/stop buttons, status pill
   └── controller.js                        — DI / worker wiring (see below)
 ```
 
@@ -238,9 +239,9 @@ worker/runtime messages into component method calls. It owns the module-level `p
 Worker → controller.js → components
   messageSent      → messageInput.handleMessageSent()
   newToken         → messagesArea.handleNewToken(token)          (feeds StreamingMessage + fading span)
-  newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage)
-  tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons → divider)
-  error            → messagesArea.appendBotMessage(payload,'error')
+  newThinkingToken → messagesArea.handleNewThinkingToken(token)  (feeds StreamingMessage + live "Thinking…" indicator)
+  tokensDone       → messagesArea.handleTokensDone(promptData)   (flush → action buttons)
+  error            → messagesArea.appendBotMessage(payload,'error') + messageInput.showErrorStatus()
 
 background → controller.js (browser.runtime commands)
   api_send             → set promptData; send prompt (or show custom-text field)
@@ -251,21 +252,224 @@ background → controller.js (browser.runtime commands)
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
 text to `renderThinkingBlock`. The answer-text snapshot is what the "use this answer" /
-"save as summary" / diff buttons close over — one instance per turn keeps each turn's
-buttons tied to their own response.
+"copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
+turn's buttons tied to their own response.
+
+Every one of those buttons honours a text selection and acts on just that part of the
+answer, falling back to the whole snapshot when nothing is selected. "Copy" writes **plain
+text**, so it reads the selection through `getCurrentSelectionText()` and converts the
+snapshot with `htmlToPlainText()` — which parses the markup, decoding entities (`&amp;` → `&`)
+and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
+is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
+
+### Theming
+
+Every colour in the window comes from a CSS custom property declared once on `:root` in
+`api_webchat/styles.css`, with a `@media (prefers-color-scheme: dark)` override. The theme
+follows Thunderbird/the system; **there is no manual override**, because applying one before
+first paint would need an inline `<head>` script, which the default MV2 CSP forbids.
+
+The three components each live in their own shadow root, which `styles.css` cannot select
+into. Custom properties are inherited DOM properties and *do* cross shadow boundaries, so
+they are the theming channel: component styles consume `var(--token)` and must never declare
+literal colours or their own `prefers-color-scheme` block. Rules that are not custom
+properties (focus rings, `@keyframes`, the reduced-motion opt-out, the shared button
+families) live in `api_webchat/sharedStyles.js` as CSS strings that each component
+concatenates into its own `<style>`.
+
+`--accent` mirrors `pages/_lib/mzta-design.css` so the whole add-on shares one blue.
+
+### Transcript DOM contract
+
+Every exchange is wrapped in a `.turn` element — the wrapper is what makes the per-answer
+toolbar possible, since `:hover` / `:focus-within` need a single element enclosing an answer
+and its buttons. There are no `<hr>` dividers; spacing separates the turns.
+
+```
+#messages
+  .turn.turn-user   → .bubble                        (accent bubble, right-aligned)
+  .turn.turn-info   → .message.info                  (full-width startup notice)
+  .turn.turn-bot    → .turn-head (avatar)
+                      .turn-body → .turn-name
+                                   .message.bot       (one per flushed block)
+                                   .turn-tools        (icon toolbar, earlier answers)
+                                   .action-bar        (full bar, newest answer)
+                                   .sel_info          (alongside the full bar)
+```
+
+Two invariants in `MessagesArea`, both easy to break:
+
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every `'\n'`, so
+  clearing it in `flushAccumulatingMessage()` would open a new wrapper — and render a second
+  avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
+  `handleTokensDone()` reset it. `appendDiffViewer()` can run against an older turn mid-session,
+  so it saves and restores the field around `_beginBotTurn()`.
+- **`_lastFullBarTurn` owns the only full action bar.** `addActionButtons()` calls
+  `_degradeFullActionBar()` first, so two full bars never coexist. `.action-bar` and
+  `.turn-tools` are mutually exclusive on a given turn — an answer showing the full bar needs
+  no icon toolbar, because every icon would duplicate a button already spelled out beside it.
+  Degrading therefore *replaces* the bar with the toolbar. The toolbar is built at that
+  moment, but from the arguments stashed on the turn (`_mztaToolsArgs`) when the bar was
+  created, so it stays bound to that answer's own text rather than to whatever is on screen
+  later.
+
+### Scrolling (prompt-anchored following)
+
+**Exactly one box scrolls: `#messages`** inside the `<messages-area>` shadow root. The host is
+`overflow: hidden` in *both* places that style it — `:host` in `messagesArea.js` and the
+light-DOM `messages-area` rule in `styles.css`, which wins on specificity, so both must agree.
+A `wheel` event over `#messages` bubbles to the host, so a second scrollbox there would leave
+the logic below reading a `scrollTop` that is not the one moving.
+
+The transcript **follows new content only while the user has not read back**
+(`_stickToBottom`; `MessagesArea.BOTTOM_SLACK_PX`, 24px ≈ one line of body text, absorbs
+sub-pixel `scrollHeight` rounding across font-zoom levels). Scrolling up mid-stream freezes the
+view; the floating `#jumpToLatest` button returns to the bottom and re-arms following, and
+scrolling back to the bottom by hand re-arms it too. `_stickToBottom` is now *purely* that
+follow state — it no longer gates the button (see below), so `_setStickToBottom()` is a plain
+assignment with no early return.
+
+*Where* following aims depends on the **prompt anchor**. `appendUserMessage()` pins the exchange
+to the user turn it just created (`_setAnchor`; `info` notices do not pin — they are not
+prompts). While an anchor is set, `_followTarget()` aims at **the prompt at the top of the
+viewport** rather than at the bottom of the transcript, so the answer streams down into a still
+window instead of dragging the reader along line by line. Three clamps define it:
+
+- **Never past the content bottom.** A short exchange that already fits entirely is therefore a
+  no-op — the target collapses onto the ordinary bottom and nothing special happens.
+- **Never backwards** (`max(target, scrollTop)`): a growing answer can never push the prompt
+  back down into view.
+- **A tall prompt yields.** If putting the prompt flush at the top would leave the answer less
+  than two thirds of the window, the target instead puts the *answer's* top one third down —
+  prompt one third, answer two thirds (`PROMPT_MAX_VIEWPORT_SHARE = 1/3`, measured off the
+  answer turn, which is the anchor's `nextElementSibling`).
+
+**`#anchorSpacer` is what makes the anchor reachable at all.** Right after a prompt is sent the
+transcript is not tall enough to scroll it to the top — `scrollHeight - clientHeight` sits just
+past the prompt — so without reserved space the view would barely move (and the prompt would
+creep up only as the answer happened to grow). `_updateAnchorSpacer()` inserts a
+`flex: 0 0 auto` div as the **last** child of `#messages`, sized to the shortfall between the
+content below the prompt and one full viewport, and shrinks it to nothing as the answer grows
+into it. Consequences worth keeping straight:
+
+- It exists **only while an exchange is pinned** — `_setAnchor(null)` removes the node, so a
+  finished conversation never ends in dead space. `handleTokensDone()` is what normally retires it,
+  before its final follow; the user gestures that drop the anchor do it too.
+- **Turns are inserted before it**, via `_appendTurn()` (`insertBefore(turn, this._anchorSpacer)`;
+  a null spacer makes that a plain append). Appending *past* the spacer would render the answer
+  below a viewport-sized gap for the frame before the order is corrected.
+- Its height is subtracted **arithmetically** (`offsetHeight`), never by collapsing it to 0 and
+  re-measuring: shrinking content mid-frame lets the browser clamp `scrollTop` and discard the
+  position being held. The write is also skipped when the value is unchanged.
+- `_scrollNow()` re-sizes it *before* computing the target, since `_followTarget()` clamps to a
+  `scrollHeight` that must already include the reservation.
+
+Positions are measured with `getBoundingClientRect()` deltas against `#messages`' own rect (plus
+`scrollTop`), not `offsetTop`: `#messages` is `position: static`, so the turns' `offsetParent` is
+the *host*, and `offsetTop` there does not mean "distance into the scrolled content".
+
+Once the anchor position is reached the view **holds still** for the rest of the answer. The
+user regains bottom-following by scrolling to the bottom themselves or pressing `#jumpToLatest`
+— both drop the anchor.
+
+**`handleTokensDone()` drops the anchor before its final follow**, and the order matters. Once the
+answer is complete the anchor has nothing left to hold — its whole job was keeping the view still
+while the answer streamed into it — and while it is still set `_followTarget()` clamps to the
+anchored position and *stops there*. In reply mode that falls short of the action bar: it is the
+tallest bar of the lot (two-line split button + visible `.sel_info`) and all of it lives below the
+anchored target, so the view never scrolls far enough to show the whole bar and `#jumpToLatest`
+stays up pointing at it. Clearing the anchor first is what lets that last `_scrollIfSticky()` reach
+the real bottom.
+
+**`#jumpToLatest` visibility is decided on live geometry, never on the follow flags:**
+`_updateJumpButton()` is exactly `hidden = _isNearBottom()`. Keying it off state instead
+(`_stickToBottom && !_anchorTurnEl`) is the bug it replaced — a short anchored answer clamps
+`_followTarget()` onto the ordinary bottom, so the view *is* at the bottom while an anchor is
+still set, and the button sat there advertising a jump with nowhere to go (clicking it only
+"worked" because `scrollToBottom()` cleared the anchor). Because the answer is geometric it has
+to be recomputed wherever the geometry can move, and the state setters are the wrong hook — they
+early-return when the value is unchanged, which during a stream is every frame:
+
+- `_onMessagesScroll()` — unconditionally, after the two setters (which may both be no-ops).
+- `_scrollNow()` — on **both** paths: after the `scrollTop` write (the `_programmaticScroll`
+  latch makes the resulting `scroll` event skip its own update), *and* on the no-write early
+  return, which is the only signal available when content grew but the target did not move.
+- the scroller `ResizeObserver` — unconditionally, not just via `_scrollIfSticky()`: growing the
+  viewport can bring the bottom into view, and while the user is scrolled up that call does nothing,
+  so no frame would otherwise run.
+- the content `ResizeObserver` (`_contentObs`, one entry per turn) — because the scroller-level
+  observer is blind to exactly the growth that matters: `#messages` is a flex item whose height the
+  column decides, with `overflow-y: auto`, so **its own border box never moves when its content
+  grows** and it reports nothing. Without this, a content append with no scroll event and no frame
+  of ours in flight leaves the button showing whatever it showed before.
+- `_setAnchor()` — after `_updateAnchorSpacer()`, since the spacer changes `scrollHeight`.
+- `addActionButtons()` — see below.
+
+```
+_setAnchor(null)    drop the anchor, no scroll         → handleTokensDone (before its follow)
+scrollToBottom()    real bottom, drop anchor, re-arm → appendBotMessage (terminal/error),
+                                                       appendDiffViewer, #jumpToLatest click
+_resumeFollowing()  re-arm, keep the anchor          → appendUserMessage
+_scrollIfSticky()   follow only if still stuck       → handleNewToken, handleTokensDone,
+                                                       handleNewThinkingToken, ResizeObserver
+```
+
+Four details that are easy to reintroduce as bugs:
+
+- **`_programmaticScroll` must only be raised when the write changes the value.** Setting
+  `scrollTop` fires a `scroll` event indistinguishable from a user gesture, hence the latch —
+  but when already at the bottom (the common case) the write is a no-op and fires *nothing*, so
+  latching unconditionally would swallow the user's next real scroll. The latch also means
+  `_onMessagesScroll()` returns early for our own writes, which is why `_scrollNow()` has to
+  refresh `#jumpToLatest` itself rather than relying on the scroll event to do it.
+- **Writes are coalesced into one `requestAnimationFrame`.** Besides removing a layout-flushing
+  write per token, this makes the write land *after* the flush a `'\n'` token triggers —
+  `flushAccumulatingMessage()` swaps token spans for rendered markdown and so changes the
+  content height, which a scroll-then-flush order leaves unaccounted for.
+- **Instant scrolling only, never `behavior: 'smooth'`** — smooth emits a tail of scroll events
+  the latch cannot pair one-to-one with its writes, and unsticks mid-animation.
+- **`_scrollNow()`'s no-write early return cannot decide the button on its own**, hence the deferred
+  `_confirmJumpButton()` re-read on both of its paths. The synchronous reads are right for whatever
+  the DOM held at that instant, but an append made earlier in the same task can still be pending
+  style resolution, and `_setAnchor(null)` removes the spacer, after which the *browser* clamps
+  `scrollTop` by itself. That clamp is what makes `scrollTop === target` and takes the early return —
+  so the jump button click used to write nothing at all and merely refresh a stale flag, which reads
+  as "the view moves a little, then the button vanishes".
+
+`#messages` also sets `overflow-anchor: none`: Firefox scroll anchoring tries to hold the visual
+position as content grows, but the flush tears down and rebuilds the subtree an anchor may have
+picked, which surfaces as micro-jumps. A `ResizeObserver` on `#messages` re-follows after window
+resizes and font-zoom changes, which move `scrollHeight` without firing a `scroll` event; it also
+invalidates the cached `padding-top` (`_padTopPx`) the anchor target is computed from — reading it
+with `getComputedStyle` on every frame of a stream would flush style for nothing. A **second**
+observer, `_contentObs`, watches the turns instead of the scroller and is registered in
+`_appendTurn()` — the single insertion path for every turn — so later growth *inside* a turn also
+reaches `_updateJumpButton()`. Its callback, and `_confirmJumpButton()`, must stay **strictly
+read-only**: `_updateJumpButton()` only toggles `hidden` on a button that is `position:absolute`
+outside `#messages`, and that is the whole reason the observer cannot oscillate. Writing layout from
+either place — e.g. reserving bottom padding for the button — would put a layout write inside the
+geometry that decides that button's visibility.
+
+`addActionButtons()` deliberately does *not* scroll — `handleTokensDone()` does, which also covers
+the paths where that method returns early — though it *does* refresh `#jumpToLatest`: its append is
+the largest single content growth of the exchange (in reply mode the split button gains a second text
+line and `.sel_info` becomes visible), it lands after an `await browser.storage.sync.get`, and the
+`_scrollIfSticky()` that follows it is a no-op while the user sits at the anchored prompt.
 
 ### Files
 
 | File | Role |
 |------|------|
 | `api_webchat/controller.js` | Wires components ↔ worker (DI); owns `promptData`, font-zoom, runtime-command handling |
-| `api_webchat/messagesArea.js` | `<messages-area>` custom element: conversation transcript, action buttons, orchestrates the render helpers below |
-| `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, status logger, custom-text flow |
-| `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
+| `api_webchat/styles.css` | Design tokens (`:root` + dark override), page shell and header bar — the single source of truth for colour |
+| `api_webchat/sharedStyles.js` | CSS strings (`SHARED_BASE_CSS`, `BUTTON_CSS`) concatenated into each shadow root's `<style>`: focus rings, keyframes, reduced motion, button families |
+| `api_webchat/messagesArea.js` | `<messages-area>` custom element: turn-wrapped transcript, per-answer toolbar + newest-answer action bar, prompt-anchored scrolling + `#jumpToLatest` button, orchestrates the render helpers below |
+| `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
+| `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
 | `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
 | `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
-| `api_webchat/svgIcons.js` | Inline-SVG icon builders (`buildSendIcon`/`buildStopIcon`/`buildDropdownArrowIcon`) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML` |
+| `api_webchat/svgIcons.js` | Inline-SVG icon builders (send/stop/dropdown, sparkle avatar, copy, check, diff, save, close, alert, dot (unused), scroll-to-bottom) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML`; icons stroke in `currentColor` so they follow the tokens |
 
 ## Key Modules
 

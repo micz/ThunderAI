@@ -31,6 +31,28 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
+
+// Reasoning field names used by the various OpenAI-compatible servers, in priority
+// order: reasoning_content (DeepSeek, vLLM, SGLang), reasoning (OpenRouter, which
+// may send a string or an object with a .text property), thinking (some
+// llama.cpp / LM Studio builds). Detection is based purely on the field being
+// present in the stream, so a model that reasons without the connection's thinking
+// option being enabled is still handled.
+const REASONING_DELTA_FIELDS = ['reasoning_content', 'reasoning', 'thinking'];
+
+function extractReasoningToken(delta) {
+    for (const field of REASONING_DELTA_FIELDS) {
+        const value = delta[field];
+        if (typeof value === 'string' && value !== '') {
+            return value;
+        }
+        if (value && typeof value === 'object' && typeof value.text === 'string' && value.text !== '') {
+            return value.text;
+        }
+    }
+    return null;
+}
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -82,7 +104,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
@@ -90,7 +113,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'assistant', content: assistantResponseAccumulator });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level OpenAI response parsing stuff
@@ -127,6 +151,15 @@ self.onmessage = async function(event) {
                     continue;
                 }
                 const { delta } = choices[0];
+                if (!delta || typeof delta !== 'object') {
+                    continue;
+                }
+                // Update the UI with the new thinking content
+                const thinkingToken = extractReasoningToken(delta);
+                if (thinkingToken) {
+                    thinkingAccumulator += thinkingToken;
+                    postMessage({ type: 'newThinkingToken', payload: { token: thinkingToken } });
+                }
                 const { content } = delta;
                 // Update the UI with the new content
                 if (content) {

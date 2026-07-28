@@ -22,6 +22,7 @@
     integration_options_config
  } from "../options/mzta-options-default.js";
  import { taLogger } from './mzta-logger.js';
+ import { stripThinkTags } from './mzta-utils.js';
 
  // Fallback timeout (ms) for a special command if the special_command_timeout
  // preference is unavailable. Kept generous to accommodate slow local models.
@@ -187,11 +188,22 @@
                     case 'newToken':
                         this.full_message += payload.token;
                         break;
-                    case 'tokensDone':
-                        clearTimer();
-                        this.logger.log("tokensDone: " + this.full_message);
-                        resolve(this.full_message); // Resolve the promise with the full message
+                    case 'newThinkingToken':
+                        // A special command's response is parsed, not displayed, so the
+                        // model's reasoning must never reach full_message. Discarded here
+                        // for the providers that stream it in a dedicated field.
                         break;
+                    case 'tokensDone': {
+                        clearTimer();
+                        // Models that emit their reasoning inline instead (<think> blocks in
+                        // the content stream) need it stripped for the same reason. An
+                        // unterminated block means a truncated reply: drop the leftover too,
+                        // rather than handing raw reasoning to the caller's parser.
+                        const cleaned = stripThinkTags(this.full_message, true).text;
+                        this.logger.log("tokensDone: " + cleaned);
+                        resolve(cleaned); // Resolve the promise with the full message
+                        break;
+                    }
                     case 'error':
                         clearTimer();
                         console.error('[ThunderAI] Error from API worker:', payload);

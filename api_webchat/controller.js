@@ -24,6 +24,7 @@ import { prefs_default, integration_options_config } from '../options/mzta-optio
 import { placeholdersUtils } from '../js/mzta-placeholders.js';
 import { getAPIsInitMessageString, convertNewlinesToBr } from '../js/mzta-utils.js';
 import { loadPrompt } from '../js/mzta-prompts.js';
+import { buildChatBubbleIcon } from './svgIcons.js';
 
 // Get the LLM to be used
 const urlParams = new URLSearchParams(window.location.search);
@@ -158,8 +159,35 @@ if (worker) {
         }
         messagesArea.setLLMName(llmName);
         messagesArea.setHideThinking(!!prefs_api.hide_thinking);
-        
-        document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
+
+        // Shared by the header chip and the startup info message below.
+        const api_strings = {
+            chatgpt: "ChatGPT API",
+            google_gemini: "Google Gemini API",
+            ollama: "Ollama API",
+            openai_comp: "OpenAI Compatible API",
+            anthropic: "Claude API"
+        };
+
+        // Header bar: the logo icon plus two static chips, the API in use and
+        // the model. Every live state (waiting / streaming / done / error)
+        // belongs to the status pill above the input, so there is only one
+        // thing to keep in sync with the request lifecycle.
+        document.getElementById('appHeaderLogo').appendChild(buildChatBubbleIcon());
+        const apiChip = document.getElementById('appHeaderApi');
+        if (api_strings[integration]) {
+            document.getElementById('appHeaderApiName').textContent = api_strings[integration];
+            // `llm` is the connection type (chatgpt_api, anthropic_api, …), the
+            // same key the settings pages tint their connection pill with.
+            apiChip.classList.add('tint_' + llm);
+            apiChip.hidden = false;
+        }
+        // Model chip: "prompt name | model", dropping either half when missing.
+        const modelChip = document.getElementById('appHeaderModel');
+        const model_label = prefs_api[`${integration_prefix}_model`] || llmName;
+        const prompt_label = decodeURIComponent(prompt_name ?? '').trim();
+        modelChip.textContent = prompt_label ? `${prompt_label} | ${model_label}` : model_label;
+        modelChip.title = modelChip.textContent;
 
         document.title += " [" + llmName + " | " + decodeURIComponent(prompt_name) + "]";
 
@@ -246,14 +274,6 @@ if (worker) {
         additional_text_elements.push({label: browser.i18n.getMessage("prompt_string"), value: '[' + prompt_id + '] ' + decodeURIComponent(prompt_name)});
         additional_text_elements.push(...getAdditionalMessages(integration, prefs_api));
 
-        const api_strings = {
-            chatgpt: "ChatGPT API",
-            google_gemini: "Google Gemini API",
-            ollama: "Ollama API",
-            openai_comp: "OpenAI Compatible API",
-            anthropic: "Claude API"
-        };
-        
         messagesArea.appendUserMessage(getAPIsInitMessageString({
             api_string: api_strings[integration],
             model_string: prefs_api[`${integration_prefix}_model`],
@@ -282,11 +302,11 @@ worker.onmessage = async function(event) {
             break;
         case 'newToken':
             messagesArea.handleNewToken(payload.token);
-            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            messageInput.showStreamingStatus();
             break;
         case 'newThinkingToken':
             messagesArea.handleNewThinkingToken(payload.token);
-            messageInput.setStatusMessage(browser.i18n.getMessage("apiwebchat_receiving_data") + '...');
+            messageInput.showStreamingStatus();
             break;
         case 'tokensDone':
             await messagesArea.handleTokensDone(promptData);
@@ -295,6 +315,7 @@ worker.onmessage = async function(event) {
         case 'error':
             messagesArea.appendBotMessage(payload,'error');
             messageInput.enableInput(false);
+            messageInput.showErrorStatus();
             break;
         default:
             console.error('[ThunderAI] Unknown event type from API worker:', type);
@@ -343,6 +364,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "api_error":
             messagesArea.appendBotMessage(message.error,'error');
             messageInput.enableInput(false);
+            messageInput.showErrorStatus();
             break;
     }
 });

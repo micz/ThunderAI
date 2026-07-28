@@ -31,6 +31,7 @@ let taLog = null;
 
 let conversationHistory = [];
 let assistantResponseAccumulator = '';
+let thinkingAccumulator = '';
 
 self.onmessage = async function(event) {
     if (event.data.type === 'init') {
@@ -82,7 +83,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             const { done, value } = await reader.read();
@@ -90,7 +92,8 @@ self.onmessage = async function(event) {
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
-                postMessage({ type: 'tokensDone' });
+                postMessage({ type: 'tokensDone', payload: { thinking: thinkingAccumulator } });
+                thinkingAccumulator = '';
                 break;
             }
             // lots of low-level Google Gemini response parsing stuff
@@ -139,11 +142,24 @@ self.onmessage = async function(event) {
                     continue;
                 }
 
-                const { text } = parts[0];
-                // Update the UI with the new content
-                if (text) {
-                    assistantResponseAccumulator += text;
-                    postMessage({ type: 'newToken', payload: { token: text } });
+                // Every part must be examined, not just parts[0]: when the model
+                // reasons, the reasoning arrives as additional parts flagged with
+                // thought: true, and a thought part can come first. Detection relies
+                // only on that flag, so a model that reasons without
+                // google_gemini_thinking_budget being set is handled too.
+                for (const part of parts) {
+                    if (!part || typeof part.text !== 'string' || part.text === '') {
+                        continue;
+                    }
+                    // Update the UI with the new thinking content
+                    if (part.thought === true) {
+                        thinkingAccumulator += part.text;
+                        postMessage({ type: 'newThinkingToken', payload: { token: part.text } });
+                        continue;
+                    }
+                    // Update the UI with the new content
+                    assistantResponseAccumulator += part.text;
+                    postMessage({ type: 'newToken', payload: { token: part.text } });
                 }
             }
         }

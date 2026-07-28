@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Other meta tags and stylesheets -->
+    <meta charset="utf-8">
+    <title>ThunderAI</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-    <!-- Use the custom tags directly -->
     <div id="appContainer">
+        <div id="appHeader">
+            <span id="appHeaderBrand">
+                <span id="appHeaderLogo"></span>
+                <span id="appHeaderName">ThunderAI</span>
+            </span>
+            <span id="appHeaderModel"></span>
+            <span id="appHeaderApi" hidden><span class="pill_dot"></span><span id="appHeaderApiName"></span></span>
+        </div>
         <messages-area></messages-area>
         <message-input style="position:relative;"></message-input>
-    </div>
-    <div id="content">
     </div>
 
     <!-- Include the JavaScript files at bottom to avoid blocking UI -->
