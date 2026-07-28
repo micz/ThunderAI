@@ -9,7 +9,13 @@
         <li>A prompt's placement is now managed entirely from the Menu Order page: the "Show in" selector and the enabled checkbox have been removed from the prompt editor, which now shows a "Menu position" button that opens the Menu Order page and highlights the prompt. New prompts start visible in the popup menu [<a href="https://github.com/micz/ThunderAI/issues/824">#824</a>].</li>
         <li>The Custom Prompts page UI has been improved [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
         <li>The Data Placeholders page UI has been restyled to match the new Custom Prompts page design [<a href="https://github.com/micz/ThunderAI/issues/838">#838</a>].</li>
+        <li><i>[All APIs]</i> The AI chat window has been completely redesigned: a new header bar showing the API and the model in use, conversation turns with the assistant avatar, a floating status pill above the input reporting the current state (waiting for the server, streaming, done, error) and a full light/dark theme that follows Thunderbird [<a href="https://github.com/micz/ThunderAI/issues/842">#842</a>].</li>
+        <li><i>[All APIs]</i> In the AI chat window every answer now has its own actions toolbar, so it's possible to use, copy or save any answer of the conversation and not only the last one [<a href="https://github.com/micz/ThunderAI/issues/842">#842</a>].</li>
+        <li><i>[All APIs]</i> A "Copy" button has been added to the answers in the AI chat window: it copies the answer as plain text, or only the selected part of it if there is a selection [<a href="https://github.com/micz/ThunderAI/issues/842">#842</a>].</li>
+        <li><i>[All APIs]</i> The thinking block is now always shown when the model returns reasoning content, even if the thinking option of the connection is not enabled.</li>
+        <li><i>[Google Gemini API][OpenAI Comp API]</i> Improved the detection of the thinking content in the response stream.</li>
         <li><i>[OpenAI API]</i> The thinking block is correctly handled and reported on the webchat. The reasoning summary parameter must be set [<a href="https://github.com/micz/ThunderAI/issues/773">#773</a>].</li>
+        <li>Fix: the reasoning content is no longer included in the result of the special prompts (add tags, spam filter, calendar event, task), where the response is parsed and not displayed.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>
