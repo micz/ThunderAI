@@ -149,18 +149,6 @@
     "customPrompts_add_to_menu_composing": {
         "message": "Menulis email"
     },
-    "show_in": {
-        "message": "Tampilkan di"
-    },
-    "show_in_popup": {
-        "message": "Hanya popup"
-    },
-    "show_in_context": {
-        "message": "Hanya menu konteks"
-    },
-    "show_in_both": {
-        "message": "Keduanya"
-    },
     "customPrompts_close_button": {
         "message": "Tombol tutup"
     },
@@ -364,9 +352,6 @@
     "ChatGPT_Models": {
         "message": "Model ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Perbarui daftar Model ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Terjadi kesalahan saat mencoba mengambil model ChatGPT"
     },
@@ -403,9 +388,6 @@
     "Ollama_Models": {
         "message": "Model Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Perbarui daftar Model Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Terjadi kesalahan saat mencoba mengambil model Ollama"
     },
@@ -435,9 +417,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Model API Kompatibel OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Perbarui daftar Model API Kompatibel OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Terjadi kesalahan saat mencoba mengambil model API Kompatibel OpenAI"
@@ -727,9 +706,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Jika dicentang, label tag akan diatur menjadi huruf kecil dengan hanya huruf pertama yang kapital."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opsi Tambahkan Tag"
-    },
     "prefs_SurveyLinkText": {
         "message": "Bagikan masukan Anda dan bantu meningkatkan ThunderAI!"
     },
@@ -771,9 +747,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Model Google Gemini API"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Perbarui daftar Model Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Terjadi kesalahan saat mencoba mengambil model Google Gemini"
@@ -835,9 +808,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Tampilkan item menu tambahan untuk membuat acara kalender dari konten teks clipboard."
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "Opsi Ringkasan"
-    },
     "prompt_summarize": {
         "message": "Ringkas"
     },
@@ -868,17 +838,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Jika dicentang, item akan disertakan dalam menu untuk mengambil informasi acara kalender dari teks yang dipilih."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Opsi Acara Kalender"
-    },
     "prefs_OptionText_get_task": {
         "message": "Tambahkan tugas baru dari teks yang dipilih"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Jika dicentang, item akan disertakan dalam menu untuk mengambil informasi tugas dari teks yang dipilih."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Opsi Tugas"
     },
     "Select_your_timezone": {
         "message": "Pilih zona waktu Anda"
@@ -1047,9 +1011,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analisis email berikut dan tentukan apakah ini spam atau bukan. Pertimbangkan faktor-faktor seperti kata kunci mencurigakan, bahasa promosi yang berlebihan, baris subjek yang menyesatkan, permintaan informasi pribadi, dan alamat pengirim yang tidak biasa.\nBerikan nilai dari 0 (bukan spam) hingga 100 (spam) dan penjelasan tidak lebih dari 10 kata.\nJika data pesan tidak lengkap, tetapkan nilai ke 0 (bukan spam), dan berikan alasannya.\nBuat respons hanya dalam format JSON. Jangan sertakan teks atau penjelasan tambahan apa pun; berikan hanya JSON. Berikut format yang harus digunakan:\n{\n\"explanation\": \"Penjelasan singkat atas alasan Anda\",\n\"spamValue\": <bilangan bulat dari 0 hingga 100>\n}\nBerikut informasi emailnya:\nPengirim: \"{%author%}\"\nSubjek: \"{%mail_subject%}\"\nIsi HTML: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opsi Filter Spam"
     },
     "Summarize_PageTitle": {
         "message": "Kelola Pengaturan Ringkasan"
@@ -1293,9 +1254,6 @@
     },
     "Anthropic_Models": {
         "message": "Model Claude"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Perbarui daftar Model Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Terjadi kesalahan saat mencoba mengambil model Claude"
@@ -1626,9 +1584,6 @@
     },
     "Translate_prompt_text_title": {
         "message": "Teks prompt saat ini"
-    },
-    "Translate_prompt_prefs_title": {
-        "message": "Opsi Terjemahan"
     },
     "prefs_OptionText_translate_auto": {
         "message": "Terjemahkan pesan secara otomatis"

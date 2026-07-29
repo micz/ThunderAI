@@ -314,9 +314,6 @@
     "ChatGPT_Models": {
         "message": "Modelos de ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Actualizar lista de modelos de ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de ChatGPT"
     },
@@ -356,9 +353,6 @@
     "Ollama_Models": {
         "message": "Modelos de Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Actualizar lista de modelos de Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Ollama"
     },
@@ -388,9 +382,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelos de API compatibles con OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Actualizar lista de modelos de API compatibles con OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de API compatibles con OpenAI"
@@ -653,9 +644,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Si está marcado, la etiqueta de etiquetas se establecerá en minúsculas con solo la primera letra en mayúscula."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opciones de agregar etiquetas"
-    },
     "prefs_SurveyLinkText": {
         "message": "Comparte tus comentarios y ayuda a mejorar ThunderAI!"
     },
@@ -685,9 +673,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelos de API de Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Actualizar la lista de modelos de Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Google Gemini"
@@ -740,17 +725,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Si está marcado, se incluirá un elemento en el menú para obtener información del evento de calendario a partir del texto seleccionado."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Opciones de eventos de calendario"
-    },
     "prefs_OptionText_get_task": {
         "message": "Agregar una nueva tarea a partir del texto seleccionado"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Si está marcado, se incluirá un elemento en el menú para obtener información de la tarea a partir del texto seleccionado."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Opciones de tareas"
     },
     "Select_your_timezone": {
         "message": "Seleccione su zona horaria"
@@ -889,9 +868,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analiza el siguiente correo electrónico y determina si es spam o no. Considera factores como palabras clave sospechosas, lenguaje promocional excesivo, líneas de asunto engañosas, solicitudes de información personal y direcciones de remitente inusuales.\nProporciona un valor de 0 (no es spam) a 100 (spam) y una explicación de no más de 10 palabras.\nEn caso de que falten datos del mensaje, establece el valor en 0 (no es spam) y da la razón.\nGenera una respuesta únicamente en formato JSON. No incluyas texto adicional ni explicación; proporciona solo el JSON. El formato a usar es:\n{\n\"explanation\": \"Breve explicación de tu razonamiento\",\n\"spamValue\": <entero de 0 a 100>\n}\nAquí está la información del correo:\nRemitente: \"{%author%}\"\nAsunto: \"{%mail_subject%}\"\nCuerpo HTML: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opciones del filtro de spam"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "Usar modelo y API específicos"
@@ -1069,9 +1045,6 @@
     },
     "Anthropic_Models": {
         "message": "Modelos Claude"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Actualizar lista de modelos de Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Error al intentar obtener los modelos de Claude"
@@ -1340,9 +1313,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Mostrar un elemento de menú adicional para crear eventos de calendario a partir del contenido de texto del portapapeles."
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "Opciones de resumen"
-    },
     "prompt_summarize": {
         "message": "Resumir"
     },
@@ -1591,9 +1561,6 @@
     "Translate_prompt_text_title": {
         "message": "Texto del prompt actual"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Opciones de traducción"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Traducir automáticamente mensajes"
     },
@@ -1710,18 +1677,6 @@
     },
     "prefs_OptionText_translate_max_display_length": {
         "message": "Longitud máxima de la traducción mostrada"
-    },
-    "show_in": {
-        "message": "Mostrar en"
-    },
-    "show_in_popup": {
-        "message": "Solo ventana emergente"
-    },
-    "show_in_context": {
-        "message": "Solo menú contextual"
-    },
-    "show_in_both": {
-        "message": "Ambos"
     },
     "prefs_OptionText_hide_thinking": {
         "message": "Colapsar bloque de pensamiento por defecto"

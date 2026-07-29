@@ -398,9 +398,6 @@
     "ChatGPT_Models": {
         "message": "ChatGPT-modeller"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Uppdatera listan över ChatGPT-modeller"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Fel vid försök att hämta ChatGPT-modeller"
     },
@@ -437,9 +434,6 @@
     "Ollama_Models": {
         "message": "Ollama-modeller"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Uppdatera listan över Ollama-modeller"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Ollama-modeller"
     },
@@ -469,9 +463,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI-kompatibla API-modeller"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Uppdatera listan över OpenAI-kompatibla API-modeller"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Fel vid försök att hämta OpenAI-kompatibla API-modeller"
@@ -683,9 +674,6 @@
     "GoogleGemini_Models": {
         "message": "Google Gemini API-modeller"
     },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Uppdatera listan över Google Gemini-modeller"
-    },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Google Gemini-modeller"
     },
@@ -742,9 +730,6 @@
     },
     "prompt_spamfilter": {
         "message": "Analysera för skräppost"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Alternativ för skräppostfilter"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "Använd specifik modell och API"
@@ -850,9 +835,6 @@
     },
     "Anthropic_Models": {
         "message": "Claude-modeller"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Uppdatera listan med Claude-modeller"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Fel vid försök att hämta Claude-modeller"
@@ -1137,17 +1119,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta information om kalenderhändelser från markerad text."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Alternativ för kalenderhändelser"
-    },
     "prefs_OptionText_get_task": {
         "message": "Lägg till en ny uppgift från markerad text"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta uppgiftsinformation från markerad text."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Uppgiftsalternativ"
     },
     "prefs_OptionText_composing_plain_text": {
         "message": "Skriva i oformaterad text"
@@ -1245,9 +1221,6 @@
     "addtags_info_additional_statements": {
         "message": "Detta uttryck kommer att läggas till i slutet av prompten:"
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Lägga till taggar alternativ"
-    },
     "placeholder_mail_typed_text": {
         "message": "Skriven text före citatbrevets brödtext"
     },
@@ -1262,9 +1235,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analysera följande e-postmeddelande och avgör om det är skräppost eller inte. Tänk på faktorer som misstänkta sökord, överdrivet reklamspråk, vilseledande ämnesrader, förfrågningar om personlig information och ovanliga avsändaradresser.\nAnge ett värde från 0 (inte skräppost) till 100 (skräppost) och en förklaring på högst 10 ord.\nOm meddelandedata saknas, sätt värdet till 0 (inte skräppost) och ange orsaken.\nGenerera ett svar endast i JSON-format. Inkludera inte ytterligare text eller förklaring; ange endast JSON. Här är formatet som ska användas:\n{\n\"explanation\": \"Kort förklaring av ditt resonemang\",\n\"spamValue\": <heltal från 0 till 100>\n}\nHär är e-postinformationen:\nAvsändare: \"{%author%}\"\nÄmne: \"{%mail_subject%}\"\nHtml-text: \"{%mail_html_body%}\""
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Sammanfattningsalternativ"
     },
     "prompt_summarize": {
         "message": "Sammanfatta"
@@ -1562,9 +1532,6 @@
     "Translate_prompt_text_title": {
         "message": "Aktuell prompttext"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Översättningsalternativ"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Översätt meddelanden automatiskt"
     },
@@ -1710,18 +1677,6 @@
     },
     "spamfilter_skip_addresses_explanation": {
         "message": "Avsändaren finns i listan över e-postadresser som inte ska skickas med skräppost."
-    },
-    "show_in": {
-        "message": "Visa i"
-    },
-    "show_in_popup": {
-        "message": "Popup endast"
-    },
-    "show_in_context": {
-        "message": "Kontextmeny endast"
-    },
-    "show_in_both": {
-        "message": "Båda"
     },
     "menu_order_title": {
         "message": "Menyordning"

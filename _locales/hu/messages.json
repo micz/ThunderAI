@@ -149,18 +149,6 @@
     "customPrompts_add_to_menu_composing": {
         "message": "E-mail írásakor"
     },
-    "show_in": {
-        "message": "Megjelenítés itt"
-    },
-    "show_in_popup": {
-        "message": "Csak felugró ablakban (Popup)"
-    },
-    "show_in_context": {
-        "message": "Csak a helyi menüben"
-    },
-    "show_in_both": {
-        "message": "Mindkettőben"
-    },
     "customPrompts_close_button": {
         "message": "Bezárás gomb"
     },
@@ -364,9 +352,6 @@
     "ChatGPT_Models": {
         "message": "ChatGPT modellek"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "ChatGPT modellek listájának frissítése"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Hiba történt a ChatGPT modellek lekérése során"
     },
@@ -403,9 +388,6 @@
     "Ollama_Models": {
         "message": "Ollama modellek"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ollama modellek listájának frissítése"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Hiba történt az Ollama modellek lekérése során"
     },
@@ -435,9 +417,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI kompatibilis API modellek"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "OpenAI kompatibilis modellek listájának frissítése"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Hiba történt az OpenAI kompatibilis modellek lekérése során"
@@ -727,9 +706,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Ha be van jelölve, a címkék kisbetűsek lesznek, kivéve a legelső betűt, ami nagybetűvé válik."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Címkézési opciók"
-    },
     "prefs_SurveyLinkText": {
         "message": "Ossza meg visszajelzését és segítsen a ThunderAI fejlesztésében!"
     },
@@ -771,9 +747,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Google Gemini API modellek"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Google Gemini modellek listájának frissítése"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Hiba történt a Google Gemini modellek lekérése során"
@@ -835,9 +808,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Egy extra menüpont megjelenítése, amellyel a vágólapra másolt szövegből naptári esemény hozható létre."
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "Összefoglalási opciók"
-    },
     "prompt_summarize": {
         "message": "Összefoglalás"
     },
@@ -868,17 +838,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a naptári információk kijelölt szövegből történő kinyeréséhez."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Naptári események opciói"
-    },
     "prefs_OptionText_get_task": {
         "message": "Új feladat hozzáadása a kijelölt szövegből"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Ha be van jelölve, a menü tartalmazni fog egy elemet a feladat-információk kijelölt szövegből történő kinyeréséhez."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Feladatok opciói"
     },
     "Select_your_timezone": {
         "message": "Válassza ki az időzónáját"
@@ -1047,9 +1011,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analyze the following email and determine if it is spam or not. Consider factors such as suspicious keywords, excessive promotional language, misleading subject lines, requests for personal information, and unusual sender addresses.\nProvide a value from 0 (not spam) to 100 (spam) and an explanation of no more than 10 words.\nIn case of missing message data, set the value to 0 (not spam), and give the reason.\nGenerate a response in JSON format only. Do not include any additional text or explanation; provide only the JSON. Here is the format to be used:\n{\n\"explanation\": \"Brief explanation of your reasoning\",\n\"spamValue\": <integer from 0 to 100>\n}\nHere there are the mail information:\nSender: \"{%author%}\"\nSubject: \"{%mail_subject%}\"\nHtml body: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Spamszűrő opciói"
     },
     "Summarize_PageTitle": {
         "message": "Összefoglalási beállítások kezelése"
@@ -1287,9 +1248,6 @@
     },
     "Anthropic_Models": {
         "message": "Claude modellek"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Claude modellek listájának frissítése"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Hiba történt a Claude modellek lekérése során"
@@ -1620,9 +1578,6 @@
     },
     "Translate_prompt_text_title": {
         "message": "Aktuális utasítás szövege"
-    },
-    "Translate_prompt_prefs_title": {
-        "message": "Fordítási opciók"
     },
     "prefs_OptionText_translate_auto": {
         "message": "Üzenetek automatikus fordítása"

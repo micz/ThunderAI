@@ -303,9 +303,6 @@
     "ChatGPT_Models": {
         "message": "Modele ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Zaktualizuj listę modeli ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Błąd podczas pobierania modeli ChatGPT"
     },
@@ -342,9 +339,6 @@
     "Ollama_Models": {
         "message": "Modele Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Zaktualizuj listę modeli Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Błąd podczas pobierania modeli Ollama"
     },
@@ -374,9 +368,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modele API kompatybilne z OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Zaktualizuj listę modeli API kompatybilnych z OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Błąd podczas pobierania modeli API kompatybilnych z OpenAI"
@@ -609,9 +600,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Jeśli zaznaczone, etykieta tagów będzie ustawiona na małe litery z wyjątkiem pierwszej wielkiej litery."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opcje dodawania tagów"
-    },
     "prefs_SurveyLinkText": {
         "message": "Podziel się swoją opinią i pomóż ulepszyć ThunderAI!"
     },
@@ -632,9 +620,6 @@
     },
     "prompt_add_tags_force_lang": {
         "message": "Tagi muszą być napisane w"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Zaktualizuj listę modeli Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Błąd podczas próby pobrania modeli Google Gemini"
@@ -728,9 +713,6 @@
     },
     "Report_Date": {
         "message": "Data raportu"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opcje filtra spamu"
     },
     "Explanation": {
         "message": "Wyjaśnienie"
@@ -846,9 +828,6 @@
     "Select_your_timezone": {
         "message": "Wybierz swoją strefę czasową"
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Opcje Wydarzeń Kalendarza"
-    },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Wymuś konkretną strefę czasową"
     },
@@ -872,18 +851,6 @@
     },
     "prompt_string": {
         "message": "Polecenie"
-    },
-    "show_in": {
-        "message": "Pokaż w"
-    },
-    "show_in_popup": {
-        "message": "Tylko w okienku popup"
-    },
-    "show_in_context": {
-        "message": "Tylko w menu kontekstowym"
-    },
-    "show_in_both": {
-        "message": "W obu"
     },
     "webchat_save_as_summary": {
         "message": "Zapisz jako streszczenie"
@@ -992,9 +959,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Wyświetl dodatkową opcję w menu umożliwiającą tworzenie wydarzeń w kalendarzu na podstawie treści z schowka."
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "Opcje streszczania"
-    },
     "prompt_summarize": {
         "message": "Streść"
     },
@@ -1027,9 +991,6 @@
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Jeśli opcja jest zaznaczona, przycisk zostanie dodany do menu, co umożliwi pobranie informacji o zadaniu z zaznaczonego tekstu."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Opcje zadań"
     },
     "prefs_OptionText_Summarize_infoline2": {
         "message": "Możesz dowolnie modyfikować polecenie. Pierwsze pole to główne polecenie, a drugie pole to szablon dla pojedynczej wiadomości. Lista wiadomości zostanie dołączona do głównego polecenia. Wiadomości zostaną oddzielone separatorem określonym w trzecim polu."

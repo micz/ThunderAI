@@ -23,9 +23,6 @@
     "importPrompts_invalidPrompts": {
         "message": "Файл, который вы пытаетесь импортировать, не содержит допустимых промтов."
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Обновить список моделей ChatGPT"
-    },
     "more_info_string": {
         "message": "Дополнительная информация"
     },
@@ -326,9 +323,6 @@
     "customPrompts_start_import": {
         "message": "Запуск импорта пользовательских промтов..."
     },
-    "Ollama_Models_Fetch": {
-        "message": "Обновить список моделей Ollama"
-    },
     "Ollama_Models": {
         "message": "Модели Ollama"
     },
@@ -385,9 +379,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Совместимые с OpenAI модели API"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Обновление списка совместимых с OpenAI моделей API"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Ошибка при попытке получить модели OpenAI Compatible API"
@@ -644,9 +635,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Если флажок установлен, то в метке тегов будут использоваться строчные буквы, причем только первая буква будет прописной."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Параметры добавления тегов"
-    },
     "prefs_SurveyLinkText": {
         "message": "Поделитесь своими отзывами и помогите улучшить ThunderAI!"
     },
@@ -676,9 +664,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Модели API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Обновление списка моделей Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Ошибка при попытке получить модели Google Gemini"
@@ -731,17 +716,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Если флажок установлен, в меню будет включен пункт для получения информации о событиях календаря из выделенного текста."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Параметры событий календаря"
-    },
     "prefs_OptionText_get_task": {
         "message": "Добавление нового задания из выделенного текста"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Если флажок установлен, в меню будет включен пункт для получения информации о задаче из выделенного текста."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Параметры задач"
     },
     "Select_your_timezone": {
         "message": "Выберите часовой пояс"
@@ -859,9 +838,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Проанализируйте следующее письмо и определите, является ли оно спамом или нет. Учитывайте такие факторы, как подозрительные ключевые слова, излишняя рекламная лексика, вводящие в заблуждение тематические строки, запросы личной информации и необычные адреса отправителей.\nУкажите значение от 0 (не спам) до 100 (спам) и объяснение, состоящее не более чем из 10 слов.\nВ случае отсутствия данных о сообщении установите значение 0 (не спам) и укажите причину.\nГенерируйте ответ только в формате JSON. Не включайте никаких доп. текстов или объяснений; предоставляйте только JSON. Вот формат, который следует использовать:\n{\n\"explanation\": \"Краткое объяснение ваших рассуждений\",\n\"spamValue\": <целое число от 0 до 100>\n}\nЗдесь находится информация о почте:\nОтправитель: \"{%author%}\"\nТема: \"{%mail_subject%}\"\nHtml-тело: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Параметры спам-фильтра"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Порог спама"
@@ -1030,9 +1006,6 @@
     },
     "Anthropic_Models": {
         "message": "Антропологические модели"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Обновить список антропологических моделей"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Ошибка при попытке получить антропные модели"

@@ -176,9 +176,6 @@
     "customPrompts_form_label_Text": {
         "message": "Texto do Prompt"
     },
-    "show_in_both": {
-        "message": "Ambos"
-    },
     "chatgpt_textarea_not_found_error": {
         "message": "Parece que a página do ChatGPT está a demorar muito para carregar. Se terminar de carregar, clique no botão à direita. Se o problema persistir, por favor, verifique o estado do serviço."
     },
@@ -320,9 +317,6 @@
     "ChatGPT_Models": {
         "message": "Modelos do ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Atualizar lista de modelos do ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do ChatGPT"
     },
@@ -359,9 +353,6 @@
     "Ollama_Models": {
         "message": "Modelos do Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Atualizar lista de modelos do Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos do Ollama"
     },
@@ -391,9 +382,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modelos da API Compatível com OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Atualizar a lista de Modelos da API Compatível com OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos da API Compatível com OpenAI"
@@ -623,9 +611,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Se marcado, o rótulo das tags será definido em letras minúsculas, com apenas a primeira letra em maiúscula."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Opções de adição de tags"
-    },
     "prefs_SurveyLinkText2": {
         "message": "Clique aqui, leva apenas um minuto!"
     },
@@ -652,9 +637,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modelos da API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Atualizar a lista de modelos Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Erro ao tentar buscar os modelos Google Gemini"
@@ -760,9 +742,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nNo caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Opções do filtro de spam"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Limite de spam"
