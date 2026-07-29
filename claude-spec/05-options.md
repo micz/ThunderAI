@@ -124,7 +124,7 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `get_calendar_event_from_clipboard` | `false` | Enable calendar from clipboard |
 | `get_task` | `true` | Enable task creation |
 | `calendar_enforce_timezone` | `false` | Force specific timezone |
-| `calendar_timezone` | `''` | Timezone to enforce |
+| `calendar_timezone` | `''` | IANA timezone id to enforce (see note below) |
 | `calendar_no_selection` | `false` | Skip selection prompt |
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
@@ -141,6 +141,39 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
+
+### Timezone Select (`pages/_lib/mzta-timezones.js`)
+
+The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`) and Task
+(`pages/get-task/`) pages is **not** hardcoded in the HTML. Both pages ship an empty
+`<select id="calendar_timezone" class="option-input">` containing only the empty option, and call
+`initTimezoneSelect(document.getElementById('calendar_timezone'))` to fill it.
+
+- The list is generated at runtime from `Intl.supportedValuesOf('timeZone')` (~418 zones), so it always
+  matches the tzdata of the running Thunderbird and needs no manual maintenance.
+- Each option's label is `(UTC±HH:MM) Area/City`, e.g. `(UTC+05:30) Asia/Calcutta`. The offset is computed
+  with `Intl.DateTimeFormat(..., {timeZoneName: 'longOffset'})` against the **current date**, because offsets
+  are DST-dependent. The label always ends with the option value, so the fallback option that
+  `restoreOptions()` injects for an unknown stored value looks consistent with the generated ones.
+- Options are sorted by UTC offset, then by id.
+- `Intl.supportedValuesOf()` returns ICU's **legacy canonical** ids: `Asia/Calcutta` (not `Asia/Kolkata`),
+  `Asia/Rangoon` (not `Asia/Yangon`), `Asia/Katmandu`, `Europe/Kiev`. This is intentional — no alias layer.
+- The select is wrapped in Tom Select for search. Two config values are load-bearing: `maxOptions: null`
+  (the default caps the dropdown at 50) and `sortField: null` (sorting by label would move every negative
+  offset after the positive ones, since `-` sorts after `+`).
+- Tom Select theming lives in `pages/_lib/mzta-design.css`, scoped to `#mzta_card` so it covers every select on
+  the design-system pages (it used to be scoped to `#connection_ui_table`/`#connection_ui_adv_table`, which left
+  other Tom Selects unstyled). The vendored `tom-select.default.min.css` hardcodes light colors, so the control,
+  the inner `<input>` that renders the selected item, and the dropdown each have to be pointed at the theme
+  tokens — otherwise the text stays dark on a dark field in the dark theme. The legacy Custom Prompts page is
+  not part of this design system (no `#mzta_card`, does not link `mzta-design.css`) and is unaffected.
+- `initTimezoneSelect()` must be called **before** `initializeSpecificIntegrationUI()`, which invokes
+  `restoreOptions()` via its `restoreOptionsCallback`. Populating later would make restore inject a bare
+  unlabelled option that the populate step would then duplicate. Population is idempotent
+  (`select.dataset.tzPopulated`).
+- The stored pref value stays a plain IANA id, so the JSON payload sent to the external Sparks add-on
+  (`js/mzta-menus.js`) is unchanged. Values stored by older versions still work through the existing
+  `restoreOptions()` fallback.
 
 ### Summarize Settings Page (`pages/summarize/`)
 

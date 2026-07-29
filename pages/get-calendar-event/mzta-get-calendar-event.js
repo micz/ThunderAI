@@ -37,6 +37,7 @@ import {
 import {
   initializeSpecificIntegrationUI
 } from "../_lib/connection-ui.js";
+import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 
 let autocompleteSuggestions = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
@@ -61,6 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         await browser.storage.sync.set(update_prefs);
     }
+
+    // Must run before restoreOptions(), which is called by initializeSpecificIntegrationUI()
+    initTimezoneSelect(document.getElementById('calendar_timezone'));
 
     await initializeSpecificIntegrationUI({
       prefix: 'get_calendar_event',

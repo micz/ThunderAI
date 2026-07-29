@@ -476,17 +476,54 @@ span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: va
     padding: 5px 9px !important;
     border-radius: 7px !important;
 }
-/* TomSelect model dropdowns fill the panel width and match the field look */
-#connection_ui_table .ts-wrapper,
-#connection_ui_adv_table .ts-wrapper { width: 100%; }
-#connection_ui_table .ts-control,
-#connection_ui_adv_table .ts-control {
+/* TomSelect controls match the field look and follow the light/dark theme.
+   The vendored tom-select CSS hardcodes light colors (#fff backgrounds, #303030
+   text) on the control, on the inner <input> that shows the selected item, and
+   on the dropdown, so each of those has to be pointed at the theme tokens. */
+#mzta_card .ts-wrapper { width: 100%; }
+#mzta_card .ts-control,
+#mzta_card .ts-wrapper.single .ts-control,
+#mzta_card .ts-wrapper.single.input-active .ts-control {
     background: var(--field);
+    background-image: none;     /* the vendored CSS paints a light gradient */
+    box-shadow: none;
     border: 1px solid var(--fieldLine);
     border-radius: 8px;
     min-height: 38px;
     color: var(--text);
 }
+/* The selected item is rendered in the inner input: without this it keeps the
+   vendored dark-on-light color and disappears against a dark field. */
+#mzta_card .ts-control > input,
+#mzta_card .ts-control > input::placeholder,
+#mzta_card .ts-control .item {
+    color: var(--text);
+}
+#mzta_card .ts-control > input::placeholder { color: var(--dim); }
+#mzta_card .ts-wrapper.single .ts-control:after { border-top-color: var(--dim); }
+#mzta_card .ts-wrapper.single.dropdown-active .ts-control:after { border-bottom-color: var(--dim); }
+#mzta_card .ts-dropdown,
+#mzta_card .ts-dropdown.single {
+    background: var(--panel);
+    border: 1px solid var(--fieldLine);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .option,
+#mzta_card .ts-dropdown .optgroup-header,
+#mzta_card .ts-dropdown .no-results {
+    background: transparent;
+    color: var(--text);
+}
+#mzta_card .ts-dropdown .active,
+#mzta_card .ts-dropdown .active.create {
+    background: var(--accentLight);
+    color: var(--text);
+}
+#mzta_card .ts-dropdown [data-selectable] .highlight {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: inherit;
+}
+#mzta_card .ts-dropdown .optgroup { border-top-color: var(--line); }
 /* CORS warning rows keep a distinct amber note look */
 #connection_ui_table tr[id$="_cors_warning"] td,
 #connection_ui_adv_table tr[id$="_cors_warning"] td {
