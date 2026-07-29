@@ -83,6 +83,15 @@ const defaultPlaceholders = [
         enabled: 1,
     },
     {
+        id: 'mail_typed_html',
+        name: "__MSG_placeholder_mail_typed_html__",
+        default_value: "",
+        type: 2,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
         id: 'mail_quoted_text',
         name: "__MSG_placeholder_mail_quoted_text__",
         default_value: "",
@@ -541,6 +550,7 @@ export const placeholdersUtils = {
             body_text = "",
             msg_text = {},
             only_typed_text = "",
+            only_typed_html = "",
             only_quoted_text = "",
             selection_text = "",
             selection_html = "",
@@ -561,6 +571,9 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
+                    break;
+                case 'mail_typed_html':
+                    finalSubs['mail_typed_html'] = placeholdersUtils.failSafePlaceholders(only_typed_html);
                     break;
                 case 'mail_quoted_text':
                     finalSubs['mail_quoted_text'] = placeholdersUtils.failSafePlaceholders(only_quoted_text);

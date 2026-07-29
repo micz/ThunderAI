@@ -302,9 +302,43 @@ switch (message.command) {
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
+
+    let cleanText = message.text || '';
+    // Strip markdown code fences if response is wrapped in ```html ... ``` or ``` ... ```
+    const codeBlockMatch = cleanText.trim().match(/^```(?:html)?\s*\n?([\s\S]*?)\n?```$/i);
+    if (codeBlockMatch) {
+      cleanText = codeBlockMatch[1];
+    }
+
+    // Decode HTML entities if text contains escaped tags (e.g. &lt;p&gt; or &lt;div&gt;)
+    while (cleanText.includes('&lt;') && (cleanText.includes('&gt;') || cleanText.includes('&quot;'))) {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = cleanText;
+      const decoded = txt.value;
+      if (decoded === cleanText) break;
+      cleanText = decoded;
+    }
+
     const parser = new DOMParser();
-    const doc = parser.parseFromString(message.text, 'text/html');
-    r.insertNode(doc.body);
+    let doc = parser.parseFromString(cleanText, 'text/html');
+
+    // Remove UI elements (buttons, SVGs, forms, scripts, inputs, navigation, etc.)
+    doc.querySelectorAll('button, svg, script, style, form, input, textarea, header, footer, nav, use').forEach(el => el.remove());
+
+    // If ChatGPT/webchat wrapper container (.markdown or [data-message-author-role]) is present, extract content directly from it
+    let targetContainer = doc.querySelector('.markdown') || doc.querySelector('[data-message-author-role="assistant"]') || doc.body;
+
+    // If targetContainer contains literal string HTML tags like "<p>", re-parse its textContent into real DOM elements
+    if (/^\s*<[a-z][^>]*>/i.test(targetContainer.textContent.trim())) {
+      const innerDoc = parser.parseFromString(targetContainer.textContent.trim(), 'text/html');
+      targetContainer = innerDoc.body;
+    }
+
+    const fragment = document.createDocumentFragment();
+    while (targetContainer.firstChild) {
+      fragment.appendChild(targetContainer.firstChild);
+    }
+    r.insertNode(fragment);
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
     return Promise.resolve(true);
   }
@@ -373,6 +407,57 @@ switch (message.command) {
     }
 
     return Promise.resolve(t);
+  }
+
+  case "getOnlyTypedHtml": {
+    const children = window.document.body.childNodes;
+    const selection = window.getSelection();
+
+    let firstNode = null;
+    let lastNode = null;
+    const container = document.createElement('div');
+
+    for (const node of children) {
+      if (node instanceof Element) {
+        if (node.classList.contains('moz-cite-prefix') || node.classList.contains('moz-forward-container')) {
+          break;
+        }
+        if (MZTA_INJECTED_SELECTORS.some(sel => node.matches && node.matches(sel))) {
+          continue;
+        }
+      }
+      container.appendChild(node.cloneNode(true));
+
+      if (!firstNode) {
+        firstNode = node;
+      }
+      if (node.textContent && node.textContent.trim() !== '') {
+        lastNode = node;
+      }
+    }
+
+    if (!lastNode) {
+      lastNode = firstNode;
+    }
+
+    if (message.do_autoselect && firstNode && lastNode) {
+      const range = document.createRange();
+      range.setStartBefore(firstNode);
+      range.setEndAfter(lastNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    let resultHtml = container.innerHTML;
+    // Un-nest ProseMirror or editor wrapper elements if present
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = resultHtml;
+    const pmWrapper = tempDiv.querySelector('.ProseMirror');
+    if (pmWrapper) {
+      resultHtml = pmWrapper.innerHTML;
+    }
+
+    return Promise.resolve(resultHtml);
   }
 
   case "getOnlyQuotedText": {

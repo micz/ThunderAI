@@ -101,7 +101,7 @@ export class StreamingMessage {
         this._thinkingAccumulator = '';
 
         // Convert Markdown to DOM nodes using the markdown-it library
-        const md = window.markdownit();
+        const md = window.markdownit({ html: true });
         const html = md.render(fullText);
 
         this._fullTextHTML += html;
