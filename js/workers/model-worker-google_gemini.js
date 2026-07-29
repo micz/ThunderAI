@@ -80,6 +80,7 @@ self.onmessage = async function(event) {
             if (stopStreaming) {
                 stopStreaming = false;
                 reader.cancel();
+                taLog.log("AI full reasoning [STOPPED]: " + thinkingAccumulator);
                 taLog.log("AI full response [STOPPED]: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';
@@ -89,6 +90,7 @@ self.onmessage = async function(event) {
             }
             const { done, value } = await reader.read();
             if (done) {
+                taLog.log("AI full reasoning: " + thinkingAccumulator);
                 taLog.log("AI full response: " + assistantResponseAccumulator);
                 conversationHistory.push({ role: 'model', parts: [{"text": assistantResponseAccumulator}] });
                 assistantResponseAccumulator = '';

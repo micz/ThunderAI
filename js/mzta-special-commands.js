@@ -61,6 +61,7 @@
     worker = null;
     llm = "";
     full_message = "";
+    thinking_message = "";
     logger = null;
     do_debug = false;
     config = {};
@@ -190,8 +191,10 @@
                         break;
                     case 'newThinkingToken':
                         // A special command's response is parsed, not displayed, so the
-                        // model's reasoning must never reach full_message. Discarded here
-                        // for the providers that stream it in a dedicated field.
+                        // model's reasoning must never reach full_message. Kept apart here
+                        // for the providers that stream it in a dedicated field: it is only
+                        // written to the debug log, never handed to the caller.
+                        this.thinking_message += payload.token;
                         break;
                     case 'tokensDone': {
                         clearTimer();
