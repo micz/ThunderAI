@@ -320,9 +320,6 @@
     "ChatGPT_Models": {
         "message": "ChatGPTモデル"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "ChatGPTモデルリストを更新"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "ChatGPTモデルの取得中にエラー"
     },
@@ -359,9 +356,6 @@
     "Ollama_Models": {
         "message": "Ollamaモデル"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ollamaモデルリストを更新"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Ollamaモデルの取得中にエラー"
     },
@@ -391,9 +385,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI互換APIモデル"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "OpenAI互換APIモデルリストを更新"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "OpenAI互換APIモデルの取得中にエラー"
@@ -659,9 +650,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "チェックすると、タグのラベルは最初の文字のみ大文字で、残りは小文字になります。"
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "タグ追加オプション"
-    },
     "prefs_SurveyLinkText": {
         "message": "フィードバックを共有してThunderAIの改善にご協力ください！"
     },
@@ -691,9 +679,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Google Gemini APIモデル"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Google Geminiモデルリストを更新"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Google Geminiモデルの取得中にエラー"
@@ -746,17 +731,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "チェックすると、選択テキストからカレンダーイベント情報を取得するアイテムがメニューに追加されます。"
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "カレンダーイベントオプション"
-    },
     "prefs_OptionText_get_task": {
         "message": "選択テキストから新しいタスクを追加"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "チェックすると、選択テキストからタスク情報を取得するアイテムがメニューに追加されます。"
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "タスクオプション"
     },
     "Select_your_timezone": {
         "message": "タイムゾーンを選択"
@@ -892,9 +871,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "以下のメールを分析し、スパムかどうかを判断してください。不審なキーワード、過度な宣伝文句、誤解を招く件名、個人情報の要求、不審な送信者アドレスなどの要素を考慮してください。\n0（スパムではない）から100（スパム）までの値と、10語以内の説明を提供してください。\nメッセージデータが欠落している場合は、値を0（スパムではない）に設定し、理由を示してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"explanation\": \"判断理由の簡単な説明\",\n\"spamValue\": <0から100の整数>\n}\n以下がメール情報です：\n送信者：「{%author%}」\n件名：「{%mail_subject%}」\nHTML本文：「{%mail_html_body%}」"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "スパムフィルターオプション"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "特定のモデルとAPIを使用"
@@ -1072,9 +1048,6 @@
     },
     "Anthropic_Models": {
         "message": "Claudeモデル"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Claudeモデルリストを更新"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Claudeモデルの取得中にエラー"

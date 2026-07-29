@@ -311,9 +311,6 @@
     "Ollama_Models": {
         "message": "Modely Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů Ollama"
     },
@@ -343,9 +340,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modely kompatibilní s OpenAI API"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů kompatibilních s OpenAI API"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů kompatibilních s OpenAI API"
@@ -494,9 +488,6 @@
     "spamfilter_no_reports": {
         "message": "Zatím nebyly žádné zprávy zkontrolovány na spam. Zde naleznete seznam posledních 100 hlášení spamu."
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "\"Možnosti filtru spamu\""
-    },
     "spamfilter_threshold_too_low": {
         "message": "Práh spamu je příliš nízký! Pravděpodobně označíte příliš mnoho e-mailů jako spam!"
     },
@@ -511,9 +502,6 @@
     },
     "currently_used_prompt": {
         "message": "Aktuálně používaný název přikazu"
-    },
-    "ChatGPT_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů ChatGPT"
     },
     "ChatGPT_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů ChatGPT"
@@ -535,9 +523,6 @@
     },
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Pokud je zaškrtnuto, štítek bude nastaven na malá písmena s pouze prvním písmenem velkým."
-    },
-    "AddTags_prompt_prefs_title": {
-        "message": "Možnosti přidávání štítků"
     },
     "prefs_SurveyLinkText": {
         "message": "Podělte se o svůj názor a pomozte vylepšit ThunderAI!"
@@ -568,9 +553,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modely Google Gemini API"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Google Gemini"
     },
     "google_gemini_empty_apikey": {
         "message": "Nezadali jste API klíč pro Google Gemini API. Vložte jej na stránce možností."
@@ -827,9 +809,6 @@
     "prompt_spamfilter_full_text": {
         "message": "Analyzuj následující e-mail a urči, zda se jedná o spam či nikoli. Zvaž faktory, jako jsou podezřelá klíčová slova, nadměrné propagační výrazy, zavádějící řádky předmětu, žádosti o osobní informace a neobvyklé adresy odesílatele.\nZadej hodnotu od 0 (není spam) do 100 (spam) a vysvětlení o maximálně 10 slovech. \nV případě chybějících údajů zprávy nastavte hodnotu na 0 (není spam) a uveďte důvod.\nVygeneruj odpověď pouze ve formátu JSON. Neuváděj žádný další text nebo vysvětlení; uveď pouze JSON. Zde je formát, který se má použít:\n{\n\"explanation\": \"Stručné vysvětlení vašeho zdůvodnění\",\n\"spamValue\": <celé číslo od 0 do 100>\n}\nZde jsou informace o e-mailu:\nOdesílatel: \"{%author%}\"\nPředmět: \"{%mail_subject%}\"\nText HTML: \"{%mail_html_body%}\""
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Možnosti události kalendáře"
-    },
     "prefs_OptionText_calendar_enforce_timezone": {
         "message": "Vynutit zvolené časové pásmo"
     },
@@ -931,9 +910,6 @@
     "OpenChatGPTTab_Info2": {
         "message": "Otevření ChatGPT Web odtud použije všechny nakonfigurované nastavení pro model, projekt a Custom GPT."
     },
-    "get_task_prompt_prefs_title": {
-        "message": "Možnosti úloh"
-    },
     "GetTask_PageTitle": {
         "message": "Spravovat nastavení úloh"
     },
@@ -984,9 +960,6 @@
     },
     "Anthropic_Models": {
         "message": "Modely Claude"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Aktualizovat seznam modelů Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Chyba při pokusu o načtení modelů Claude"
@@ -1113,18 +1086,6 @@
     "prompt_string": {
         "message": "Prompt (příkaz)"
     },
-    "show_in": {
-        "message": "Zobrazit v"
-    },
-    "show_in_popup": {
-        "message": "Pouze ve vyskakovacím okně"
-    },
-    "show_in_context": {
-        "message": "Pouze v kontextové nabídce"
-    },
-    "show_in_both": {
-        "message": "Obojí"
-    },
     "webchat_save_as_summary": {
         "message": "Uložit jako shrnutí"
     },
@@ -1211,9 +1172,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Zobrazit další položku menu pro vytváření událostí kalendáře z obsahu schránky."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Možnosti shrnutí"
     },
     "prompt_summarize": {
         "message": "Shrnout"
@@ -1597,9 +1555,6 @@
     },
     "Translate_prompt_text_title": {
         "message": "Aktuální text promptu"
-    },
-    "Translate_prompt_prefs_title": {
-        "message": "Možnosti překladu"
     },
     "prefs_OptionText_translate_auto": {
         "message": "Automaticky překládat zprávy"

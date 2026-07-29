@@ -303,9 +303,6 @@
     "ChatGPT_Models": {
         "message": "Modèles ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Mettre à jour la liste des modèles ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Erreur lors de la récupération des modèles ChatGPT"
     },
@@ -342,9 +339,6 @@
     "Ollama_Models": {
         "message": "Modèles Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Mettre à jour la liste des modèles Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Erreur lors de la tentative de récupération des modèles Ollama"
     },
@@ -374,9 +368,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Modèles d'API compatibles OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Mettre à jour la liste des modèles d'API compatibles OpenAI"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Erreur lors de la tentative de récupération des modèles d'API compatibles OpenAI"
@@ -609,9 +600,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Si coché, l'étiquette des tags sera définie en minuscules avec seulement la première lettre en majuscule."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Options d’ajout de tags"
-    },
     "prefs_SurveyLinkText": {
         "message": "Partagez vos commentaires et aidez à améliorer ThunderAI !"
     },
@@ -641,9 +629,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Modèles d'API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Mettre à jour la liste des modèles Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Erreur lors de la tentative de récupération des modèles Google Gemini"
@@ -722,9 +707,6 @@
     },
     "Subject": {
         "message": "Objet"
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Options du filtre anti-spam"
     },
     "prefs_OptionText_spamfilter_threshold_Info": {
         "message": "Si la valeur retournée par l'IA est supérieure à ce seuil, l'e-mail sera déplacé dans le dossier spam."
@@ -821,9 +803,6 @@
     },
     "noActiveCalendar": {
         "message": "Aucun calendrier modifiable trouvé !"
-    },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Options des événements du calendrier"
     },
     "apiwebchat_you": {
         "message": "Vous"
@@ -951,9 +930,6 @@
     "prefs_OptionText_get_task_Info": {
         "message": "Si coché, un élément sera ajouté au menu pour obtenir des informations sur la tâche à partir du texte sélectionné."
     },
-    "get_task_prompt_prefs_title": {
-        "message": "Options des tâches"
-    },
     "prompt_get_task": {
         "message": "Ajouter une nouvelle tâche"
     },
@@ -1074,9 +1050,6 @@
     },
     "Anthropic_Models": {
         "message": "Modèles Claude"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Mettre à jour la liste des modèles Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Erreur lors de la tentative de récupération des modèles Claude"
@@ -1311,9 +1284,6 @@
     },
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Afficher un élément de menu supplémentaire pour créer des événements de calendrier à partir du contenu textuel du presse-papiers."
-    },
-    "Summarize_prompt_prefs_title": {
-        "message": "Options de résumé"
     },
     "prompt_summarize": {
         "message": "Résumer cet e-mail ou ces e-mails"
@@ -1587,9 +1557,6 @@
     "Translate_prompt_text_title": {
         "message": "Texte du prompt actuel"
     },
-    "Translate_prompt_prefs_title": {
-        "message": "Options de traduction"
-    },
     "prefs_OptionText_translate_auto": {
         "message": "Traduire les messages automatiquement"
     },
@@ -1736,18 +1703,6 @@
     },
     "menu_order_icon_none": {
         "message": "(aucune)"
-    },
-    "show_in": {
-        "message": "Afficher dans"
-    },
-    "show_in_popup": {
-        "message": "Fenêtre contextuelle uniquement"
-    },
-    "show_in_context": {
-        "message": "Menu contextuel uniquement"
-    },
-    "show_in_both": {
-        "message": "Les deux"
     },
     "webchat_save_as_summary": {
         "message": "Enregistrer comme résumé"

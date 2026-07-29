@@ -317,9 +317,6 @@
     "ChatGPT_Models": {
         "message": "Μοντέλα ChatGPT"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Ενημέρωση λίστας μοντέλων ChatGPT"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων ChatGPT"
     },
@@ -356,9 +353,6 @@
     "Ollama_Models": {
         "message": "Μοντέλα Ollama"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ενημέρωση λίστας μοντέλων Ollama"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Ollama"
     },
@@ -388,9 +382,6 @@
     },
     "OpenAIComp_Models": {
         "message": "Μοντέλα API συμβατά με OpenAI"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Ενημέρωση λίστας μοντέλων API συμβατών με OpenAI"
     },
     "OpenAIComp_empty_host": {
         "message": "Δεν έχετε προσθέσει Διεύθυνση κεντρικού υπολογιστή για το API συμβατό με OpenAI. Εισαγάγετε μία στη σελίδα επιλογών."
@@ -563,17 +554,11 @@
     "prefs_OptionText_get_calendar_event_Info": {
         "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για τη λήψη πληροφοριών συμβάντων ημερολογίου από επιλεγμένο κείμενο."
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "Επιλογές Εκδηλώσεων Ημερολογίου"
-    },
     "prefs_OptionText_get_task": {
         "message": "Προσθήκη νέας εργασίας από επιλεγμένο κείμενο"
     },
     "prefs_OptionText_get_task_Info": {
         "message": "Εάν είναι επιλεγμένο, θα συμπεριληφθεί ένα στοιχείο στο μενού για τη λήψη πληροφοριών εργασίας από επιλεγμένο κείμενο."
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "Επιλογές εργασιών"
     },
     "Select_your_timezone": {
         "message": "Επιλέξτε τη ζώνη ώρας σας"
@@ -709,9 +694,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Αναλύστε το ακόλουθο email και προσδιορίστε εάν είναι spam ή όχι. Λάβετε υπόψη παράγοντες όπως ύποπτες λέξεις-κλειδιά, υπερβολική διαφημιστική γλώσσα, παραπλανητικές γραμμές θέματος, αιτήματα για προσωπικά στοιχεία και ασυνήθιστες διευθύνσεις αποστολέα.\nΔώστε μια τιμή από 0 (όχι spam) έως 100 (spam) και μια εξήγηση που δεν υπερβαίνει τις 10 λέξεις.\nΣε περίπτωση που λείπουν δεδομένα μηνύματος, ορίστε την τιμή σε 0 (όχι spam) και δώστε τον λόγο.\nΔημιουργήστε μια απάντηση μόνο σε μορφή JSON. Μην συμπεριλάβετε κανένα επιπλέον κείμενο ή εξήγηση. Δώστε μόνο το JSON. Ακολουθεί η μορφή που θα χρησιμοποιηθεί:\n{\n\"explanation\": \"Σύντομη εξήγηση του συλλογισμού σας\",\n\"spamValue\": <ακέραιος αριθμός από 0 έως 100>\n}\nΕδώ βρίσκονται οι πληροφορίες του email:\nΑποστολέας: \"{%author%}\"\nΘέμα: \"{%mail_subject%}\"\nΣώμα Html: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Επιλογές φίλτρου ανεπιθύμητης αλληλογραφίας"
     },
     "prefs_OptionText_use_specific_integration": {
         "message": "Χρησιμοποιήστε συγκεκριμένο μοντέλο και API"
@@ -889,9 +871,6 @@
     },
     "Anthropic_Models": {
         "message": "Claude Μοντέλα"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "Ενημέρωση λίστας μοντέλων Claude"
     },
     "Anthropic_Models_Error_fetching": {
         "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Claude"
@@ -1131,9 +1110,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Εάν επιλεγεί, η ονομασία ετικετών θα οριστεί σε πεζά γράμματα με μόνο το πρώτο γράμμα κεφαλαίο."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Επιλογές προσθήκης ετικετών"
-    },
     "prefs_SurveyLinkText": {
         "message": "Μοιραστείτε τα σχόλιά σας και βοηθήστε στη βελτίωση του ThunderAI!"
     },
@@ -1163,9 +1139,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Μοντέλα API Google Gemini"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Ενημέρωση λίστας μοντέλων Google Gemini"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Σφάλμα κατά την προσπάθεια ανάκτησης μοντέλων Google Gemini"
@@ -1290,9 +1263,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "Εμφάνιση ενός επιπλέον στοιχείου μενού για τη δημιουργία συμβάντων ημερολογίου από περιεχόμενο κειμένου στο πρόχειρο."
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "Επιλογές σύνοψης"
-    },
     "prompt_summarize": {
         "message": "Συνοψίστε"
     },
@@ -1382,18 +1352,6 @@
     },
     "copy_text": {
         "message": "αντιγραφή"
-    },
-    "show_in": {
-        "message": "Εμφάνιση σε"
-    },
-    "show_in_popup": {
-        "message": "Μόνο αναδυόμενο παράθυρο"
-    },
-    "show_in_context": {
-        "message": "Μόνο μενού περιβάλλοντος"
-    },
-    "show_in_both": {
-        "message": "Και τα δύο"
     },
     "webchat_save_as_summary": {
         "message": "Αποθήκευση ως Σύνοψη"
@@ -1620,9 +1578,6 @@
     },
     "Translate_prompt_text_title": {
         "message": "Τρέχον κείμενο προτροπής"
-    },
-    "Translate_prompt_prefs_title": {
-        "message": "Επιλογές μετάφρασης"
     },
     "prefs_OptionText_translate_auto": {
         "message": "Αυτόματη μετάφραση μηνυμάτων"

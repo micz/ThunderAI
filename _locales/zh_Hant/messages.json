@@ -455,9 +455,6 @@
     "prefs_OptionText_spamfilter_threshold": {
         "message": "垃圾訊息閾值"
     },
-    "get_task_prompt_prefs_title": {
-        "message": "任務選項"
-    },
     "btn_show_differences": {
         "message": "顯示差異"
     },
@@ -494,9 +491,6 @@
     "importPrompts_invalidPrompts": {
         "message": "您嘗試匯入的文件不包含任何有效提示。"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "更新 ChatGPT 模型清單"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "嘗試取得 ChatGPT 模型時出錯"
     },
@@ -508,9 +502,6 @@
     },
     "chatgpt_empty_model": {
         "message": "您尚未選擇 ChatGPT API 的模型。請在選項頁面中選擇一個。"
-    },
-    "Ollama_Models_Fetch": {
-        "message": "更新 Ollama 模型清單"
     },
     "Ollama_Models_Error_fetching": {
         "message": "嘗試取得 Ollama 模型時出錯"
@@ -529,9 +520,6 @@
     },
     "OpenAIComp_api_request_failed": {
         "message": "OpenAI 相容 API 請求失敗"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "更新 OpenAI 相容 API 模型列表"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "嘗試取得 OpenAI 相容 API 模型時出錯"
@@ -611,9 +599,6 @@
     "prompt_spamfilter": {
         "message": "偵測垃圾郵件"
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "垃圾郵件過濾器選項"
-    },
     "SpamReport_Title": {
         "message": "垃圾郵件過濾報告"
     },
@@ -622,9 +607,6 @@
     },
     "prefs_OptionText_chatgpt_web_project_info": {
         "message": "這是將針對 ChatGPT 網頁介面強制執行的專案。"
-    },
-    "Anthropic_Models_Fetch": {
-        "message": "更新 Claude 模型列表"
     },
     "prefs_Anthropic_API_Key": {
         "message": "Claude API 金鑰"
@@ -690,9 +672,6 @@
     },
     "AddTags_excl_list_infoline": {
         "message": "這是一份禁止在郵件中新增的標籤清單。"
-    },
-    "AddTags_prompt_prefs_title": {
-        "message": "新增標籤選項"
     },
     "addtags_dialog_title": {
         "message": "為電子郵件新增標籤"
@@ -897,9 +876,6 @@
     "prefs_OpenAIComp_ForceModel": {
         "message": "手動輸入模型"
     },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "日曆事件選項"
-    },
     "prefs_OptionText_btnManageTaskInfo": {
         "message": "管理任務設定"
     },
@@ -929,9 +905,6 @@
     },
     "customPrompts_start_import": {
         "message": "正在匯入自訂提示…"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "更新 Google Gemini 模型列表"
     },
     "chatgpt_win_diff_title": {
         "message": "原文與修改後的文字之間的差異"

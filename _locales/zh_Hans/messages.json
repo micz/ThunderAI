@@ -245,9 +245,6 @@
     "placeholder_thunderai_def_sign": {
         "message": "ThunderAI 选项中定义的默认签名。"
     },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "垃圾邮件过滤选项"
-    },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "垃圾阈值"
     },
@@ -455,9 +452,6 @@
     "placeholder_additional_text": {
         "message": "附加文本"
     },
-    "Ollama_Models_Fetch": {
-        "message": "更新 Ollama 模型列表"
-    },
     "currently_used_prompt": {
         "message": "当前使用的提示词名称"
     },
@@ -509,9 +503,6 @@
     "prefs_Connection_type_ChatGPT_Web": {
         "message": "ChatGPT Web 界面"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "更新 ChatGPT 模型列表"
-    },
     "SearchPrompt": {
         "message": "搜索提示词"
     },
@@ -559,9 +550,6 @@
     },
     "prefs_OpenAIComp_API_Key": {
         "message": "OpenAI 兼容 API 密钥"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "更新 OpenAI 兼容 API 模型列表"
     },
     "prefs_OptionText_chatgpt_win_dims_info": {
         "message": "如果不想指定窗口大小，请设置为 0。"
@@ -716,14 +704,8 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "如果选中，标签标签将设置为小写字母，但只有首字母大写。"
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "添加标签选项"
-    },
     "prefs_OptionText_add_tags_force_lang": {
         "message": "强制语言"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "更新 Google Gemini 模型列表"
     },
     "ChatGPT_Developer_Messages_Info": {
         "message": "当您设置开发者消息时，您为模型提供了额外的上下文，以帮助其理解任务、提供更个性化的响应，并遵循将在提示中发送的具体准则。"
@@ -820,9 +802,6 @@
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "启用文本差异查看器"
-    },
-    "get_calendar_event_prompt_prefs_title": {
-        "message": "日历事件选项"
     },
     "Select_your_timezone": {
         "message": "选择您的时区"
@@ -985,9 +964,6 @@
     "prefs_OptionText_get_calendar_event_from_clipboard_Info": {
         "message": "显示一个额外的菜单项，用于根据剪贴板文本内容创建日历事件。"
     },
-    "Summarize_prompt_prefs_title": {
-        "message": "摘要选项"
-    },
     "prompt_summarize": {
         "message": "总结这封或这些邮件"
     },
@@ -1017,9 +993,6 @@
     },
     "prefs_OptionText_get_task_Info": {
         "message": "如果选中，则会在菜单中添加一个项目，以便从选定的文本获取任务信息。"
-    },
-    "get_task_prompt_prefs_title": {
-        "message": "任务选项"
     },
     "prefs_OptionText_Summarize_infoline2": {
         "message": "您可以根据需要更改提示词，第一个字段是主提示词，第二个字段是单封邮件的模板。邮件列表将附加到主提示词中。邮件将由第三个字段中指定的间隔符分隔。"

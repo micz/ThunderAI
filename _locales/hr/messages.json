@@ -303,9 +303,6 @@
     "ChatGPT_Models": {
         "message": "ChatGPT modeli"
     },
-    "ChatGPT_Models_Fetch": {
-        "message": "Ažuriraj popis ChatGPT modela"
-    },
     "ChatGPT_Models_Error_fetching": {
         "message": "Pogreška pri pokušaju dohvaćanja ChatGPT modela"
     },
@@ -342,9 +339,6 @@
     "Ollama_Models": {
         "message": "Ollama modeli"
     },
-    "Ollama_Models_Fetch": {
-        "message": "Ažurirajte popis Ollama modela"
-    },
     "Ollama_Models_Error_fetching": {
         "message": "Pogreška pri pokušaju dohvaćanja Ollama modela"
     },
@@ -374,9 +368,6 @@
     },
     "OpenAIComp_Models": {
         "message": "OpenAI kompatibilni API modeli"
-    },
-    "OpenAIComp_Models_Fetch": {
-        "message": "Ažuriraj popis OpenAI kompatibilnih API modela"
     },
     "OpenAIComp_Models_Error_fetching": {
         "message": "Pogreška pri pokušaju dohvaćanja OpenAI kompatibilnih API modela"
@@ -609,9 +600,6 @@
     "prefs_OptionText_add_tags_first_uppercase_Info": {
         "message": "Ako je označeno, etiketa oznaka bit će postavljena na mala slova sa samo prvim velikim slovom."
     },
-    "AddTags_prompt_prefs_title": {
-        "message": "Mogućnosti dodavanja oznaka"
-    },
     "prefs_SurveyLinkText": {
         "message": "Podijelite svoje povratne informacije i pomozite nam poboljšati ThunderAI!"
     },
@@ -641,9 +629,6 @@
     },
     "GoogleGemini_Models": {
         "message": "Google Gemini API modeli"
-    },
-    "GoogleGemini_Models_Fetch": {
-        "message": "Ažuriraj popis Google Gemini modela"
     },
     "GoogleGemini_Models_Error_fetching": {
         "message": "Pogreška pri pokušaju dohvaćanja modela Google Gemini"
@@ -767,9 +752,6 @@
     },
     "prompt_spamfilter_full_text": {
         "message": "Analiziraj sljedeću e-poruku i utvrdi je li neželjena ili ne. Razmotri čimbenike kao što su sumnjive ključne riječi, pretjerani promotivni jezik, zavaravajuće linije predmeta, zahtjevi za osobnim podacima i neobične adrese pošiljatelja.\nNavedi vrijednost od 0 (nije spam) do 100 (neželjena pošta) i objašnjenje od najviše 10 riječi.\nU slučaju nedostatka podataka poruke, postavite vrijednost na 0 (nije spam) i navedite razlog.\nGeneriraj odgovor samo u JSON formatu. Nemoj uključivati nikakav dodatni tekst ili objašnjenje; pruži samo JSON. Ovdje je format koji treba koristiti:\n{\n\"explanation\": \"Kratko objašnjenje vašeg obrazloženja\",\n\"spamValue\": <cijeli broj od 0 do 100>\n}\nOvdje su informacije o e-poruci:\nŠalje: \"{%author%}\"\nNaslov: \"{%mail_subject%}\"\nHtml tijelo: \"{%mail_html_body%}\""
-    },
-    "SpamFilter_prompt_prefs_title": {
-        "message": "Mogućnosti filtera neželjene pošte"
     },
     "prefs_OptionText_spamfilter_threshold": {
         "message": "Prag neželjene pošte"
