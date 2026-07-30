@@ -155,17 +155,10 @@ export function buildDiffIcon(size = 15) {
     return strokedIcon(size, ['M12 4v16M6 8l-3 4 3 4M18 8l3 4-3 4']);
 }
 
-// Curved arrow back to a start point — "revert this change" in the diff picker.
-export function buildRevertIcon(size = 13) {
-    return strokedIcon(size, [
-        'M4 9a8 8 0 1 1 2 8',
-        'M3.5 4v5.5H9',
-    ]);
-}
-
-// Three dots — stands in for a diff-picker hunk whose current side is empty
-// (an accepted deletion, or a rejected insertion), so the hunk keeps its place
-// in the text flow and stays clickable instead of vanishing.
+// Three dots — stands in for the empty side of a diff-picker change: the
+// missing original of an insertion, or the missing replacement of a deletion.
+// Gives that side something to click, so "keep nothing here" is the same
+// gesture as every other choice.
 export function buildHunkMarkerIcon(size = 11) {
     const svg = el('svg', {
         width: String(size),

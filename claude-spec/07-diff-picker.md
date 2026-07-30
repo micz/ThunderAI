@@ -183,20 +183,37 @@ Escape **first**, then substitute `<br>`, or the tags just inserted get escaped 
 
 ## UI
 
-Single **inline** view, not side-by-side — the webchat window is often narrow.
+Single **inline** view, not two columns — the webchat window is often narrow.
+
+**Both versions of every change are on screen at once, and you click the one you want to keep.**
+That is the core interaction:
 
 - Context entries render as plain text, with real `<br>` elements for line breaks.
-- Each non-context hunk is one interactive `<span>`: accepted shows `newText` (green, like the old
-  `.added`), rejected shows `oldText` (red + strikethrough, like `.removed`).
-- A `replace` hunk shows **only one side at a time** — showing both is what made the old viewer hard
-  to read.
-- An accepted `delete` or a rejected `insert` has nothing to show, so it renders a small inline
-  three-dot marker and stays clickable and focusable instead of vanishing from the flow.
-- Click toggles. A small check/revert icon button appears on hover and on focus.
-- Accessibility: `tabindex="0"`, `role="button"`, `aria-pressed` reflecting the accepted state, and a
-  descriptive `aria-label` per hunk. The counter is `aria-live="polite"`.
-- Keyboard: `Space`/`Enter` toggle the focused hunk, `j`/`k` move to next/previous. Modified keys
-  (ctrl/meta/alt) are ignored so browser shortcuts survive, and keys inside a textarea are left alone.
+- Each change renders as a wrapper `.hunk` span holding **two** `.hunk-side` spans: the original
+  (red, `--err-*`) and the answer's replacement (green, `--ok-*`), in that order.
+- The side currently in force is `.is-active` (full colour, semibold); the other is `.is-inactive`
+  (dimmed and struck through). Both stay legible, so the comparison is always visible and switching
+  back is one click.
+- Clicking a side **keeps that side**. It is idempotent: clicking the side already in force does
+  nothing, rather than toggling away from what the user just asked for.
+- A pure insertion has no original and a pure deletion has no replacement. That empty side still
+  renders, as a dimmed three-dot placeholder (`.is-empty`), so "keep nothing here" is the same
+  gesture as every other choice instead of a special case.
+- The wrapper is `white-space: nowrap` so a change never breaks across lines with its two halves on
+  either side of the break, which would read as two unrelated edits. The text *inside* each side
+  wraps normally.
+- Accessibility: each side is `tabindex="0"` `role="radio"` with `aria-checked` reflecting which is in
+  force — the pair is genuinely a two-option choice, which `role="button"` + `aria-pressed` would not
+  convey. Each side carries a descriptive `aria-label`. The counter is `aria-live="polite"`.
+- Keyboard: `j`/`k` move between changes, landing focus on the **active** side so the next keystroke
+  acts relative to what is actually there. `Space`/`Enter` on the inactive side selects it; on the
+  active side it flips to the other one (otherwise the key would appear dead) and focus follows the
+  new active side. Modified keys (ctrl/meta/alt) are ignored so browser shortcuts survive, and keys
+  inside a textarea are left alone.
+
+> An earlier iteration showed only one side at a time and toggled on click. It was changed because
+> seeing the original and the suggestion together is the whole point of reviewing a proofread: with
+> one side hidden the user cannot tell what they are choosing between.
 
 Sticky toolbar: the counter ("7 of 12 changes accepted"), Accept all / Reject all, previous / next,
 and "Use this answer". Buttons reuse `mzta-btn-secondary` / `mzta-btn-tertiary` from
@@ -208,16 +225,20 @@ a bare "0 of 0 changes accepted". "Use this answer" stays available and still re
 
 ### Surgical re-render
 
-A toggle repaints **one** hunk via `_renderHunk(index)`. `_hunkEls[i]` is kept aligned 1:1 with
-`_hunks[i]` (context entries included, so indices never need recomputing), and the span's **element
-identity never changes** — `tabindex`, `dataset.hunkIndex` and the listeners are set once at build
-time. That is what preserves focus and tab order across a toggle.
+Choosing a side repaints **one** change via `_renderHunk(index)`, which does nothing but reassign
+`.is-active` / `.is-inactive`, `aria-checked` and the labels on its two existing side elements. **No
+DOM is created or destroyed on a choice**, so focus, tab order and hover survive untouched — there is
+no need to detect and restore focus the way a rebuild would require.
 
-Clearing `textContent` does blur a focused **descendant** (the icon button), so `_toggleHunk` records
-whether focus was inside the span and re-focuses the rebuilt button afterwards.
+Two parallel arrays are kept aligned 1:1 with `_hunks` (context entries included, so indices never
+need recomputing): `_hunkEls[i]` holds the wrapper span, `_sideEls[i]` holds `{old, new}` (or `null`
+for context). Text content and listeners are built once in `_renderAll`.
+
+`_chooseSide(index, which)` is the single mutation path. `_toggleHunk(index)` just delegates to it
+with the opposite side, for the keyboard case where there is no clicked side to go on.
 
 Bulk accept/reject sets every state first, then repaints, then updates the counter **once**, rather
-than routing through `_toggleHunk` N times.
+than routing through the per-change path N times.
 
 ## Why a custom element
 
@@ -247,5 +268,5 @@ everything — a single "replace it all" hunk. It works well on genuinely multi-
 |------|------|
 | `api_webchat/diffPicker.js` | Hunk model, compose functions, `<diff-picker>` element |
 | `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection |
-| `api_webchat/svgIcons.js` | `buildRevertIcon`, `buildHunkMarkerIcon` |
+| `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder) |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |

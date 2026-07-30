@@ -17,11 +17,18 @@
  */
 
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
-import { buildCheckIcon, buildRevertIcon, buildHunkMarkerIcon, buildUseAnswerIcon } from './svgIcons.js';
+import { buildHunkMarkerIcon, buildUseAnswerIcon } from './svgIcons.js';
 
 // <diff-picker> replaces the read-only diff viewer for prompts with
-// use_diff_viewer == "1": the user accepts or rejects each change individually
+// use_diff_viewer == "1": the user chooses, per change, which version to keep,
 // and the composed result is what gets written back into the email.
+//
+// BOTH versions of every change are shown at once - the original in red, the
+// answer's replacement in green - and clicking one keeps it. The other stays on
+// screen, dimmed, so the comparison never disappears and switching back is one
+// click. Showing only the version in force was tried first and dropped: with one
+// side hidden the user cannot see what they are choosing between, which is the
+// whole point of reviewing a proofread.
 //
 // The important reason this is a custom element and not inline markup is the
 // same one documented at the top of splitButton.js: the keyboard-navigation
@@ -261,68 +268,76 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       margin: 0 0 9px;
     }
 
-    /* Interactive hunks. Colours mirror the .added/.removed pair the read-only
-       viewer used, so the picker reads as the same feature. The rules have to
-       live here: only the custom properties cross the shadow boundary. */
+    /* A change shows BOTH versions at once: the red original and the green
+       replacement, side by side. Clicking one keeps it. The colours mirror the
+       .added/.removed pair the read-only viewer used, so the picker still reads
+       as the same feature. The rules have to live here: only the custom
+       properties cross the shadow boundary. */
     .hunk {
-      position: relative;
-      cursor: pointer;
+      display: inline;
       border-radius: 3px;
-      padding: 0 1px;
-      transition: box-shadow .12s ease;
+      /* Keep the pair together: a change must never be split across lines with
+         the original at the end of one and the replacement at the start of the
+         next, which reads as two unrelated edits. */
+      white-space: nowrap;
     }
-    .hunk.is-accepted {
-      background-color: var(--ok-bg);
-      color: var(--ok-ink);
-    }
-    .hunk.is-rejected {
-      background-color: var(--err-bg);
-      color: var(--err-ink);
-      text-decoration: line-through;
-    }
-    .hunk:hover {
-      box-shadow: 0 0 0 2px var(--border-strong);
+    /* The text inside a side still has to wrap normally - only the grouping of
+       the two sides is nowrap. */
+    .hunk-side {
+      white-space: normal;
     }
     .hunk.is-current {
       box-shadow: 0 0 0 2px var(--accent);
     }
 
-    /* An accepted delete or a rejected insert has nothing to show. The marker
-       keeps the hunk in the flow so it stays clickable and focusable instead
-       of vanishing. */
+    /* One of the two versions. Both are always on screen; the one currently in
+       force is fully coloured, the other is dimmed and struck through, so the
+       comparison stays readable and switching back is one click away. */
+    .hunk-side {
+      display: inline;
+      cursor: pointer;
+      border-radius: 3px;
+      padding: 0 2px;
+      transition: opacity .12s ease, box-shadow .12s ease;
+    }
+    .hunk-side-old {
+      background-color: var(--err-bg);
+      color: var(--err-ink);
+    }
+    .hunk-side-new {
+      background-color: var(--ok-bg);
+      color: var(--ok-ink);
+    }
+    /* Not chosen: still legible, clearly not what will be inserted. */
+    .hunk-side.is-inactive {
+      opacity: .5;
+      text-decoration: line-through;
+    }
+    .hunk-side.is-active {
+      font-weight: 600;
+    }
+    .hunk-side:hover {
+      opacity: 1;
+      box-shadow: 0 0 0 2px var(--border-strong);
+    }
+    .hunk-side:focus-visible {
+      opacity: 1;
+    }
+
+    /* A pure insertion has no original, and a pure deletion has no replacement.
+       The placeholder stands in for that empty side so the gesture stays the
+       same everywhere: click the version you want to keep. */
+    .hunk-side.is-empty {
+      opacity: .55;
+      text-decoration: none;
+      padding: 0 3px;
+    }
+    .hunk-side.is-empty.is-active {
+      opacity: 1;
+    }
     .hunk-marker {
       display: inline-flex;
       vertical-align: middle;
-      opacity: .75;
-    }
-
-    /* The accept/revert affordance, revealed on hover and on focus. Absolutely
-       positioned so it never disturbs the inline flow of the prose around it. */
-    .hunk-action {
-      position: absolute;
-      top: -9px;
-      right: -7px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      padding: 0;
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      border-radius: 50%;
-      color: var(--ink-2);
-      cursor: pointer;
-      line-height: 0;
-    }
-    .hunk:hover .hunk-action,
-    .hunk:focus-visible .hunk-action,
-    .hunk-action:focus-visible {
-      display: inline-flex;
-    }
-    .hunk-action:hover {
-      border-color: var(--accent);
-      color: var(--accent);
     }
 
     /* EDIT mode (phase 2) lands here. */
@@ -362,6 +377,8 @@ class DiffPicker extends HTMLElement {
         // Aligned 1:1 with _hunks, context entries included, so an index is
         // never recomputed and _renderHunk can stay a pure index lookup.
         this._hunkEls = [];
+        // Same indexing: {old, new} side elements per change, null for context.
+        this._sideEls = [];
         // Indices of the interactive (non-context) hunks, for j/k navigation.
         this._interactive = [];
         this._currentIdx = -1;
@@ -508,126 +525,131 @@ class DiffPicker extends HTMLElement {
     _renderAll() {
         this._bodyEl.textContent = '';
         this._hunkEls = [];
+        this._sideEls = [];
         this._interactive = [];
 
         this._hunks.forEach((hunk, index) => {
             const span = document.createElement('span');
-            if (hunk.type !== 'context') {
-                // Set once, never touched by _renderHunk: this is what lets a
-                // toggle preserve focus and tab order.
-                span.tabIndex = 0;
-                span.setAttribute('role', 'button');
-                span.dataset.hunkIndex = String(index);
-                span.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this._currentIdx = index;
-                    this._toggleHunk(index);
-                });
-                this._interactive.push(index);
-            }
             this._hunkEls.push(span);
+            this._sideEls.push(null);
             this._bodyEl.appendChild(span);
+
+            if (hunk.type === 'context') {
+                span.appendChild(textWithNewlinesToFragment(hunk.oldText));
+                return;
+            }
+
+            span.classList.add('hunk');
+            // Both versions are built ONCE here, never rebuilt: a toggle only
+            // reassigns their active/inactive classes. That is what keeps focus,
+            // tab order and hover intact across a choice.
+            const oldSide = this._buildSide(index, 'old');
+            const newSide = this._buildSide(index, 'new');
+            span.appendChild(oldSide);
+            span.appendChild(newSide);
+            this._sideEls[index] = { old: oldSide, new: newSide };
+            this._interactive.push(index);
+
             this._renderHunk(index);
         });
     }
 
-    // Repaint ONE hunk in place. The span element identity never changes, so
-    // focus, tab order and hover survive a toggle - which is the whole point
-    // of not rebuilding the view.
-    _renderHunk(index) {
+    // One of the two versions of a change. `which` is 'old' (the original, red)
+    // or 'new' (the answer's replacement, green). Clicking it keeps that side.
+    _buildSide(index, which) {
         const hunk = this._hunks[index];
-        const span = this._hunkEls[index];
+        const text = (which === 'old') ? hunk.oldText : hunk.newText;
 
-        span.textContent = '';
-        span.className = '';
+        const side = document.createElement('span');
+        side.classList.add('hunk-side', which === 'old' ? 'hunk-side-old' : 'hunk-side-new');
+        side.tabIndex = 0;
+        side.setAttribute('role', 'radio');
+        side.dataset.hunkIndex = String(index);
+        side.dataset.side = which;
 
-        if (hunk.type === 'context') {
-            span.appendChild(textWithNewlinesToFragment(hunk.oldText));
-            return;
-        }
-
-        const accepted = hunk.state === 'accepted';
-        const shown = accepted ? hunk.newText : hunk.oldText;
-
-        span.classList.add('hunk', accepted ? 'is-accepted' : 'is-rejected');
-        span.setAttribute('aria-pressed', accepted ? 'true' : 'false');
-        const label = this._hunkLabel(hunk);
-        span.setAttribute('aria-label', label);
-        span.title = label;
-
-        if (shown === '') {
-            // Accepted delete, or rejected insert: the side in force is empty.
+        if (text === '') {
+            // A pure insertion has no original and a pure deletion has no
+            // replacement. The placeholder gives that empty side something to
+            // click, so choosing "keep nothing here" works like every other
+            // choice instead of being a special gesture.
+            side.classList.add('is-empty');
             const marker = document.createElement('span');
             marker.className = 'hunk-marker';
             marker.setAttribute('aria-hidden', 'true');
             marker.appendChild(buildHunkMarkerIcon());
-            span.appendChild(marker);
+            side.appendChild(marker);
         } else {
-            span.appendChild(textWithNewlinesToFragment(shown));
+            side.appendChild(textWithNewlinesToFragment(text));
         }
 
-        span.appendChild(this._buildHunkAction(index, accepted));
-    }
-
-    _buildHunkAction(index, accepted) {
-        const btn = document.createElement('button');
-        btn.className = 'hunk-action';
-        btn.type = 'button';
-        // -1: the hunk span itself is the tab stop. Reaching the icon via Tab
-        // would double every stop in a long email.
-        btn.tabIndex = -1;
-        const label = browser.i18n.getMessage(
-            accepted ? 'apiwebchat_picker_reject_change' : 'apiwebchat_picker_accept_change');
-        btn.setAttribute('aria-label', label);
-        btn.title = label;
-        btn.appendChild(accepted ? buildRevertIcon(11) : buildCheckIcon(11));
-        btn.addEventListener('click', (e) => {
-            // Without this the click also lands on the parent span and the
-            // hunk toggles twice, back to where it started.
-            e.stopPropagation();
+        side.addEventListener('click', (e) => {
             e.preventDefault();
             this._currentIdx = index;
-            this._toggleHunk(index);
+            this._chooseSide(index, which);
         });
-        return btn;
+        return side;
     }
 
-    _hunkLabel(hunk) {
+    // Repaint ONE hunk in place: flip which of its two sides is active. The
+    // side elements themselves are never rebuilt, only reclassified.
+    _renderHunk(index) {
+        const hunk = this._hunks[index];
+        if (hunk.type === 'context') { return; }
+
+        const sides = this._sideEls[index];
+        if (!sides) { return; }
+
         const accepted = hunk.state === 'accepted';
-        switch (hunk.type) {
-            case 'insert':
-                return browser.i18n.getMessage(accepted
-                    ? 'apiwebchat_picker_hunk_insert_accepted'
-                    : 'apiwebchat_picker_hunk_insert_rejected', [hunk.newText]);
-            case 'delete':
-                return browser.i18n.getMessage(accepted
-                    ? 'apiwebchat_picker_hunk_delete_accepted'
-                    : 'apiwebchat_picker_hunk_delete_rejected', [hunk.oldText]);
-            default:
-                return browser.i18n.getMessage(accepted
-                    ? 'apiwebchat_picker_hunk_replace_accepted'
-                    : 'apiwebchat_picker_hunk_replace_rejected', [hunk.oldText, hunk.newText]);
-        }
+        this._paintSide(sides.old, hunk, 'old', !accepted);
+        this._paintSide(sides.new, hunk, 'new', accepted);
     }
 
-    _toggleHunk(index) {
+    _paintSide(side, hunk, which, isActive) {
+        side.classList.toggle('is-active', isActive);
+        side.classList.toggle('is-inactive', !isActive);
+        // radio semantics: exactly one of the pair is checked at any time.
+        side.setAttribute('aria-checked', isActive ? 'true' : 'false');
+        const label = this._sideLabel(hunk, which, isActive);
+        side.setAttribute('aria-label', label);
+        side.title = label;
+    }
+
+    _sideLabel(hunk, which, isActive) {
+        const empty = (which === 'old' ? hunk.oldText : hunk.newText) === '';
+        let key;
+        if (empty) {
+            // "keep nothing": rejecting an insertion, or accepting a deletion.
+            key = isActive ? 'apiwebchat_picker_side_empty_active' : 'apiwebchat_picker_side_empty_inactive';
+            return browser.i18n.getMessage(key);
+        }
+        if (which === 'old') {
+            key = isActive ? 'apiwebchat_picker_side_old_active' : 'apiwebchat_picker_side_old_inactive';
+            return browser.i18n.getMessage(key, [hunk.oldText]);
+        }
+        key = isActive ? 'apiwebchat_picker_side_new_active' : 'apiwebchat_picker_side_new_inactive';
+        return browser.i18n.getMessage(key, [hunk.newText]);
+    }
+
+    // Keep the given side of a change. Idempotent: clicking the side already in
+    // force does nothing, which is what "click the version you want" implies.
+    _chooseSide(index, which) {
         const hunk = this._hunks[index];
         if (!hunk || hunk.type === 'context') { return; }
 
-        // _renderHunk clears the span's children, which blurs a focused
-        // DESCENDANT (the icon button). The span itself keeps focus, since it
-        // is the same node throughout.
-        const span = this._hunkEls[index];
-        const active = this.shadowRoot.activeElement;
-        const hadInnerFocus = !!active && active !== span && span.contains(active);
+        const wanted = (which === 'new') ? 'accepted' : 'rejected';
+        if (hunk.state === wanted) { return; }
 
-        hunk.state = (hunk.state === 'accepted') ? 'rejected' : 'accepted';
+        hunk.state = wanted;
         this._renderHunk(index);
         this._updateCounter();
+    }
 
-        if (hadInnerFocus) {
-            span.querySelector('.hunk-action')?.focus();
-        }
+    // Flip a change to its other version. Used by the keyboard toggle, where
+    // there is no "which side did you click" to go on.
+    _toggleHunk(index) {
+        const hunk = this._hunks[index];
+        if (!hunk || hunk.type === 'context') { return; }
+        this._chooseSide(index, hunk.state === 'accepted' ? 'old' : 'new');
     }
 
     // Bulk change: set every state first, then repaint once per hunk, then a
@@ -664,7 +686,9 @@ class DiffPicker extends HTMLElement {
         this._rejectAllBtn.disabled = (accepted === 0);
     }
 
-    // Move focus to the next/previous interactive hunk, clamping at the ends.
+    // Move focus to the next/previous change, clamping at the ends. Focus lands
+    // on the side currently in force, so Space/Enter flips away from what is
+    // there rather than from an arbitrary one of the two.
     _moveCurrent(delta) {
         if (this._interactive.length === 0) { return; }
 
@@ -681,8 +705,15 @@ class DiffPicker extends HTMLElement {
         this._currentIdx = this._interactive[next];
         const span = this._hunkEls[this._currentIdx];
         span.classList.add('is-current');
-        span.focus();
+        this._focusActiveSide(this._currentIdx);
         span.scrollIntoView({ block: 'nearest' });
+    }
+
+    _focusActiveSide(index) {
+        const sides = this._sideEls[index];
+        if (!sides) { return; }
+        const accepted = this._hunks[index].state === 'accepted';
+        (accepted ? sides.new : sides.old).focus();
     }
 
     _onKeydown(e) {
@@ -695,14 +726,27 @@ class DiffPicker extends HTMLElement {
         switch (e.key) {
             case ' ':
             case 'Enter': {
-                // Only when a hunk is focused: the toolbar buttons need Space
-                // and Enter for themselves.
-                const span = this.shadowRoot.activeElement;
-                const idx = span?.dataset?.hunkIndex;
+                // Only when one side of a change is focused: the toolbar buttons
+                // need Space and Enter for themselves.
+                const side = this.shadowRoot.activeElement;
+                const idx = side?.dataset?.hunkIndex;
                 if (idx === undefined) { return; }
                 e.preventDefault();   // Space would scroll the transcript
-                this._currentIdx = Number(idx);
-                this._toggleHunk(Number(idx));
+                const index = Number(idx);
+                this._currentIdx = index;
+                // Enter/Space on a side means "keep this one". On the side
+                // already in force that would be a no-op, so flip instead -
+                // otherwise the key would appear dead.
+                const wanted = side.dataset.side;
+                const current = (this._hunks[index].state === 'accepted') ? 'new' : 'old';
+                if (wanted === current) {
+                    this._toggleHunk(index);
+                    // The chosen side changed, so move focus onto it to keep
+                    // the "focus follows the active version" rule.
+                    this._focusActiveSide(index);
+                } else {
+                    this._chooseSide(index, wanted);
+                }
                 break;
             }
             case 'j':

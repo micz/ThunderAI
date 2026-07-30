@@ -1577,14 +1577,6 @@
     "message": "Next change",
     "description": ""
   },
-  "apiwebchat_picker_accept_change": {
-    "message": "Accept this change",
-    "description": ""
-  },
-  "apiwebchat_picker_reject_change": {
-    "message": "Reject this change",
-    "description": ""
-  },
   "apiwebchat_picker_no_changes": {
     "message": "The answer is identical to the original text: there is nothing to review.",
     "description": "Shown by the change picker when the diff found no differences"
@@ -1593,65 +1585,49 @@
     "message": "The two texts could not be compared. The answer is shown unchanged.",
     "description": "Shown by the change picker when the diff could not be computed"
   },
-  "apiwebchat_picker_hunk_insert_accepted": {
-    "message": "Added text, accepted: $TEXT$. Activate to reject it.",
-    "description": "Accessible label of an accepted insertion in the change picker",
+  "apiwebchat_picker_side_old_active": {
+    "message": "Original text, kept: $TEXT$",
+    "description": "Accessible label of the original version of a change, when it is the one in use",
     "placeholders": {
       "text": {
         "content": "$1"
       }
     }
   },
-  "apiwebchat_picker_hunk_insert_rejected": {
-    "message": "Added text, rejected: $TEXT$. Activate to accept it.",
-    "description": "Accessible label of a rejected insertion in the change picker",
+  "apiwebchat_picker_side_old_inactive": {
+    "message": "Original text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the original version of a change, when it is not the one in use",
     "placeholders": {
       "text": {
         "content": "$1"
       }
     }
   },
-  "apiwebchat_picker_hunk_delete_accepted": {
-    "message": "Deleted text, deletion accepted: $TEXT$. Activate to keep the original text.",
-    "description": "Accessible label of an accepted deletion in the change picker",
+  "apiwebchat_picker_side_new_active": {
+    "message": "Suggested text, kept: $TEXT$",
+    "description": "Accessible label of the suggested version of a change, when it is the one in use",
     "placeholders": {
       "text": {
         "content": "$1"
       }
     }
   },
-  "apiwebchat_picker_hunk_delete_rejected": {
-    "message": "Deleted text, deletion rejected: $TEXT$ is kept. Activate to delete it.",
-    "description": "Accessible label of a rejected deletion in the change picker",
+  "apiwebchat_picker_side_new_inactive": {
+    "message": "Suggested text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the suggested version of a change, when it is not the one in use",
     "placeholders": {
       "text": {
         "content": "$1"
       }
     }
   },
-  "apiwebchat_picker_hunk_replace_accepted": {
-    "message": "Changed text, accepted: $NEW$ replaces $OLD$. Activate to restore the original text.",
-    "description": "Accessible label of an accepted replacement in the change picker",
-    "placeholders": {
-      "old": {
-        "content": "$1"
-      },
-      "new": {
-        "content": "$2"
-      }
-    }
+  "apiwebchat_picker_side_empty_active": {
+    "message": "No text here: this part is left out. Activate the other version to keep its text.",
+    "description": "Accessible label of the empty side of a change (an insertion with no original, or a deletion with no replacement), when it is the one in use"
   },
-  "apiwebchat_picker_hunk_replace_rejected": {
-    "message": "Changed text, rejected: the original $OLD$ is kept instead of $NEW$. Activate to accept the change.",
-    "description": "Accessible label of a rejected replacement in the change picker",
-    "placeholders": {
-      "old": {
-        "content": "$1"
-      },
-      "new": {
-        "content": "$2"
-      }
-    }
+  "apiwebchat_picker_side_empty_inactive": {
+    "message": "No text here. Activate to leave this part out.",
+    "description": "Accessible label of the empty side of a change, when it is not the one in use"
   },
   "apiwebchat_you": {
     "message": "You",
