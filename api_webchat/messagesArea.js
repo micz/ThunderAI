@@ -22,7 +22,7 @@
 
 import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
-import { renderDiff } from './diffViewer.js';
+import './diffPicker.js';    // registers the <diff-picker> custom element
 import { renderThinkingBlock } from './thinkingBlock.js';
 import { StreamingMessage } from './streamingMessage.js';
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
@@ -269,18 +269,10 @@ messagesAreaStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
         display: none;
     }
 
-    /* diff viewer */
-    .added {
-        background-color: var(--ok-bg);
-        color: var(--ok-ink);
-        display: inline;
-    }
-    .removed {
-        background-color: var(--err-bg);
-        color: var(--err-ink);
-        display: inline;
-        text-decoration: line-through;
-    }
+    /* The diff .added/.removed rules used to live here, because the read-only
+       diff viewer appended its nodes straight into this shadow root. The
+       interactive <diff-picker> that replaced it has its own shadow root and
+       declares its own equivalents, so nothing here styles a diff any more. */
 
     /* Thinking block styles */
     details.thinking-block {
@@ -1018,15 +1010,44 @@ class MessagesArea extends HTMLElement {
     }
 
     // click callcback for the "use this answer" button
-    handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment){
+    //
+    // `ownerTurn` is the turn whose action bar this button belongs to. When a
+    // <diff-picker> has been opened on that turn it owns the result, and its
+    // composed text wins over the raw answer.
+    handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn = null){
         return async () => {
             if(promptData.mailMessageId == -1) {    // we are using the reply from the compose window!
                 promptData.action = "2"; // replace text
             }
-            let finalText = removeAloneBRs(fullTextHTMLAtAssignment);
-            const selectedHTML = this.getCurrentSelectionHTML();
-            if(selectedHTML != "") {
-                finalText = removeAloneBRs(selectedHTML);
+            let finalText = null;
+            const picker = ownerTurn?._mztaPicker;
+            if(picker) {
+                // Read the picker NOW, not when the bar was built, so the click
+                // picks up every accept/reject the user has made since.
+                //
+                // Deliberately NOT through removeAloneBRs(): the picker emits
+                // plain text turned into <br>-separated markup with no <p>
+                // wrapper, and removeAloneBRs strips every <br> that has no <p>
+                // ancestor - which would be all of them, collapsing the whole
+                // message into a single run-together line.
+                //
+                // The mouse-selection override is skipped too: two mechanisms
+                // competing over the same output is confusing, and the picker is
+                // the explicit one. Turns without a picker keep it untouched.
+                try {
+                    finalText = picker.composeResultHTML();
+                } catch(e) {
+                    // Never send an empty body because the picker threw.
+                    console.error("[ThunderAI] diff picker failed to compose the result, falling back to the full answer.", e);
+                    finalText = null;
+                }
+            }
+            if(finalText === null) {
+                finalText = removeAloneBRs(fullTextHTMLAtAssignment);
+                const selectedHTML = this.getCurrentSelectionHTML();
+                if(selectedHTML != "") {
+                    finalText = removeAloneBRs(selectedHTML);
+                }
             }
 
             switch(promptData.action) {
@@ -1081,7 +1102,7 @@ class MessagesArea extends HTMLElement {
         selectionInfo.classList.add('sel_info');
 
         // "use this answer" split button
-        const splitButton = this._buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment);
+        const splitButton = this._buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment, turn);
 
         const closeButton = document.createElement('button');
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
@@ -1095,7 +1116,7 @@ class MessagesArea extends HTMLElement {
         }
 
         // copy button
-        actionButtons.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment));
+        actionButtons.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, false, turn));
 
         // Save as Summary button (only shown for summary webchat sessions)
         const saveSummaryButton = this._buildSaveSummaryButton(promptData, fullTextHTMLAtAssignment);
@@ -1105,7 +1126,7 @@ class MessagesArea extends HTMLElement {
         }
 
         // diff viewer button
-        const diffvButton = this._buildDiffButton(promptData, fullTextHTMLAtAssignment);
+        const diffvButton = this._buildDiffButton(promptData, fullTextHTMLAtAssignment, turn, reply_type_pref.reply_type);
         if(diffvButton) {
             actionButtons.appendChild(diffvButton);
         }
@@ -1139,24 +1160,28 @@ class MessagesArea extends HTMLElement {
         // answer text and not to whatever is on screen later.
         const args = turn._mztaToolsArgs;
         if(bar && args) {
-            bar.replaceWith(this._buildTurnTools(args.promptData, args.replyType, args.text));
+            bar.replaceWith(this._buildTurnTools(args.promptData, args.replyType, args.text, turn));
         } else if(bar) {
             bar.remove();
         }
         if(hint) { hint.remove(); }
         delete turn._mztaToolsArgs;
+        // turn._mztaPicker is deliberately NOT deleted, unlike _mztaToolsArgs
+        // above: this answer's picker stays on screen in its own turn, and the
+        // compact toolbar being built right now has to keep handing back that
+        // picker's current state.
         this._lastFullBarTurn = null;
     }
 
     // Icon-only toolbar shown on every earlier answer, faint until the turn is
     // hovered or focused. Shares the click handlers of the full bar.
-    _buildTurnTools(promptData, replyType, fullTextHTMLAtAssignment) {
+    _buildTurnTools(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn = null) {
         const tools = document.createElement('div');
         tools.classList.add('turn-tools');
         tools.setAttribute('role', 'group');
         tools.setAttribute('aria-label', browser.i18n.getMessage("apiwebchat_turn_tools"));
 
-        tools.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, true));
+        tools.appendChild(this._buildCopyButton(fullTextHTMLAtAssignment, true, ownerTurn));
 
         if(promptData.action != "0") {
             const useBtn = this._makeIconButton(
@@ -1164,7 +1189,7 @@ class MessagesArea extends HTMLElement {
                 browser.i18n.getMessage("apiwebchat_use_this_answer"),
             );
             useBtn.addEventListener('click',
-                this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment));
+                this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             tools.appendChild(useBtn);
         }
 
@@ -1184,8 +1209,10 @@ class MessagesArea extends HTMLElement {
     // "Copy": puts the answer on the clipboard WITHOUT closing the window, and
     // confirms with a check for 1.5s. Like the other action buttons it honours
     // a text selection and copies only that part. `iconOnly` builds the
-    // light-toolbar form.
-    _buildCopyButton(fullTextHTMLAtAssignment, iconOnly = false) {
+    // light-toolbar form. When a <diff-picker> owns this turn, Copy follows it
+    // rather than the raw answer, so it agrees with what "use this answer"
+    // would insert.
+    _buildCopyButton(fullTextHTMLAtAssignment, iconOnly = false, ownerTurn = null) {
         const label = browser.i18n.getMessage("apiwebchat_copy");
         let button;
         let labelEl = null;
@@ -1206,9 +1233,15 @@ class MessagesArea extends HTMLElement {
         let resetTimeout = null;
         button.addEventListener('click', async () => {
             const selectedText = this.getCurrentSelectionText();
-            const plainText = selectedText !== ''
-                ? selectedText
-                : htmlToPlainText(fullTextHTMLAtAssignment);
+            let plainText;
+            if(selectedText !== '') {
+                // An explicit selection still wins, as it always has.
+                plainText = selectedText;
+            } else if(ownerTurn?._mztaPicker) {
+                plainText = ownerTurn._mztaPicker.composeResultText();
+            } else {
+                plainText = htmlToPlainText(fullTextHTMLAtAssignment);
+            }
             const ok = await copyTextToClipboard(plainText);
             const feedback = ok
                 ? browser.i18n.getMessage("apiwebchat_copied")
@@ -1243,7 +1276,7 @@ class MessagesArea extends HTMLElement {
     // (action=="1" && mailMessageId!=-1) it gets a reply-type info line plus a single
     // dropdown option offering the opposite reply type; otherwise it is a standalone
     // button. The <split-button> element owns the outside-click listener lifecycle.
-    _buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment) {
+    _buildUseThisAnswerButton(promptData, reply_type_pref, fullTextHTMLAtAssignment, ownerTurn = null) {
         const splitButton = document.createElement('split-button');
         const isReplyToMessage = (promptData.action == "1") && (promptData.mailMessageId != -1);
 
@@ -1252,14 +1285,14 @@ class MessagesArea extends HTMLElement {
             line2: isReplyToMessage
                 ? (reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_all") : browser.i18n.getMessage("prefs_OptionText_reply_sender"))
                 : null,
-            onClick: this.handleUseThisAnswerButtonClick(promptData, reply_type_pref.reply_type, fullTextHTMLAtAssignment),
+            onClick: this.handleUseThisAnswerButtonClick(promptData, reply_type_pref.reply_type, fullTextHTMLAtAssignment, ownerTurn),
             standalone: !isReplyToMessage,
         });
 
         if (isReplyToMessage) {
             splitButton.setDropdownOption({
                 label: reply_type_pref.reply_type == 'reply_all' ? browser.i18n.getMessage("prefs_OptionText_reply_sender") : browser.i18n.getMessage("prefs_OptionText_reply_all"),
-                onClick: this.handleUseThisAnswerButtonClick(promptData, reply_type_pref.reply_type == 'reply_all' ? 'reply_sender' : 'reply_all', fullTextHTMLAtAssignment),
+                onClick: this.handleUseThisAnswerButtonClick(promptData, reply_type_pref.reply_type == 'reply_all' ? 'reply_sender' : 'reply_all', fullTextHTMLAtAssignment, ownerTurn),
             });
         }
 
@@ -1268,6 +1301,11 @@ class MessagesArea extends HTMLElement {
 
     // Build the "save as summary" button (only for summary webchat sessions). Returns
     // null when this session is not a summary session.
+    //
+    // Deliberately NOT wired to turn._mztaPicker like the "use this answer" and
+    // "copy" buttons: a summary session and a diff-picker session are mutually
+    // exclusive, since every prompt carrying headerMessageId/summaryTabId has
+    // use_diff_viewer "0", so a picker can never exist on such a turn.
     _buildSaveSummaryButton(promptData, fullTextHTMLAtAssignment) {
         if(!(promptData.prompt_info?.headerMessageId && promptData.prompt_info?.summaryTabId)) {
             return null;
@@ -1299,8 +1337,11 @@ class MessagesArea extends HTMLElement {
     }
 
     // Build the "show differences" button. Returns null when the prompt did not
-    // request the diff viewer.
-    _buildDiffButton(promptData, fullTextHTMLAtAssignment) {
+    // request the diff viewer. `ownerTurn` is this bar's own turn: the picker
+    // renders in a turn of its own, but the result indirection has to land on
+    // the turn that owns the action bar, and that is not necessarily
+    // _currentTurnEl by the time the button is clicked.
+    _buildDiffButton(promptData, fullTextHTMLAtAssignment, ownerTurn = null, replyType = null) {
         if(promptData.prompt_info?.use_diff_viewer != "1") {
             return null;
         }
@@ -1314,33 +1355,76 @@ class MessagesArea extends HTMLElement {
         diffLabelEl.textContent = diffLabel;
         diffvButton.appendChild(diffLabelEl);
         diffvButton.addEventListener('click', async () => {
-            let strippedText = stripHtmlTags(fullTextHTMLAtAssignment);
+            // htmlToPlainText, not stripHtmlTags: the latter DELETES <br> rather
+            // than turning it into a line break, so the read-only viewer used to
+            // diff a single run-together line against a multi-line original and
+            // reported the whole answer as changed. It also decodes entities.
+            const newText = htmlToPlainText(fullTextHTMLAtAssignment);
             let originalText = promptData.prompt_info?.selection_text;
             if((originalText == null) || (originalText == "")) {
                 originalText = promptData.prompt_info?.body_text;
             }
-            this.appendDiffViewer(originalText, strippedText);
+            // The special-prompt shape built by js/mzta-utils-prompt.js carries
+            // neither field. Those prompts all have use_diff_viewer "0" so we
+            // never get here today, but one prompt-definition edit away this
+            // would hand undefined to the tokenizer.
+            if(originalText == null) { originalText = ""; }
+            // Every current producer emits \n (see getMailBody in
+            // js/mzta-menus.js, where the plain-text fields go through
+            // cleanupNewlines while only the _html ones get <br>). Defensive, so
+            // a prompt_info carrying markup cannot put literal <br> into the
+            // picker's plain text.
+            originalText = String(originalText).replace(/<br\s*\/?>/gi, '\n');
+
+            this.appendDiffPicker(originalText, newText, ownerTurn, 'words', () =>
+                this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             diffvButton.disabled = true;
         });
         return diffvButton;
     }
 
-    appendDiffViewer(originalText, newText) {
+    // Open the interactive change picker in a turn of its own.
+    // `buildUseAnswerHandler` is a thunk so the picker gets its own "use this
+    // answer" action without appendDiffPicker having to know the argument list.
+    appendDiffPicker(originalText, newText, ownerTurn = null, granularity = 'words', buildUseAnswerHandler = null) {
         // Triggered by a button that may belong to an older answer, part-way
         // through a session. _beginBotTurn moves _currentTurnEl, so save and
-        // restore it: the diff must not hijack the turn being streamed, nor
+        // restore it: the picker must not hijack the turn being streamed, nor
         // touch which answer owns the full action bar.
         const previousTurnEl = this._currentTurnEl;
 
-        const body = this._beginBotTurn(browser.i18n.getMessage("chatgpt_win_diff_title"));
+        const body = this._beginBotTurn(browser.i18n.getMessage("apiwebchat_picker_title"));
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', 'bot');
 
-        // Delegate the diff-node building; page-level layout stays here.
-        renderDiff(messageElement, originalText, newText);
+        const picker = document.createElement('diff-picker');
+        picker.setGranularity(granularity);   // before setContent: it picks the diff fn
+        picker.setContent(originalText, newText);
+        messageElement.appendChild(picker);
         body.appendChild(messageElement);
 
         this._currentTurnEl = previousTurnEl;
+
+        if(ownerTurn) {
+            // The picker now owns this turn's result. Read at click time, so the
+            // user's latest toggles are what gets inserted.
+            ownerTurn._mztaPicker = picker;
+            // The picker sits below the answer that owns the action bar, so
+            // give it its own way to apply the result instead of making the user
+            // scroll back up to a different turn. The handler comes from the
+            // caller's own closure rather than from turn._mztaToolsArgs, which
+            // _degradeFullActionBar deletes once a newer answer arrives.
+            if(buildUseAnswerHandler) {
+                picker.setUseAnswerHandler(buildUseAnswerHandler());
+            }
+            // "Select part of the answer to use only that part" no longer
+            // applies: the picker is the explicit mechanism now, and
+            // handleUseThisAnswerButtonClick skips the selection override for
+            // turns that have one.
+            const hint = ownerTurn.querySelector('.sel_info');
+            if(hint) { hint.style.display = "none"; }
+        }
+
         this.scrollToBottom();
     }
 
@@ -1418,13 +1502,11 @@ class MessagesArea extends HTMLElement {
 customElements.define('messages-area', MessagesArea);
 
 
-function stripHtmlTags(htmlString) {
-    return htmlString.replace(/<\/?[^>]+(>|$)/g, "");
-}
-
-// HTML → the text the user actually sees. Unlike stripHtmlTags() this parses
+// HTML → the text the user actually sees. Unlike a regex tag-strip this parses
 // the markup, so entities are decoded (&amp; → &) instead of being copied as
-// their escape sequences, and <br>/</p> become real line breaks.
+// their escape sequences, and <br>/</p> become real line breaks. The diff
+// button used to strip tags with a regex instead, which DELETED <br> rather
+// than converting it and so fed the diff a single run-together line.
 function htmlToPlainText(htmlString) {
     const doc = new DOMParser().parseFromString(htmlString, 'text/html');
     doc.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));

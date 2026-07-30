@@ -65,4 +65,5 @@ For detailed documentation see [`claude-spec/`](claude-spec/):
 - [04-api-integrations.md](claude-spec/04-api-integrations.md) — AI provider integrations
 - [05-options.md](claude-spec/05-options.md) — Settings and preferences system
 - [06-localization.md](claude-spec/06-localization.md) — i18n rules and workflow
+- [07-diff-picker.md](claude-spec/07-diff-picker.md) — Interactive change picker for proofreading (hunk model, compose invariant)
 - [99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) — Thunderbird WebExtensions development guidelines (API usage, experiments, review requirements)
