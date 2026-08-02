@@ -70,6 +70,36 @@ Dynamic placeholders use a colon separator to pass a parameter:
 
 The `is_dynamic: "1"` property signals this behavior in the placeholder definition.
 
+## Placeholder Autocomplete
+
+`textareaAutocomplete()` in `js/mzta-placeholders-autocomplete.js` provides the `{%…` autocomplete
+dropdown, and is shared by **8 pages**: customprompts, customdataplaceholders, translate, summarize,
+addtags, spamfilter, get-task, get-calendar-event. Suggestions are built from
+`getPlaceholders(true)` mapped through `mapPlaceholderToSuggestion()`.
+
+**Type filtering.** A placeholder is offered only if its `type` equals the prompt's selected type, or
+its type is `0` ("always"). The type is read **lazily on every keystroke**, so changing the selector
+mid-edit takes effect immediately with no re-registration.
+
+- The 6 single-textarea pages pass an explicit `type_value` (all currently `1`, "reading").
+- The two table-based CRUD pages (customprompts, customdataplaceholders) pass no type and instead
+  resolve it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
+  not a fixed `parentNode` chain — the editor markup nests the textarea inside a backdrop wrapper
+  (see `claude-spec/05-options.md`), and a fixed chain silently breaks type filtering, throwing on
+  every keystroke inside an `input` handler.
+
+**Insertion.** Accepting a suggestion inserts through `document.execCommand('insertText')`, falling back
+to `setRangeText()` plus a synthetic `input` event. A direct `textarea.value = …` assignment must not be
+used: it discards the native undo stack and fires no `input` event, which leaves the edit-mode highlight
+mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
+reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
+textarea lose focus and collapse its selection before the insertion runs.
+
+Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders,
+hiding type-1 and type-2 ones; `getPlaceholders(true)` returns the list unsorted, so the dropdown is
+in declaration order rather than alphabetical; and `setCustomPlaceholders()` never assigns `type`,
+so custom placeholders may not match the filter at all.
+
 ## Custom Placeholders
 
 Users can define their own placeholders via `pages/customdataplaceholders/`. Custom placeholders:

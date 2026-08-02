@@ -17,6 +17,12 @@
         <li><i>[OpenAI API]</i> The thinking block is correctly handled and reported on the webchat. The reasoning summary parameter must be set [<a href="https://github.com/micz/ThunderAI/issues/773">#773</a>].</li>
         <li><i>[All APIs]</i> Fix: the reasoning content is no longer included in the result of the special prompts (add tags, spam filter, calendar event, task), where the response is parsed and not displayed.</li>
         <li>Fix: The timezone selector of the calendar event and task settings pages now lists all the timezones known to Thunderbird, and has a search box to quickly find one. The previous list was missing every timezone with a fractional offset, like UTC+05:30 (IST), UTC+05:45, UTC+03:30, UTC+04:30, UTC-03:30, UTC+08:45 and UTC+10:30 [<a href="https://github.com/micz/ThunderAI/issues/843">#843</a>].</li>
+        <li>In the Custom Prompts page the {%placeholder%} tokens are now highlighted while editing a prompt too, and not only when reading it. The prompt text is shown in a monospace font in both modes [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>Fix: In the Custom Prompts page the placeholder autocomplete handlers were registered multiple times per prompt (once more for every prompt in the list, and again on every entry into edit mode), leaving stale listeners behind [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>Fix: Placeholders whose value contains a percent sign, like {%additional_text:50%%}, are now recognized and highlighted correctly.</li>
+        <li>Fix: Selecting a placeholder from the autocomplete list now keeps the inserted text visible, and can be undone with a single Ctrl+Z.</li>
+        <li>Fix: Saving an edited prompt no longer loses the placeholder highlighting in the prompt list.</li>
+        <li>Fix: In the Custom Prompts page the line breaks of a prompt are no longer lost from the list after saving or cancelling an edit.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>

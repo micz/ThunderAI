@@ -494,7 +494,8 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
-| `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
+| `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor (shared by 8 pages) |
+| `js/mzta-editor-highlight.js` | Live `{%placeholder%}` highlighting for a textarea via a backdrop mirror; exports the shared `PLACEHOLDER_RE` token pattern |
 
 ## API Modules (`js/api/`)
 

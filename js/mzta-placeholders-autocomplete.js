@@ -30,8 +30,14 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
         const lastWord = match[0];
         let type = type_value;
         if(type_value === -1) {
-            const tr = textarea.parentNode.parentNode.parentNode;
-            type = tr.querySelector('.type_output').value
+            // Resolve the prompt type lazily from the row, so changing the
+            // selector mid-edit takes effect immediately. Uses closest() rather
+            // than a fixed parentNode chain: the editor markup nests the
+            // textarea inside a backdrop wrapper, and any further change to that
+            // depth must not silently break type filtering.
+            const tr = textarea.closest('tr');
+            const type_select = tr ? tr.querySelector('.type_output') : null;
+            if(type_select) type = type_select.value;
         }
         // console.log(">>>>>>>>> type: " + type);
         //  console.log(">>>>>>>>> suggestions: " + JSON.stringify(suggestions));
@@ -81,7 +87,11 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
       matches.forEach(match => {
         const li = document.createElement('li');
         li.textContent = match;
-        li.addEventListener('click', () => {
+        // 'mousedown' with preventDefault, not 'click': a click would let the
+        // textarea lose focus and collapse its selection before the insertion
+        // runs, and the insertion needs the caret still where the user left it.
+        li.addEventListener('mousedown', (e) => {
+          e.preventDefault();
           insertAutocomplete(match, textarea);
           hideSuggestions(autocompleteList);
         });
@@ -114,8 +124,15 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
       if (match) {
         const lastWord = match[0];
         const completion = suggestion.substring(lastWord.length);
-        const newText = textBefore + completion + textAfter;
-        textarea.value = newText;
+        // Insert through the editing host rather than assigning .value: a direct
+        // assignment wipes the native undo stack and, crucially, fires no
+        // 'input' event — which would leave the highlight mirror painting stale
+        // text while the caret advances over glyphs that are never repainted.
+        textarea.focus();
+        if (!document.execCommand('insertText', false, completion)) {
+            textarea.setRangeText(completion, cursorPosition, cursorPosition, 'end');
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         const newCursorPosition = cursorPosition + completion.length - (suggestion.endsWith(':%}') ? 2 : 0);
         textarea.setSelectionRange(newCursorPosition, newCursorPosition);
       }
