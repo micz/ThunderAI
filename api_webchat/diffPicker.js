@@ -380,7 +380,8 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       vertical-align: middle;
     }
 
-    /* EDIT mode (phase 2) lands here. */
+    /* The two modes are mutually exclusive, driven by one attribute on the host
+       so a single write swaps the whole view and the two can never both show. */
     .picker-editor {
       display: none;
       width: 100%;
@@ -393,7 +394,29 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       border: 1px solid var(--border);
       border-radius: var(--r-md);
       padding: 8px 10px;
+      /* Vertical only: a horizontal resize inside a flex column fights the
+         layout, and the text wraps anyway. */
       resize: vertical;
+    }
+    :host([mode="edit"]) .picker-body {
+      display: none;
+    }
+    :host([mode="edit"]) .picker-editor {
+      display: block;
+    }
+
+    /* Held down while editing, like the granularity toggle's selected position:
+       EDIT is a state you are in, not an action you fired. */
+    .picker-mode-btn[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 650;
+    }
+    .picker-mode-btn[aria-pressed="true"]:hover:not(:disabled) {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: #fff;
     }
 `;
 pickerTemplate.content.appendChild(pickerStyle);
@@ -423,20 +446,32 @@ class DiffPicker extends HTMLElement {
         this._interactive = [];
         this._currentIdx = -1;
         this._useAnswerHandler = null;
+        // 'review' (pick per change) or 'edit' (free-text textarea).
+        this._mode = 'review';
 
         this._buildChrome();
 
         // Bound so the exact same reference can be added in connectedCallback
         // and removed in disconnectedCallback.
         this._onKeydown = this._onKeydown.bind(this);
+        this._onEditorResize = this._onEditorResize.bind(this);
     }
 
     connectedCallback() {
         this.addEventListener('keydown', this._onKeydown);
+        // The user dragging the textarea's resize handle changes the picker's
+        // height with no mutation and no scroll event, so nothing else would
+        // notice that the transcript geometry moved.
+        if (typeof ResizeObserver !== 'undefined') {
+            this._editorObs = new ResizeObserver(this._onEditorResize);
+            this._editorObs.observe(this._editor);
+        }
     }
 
     disconnectedCallback() {
         this.removeEventListener('keydown', this._onKeydown);
+        this._editorObs?.disconnect();
+        this._editorObs = null;
     }
 
     // Static chrome, built once: the toolbar, the review body and the (phase 2)
@@ -472,6 +507,12 @@ class DiffPicker extends HTMLElement {
         this._rejectAllBtn.addEventListener('click', () => this._setAllStates('rejected'));
         toolbar.appendChild(this._rejectAllBtn);
 
+        this._modeBtn = this._makeToolbarButton('apiwebchat_picker_edit', 'mzta-btn-secondary');
+        this._modeBtn.classList.add('picker-mode-btn');
+        this._modeBtn.setAttribute('aria-pressed', 'false');
+        this._modeBtn.addEventListener('click', () => this._toggleMode());
+        toolbar.appendChild(this._modeBtn);
+
         // The picker lives in its own transcript turn, below the answer that
         // owns the action bar. Without this the user would have to scroll back
         // up to a different turn to apply the choices they just made here.
@@ -497,7 +538,12 @@ class DiffPicker extends HTMLElement {
 
         this._editor = document.createElement('textarea');
         this._editor.className = 'picker-editor';
+        this._editor.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_picker_editor'));
         this._root.appendChild(this._editor);
+
+        // Sets the mode button's label and aria-pressed for the initial REVIEW
+        // state; without it the button would render with no text.
+        this._paintMode();
     }
 
     _makeToolbarButton(i18nKey, cls) {
@@ -578,6 +624,84 @@ class DiffPicker extends HTMLElement {
         this._paintGranularity();
     }
 
+    // ---- REVIEW / EDIT modes ------------------------------------------------
+    //
+    // Picking per change covers the common case, but not "the suggestion is
+    // nearly right and I want to fix one word myself". EDIT mode is that escape
+    // hatch: a plain textarea over the current composition.
+    //
+    // A <textarea> and not contenteditable, deliberately: contenteditable would
+    // accept pasted rich text and quietly break the plain-text-only contract the
+    // whole hunk model rests on.
+
+    _toggleMode() {
+        this._setMode(this._mode === 'review' ? 'edit' : 'review');
+    }
+
+    _setMode(mode) {
+        const wanted = (mode === 'edit') ? 'edit' : 'review';
+        if (wanted === this._mode) { return; }
+
+        if (wanted === 'edit') {
+            // Measure BEFORE hiding: offsetHeight of a display:none element is
+            // 0. Opening the editor at the height the review view had keeps the
+            // transcript from jumping under the user's cursor - and because the
+            // two views then start the same size, there is no scroll position to
+            // restore afterwards.
+            const h = this._bodyEl.offsetHeight;
+            this._editor.value = composeResult(this._hunks);
+            if (h > 0) { this._editor.style.height = h + 'px'; }
+            this._mode = 'edit';
+            this.setAttribute('mode', 'edit');
+            // Warn before the reset happens, not after: coming back re-diffs and
+            // discards the choices, which is surprising if unannounced.
+            this._showNote('apiwebchat_picker_edit_hint');
+        } else {
+            // Re-diff the edited text against the ORIGINAL. This resets every
+            // choice to accepted - see the comment on _rebuild. _rebuild also
+            // resets the note, clearing the edit hint.
+            this._mode = 'review';
+            this.removeAttribute('mode');
+            this._rebuild(this._editor.value);
+        }
+
+        this._paintMode();
+        this._notifyResize();
+    }
+
+    _paintMode() {
+        const editing = (this._mode === 'edit');
+        const label = browser.i18n.getMessage(
+            editing ? 'apiwebchat_picker_review' : 'apiwebchat_picker_edit');
+        // The button is both a state indicator and the way out of that state,
+        // so its label has to name the destination, not the current mode.
+        this._modeBtn.textContent = '';
+        const labelEl = document.createElement('span');
+        labelEl.textContent = label;
+        this._modeBtn.appendChild(labelEl);
+        this._modeBtn.setAttribute('aria-label', label);
+        this._modeBtn.title = label;
+        this._modeBtn.setAttribute('aria-pressed', editing ? 'true' : 'false');
+        // Everything that operates on hunks is meaningless over free text.
+        this._updateCounter();
+    }
+
+    // Tell the transcript its geometry moved. A composed CustomEvent and not a
+    // direct call: <messages-area> imports this module, so a reference the other
+    // way would invert the dependency. Without composed:true the event would not
+    // cross the shadow boundary at all.
+    _notifyResize() {
+        this.dispatchEvent(new CustomEvent('mzta-picker-resize', {
+            bubbles: true,
+            composed: true,
+        }));
+    }
+
+    _onEditorResize() {
+        if (this._mode !== 'edit') { return; }
+        this._notifyResize();
+    }
+
     // Wire the toolbar's "use this answer" button. The handler is invoked with
     // no arguments; it is expected to read composeResultHTML() itself, so it
     // always sees the latest state.
@@ -588,11 +712,23 @@ class DiffPicker extends HTMLElement {
     setContent(originalText, newText) {
         this._originalText = originalText == null ? '' : String(originalText);
         this._newText = newText == null ? '' : String(newText);
+        // New content always arrives for review: opening straight into the
+        // editor would hide the changes the button was clicked to see.
+        this._mode = 'review';
+        this.removeAttribute('mode');
+        this._editor.value = '';
         this._rebuild(this._newText);
+        this._paintMode();
     }
 
-    // Build (or rebuild) the hunk list and render it. Phase 2's EDIT -> REVIEW
+    // Build (or rebuild) the hunk list and render it. The EDIT -> REVIEW
     // round-trip comes back through here with the edited text.
+    //
+    // Rebuilding from scratch RESETS every hunk to 'accepted', discarding
+    // accept/reject decisions made before. That is the design, not an oversight:
+    // the hunks are recomputed against different text (or at a different
+    // granularity), so old decisions have no counterpart to map onto, and
+    // inventing one would silently misrepresent what the user chose.
     _rebuild(newText) {
         this._hunks = buildHunks(this._originalText, newText, this._granularity);
         this._currentIdx = -1;
@@ -772,19 +908,25 @@ class DiffPicker extends HTMLElement {
 
     _updateCounter() {
         const { accepted, total } = countChanges(this._hunks);
-        const empty = (total === 0);
+        // Hidden with nothing to pick ("0 of 0 changes accepted" reads like a
+        // bug) and in EDIT mode, where there are no hunks to operate on: the
+        // counter would report a state the visible text no longer reflects.
+        const editing = (this._mode === 'edit');
+        const hide = editing || (total === 0);
 
-        this._counterEl.textContent = empty
+        this._counterEl.textContent = hide
             ? ''
             : browser.i18n.getMessage('apiwebchat_picker_counter', [String(accepted), String(total)]);
 
-        // With nothing to pick, every control except "use this answer" is
-        // meaningless - and "0 of 0 changes accepted" reads like a bug.
-        this._counterEl.hidden = empty;
-        this._prevBtn.hidden = empty;
-        this._nextBtn.hidden = empty;
-        this._acceptAllBtn.hidden = empty;
-        this._rejectAllBtn.hidden = empty;
+        this._counterEl.hidden = hide;
+        this._prevBtn.hidden = hide;
+        this._nextBtn.hidden = hide;
+        this._acceptAllBtn.hidden = hide;
+        this._rejectAllBtn.hidden = hide;
+        // The granularity toggle stays visible with zero changes - switching to
+        // sentences is a reasonable thing to try - but not while editing, where
+        // re-diffing would throw away what the user has typed.
+        this._granEl.hidden = editing;
 
         this._acceptAllBtn.disabled = (accepted === total);
         this._rejectAllBtn.disabled = (accepted === 0);
@@ -823,9 +965,13 @@ class DiffPicker extends HTMLElement {
     _onKeydown(e) {
         // Never shadow a browser or OS shortcut.
         if (e.ctrlKey || e.metaKey || e.altKey) { return; }
-        // Phase 2's textarea must keep every key, j and k included.
+        // The textarea keeps every key, j and k included: they are text there.
         const target = e.composedPath()[0];
         if (target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT')) { return; }
+        // Nothing to navigate or toggle in EDIT mode. Belt and braces: the guard
+        // above already covers the textarea itself, but focus can sit on a
+        // toolbar button while editing.
+        if (this._mode === 'edit') { return; }
 
         switch (e.key) {
             case ' ':
@@ -864,7 +1010,11 @@ class DiffPicker extends HTMLElement {
         }
     }
 
+    // The single source of truth for what the user has chosen, in either mode.
+    // In EDIT it is the textarea verbatim, so "Use this answer" and Copy work
+    // straight from the editor without forcing a trip back through REVIEW.
     composeResultText() {
+        if (this._mode === 'edit') { return this._editor.value; }
         return composeResult(this._hunks);
     }
 

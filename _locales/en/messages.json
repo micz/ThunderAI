@@ -1561,6 +1561,22 @@
       }
     }
   },
+  "apiwebchat_picker_edit": {
+    "message": "Edit manually",
+    "description": "Change picker button that switches from reviewing changes to freely editing the text"
+  },
+  "apiwebchat_picker_review": {
+    "message": "Back to changes",
+    "description": "Change picker button that leaves manual editing and compares the edited text against the original again"
+  },
+  "apiwebchat_picker_editor": {
+    "message": "Edited text",
+    "description": "Accessible label of the change picker's manual editing text box"
+  },
+  "apiwebchat_picker_edit_hint": {
+    "message": "You are editing the text by hand. Going back to the changes will compare what you wrote with the original text again, and every choice will be reset.",
+    "description": "Note shown by the change picker while in manual editing mode"
+  },
   "apiwebchat_picker_granularity": {
     "message": "Compare by",
     "description": "Accessible label of the change picker's word/sentence granularity toggle"

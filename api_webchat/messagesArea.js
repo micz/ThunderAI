@@ -466,6 +466,7 @@ class MessagesArea extends HTMLElement {
         this._confirmRaf = 0;
         this._onMessagesScroll = this._onMessagesScroll.bind(this);
         this._onUserScrollIntent = this._onUserScrollIntent.bind(this);
+        this._onPickerResize = this._onPickerResize.bind(this);
 
         const shadowRoot = this.attachShadow({ mode: 'open' });
         shadowRoot.appendChild(messagesAreaTemplate.content.cloneNode(true));
@@ -491,6 +492,13 @@ class MessagesArea extends HTMLElement {
         // token's write before the browser dispatches the scroll event.
         this.messages.addEventListener('wheel', this._onUserScrollIntent, { passive: true });
         this.messages.addEventListener('keydown', this._onUserScrollIntent, { passive: true });
+        // <diff-picker> switching to its editor, or the user dragging the
+        // textarea's resize handle, changes the transcript's height with no
+        // mutation and no scroll event. One delegated listener here, not one per
+        // picker: the event bubbles and is composed, so it reaches this element
+        // from inside any picker's shadow root and there is nothing to tear down
+        // per turn.
+        this.messages.addEventListener('mzta-picker-resize', this._onPickerResize, { passive: true });
         // Window resizing and font zoom change scrollHeight without firing a
         // scroll event: realign if we are still following.
         this._resizeObs = new ResizeObserver(() => {
@@ -522,6 +530,7 @@ class MessagesArea extends HTMLElement {
         this.messages.removeEventListener('scroll', this._onMessagesScroll);
         this.messages.removeEventListener('wheel', this._onUserScrollIntent);
         this.messages.removeEventListener('keydown', this._onUserScrollIntent);
+        this.messages.removeEventListener('mzta-picker-resize', this._onPickerResize);
         this._resizeObs?.disconnect();
         this._contentObs?.disconnect();
         if (this._scrollRaf) {
@@ -556,6 +565,18 @@ class MessagesArea extends HTMLElement {
         // Unconditional: the two setters above are no-ops when the state is
         // already what they are being set to, but the geometry the button
         // reflects has just changed regardless.
+        this._updateJumpButton();
+    }
+
+    // A picker changed its own height (mode switch, or a manual textarea drag).
+    //
+    // Read-only, exactly like _contentObs: refresh the jump button and nothing
+    // else. Deliberately NOT scrollToBottom() - that does _setAnchor(null) and
+    // sticks to the bottom, yanking the user away from what they were editing,
+    // which is the opposite of leaving their position alone. _scrollIfSticky() is
+    // wrong here too: this is not new content arriving, it is the same content
+    // changing size under the user's own hands.
+    _onPickerResize() {
         this._updateJumpButton();
     }
 

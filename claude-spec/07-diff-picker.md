@@ -216,9 +216,9 @@ That is the core interaction:
 > one side hidden the user cannot tell what they are choosing between.
 
 Sticky toolbar: the counter ("7 of 12 changes accepted"), the **Words / Sentences** granularity
-toggle, Accept all / Reject all, previous / next, and "Use this answer". Buttons reuse
-`mzta-btn-secondary` / `mzta-btn-tertiary` from `sharedStyles.js`; the toggle adds a `.picker-gran`
-segmented-control skin over two of them.
+toggle, Accept all / Reject all, previous / next, the **Edit manually** mode button, and "Use this
+answer". Buttons reuse `mzta-btn-secondary` / `mzta-btn-tertiary` from `sharedStyles.js`; the
+granularity toggle adds a `.picker-gran` segmented-control skin over two of them.
 
 **Zero-changes state:** when the answer normalizes identically to the original there is nothing to
 pick, so the counter, navigation and accept/reject-all are hidden and a muted note is shown instead of
@@ -242,6 +242,77 @@ with the opposite side, for the keyboard case where there is no clicked side to 
 
 Bulk accept/reject sets every state first, then repaints, then updates the counter **once**, rather
 than routing through the per-change path N times.
+
+## REVIEW and EDIT modes
+
+Two mutually exclusive modes, switched by one toolbar button:
+
+- **REVIEW** (default) — the per-change picker described above.
+- **EDIT** — a `<textarea>` holding the current composition, freely editable.
+
+EDIT exists for the case picking cannot cover: the suggestion is nearly right and the user wants to
+fix one word themselves.
+
+A **`<textarea>`, deliberately not `contenteditable`**: contenteditable would accept pasted rich text
+and quietly break the plain-text-only contract the entire hunk model rests on.
+
+`_mode` (`'review'` | `'edit'`) is the state; `_setMode` mirrors it onto a `mode` attribute on the
+**host**, and the CSS (`:host([mode="edit"])`) swaps the two views. One attribute write, so the two
+views can never both be visible.
+
+### `composeResultText()` is mode-aware
+
+In EDIT it returns `this._editor.value` verbatim; in REVIEW it returns `composeResult(this._hunks)`.
+This is what makes **"Use this answer" and Copy work straight from the editor** with no trip back
+through REVIEW. Both consumers in `messagesArea.js` (`composeResultHTML()` at the use-answer site,
+`composeResultText()` at the Copy site) go through these methods, so neither needed changing.
+
+### EDIT → REVIEW re-diffs from scratch
+
+Coming back runs `_rebuild(this._editor.value)` — `buildHunks(originalText, editedText)`, a full
+recompute against the **original**. No merge, no attempt to carry the old hunk list over.
+
+**This resets every hunk to `'accepted'`, discarding accept/reject decisions made before**, and the
+counter jumps back to "N of N". That is the design: the hunks are recomputed against different text,
+so old decisions have no counterpart to map onto and inventing one would misrepresent what the user
+chose. Same reasoning as the granularity switch. Because it *is* surprising, EDIT mode shows a note
+(`apiwebchat_picker_edit_hint`) warning about it **before** it happens rather than after.
+
+The invariant survives the round-trip: after EDIT → REVIEW, reject-all still yields
+`normalizeForDiff(originalText)` — verified.
+
+`setContent()` also forces `'review'` and clears the editor: a fresh picker opening into the editor
+would hide the very changes the button was clicked to see.
+
+### What is hidden in EDIT
+
+Counter, previous / next, Accept all / Reject all **and** the granularity toggle. All operate on hunks,
+which do not exist over free text — and re-diffing at a new granularity would throw away what the user
+typed. "Use this answer" stays. `_onKeydown` returns early on `_mode === 'edit'`: the textarea guard
+already covers keys typed in the box, but focus can sit on a toolbar button while editing, and `j`/`k`
+must not act there either.
+
+### Height and scroll
+
+The textarea opens at the height the review view had. `offsetHeight` is measured **before** hiding it —
+on a `display: none` element it is 0. Because both views then start the same size, there is no scroll
+position left to restore; the problem largely dissolves rather than being solved.
+
+The picker has **no reference to `MessagesArea`** and must not get one: `messagesArea.js` imports
+`diffPicker.js`, so a reference the other way would invert the dependency. Instead it dispatches a
+`CustomEvent('mzta-picker-resize')` with `bubbles: true` **and `composed: true`** — without `composed`
+the event never crosses the shadow boundary. Fired on a mode switch, and by a `ResizeObserver` on the
+textarea when the user drags its resize handle (silent in REVIEW).
+
+`MessagesArea` listens **once**, delegated on `this.messages` in `connectedCallback` (the event bubbles,
+so one listener serves every picker and there is nothing to tear down per turn) and handles it with
+`_onPickerResize` → **`this._updateJumpButton()` and nothing else**. Read-only, exactly like
+`_contentObs`. Deliberately **not** `scrollToBottom()`, which does `_setAnchor(null)` and sticks to the
+bottom — that yanks the user away from what they are editing, the opposite of leaving their position
+alone. Not `_scrollIfSticky()` either: this is not new content arriving, it is the same content changing
+size under the user's own hands.
+
+`_editorObs` is disconnected in `disconnectedCallback()`, alongside the keydown listener.
 
 ## Why a custom element
 
@@ -278,7 +349,7 @@ Two properties of the interactive switch matter:
 - **It discards every accept/reject decision** — all changes go back to `accepted`. There is no correct
   alternative: one sentence-level hunk spans several word-level ones, so the decisions carry no meaning
   across the boundary and mapping them over would silently invent choices the user never made. Losing
-  them visibly beats corrupting them invisibly. (Same reasoning as phase 2's EDIT→REVIEW round-trip.)
+  them visibly beats corrupting them invisibly. (Same reasoning as the EDIT→REVIEW round-trip.)
 - Clicking the position already selected is a no-op, so it cannot wipe choices by accident.
 
 Caveat worth knowing about `'sentences'`: `SentenceDiff.tokenize` only splits on `[.!?]` followed by
@@ -297,6 +368,6 @@ without the latter a picker left at the default would show neither position as s
 | File | Role |
 |------|------|
 | `api_webchat/diffPicker.js` | Hunk model, compose functions, `<diff-picker>` element |
-| `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection |
+| `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder) |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |
