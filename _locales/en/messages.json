@@ -1561,6 +1561,18 @@
       }
     }
   },
+  "apiwebchat_picker_granularity": {
+    "message": "Compare by",
+    "description": "Accessible label of the change picker's word/sentence granularity toggle"
+  },
+  "apiwebchat_picker_granularity_words": {
+    "message": "Words",
+    "description": "Change picker granularity option: compare the texts word by word"
+  },
+  "apiwebchat_picker_granularity_sentences": {
+    "message": "Sentences",
+    "description": "Change picker granularity option: compare the texts sentence by sentence"
+  },
   "apiwebchat_picker_accept_all": {
     "message": "Accept all",
     "description": ""

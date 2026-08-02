@@ -246,6 +246,46 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       padding: 5px 9px;
     }
 
+    /* Granularity toggle: two mutually exclusive options rendered as one
+       segmented control, so it reads as a single setting with two positions
+       rather than two unrelated buttons. */
+    .picker-gran {
+      display: inline-flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .picker-gran button {
+      border: none;
+      border-radius: 0;
+      margin: 0;
+      background: transparent;
+      color: var(--ink-2);
+      font-weight: 500;
+    }
+    .picker-gran button + button {
+      border-left: 1px solid var(--border);
+    }
+    /* Not --surface-2: that is the toolbar's own background, so the hover
+       would be invisible. Tinting toward the accent works in both themes. */
+    .picker-gran button:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--ink);
+    }
+    /* The selected position, not a hover/active flicker: it has to stay
+       visibly held down. */
+    .picker-gran button[aria-checked="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 650;
+    }
+    .picker-gran button[aria-checked="true"]:hover:not(:disabled) {
+      background: var(--accent-dark);
+      color: #fff;
+    }
+
     .picker-use-btn {
       background: var(--accent);
       border-color: var(--accent);
@@ -413,6 +453,9 @@ class DiffPicker extends HTMLElement {
         this._counterEl.setAttribute('aria-live', 'polite');
         toolbar.appendChild(this._counterEl);
 
+        this._granEl = this._buildGranularityToggle();
+        toolbar.appendChild(this._granEl);
+
         this._prevBtn = this._makeToolbarButton('apiwebchat_picker_prev', 'mzta-btn-tertiary');
         this._prevBtn.addEventListener('click', () => this._moveCurrent(-1));
         toolbar.appendChild(this._prevBtn);
@@ -469,9 +512,70 @@ class DiffPicker extends HTMLElement {
         return btn;
     }
 
-    // Must be called before setContent().
+    // Word-level or sentence-level comparison, switchable while reviewing.
+    //
+    // Both are genuinely useful and which one is right is not knowable in
+    // advance: word granularity suits an in-place grammar fix, but a prompt that
+    // rewrites whole sentences produces dozens of interleaved micro-hunks at
+    // word level and a handful of readable ones at sentence level. So the choice
+    // belongs to the user, at the moment they can see the result.
+    _buildGranularityToggle() {
+        const group = document.createElement('span');
+        group.className = 'picker-gran';
+        group.setAttribute('role', 'radiogroup');
+        group.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_picker_granularity'));
+
+        this._granBtns = {};
+        for (const g of ['words', 'sentences']) {
+            const btn = this._makeToolbarButton(
+                g === 'words' ? 'apiwebchat_picker_granularity_words'
+                              : 'apiwebchat_picker_granularity_sentences',
+                'mzta-btn-tertiary');
+            // radio, not a pressed button: the two positions are mutually
+            // exclusive, and aria-pressed would announce them as independent.
+            btn.setAttribute('role', 'radio');
+            btn.dataset.granularity = g;
+            btn.addEventListener('click', () => this._changeGranularity(g));
+            group.appendChild(btn);
+            this._granBtns[g] = btn;
+        }
+        // Paint here too, not only from setGranularity(): a picker left at the
+        // default would otherwise show neither position as selected.
+        this._paintGranularity();
+        return group;
+    }
+
+    // Re-diff at the new granularity.
+    //
+    // This rebuilds the hunk list from scratch, which DISCARDS every accept /
+    // reject decision already made - all changes go back to accepted. There is
+    // no correct alternative: one sentence-level hunk spans several word-level
+    // ones, so the decisions have no meaning across the boundary and any attempt
+    // to carry them over would silently invent choices the user never made.
+    // Losing them visibly is better than corrupting them invisibly.
+    _changeGranularity(granularity) {
+        const wanted = (granularity === 'sentences') ? 'sentences' : 'words';
+        if (wanted === this._granularity) { return; }
+        this._granularity = wanted;
+        this._paintGranularity();
+        // From _newText, not from the current composition: the granularity
+        // switch re-compares the ORIGINAL against the ANSWER. Feeding the
+        // composed text back in would make the answer's rejected parts
+        // unreachable, turning a view setting into a destructive edit.
+        this._rebuild(this._newText);
+    }
+
+    _paintGranularity() {
+        for (const [g, btn] of Object.entries(this._granBtns || {})) {
+            btn.setAttribute('aria-checked', g === this._granularity ? 'true' : 'false');
+        }
+    }
+
+    // Sets the initial granularity. Safe before setContent(); afterwards the
+    // toolbar toggle is the way in, since this does not re-diff.
     setGranularity(granularity) {
         this._granularity = (granularity === 'sentences') ? 'sentences' : 'words';
+        this._paintGranularity();
     }
 
     // Wire the toolbar's "use this answer" button. The handler is invoked with

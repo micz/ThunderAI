@@ -215,13 +215,16 @@ That is the core interaction:
 > seeing the original and the suggestion together is the whole point of reviewing a proofread: with
 > one side hidden the user cannot tell what they are choosing between.
 
-Sticky toolbar: the counter ("7 of 12 changes accepted"), Accept all / Reject all, previous / next,
-and "Use this answer". Buttons reuse `mzta-btn-secondary` / `mzta-btn-tertiary` from
-`sharedStyles.js`.
+Sticky toolbar: the counter ("7 of 12 changes accepted"), the **Words / Sentences** granularity
+toggle, Accept all / Reject all, previous / next, and "Use this answer". Buttons reuse
+`mzta-btn-secondary` / `mzta-btn-tertiary` from `sharedStyles.js`; the toggle adds a `.picker-gran`
+segmented-control skin over two of them.
 
 **Zero-changes state:** when the answer normalizes identically to the original there is nothing to
 pick, so the counter, navigation and accept/reject-all are hidden and a muted note is shown instead of
-a bare "0 of 0 changes accepted". "Use this answer" stays available and still returns the text.
+a bare "0 of 0 changes accepted". "Use this answer" stays available and still returns the text. The
+granularity toggle stays visible — switching to sentences on a word diff that found nothing is a
+reasonable thing to try.
 
 ### Surgical re-render
 
@@ -255,12 +258,39 @@ in `<messages-area>`'s shadow style was removed along with `diffViewer.js`.
 
 ## Granularity
 
-`setGranularity('words' | 'sentences')` selects the diff function and must be called **before**
-`setContent()`. Currently hardcoded to `'words'` by `_buildDiffButton`.
+Word-level or sentence-level comparison, chosen by a **toggle in the picker's own toolbar** (a
+`role="radiogroup"` of two `role="radio"` buttons — mutually exclusive positions, which `aria-pressed`
+would announce as independent).
+
+Which one is right is not knowable in advance, which is why the choice is the user's and is made while
+they can see the result: word granularity suits an in-place grammar fix, but a prompt that rewrites
+whole sentences yields dozens of interleaved micro-hunks at word level and a handful of readable ones
+at sentence level. Measured on a 3-sentence rewrite: **8 changes at word level, 3 at sentence level.**
+
+`setGranularity('words' | 'sentences')` sets the initial value (it does **not** re-diff, so after
+`setContent()` the toolbar toggle is the way in). `_changeGranularity(g)` is the interactive path.
+
+Two properties of the interactive switch matter:
+
+- **It re-diffs from `_newText`, never from the composed text.** Comparing the original against the
+  current composition would make the answer's rejected parts unreachable, turning a view setting into
+  a destructive edit.
+- **It discards every accept/reject decision** — all changes go back to `accepted`. There is no correct
+  alternative: one sentence-level hunk spans several word-level ones, so the decisions carry no meaning
+  across the boundary and mapping them over would silently invent choices the user never made. Losing
+  them visibly beats corrupting them invisibly. (Same reasoning as phase 2's EDIT→REVIEW round-trip.)
+- Clicking the position already selected is a no-op, so it cannot wipe choices by accident.
 
 Caveat worth knowing about `'sentences'`: `SentenceDiff.tokenize` only splits on `[.!?]` followed by
 whitespace, so on **single-sentence** text it degenerates to one delete + one insert covering
 everything — a single "replace it all" hunk. It works well on genuinely multi-sentence text.
+
+`aria-checked` is painted both from `setGranularity()` and at build time in `_buildGranularityToggle()`;
+without the latter a picker left at the default would show neither position as selected.
+
+> Phase 3 of the original plan adds a global `diff_granularity` preference plus a per-prompt override
+> feeding `setGranularity()` as the *initial* value. This toolbar toggle is independent of that and
+> stays useful either way: the preference sets the starting point, the toggle changes it in the moment.
 
 ## Files
 
