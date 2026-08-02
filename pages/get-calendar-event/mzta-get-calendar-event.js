@@ -27,10 +27,9 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
   getPlaceholders,
-  mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+  mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight } from "../../js/mzta-editor-highlight.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
   setTomSelectBorder
@@ -41,6 +40,7 @@ import {
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -178,8 +178,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_calendar_event_textarea.value = get_calendar_event_prompt.text;
     get_calendar_event_reset_btn.disabled = (get_calendar_event_textarea.value === browser.i18n.getMessage('prompt_get_calendar_event_full_text'));
 
-    autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
-    attachEditorHighlight(get_calendar_event_textarea);
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    const get_calendar_event_textarea_hl = attachEditorHighlight(get_calendar_event_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (get_calendar_event_textarea_hl) get_calendar_event_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(get_calendar_event_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
 });

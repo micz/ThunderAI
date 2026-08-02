@@ -166,7 +166,55 @@ Because the pages use two disjoint token systems, every token there uses a fallb
 `mzta-design.css` from the two table pages — its `:root` would fight their local one. The shared file
 must be linked **after** the page's own stylesheet.
 
-Known quirks (documented, not currently fixed):
+## Invalid placeholder feedback
+
+The highlight mirror flags tokens that will not resolve. `makeTokenStateResolver()` in
+`js/mzta-editor-highlight.js` builds the per-token callback; a page installs it with
+`handle.setTokenStateResolver(...)`.
+
+| State | Rendering |
+|---|---|
+| Valid placeholder (including dynamic `{%id:value%}`) | normal chip |
+| Unknown id, or valid id not available for the prompt's type | warning chip + `title` |
+| Unterminated `{%` with no closing `%}` | warning chip + `title` |
+
+**One predicate, two callers.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
+resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
+with what the prompt will actually resolve at runtime. It is **sync** and takes an already-fetched list,
+because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
+`extractPlaceholders()` omits it, preserving its previous behaviour exactly (it ignores type entirely),
+while the editor supplies the prompt's selected type so a reading-only placeholder in a composing prompt
+is flagged. Verified equivalent to the old inline `find` across the token forms the regex produces.
+
+A prompt of type `0` accepts placeholders of **any** type here, deliberately diverging from the
+autocomplete's stricter filter (quirk 2 below, left as is): a type-0 prompt runs in both contexts, so a
+type-1 placeholder in it does resolve at runtime, and replicating the dropdown's strictness would paint a
+warning over valid text. Validity matrix: type 0 accepts all; type 1 rejects composing-only; type 2
+rejects reading-only; an unknown id is always flagged.
+
+`makeTokenStateResolver(find, placeholders, getType)` takes the predicate **injected**, not imported:
+`mzta-editor-highlight.js` is loaded by every editor page, and importing `mzta-placeholders.js` there
+would pull its whole dependency chain along.
+
+**The token under the caret is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
+every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
+because the ordinary repaint path (`refresh()`, on every `input`) passes none.
+
+**Re-validation on type change.** Validity depends on the prompt type, and the mirror caches its render,
+so `attachHighlightWithValidation()` on the two table pages adds a `change` listener to the row's
+`.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
+those selectors before — the autocomplete reads the type lazily per keystroke and never needed one.
+The six settings pages pass a constant type `1`, matching the `type_value` they give the autocomplete.
+
+**Validation list vs suggestion list.** The six settings pages filter `additional_text` out of their
+*suggestions* but validate against the **unfiltered** list: it is a real placeholder they simply do not
+offer, and flagging it would be wrong. The Data Placeholders page is the opposite — its built-ins-only
+restriction is semantic, so the same filtered list drives both.
+
+**Colours.** `--ed-warn-bg/-fg/-border`, from `--warn-*` on the two table pages and `--warnChip*` in
+`mzta-design.css`. Those chip tokens are opaque on purpose: `--warnBg`/`--warnBorder` are 7%/28% alpha
+washes for large disclaimer panels and are invisible at chip size — the same trap as `--accentLight`.
+Tooltips use `editor_placeholder_unknown` / `editor_placeholder_unterminated` (English only).
 
 Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders,
 hiding type-1 and type-2 ones; `getPlaceholders(true)` returns the list unsorted, so the dropdown is

@@ -43,6 +43,13 @@
     --code: #1d4ed8;
     --codeBg: #e7efff;
 
+    /* Invalid {%placeholder%} chip. Opaque, unlike the --warn* disclaimer washes
+       above: a token-sized chip needs real contrast. Same values as the two
+       Custom Prompts / Data Placeholders pages. */
+    --warnChipText: #8a5300;
+    --warnChipBg: #fdf1dc;
+    --warnChipBorder: #e0a44a;
+
     /* Monospace stack for placeholder tokens and other code-like text. Same
        name and value as the local token on the two Custom Prompts / Data
        Placeholders pages, so pages/_lib/autocomplete.css can rely on one name
@@ -77,6 +84,11 @@
            token-sized chip needs real contrast against --field. */
         --code: #8fb6ff;
         --codeBg: #1a2740;
+
+        /* Invalid placeholder chip (see the light block). */
+        --warnChipText: #f0c07a;
+        --warnChipBg: #3a2c14;
+        --warnChipBorder: #7a5a22;
 
         /* ThunderStats (green) tint */
         --statsAccent: #54c07a75;
@@ -333,9 +345,13 @@ input, select, button, textarea { font-family: inherit; }
        tint in dark mode -- the dark --accent is already dim. */
     --ed-chip-bg: var(--codeBg);
     --ed-chip-fg: var(--code);
-    --ed-warn-bg: var(--warnBg);
-    --ed-warn-fg: var(--warnColor);
-    --ed-warn-border: var(--warnBorder);
+    /* NOT --warnBg/--warnBorder: like --accentLight those are low-alpha washes
+       (7% / 28%) for large disclaimer panels, and invisible on a token-sized
+       chip. --warnChip* are opaque, with the same values the two Custom Prompts /
+       Data Placeholders pages use. */
+    --ed-warn-bg: var(--warnChipBg);
+    --ed-warn-fg: var(--warnChipText);
+    --ed-warn-border: var(--warnChipBorder);
 }
 input.win_prop { width: 100px; }
 span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: var(--dim); }

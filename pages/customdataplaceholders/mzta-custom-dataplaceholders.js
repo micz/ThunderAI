@@ -33,7 +33,7 @@ import {
     mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
-import { attachEditorHighlight, getEditorHighlight, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
+import { attachEditorHighlight, getEditorHighlight, makeTokenStateResolver, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
 
 let prefs = null;
 var customDataPHsList = null;
@@ -42,6 +42,7 @@ var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -96,9 +97,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Built-in placeholders only: a custom data placeholder cannot reference
     // another one. Mapped through the shared mapper rather than built inline, so
     // the dropdown gets the same descriptions as on the other pages.
-    autocompleteSuggestions = (await getPlaceholders())
-        .filter(p => p.is_default == "1")
-        .map(mapPlaceholderToSuggestion);
+    // Unlike the other pages, the same filtered list drives validation too: the
+    // built-ins-only restriction is semantic, so a token naming a custom data
+    // placeholder really is invalid here and should be flagged.
+    activePlaceholders = (await getPlaceholders()).filter(p => p.is_default == "1");
+    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
 
@@ -111,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // mode and get theirs from showItemRowEditor(); attaching one now would
         // paint a second copy of the text behind every read-mode row.
         // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
-        if (textarea.classList.contains('input_new')) attachEditorHighlight(textarea);
+        if (textarea.classList.contains('input_new')) attachHighlightWithValidation(textarea);
     });
 
     i18n.updateDocument();
@@ -272,10 +275,43 @@ function showItemRowEditor(tr) {
     textareaAutocomplete(text_output, autocompleteSuggestions)
     // Both calls are idempotent, so re-entering edit mode on the same row does
     // not stack listeners or mirrors.
-    attachEditorHighlight(text_output);
+    attachHighlightWithValidation(text_output);
     tr.querySelector('.text_show').style.display = 'none';
 	tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
+}
+
+/*
+ *  Attaches the highlight mirror plus token validation to a placeholder textarea.
+ *  Mirrors attachHighlightWithValidation() on the Custom Prompts page: the type
+ *  selector is read lazily per token, and a 'change' listener repaints, because
+ *  the mirror caches its render and would otherwise keep stale warnings.
+ */
+function attachHighlightWithValidation(textarea) {
+    const existing = getEditorHighlight(textarea);
+    const handle = existing || attachEditorHighlight(textarea);
+    if (!handle) return null;
+
+    const tr = textarea.closest('tr');
+    const typeSelect = textarea.classList.contains('input_new')
+        ? document.getElementById('selectTypeNew')
+        : (tr ? tr.querySelector('.type_output') : null);
+
+    if (!existing) {
+        handle.setTokenStateResolver(makeTokenStateResolver(
+            placeholdersUtils.findPlaceholder,
+            activePlaceholders,
+            typeSelect ? () => typeSelect.value : null));
+    }
+
+    if (typeSelect && !typeSelect._mztaHighlightSync) {
+        typeSelect._mztaHighlightSync = true;
+        typeSelect.addEventListener('change', () => {
+            const h = getEditorHighlight(textarea);
+            if (h) h.refresh();
+        });
+    }
+    return handle;
 }
 
 function hideItemRowEditor(tr) {

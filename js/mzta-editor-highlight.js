@@ -221,3 +221,40 @@ export function attachEditorHighlight(textarea, options = {}) {
 export function getEditorHighlight(textarea) {
     return (textarea && textarea._mztaHighlight) || null;
 }
+
+/*
+ *  Builds the getTokenState callback that flags invalid tokens.
+ *
+ *  find          the resolution predicate, i.e. placeholdersUtils.findPlaceholder.
+ *                Injected rather than imported: this module is loaded by every
+ *                editor page, and importing mzta-placeholders.js here would pull
+ *                its whole dependency chain (options defaults, utils) with it.
+ *  placeholders  list as returned by getPlaceholders(true). Captured by
+ *                reference, so a page that refreshes its list in place gets the
+ *                new one without re-attaching.
+ *  getType       optional () => type, read on every token so a change to the
+ *                prompt's type selector takes effect on the next refresh().
+ *                Return null/undefined to skip type filtering entirely.
+ *
+ *  Using the same predicate extractPlaceholders() uses at runtime means the
+ *  editor cannot disagree with what the prompt will actually resolve.
+ */
+export function makeTokenStateResolver(find, placeholders, getType = null) {
+    return function (inner) {
+        // inner === null means an unterminated '{%' with no closing '%}'.
+        if (inner === null) {
+            return {
+                invalid: true,
+                title: browser.i18n.getMessage('editor_placeholder_unterminated'),
+            };
+        }
+        const type = getType ? getType() : null;
+        const found = find(inner, placeholders,
+            (type === null || type === undefined) ? null : type);
+        if (found) return null;
+        return {
+            invalid: true,
+            title: browser.i18n.getMessage('editor_placeholder_unknown'),
+        };
+    };
+}

@@ -430,6 +430,41 @@ export const placeholdersUtils = {
         return placeholder_id;
     },
 
+    /*
+     *  Resolves the inner text of a {%...%} token against a placeholder list.
+     *
+     *  Sync, and takes an already-fetched list, because the prompt editor's
+     *  highlight backdrop calls it on every keystroke and cannot await.
+     *  Shared with extractPlaceholders() below so the editor and the runtime can
+     *  never disagree on which tokens are valid.
+     *
+     *  inner      the text between {% and %}, e.g. "mail_headers:x-spam"
+     *  activePHs  placeholder list, as returned by getPlaceholders(true)
+     *  type       optional prompt type ('0'/'1'/'2'). When given, a placeholder
+     *             only matches if its own type is that type or '0' ("always").
+     *             Omitted by extractPlaceholders(), whose behaviour is therefore
+     *             unchanged (it ignores type entirely).
+     *
+     *             A prompt of type '0' accepts placeholders of ANY type: it runs
+     *             in both the reading and the composing context, so a type-1 or
+     *             type-2 placeholder in it does resolve at runtime. The
+     *             autocomplete's own filter is stricter and offers only type-0
+     *             ones there (a known quirk, left as is) -- but replicating that
+     *             strictness here would flag perfectly valid text as an error.
+     */
+    findPlaceholder(inner, activePHs, type = null) {
+        if (!inner || !Array.isArray(activePHs)) return null;
+        const id = String(inner).trim();
+        const found = activePHs.find(ph => ph.id === id
+            || (ph.is_dynamic == 1 && id.startsWith(ph.id + ':')));
+        if (!found) return null;
+        if (type !== null && String(type) !== '0'
+            && !(String(found.type) === String(type) || String(found.type) === '0')) {
+            return null;
+        }
+        return found;
+    },
+
     async extractPlaceholders(text) {
         // Regular expression to match patterns like {%...%}
         const regex = /{%\s*(.*?)\s*%}/g;
@@ -437,11 +472,11 @@ export const placeholdersUtils = {
         let match;
 
         let activePHs = await getPlaceholders(true);
-      
+
         // Use exec to find all matches
         while ((match = regex.exec(text)) !== null) {
             // console.log(">>>>>>>>>> extractPlaceholders match: " + JSON.stringify(match));
-          const foundPH = activePHs.find(ph => ph.id === match[1].trim() || (ph.is_dynamic == 1 && match[1].startsWith(ph.id + ':')));
+          const foundPH = this.findPlaceholder(match[1], activePHs);
             if (foundPH) {
                 if (foundPH.is_dynamic == 1 && match[1].includes(':')) {
                     const [id, custom_value] = match[1].split(':', 2);

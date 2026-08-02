@@ -50,6 +50,7 @@ import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js
 import {
     attachEditorHighlight,
     getEditorHighlight,
+    makeTokenStateResolver,
     PLACEHOLDER_RE
 } from "../../js/mzta-editor-highlight.js";
 
@@ -62,6 +63,7 @@ var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -118,7 +120,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
-    autocompleteSuggestions = (await getPlaceholders(true)).map(mapPlaceholderToSuggestion);
+    // Kept as the raw list too: the highlight backdrop validates tokens against
+    // it on every keystroke and needs the placeholder objects, not the mapped
+    // autocomplete suggestions.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     
@@ -132,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // mode and get theirs from showItemRowEditor(); attaching one now would
         // paint a second copy of the prompt text behind every read-mode row.
         // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
-        if (textarea.classList.contains('input_new')) attachEditorHighlight(textarea);
+        if (textarea.classList.contains('input_new')) attachHighlightWithValidation(textarea);
         textarea.addEventListener('input', async (e) => {
             await checkPromptsConfigForPlaceholders(e.target);
         });
@@ -655,6 +661,45 @@ function populateConnectionUI(tr, id, prefix, selectId) {
     i18n.updateDocument();
 }
 
+/*
+ *  Attaches the highlight mirror plus token validation to a prompt textarea.
+ *
+ *  Token validity depends on the prompt's selected type, so the type selector is
+ *  read lazily on every token and a 'change' listener repaints the mirror. There
+ *  was no listener on .type_output / #selectTypeNew before this: the autocomplete
+ *  reads the type per keystroke and never needed one, but the mirror caches its
+ *  render and would otherwise keep showing stale warnings after a type change.
+ */
+function attachHighlightWithValidation(textarea) {
+    // Idempotent, like attachEditorHighlight itself: showItemRowEditor() re-runs
+    // on every entry into edit mode.
+    const existing = getEditorHighlight(textarea);
+    const handle = existing || attachEditorHighlight(textarea);
+    if (!handle) return null;
+
+    // The add-form textarea has no row; its selector is #selectTypeNew.
+    const tr = textarea.closest('tr');
+    const typeSelect = textarea.classList.contains('input_new')
+        ? document.getElementById('selectTypeNew')
+        : (tr ? tr.querySelector('.type_output') : null);
+
+    if (!existing) {
+        handle.setTokenStateResolver(makeTokenStateResolver(
+            placeholdersUtils.findPlaceholder,
+            activePlaceholders,
+            typeSelect ? () => typeSelect.value : null));
+    }
+
+    if (typeSelect && !typeSelect._mztaHighlightSync) {
+        typeSelect._mztaHighlightSync = true;
+        typeSelect.addEventListener('change', () => {
+            const h = getEditorHighlight(textarea);
+            if (h) h.refresh();
+        });
+    }
+    return handle;
+}
+
 function showItemRowEditor(tr) {
     tr.querySelector('.id_output').style.display = 'inline';
     tr.querySelector('.id_show').style.display = 'none';
@@ -667,7 +712,7 @@ function showItemRowEditor(tr) {
     textareaAutocomplete(text_output, autocompleteSuggestions)
     // Both calls are idempotent, so re-entering edit mode on the same row does
     // not stack listeners or mirrors.
-    attachEditorHighlight(text_output);
+    attachHighlightWithValidation(text_output);
     tr.querySelector('.text_show').style.display = 'none';
     toggleAdditionalPropertiesEditor(tr);
     tr.querySelector('.chatgpt_web_additional_info_show').style.display = 'none';

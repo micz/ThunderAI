@@ -26,6 +26,7 @@
         <li>The placeholder autocomplete list now opens at the text cursor instead of below the whole text box, is no longer cut off inside the prompts table, and shows a description of what each placeholder does. It can be accepted with Tab as well as Enter, closed with Escape, and is keyboard accessible [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
         <li>Fix: In the Translate, Summarize, Add Tags, Spam Filter, Get Task and Get Calendar Event settings pages, clicking inside the prompt text box no longer closes the placeholder autocomplete list.</li>
         <li>The {%placeholder%} tokens are now highlighted while editing in every prompt text box of the add-on: the Custom Prompts and Data Placeholders pages, and the Translate, Summarize, Add Tags, Spam Filter, Get Task and Get Calendar Event settings pages [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>A misspelled placeholder, one that is not available for the prompt type, or one missing its closing %} is now highlighted as a warning while editing, with a tooltip explaining the problem [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>
