@@ -486,6 +486,19 @@ table.prompts_list td label:has(input:checked),
     opacity: .55;
 }
 
+/* Explains, under the toggle, the condition that makes `use_diff_viewer`
+   available; hidden by updateUseDiffViewerHint() once the toggle is editable.
+   The `.hidden` override has to be ID-scoped too: a bare `.hidden` (0,1,0)
+   loses to this ID rule (1,0,0) no matter the source order, so display:block
+   would keep the hint visible. */
+#useDiffViewerNew_hint {
+    display: block;
+    margin: -4px 0 8px 0;
+    font-size: 0.7rem;
+}
+
+#useDiffViewerNew_hint.hidden { display: none; }
+
 #formNew input:disabled.need_selected,
 #formNew input:disabled.need_signature,
 #formNew input:disabled.need_custom_text,

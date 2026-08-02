@@ -140,7 +140,7 @@
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer_title": {
-    "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
+    "message": "Available when the \"Action\" is \"Substitute text\".",
     "description": ""
   },
   "customPrompts_form_required_fields": {

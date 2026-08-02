@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let _checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
         _checkboxUseDiffViewerNew.checked = false;
         _checkboxUseDiffViewerNew.disabled = true;
+        updateUseDiffViewerHint();
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
@@ -245,6 +246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkboxUseDiffViewerNew.checked = false;
             checkboxUseDiffViewerNew.disabled = true;
         }
+        updateUseDiffViewerHint();
     });
 
     const btnAddNew = document.getElementById('btnAddNew');
@@ -987,6 +989,7 @@ function handleCopyClick(e) {
     let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
     checkboxUseDiffViewerNew.disabled = (action !== "2");
+    updateUseDiffViewerHint();
 
     document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
     document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
@@ -1304,6 +1307,16 @@ function checkFields() {
 }
 
 
+// The diff viewer flag only applies when the action is "substitute text", so
+// while it's disabled the form spells out the condition under the toggle. Once
+// it becomes available the hint is redundant and gets hidden again.
+function updateUseDiffViewerHint() {
+    const hint = document.getElementById('useDiffViewerNew_hint');
+    if (!hint) return;
+    const checkbox = document.getElementById('checkboxUseDiffViewerNew');
+    hint.classList.toggle('hidden', !checkbox.disabled);
+}
+
 function clearFields() {
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
@@ -1321,6 +1334,7 @@ function clearFields() {
     // The action is reset to '0' above, so the diff viewer flag goes back to
     // being not applicable (same state as on page load).
     document.getElementById('checkboxUseDiffViewerNew').disabled = true;
+    updateUseDiffViewerHint();
     // Drop any leftover validation rings from the previous edit.
     document.getElementById('checkboxNeedSelectedNew').classList.remove('invalid_flag');
     document.getElementById('checkboxNeedCustomTextNew').classList.remove('invalid_flag');
