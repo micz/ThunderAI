@@ -23,6 +23,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
 | `use_diff_viewer` | string | `"0"` = normal output, `"1"` = offer a diff of the answer against the original text. On the API paths this is the interactive change picker — see [07-diff-picker.md](07-diff-picker.md); on ChatGPT Web it is a separate read-only diff. Only selectable when `action` is `"2"` |
+| `diff_granularity` | string | Comparison unit of the change picker; only meaningful when `use_diff_viewer` is `"1"`. `""` = inherit the global `diff_granularity` preference, `"words"`, `"sentences"`. Same "inherit from global" convention as `api_type` — see [07-diff-picker.md](07-diff-picker.md) |
 
 > **Note:** These numeric-looking properties are stored as **strings** (`"0"`/`"1"`/`"2"`) in the prompt objects in `js/mzta-prompts.js`, not as JS numbers. The prompt body lives in the `text` property (there is no `prompt` property).
 
@@ -37,6 +38,19 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `position_context` | number | Sort order for the context menu |
 | `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
 | `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
+| `diff_granularity` | string | Per-prompt override of the change-picker comparison unit (see the base-properties table above). Editable on default prompts, so it persists through the whitelist triple below. |
+
+> **Adding a user-editable property to a DEFAULT prompt requires editing three places**, or the value
+> is silently dropped on save. Default prompts do not persist their whole object — only an explicit
+> whitelist of fields:
+>
+> 1. `setDefaultPromptsProperties()` — the write side; the field must be listed or it is never stored
+> 2. `getDefaultPrompts_withProps()` — the read side; without it the saved value is never loaded back
+> 3. `preparePromptsForExport()` — the `allowedKeys` allow-list for `is_default == 1` prompts, or the
+>    field does not survive export/import
+>
+> Custom prompts are different: their whole object is stored, so they only need a default in the
+> `getCustomPrompts()` migration chain (`undefined` → the inherit value).
 
 ### Per-Prompt API Override Properties
 

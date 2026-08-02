@@ -359,9 +359,60 @@ everything — a single "replace it all" hunk. It works well on genuinely multi-
 `aria-checked` is painted both from `setGranularity()` and at build time in `_buildGranularityToggle()`;
 without the latter a picker left at the default would show neither position as selected.
 
-> Phase 3 of the original plan adds a global `diff_granularity` preference plus a per-prompt override
-> feeding `setGranularity()` as the *initial* value. This toolbar toggle is independent of that and
-> stays useful either way: the preference sets the starting point, the toggle changes it in the moment.
+### Where the initial value comes from
+
+The toolbar toggle changes the granularity in the moment; the **starting** value is a preference,
+resolved by `_resolveDiffGranularity(promptData)` in `messagesArea.js`:
+
+1. the prompt's own `diff_granularity`, if it is `'words'` or `'sentences'`;
+2. otherwise the global `diff_granularity` preference (`prefs_default`: `'words'`).
+
+`''` on a prompt means **inherit the global preference** — the same convention `api_type` uses.
+Anything unrecognised falls back to `'words'` rather than reaching `buildHunks`, where an unknown key
+would silently pick the default function.
+
+Resolved in `messagesArea.js` and **not** in the background: `prompt_info` already carries the whole
+prompt object, so the per-prompt field rides along for free and none of the five `api_send` sites need
+to know about it.
+
+### Persisting the per-prompt override
+
+The three prompts that actually use the picker — `prompt_proofread_this`, `prompt_rewrite_formal`,
+`prompt_rewrite_polite` — are all **default** prompts, and default prompts persist their user-editable
+properties through a **fixed triple** in `js/mzta-prompts.js`. All three had to be updated, or the
+override would have been silently dropped on save for exactly the prompts it exists for:
+
+| Site | Role |
+|------|------|
+| `setDefaultPromptsProperties` | writes an explicit whitelist of fields — the field must be listed |
+| `getDefaultPrompts_withProps` | reads that whitelist back, falling back to `''` |
+| `preparePromptsForExport` | allow-lists which keys survive export **for default prompts** |
+
+In the export allow-list `diff_granularity` sits in the base list, not behind `include_api_settings`:
+it is a user-editable property, not an API setting, so it has to survive an export that excludes API
+details.
+
+Custom prompts are covered separately by the `getCustomPrompts()` migration (`undefined` → `''`).
+
+`clearPromptAPI()` deliberately does **not** reset it — it clears API connection settings, and this is
+not one.
+
+### The options UI gate
+
+In `pages/customprompts/` the select is shown only when the picker can actually run, which is a
+**two-level** condition: the action must be `"2"` (substitute text) **and** `use_diff_viewer` must be
+ticked. `toggleDiffGranularity(tr)` (row editor) and `toggleDiffGranularityNew()` (new-prompt form)
+enforce it in their respective DOMs. On save, the value is forced back to `''` when the picker is off,
+so a stale override cannot linger out of sight.
+
+Two traps in that page worth knowing:
+
+- List.js writes a row's value into the `.diff_granularity` **hiddendata span**, not into the select, so
+  the select has to be re-synced by hand after `values()` — the same manual sync `.action` /
+  `.action_show` needs.
+- `showItemRowEditor` / `hideItemRowEditor` **add** a `change` listener to `.action_output` on every
+  call without ever removing it, stacking a duplicate each edit cycle. The new checkbox listener is
+  bound once, guarded by a `dataset` flag, rather than replicating that.
 
 ## Files
 
@@ -371,3 +422,7 @@ without the latter a picker left at the default would show neither position as s
 | `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder) |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |
+| `js/mzta-prompts.js` | the per-prompt `diff_granularity` field, its migration and its persistence triple |
+| `options/mzta-options-default.js` | the global `diff_granularity` preference |
+| `options/mzta-options.html/.js` | the global preference's control in the advanced section |
+| `pages/customprompts/` | the per-prompt override UI (row editor + new-prompt form) |

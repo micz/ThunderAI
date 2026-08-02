@@ -52,6 +52,12 @@
     0: Do not use the diff viewer
     1: Use the diff viewer
 
+    Diff granularity (diff_granularity attribute):
+    Comparison unit of the change picker, only meaningful when use_diff_viewer is 1.
+    "": Inherit the global diff_granularity preference
+    "words": Compare word by word
+    "sentences": Compare sentence by sentence
+
     ================ DYNAMIC PROPERTIES (set at runtime via prompt_info)
 
     headerMessageId (set by _openSummaryWebchat in mzta-background.js):
@@ -108,6 +114,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -127,6 +134,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -146,6 +154,7 @@ const defaultPrompts = [
         need_custom_text: "1",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -165,6 +174,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -184,6 +194,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -203,6 +214,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -222,6 +234,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -241,6 +254,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -263,6 +277,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         is_default: "1",
         is_special: "1",
@@ -279,6 +294,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         is_default: "1",
         is_special: "1",
@@ -295,6 +311,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         is_default: "1",
         is_special: "1",
@@ -311,6 +328,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         is_default: "1",
         is_special: "1",
@@ -327,6 +345,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         is_default: "1",
         is_special: "1",
@@ -343,6 +362,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         api_model: '',
         is_default: "1",
@@ -360,6 +380,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         api_model: '',
         is_default: "1",
@@ -377,6 +398,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         api_model: '',
         is_default: "1",
@@ -394,6 +416,7 @@ const specialPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        diff_granularity: "",
         api_type: '',
         api_model: '',
         is_default: "1",
@@ -471,7 +494,10 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
+            // diff_granularity belongs here and not behind include_api_settings:
+            // it is a user-editable property of a default prompt, not an API
+            // setting, so it has to survive an export that excludes API details.
+            let allowedKeys = ['id', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'diff_granularity', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -554,6 +580,9 @@ async function getDefaultPrompts_withProps() {
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
                 prompt.api_type = (prefs._default_prompts_properties[prompt.id]?.api_type || '').trim();
+                // Falls back to '' (inherit the global preference) for properties
+                // saved before this option existed.
+                prompt.diff_granularity = (prefs._default_prompts_properties[prompt.id]?.diff_granularity || '').trim();
                 prompt.show_in = prefs._default_prompts_properties[prompt.id]?.show_in || prompt.show_in;
                 prompt.custom_icon = prefs._default_prompts_properties[prompt.id]?.custom_icon || "";
             }else{
@@ -578,6 +607,11 @@ async function getCustomPrompts() {
         prefs._custom_prompt.forEach(prompt => {
             if (prompt.use_diff_viewer === undefined) {
                 prompt.use_diff_viewer = "0";
+            }
+            // "" means "inherit the global diff_granularity preference", which is
+            // what a prompt created before this option existed should do.
+            if (prompt.diff_granularity === undefined) {
+                prompt.diff_granularity = "";
             }
             if(prompt.chatgpt_web_model === undefined){
                 prompt.chatgpt_web_model = "";
@@ -614,6 +648,11 @@ export async function setDefaultPromptsProperties(prompts) {
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
             api_type: (prompt.api_type === undefined || prompt.api_type === "undefined") ? "" : prompt.api_type,
+            // Default prompts are the ones that actually use the picker
+            // (proofread, rewrite formal, rewrite polite), so without this the
+            // per-prompt override would be dropped on save for exactly the
+            // prompts it exists for. "" = inherit the global preference.
+            diff_granularity: (prompt.diff_granularity === undefined || prompt.diff_granularity === "undefined") ? "" : prompt.diff_granularity,
             show_in: (prompt.show_in === undefined || prompt.show_in === "undefined") ? "popup" : prompt.show_in,
             custom_icon: (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") ? "" : prompt.custom_icon,
         };

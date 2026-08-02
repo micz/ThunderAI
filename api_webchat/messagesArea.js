@@ -1357,6 +1357,24 @@ class MessagesArea extends HTMLElement {
         return saveSummaryButton;
     }
 
+    // Effective comparison unit for the picker: the prompt's own override if it
+    // set one, otherwise the global preference.
+    //
+    // Resolved here and not in the background: prompt_info already carries the
+    // whole prompt object, so the per-prompt field rides along for free and none
+    // of the api_send sites need to know about it. Same "'' means inherit"
+    // convention api_type uses.
+    async _resolveDiffGranularity(promptData) {
+        const perPrompt = promptData.prompt_info?.diff_granularity;
+        if(perPrompt === 'words' || perPrompt === 'sentences') {
+            return perPrompt;
+        }
+        const prefs = await browser.storage.sync.get({ diff_granularity: prefs_default.diff_granularity });
+        // Anything unrecognised falls back to 'words' rather than reaching
+        // buildHunks, where an unknown key would silently pick the default fn.
+        return (prefs.diff_granularity === 'sentences') ? 'sentences' : 'words';
+    }
+
     // Build the "show differences" button. Returns null when the prompt did not
     // request the diff viewer. `ownerTurn` is this bar's own turn: the picker
     // renders in a turn of its own, but the result indirection has to land on
@@ -1397,7 +1415,9 @@ class MessagesArea extends HTMLElement {
             // picker's plain text.
             originalText = String(originalText).replace(/<br\s*\/?>/gi, '\n');
 
-            this.appendDiffPicker(originalText, newText, ownerTurn, 'words', () =>
+            const granularity = await this._resolveDiffGranularity(promptData);
+
+            this.appendDiffPicker(originalText, newText, ownerTurn, granularity, () =>
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             diffvButton.disabled = true;
         });

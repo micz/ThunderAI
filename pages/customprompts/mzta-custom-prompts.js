@@ -93,6 +93,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         let _checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
         _checkboxUseDiffViewerNew.checked = false;
         _checkboxUseDiffViewerNew.disabled = true;
+        // Back to "inherit the global preference", and hidden: the checkbox above
+        // was just cleared, so the two-level gate is closed.
+        document.getElementById('selectDiffGranularityNew').value = '';
+        toggleDiffGranularityNew();
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
@@ -245,7 +249,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkboxUseDiffViewerNew.checked = false;
             checkboxUseDiffViewerNew.disabled = true;
         }
+        toggleDiffGranularityNew();
     });
+    // Two-level gate, same as the row editor: the granularity only matters when
+    // the action substitutes text AND the picker is on.
+    checkboxUseDiffViewerNew.addEventListener('change', toggleDiffGranularityNew);
+    toggleDiffGranularityNew();
 
     const btnAddNew = document.getElementById('btnAddNew');
     btnAddNew.addEventListener('click', (e) => {
@@ -264,6 +273,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
+            // "" = inherit the global preference; forced to "" when the picker is
+            // off so no stale override is stored out of sight.
+            diff_granularity: (checkboxUseDiffViewerNew.checked) ? document.getElementById('selectDiffGranularityNew').value : "",
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
             is_default: 0,
@@ -550,6 +562,14 @@ function handleEditClick(e) {
     tr.querySelector('.btnCopyItem').style.display = 'none';   // Copy btn
     tr.querySelector('.btnDeleteItem').style.display = 'none';   // Delete btn
     showItemRowEditor(tr);
+    // Seed the select from the stored value: List.js keeps it in the
+    // .diff_granularity hiddendata span, and the select is not one of the
+    // elements it writes to.
+    const granularitySelect = tr.querySelector('.diff_granularity_output');
+    if(granularitySelect) {
+        const stored = tr.querySelector('.diff_granularity')?.innerText.trim() || '';
+        granularitySelect.value = (stored === 'words' || stored === 'sentences') ? stored : '';
+    }
     toggleDiffviewer(e);
     toggleAdditionalPropertiesShow(tr);
 }
@@ -664,7 +684,17 @@ function showItemRowEditor(tr) {
     tr.querySelector('input.need_signature').disabled = false;
     tr.querySelector('input.need_custom_text').disabled = false;
     tr.querySelector('input.define_response_lang').disabled = false;
-    tr.querySelector('input.use_diff_viewer').disabled = false;
+    const diffCheckbox = tr.querySelector('input.use_diff_viewer');
+    diffCheckbox.disabled = false;
+    // Attached ONCE per row, guarded by the flag: the action_output listeners
+    // above are added on every show/hide without ever being removed, so they
+    // stack a duplicate on each edit cycle. Not replicating that here.
+    if(!diffCheckbox.dataset.mztaGranularityBound) {
+        diffCheckbox.dataset.mztaGranularityBound = '1';
+        diffCheckbox.addEventListener('change', () => toggleDiffGranularity(tr));
+    }
+    tr.querySelector('.diff_granularity_output').disabled = false;
+    toggleDiffGranularity(tr);
 }
 
 function hideItemRowEditor(tr) {
@@ -690,6 +720,10 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = true;
     tr.querySelector('input.define_response_lang').disabled = true;
     tr.querySelector('input.use_diff_viewer').disabled = true;
+    tr.querySelector('.diff_granularity_output').disabled = true;
+    // Still shown outside edit mode - it is part of the row's visible state, like
+    // the checkboxes - but read-only.
+    toggleDiffGranularity(tr);
 }
 
 function toggleAdditionalPropertiesShow(tr) {
@@ -799,6 +833,34 @@ function toggleAdditionalPropertiesEditor(tr) {
     }
 }
 
+// New-prompt form twin of toggleDiffGranularity(tr). Same two-level condition,
+// different DOM: the new form uses ids, the row editor per-row classes.
+function toggleDiffGranularityNew() {
+    const action = document.getElementById('selectActionNew');
+    const checkbox = document.getElementById('checkboxUseDiffViewerNew');
+    const wrap = document.getElementById('spanDiffGranularityNew');
+    if(!action || !checkbox || !wrap) { return; }
+    wrap.style.display = ((action.value === "2") && checkbox.checked) ? 'inline' : 'none';
+}
+
+// The granularity select is only meaningful when the picker actually runs, which
+// is a TWO-level condition: the action must be "substitute text" AND the diff
+// viewer checkbox must be ticked. Shown only then, so it cannot suggest it has
+// an effect where it has none.
+function toggleDiffGranularity(tr) {
+    const action = tr.querySelector('.action_output').value;
+    const checkbox = tr.querySelector('.use_diff_viewer');
+    const wrap = tr.querySelector('.diff_granularity_wrap');
+    const select = tr.querySelector('.diff_granularity_output');
+    if(!wrap || !select) { return; }
+    const applicable = (action === "2") && checkbox.checked;
+    // hiddendata is the class this page uses to hide a field, so toggling it
+    // keeps this row consistent with every other hidden element here.
+    wrap.classList.toggle('hiddendata', !applicable);
+    // Editable only while the row is in edit mode; showItemRowEditor owns that.
+    select.disabled = checkbox.disabled || !applicable;
+}
+
 function toggleDiffviewer(e) {
     e.preventDefault();
     const tr = e.target.parentNode.parentNode;
@@ -811,6 +873,7 @@ function toggleDiffviewer(e) {
         checkbox.setAttribute('checked_val', '0');
         checkbox.disabled = true;
     }
+    toggleDiffGranularity(tr);
     //console.log('>>>>>>>> tr: ' + tr.getAttribute('data-idnum'));
     //console.log('>>>>>>>> action: ' + action);
     //console.log('>>>>>>>> checkbox: ' + checkbox.checked);
@@ -877,6 +940,10 @@ function handleConfirmClick(e) {
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
+    // "" = inherit the global preference. Forced back to "" when the picker is
+    // off, so a stale override cannot linger invisibly on a prompt that no
+    // longer shows the granularity select at all.
+    newValues.diff_granularity = newValues.use_diff_viewer ? tr.querySelector('.diff_granularity_output').value : "";
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
     newValues.chatgpt_web_custom_gpt = tr.querySelector('.chatgpt_web_custom_gpt_output').value.trim();
@@ -901,8 +968,12 @@ function handleConfirmClick(e) {
     if (newValues.api_type !== '') {
         tr.querySelector('.api_type_show').innerText = newValues.api_type;
         toggleApiPropertiesShow(tr);
-    
+
     }
+    // List.js writes the value into the .diff_granularity hiddendata span, not
+    // into the select, so the select has to be put back in step by hand - the
+    // same manual sync .action / .action_show needs just above.
+    tr.querySelector('.diff_granularity_output').value = newValues.diff_granularity;
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
     setSomethingChanged();
@@ -986,6 +1057,15 @@ function handleCopyClick(e) {
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
     checkboxUseDiffViewerNew.disabled = (action !== "2");
 
+    // From itemValues, not from the row's select: that select is only in step
+    // with the stored value while the row is being edited, and Copy works on a
+    // row that is not.
+    const granularityNew = document.getElementById('selectDiffGranularityNew');
+    const copiedGranularity = itemValues.diff_granularity || '';
+    granularityNew.value = (copiedGranularity === 'words' || copiedGranularity === 'sentences') ? copiedGranularity : '';
+    // Re-run the gate: the checkbox and action were just set from the copy.
+    toggleDiffGranularityNew();
+
     document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
     document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
     document.getElementById('chatGPTWebCustomGPTNew').value = chatgpt_web_custom_gpt;
@@ -1063,7 +1143,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, 'diff_granularity', 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1162,6 +1242,12 @@ function loadPromptsList(values){
                     <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
+                    <span class="diff_granularity_wrap hiddendata"><br><label title="__MSG_customPrompts_form_label_diff_granularity_title__">__MSG_customPrompts_form_label_diff_granularity__ <select class="diff_granularity_output" disabled>
+                        <option value="">__MSG_customPrompts_form_label_diff_granularity_inherit__</option>
+                        <option value="words">__MSG_prefs_OptionText_diff_granularity_words__</option>
+                        <option value="sentences">__MSG_prefs_OptionText_diff_granularity_sentences__</option>
+                    </select></label></span>
+                    <span class="diff_granularity hiddendata">` + (values.diff_granularity || '') + `</span>
                     <span class="is_default hiddendata"></span>
                     <span class="position_compose hiddendata"></span>
                     <span class="position_display hiddendata"></span>
