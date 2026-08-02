@@ -426,13 +426,25 @@ table .sort.desc { background-image: url(../../images/listjs-arrow-sort-active-u
      - EDIT (enabled)   -> interactive toggle switch (30x18, --accent on / --border2 off)
      - READ-ONLY (disabled) -> static check/dash status icon (not clickable-looking)
    A default prompt's `need_custom_text` stays enabled even in a read-only row, so
-   it correctly keeps the switch look — no special casing needed. */
+   it correctly keeps the switch look — no special casing needed.
+
+   The same switch look is shared by the add-prompt form (#formNew), whose five
+   inputs carry these same classes. The read-only status-icon rules below stay
+   scoped to `table.prompts_list td` on purpose: in the form, `disabled` means
+   "not applicable yet" (use_diff_viewer while the action isn't "substitute
+   text"), so a disabled flag must stay a dimmed switch, not become a status
+   icon. */
 
 table.prompts_list td label:has(.need_selected),
 table.prompts_list td label:has(.need_signature),
 table.prompts_list td label:has(.need_custom_text),
 table.prompts_list td label:has(.define_response_lang),
-table.prompts_list td label:has(.use_diff_viewer) {
+table.prompts_list td label:has(.use_diff_viewer),
+#formNew label:has(.need_selected),
+#formNew label:has(.need_signature),
+#formNew label:has(.need_custom_text),
+#formNew label:has(.define_response_lang),
+#formNew label:has(.use_diff_viewer) {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -442,17 +454,53 @@ table.prompts_list td label:has(.use_diff_viewer) {
     font-size: 13px;
 }
 
+/* In the form, `need_selected` and `need_custom_text` wrap their checkbox + text
+   in an inner <span> (…_span, kept for the padding and as a validation hook), so
+   the flex layout has to live on that span too — otherwise the label's flex sees
+   a single span child and the switch/text never align. */
+#formNew .need_selected_span,
+#formNew .need_custom_text_span {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
 /* A label whose property is active (on) reads as active text; this holds in both
-   modes (active = --text, inactive = --muted). */
-table.prompts_list td label:has(input:checked) { color: var(--text); }
+   modes (active = --text, inactive = --muted). In #formNew the selectors name the
+   five property classes explicitly: a bare `label:has(input:checked)` would also
+   catch the API-options checkboxes that connection-ui.js injects into the form. */
+table.prompts_list td label:has(input:checked),
+#formNew label:has(input:checked.need_selected),
+#formNew label:has(input:checked.need_signature),
+#formNew label:has(input:checked.need_custom_text),
+#formNew label:has(input:checked.define_response_lang),
+#formNew label:has(input:checked.use_diff_viewer) { color: var(--text); }
+
+/* Form-only: a not-applicable flag is a dimmed, non-interactive switch. */
+#formNew label:has(input:disabled.need_selected),
+#formNew label:has(input:disabled.need_signature),
+#formNew label:has(input:disabled.need_custom_text),
+#formNew label:has(input:disabled.define_response_lang),
+#formNew label:has(input:disabled.use_diff_viewer) {
+    cursor: default;
+    opacity: .55;
+}
+
+#formNew input:disabled.need_selected,
+#formNew input:disabled.need_signature,
+#formNew input:disabled.need_custom_text,
+#formNew input:disabled.define_response_lang,
+#formNew input:disabled.use_diff_viewer {
+    cursor: default;
+}
 
 /* Read-only rows: wider icon-to-label gap and more vertical rhythm between rows.
    The label text may wrap onto multiple lines; the status icon stays pinned to
    the first line (top-aligned) instead of centering against the whole text block. */
 /* `need_selected` and `need_custom_text` wrap their checkbox + text in an inner
-   <span> (…_span, used for validation borders), so the flex layout must live on
-   that span rather than the label; the other three have the input as a direct
-   label child. Target both shapes. */
+   <span> (…_span), so the flex layout must live on that span rather than the
+   label; the other three have the input as a direct label child. Target both
+   shapes. */
 table.prompts_list td label:has(input:disabled),
 table.prompts_list td label:has(input:disabled) .need_selected_span,
 table.prompts_list td label:has(input:disabled) .need_custom_text_span {
@@ -475,7 +523,12 @@ table.prompts_list td .need_selected,
 table.prompts_list td .need_signature,
 table.prompts_list td .need_custom_text,
 table.prompts_list td .define_response_lang,
-table.prompts_list td .use_diff_viewer {
+table.prompts_list td .use_diff_viewer,
+#formNew .need_selected,
+#formNew .need_signature,
+#formNew .need_custom_text,
+#formNew .define_response_lang,
+#formNew .use_diff_viewer {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -496,7 +549,12 @@ table.prompts_list td .need_selected::after,
 table.prompts_list td .need_signature::after,
 table.prompts_list td .need_custom_text::after,
 table.prompts_list td .define_response_lang::after,
-table.prompts_list td .use_diff_viewer::after {
+table.prompts_list td .use_diff_viewer::after,
+#formNew .need_selected::after,
+#formNew .need_signature::after,
+#formNew .need_custom_text::after,
+#formNew .define_response_lang::after,
+#formNew .use_diff_viewer::after {
     content: '';
     position: absolute;
     top: 2px;
@@ -513,7 +571,12 @@ table.prompts_list td input:checked.need_selected,
 table.prompts_list td input:checked.need_signature,
 table.prompts_list td input:checked.need_custom_text,
 table.prompts_list td input:checked.define_response_lang,
-table.prompts_list td input:checked.use_diff_viewer {
+table.prompts_list td input:checked.use_diff_viewer,
+#formNew input:checked.need_selected,
+#formNew input:checked.need_signature,
+#formNew input:checked.need_custom_text,
+#formNew input:checked.define_response_lang,
+#formNew input:checked.use_diff_viewer {
     background: var(--accent);
 }
 
@@ -521,8 +584,39 @@ table.prompts_list td input:checked.need_selected::after,
 table.prompts_list td input:checked.need_signature::after,
 table.prompts_list td input:checked.need_custom_text::after,
 table.prompts_list td input:checked.define_response_lang::after,
-table.prompts_list td input:checked.use_diff_viewer::after {
+table.prompts_list td input:checked.use_diff_viewer::after,
+#formNew input:checked.need_selected::after,
+#formNew input:checked.need_signature::after,
+#formNew input:checked.need_custom_text::after,
+#formNew input:checked.define_response_lang::after,
+#formNew input:checked.use_diff_viewer::after {
     left: 14px;
+}
+
+/* Keyboard focus ring: `appearance:none` removes the native checkbox outline, so
+   restore a visible focus indicator for both the list and the form. */
+table.prompts_list td input:focus-visible.need_selected,
+table.prompts_list td input:focus-visible.need_signature,
+table.prompts_list td input:focus-visible.need_custom_text,
+table.prompts_list td input:focus-visible.define_response_lang,
+table.prompts_list td input:focus-visible.use_diff_viewer,
+#formNew input:focus-visible.need_selected,
+#formNew input:focus-visible.need_signature,
+#formNew input:focus-visible.need_custom_text,
+#formNew input:focus-visible.define_response_lang,
+#formNew input:focus-visible.use_diff_viewer {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Validation: a flag that must be on because the prompt text uses the matching
+   placeholder ({%additional_text%} / {%selected_text%}) but isn't. Applied to the
+   input itself by checkPromptsConfigForPlaceholders(), so the ring hugs the
+   switch instead of boxing the whole label row. */
+table.prompts_list td input.invalid_flag,
+#formNew input.invalid_flag {
+    outline: 2px solid var(--del-text);
+    outline-offset: 2px;
 }
 
 /* ---- Read-only (disabled) status icon box. Repaints the switch track as a
@@ -667,6 +761,9 @@ table.prompts_list .action_output {
     min-width: 0;
 }
 
+/* Inner wrappers around the two placeholder-linked flags. The validation ring is
+   drawn on the input (.invalid_flag) rather than on these spans, but they are kept
+   as the structural grouping of checkbox + text. */
 .need_custom_text_span, .need_selected_span { padding-right: 2px; }
 
 /* ============================ Storage space ============================ */

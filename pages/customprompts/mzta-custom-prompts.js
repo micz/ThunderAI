@@ -922,7 +922,9 @@ async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('need_custom_text')) {
+    // List rows only: the #formNew checkbox shares this class but has no backing
+    // List.js item yet (its `tr` carries no data-idnum).
+    if (e.target.classList.contains('need_custom_text') && !e.target.closest('#formNew')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
@@ -1311,9 +1313,17 @@ function clearFields() {
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
     document.getElementById('selectActionNew').value = '0';
-    document.getElementById('checkboxNeedSelectedNew').value = '0';
-    document.getElementById('checkboxNeedSignatureNew').value = '0';
-    document.getElementById('checkboxNeedCustomTextNew').value = '0';
+    document.getElementById('checkboxNeedSelectedNew').checked = false;
+    document.getElementById('checkboxNeedSignatureNew').checked = false;
+    document.getElementById('checkboxNeedCustomTextNew').checked = false;
+    document.getElementById('checkboxDefineResponseLangNew').checked = false;
+    document.getElementById('checkboxUseDiffViewerNew').checked = false;
+    // The action is reset to '0' above, so the diff viewer flag goes back to
+    // being not applicable (same state as on page load).
+    document.getElementById('checkboxUseDiffViewerNew').disabled = true;
+    // Drop any leftover validation rings from the previous edit.
+    document.getElementById('checkboxNeedSelectedNew').classList.remove('invalid_flag');
+    document.getElementById('checkboxNeedCustomTextNew').classList.remove('invalid_flag');
     document.getElementById('formNew').style.display = 'none';
 }
 
@@ -1362,12 +1372,16 @@ function setNothingChanged(){
 
 function checkSelectedBoxes(checkboxes = null) {
     if(checkboxes == null){
+        // Restores the list rows' checkboxes from their `checked_val` attribute.
+        // Scoped to the prompts list on purpose: the #formNew inputs share these
+        // classes (they use the same toggle-switch styling) but carry no
+        // `checked_val`, and the else-branch below would then force them all on.
         checkboxes = [
-            ...document.querySelectorAll('.need_selected[type="checkbox"]'),
-            ...document.querySelectorAll('.need_signature[type="checkbox"]'),
-            ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
-            ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
-            ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_selected[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_signature[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_custom_text[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .define_response_lang[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .use_diff_viewer[type="checkbox"]'),
         ];
     }
 
@@ -1451,25 +1465,13 @@ async function checkPromptsConfigForPlaceholders(textarea){
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(/{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text))){
-        if(!need_custom_text_element.checked){
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
-        }else{
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-        }
-      }else{
-        need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-      }
+    // The ring is drawn on the checkbox itself (see .invalid_flag in the CSS), so it
+    // hugs the toggle switch instead of boxing the whole label row.
+    let need_custom_text_missing = /{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text)) && !need_custom_text_element.checked;
+    need_custom_text_element.classList.toggle('invalid_flag', need_custom_text_missing);
 
       let tr_ancestor2 = textarea.closest('tr');
       let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if((String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1)){
-        if(!selected_text_element.checked){
-            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
-        }else{
-            selected_text_element.closest('.need_selected_span').style.border = '';
-        }
-      }else{
-        selected_text_element.closest('.need_selected_span').style.border = '';
-      }
+      let selected_text_used = (String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1);
+      selected_text_element.classList.toggle('invalid_flag', selected_text_used && !selected_text_element.checked);
 }
