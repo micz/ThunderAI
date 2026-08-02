@@ -30,6 +30,7 @@ import {
   mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight } from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
   setTomSelectBorder
@@ -131,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     get_task_reset_btn.disabled = (get_task_textarea.value === browser.i18n.getMessage('prompt_get_task_full_text'));
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    attachEditorHighlight(get_task_textarea);
     textareaAutocomplete(get_task_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
 });

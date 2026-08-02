@@ -37,6 +37,12 @@
     --success: #1f8a5b;
     --warning: #c9760a;
 
+    /* Code-like text: {%placeholder%} chips in the prompt editors. Same values as
+       the --code/--code-bg tokens on the two Custom Prompts / Data Placeholders
+       pages, so a placeholder chip looks the same everywhere in the add-on. */
+    --code: #1d4ed8;
+    --codeBg: #e7efff;
+
     /* Monospace stack for placeholder tokens and other code-like text. Same
        name and value as the local token on the two Custom Prompts / Data
        Placeholders pages, so pages/_lib/autocomplete.css can rely on one name
@@ -66,6 +72,11 @@
         --fieldLine: rgba(255, 255, 255, .15);
         --accent: #2c5e9b;
         --accentLight: #4c9dff21;
+
+        /* Code-like text (see the light block). Opaque, not an alpha wash: a
+           token-sized chip needs real contrast against --field. */
+        --code: #8fb6ff;
+        --codeBg: #1a2740;
 
         /* ThunderStats (green) tint */
         --statsAccent: #54c07a75;
@@ -295,6 +306,37 @@ input, select, button, textarea { font-family: inherit; }
 #mzta_card select,
 #mzta_card textarea { width: 100%; }
 #mzta_card textarea { min-height: 70px; resize: vertical; }
+
+/* Placeholder-highlighting editor metrics for the pages using this design
+   system. Structure comes from pages/_lib/editor-highlight.css; these are the
+   values it reads, and they MUST match the #mzta_card textarea rules above
+   (padding, font, line-height) or the mirror drifts away from the text.
+   --ed-surface-focus mirrors the focus rule further down, which repaints the
+   field background — the mirror needs that highlight on the wrapper instead. */
+#mzta_card .editor-wrap {
+    --ed-padding: 9px 11px;
+    /* Monospace, matching the Custom Prompts editor: it is what makes a
+       {%placeholder%} chip read as a token rather than as tinted prose. Must be
+       applied to the textarea too (see the rule further down) — setting it on the
+       chip alone would change its advance width and break mirror alignment. */
+    --ed-font: var(--font-mono);
+    /* Matches #mzta_card textarea's default line-height; the feature-page
+       override further down bumps both together. */
+    --ed-line-height: normal;
+    --ed-surface: var(--field);
+    --ed-surface-focus: var(--panel);
+    --ed-border: var(--fieldLine);
+    /* NOT --accentLight: that token is a 6%-alpha wash (#0a68ff0f) meant for
+       large hover surfaces, and a token-sized chip painted with it is invisible
+       (1.09 contrast against --field). --code/--codeBg are dedicated tokens with
+       per-theme values, since mixing --accent into --field cannot reach a legible
+       tint in dark mode -- the dark --accent is already dim. */
+    --ed-chip-bg: var(--codeBg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warnBg);
+    --ed-warn-fg: var(--warnColor);
+    --ed-warn-border: var(--warnBorder);
+}
 input.win_prop { width: 100px; }
 span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: var(--dim); }
 
@@ -1133,7 +1175,27 @@ body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
 body.mzta_feature_page #mzta_card select {
     min-height: 40px;
 }
+/* Kept in step with --ed-line-height below: the highlight mirror must use the
+   same line-height as the textarea it sits behind, or the two drift apart. */
 body.mzta_feature_page #mzta_card textarea { line-height: 1.6; }
+body.mzta_feature_page #mzta_card .editor-wrap { --ed-line-height: 1.6; }
+
+/* The highlight mirror needs its textarea transparent so the painted mirror
+   behind it shows through. editor-highlight.css says so on `.editor-wrap .editor`
+   (0,0,2,0), but `#mzta_card textarea` above is (0,1,0,1) and an id beats any
+   number of classes — so without this repetition, scoped to #mzta_card, the
+   textarea stays opaque with black text and hides the mirror completely.
+   Keep in sync with the same declarations in editor-highlight.css. */
+#mzta_card .editor-wrap .editor {
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+    border-color: var(--ed-border);
+    /* Must equal --ed-font above: the mirror reads that token, the textarea reads
+       this declaration, and if the two fonts differ the highlight drifts off the
+       text. Beats `input, select, button, textarea { font-family: inherit }`. */
+    font-family: var(--ed-font);
+}
 
 /* --- Number fields: label/desc left, compact control right ------------- */
 body.mzta_feature_page .mzta_field_num {
@@ -1172,3 +1234,8 @@ body.mzta_feature_page #mzta_card textarea:focus {
     outline: none;
     transition: border-color .13s ease, box-shadow .13s ease, background .13s ease;
 }
+
+/* ...except a highlight-mirror textarea, which must stay transparent or it hides
+   the mirror. The focus tint moves to the wrapper (:focus-within) instead. This
+   has to sit AFTER the rule above: same specificity, so source order decides. */
+body.mzta_feature_page #mzta_card .editor-wrap .editor:focus { background: transparent; }

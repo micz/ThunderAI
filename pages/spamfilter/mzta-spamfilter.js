@@ -30,6 +30,7 @@ import {
   mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight } from "../../js/mzta-editor-highlight.js";
 import { taSpamReport } from '../../js/mzta-spamreport.js';
 import {
   getAccountsList,
@@ -139,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     spamfilter_reset_btn.disabled = (spamfilter_textarea.value === browser.i18n.getMessage('prompt_spamfilter_full_text'));
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    attachEditorHighlight(spamfilter_textarea);
     textareaAutocomplete(spamfilter_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     // Skip addresses list

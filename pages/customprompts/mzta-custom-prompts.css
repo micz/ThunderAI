@@ -811,119 +811,38 @@ table.prompts_list .action_output {
 
 /* ======================= Prompt editor (highlighting) =======================
 
-   Live {%placeholder%} highlighting is painted on a mirror element behind a
-   transparent textarea. The textarea remains the source of truth; the mirror is
-   inert. For the highlight to stay glued to the text, the two MUST agree on
-   every metric that affects glyph position — hence the shared selector list
-   below. Never set a font, padding, border-width or wrapping property on one of
-   them alone; put it in the shared block or the highlight drifts.
-
+   Structure lives in pages/_lib/editor-highlight.css, which is shared with the
+   Data Placeholders page and the six single-textarea settings pages. Only this
+   page's metrics and colours are set here, as the custom properties that file
+   reads. Keep --ed-font/--ed-line-height in step with .text_show above, so read
+   mode and edit mode render the prompt identically.
    ------------------------------------------------------------------------- */
 
-.editor-wrap { position: relative; }
-
-/* The field surface is painted by the wrapper, not by the textarea (which must
-   stay transparent to let the mirror show through) and not by the backdrop
-   (which is inset inside the textarea's border box, so it would leave the 1px
-   border ring and the rounded corners showing the page behind the field).
-   Only while editing: in read mode the wrapper is just a positioning context. */
-.editor-wrap.editor-active {
-    background: var(--panel);
-    border-radius: 8px;
+.editor-wrap {
+    --ed-padding: 7px 10px;
+    --ed-font: var(--font-mono);
+    --ed-line-height: 1.55;
+    --ed-surface: var(--panel);
+    --ed-border: var(--border2);
+    --ed-chip-bg: var(--code-bg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warn-bg);
+    --ed-warn-fg: var(--warn-text);
+    --ed-warn-border: var(--warn-border);
 }
 
-/* Metrics shared by the textarea and its mirror. */
-.editor-wrap .editor,
-.editor-wrap .editor-highlights {
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: 7px 10px;
-    border: 1px solid transparent;   /* same border box; color differs below */
-    border-radius: 8px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 1.55;
-    letter-spacing: normal;
-    tab-size: 4;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    word-break: normal;
-}
+/* Visibility gating, specific to the two table pages: a row toggles between a
+   read-only span and the editor, and leaving edit mode sets display:none on the
+   textarea only -- its siblings stay visible, so an always-on backdrop would
+   keep painting a second copy of the prompt text under .text_show.
+   attachEditorHighlight() adds .editor-active, destroy() removes it.
 
-/* The textarea sits above the mirror, painting the border, the caret and the
-   selection. It must stay transparent or it would hide the mirror behind it —
-   the field surface is painted by .editor-wrap, one layer below both. */
-.editor-wrap .editor {
-    position: relative;
-    z-index: 1;
-    background: transparent;
-    color: transparent;
-    caret-color: var(--text);
-    border-color: var(--border2);
-    resize: vertical;
-    /* Overrides the generic .text_output width:98% so the mirror can match the
-       box exactly. */
-    width: 100%;
-}
-
-.editor-wrap .editor::selection { background: var(--code-bg); color: var(--text); }
-
-/* Inert mirror. Fully transparent — it paints glyphs and chips only, never a
-   surface. Hidden by default so that leaving edit mode (which only sets
-   display:none on the textarea) cannot leave a ghost copy of the text painted
-   underneath the read-mode .text_show; attachEditorHighlight() reveals it. */
-.editor-backdrop {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    border-radius: 8px;
-    background: transparent;
-    z-index: 0;
-    display: none;
-}
-
+   display:block must NOT move to `.editor-wrap .editor`: at two classes it
+   would beat the row template's `.hiddendata { display: none }` and leave every
+   row's textarea visible at page load. */
+.editor-wrap .editor-backdrop { display: none; }
 .editor-wrap.editor-active .editor-backdrop { display: block; }
-
-/* Block-level only while editing. It must NOT be on `.editor-wrap .editor`:
-   that selector has two classes and so would beat `.hiddendata { display:none }`,
-   leaving every row's textarea visible under its read-mode text until
-   show/hideItemRowEditor writes an inline display. */
 .editor-wrap.editor-active .editor { display: block; }
-
-.editor-wrap .editor-highlights {
-    min-height: 100%;
-    color: var(--text);
-    border-color: transparent;
-}
-
-/* Edit-mode chip. MUST be metric-neutral: no font-family, font-size or padding
-   that changes the advance width of the text, or the mirror stops matching the
-   textarea. Horizontal breathing room is faked with equal negative margin. */
-.ph_chip_live {
-    background: var(--code-bg);
-    color: var(--code);
-    border-radius: 4px;
-    padding: 0 .2em;
-    margin: 0 -.2em;
-}
-
-/* Unknown id, wrong prompt type, or an unterminated token. */
-.ph_chip_invalid {
-    background: var(--warn-bg);
-    color: var(--warn-text);
-    box-shadow: inset 0 -1px 0 0 var(--warn-border);
-}
-
-/* Zero-width caret marker used to anchor the autocomplete list. */
-.caret-anchor {
-    display: inline-block;
-    width: 0;
-    height: 1em;
-    vertical-align: baseline;
-    overflow: hidden;
-}
 
 /* ============================ Autocomplete ============================ */
 

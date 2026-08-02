@@ -27,6 +27,7 @@ import {
   mapPlaceholderToSuggestion
  } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight } from "../../js/mzta-editor-highlight.js";
 import {
   addTags_getExclusionList,
   addTags_setExclusionList
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateAdditionalPromptStatements();
 
     autocompleteSuggestions = (await getPlaceholders(true)).filter(p => !(p.id === 'additional_text')).map(mapPlaceholderToSuggestion);
+    attachEditorHighlight(addtags_textarea);
     textareaAutocomplete(addtags_textarea, autocompleteSuggestions, 1);    // type_value = 1, only when reading an email
 
     let excl_list_textarea = document.getElementById('addtags_excl_list');

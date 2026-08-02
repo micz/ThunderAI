@@ -33,6 +33,7 @@ import {
     mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, getEditorHighlight, PLACEHOLDER_RE } from "../../js/mzta-editor-highlight.js";
 
 let prefs = null;
 var customDataPHsList = null;
@@ -105,6 +106,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // which attached every handler N+1 times for N textareas.
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
+        // The mirror is attached here only for the add-form textarea (.input_new),
+        // which is permanently in edit mode. Row textareas start hidden in read
+        // mode and get theirs from showItemRowEditor(); attaching one now would
+        // paint a second copy of the text behind every read-mode row.
+        // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
+        if (textarea.classList.contains('input_new')) attachEditorHighlight(textarea);
     });
 
     i18n.updateDocument();
@@ -259,8 +266,13 @@ function showItemRowEditor(tr) {
     tr.querySelector('.name_output').style.display = 'inline';
     tr.querySelector('.name_show').style.display = 'none';
     const text_output = tr.querySelector('.text_output');
-    text_output.style.display = 'inline';
+    // 'block', not 'inline': the highlight backdrop is absolutely positioned
+    // against this box, and an inline textarea would not align with it.
+    text_output.style.display = 'block';
     textareaAutocomplete(text_output, autocompleteSuggestions)
+    // Both calls are idempotent, so re-entering edit mode on the same row does
+    // not stack listeners or mirrors.
+    attachEditorHighlight(text_output);
     tr.querySelector('.text_show').style.display = 'none';
 	tr.querySelector('.type_output').style.display = 'inline';
     tr.querySelector('.type_show').style.display = 'none';
@@ -271,7 +283,13 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.id_show').style.display = 'inline';
     tr.querySelector('.name_output').style.display = 'none';
     tr.querySelector('.name_show').style.display = 'inline';
-    tr.querySelector('.text_output').style.display = 'none';
+    const text_output_hide = tr.querySelector('.text_output');
+    const highlight = getEditorHighlight(text_output_hide);
+    if (highlight) highlight.destroy();
+    // The autocomplete must go down with the mirror it reads the caret from,
+    // and its close() drops the row from the shared open-instances set.
+    if (text_output_hide._mztaAutocomplete) text_output_hide._mztaAutocomplete.destroy();
+    text_output_hide.style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
 	tr.querySelector('.type_output').style.display = 'none';
     tr.querySelector('.type_show').style.display = 'inline';
@@ -340,13 +358,26 @@ function handleInputChange(e) {
 // Wrap {%placeholder%} tokens in the visible placeholder text with a styled chip.
 // Only touches the read-only .text_show spans (never the editable textarea),
 // and is idempotent (skips spans already decorated).
+// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, so read
+// mode and edit mode can never disagree on what counts as a token. This also
+// matches values containing '%' (e.g. {%additional_text:50%%}), which the
+// previous /\{%[^%]+%\}/ never did.
+// The guard holds the decorated result rather than a plain '1', so it
+// self-invalidates whenever the span is rewritten from the stored value.
 function decoratePlaceholderText() {
     document.querySelectorAll('#all_custom_dataplaceholders .text_show').forEach(span => {
-        if (span.dataset.phDecorated === '1') return;
-        if (!/\{%[^%]+%\}/.test(span.innerHTML)) { span.dataset.phDecorated = '1'; return; }
-        span.innerHTML = span.innerHTML.replace(/\{%[^%]+%\}/g,
+        if (span.dataset.phDecorated === span.innerHTML) return;
+        // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
+        // each use so a previous call cannot make this one start mid-string.
+        PLACEHOLDER_RE.lastIndex = 0;
+        if (!PLACEHOLDER_RE.test(span.innerHTML)) {
+            span.dataset.phDecorated = span.innerHTML;
+            return;
+        }
+        PLACEHOLDER_RE.lastIndex = 0;
+        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE,
             m => '<span class="ph_chip">' + m + '</span>');
-        span.dataset.phDecorated = '1';
+        span.dataset.phDecorated = span.innerHTML;
     });
 }
 
@@ -389,7 +420,8 @@ function loadCustomDataPHsList(values){
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
                     <span class="text text_show"></span>
-                    <div class="autocomplete-container">
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
                         <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>

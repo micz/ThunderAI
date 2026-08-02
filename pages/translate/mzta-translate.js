@@ -30,6 +30,7 @@ import {
     mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
@@ -125,6 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    attachEditorHighlight(translate_textarea);
     textareaAutocomplete(translate_textarea, autocompleteSuggestions, 1);
 
 });

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-summarize.css" />
     <link rel="stylesheet" href="../_lib/autocomplete.css" />
+    <link rel="stylesheet" href="../_lib/editor-highlight.css" />
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
@@ -120,8 +121,9 @@
                 <!-- main prompt -->
                 <div class="mzta_field">
                     <span class="opt_title_small">__MSG_prefs_OptionText_Summarize_main_prompt__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_prompt_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="summarize_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div class="summarize_info_additional_statements"></div>
@@ -134,8 +136,9 @@
                 <!-- email template -->
                 <div class="mzta_field">
                     <span class="opt_title_small">__MSG_prefs_OptionText_Summarize_email_template__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_email_template_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="summarize_email_template_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div class="summarize_info_additional_statements"></div>
@@ -148,8 +151,9 @@
                 <!-- email separator -->
                 <div class="mzta_field">
                     <span class="opt_title_small">__MSG_prefs_OptionText_Summarize_email_separator__</span>
-                    <div class="autocomplete-container">
-                        <textarea id="summarize_email_separator_text" rows="7"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="summarize_email_separator_text" rows="7" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div class="summarize_info_additional_statements"></div>

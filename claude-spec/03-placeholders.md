@@ -98,13 +98,17 @@ placeholder leaves the caret before the trailing `:%}` so the value can be typed
 
 **Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
 on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
-rect comes from the Phase 1 highlight mirror (`getCaretRect()` on the handle returned by
+rect comes from the highlight mirror (`getCaretRect()` on the handle returned by
 `attachEditorHighlight()`), which plants a zero-width anchor at `selectionStart` and measures it — no
-caret-position library. Pages with no mirror (the six single-textarea settings pages) fall back to the
-bottom-left of the textarea, which is where the list used to open unconditionally. The list flips above
-the caret when there is not enough room below and clamps horizontally into the viewport. It **closes**
-on `scroll`/`resize` rather than repositioning, since a fixed element's coordinates go stale as soon as
-any ancestor scrolls.
+caret-position library. The list flips above the caret when there is not enough room below and clamps
+horizontally into the viewport. It **closes** on `scroll`/`resize` rather than repositioning, since a
+fixed element's coordinates go stale as soon as any ancestor scrolls.
+
+**All 9 textareas have a mirror.** Every page that offers the autocomplete also attaches
+`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the two
+table pages (add-form + row editor) plus the eight single textareas on the six settings pages (summarize
+has three). `caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
+so a new page that forgets the attach degrades gracefully rather than breaking.
 
 **Lifecycle.** `textareaAutocomplete()` is idempotent, guarded by `textarea._mztaAutocomplete`, and
 returns a handle with `close()` and `destroy()`. There is **one** module-level outside-click controller
@@ -125,7 +129,36 @@ plus a muted second line with the placeholder description. `mapPlaceholderToSugg
 accepts the active item like `Enter` (rather than moving focus away mid-token), `Escape` closes, and
 arrow keys wrap around with `scrollIntoView({ block: 'nearest' })`.
 
-**Shared CSS.** All 8 pages link `pages/_lib/autocomplete.css`, which replaced 8 near-duplicate blocks.
+**Shared CSS — highlighting.** The mirror's *structure* lives in **one** file,
+`pages/_lib/editor-highlight.css`, linked by all 8 pages. The three metrics that legitimately differ
+between pages plus the colours are custom properties a page must define on `.editor-wrap`:
+`--ed-padding`, `--ed-font`, `--ed-line-height`, `--ed-surface`, `--ed-surface-focus`, `--ed-border`,
+`--ed-chip-bg/-fg`, `--ed-warn-bg/-fg/-border`. The design-system pages get them from
+`#mzta_card .editor-wrap` in `mzta-design.css` (9px 11px / inherit / 1.6, matching that file's own
+textarea rules); the two table pages set them locally (7px 10px / mono / 1.55).
+
+**Specificity trap on the `#mzta_card` pages.** `mzta-design.css` styles fields with `#mzta_card textarea`
+— **(1 id, 0 classes, 1 element)**, which beats `editor-wrap .editor` **(0, 2, 1)** no matter how late
+the shared file loads, because a single id outranks any number of classes. The textarea therefore stayed
+opaque with black text and hid the mirror completely: the visible text was the textarea's, not the
+mirror's. The `background: transparent; color: transparent` pair is consequently **repeated** in
+`mzta-design.css` under `#mzta_card .editor-wrap .editor`, and again for `:focus` (which has to come
+*after* the design system's own `…textarea:focus` rule, being of equal specificity). Keep the two copies
+in sync. The remaining metrics (`padding`, `font-size`, `line-height`, `box-sizing`, `border-width`) are
+also won by the design system, which is harmless *only because* the `--ed-*` values were chosen to match
+them exactly — change one side and the mirror drifts.
+
+The chip colours there come from dedicated `--code` / `--codeBg` tokens, added to both theme blocks of
+`mzta-design.css` with the same values as the two table pages' `--code` / `--code-bg`. Do **not** reach
+for `--accentLight`: it is a 6%-alpha wash (`#0a68ff0f`) intended for large hover surfaces, and a
+token-sized chip painted with it is invisible (1.09 contrast against `--field`) — which is exactly how
+the first attempt shipped no visible highlight on those six pages. The same caution applies to
+`--warnBg`/`--warnBorder`, which are also low-alpha washes. Fallbacks in the shared
+file are deliberately inert (`transparent`/`inherit`/`0`) so a page that forgets one renders *no*
+highlight rather than a misaligned mirror. Only the two table pages add rules of their own, for the
+`.editor-active` visibility gating.
+
+**Shared CSS — dropdown.** All 8 pages link `pages/_lib/autocomplete.css`, which replaced 8 near-duplicate blocks.
 Because the pages use two disjoint token systems, every token there uses a fallback chain
 (`var(--field, var(--panel))`, `var(--fieldLine, var(--border2))`, `var(--muted, var(--dim))`,
 `var(--accentLight, var(--rowhover))`); `--text` and `--accent` exist in both and need none.

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="../_lib/mzta-design.css" />
     <link rel="stylesheet" href="mzta-get-task.css" />
     <link rel="stylesheet" href="../_lib/autocomplete.css" />
+    <link rel="stylesheet" href="../_lib/editor-highlight.css" />
     <link rel="stylesheet" href="../_lib/connection-ui.css" />
     <link rel="icon" href="../../images/icon-16px.png" />
 </head>
@@ -80,8 +81,9 @@
                     <br><b>__MSG_prefs_OptionText_AdvancedPromptResponse_infoline2__</b>
                 </p>
                 <div class="mzta_field">
-                    <div class="autocomplete-container">
-                        <textarea id="get_task_prompt_text" rows="15"></textarea>
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
+                        <textarea id="get_task_prompt_text" rows="15" class="editor"></textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                     <div id="get_task_info_additional_statements"></div>
