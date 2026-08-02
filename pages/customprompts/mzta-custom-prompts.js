@@ -1159,7 +1159,7 @@ function loadPromptsList(values){
                     <br>
                     <label><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span></label>
                     <br>
-                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
+                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customprompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
                     <span class="is_default hiddendata"></span>
