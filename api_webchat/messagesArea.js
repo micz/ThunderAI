@@ -1357,21 +1357,14 @@ class MessagesArea extends HTMLElement {
         return saveSummaryButton;
     }
 
-    // Effective comparison unit for the picker: the prompt's own override if it
-    // set one, otherwise the global preference.
+    // Comparison unit the picker opens with, from the global preference. The
+    // picker's own toolbar toggle changes it from there for the current review;
+    // this is only the starting point.
     //
-    // Resolved here and not in the background: prompt_info already carries the
-    // whole prompt object, so the per-prompt field rides along for free and none
-    // of the api_send sites need to know about it. Same "'' means inherit"
-    // convention api_type uses.
-    async _resolveDiffGranularity(promptData) {
-        const perPrompt = promptData.prompt_info?.diff_granularity;
-        if(perPrompt === 'words' || perPrompt === 'sentences') {
-            return perPrompt;
-        }
+    // Anything unrecognised falls back to 'words' rather than reaching
+    // buildHunks, where an unknown key would silently pick the default fn.
+    async _resolveDiffGranularity() {
         const prefs = await browser.storage.sync.get({ diff_granularity: prefs_default.diff_granularity });
-        // Anything unrecognised falls back to 'words' rather than reaching
-        // buildHunks, where an unknown key would silently pick the default fn.
         return (prefs.diff_granularity === 'sentences') ? 'sentences' : 'words';
     }
 
@@ -1415,7 +1408,7 @@ class MessagesArea extends HTMLElement {
             // picker's plain text.
             originalText = String(originalText).replace(/<br\s*\/?>/gi, '\n');
 
-            const granularity = await this._resolveDiffGranularity(promptData);
+            const granularity = await this._resolveDiffGranularity();
 
             this.appendDiffPicker(originalText, newText, ownerTurn, granularity, () =>
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));

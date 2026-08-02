@@ -135,18 +135,6 @@
     "message": "Enabled",
     "description": ""
   },
-  "customPrompts_form_label_diff_granularity": {
-    "message": "Compare by:",
-    "description": "Label of the per-prompt comparison unit selector in the custom prompts page"
-  },
-  "customPrompts_form_label_diff_granularity_title": {
-    "message": "How the change picker compares the original text with the answer for this prompt. Leave it on the default to follow the general setting.",
-    "description": "Tooltip of the per-prompt comparison unit selector"
-  },
-  "customPrompts_form_label_diff_granularity_inherit": {
-    "message": "Use the general setting",
-    "description": "Option of the per-prompt comparison unit selector: inherit the global preference"
-  },
   "customPrompts_form_label_use_diff_viewer": {
     "message": "Enable the text comparison viewer",
     "description": ""
@@ -746,7 +734,7 @@
     "description": "Options page: default comparison unit of the proofreading change picker"
   },
   "prefs_OptionText_diff_granularity_info": {
-    "message": "How the change picker compares the original text with the answer. \"Words\" suits fixing spelling and grammar; \"Sentences\" is easier to read when the answer rewrites whole sentences. Note that on a text made of a single sentence, \"Sentences\" shows the whole text as one change. Each prompt can override this setting.",
+    "message": "How the change picker compares the original text with the answer. \"Words\" suits fixing spelling and grammar; \"Sentences\" is easier to read when the answer rewrites whole sentences. Note that on a text made of a single sentence, \"Sentences\" shows the whole text as one change. You can also switch between the two while reviewing the changes.",
     "description": ""
   },
   "prefs_OptionText_diff_granularity_words": {
