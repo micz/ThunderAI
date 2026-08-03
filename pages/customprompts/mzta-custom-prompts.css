@@ -926,28 +926,7 @@ table.prompts_list .action_output {
 }
 
 /* ============================ Autocomplete ============================ */
-.autocomplete-container { position: relative; }
 
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--panel);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    font-size: small;
-}
-
-.autocomplete-list li { padding: 8px; cursor: pointer; }
-.autocomplete-list li:hover { background: var(--rowhover); }
-.autocomplete-list li.active { background: var(--panel2); }
 
 /* ============================ ChatGPT Web / API panels ============================ */
 .chatgpt_web_additional_info,

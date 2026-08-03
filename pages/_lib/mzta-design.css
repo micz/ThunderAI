@@ -37,6 +37,13 @@
     --success: #1f8a5b;
     --warning: #c9760a;
 
+    /* Monospace stack for placeholder tokens and other code-like text. Same
+       name and value as the local token on the two Custom Prompts / Data
+       Placeholders pages, so pages/_lib/autocomplete.css can rely on one name
+       across both design-token systems. Theme-independent, hence not repeated
+       in the dark block below. */
+    --font-mono: ui-monospace, 'Cascadia Code', monospace;
+
     /* ThunderStats (green) tint */
     --statsAccent: #1f8a464f;
     --statsBg: rgba(31, 138, 70, .04);

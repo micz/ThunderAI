@@ -29,7 +29,8 @@ import {
     getCustomPlaceholders,
     prepareCustomDataPHsForExport,
     prepareCustomDataPHsForImport,
-    placeholdersUtils
+    placeholdersUtils,
+    mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
 
@@ -91,17 +92,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
+    // Built-in placeholders only: a custom data placeholder cannot reference
+    // another one. Mapped through the shared mapper rather than built inline, so
+    // the dropdown gets the same descriptions as on the other pages.
     autocompleteSuggestions = (await getPlaceholders())
         .filter(p => p.is_default == "1")
-        .map(p => ({ command: '{%' + p.id + '%}', type: p.type }));
+        .map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> suggestions: ' + JSON.stringify(suggestions));
-    
+
+    // One registration per textarea. This used to be a nested pair of loops,
+    // which attached every handler N+1 times for N textareas.
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
-        textareas.forEach(textarea => {
-            textareaAutocomplete(textarea, autocompleteSuggestions);
-        });
     });
 
     i18n.updateDocument();

@@ -387,12 +387,28 @@ export async function prepareCustomDataPHsForImport(placeholders){
     return output;
 }
 
+// Resolves a placeholder `name` for display. Built-in placeholders store a raw
+// "__MSG_key__" token (they are localized at render time by mzta-i18n.js, which
+// only walks the DOM); custom ones store a plain string. Falls back to the raw
+// value if the key is missing, so an unlocalized name is still readable.
+function resolvePlaceholderName(name) {
+    if (!name) return '';
+    const msg = String(name).match(/^__MSG_(.+)__$/);
+    if (!msg) return name;
+    return browser.i18n.getMessage(msg[1]) || name;
+}
+
 export function mapPlaceholderToSuggestion(p) {
     // console.log(">>>>>>>>>> mapPlaceholderToSuggestion p" + JSON.stringify(p));
+    // `id` and `label` are additive: existing consumers read only command/type/
+    // is_dynamic, and the autocomplete falls back to the command when there is
+    // no label (customdataplaceholders builds its suggestions inline).
     return {
         command: '{%' + p.id + (p.is_dynamic == 1 ? ':' : '') + '%}',
         type: p.type,
         is_dynamic: p.is_dynamic,
+        id: p.id,
+        label: resolvePlaceholderName(p.name),
     };
 }
 

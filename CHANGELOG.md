@@ -23,6 +23,8 @@
         <li>Fix: Selecting a placeholder from the autocomplete list now keeps the inserted text visible, and can be undone with a single Ctrl+Z.</li>
         <li>Fix: Saving an edited prompt no longer loses the placeholder highlighting in the prompt list.</li>
         <li>Fix: In the Custom Prompts page the line breaks of a prompt are no longer lost from the list after saving or cancelling an edit.</li>
+        <li>The placeholder autocomplete list now opens at the text cursor instead of below the whole text box, is no longer cut off inside the prompts table, and shows a description of what each placeholder does. It can be accepted with Tab as well as Enter, closed with Escape, and is keyboard accessible [<a href="https://github.com/micz/ThunderAI/issues/833">#833</a>].</li>
+        <li>Fix: In the Translate, Summarize, Add Tags, Spam Filter, Get Task and Get Calendar Event settings pages, clicking inside the prompt text box no longer closes the placeholder autocomplete list.</li>
         <li>...</li>
       </ul>
 <h2>Version 4.1.1 - 19/07/2026</h2>

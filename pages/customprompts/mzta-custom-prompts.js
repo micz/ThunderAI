@@ -693,6 +693,9 @@ function hideItemRowEditor(tr) {
     const text_output_hide = tr.querySelector('.text_output');
     const highlight = getEditorHighlight(text_output_hide);
     if (highlight) highlight.destroy();
+    // The autocomplete must go down with the mirror it reads the caret from,
+    // and its close() drops the row from the shared open-instances set.
+    if (text_output_hide._mztaAutocomplete) text_output_hide._mztaAutocomplete.destroy();
     text_output_hide.style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';

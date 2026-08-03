@@ -93,7 +93,47 @@ to `setRangeText()` plus a synthetic `input` event. A direct `textarea.value = �
 used: it discards the native undo stack and fires no `input` event, which leaves the edit-mode highlight
 mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
 reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
-textarea lose focus and collapse its selection before the insertion runs.
+textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
+placeholder leaves the caret before the trailing `:%}` so the value can be typed immediately.
+
+**Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
+on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
+rect comes from the Phase 1 highlight mirror (`getCaretRect()` on the handle returned by
+`attachEditorHighlight()`), which plants a zero-width anchor at `selectionStart` and measures it — no
+caret-position library. Pages with no mirror (the six single-textarea settings pages) fall back to the
+bottom-left of the textarea, which is where the list used to open unconditionally. The list flips above
+the caret when there is not enough room below and clamps horizontally into the viewport. It **closes**
+on `scroll`/`resize` rather than repositioning, since a fixed element's coordinates go stale as soon as
+any ancestor scrolls.
+
+**Lifecycle.** `textareaAutocomplete()` is idempotent, guarded by `textarea._mztaAutocomplete`, and
+returns a handle with `close()` and `destroy()`. There is **one** module-level outside-click controller
+for the whole page, tracking open instances in a `Set`; the previous version registered a `document`
+click listener *inside* the per-textarea function, so a page with N rows accumulated N listeners each
+closing over a possibly-removed textarea. Dismissal tests the event against the instance's own textarea
+and list — the old check was `e.target.closest('.editor')`, a class only the two table pages use, so on
+the other six clicking inside the textarea dismissed the list.
+
+**Item presentation.** Each `<li>` shows the token in monospace with the already-typed prefix in `<b>`,
+plus a muted second line with the placeholder description. `mapPlaceholderToSuggestion()` was extended
+**additively** with `id` and `label`; `label` resolves `__MSG_key__` names via `browser.i18n.getMessage()`
+(built-in placeholders store raw tokens, and `mzta-i18n.js` only localizes the DOM). An item with no
+`label` renders the command alone, so any consumer building suggestion objects by hand still works.
+
+**Accessibility.** `role="listbox"` on the `<ul>`, `role="option"` + `aria-selected` on items,
+`aria-autocomplete`/`aria-expanded`/`aria-controls`/`aria-activedescendant` on the textarea. `Tab`
+accepts the active item like `Enter` (rather than moving focus away mid-token), `Escape` closes, and
+arrow keys wrap around with `scrollIntoView({ block: 'nearest' })`.
+
+**Shared CSS.** All 8 pages link `pages/_lib/autocomplete.css`, which replaced 8 near-duplicate blocks.
+Because the pages use two disjoint token systems, every token there uses a fallback chain
+(`var(--field, var(--panel))`, `var(--fieldLine, var(--border2))`, `var(--muted, var(--dim))`,
+`var(--accentLight, var(--rowhover))`); `--text` and `--accent` exist in both and need none.
+`--font-mono` was added to `pages/_lib/mzta-design.css` so one name works everywhere. Do **not** link
+`mzta-design.css` from the two table pages — its `:root` would fight their local one. The shared file
+must be linked **after** the page's own stylesheet.
+
+Known quirks (documented, not currently fixed):
 
 Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders,
 hiding type-1 and type-2 ones; `getPlaceholders(true)` returns the list unsorted, so the dropdown is
