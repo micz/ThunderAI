@@ -21,7 +21,8 @@ import {
     setDefaultPromptsProperties,
     setCustomPrompts,
     setSpecialPrompts,
-    getHiddenSpecialPromptIds
+    getHiddenSpecialPromptIds,
+    getFactoryShowIn
 } from '../../js/mzta-prompts.js';
 import {
     i18nConditionalGet,
@@ -47,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSubTabs();
 
     document.getElementById('btnSaveAll').addEventListener('click', saveAll);
+    document.getElementById('btnResetAll').addEventListener('click', resetAll);
 
     // If prompts are modified elsewhere (e.g. custom prompts page saving), reload this page's data.
     // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
@@ -641,6 +643,41 @@ function updatePositionsFromDOM(listEl, positionKey) {
             prompt[positionKey] = index + 1;
         }
     });
+}
+
+// ==================== Reset ====================
+
+// Restore the factory state of everything this page can customize: positions,
+// visibility (show_in) and icons, for default, special and custom prompts alike.
+// The factory order is the same one a fresh install gets — special prompts first
+// in alphabetical order, then all the others alphabetically — as computed by
+// migrateMenuOrderAlphabetic() in mzta-prompts.js.
+// This only touches the in-memory state and marks the page unsaved, exactly like
+// a drag or an icon pick: nothing is written until Save All, so reloading the
+// page discards the reset and no confirmation prompt is needed.
+function resetAll() {
+    const specials = allPrompts.filter(p => String(p.is_special) === '1')
+        .sort((a, b) => a._displayName.localeCompare(b._displayName));
+    const others = allPrompts.filter(p => String(p.is_special) !== '1')
+        .sort((a, b) => a._displayName.localeCompare(b._displayName));
+
+    specials.concat(others).forEach((prompt, idx) => {
+        const pos = idx + 1;
+        prompt.position_display = pos;
+        prompt.position_compose = pos;
+        prompt.position_context = pos;
+        prompt.show_in = getFactoryShowIn(prompt.id);
+        prompt.custom_icon = '';    // empty means "use the built-in icon", see getBuiltInPromptIcon()
+    });
+
+    // allExcludedSpecialPrompts is intentionally left alone: those rows are not
+    // shown here and saveAll() re-appends them verbatim.
+
+    closeIconPopover();     // a picker may be open on a row about to be re-rendered
+    clearHighlight();
+    renderPopupList();
+    renderContextList();
+    markUnsaved();
 }
 
 // ==================== Save ====================

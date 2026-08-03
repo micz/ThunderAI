@@ -136,6 +136,13 @@ Both sections are draggable and act as drop targets; the section the row lands i
 
 **Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work.
 
+**Reset all** — a `#btnResetAll` button in the command palette (next to Save All, always enabled) restores the factory state of everything this page customizes, via `resetAll()`:
+- **Order**: prompts are re-sorted with special prompts first (alphabetically by resolved display name), then all the others alphabetically, and get sequential positions assigned to `position_display` = `position_compose` = `position_context`. This is the same factory ordering `migrateMenuOrderAlphabetic()` produces for a fresh install.
+- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So context-only special prompts (`prompt_spamfilter`, `prompt_summarize`, `prompt_translate_this`) land back in the popup panel's Hidden section, not the Visible one.
+- **Icons**: `custom_icon` is cleared to `""` on every prompt, which is all that is needed — the resolution chain falls back to `getBuiltInPromptIcon()` (see Icon Resolution), so shipped icons return and prompts with no built-in icon go back to no icon.
+
+The reset is **in-memory only**: it closes any open icon popover, clears the deep-link highlight, re-renders both panels and calls `markUnsaved()` — exactly like a drag or an icon pick. Nothing is persisted until Save All, so reloading the page discards it; that is why there is no confirmation dialog. `allExcludedSpecialPrompts` is deliberately untouched, since those rows are not shown and are re-appended verbatim by the save flow.
+
 **Save flow**:
 1. Re-concat preserved prompts (hidden-specials + inactive-feature specials) with the UI-visible prompts
 2. Split by `is_default` / `is_special` and call `setDefaultPromptsProperties()`, `setCustomPrompts()`, `setSpecialPrompts()`

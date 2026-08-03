@@ -679,6 +679,16 @@ export function getHiddenSpecialPromptIds() {
     return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
 }
 
+// Factory show_in for a prompt id: the value declared in the built-in
+// defaultPrompts/specialPrompts arrays. Custom prompts have no declaration,
+// so they fall back to the same default used by getCustomPrompts() ("popup").
+// Used by the menu order page to reset visibility to its out-of-the-box state.
+export function getFactoryShowIn(promptId) {
+    const prompt = specialPrompts.find(sp => sp.id === promptId)
+                || defaultPrompts.find(dp => dp.id === promptId);
+    return prompt?.show_in || "popup";
+}
+
 // Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions
 // so that prompts appear alphabetically with special prompts first, then disable the flag
 // to switch to position-based ordering permanently.

@@ -25,8 +25,10 @@
     background-color: #ffffff;
 }
 
-/* Save All — quiet until there are changes. */
-#btnSaveAll {
+/* Save All — quiet until there are changes. Reset All shares the same shape,
+   but is always enabled so it keeps the enabled text color at all times. */
+#btnSaveAll,
+#btnResetAll {
     transition: var(--btn-tr);
     cursor: pointer;
     font-family: var(--font-ui);
@@ -39,17 +41,27 @@
     border: 1px solid var(--border2);
 }
 
-#btnSaveAll:not(:disabled) {
+#btnSaveAll:not(:disabled),
+#btnResetAll {
     color: var(--text);
 }
 
-#btnSaveAll:hover:not(:disabled) {
+#btnSaveAll:hover:not(:disabled),
+#btnResetAll:hover {
     border-color: var(--accent);
 }
 
 #btnSaveAll:disabled {
     opacity: .5;
     cursor: default;
+}
+
+/* Reset All sits on the far right of the palette, away from Save All so it is not
+   hit by accident. `order` moves it past #msgDisplay without changing the DOM (and
+   so the tab) order, and the auto margin absorbs the leftover space. */
+#btnResetAll {
+    order: 1;
+    margin-left: auto;
 }
 
 #msgDisplay {
