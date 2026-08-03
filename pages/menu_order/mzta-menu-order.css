@@ -276,15 +276,6 @@
     border-color: #b0c4de;
 }
 
-.item_icon_preview_special {
-    cursor: default;
-}
-
-.item_icon_preview_special:hover {
-    border-color: transparent;
-    background: transparent;
-}
-
 .icon_picker_popover {
     position: absolute;
     z-index: 1000;

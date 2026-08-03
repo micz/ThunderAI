@@ -25,23 +25,12 @@ import {
 } from '../../js/mzta-prompts.js';
 import {
     i18nConditionalGet,
-    specialPromptToContextMenuID,
-    contextMenuIconsPath,
-    defaultPromptIconsPath
+    getBuiltInPromptIcon
 } from '../../js/mzta-utils.js';
 import {
     customMenuIcons,
     customMenuIconsPath
 } from './mzta-custom-menu-icons.js';
-
-// Convert "moz-extension:images/foo.png" to a relative path usable from this page
-function resolveSpecialIconPath(promptId) {
-    const ctxId = specialPromptToContextMenuID[promptId];
-    if (!ctxId) return '';
-    const raw = contextMenuIconsPath[ctxId];
-    if (!raw) return '';
-    return '../../' + raw.replace(/^moz-extension:/, '');
-}
 
 let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
@@ -316,13 +305,9 @@ function renderListItems(listEl, items, menuType, isActive) {
 
         // Icon slot - between handle and name, to keep rows aligned.
         // Present in every list of both panels: this page is the only place icons are
-        // chosen (the popup menu itself only displays them). Special prompts show a
-        // read-only icon, since theirs is hard-coded.
-        if (String(prompt.is_special) === '1') {
-            li.appendChild(buildSpecialIconDisplay(prompt));
-        } else {
-            li.appendChild(buildIconPicker(prompt));
-        }
+        // chosen (the popup menu itself only displays them). Every prompt gets a picker,
+        // special ones included: their hard-coded icon is just the default to restore.
+        li.appendChild(buildIconPicker(prompt));
 
         // Name
         const nameSpan = document.createElement('span');
@@ -385,9 +370,9 @@ function onDocKeyDownForPopover(e) {
 }
 
 // filename is the user-chosen custom icon ('' when none). promptId is optional and
-// only used to fall back to a built-in default-prompt icon when nothing is chosen.
+// only used to fall back to the prompt's built-in icon when nothing is chosen.
 function applyIconToPreview(preview, filename, promptId) {
-    const builtIn = promptId ? defaultPromptIconsPath[promptId] : '';
+    const builtIn = promptId ? getBuiltInPromptIcon(promptId) : '';
     if (filename) {
         preview.src = '../../' + customMenuIconsPath + filename;
         preview.classList.remove('item_icon_preview_empty');
@@ -400,28 +385,13 @@ function applyIconToPreview(preview, filename, promptId) {
     }
 }
 
-function buildSpecialIconDisplay(prompt) {
-    const img = document.createElement('img');
-    img.classList.add('item_icon_preview', 'item_icon_preview_special');
-    img.alt = '';
-    // Images are natively draggable: without this, starting a drag on the icon drags
-    // the image instead of the row it belongs to.
-    img.draggable = false;
-    const path = resolveSpecialIconPath(prompt.id);
-    if (path) {
-        img.src = path;
-    } else {
-        img.src = '../../' + customMenuIconsPath + 'empty_icon.png';
-        img.classList.add('item_icon_preview_empty');
-    }
-    return img;
-}
-
 function buildIconPicker(prompt) {
     const preview = document.createElement('img');
     preview.classList.add('item_icon_preview', 'item_icon_preview_editable');
     preview.alt = '';
-    preview.draggable = false;   // see buildSpecialIconDisplay()
+    // Images are natively draggable: without this, starting a drag on the icon drags
+    // the image instead of the row it belongs to.
+    preview.draggable = false;
     preview.title = browser.i18n.getMessage('menu_order_icon_label');
     applyIconToPreview(preview, prompt.custom_icon || '', prompt.id);
 
@@ -445,7 +415,7 @@ function openIconPopover(anchorEl, prompt) {
 
     // "None" option: for a prompt that ships a built-in icon, clearing the custom icon
     // reverts to that icon rather than to nothing, so the cell previews the built-in one.
-    const builtInIcon = defaultPromptIconsPath[prompt.id];
+    const builtInIcon = getBuiltInPromptIcon(prompt.id);
     const noneBtn = document.createElement('button');
     noneBtn.type = 'button';
     noneBtn.classList.add('icon_picker_cell', 'icon_picker_cell_none');

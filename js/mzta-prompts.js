@@ -634,6 +634,9 @@ export async function getSpecialPrompts(){
         def_specPrompts.forEach((prompt) => {
             // console.log(">>>>>>>>>>>>> getSpecialPrompts prompt: " + JSON.stringify(prompt));
             prompt.text = browser.i18n.getMessage(prompt.text);
+            // Icons are selectable for special prompts too; empty means "use the
+            // hard-coded built-in icon" (see getBuiltInPromptIcon()).
+            prompt.custom_icon = "";
         })
         return def_specPrompts;
     } else {
@@ -650,6 +653,11 @@ export async function getSpecialPrompts(){
         updatedPrompts.forEach((prompt) => {
             if (prompt.show_in === undefined) {
                 prompt.show_in = "both";
+            }
+            // Migrate: special prompts saved before icons were selectable have no
+            // custom_icon; empty means "use the hard-coded built-in icon".
+            if (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") {
+                prompt.custom_icon = "";
             }
         });
 
