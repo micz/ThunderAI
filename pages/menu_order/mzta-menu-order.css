@@ -501,7 +501,9 @@
         filter: invert(1);
     }
 
-    .icon_picker_cell_none img {
+    /* Only the greyscale empty placeholder needs inverting; when the cell previews a
+       prompt's built-in default icon it is a real color image and must be left alone. */
+    .icon_picker_cell_none img.icon_picker_none_empty {
         filter: invert(1);
     }
 }

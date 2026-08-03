@@ -57,6 +57,20 @@ export const specialPromptToContextMenuID = {
   'prompt_translate_this': contextMenuID_Translate,
 };
 
+// Built-in icons for default prompts that are not special prompts.
+// These are shipped with the add-on (not in the user-selectable custom icons folder),
+// and act as a fallback: an icon explicitly chosen on the Menu Order page wins.
+export const defaultPromptIconsPath = {
+  'prompt_proofread_this': 'moz-extension:images/context_menu/proofread.png',
+  'prompt_classify': 'moz-extension:images/context_menu/classify.png',
+  'prompt_this': 'moz-extension:images/context_menu/prompt_this.png',
+  'prompt_rewrite_formal': 'moz-extension:images/context_menu/rewrite_formal.png',
+  'prompt_rewrite_polite': 'moz-extension:images/context_menu/rewrite_polite.png',
+  'prompt_reply_advanced': 'moz-extension:images/context_menu/prompt_reply_advanced.png',
+  'prompt_reply': 'moz-extension:images/context_menu/prompt_reply.png',
+  'prompt_reply_custom_command': 'moz-extension:images/context_menu/prompt_reply_custom_command.png',
+};
+
 // const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
 const defaultContextMenuIcon = '';
 
@@ -74,6 +88,10 @@ export function getContextMenuIcon(prompt) {
 
   if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
     return 'moz-extension:' + customMenuIconsPath + prompt.custom_icon;
+  }
+
+  if (defaultPromptIconsPath[promptId]) {
+    return defaultPromptIconsPath[promptId];
   }
 
   return defaultContextMenuIcon;

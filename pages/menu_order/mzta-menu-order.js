@@ -26,7 +26,8 @@ import {
 import {
     i18nConditionalGet,
     specialPromptToContextMenuID,
-    contextMenuIconsPath
+    contextMenuIconsPath,
+    defaultPromptIconsPath
 } from '../../js/mzta-utils.js';
 import {
     customMenuIcons,
@@ -383,9 +384,15 @@ function onDocKeyDownForPopover(e) {
     if (e.key === 'Escape') closeIconPopover();
 }
 
-function applyIconToPreview(preview, filename) {
+// filename is the user-chosen custom icon ('' when none). promptId is optional and
+// only used to fall back to a built-in default-prompt icon when nothing is chosen.
+function applyIconToPreview(preview, filename, promptId) {
+    const builtIn = promptId ? defaultPromptIconsPath[promptId] : '';
     if (filename) {
         preview.src = '../../' + customMenuIconsPath + filename;
+        preview.classList.remove('item_icon_preview_empty');
+    } else if (builtIn) {
+        preview.src = '../../' + builtIn.replace(/^moz-extension:/, '');
         preview.classList.remove('item_icon_preview_empty');
     } else {
         preview.src = '../../' + customMenuIconsPath + 'empty_icon.png';
@@ -416,7 +423,7 @@ function buildIconPicker(prompt) {
     preview.alt = '';
     preview.draggable = false;   // see buildSpecialIconDisplay()
     preview.title = browser.i18n.getMessage('menu_order_icon_label');
-    applyIconToPreview(preview, prompt.custom_icon || '');
+    applyIconToPreview(preview, prompt.custom_icon || '', prompt.id);
 
     preview.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -436,19 +443,26 @@ function openIconPopover(anchorEl, prompt) {
     popover.classList.add('icon_picker_popover');
     popover.dataset.forId = prompt.id;
 
-    // "None" option
+    // "None" option: for a prompt that ships a built-in icon, clearing the custom icon
+    // reverts to that icon rather than to nothing, so the cell previews the built-in one.
+    const builtInIcon = defaultPromptIconsPath[prompt.id];
     const noneBtn = document.createElement('button');
     noneBtn.type = 'button';
     noneBtn.classList.add('icon_picker_cell', 'icon_picker_cell_none');
-    noneBtn.title = browser.i18n.getMessage('menu_order_icon_none');
+    noneBtn.title = browser.i18n.getMessage(builtInIcon ? 'menu_order_icon_default' : 'menu_order_icon_none');
     const noneImg = document.createElement('img');
-    noneImg.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+    if (builtInIcon) {
+        noneImg.src = '../../' + builtInIcon.replace(/^moz-extension:/, '');
+    } else {
+        noneImg.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+        noneImg.classList.add('icon_picker_none_empty');   // dark-mode inversion target
+    }
     noneImg.alt = '';
     noneBtn.appendChild(noneImg);
     if (!prompt.custom_icon) noneBtn.classList.add('selected');
     noneBtn.addEventListener('click', () => {
         prompt.custom_icon = '';
-        applyIconToPreview(anchorEl, '');
+        applyIconToPreview(anchorEl, '', prompt.id);
         markUnsaved();
         closeIconPopover();
     });

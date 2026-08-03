@@ -2523,6 +2523,10 @@
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
   },
+  "menu_order_icon_default": {
+    "message": "Default icon",
+    "description": "Icon picker option that clears the custom icon and restores the prompt's built-in default icon"
+  },
   "menu_order_legend_type": {
     "message": "When shown:",
     "description": "Heading for the type badge group in the menu order page legend"
