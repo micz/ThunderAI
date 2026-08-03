@@ -42,6 +42,9 @@ let highlightTargetId = null; // id of a prompt to visually highlight, null when
 // Debounce shared between the storage.onChanged reloader and the highlight message
 // handler, so the latter can cancel a pending reload before doing its own.
 let reloadDebounce = null;
+// True when the in-memory state differs from what is stored, i.e. Save All is
+// pending. Guards the beforeunload warning, like on the custom prompts page.
+let somethingChanged = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
@@ -57,12 +60,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
         clearTimeout(reloadDebounce);
         reloadDebounce = setTimeout(() => {
-            document.getElementById('btnSaveAll').disabled = true;
-            const msgDisplay = document.getElementById('msgDisplay');
-            msgDisplay.textContent = '';
-            msgDisplay.style.display = 'none';
+            markSaved();
             loadAndRender();
         }, 200);
+    });
+
+    // Warn before leaving the page with a pending Save All. [Thunderbird 128+ only]
+    window.addEventListener('beforeunload', function (event) {
+        if (somethingChanged) {
+            event.preventDefault();
+        }
     });
 
     // A "Menu position" deep-link (from the Custom Prompts editor) can ask this
@@ -697,6 +704,10 @@ async function saveAll() {
 
     await browser.runtime.sendMessage({ command: "reload_menus" });
 
+    // Only now the stored state matches the in-memory one: disarm the
+    // beforeunload warning after the writes, not before.
+    somethingChanged = false;
+
     msgDisplay.textContent = browser.i18n.getMessage('menu_order_saved');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'green';
@@ -707,9 +718,21 @@ async function saveAll() {
 }
 
 function markUnsaved() {
+    somethingChanged = true;
     document.getElementById('btnSaveAll').disabled = false;
     const msgDisplay = document.getElementById('msgDisplay');
     msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'red';
+}
+
+// Back to a clean state: nothing pending, no warning on close.
+// Used when a change made elsewhere forces this page to reload its data.
+function markSaved() {
+    somethingChanged = false;
+    document.getElementById('btnSaveAll').disabled = true;
+    const msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.textContent = '';
+    msgDisplay.style.display = 'none';
+    msgDisplay.style.color = '';
 }
