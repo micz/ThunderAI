@@ -313,13 +313,14 @@ function renderListItems(listEl, items, menuType, isActive) {
         handle.textContent = '\u2630';
         li.appendChild(handle);
 
-        // Icon slot (context menu only) - between handle and name, to keep rows aligned
-        if (menuType === 'context') {
-            if (String(prompt.is_special) === '1') {
-                li.appendChild(buildSpecialIconDisplay(prompt));
-            } else {
-                li.appendChild(buildIconPicker(prompt));
-            }
+        // Icon slot - between handle and name, to keep rows aligned.
+        // Present in every list of both panels: this page is the only place icons are
+        // chosen (the popup menu itself only displays them). Special prompts show a
+        // read-only icon, since theirs is hard-coded.
+        if (String(prompt.is_special) === '1') {
+            li.appendChild(buildSpecialIconDisplay(prompt));
+        } else {
+            li.appendChild(buildIconPicker(prompt));
         }
 
         // Name
@@ -396,6 +397,9 @@ function buildSpecialIconDisplay(prompt) {
     const img = document.createElement('img');
     img.classList.add('item_icon_preview', 'item_icon_preview_special');
     img.alt = '';
+    // Images are natively draggable: without this, starting a drag on the icon drags
+    // the image instead of the row it belongs to.
+    img.draggable = false;
     const path = resolveSpecialIconPath(prompt.id);
     if (path) {
         img.src = path;
@@ -410,6 +414,7 @@ function buildIconPicker(prompt) {
     const preview = document.createElement('img');
     preview.classList.add('item_icon_preview', 'item_icon_preview_editable');
     preview.alt = '';
+    preview.draggable = false;   // see buildSpecialIconDisplay()
     preview.title = browser.i18n.getMessage('menu_order_icon_label');
     applyIconToPreview(preview, prompt.custom_icon || '');
 

@@ -36,7 +36,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
 | `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
-| `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
+| `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/`. A single shared value: the same icon is used in **both** the context menu and the popup menu. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from the icon picker on the Menu Order page — in every list of both panels; that page is the only place icons are chosen. |
 
 ### Per-Prompt API Override Properties
 
@@ -71,13 +71,14 @@ These special prompts can have their own dedicated API integration settings (con
 - Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`)
 - Ordering: always position-based using `position_display` (reading view) or `position_compose` (compose view). Alphabetical ordering has been removed
 - Special prompts retain their colored background (CSS class `special_prompt`) in the popup based on `is_special == "1"`
+- Icons: each row shows the prompt's icon, resolved by `getContextMenuIcon()` and passed through in `addShortcutMenu()` as `custom_icon`. Special prompts show their dedicated icon, others their `custom_icon`. Icons here are **display-only** — they are chosen on the Menu Order page. The 16px slot is always rendered (blank via `.mzta_item_icon_empty` when there is no icon) so labels stay aligned
 
 ### Context Menu
 - Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)
 - Appears as a "ThunderAI" submenu in the `message_list` context
 - Ordering: position-based using `position_context` (fallback to alphabetical only when positions are equal)
 - Special prompts (add_tags, spamfilter, summarize, translate) route through `processEmails()` for batch processing; regular prompts execute via `menus.executeMenuAction()`
-- Icons: special prompts use dedicated icons (defined in `contextMenuIconsPath`); all other prompts use the addon icon (`images/icon-32.png`)
+- Icons: resolved by `getContextMenuIcon()` — special prompts use dedicated icons (defined in `contextMenuIconsPath`), other prompts use their `custom_icon`. Prompts with no icon get none: `defaultContextMenuIcon` is `''`, so `menuOpts.icons` is left unset
 - Add Tags in context menu assigns tags automatically (`addTagsAuto: true`), while in the popup it shows the interactive tag selection form
 
 ### Menu Order Page (`pages/menu_order/`)
@@ -91,6 +92,8 @@ Dedicated page for reordering, enabling, and disabling menu items across both th
 Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
 - **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
+
+**Row icons** — every row in every list of both panels shows an icon slot (rendered in `renderListItems()`, between the drag handle and the name). Non-special prompts get a clickable picker (`buildIconPicker()` → `openIconPopover()`, a grid of `customMenuIcons` plus a "none" cell); special prompts get a read-only display (`buildSpecialIconDisplay()`), since their icons are hard-coded. Selecting writes `custom_icon` on the in-memory prompt and calls `markUnsaved()`; it is persisted by the normal save flow. Because `custom_icon` is a single shared value and the panels render the same prompt objects, an icon chosen in one panel shows in the other. Rendering the slot in all lists is what makes composing-only (`type: "2"`) prompts reachable, since they never appear in the context panel.
 
 **Row badges** — each row shows two colored badges (rendered in `renderListItems()`): a **type** badge (`.badge_type`) with the value Always / Reading / Composing (from `type` `0`/`1`/`2`), and a **source** badge with the value Default / Special / Custom (`.badge_default` / `.badge_special` / `.badge_custom`, from `is_default` / `is_special`). A static **legend** near the top of the page (`#badge_legend` in the HTML) explains both badge groups; it reuses the same badge CSS classes and i18n labels so its swatches match the rows automatically.
 

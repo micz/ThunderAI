@@ -50,8 +50,30 @@ body {
   .mzta_autocomplete-item {
       padding: 4px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
   }
-  
+
+  /* Icon slot: kept in the layout even when empty, so labels stay aligned. */
+  .mzta_item_icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+      object-fit: contain;
+  }
+
+  .mzta_item_icon_empty {
+      visibility: hidden;
+  }
+
+  .mzta_item_label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+  }
+
   .mzta_autocomplete-item:hover {
       background-color: #e9e9e9;
   }
