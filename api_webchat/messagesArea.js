@@ -1428,6 +1428,7 @@ class MessagesArea extends HTMLElement {
         const previousTurnEl = this._currentTurnEl;
 
         const body = this._beginBotTurn(browser.i18n.getMessage("apiwebchat_picker_title"));
+        const pickerTurnEl = this._currentTurnEl;
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', 'bot');
 
@@ -1459,7 +1460,20 @@ class MessagesArea extends HTMLElement {
             if(hint) { hint.style.display = "none"; }
         }
 
-        this.scrollToBottom();
+        // Open with the picker's TOP in view, not its bottom. A long answer makes
+        // a tall picker, and scrolling to the bottom of it lands the user in the
+        // middle of the text with the sticky toolbar off-screen above - the
+        // opposite of what "show differences" was clicked for. Anchoring the
+        // picker turn puts its head and toolbar at the top of the viewport and
+        // lets the text run below the fold, for the user to scroll through.
+        //
+        // Reusing the anchor rather than a one-shot scroll write is what makes it
+        // hold: the picker is the last turn, so without the spacer _updateAnchorSpacer
+        // reserves there is simply not enough content below it for scrollTop to
+        // reach the position at all (a short picker is then clamped to the bottom
+        // by _followTarget, which is correct - it already fits).
+        this._setAnchor(pickerTurnEl);
+        this._resumeFollowing();
     }
 
     flushAccumulatingMessage() {

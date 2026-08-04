@@ -292,6 +292,26 @@ typed. "Use this answer" stays. `_onKeydown` returns early on `_mode === 'edit'`
 already covers keys typed in the box, but focus can sit on a toolbar button while editing, and `j`/`k`
 must not act there either.
 
+### Opening scroll position
+
+`appendDiffPicker` **anchors the picker's own turn** (`_setAnchor(pickerTurnEl)` +
+`_resumeFollowing()`), it does **not** `scrollToBottom()`. A long answer makes a tall picker, and
+scrolling to its bottom dropped the user into the middle of the text with the sticky toolbar
+off-screen above — the opposite of what "Show differences" was clicked for. Anchored, the picker's
+head and toolbar land at the top of the viewport and the text runs below the fold for the user to
+scroll through.
+
+This reuses the same anchor machinery that pins a prompt turn while its answer streams, and reusing
+it (rather than writing `scrollTop` once) is what makes the position *hold*: the picker is the last
+turn, so without the shortfall `_updateAnchorSpacer()` reserves there is not enough content below it
+for `scrollTop` to reach the target at all. A **short** picker is then clamped to the bottom by
+`_followTarget()`, which is right — it already fits entirely.
+
+`_followTarget()`'s "prompt taller than a third of the viewport" branch keys off
+`nextElementSibling`, which for the picker is nothing (or the anchor spacer, explicitly excluded), so
+it never applies. The anchor cannot go stale either: the next user prompt re-anchors in
+`appendUserMessage`, and `appendBotMessage` clears it via `scrollToBottom()`.
+
 ### Height and scroll
 
 The textarea opens at the height the review view had. `offsetHeight` is measured **before** hiding it —
