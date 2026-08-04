@@ -185,7 +185,27 @@ async function searchPrompt(allPrompts, tabId, tabType, filtering){
    filteredData.forEach(item => {
        const itemDiv = document.createElement('div');
        itemDiv.classList.add('mzta_autocomplete-item');
-       itemDiv.textContent = item.label;
+
+       // Icon slot: always present so every row keeps the same left offset.
+       // Icons are display-only here; they are chosen in the Menu Order page.
+       const itemIcon = document.createElement('img');
+       itemIcon.classList.add('mzta_item_icon');
+       itemIcon.alt = '';
+       itemIcon.draggable = false;   // don't let a native image drag swallow the click
+       if (item.custom_icon) {
+           // getContextMenuIcon() returns a "moz-extension:"-prefixed path; the popup
+           // lives one level deep, so a single "../" makes it usable from here.
+           itemIcon.src = '../' + item.custom_icon.replace(/^moz-extension:/, '');
+       } else {
+           itemIcon.classList.add('mzta_item_icon_empty');
+       }
+       itemDiv.appendChild(itemIcon);
+
+       const itemLabel = document.createElement('span');
+       itemLabel.classList.add('mzta_item_label');
+       itemLabel.textContent = item.label;
+       itemDiv.appendChild(itemLabel);
+
        itemDiv.setAttribute('data-id', item.id);
        if(item.is_special == "1"){
          itemDiv.className += ' special_prompt';

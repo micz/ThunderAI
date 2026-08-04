@@ -21,26 +21,17 @@ import {
     setDefaultPromptsProperties,
     setCustomPrompts,
     setSpecialPrompts,
-    getHiddenSpecialPromptIds
+    getHiddenSpecialPromptIds,
+    getFactoryShowIn
 } from '../../js/mzta-prompts.js';
 import {
     i18nConditionalGet,
-    specialPromptToContextMenuID,
-    contextMenuIconsPath
+    getBuiltInPromptIcon
 } from '../../js/mzta-utils.js';
 import {
     customMenuIcons,
     customMenuIconsPath
 } from './mzta-custom-menu-icons.js';
-
-// Convert "moz-extension:images/foo.png" to a relative path usable from this page
-function resolveSpecialIconPath(promptId) {
-    const ctxId = specialPromptToContextMenuID[promptId];
-    if (!ctxId) return '';
-    const raw = contextMenuIconsPath[ctxId];
-    if (!raw) return '';
-    return '../../' + raw.replace(/^moz-extension:/, '');
-}
 
 let allPrompts = [];
 let allExcludedSpecialPrompts = []; // special prompts excluded from UI (hidden + inactive features), preserved on save
@@ -51,12 +42,16 @@ let highlightTargetId = null; // id of a prompt to visually highlight, null when
 // Debounce shared between the storage.onChanged reloader and the highlight message
 // handler, so the latter can cancel a pending reload before doing its own.
 let reloadDebounce = null;
+// True when the in-memory state differs from what is stored, i.e. Save All is
+// pending. Guards the beforeunload warning, like on the custom prompts page.
+let somethingChanged = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAndRender();
     initSubTabs();
 
     document.getElementById('btnSaveAll').addEventListener('click', saveAll);
+    document.getElementById('btnResetAll').addEventListener('click', resetAll);
 
     // If prompts are modified elsewhere (e.g. custom prompts page saving), reload this page's data.
     // Any unsaved changes on this page are discarded to avoid overwriting the other page's changes.
@@ -65,12 +60,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!(changes._default_prompts_properties || changes._custom_prompt || changes._special_prompts)) return;
         clearTimeout(reloadDebounce);
         reloadDebounce = setTimeout(() => {
-            document.getElementById('btnSaveAll').disabled = true;
-            const msgDisplay = document.getElementById('msgDisplay');
-            msgDisplay.textContent = '';
-            msgDisplay.style.display = 'none';
+            markSaved();
             loadAndRender();
         }, 200);
+    });
+
+    // Warn before leaving the page with a pending Save All. [Thunderbird 128+ only]
+    window.addEventListener('beforeunload', function (event) {
+        if (somethingChanged) {
+            event.preventDefault();
+        }
     });
 
     // A "Menu position" deep-link (from the Custom Prompts editor) can ask this
@@ -313,14 +312,11 @@ function renderListItems(listEl, items, menuType, isActive) {
         handle.textContent = '\u2630';
         li.appendChild(handle);
 
-        // Icon slot (context menu only) - between handle and name, to keep rows aligned
-        if (menuType === 'context') {
-            if (String(prompt.is_special) === '1') {
-                li.appendChild(buildSpecialIconDisplay(prompt));
-            } else {
-                li.appendChild(buildIconPicker(prompt));
-            }
-        }
+        // Icon slot - between handle and name, to keep rows aligned.
+        // Present in every list of both panels: this page is the only place icons are
+        // chosen (the popup menu itself only displays them). Every prompt gets a picker,
+        // special ones included: their hard-coded icon is just the default to restore.
+        li.appendChild(buildIconPicker(prompt));
 
         // Name
         const nameSpan = document.createElement('span');
@@ -382,9 +378,15 @@ function onDocKeyDownForPopover(e) {
     if (e.key === 'Escape') closeIconPopover();
 }
 
-function applyIconToPreview(preview, filename) {
+// filename is the user-chosen custom icon ('' when none). promptId is optional and
+// only used to fall back to the prompt's built-in icon when nothing is chosen.
+function applyIconToPreview(preview, filename, promptId) {
+    const builtIn = promptId ? getBuiltInPromptIcon(promptId) : '';
     if (filename) {
         preview.src = '../../' + customMenuIconsPath + filename;
+        preview.classList.remove('item_icon_preview_empty');
+    } else if (builtIn) {
+        preview.src = '../../' + builtIn.replace(/^moz-extension:/, '');
         preview.classList.remove('item_icon_preview_empty');
     } else {
         preview.src = '../../' + customMenuIconsPath + 'empty_icon.png';
@@ -392,26 +394,15 @@ function applyIconToPreview(preview, filename) {
     }
 }
 
-function buildSpecialIconDisplay(prompt) {
-    const img = document.createElement('img');
-    img.classList.add('item_icon_preview', 'item_icon_preview_special');
-    img.alt = '';
-    const path = resolveSpecialIconPath(prompt.id);
-    if (path) {
-        img.src = path;
-    } else {
-        img.src = '../../' + customMenuIconsPath + 'empty_icon.png';
-        img.classList.add('item_icon_preview_empty');
-    }
-    return img;
-}
-
 function buildIconPicker(prompt) {
     const preview = document.createElement('img');
     preview.classList.add('item_icon_preview', 'item_icon_preview_editable');
     preview.alt = '';
+    // Images are natively draggable: without this, starting a drag on the icon drags
+    // the image instead of the row it belongs to.
+    preview.draggable = false;
     preview.title = browser.i18n.getMessage('menu_order_icon_label');
-    applyIconToPreview(preview, prompt.custom_icon || '');
+    applyIconToPreview(preview, prompt.custom_icon || '', prompt.id);
 
     preview.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -431,19 +422,26 @@ function openIconPopover(anchorEl, prompt) {
     popover.classList.add('icon_picker_popover');
     popover.dataset.forId = prompt.id;
 
-    // "None" option
+    // "None" option: for a prompt that ships a built-in icon, clearing the custom icon
+    // reverts to that icon rather than to nothing, so the cell previews the built-in one.
+    const builtInIcon = getBuiltInPromptIcon(prompt.id);
     const noneBtn = document.createElement('button');
     noneBtn.type = 'button';
     noneBtn.classList.add('icon_picker_cell', 'icon_picker_cell_none');
-    noneBtn.title = browser.i18n.getMessage('menu_order_icon_none');
+    noneBtn.title = browser.i18n.getMessage(builtInIcon ? 'menu_order_icon_default' : 'menu_order_icon_none');
     const noneImg = document.createElement('img');
-    noneImg.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+    if (builtInIcon) {
+        noneImg.src = '../../' + builtInIcon.replace(/^moz-extension:/, '');
+    } else {
+        noneImg.src = '../../' + customMenuIconsPath + 'empty_icon.png';
+        noneImg.classList.add('icon_picker_none_empty');   // dark-mode inversion target
+    }
     noneImg.alt = '';
     noneBtn.appendChild(noneImg);
     if (!prompt.custom_icon) noneBtn.classList.add('selected');
     noneBtn.addEventListener('click', () => {
         prompt.custom_icon = '';
-        applyIconToPreview(anchorEl, '');
+        applyIconToPreview(anchorEl, '', prompt.id);
         markUnsaved();
         closeIconPopover();
     });
@@ -654,6 +652,41 @@ function updatePositionsFromDOM(listEl, positionKey) {
     });
 }
 
+// ==================== Reset ====================
+
+// Restore the factory state of everything this page can customize: positions,
+// visibility (show_in) and icons, for default, special and custom prompts alike.
+// The factory order is the same one a fresh install gets — special prompts first
+// in alphabetical order, then all the others alphabetically — as computed by
+// migrateMenuOrderAlphabetic() in mzta-prompts.js.
+// This only touches the in-memory state and marks the page unsaved, exactly like
+// a drag or an icon pick: nothing is written until Save All, so reloading the
+// page discards the reset and no confirmation prompt is needed.
+function resetAll() {
+    const specials = allPrompts.filter(p => String(p.is_special) === '1')
+        .sort((a, b) => a._displayName.localeCompare(b._displayName));
+    const others = allPrompts.filter(p => String(p.is_special) !== '1')
+        .sort((a, b) => a._displayName.localeCompare(b._displayName));
+
+    specials.concat(others).forEach((prompt, idx) => {
+        const pos = idx + 1;
+        prompt.position_display = pos;
+        prompt.position_compose = pos;
+        prompt.position_context = pos;
+        prompt.show_in = getFactoryShowIn(prompt.id);
+        prompt.custom_icon = '';    // empty means "use the built-in icon", see getBuiltInPromptIcon()
+    });
+
+    // allExcludedSpecialPrompts is intentionally left alone: those rows are not
+    // shown here and saveAll() re-appends them verbatim.
+
+    closeIconPopover();     // a picker may be open on a row about to be re-rendered
+    clearHighlight();
+    renderPopupList();
+    renderContextList();
+    markUnsaved();
+}
+
 // ==================== Save ====================
 
 async function saveAll() {
@@ -671,6 +704,10 @@ async function saveAll() {
 
     await browser.runtime.sendMessage({ command: "reload_menus" });
 
+    // Only now the stored state matches the in-memory one: disarm the
+    // beforeunload warning after the writes, not before.
+    somethingChanged = false;
+
     msgDisplay.textContent = browser.i18n.getMessage('menu_order_saved');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'green';
@@ -681,9 +718,21 @@ async function saveAll() {
 }
 
 function markUnsaved() {
+    somethingChanged = true;
     document.getElementById('btnSaveAll').disabled = false;
     const msgDisplay = document.getElementById('msgDisplay');
     msgDisplay.textContent = browser.i18n.getMessage('customPrompts_unsaved_changes');
     msgDisplay.style.display = 'inline';
     msgDisplay.style.color = 'red';
+}
+
+// Back to a clean state: nothing pending, no warning on close.
+// Used when a change made elsewhere forces this page to reload its data.
+function markSaved() {
+    somethingChanged = false;
+    document.getElementById('btnSaveAll').disabled = true;
+    const msgDisplay = document.getElementById('msgDisplay');
+    msgDisplay.textContent = '';
+    msgDisplay.style.display = 'none';
+    msgDisplay.style.color = '';
 }

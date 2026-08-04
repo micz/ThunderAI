@@ -130,11 +130,11 @@ _The language status represents the percentage of translated strings in the late
 - <a href="https://loading.io">loading.io</a> for the loading SVGs
 - [Fluent Design System](https://www.iconfinder.com/fluent-designsystem) for the Custom Prompts table sorting icons
 - [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
-- [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for the autotag context menu icon
-- [Icojam](https://www.iconarchive.com/artist/icojam.html) for the spam filter context menu icon
+- [Iconka.com](https://www.iconarchive.com/artist/iconka.html) for various context menu icons
+- [Icojam](https://www.iconarchive.com/artist/icojam.html) for various context menu icons
 - [Roundicons](https://www.flaticon.com/authors/roundicons) for the summarize context menu icon
 - [HideMau](https://www.flaticon.com/authors/hidemaru) for the ai summarize icon
-- [Hilmy Abiyyu A.](https://www.flaticon.com/authors/hilmy-abiyyu-a) for the ai translate and context menu icons
+- [Hilmy Abiyyu A.](https://www.flaticon.com/authors/hilmy-abiyyu-a) for various context menu icons
 - [bearicons](https://www.flaticon.com/authors/bearicons) for the empty context menu icon
 - [meaicon](https://www.flaticon.com/authors/meaicon) for the add task context menu icon
 
