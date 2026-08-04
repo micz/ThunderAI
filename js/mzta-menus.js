@@ -32,7 +32,7 @@ import {
     getTagsList,
     extractJsonObject,
     normalizeDateTimeString,
-    convertNewlinesToBr,
+    normalizeHtmlSourceNewlines,
     cleanupNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -100,9 +100,9 @@ export class mzta_Menus {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             return {tabId: tabs[0].id, 
                 selection: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
-                selection_html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
+                selection_html: normalizeHtmlSourceNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
                 text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
-                html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
+                html: normalizeHtmlSourceNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
                 only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
                 only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };

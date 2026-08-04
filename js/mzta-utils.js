@@ -309,6 +309,7 @@ export function stripHtmlKeepLines(htmlString) {
   // Replaces <p> tags with a newline at the beginning
   // and removes all other HTML tags
   return convertBrToNewlines(htmlString)
+    .replace(/&lt;br\s*\/?&gt;/gi, '\n')   // literal <br> that survived HTML escaping
     .replace(/<p>/gi, '')                  // removes <p> tags
     .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
     .replace(/<[^>]*>/g, '')               // removes any other HTML tags
@@ -402,8 +403,23 @@ export function stripThinkTags(text, truncateUnterminated = false) {
   return { text: out.replace(/^\s+/, ''), thinking: thinking };
 }
 
+// Only for PLAIN text. Applying this to already-formed HTML injects spurious <br>
+// at every source newline (indentation, line breaks between tags) — use
+// normalizeHtmlSourceNewlines() for HTML instead.
 export function convertNewlinesToBr(text) {
   return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
+}
+
+// Collapses the source newlines of an HTML string without turning them into markup.
+// In HTML the source newlines are not line breaks: the line structure is carried by
+// the tags (<div>, <p>, and any <br> already present in the body), so collapsing them
+// to a space preserves the semantics and keeps spurious <br> out of the AI prompt.
+export function normalizeHtmlSourceNewlines(html) {
+  if (!html) return '';
+  return html
+    .replace(/\r\n/g, '\n')
+    .replace(/\n/g, ' ')
+    .replace(/[ \t]{2,}/g, ' ');
 }
 
 function convertBrToNewlines(html) {

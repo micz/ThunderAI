@@ -102,6 +102,15 @@ export class StreamingMessage {
         }
         this._thinkingAccumulator = '';
 
+        // The model may echo literal <br> tags coming from an HTML mail body. markdown-it
+        // runs with html:false, so they would be escaped to &lt;br&gt; and shown as visible
+        // text. Convert them to real newlines instead: markdown-it turns them into <p>
+        // structure, and convertTextNodeNewlinesToBr() (messagesArea.js) promotes the
+        // remaining ones to actual <br> elements after the render.
+        // Note: this also rewrites a literal <br> inside a markdown code fence. Telling the
+        // two apart would require a pre-parse; for a mail extension the trade-off is fine.
+        fullText = fullText.replace(/<br\s*\/?>/gi, '\n');
+
         // Convert Markdown to DOM nodes using the markdown-it library
         const md = window.markdownit();
         const html = md.render(fullText);

@@ -251,7 +251,17 @@ background → controller.js (browser.runtime commands)
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
-text to `renderThinkingBlock`. The answer-text snapshot is what the "use this answer" /
+text to `renderThinkingBlock`.
+
+`flush()` runs markdown-it with its defaults, which means **`html: false`** — raw HTML in the
+model output is escaped, never rendered, so the model can't inject markup into the extension UI.
+Because of that, a literal `<br>` echoed by the model would otherwise surface as visible
+`&lt;br&gt;` text. To prevent this, `flush()` rewrites `<br>` to `\n` right after
+`stripThinkTags()` and before the markdown render; markdown-it then builds the `<p>` structure
+and `convertTextNodeNewlinesToBr()` promotes the leftover newlines to real `<br>` elements.
+The complementary half of this lives on the input side: the compose-window HTML placeholders
+go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
+so the prompt no longer carries a `<br>` at every source newline for the model to copy back. The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
 turn's buttons tied to their own response.
 

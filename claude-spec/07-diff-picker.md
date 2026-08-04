@@ -127,8 +127,8 @@ text, and only converted back to `<br>` markup when the result is handed to the 
 
 Rationale: the hunk model needs a single linear text to be correct — a hunk boundary can fall in the
 middle of a `<strong>` — and the original side arrives as plain text regardless (`getMailBody()` in
-`js/mzta-menus.js` sends `selection`/`text` through `cleanupNewlines()`; only `selection_html`/`html`
-get `convertNewlinesToBr()`), so a rejected change would have no formatting to restore anyway.
+`js/mzta-menus.js` sends `selection`/`text` through `cleanupNewlines()`; `selection_html`/`html`
+get `normalizeHtmlSourceNewlines()`), so a rejected change would have no formatting to restore anyway.
 
 **Important nuance: this is not a regression for users who don't open the picker.** The formatted
 HTML path is untouched — `handleUseThisAnswerButtonClick()` still inserts
