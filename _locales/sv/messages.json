@@ -1940,5 +1940,8 @@
     },
     "prefs_footer_donate": {
         "message": "Donera"
+    },
+    "apiwebchat_copy": {
+        "message": "Kopiera"
     }
 }
