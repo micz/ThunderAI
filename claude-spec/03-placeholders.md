@@ -70,6 +70,157 @@ Dynamic placeholders use a colon separator to pass a parameter:
 
 The `is_dynamic: "1"` property signals this behavior in the placeholder definition.
 
+## Placeholder Autocomplete
+
+`textareaAutocomplete()` in `js/mzta-placeholders-autocomplete.js` provides the `{%…` autocomplete
+dropdown, and is shared by **8 pages**: customprompts, customdataplaceholders, translate, summarize,
+addtags, spamfilter, get-task, get-calendar-event. Suggestions are built from
+`getPlaceholders(true)` mapped through `mapPlaceholderToSuggestion()`.
+
+**Type filtering.** A placeholder is offered only if its `type` equals the prompt's selected type, or
+its type is `0` ("always"). The type is read **lazily on every keystroke**, so changing the selector
+mid-edit takes effect immediately with no re-registration.
+
+- The 6 single-textarea pages pass an explicit `type_value` (all currently `1`, "reading").
+- The two table-based CRUD pages (customprompts, customdataplaceholders) pass no type and instead
+  resolve it from the row: `textarea.closest('tr')` → `.type_output`. This **must** use `closest()`,
+  not a fixed `parentNode` chain — the editor markup nests the textarea inside a backdrop wrapper
+  (see `claude-spec/05-options.md`), and a fixed chain silently breaks type filtering, throwing on
+  every keystroke inside an `input` handler.
+
+**Insertion.** Accepting a suggestion inserts through `document.execCommand('insertText')`, falling back
+to `setRangeText()` plus a synthetic `input` event. A direct `textarea.value = …` assignment must not be
+used: it discards the native undo stack and fires no `input` event, which leaves the edit-mode highlight
+mirror painting stale text while the caret advances over glyphs that never get repainted. For the same
+reason the list items handle **`mousedown` with `preventDefault()`**, not `click` — a click lets the
+textarea lose focus and collapse its selection before the insertion runs. Completing a dynamic
+placeholder leaves the caret before the trailing `:%}` so the value can be typed immediately.
+
+**Positioning.** The dropdown is `position: fixed` and placed at the caret by JS. Fixed, not absolute:
+on the two table pages an absolutely positioned list is clipped by the surrounding `<td>`. The caret
+rect comes from the highlight mirror (`getCaretRect()` on the handle returned by
+`attachEditorHighlight()`), which plants a zero-width anchor at `selectionStart` and measures it — no
+caret-position library. The list flips above the caret when there is not enough room below and clamps
+horizontally into the viewport. It **closes** on `scroll`/`resize` rather than repositioning, since a
+fixed element's coordinates go stale as soon as any ancestor scrolls.
+
+**All 9 textareas have a mirror.** Every page that offers the autocomplete also attaches
+`attachEditorHighlight()`, so tokens are highlighted and the list is caret-anchored everywhere — the two
+table pages (add-form + row editor) plus the eight single textareas on the six settings pages (summarize
+has three). `caretRect()` still falls back to the bottom-left of the textarea when no mirror is present,
+so a new page that forgets the attach degrades gracefully rather than breaking.
+
+**Lifecycle.** `textareaAutocomplete()` is idempotent, guarded by `textarea._mztaAutocomplete`, and
+returns a handle with `close()` and `destroy()`. There is **one** module-level outside-click controller
+for the whole page, tracking open instances in a `Set`; the previous version registered a `document`
+click listener *inside* the per-textarea function, so a page with N rows accumulated N listeners each
+closing over a possibly-removed textarea. Dismissal tests the event against the instance's own textarea
+and list — the old check was `e.target.closest('.editor')`, a class only the two table pages use, so on
+the other six clicking inside the textarea dismissed the list.
+
+**Item presentation.** Each `<li>` shows the token in monospace with the already-typed prefix in `<b>`,
+plus a muted second line with the placeholder description. `mapPlaceholderToSuggestion()` was extended
+**additively** with `id` and `label`; `label` resolves `__MSG_key__` names via `browser.i18n.getMessage()`
+(built-in placeholders store raw tokens, and `mzta-i18n.js` only localizes the DOM). An item with no
+`label` renders the command alone, so any consumer building suggestion objects by hand still works.
+
+**Accessibility.** `role="listbox"` on the `<ul>`, `role="option"` + `aria-selected` on items,
+`aria-autocomplete`/`aria-expanded`/`aria-controls`/`aria-activedescendant` on the textarea. `Tab`
+accepts the active item like `Enter` (rather than moving focus away mid-token), `Escape` closes, and
+arrow keys wrap around with `scrollIntoView({ block: 'nearest' })`.
+
+**Shared CSS — highlighting.** The mirror's *structure* lives in **one** file,
+`pages/_lib/editor-highlight.css`, linked by all 8 pages. The three metrics that legitimately differ
+between pages plus the colours are custom properties a page must define on `.editor-wrap`:
+`--ed-padding`, `--ed-font`, `--ed-line-height`, `--ed-surface`, `--ed-surface-focus`, `--ed-border`,
+`--ed-chip-bg/-fg`, `--ed-warn-bg/-fg/-border`. The design-system pages get them from
+`#mzta_card .editor-wrap` in `mzta-design.css` (9px 11px / inherit / 1.6, matching that file's own
+textarea rules); the two table pages set them locally (7px 10px / mono / 1.55).
+
+**Specificity trap on the `#mzta_card` pages.** `mzta-design.css` styles fields with `#mzta_card textarea`
+— **(1 id, 0 classes, 1 element)**, which beats `editor-wrap .editor` **(0, 2, 1)** no matter how late
+the shared file loads, because a single id outranks any number of classes. The textarea therefore stayed
+opaque with black text and hid the mirror completely: the visible text was the textarea's, not the
+mirror's. The `background: transparent; color: transparent` pair is consequently **repeated** in
+`mzta-design.css` under `#mzta_card .editor-wrap .editor`, and again for `:focus` (which has to come
+*after* the design system's own `…textarea:focus` rule, being of equal specificity). Keep the two copies
+in sync. The remaining metrics (`padding`, `font-size`, `line-height`, `box-sizing`, `border-width`) are
+also won by the design system, which is harmless *only because* the `--ed-*` values were chosen to match
+them exactly — change one side and the mirror drifts.
+
+The chip colours there come from dedicated `--code` / `--codeBg` tokens, added to both theme blocks of
+`mzta-design.css` with the same values as the two table pages' `--code` / `--code-bg`. Do **not** reach
+for `--accentLight`: it is a 6%-alpha wash (`#0a68ff0f`) intended for large hover surfaces, and a
+token-sized chip painted with it is invisible (1.09 contrast against `--field`) — which is exactly how
+the first attempt shipped no visible highlight on those six pages. The same caution applies to
+`--warnBg`/`--warnBorder`, which are also low-alpha washes. Fallbacks in the shared
+file are deliberately inert (`transparent`/`inherit`/`0`) so a page that forgets one renders *no*
+highlight rather than a misaligned mirror. Only the two table pages add rules of their own, for the
+`.editor-active` visibility gating.
+
+**Shared CSS — dropdown.** All 8 pages link `pages/_lib/autocomplete.css`, which replaced 8 near-duplicate blocks.
+Because the pages use two disjoint token systems, every token there uses a fallback chain
+(`var(--field, var(--panel))`, `var(--fieldLine, var(--border2))`, `var(--muted, var(--dim))`,
+`var(--accentLight, var(--rowhover))`); `--text` and `--accent` exist in both and need none.
+`--font-mono` was added to `pages/_lib/mzta-design.css` so one name works everywhere. Do **not** link
+`mzta-design.css` from the two table pages — its `:root` would fight their local one. The shared file
+must be linked **after** the page's own stylesheet.
+
+## Invalid placeholder feedback
+
+The highlight mirror flags tokens that will not resolve. `makeTokenStateResolver()` in
+`js/mzta-editor-highlight.js` builds the per-token callback; a page installs it with
+`handle.setTokenStateResolver(...)`.
+
+| State | Rendering |
+|---|---|
+| Valid placeholder (including dynamic `{%id:value%}`) | normal chip |
+| Unknown id, or valid id not available for the prompt's type | warning chip + `title` |
+| Unterminated `{%` with no closing `%}` | warning chip + `title` |
+
+**One predicate, two callers.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
+resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
+with what the prompt will actually resolve at runtime. It is **sync** and takes an already-fetched list,
+because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
+`extractPlaceholders()` omits it, preserving its previous behaviour exactly (it ignores type entirely),
+while the editor supplies the prompt's selected type so a reading-only placeholder in a composing prompt
+is flagged. Verified equivalent to the old inline `find` across the token forms the regex produces.
+
+A prompt of type `0` accepts placeholders of **any** type here, deliberately diverging from the
+autocomplete's stricter filter (quirk 2 below, left as is): a type-0 prompt runs in both contexts, so a
+type-1 placeholder in it does resolve at runtime, and replicating the dropdown's strictness would paint a
+warning over valid text. Validity matrix: type 0 accepts all; type 1 rejects composing-only; type 2
+rejects reading-only; an unknown id is always flagged.
+
+`makeTokenStateResolver(find, placeholders, getType)` takes the predicate **injected**, not imported:
+`mzta-editor-highlight.js` is loaded by every editor page, and importing `mzta-placeholders.js` there
+would pull its whole dependency chain along.
+
+**The token under the caret is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
+every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
+because the ordinary repaint path (`refresh()`, on every `input`) passes none.
+
+**Re-validation on type change.** Validity depends on the prompt type, and the mirror caches its render,
+so `attachHighlightWithValidation()` on the two table pages adds a `change` listener to the row's
+`.type_output` (or `#selectTypeNew` in the add-form) that calls `refresh()`. There was no listener on
+those selectors before — the autocomplete reads the type lazily per keystroke and never needed one.
+The six settings pages pass a constant type `1`, matching the `type_value` they give the autocomplete.
+
+**Validation list vs suggestion list.** The six settings pages filter `additional_text` out of their
+*suggestions* but validate against the **unfiltered** list: it is a real placeholder they simply do not
+offer, and flagging it would be wrong. The Data Placeholders page is the opposite — its built-ins-only
+restriction is semantic, so the same filtered list drives both.
+
+**Colours.** `--ed-warn-bg/-fg/-border`, from `--warn-*` on the two table pages and `--warnChip*` in
+`mzta-design.css`. Those chip tokens are opaque on purpose: `--warnBg`/`--warnBorder` are 7%/28% alpha
+washes for large disclaimer panels and are invisible at chip size — the same trap as `--accentLight`.
+Tooltips use `editor_placeholder_unknown` / `editor_placeholder_unterminated` (English only).
+
+Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders,
+hiding type-1 and type-2 ones; `getPlaceholders(true)` returns the list unsorted, so the dropdown is
+in declaration order rather than alphabetical; and `setCustomPlaceholders()` never assigns `type`,
+so custom placeholders may not match the filter at all.
+
 ## Custom Placeholders
 
 Users can define their own placeholders via `pages/customdataplaceholders/`. Custom placeholders:

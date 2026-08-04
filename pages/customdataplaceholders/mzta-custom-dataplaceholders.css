@@ -18,6 +18,9 @@
     --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
     --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
     --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
+    /* Warning (invalid/unknown placeholder token) — distinct from --del-*,
+       which means "delete", and from --ok-*, which means success. */
+    --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
     --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
 
     --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -36,6 +39,7 @@
         --edit-bg:#17304d;  --edit-text:#8fc0ff;  --edit-border:#2a4c78;  --edit-hover:#1d3d63;
         --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
         --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
+        --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
         --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
     }
 }
@@ -322,15 +326,27 @@ table.prompts_list td.w08 > i,
 
 .text_show, .name_show, .id_show, .type_show { font-size: 13px; }
 
-.text_show { color: var(--muted); line-height: 1.55; }
+/* Placeholder text is monospace in read mode *and* in edit mode, at one shared
+   font-size/line-height (see the .editor metrics block further down). That is
+   what lets the edit-mode backdrop mirror align with the textarea, and what
+   makes the two modes look like the same text.
+   pre-wrap because the text reaches this span with newlines in either form:
+   stored values use <br>, but a row saved from the editor writes the raw \n. */
+.text_show {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
 
-/* Placeholder token chip inside the placeholder text (wrapped in JS). */
+/* Placeholder token chip inside the placeholder text (wrapped in JS).
+   Read mode has no caret to align to, so this one can afford real padding. */
 .ph_chip {
     color: var(--code);
     background: var(--code-bg);
     padding: 1px 6px;
     border-radius: 4px;
-    font-size: 12px;
     font-family: var(--font-mono);
 }
 
@@ -483,26 +499,37 @@ label:has(input[type="checkbox"]:disabled) { cursor: default; }
     margin: 8px 1px 0 0;
 }
 
-/* ============================ Autocomplete ============================ */
-.autocomplete-container { position: relative; }
+/* =================== Placeholder text editor (highlighting) ===================
 
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--panel);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    font-size: small;
+   Structure lives in pages/_lib/editor-highlight.css, shared with the Custom
+   Prompts page and the six single-textarea settings pages. Only this page's
+   metrics and colours are set here, as the custom properties that file reads.
+   Keep --ed-font/--ed-line-height in step with .text_show above, so read mode
+   and edit mode render the text identically.
+   --------------------------------------------------------------------------- */
+
+.editor-wrap {
+    --ed-padding: 7px 10px;
+    --ed-font: var(--font-mono);
+    --ed-line-height: 1.55;
+    --ed-surface: var(--panel);
+    --ed-border: var(--border2);
+    --ed-chip-bg: var(--code-bg);
+    --ed-chip-fg: var(--code);
+    --ed-warn-bg: var(--warn-bg);
+    --ed-warn-fg: var(--warn-text);
+    --ed-warn-border: var(--warn-border);
 }
 
-.autocomplete-list li { padding: 8px; cursor: pointer; }
-.autocomplete-list li:hover { background: var(--rowhover); }
-.autocomplete-list li.active { background: var(--panel2); }
+/* Visibility gating, as on the Custom Prompts page: a row toggles between a
+   read-only span and the editor, and leaving edit mode sets display:none on the
+   textarea only -- its siblings stay visible, so an always-on backdrop would
+   keep painting a second copy of the text under .text_show.
+
+   display:block must NOT move to `.editor-wrap .editor`: at two classes it would
+   beat the row template's `.hiddendata { display: none }`. */
+.editor-wrap .editor-backdrop { display: none; }
+.editor-wrap.editor-active .editor-backdrop { display: block; }
+.editor-wrap.editor-active .editor { display: block; }
+
+

@@ -27,9 +27,9 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
@@ -40,6 +40,7 @@ import {
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-summarize-page", true);
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -185,12 +186,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     summarize_email_separator_textarea.value = summarize_email_separator.text;
     summarize_email_separator_reset_btn.disabled = (summarize_email_separator_textarea.value === browser.i18n.getMessage("prompt_summarize_email_separator_full_text"));
 
-    autocompleteSuggestions = (await getPlaceholders(true))
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    const summarize_textarea_hl = attachEditorHighlight(summarize_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_textarea_hl) summarize_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_textarea, autocompleteSuggestions, 1);
+    const summarize_textarea_email_template_hl = attachEditorHighlight(summarize_textarea_email_template);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_textarea_email_template_hl) summarize_textarea_email_template_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_textarea_email_template, autocompleteSuggestions, 1);
+    const summarize_email_separator_textarea_hl = attachEditorHighlight(summarize_email_separator_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (summarize_email_separator_textarea_hl) summarize_email_separator_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(summarize_email_separator_textarea, autocompleteSuggestions, 1);
     
 });
