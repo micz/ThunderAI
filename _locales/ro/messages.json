@@ -77,6 +77,9 @@
     "customPrompts_form_label_need_custom_text": {
         "message": "Solicită text suplimentar"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Elimină imaginile încorporate din HTML-ul promptului"
+    },
     "customPrompts_form_required_fields": {
         "message": "Câmpuri necesare"
     },

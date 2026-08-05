@@ -17,6 +17,9 @@
     "customPrompts_btnCancel": {
         "message": "Nuligi"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Forigi enigitajn bildojn el la prompta HTML-kodo"
+    },
     "customPrompts_form_required_fields": {
         "message": "Postulataj kampoj"
     },

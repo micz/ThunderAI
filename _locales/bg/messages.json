@@ -104,6 +104,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Инструментът за сравнение на текст може да бъде избран, когато действието е зададено на „Замести текст“."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Премахване на вградените изображения от HTML на промпта"
+    },
     "customPrompts_form_required_fields": {
         "message": "Задължително поле"
     },

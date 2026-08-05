@@ -107,6 +107,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Penampil perbandingan teks dapat dipilih ketika tindakan diatur ke \"Ganti teks\"."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Hapus gambar tersemat dari HTML prompt"
+    },
     "customPrompts_form_required_fields": {
         "message": "Kolom wajib diisi"
     },

@@ -104,6 +104,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "El visor de comparación de texto se puede seleccionar cuando la acción se establece en \"sustituir texto\"."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Eliminar imágenes incrustadas del HTML del prompt"
+    },
     "customPrompts_form_required_fields": {
         "message": "Campos obligatorios"
     },

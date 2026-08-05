@@ -182,6 +182,9 @@
     "customPrompts_form_label_need_custom_text": {
         "message": "要求补充文字"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "从提示词 HTML 中移除嵌入的图片"
+    },
     "customPrompts_form_required_fields": {
         "message": "必填字段"
     },

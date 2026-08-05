@@ -1,1 +1,5 @@
-{}
+{
+    "customPrompts_form_label_clean_embedded_images": {
+        "message": "Odstrániť vložené obrázky z HTML výzvy"
+    }
+}

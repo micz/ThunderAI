@@ -104,6 +104,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Η προβολή σύγκρισης κειμένου μπορεί να επιλεγεί όταν η ενέργεια έχει οριστεί σε \"Αντικατάσταση κειμένου\"."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Αφαίρεση ενσωματωμένων εικόνων από το HTML του prompt"
+    },
     "customPrompts_form_required_fields": {
         "message": "Απαιτούμενα πεδία"
     },

@@ -96,6 +96,9 @@
     "customPrompts_form_label_enabled": {
         "message": "Ativado"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Remover imagens incorporadas do HTML do prompt"
+    },
     "customPrompts_form_required_fields": {
         "message": "Campos obrigatórios"
     },

@@ -65,6 +65,9 @@
     "customPrompts_form_label_Name": {
         "message": "Název"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Odebrat vložené obrázky z HTML výzvy"
+    },
     "customPrompts_form_required_fields": {
         "message": "Požadovaná pole"
     },

@@ -107,6 +107,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "テキスト比較ビューアは、アクションが「テキストを置換」に設定されている場合に選択できます。"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "プロンプトHTMLから埋め込み画像を削除"
+    },
     "customPrompts_form_required_fields": {
         "message": "必須フィールド"
     },

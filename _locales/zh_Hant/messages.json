@@ -92,6 +92,9 @@
     "customPrompts_form_label_use_diff_viewer": {
         "message": "啟用文字比較檢視器"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "從提示詞 HTML 中移除嵌入的圖片"
+    },
     "customPrompts_form_required_fields": {
         "message": "必填欄位"
     },
