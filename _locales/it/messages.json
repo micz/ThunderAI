@@ -93,6 +93,9 @@
     "customPrompts_form_label_need_custom_text": {
         "message": "Chiedi un testo aggiuntivo"
     },
+    "customPrompts_form_label_clean_embedded_images": {
+        "message": "Rimuovi immagini incorporate dall'HTML del prompt"
+    },
     "customPrompts_form_label_enabled": {
         "message": "Attivo"
     },
