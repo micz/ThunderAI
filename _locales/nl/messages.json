@@ -1,5 +1,8 @@
 {
     "extensionDescription": {
         "message": "Gebruik ChatGPT, Google Gemini, Claude of Ollama om uw emails te verbeteren."
+    },
+    "customPrompts_form_label_clean_embedded_images": {
+        "message": "Ingebedde afbeeldingen verwijderen uit prompt-HTML"
     }
 }

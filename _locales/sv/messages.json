@@ -80,6 +80,9 @@
     "customPrompts_reloading_menus": {
         "message": "Laddar om menyer..."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Ta bort inbäddade bilder från prompt-HTML"
+    },
     "customPrompts_form_required_fields": {
         "message": "Obligatoriska fält"
     },

@@ -98,6 +98,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Средство просмотра для сравнения текста можно выбрать, если для действия установлено значение \"Заменить текст\"."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Удалять встроенные изображения из HTML промпта"
+    },
     "customPrompts_form_required_fields": {
         "message": "Обязательные поля"
     },

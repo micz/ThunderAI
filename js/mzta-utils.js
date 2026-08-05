@@ -959,3 +959,78 @@ export async function* getMessages(list) {
     }
   }
 }
+
+/**
+ * Scans HTML for <img> elements with base64/data URIs or very long src attributes,
+ * replacing them with compact token placeholders [[THUNDERAI_IMG_N]] and returning
+ * a map to restore them later.
+ * 
+ * @param {string} html 
+ * @returns {{ cleanHtml: string, imageMap: Object<string, string> }}
+ */
+export function tokenizeHtmlImages(html, imageMap = {}) {
+  if (!html || typeof html !== 'string') {
+    return { cleanHtml: html || '', imageMap };
+  }
+
+  const htmlLower = html.toLowerCase();
+  if (!htmlLower.includes('data:image/') && !htmlLower.includes('<img')) {
+    return { cleanHtml: html, imageMap };
+  }
+
+  let counter = Object.keys(imageMap).length + 1;
+
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const images = doc.querySelectorAll('img');
+
+      images.forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.startsWith('data:image/') || src.length > 200) {
+          const token = `[[THUNDERAI_IMG_${counter++}]]`;
+          imageMap[token] = img.outerHTML;
+          const textNode = doc.createTextNode(token);
+          img.parentNode.replaceChild(textNode, img);
+        }
+      });
+
+      return { cleanHtml: doc.body.innerHTML, imageMap };
+    } catch (e) {
+      // Fallback to regex if DOMParser fails
+    }
+  }
+
+  // Regex fallback: match full <img ...> tags that contain a data:image/ URI
+  let cleanHtml = html.replace(/<img\s+[^>]*src=["'](data:image\/[^"']+)["'][^>]*\s*\/?>/gi, (fullMatch) => {
+    const token = `[[THUNDERAI_IMG_${counter++}]]`;
+    imageMap[token] = fullMatch;
+    return token;
+  });
+
+  return { cleanHtml, imageMap };
+}
+
+/**
+ * Restores original <img> tags in response text by replacing token placeholders
+ * [[THUNDERAI_IMG_N]] with original image HTML from imageMap.
+ * 
+ * @param {string} text 
+ * @param {Object<string, string>} imageMap 
+ * @returns {string}
+ */
+export function restoreHtmlImages(text, imageMap) {
+  if (!text || typeof text !== 'string' || !imageMap || Object.keys(imageMap).length === 0) {
+    return text || '';
+  }
+
+  let restored = text;
+  for (const [token, originalTag] of Object.entries(imageMap)) {
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(originalTag);
+    }
+  }
+  return restored;
+}
+

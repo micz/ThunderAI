@@ -26,6 +26,7 @@ import { getSpecialPrompts } from './mzta-prompts.js';
 import { prefs_default } from '../options/mzta-options-default.js';
 
 export const taPromptUtils = {
+    lastImageMap: {},
 
     async getDefaultSignature(){
         let prefs = await browser.storage.sync.get({ default_sign_name: prefs_default.default_sign_name });
@@ -47,6 +48,7 @@ export const taPromptUtils = {
             subject_text = '',
             msg_text = {},
             only_typed_text = '',
+            only_typed_html = '',
             only_quoted_text = '',
             tags_full_list = ["", []]
         } = args || {};
@@ -73,16 +75,19 @@ export const taPromptUtils = {
 
             let finalSubs = await placeholdersUtils.getPlaceholdersValues({
                 prompt_text: curr_prompt.text,
+                curr_prompt: curr_prompt,
                 curr_message: curr_message,
                 mail_subject: subject_text,
                 body_text: body_text,
                 msg_text: msg_text,
                 only_typed_text: only_typed_text,
+                only_typed_html: only_typed_html,
                 only_quoted_text: only_quoted_text,
                 selection_text: selection_text,
                 selection_html: selection_html,
                 tags_full_list: tags_full_list
             });
+            taPromptUtils.lastImageMap = finalSubs._imageMap || {};
             let prefs_ph = await browser.storage.sync.get({ placeholders_use_default_value: prefs_default.placeholders_use_default_value });
             fullPrompt = (placeholdersUtils.replacePlaceholders({
                 text: curr_prompt.text,
@@ -187,9 +192,11 @@ export const taPromptUtils = {
 
         const finalSubs = await placeholdersUtils.getPlaceholdersValues({
             prompt_text: promptText,
+            curr_prompt: prompt,
             msg_text: { html: bodyHtml.html, text: bodyHtml.text },
             mail_subject: mailSubject,
         });
+        taPromptUtils.lastImageMap = finalSubs._imageMap || {};
 
         const fullPrompt = placeholdersUtils.replacePlaceholders({
             text: promptText,

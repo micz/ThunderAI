@@ -52,6 +52,11 @@
     0: Do not use the diff viewer
     1: Use the diff viewer
 
+    Clean embedded images (clean_embedded_images attribute):
+    0: Keep raw embedded images in HTML placeholders
+    1: Remove base64 embedded images from HTML placeholders and restore them in response
+
+
     ================ DYNAMIC PROPERTIES (set at runtime via prompt_info)
 
     headerMessageId (set by _openSummaryWebchat in mzta-background.js):
@@ -108,6 +113,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -127,6 +133,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -146,6 +153,7 @@ const defaultPrompts = [
         need_custom_text: "1",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -165,6 +173,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -184,6 +193,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -203,6 +213,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "0",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -222,6 +233,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "1",
         use_diff_viewer: "1",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -241,6 +253,7 @@ const defaultPrompts = [
         need_custom_text: "0",
         define_response_lang: "0",
         use_diff_viewer: "0",
+        clean_embedded_images: "1",
         chatgpt_web_model: '',
         chatgpt_web_project: '',
         chatgpt_web_custom_gpt: '',
@@ -469,7 +482,7 @@ export function preparePromptsForExport(prompts, include_api_settings = false){
         }
 
         if(prompt.is_default == 1){
-            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'show_in', 'custom_icon'];
+            let allowedKeys = ['id', 'enabled', 'position_compose', 'position_display', 'position_context', 'need_custom_text', 'clean_embedded_images', 'show_in', 'custom_icon'];
             if(include_api_settings){
                 allowedKeys.push('api_type');
                 for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -537,6 +550,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
                 prompt.enabled = prefs._default_prompts_properties[prompt.id].enabled;
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
+                prompt.clean_embedded_images = prefs._default_prompts_properties[prompt.id]?.clean_embedded_images ?? prompt.clean_embedded_images ?? "1";
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
                 prompt.chatgpt_web_custom_gpt = (prefs._default_prompts_properties[prompt.id]?.chatgpt_web_custom_gpt || '').trim();
@@ -566,6 +580,9 @@ async function getCustomPrompts() {
         prefs._custom_prompt.forEach(prompt => {
             if (prompt.use_diff_viewer === undefined) {
                 prompt.use_diff_viewer = "0";
+            }
+            if (prompt.clean_embedded_images === undefined) {
+                prompt.clean_embedded_images = "1";
             }
             if(prompt.chatgpt_web_model === undefined){
                 prompt.chatgpt_web_model = "";
@@ -599,6 +616,7 @@ export async function setDefaultPromptsProperties(prompts) {
             position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
             enabled: (prompt.enabled === undefined || prompt.enabled === "undefined") ? "" : prompt.enabled,
             need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
+            clean_embedded_images: (prompt.clean_embedded_images === undefined || prompt.clean_embedded_images === "undefined") ? "1" : prompt.clean_embedded_images,
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,

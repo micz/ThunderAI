@@ -23,6 +23,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `need_custom_text` | string | `"0"` = no custom input, `"1"` = show custom text input field |
 | `define_response_lang` | string | `"0"` = no language hint, `"1"` = append response language instruction |
 | `use_diff_viewer` | string | `"0"` = normal output, `"1"` = show diff viewer (ChatGPT Web only) |
+| `clean_embedded_images` | string | `"0"` = keep raw embedded images, `"1"` = tokenize embedded images in HTML placeholders and restore them in AI output |
 
 > **Note:** These numeric-looking properties are stored as **strings** (`"0"`/`"1"`/`"2"`) in the prompt objects in `js/mzta-prompts.js`, not as JS numbers. The prompt body lives in the `text` property (there is no `prompt` property).
 

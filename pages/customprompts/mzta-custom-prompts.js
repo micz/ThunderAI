@@ -263,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             need_custom_text: (checkboxNeedCustomTextNew.checked) ? 1 : 0,
             define_response_lang: (checkboxDefineResponseLangNew.checked) ? 1 : 0,
             use_diff_viewer: (checkboxUseDiffViewerNew.checked) ? 1 : 0,
+            clean_embedded_images: (checkboxCleanEmbeddedImagesNew.checked) ? 1 : 0,
             enabled: 1,
             position_compose: positionMax_compose + 1,
             position_display: positionMax_display + 1,
@@ -675,6 +676,7 @@ function showItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = false;
     tr.querySelector('input.define_response_lang').disabled = false;
     tr.querySelector('input.use_diff_viewer').disabled = false;
+    tr.querySelector('input.clean_embedded_images').disabled = false;
 }
 
 function hideItemRowEditor(tr) {
@@ -702,6 +704,7 @@ function hideItemRowEditor(tr) {
     tr.querySelector('input.need_custom_text').disabled = true;
     tr.querySelector('input.define_response_lang').disabled = true;
     tr.querySelector('input.use_diff_viewer').disabled = true;
+    tr.querySelector('input.clean_embedded_images').disabled = true;
 }
 
 function toggleAdditionalPropertiesShow(tr) {
@@ -891,6 +894,7 @@ function handleConfirmClick(e) {
     newValues.need_custom_text = tr.querySelector('.need_custom_text').checked ? 1 : 0;
     newValues.define_response_lang = tr.querySelector('.define_response_lang').checked ? 1 : 0;
     newValues.use_diff_viewer = tr.querySelector('.use_diff_viewer').checked ? 1 : 0;
+    newValues.clean_embedded_images = tr.querySelector('.clean_embedded_images').checked ? 1 : 0;
     newValues.enabled = tr.querySelector('.enabled').checked ? 1 : 0;
     newValues.chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value.trim();
     newValues.chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value.trim();
@@ -975,6 +979,7 @@ function handleCopyClick(e) {
     let need_custom_text = tr.querySelector('.need_custom_text').checked;
     let define_response_lang = tr.querySelector('.define_response_lang').checked;
     let use_diff_viewer = tr.querySelector('.use_diff_viewer').checked;
+    let clean_embedded_images = tr.querySelector('.clean_embedded_images').checked;
     
     let chatgpt_web_model = tr.querySelector('.chatgpt_web_model_output').value;
     let chatgpt_web_project = tr.querySelector('.chatgpt_web_project_output').value;
@@ -999,6 +1004,7 @@ function handleCopyClick(e) {
     let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
     checkboxUseDiffViewerNew.disabled = (action !== "2");
+    document.getElementById('checkboxCleanEmbeddedImagesNew').checked = clean_embedded_images;
 
     document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
     document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
@@ -1057,7 +1063,7 @@ function loadPromptsList(values){
     }
 
     let options = {
-        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
+        valueNames: [ { data: ['idnum'] }, 'is_default', 'id', 'name', 'text', 'type', 'action', 'position_compose', 'position_display', 'show_in', { name: 'need_selected', attr: 'checked_val'}, { name: 'need_signature', attr: 'checked_val'}, { name: 'need_custom_text', attr: 'checked_val'}, { name: 'define_response_lang', attr: 'checked_val'}, { name: 'use_diff_viewer', attr: 'checked_val'}, { name: 'clean_embedded_images', attr: 'checked_val'}, { name: 'enabled', attr: 'checked_val'}, 'api_type', ...api_fields ],
         item: function(values) {
             let type_output = '';
             switch(String(values.type)){
@@ -1173,6 +1179,8 @@ function loadPromptsList(values){
                     <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
+                    <br>
+                    <label><input type="checkbox" class="clean_embedded_images" disabled> __MSG_customPrompts_form_label_clean_embedded_images__</label>
                     <br>
                     <label><input type="checkbox" class="enabled input_mod"> __MSG_customPrompts_form_label_enabled__</label>
                     <span class="is_default hiddendata"></span>
@@ -1369,6 +1377,7 @@ function checkSelectedBoxes(checkboxes = null) {
             ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
             ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
             ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
+            ...document.querySelectorAll('.clean_embedded_images[type="checkbox"]'),
             ...document.querySelectorAll('.enabled[type="checkbox"]'),
         ];
     }

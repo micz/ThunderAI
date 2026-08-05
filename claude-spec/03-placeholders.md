@@ -31,7 +31,8 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 |----|-------------|------|-----|
 | `mail_text_body` | Full plain text of the email | 0 | |
 | `mail_html_body` | Full HTML of the email | 0 | |
-| `mail_typed_text` | Text typed so far in compose window | 2 | |
+| `mail_typed_text` | Text typed so far in compose window (plain text) | 2 | |
+| `mail_typed_html` | HTML formatted text typed so far in compose window. *Tip: Recommended system prompt: "Return directly in HTML code when provided with HTML code as email text"* | 2 | |
 | `mail_quoted_text` | Quoted text in the compose window | 2 | |
 | `mail_subject` | Email subject line | 0 | |
 | `mail_folder_name` | Name of the folder containing the email | 1 | |

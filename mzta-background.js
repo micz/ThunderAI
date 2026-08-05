@@ -49,6 +49,7 @@ import {
     convertNewlinesToParagraphs,
     getConnectionType,
     hasSpecificIntegration,
+    restoreHtmlImages,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -455,7 +456,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _replaceSelectedText(tabId, text) {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
-                    original_html = await getOriginalBody(tabId);
+                    text = restoreHtmlImages(text, taPromptUtils.lastImageMap);
                     let prefs_repl = await browser.storage.sync.get({composing_plain_text: prefs_default.composing_plain_text});
                     if(prefs_repl.composing_plain_text){
                         text = stripHtmlKeepLines(text);
@@ -469,6 +470,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                     taLog.log("paragraphsHtmlString: " + paragraphsHtmlString);
+                    paragraphsHtmlString = restoreHtmlImages(paragraphsHtmlString, taPromptUtils.lastImageMap);
                     let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
                     if(prefs_reply.composing_plain_text){
                         paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);

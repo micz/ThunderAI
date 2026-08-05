@@ -19,7 +19,8 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import {
     getMailHeader,
-    sanitizeMailHeaders
+    sanitizeMailHeaders,
+    tokenizeHtmlImages
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -76,6 +77,15 @@ const defaultPlaceholders = [
     {
         id: 'mail_typed_text',
         name: "__MSG_placeholder_mail_typed_text__",
+        default_value: "",
+        type: 2,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
+    },
+    {
+        id: 'mail_typed_html',
+        name: "__MSG_placeholder_mail_typed_html__",
         default_value: "",
         type: 2,
         is_default: "1",
@@ -536,20 +546,47 @@ export const placeholdersUtils = {
     async getPlaceholdersValues(args) {
         const {
             prompt_text = "",
+            curr_prompt = {},
             curr_message = {},
             mail_subject = "",
             body_text = "",
             msg_text = {},
             only_typed_text = "",
+            only_typed_html = "",
             only_quoted_text = "",
             selection_text = "",
             selection_html = "",
             tags_full_list = ["", []]
         } = args || {};
+
+        let activeImageMap = {};
+        const shouldCleanImages = String(curr_prompt?.clean_embedded_images) !== "0";
+
+        let htmlBody = msg_text?.html || "";
+        let typedHtml = only_typed_html || "";
+        let selHtml = selection_html || "";
+
+        if (shouldCleanImages) {
+            if (htmlBody) {
+                const res = tokenizeHtmlImages(htmlBody, activeImageMap);
+                htmlBody = res.cleanHtml;
+            }
+            if (typedHtml) {
+                const res = tokenizeHtmlImages(typedHtml, activeImageMap);
+                typedHtml = res.cleanHtml;
+            }
+            if (selHtml) {
+                const res = tokenizeHtmlImages(selHtml, activeImageMap);
+                selHtml = res.cleanHtml;
+            }
+        }
+
         let currPHs = await placeholdersUtils.extractPlaceholders(prompt_text);
         // console.log(">>>>>>>>>> currPHs: " + JSON.stringify(currPHs));
         // console.log(">>>>>>>>>> curr_message: " + JSON.stringify(curr_message));
         let finalSubs = {};
+        finalSubs._imageMap = activeImageMap;
+
         for(let currPH of currPHs){
             // console.log(">>>>>>>>>> currPH: " + JSON.stringify(currPH));
             switch(currPH.id){
@@ -557,10 +594,13 @@ export const placeholdersUtils = {
                     finalSubs['mail_text_body'] = placeholdersUtils.failSafePlaceholders(body_text);
                     break;
                 case 'mail_html_body':
-                    finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(msg_text?.html);
+                    finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(htmlBody);
                     break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);
+                    break;
+                case 'mail_typed_html':
+                    finalSubs['mail_typed_html'] = placeholdersUtils.failSafePlaceholders(typedHtml);
                     break;
                 case 'mail_quoted_text':
                     finalSubs['mail_quoted_text'] = placeholdersUtils.failSafePlaceholders(only_quoted_text);
@@ -584,13 +624,13 @@ export const placeholdersUtils = {
                     finalSubs['selected_text'] = placeholdersUtils.failSafePlaceholders(selection_text);
                     break;
                 case 'selected_html':
-                    finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selection_html);
+                    finalSubs['selected_html'] = placeholdersUtils.failSafePlaceholders(selHtml);
                     break;
                 case 'mail_text_body_or_selected':
                     finalSubs['mail_text_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_text || body_text);
                     break;
                 case 'mail_html_body_or_selected':
-                    finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selection_html || msg_text?.html);
+                    finalSubs['mail_html_body_or_selected'] = placeholdersUtils.failSafePlaceholders(selHtml || htmlBody);
                     break;
                 case 'author':
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));

@@ -107,6 +107,9 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "A szöveg-összehasonlító nézet akkor választható ki, ha a művelet \"Szöveg helyettesítése\"-re van állítva."
     },
+    "customPrompts_form_label_clean_embedded_images": {
+      "message": "Beágyazott képek eltávolítása a prompt HTML-kódjából"
+    },
     "customPrompts_form_required_fields": {
         "message": "Kötelező mezők"
     },

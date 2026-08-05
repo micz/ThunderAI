@@ -103,6 +103,7 @@ export class mzta_Menus {
                 text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
                 html: convertNewlinesToBr(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
                 only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_typed_html: await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedHtml", do_autoselect: do_autoselect }),
                 only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
@@ -110,7 +111,7 @@ export class mzta_Menus {
         curr_menu_entry.act = async () => {
             taWorkingStatus.startWorking();
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text'));
+            const msg_text = await getMailBody(tabs, placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_text') || placeholdersUtils.hasPlaceholder(curr_prompt.text,'mail_typed_html'));
 
             if (curr_prompt.id === 'prompt_get_calendar_event_from_clipboard') {
                 try {
@@ -144,12 +145,17 @@ export class mzta_Menus {
             let selection_text = '';
             let selection_html = msg_text.selection_html;
             let only_typed_text = '';
+            let only_typed_html = '';
             let only_quoted_text = '';
             only_typed_text = msg_text.only_typed_text.replace(/[ \t]+/g, ' ').trim();
+            only_typed_html = msg_text.only_typed_html || '';
             selection_text = msg_text.selection.replace(/[ \t]+/g, ' ').trim();
             if(selection_text === ''){
                 if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
                     selection_text = only_typed_text;
+                } else if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_html")){
+                    selection_text = only_typed_text;
+                    selection_html = only_typed_html;
                 }
             }
             only_quoted_text = msg_text.only_quoted_text.replace(/[ \t]+/g, ' ').trim();
@@ -190,6 +196,7 @@ export class mzta_Menus {
                 subject_text: await getMailSubject(tabs[0]),
                 msg_text: msg_text,
                 only_typed_text: only_typed_text,
+                only_typed_html: only_typed_html,
                 only_quoted_text: only_quoted_text,
                 tags_full_list: tags_full_list
             });

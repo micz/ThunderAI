@@ -16,5 +16,8 @@
     },
     "customPrompts_start_saving": {
         "message": "Promptlar kaydediliyor…"
+    },
+    "customPrompts_form_label_clean_embedded_images": {
+        "message": "Gömülü görselleri prompt HTML'sinden kaldır"
     }
 }
