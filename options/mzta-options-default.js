@@ -124,6 +124,9 @@ export const prefs_default = {
     placeholders_use_default_value: false,
     hide_thinking: true,
     api_webchat_font_scale: 1.0,   // font zoom factor for the API webchat (1.0 = 100%)
+    // Default comparison unit of the proofreading change picker: 'words' or
+    // 'sentences'. A prompt can override it; '' on a prompt means "inherit this".
+    diff_granularity: 'words',
     max_prompt_length: 30000,   // max string length for prompt
     add_tags: false,
     add_tags_maxnum: 3,

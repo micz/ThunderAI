@@ -155,6 +155,86 @@ export function buildDiffIcon(size = 15) {
     return strokedIcon(size, ['M12 4v16M6 8l-3 4 3 4M18 8l3 4-3 4']);
 }
 
+// Three dots — stands in for the empty side of a diff-picker change: the
+// missing original of an insertion, or the missing replacement of a deletion.
+// Gives that side something to click, so "keep nothing here" is the same
+// gesture as every other choice.
+export function buildHunkMarkerIcon(size = 11) {
+    const svg = el('svg', {
+        width: String(size),
+        height: String(size),
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    for (const cx of ['6', '12', '18']) {
+        svg.appendChild(el('circle', {
+            cx: cx, cy: '12', r: '2',
+            fill: 'currentColor',
+        }));
+    }
+    return svg;
+}
+
+// Chevron pointing left / right — the diff-picker's previous / next stepper.
+export function buildChevronLeftIcon(size = 15) {
+    return strokedIcon(size, ['M15 18l-6-6 6-6'], '2');
+}
+
+export function buildChevronRightIcon(size = 15) {
+    return strokedIcon(size, ['M9 18l6-6-6-6'], '2');
+}
+
+// Check inside a circle — the diff-picker's status indicator.
+export function buildCircleCheckIcon(size = 15) {
+    const svg = strokedIcon(size, ['M8.5 12.2l2.4 2.4 4.6-4.8'], '2.2');
+    svg.appendChild(el('circle', {
+        cx: '12', cy: '12', r: '9',
+        stroke: 'currentColor',
+        'stroke-width': '2.2',
+    }));
+    return svg;
+}
+
+// Bare check mark — "accept all" in the overflow menu.
+export function buildCheckMarkIcon(size = 15) {
+    return strokedIcon(size, ['M20 6L9 17l-5-5'], '2.2');
+}
+
+// Cross — "reject all" in the overflow menu.
+export function buildCrossIcon(size = 15) {
+    return strokedIcon(size, ['M18 6L6 18M6 6l12 12'], '2.2');
+}
+
+// Pencil over a line — "edit manually" in the overflow menu.
+export function buildPencilIcon(size = 15) {
+    return strokedIcon(size, [
+        'M12 20h9',
+        'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+    ], '2');
+}
+
+// Three dots in a row — the diff-picker's "more actions" overflow button.
+// Horizontally laid out like buildHunkMarkerIcon but at the wider spacing and
+// larger radius the toolbar button needs; kept separate so changing one glyph
+// cannot silently restyle the other.
+export function buildOverflowIcon(size = 16) {
+    const svg = el('svg', {
+        width: String(size),
+        height: String(size),
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        'aria-hidden': 'true',
+    });
+    for (const cx of ['5', '12', '19']) {
+        svg.appendChild(el('circle', {
+            cx: cx, cy: '12', r: '1.8',
+            fill: 'currentColor',
+        }));
+    }
+    return svg;
+}
+
 // Save (floppy-style outline) — "save as summary".
 export function buildSaveIcon(size = 15) {
     return strokedIcon(size, [

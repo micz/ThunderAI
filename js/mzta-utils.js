@@ -330,14 +330,25 @@ export function sanitizeMailHeaders(input){
   return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// HTML → plain text for the "compose in plain text" preference.
+//
+// The line structure is carried by the TAGS, not by the source newlines: the
+// markdown renderer emits "<br>\n" and "</p>\n<p>", so a newline in the source
+// is almost always just pretty-printing next to a tag that already means a
+// break. Counting both would double every line — a single <br> would come out
+// as a blank line and be indistinguishable from a paragraph break.
 export function stripHtmlKeepLines(htmlString) {
-  // Replaces <p> tags with a newline at the beginning
-  // and removes all other HTML tags
-  return convertBrToNewlines(htmlString)
-    .replace(/<p>/gi, '')                  // removes <p> tags
-    .replace(/<\/p>/gi, '\n')              // replaces </p> tags with newline
-    .replace(/<[^>]*>/g, '')               // removes any other HTML tags
-    .trim();                               // removes leading/trailing whitespace
+  return htmlString
+    .replace(/\r\n/g, '\n')
+    .replace(/<br\s*\/?>[ \t]*\n?/gi, '\n')  // <br> IS the break: eat the source newline after it
+    .replace(/&lt;br\s*\/?&gt;[ \t]*\n?/gi, '\n') // literal <br> that survived HTML escaping
+    .replace(/\n?[ \t]*<p>/gi, '')           // removes <p> tags
+    .replace(/<\/p>[ \t]*\n?/gi, '\n\n')     // a paragraph boundary is a blank line
+    .replace(/<\/(li|tr|div|h[1-6]|blockquote)>[ \t]*\n?/gi, '\n')  // one block = one line
+    .replace(/\n?[ \t]*<(li|tr|div|h[1-6]|blockquote)[^>]*>/gi, '\n')
+    .replace(/<[^>]*>[ \t]*\n?/g, '')        // removes any other HTML tag (and its trailing newline)
+    .replace(/\n{3,}/g, '\n\n')              // never more than one blank line
+    .trim();                                 // removes leading/trailing whitespace
 }
 export function htmlBodyToPlainText(htmlString) {
 	// Create a new DOMParser instance
@@ -427,12 +438,23 @@ export function stripThinkTags(text, truncateUnterminated = false) {
   return { text: out.replace(/^\s+/, ''), thinking: thinking };
 }
 
+// Only for PLAIN text. Applying this to already-formed HTML injects spurious <br>
+// at every source newline (indentation, line breaks between tags) — use
+// normalizeHtmlSourceNewlines() for HTML instead.
 export function convertNewlinesToBr(text) {
   return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
 }
 
-function convertBrToNewlines(html) {
-  return html.replace(/<br\s*\/?>/gi, '\n');
+// Collapses the source newlines of an HTML string without turning them into markup.
+// In HTML the source newlines are not line breaks: the line structure is carried by
+// the tags (<div>, <p>, and any <br> already present in the body), so collapsing them
+// to a space preserves the semantics and keeps spurious <br> out of the AI prompt.
+export function normalizeHtmlSourceNewlines(html) {
+  if (!html) return '';
+  return html
+    .replace(/\r\n/g, '\n')
+    .replace(/\n/g, ' ')
+    .replace(/[ \t]{2,}/g, ' ');
 }
 
 export function convertNewlinesToParagraphs(input) {

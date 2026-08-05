@@ -110,6 +110,9 @@ async function restoreOptions() {
         case 'select-one':
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
+          // Without a default this select would restore to '', which matches no
+          // option, and the control would render blank.
+          if(element.id == 'diff_granularity') default_select_value = prefs_default.diff_granularity;
           // No fallback for connection_type: an empty value means "no connection
           // selected yet" and must stay empty, so the placeholder option shows.
           element.value = result[element.id] || default_select_value;

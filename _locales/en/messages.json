@@ -729,6 +729,22 @@
     "message": "If checked, the placeholders will be filled with the default values when no value is provided. Otherwise, the placeholders will be kept in place.",
     "description": ""
   },
+  "prefs_OptionText_diff_granularity": {
+    "message": "Compare changes by",
+    "description": "Options page: default comparison unit of the proofreading change picker"
+  },
+  "prefs_OptionText_diff_granularity_info": {
+    "message": "How the change picker compares the original text with the answer. \"Words\" suits fixing spelling and grammar; \"Sentences\" is easier to read when the answer rewrites whole sentences. Note that on a text made of a single sentence, \"Sentences\" shows the whole text as one change. You can also switch between the two while reviewing the changes.",
+    "description": ""
+  },
+  "prefs_OptionText_diff_granularity_words": {
+    "message": "Words",
+    "description": "Comparison unit: word by word"
+  },
+  "prefs_OptionText_diff_granularity_sentences": {
+    "message": "Sentences",
+    "description": "Comparison unit: sentence by sentence"
+  },
   "prefs_OptionText_hide_thinking": {
     "message": "Collapse thinking block by default",
     "description": ""
@@ -1540,6 +1556,172 @@
   "chatgpt_win_diff_title": {
     "message": "Differences between the original and the modified text",
     "description": ""
+  },
+  "apiwebchat_picker_title": {
+    "message": "Review the changes",
+    "description": "Title of the transcript turn holding the interactive change picker"
+  },
+  "apiwebchat_picker_toolbar": {
+    "message": "Change picker actions",
+    "description": "Accessible label of the change picker toolbar"
+  },
+  "apiwebchat_picker_counter": {
+    "message": "$ACCEPTED$ of $TOTAL$ changes accepted",
+    "description": "Change picker counter",
+    "placeholders": {
+      "accepted": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_counter_all": {
+    "message": "All $TOTAL$ changes accepted",
+    "description": "Change picker status shown when every change is accepted",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_step_short": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "description": "Change picker stepper label, compact form used on wide layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_long": {
+    "message": "Change $CURRENT$ of $TOTAL$",
+    "description": "Change picker stepper label, full form used on narrow layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_total": {
+    "message": "$TOTAL$ changes",
+    "description": "Change picker stepper label before the user has navigated to a specific change, narrow layout",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_progress": {
+    "message": "Accepted changes",
+    "description": "Accessible label of the change picker's progress bar"
+  },
+  "apiwebchat_picker_more_actions": {
+    "message": "More actions",
+    "description": "Accessible label of the change picker's overflow menu button"
+  },
+  "apiwebchat_picker_edit": {
+    "message": "Edit manually",
+    "description": "Change picker button that switches from reviewing changes to freely editing the text"
+  },
+  "apiwebchat_picker_review": {
+    "message": "Back to changes",
+    "description": "Change picker button that leaves manual editing and compares the edited text against the original again"
+  },
+  "apiwebchat_picker_editor": {
+    "message": "Edited text",
+    "description": "Accessible label of the change picker's manual editing text box"
+  },
+  "apiwebchat_picker_edit_hint": {
+    "message": "You are editing the text by hand. Going back to the changes will compare what you wrote with the original text again, and every choice will be reset.",
+    "description": "Note shown by the change picker while in manual editing mode"
+  },
+  "apiwebchat_picker_granularity": {
+    "message": "Compare by",
+    "description": "Accessible label of the change picker's word/sentence granularity toggle"
+  },
+  "apiwebchat_picker_granularity_words": {
+    "message": "Words",
+    "description": "Change picker granularity option: compare the texts word by word"
+  },
+  "apiwebchat_picker_granularity_sentences": {
+    "message": "Sentences",
+    "description": "Change picker granularity option: compare the texts sentence by sentence"
+  },
+  "apiwebchat_picker_accept_all": {
+    "message": "Accept all",
+    "description": ""
+  },
+  "apiwebchat_picker_reject_all": {
+    "message": "Reject all",
+    "description": ""
+  },
+  "apiwebchat_picker_prev": {
+    "message": "Previous change",
+    "description": ""
+  },
+  "apiwebchat_picker_next": {
+    "message": "Next change",
+    "description": ""
+  },
+  "apiwebchat_picker_no_changes": {
+    "message": "The answer is identical to the original text: there is nothing to review.",
+    "description": "Shown by the change picker when the diff found no differences"
+  },
+  "apiwebchat_picker_diff_failed": {
+    "message": "The two texts could not be compared. The answer is shown unchanged.",
+    "description": "Shown by the change picker when the diff could not be computed"
+  },
+  "apiwebchat_picker_side_old_active": {
+    "message": "Original text, kept: $TEXT$",
+    "description": "Accessible label of the original version of a change, when it is the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_old_inactive": {
+    "message": "Original text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the original version of a change, when it is not the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_new_active": {
+    "message": "Suggested text, kept: $TEXT$",
+    "description": "Accessible label of the suggested version of a change, when it is the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_new_inactive": {
+    "message": "Suggested text, discarded: $TEXT$. Activate to keep it instead.",
+    "description": "Accessible label of the suggested version of a change, when it is not the one in use",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_side_empty_active": {
+    "message": "No text here: this part is left out. Activate the other version to keep its text.",
+    "description": "Accessible label of the empty side of a change (an insertion with no original, or a deletion with no replacement), when it is the one in use"
+  },
+  "apiwebchat_picker_side_empty_inactive": {
+    "message": "No text here. Activate to leave this part out.",
+    "description": "Accessible label of the empty side of a change, when it is not the one in use"
   },
   "apiwebchat_you": {
     "message": "You",

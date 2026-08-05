@@ -251,7 +251,38 @@ background → controller.js (browser.runtime commands)
 
 Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens and, on flush,
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
-text to `renderThinkingBlock`. The answer-text snapshot is what the "use this answer" /
+text to `renderThinkingBlock`.
+
+`flush()` runs markdown-it with **`html: false`** (the default) — raw HTML in the model output is
+escaped, never rendered, so the model can't inject markup into the extension UI — and with
+**`breaks: true`**, which is deliberate: this is a mail composer, so a newline the model wrote is a
+newline the user expects, and a single `\n` inside a paragraph must render as a real `<br>`.
+
+`html: false` means a literal `<br>` echoed by the model would otherwise surface as visible
+`&lt;br&gt;` text. `normalizeEchoedBrTags()` (`api_webchat/streamingMessage.js`) rewrites them to
+newlines before the render, per **run** rather than per tag:
+
+| echoed | becomes | renders as |
+|---|---|---|
+| one `<br>` | `\n` | a line break (`<br>`, via `breaks: true`) |
+| two or more `<br>` | `\n\n` | exactly one blank line, whether the model wrote 2 or 8 |
+
+Deciding the run→break mapping explicitly is what makes the vertical space deterministic; it used to
+fall out of markdown-it collapsing consecutive blank lines. Fenced code blocks and inline code spans
+are masked out before the rewrite and restored after, so a `<br>` the user is asking *about* stays in
+the code block as escaped text.
+
+**There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
+already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the
+"use this answer" path inserts into the mail. That symmetry is the invariant: the chat and the mail
+must show the same line structure. The old `convertTextNodeNewlinesToBr()` fixed up only the chat
+DOM, so the mail silently lost every single-`<br>` break; it has been removed. Re-adding it would
+also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the `\n` right after the
+`<br>` would be promoted to a second one.
+
+The complementary half of this lives on the input side: the compose-window HTML placeholders
+go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
+so the prompt no longer carries a `<br>` at every source newline for the model to copy back. The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
 turn's buttons tied to their own response.
 
@@ -261,6 +292,13 @@ text**, so it reads the selection through `getCurrentSelectionText()` and conver
 snapshot with `htmlToPlainText()` — which parses the markup, decoding entities (`&amp;` → `&`)
 and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
 is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
+
+With `composing_plain_text` on, `mzta-background.js` converts that same snapshot with
+`stripHtmlKeepLines()` (`js/mzta-utils.js`) before handing it to the compose window. The line
+structure there is carried by the **tags**, not by the source newlines: the renderer emits
+`<br>\n` and `</p>\n<p>`, so each of those rules consumes the pretty-printing newline that follows
+its tag. Counting both would double every line and make a single `<br>` indistinguishable from a
+paragraph break.
 
 ### Theming
 
