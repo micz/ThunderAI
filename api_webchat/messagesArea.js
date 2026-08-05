@@ -1500,10 +1500,19 @@ class MessagesArea extends HTMLElement {
 
             // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
 
-            // Create a new DOM parser
+            // Create a new DOM parser.
+            //
+            // The rendered HTML is used AS IS, with no newline→<br> post-pass over
+            // the text nodes. StreamingMessage renders with breaks:true, so every
+            // line break the model wrote is already a real <br> element in `html` —
+            // and therefore also in `fullTextHTML`, the snapshot that goes into the
+            // mail. That symmetry is the point: the chat and the mail must show the
+            // same line structure, and a DOM-only fix-up here would only ever be
+            // visible in the chat. It would also double-space the answer, because
+            // markdown-it emits "<p>a<br>\nb</p>" and the '\n' right after the <br>
+            // would be promoted to a second one.
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            convertTextNodeNewlinesToBr(doc.body);
 
             // Remove existing tokens
             while (this.accumulatingMessageEl.firstChild) {
@@ -1618,25 +1627,13 @@ function htmlStringToFragment(htmlString) {
   return fragment;
 }
 
-function convertTextNodeNewlinesToBr(element) {
-    element.childNodes.forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (node.textContent.includes('\n') && node.textContent.trim() !== '') {
-                const fragment = document.createDocumentFragment();
-                node.textContent.split('\n').forEach((part, idx, arr) => {
-                    fragment.appendChild(document.createTextNode(part));
-                    if (idx < arr.length - 1) {
-                        fragment.appendChild(document.createElement('br'));
-                    }
-                });
-                node.parentNode.replaceChild(fragment, node);
-            }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            convertTextNodeNewlinesToBr(node);
-        }
-    });
-}
-
+// removeAloneBRs strips every <br> that has no <p> ancestor.
+//
+// On the markdown answer path this now has real work to do, and does the right
+// thing: with breaks:true the snapshot contains <br> INSIDE <p> (the line breaks
+// the model wrote), and those are exactly the ones it preserves. What it still
+// removes are the <br> a mouse selection can leave outside any paragraph, which
+// is what it was written for.
 function removeAloneBRs(htmlString) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlString, 'text/html');
