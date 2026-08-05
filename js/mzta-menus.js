@@ -505,6 +505,7 @@ export class mzta_Menus {
             position_display: prompt.position_display,
             position_compose: prompt.position_compose,
             position_context: prompt.position_context,
+            custom_icon: getContextMenuIcon(prompt),   // '' when the prompt has no icon
         };
         this.shortcutMenu.push(curr_menu_entry);
     }

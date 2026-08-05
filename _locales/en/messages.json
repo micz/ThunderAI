@@ -140,7 +140,7 @@
     "description": ""
   },
   "customPrompts_form_label_use_diff_viewer_title": {
-    "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
+    "message": "Available when the \"Action\" is \"Substitute text\".",
     "description": ""
   },
   "customPrompts_form_required_fields": {
@@ -2641,6 +2641,14 @@
     "message": "Menu order saved!",
     "description": "Message shown after saving menu order"
   },
+  "menu_order_reset_all": {
+    "message": "Reset all",
+    "description": "Menu order page: button restoring default order, visibility and icons for all menu items"
+  },
+  "menu_order_reset_all_tooltip": {
+    "message": "Restores the default order, visibility and icons for all menu items. Press Save all to apply.",
+    "description": "Menu order page: tooltip for the button restoring default order, visibility and icons for all menu items"
+  },
   "menu_order_tab_reading": {
     "message": "Reading",
     "description": "Sub-tab label for reading view ordering"
@@ -2704,6 +2712,10 @@
   "menu_order_icon_none": {
     "message": "(none)",
     "description": "Dropdown option meaning no custom icon is selected for the context menu item"
+  },
+  "menu_order_icon_default": {
+    "message": "Default icon",
+    "description": "Icon picker option that clears the custom icon and restores the prompt's built-in default icon"
   },
   "menu_order_legend_type": {
     "message": "When shown:",
@@ -3117,5 +3129,13 @@
   "onboarding_footer_3": {
     "message": "Do you enjoy ThunderAI?",
     "description": "Onboarding page: footer question before the donation button"
+  },
+  "editor_placeholder_unknown": {
+    "message": "Unknown placeholder, or not available for this prompt type",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist, or exists but is not available for the prompt's selected type"
+  },
+  "editor_placeholder_unterminated": {
+    "message": "Unterminated placeholder: missing the closing %}",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
   }
 }

@@ -634,6 +634,9 @@ export async function getSpecialPrompts(){
         def_specPrompts.forEach((prompt) => {
             // console.log(">>>>>>>>>>>>> getSpecialPrompts prompt: " + JSON.stringify(prompt));
             prompt.text = browser.i18n.getMessage(prompt.text);
+            // Icons are selectable for special prompts too; empty means "use the
+            // hard-coded built-in icon" (see getBuiltInPromptIcon()).
+            prompt.custom_icon = "";
         })
         return def_specPrompts;
     } else {
@@ -650,6 +653,11 @@ export async function getSpecialPrompts(){
         updatedPrompts.forEach((prompt) => {
             if (prompt.show_in === undefined) {
                 prompt.show_in = "both";
+            }
+            // Migrate: special prompts saved before icons were selectable have no
+            // custom_icon; empty means "use the hard-coded built-in icon".
+            if (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") {
+                prompt.custom_icon = "";
             }
         });
 
@@ -669,6 +677,16 @@ export async function setSpecialPrompts(prompts) {
 
 export function getHiddenSpecialPromptIds() {
     return specialPrompts.filter(p => p.show_in === "none").map(p => p.id);
+}
+
+// Factory show_in for a prompt id: the value declared in the built-in
+// defaultPrompts/specialPrompts arrays. Custom prompts have no declaration,
+// so they fall back to the same default used by getCustomPrompts() ("popup").
+// Used by the menu order page to reset visibility to its out-of-the-box state.
+export function getFactoryShowIn(promptId) {
+    const prompt = specialPrompts.find(sp => sp.id === promptId)
+                || defaultPrompts.find(dp => dp.id === promptId);
+    return prompt?.show_in || "popup";
 }
 
 // Migration: if dynamic_menu_order_alphabet was true (or unset), assign initial positions

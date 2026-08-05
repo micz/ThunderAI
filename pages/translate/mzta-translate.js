@@ -27,9 +27,9 @@ import {
 } from "../../js/mzta-prompts.js";
 import {
     getPlaceholders,
-    mapPlaceholderToSuggestion
-} from "../../js/mzta-placeholders.js";
+    mapPlaceholderToSuggestion, placeholdersUtils } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   normalizeStringList,
   isAPIKeyValue,
@@ -40,6 +40,7 @@ import {
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 let taLog = new taLogger("mzta-translate-page", true);
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -121,10 +122,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     translate_textarea.value = translate_prompt.text;
     translate_reset_btn.disabled = (translate_textarea.value === browser.i18n.getMessage("prompt_translate_this_full_text"));
 
-    autocompleteSuggestions = (await getPlaceholders(true))
+    // Full list, kept for token validation. Deliberately NOT filtered like the
+    // suggestions: {%additional_text%} is a real placeholder that this page simply
+    // does not offer, so the editor must not flag it as unknown.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders
         .filter((p) => p.id !== "additional_text")
         .map(mapPlaceholderToSuggestion);
 
+    const translate_textarea_hl = attachEditorHighlight(translate_textarea);
+    // Flags unknown and unterminated tokens. Type 1 ("reading"),
+    // matching the type_value passed to textareaAutocomplete below.
+    if (translate_textarea_hl) translate_textarea_hl.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder, activePlaceholders, () => 1));
     textareaAutocomplete(translate_textarea, autocompleteSuggestions, 1);
 
 });

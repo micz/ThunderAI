@@ -47,6 +47,12 @@ import {
     mapPlaceholderToSuggestion
 } from "../../js/mzta-placeholders.js";
 import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js";
+import {
+    attachEditorHighlight,
+    getEditorHighlight,
+    makeTokenStateResolver,
+    PLACEHOLDER_RE
+} from "../../js/mzta-editor-highlight.js";
 
 let prefs = null;
 var promptsList = null;
@@ -57,6 +63,7 @@ var idnumMax = 0;
 var msgTimeout = null;
 let taLog = null;
 let autocompleteSuggestions = [];
+let activePlaceholders = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -93,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let _checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
         _checkboxUseDiffViewerNew.checked = false;
         _checkboxUseDiffViewerNew.disabled = true;
+        updateUseDiffViewerHint();
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
@@ -112,17 +120,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const textareas = document.querySelectorAll('.editor');
-    autocompleteSuggestions = (await getPlaceholders(true)).map(mapPlaceholderToSuggestion);
+    // Kept as the raw list too: the highlight backdrop validates tokens against
+    // it on every keystroke and needs the placeholder objects, not the mapped
+    // autocomplete suggestions.
+    activePlaceholders = await getPlaceholders(true);
+    autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
 
     // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     
+    // One registration per textarea. This used to be a nested pair of loops,
+    // which attached every handler N+1 times for N textareas (and, through
+    // textareaAutocomplete, leaked one document-level listener each time).
     textareas.forEach(textarea => {
         textareaAutocomplete(textarea, autocompleteSuggestions);
-        textareas.forEach(textarea => {
-            textarea.addEventListener('input', async (e) => {
-                await checkPromptsConfigForPlaceholders(e.target);
-            });
-        textareaAutocomplete(textarea, autocompleteSuggestions);
+        // The mirror is attached here only for the add-form textarea (.input_new),
+        // which is permanently in edit mode. Row textareas start hidden in read
+        // mode and get theirs from showItemRowEditor(); attaching one now would
+        // paint a second copy of the prompt text behind every read-mode row.
+        // Note both live inside a <tr>, so closest('tr') cannot tell them apart.
+        if (textarea.classList.contains('input_new')) attachHighlightWithValidation(textarea);
+        textarea.addEventListener('input', async (e) => {
+            await checkPromptsConfigForPlaceholders(e.target);
         });
     });
 
@@ -245,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkboxUseDiffViewerNew.checked = false;
             checkboxUseDiffViewerNew.disabled = true;
         }
+        updateUseDiffViewerHint();
     });
 
     const btnAddNew = document.getElementById('btnAddNew');
@@ -642,14 +661,58 @@ function populateConnectionUI(tr, id, prefix, selectId) {
     i18n.updateDocument();
 }
 
+/*
+ *  Attaches the highlight mirror plus token validation to a prompt textarea.
+ *
+ *  Token validity depends on the prompt's selected type, so the type selector is
+ *  read lazily on every token and a 'change' listener repaints the mirror. There
+ *  was no listener on .type_output / #selectTypeNew before this: the autocomplete
+ *  reads the type per keystroke and never needed one, but the mirror caches its
+ *  render and would otherwise keep showing stale warnings after a type change.
+ */
+function attachHighlightWithValidation(textarea) {
+    // Idempotent, like attachEditorHighlight itself: showItemRowEditor() re-runs
+    // on every entry into edit mode.
+    const existing = getEditorHighlight(textarea);
+    const handle = existing || attachEditorHighlight(textarea);
+    if (!handle) return null;
+
+    // The add-form textarea has no row; its selector is #selectTypeNew.
+    const tr = textarea.closest('tr');
+    const typeSelect = textarea.classList.contains('input_new')
+        ? document.getElementById('selectTypeNew')
+        : (tr ? tr.querySelector('.type_output') : null);
+
+    if (!existing) {
+        handle.setTokenStateResolver(makeTokenStateResolver(
+            placeholdersUtils.findPlaceholder,
+            activePlaceholders,
+            typeSelect ? () => typeSelect.value : null));
+    }
+
+    if (typeSelect && !typeSelect._mztaHighlightSync) {
+        typeSelect._mztaHighlightSync = true;
+        typeSelect.addEventListener('change', () => {
+            const h = getEditorHighlight(textarea);
+            if (h) h.refresh();
+        });
+    }
+    return handle;
+}
+
 function showItemRowEditor(tr) {
     tr.querySelector('.id_output').style.display = 'inline';
     tr.querySelector('.id_show').style.display = 'none';
     tr.querySelector('.name_output').style.display = 'inline';
     tr.querySelector('.name_show').style.display = 'none';
     const text_output = tr.querySelector('.text_output');
-    text_output.style.display = 'inline';
+    // 'block', not 'inline': the highlight backdrop is absolutely positioned
+    // against this box, and an inline textarea would not align with it.
+    text_output.style.display = 'block';
     textareaAutocomplete(text_output, autocompleteSuggestions)
+    // Both calls are idempotent, so re-entering edit mode on the same row does
+    // not stack listeners or mirrors.
+    attachHighlightWithValidation(text_output);
     tr.querySelector('.text_show').style.display = 'none';
     toggleAdditionalPropertiesEditor(tr);
     tr.querySelector('.chatgpt_web_additional_info_show').style.display = 'none';
@@ -672,7 +735,13 @@ function hideItemRowEditor(tr) {
     tr.querySelector('.id_show').style.display = 'inline';
     tr.querySelector('.name_output').style.display = 'none';
     tr.querySelector('.name_show').style.display = 'inline';
-    tr.querySelector('.text_output').style.display = 'none';
+    const text_output_hide = tr.querySelector('.text_output');
+    const highlight = getEditorHighlight(text_output_hide);
+    if (highlight) highlight.destroy();
+    // The autocomplete must go down with the mirror it reads the caret from,
+    // and its close() drops the row from the shared open-instances set.
+    if (text_output_hide._mztaAutocomplete) text_output_hide._mztaAutocomplete.destroy();
+    text_output_hide.style.display = 'none';
     tr.querySelector('.text_show').style.display = 'inline';
     tr.querySelector('.chatgpt_web_additional_info_toggle').style.display = 'none';
     tr.querySelector('.chatgpt_web_additional_info').style.display = 'none';
@@ -905,6 +974,9 @@ function handleConfirmClick(e) {
     }
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
+    // List.js rewrote .text_show from the saved value, which strips the chips and
+    // does not fire 'updated' (it only re-rendered this one row), so re-decorate.
+    decoratePromptText();
     setSomethingChanged();
 }
 
@@ -922,7 +994,9 @@ async function handleCheckboxChange(e) {
     e.preventDefault();
     e.target.setAttribute('checked_val', e.target.checked ? '1' : '0');
 
-    if (e.target.classList.contains('need_custom_text')) {
+    // List rows only: the #formNew checkbox shares this class but has no backing
+    // List.js item yet (its `tr` carries no data-idnum).
+    if (e.target.classList.contains('need_custom_text') && !e.target.closest('#formNew')) {
         let tr = e.target.closest('tr');
         if (tr) {
             let idnum = tr.getAttribute('data-idnum');
@@ -985,6 +1059,7 @@ function handleCopyClick(e) {
     let checkboxUseDiffViewerNew = document.getElementById('checkboxUseDiffViewerNew');
     checkboxUseDiffViewerNew.checked = use_diff_viewer;
     checkboxUseDiffViewerNew.disabled = (action !== "2");
+    updateUseDiffViewerHint();
 
     document.getElementById('chatGPTWebModelNew').value = chatgpt_web_model;
     document.getElementById('chatGPTWebProjectNew').value = chatgpt_web_project;
@@ -1035,13 +1110,26 @@ function handleCopyClick(e) {
 // Wrap {%placeholder%} tokens in the visible prompt text with a styled chip.
 // Only touches the read-only .text_show spans (never the editable textarea),
 // and is idempotent (skips spans already decorated).
+// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, so read
+// mode and edit mode can never disagree on what counts as a token.
 function decoratePromptText() {
     document.querySelectorAll('#all_prompts .text_show').forEach(span => {
-        if (span.dataset.phDecorated === '1') return;
-        if (!/\{%[^%]+%\}/.test(span.innerHTML)) { span.dataset.phDecorated = '1'; return; }
-        span.innerHTML = span.innerHTML.replace(/\{%[^%]+%\}/g,
+        // The guard is keyed to the *decorated result*, not to a plain '1' flag:
+        // saving a row makes List.js rewrite this span in place (chips and all)
+        // without firing 'updated', so a boolean flag would stay stale and the
+        // prompt would lose its highlighting until the next full re-render.
+        if (span.dataset.phDecorated === span.innerHTML) return;
+        // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
+        // each use so a previous call cannot make this one start mid-string.
+        PLACEHOLDER_RE.lastIndex = 0;
+        if (!PLACEHOLDER_RE.test(span.innerHTML)) {
+            span.dataset.phDecorated = span.innerHTML;
+            return;
+        }
+        PLACEHOLDER_RE.lastIndex = 0;
+        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE,
             m => '<span class="ph_chip">' + m + '</span>');
-        span.dataset.phDecorated = '1';
+        span.dataset.phDecorated = span.innerHTML;
     });
 }
 
@@ -1096,7 +1184,8 @@ function loadPromptsList(values){
                 <td class="w08"><span class="name name_show"></span><input type="text" class="hiddendata name_output" value="` + values.name + `" /></td>
                 <td class="w40">
                     <span class="text text_show"></span>
-                    <div class="autocomplete-container">
+                    <div class="autocomplete-container editor-wrap">
+                        <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
                         <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
@@ -1159,7 +1248,7 @@ function loadPromptsList(values){
                     <br>
                     <label><span class="need_custom_text_span"><input type="checkbox" class="need_custom_text` + ((values.is_default == 1) ? ' input_mod':'') + `"` + ((values.is_default == 0) ? ' disabled':'') + ` > __MSG_customPrompts_form_label_need_custom_text__</span></label>
                     <br>
-                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customPrompts_form_label_define_response_lang__</label>
+                    <label><input type="checkbox" class="define_response_lang" disabled> __MSG_customprompts_form_label_define_response_lang__</label>
                     <br>
                     <label title="__MSG_customPrompts_form_label_use_diff_viewer_title__"><input type="checkbox" class="use_diff_viewer" disabled> __MSG_customPrompts_form_label_use_diff_viewer__</label>
                     <span class="is_default hiddendata"></span>
@@ -1302,6 +1391,16 @@ function checkFields() {
 }
 
 
+// The diff viewer flag only applies when the action is "substitute text", so
+// while it's disabled the form spells out the condition under the toggle. Once
+// it becomes available the hint is redundant and gets hidden again.
+function updateUseDiffViewerHint() {
+    const hint = document.getElementById('useDiffViewerNew_hint');
+    if (!hint) return;
+    const checkbox = document.getElementById('checkboxUseDiffViewerNew');
+    hint.classList.toggle('hidden', !checkbox.disabled);
+}
+
 function clearFields() {
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
@@ -1311,9 +1410,18 @@ function clearFields() {
     document.getElementById('chatGPTWebCustomGPTNew').value = '';
     document.getElementById('selectTypeNew').value = '0';
     document.getElementById('selectActionNew').value = '0';
-    document.getElementById('checkboxNeedSelectedNew').value = '0';
-    document.getElementById('checkboxNeedSignatureNew').value = '0';
-    document.getElementById('checkboxNeedCustomTextNew').value = '0';
+    document.getElementById('checkboxNeedSelectedNew').checked = false;
+    document.getElementById('checkboxNeedSignatureNew').checked = false;
+    document.getElementById('checkboxNeedCustomTextNew').checked = false;
+    document.getElementById('checkboxDefineResponseLangNew').checked = false;
+    document.getElementById('checkboxUseDiffViewerNew').checked = false;
+    // The action is reset to '0' above, so the diff viewer flag goes back to
+    // being not applicable (same state as on page load).
+    document.getElementById('checkboxUseDiffViewerNew').disabled = true;
+    updateUseDiffViewerHint();
+    // Drop any leftover validation rings from the previous edit.
+    document.getElementById('checkboxNeedSelectedNew').classList.remove('invalid_flag');
+    document.getElementById('checkboxNeedCustomTextNew').classList.remove('invalid_flag');
     document.getElementById('formNew').style.display = 'none';
 }
 
@@ -1362,12 +1470,16 @@ function setNothingChanged(){
 
 function checkSelectedBoxes(checkboxes = null) {
     if(checkboxes == null){
+        // Restores the list rows' checkboxes from their `checked_val` attribute.
+        // Scoped to the prompts list on purpose: the #formNew inputs share these
+        // classes (they use the same toggle-switch styling) but carry no
+        // `checked_val`, and the else-branch below would then force them all on.
         checkboxes = [
-            ...document.querySelectorAll('.need_selected[type="checkbox"]'),
-            ...document.querySelectorAll('.need_signature[type="checkbox"]'),
-            ...document.querySelectorAll('.need_custom_text[type="checkbox"]'),
-            ...document.querySelectorAll('.define_response_lang[type="checkbox"]'),
-            ...document.querySelectorAll('.use_diff_viewer[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_selected[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_signature[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .need_custom_text[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .define_response_lang[type="checkbox"]'),
+            ...document.querySelectorAll('table.prompts_list .use_diff_viewer[type="checkbox"]'),
         ];
     }
 
@@ -1451,25 +1563,13 @@ async function checkPromptsConfigForPlaceholders(textarea){
     // check additional_text and selected_text placeholders presence and the corrispondent checkboxes
     let tr_ancestor = textarea.closest('tr');
     let need_custom_text_element = tr_ancestor.querySelector('.need_custom_text') || tr_ancestor.querySelector('.need_custom_text_new');
-    if(/{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text))){
-        if(!need_custom_text_element.checked){
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '2px solid red';
-        }else{
-            need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-        }
-      }else{
-        need_custom_text_element.closest('.need_custom_text_span').style.border = '';
-      }
+    // The ring is drawn on the checkbox itself (see .invalid_flag in the CSS), so it
+    // hugs the toggle switch instead of boxing the whole label row.
+    let need_custom_text_missing = /{%\s*additional_text(?::.*?)?\s*%}/.test(String(curr_text)) && !need_custom_text_element.checked;
+    need_custom_text_element.classList.toggle('invalid_flag', need_custom_text_missing);
 
       let tr_ancestor2 = textarea.closest('tr');
       let selected_text_element = tr_ancestor2.querySelector('.need_selected') || tr_ancestor2.querySelector('.need_selected_new');
-      if((String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1)){
-        if(!selected_text_element.checked){
-            selected_text_element.closest('.need_selected_span').style.border = '2px solid red';
-        }else{
-            selected_text_element.closest('.need_selected_span').style.border = '';
-        }
-      }else{
-        selected_text_element.closest('.need_selected_span').style.border = '';
-      }
+      let selected_text_used = (String(curr_text).indexOf('{%selected_text%}') != -1)||(String(curr_text).indexOf('{%selected_html%}') != -1);
+      selected_text_element.classList.toggle('invalid_flag', selected_text_used && !selected_text_element.checked);
 }

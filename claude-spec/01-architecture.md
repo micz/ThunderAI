@@ -532,7 +532,8 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-working-status.js` | Visual status indicator during AI processing (ref-counted toolbar loading icon) |
 | `js/mzta-batch-controller.js` | Cooperative cancellation controller + progress counter for batch email processing (`processEmails`) |
 | `js/mzta-addtags-exclusion-list.js` | Tag exclusion list management |
-| `js/mzta-placeholders-autocomplete.js` | Autocomplete for placeholders in prompt editor |
+| `js/mzta-placeholders-autocomplete.js` | Caret-anchored autocomplete for placeholders in prompt editors (shared by 8 pages); styled by `pages/_lib/autocomplete.css` |
+| `js/mzta-editor-highlight.js` | Live `{%placeholder%}` highlighting for a textarea via a backdrop mirror; exports the shared `PLACEHOLDER_RE` token pattern |
 
 ## API Modules (`js/api/`)
 
@@ -575,7 +576,7 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 | `summarize/` | Email summarization settings |
 | `translate/` | Email translation settings |
 | `onboarding/` | First-run welcome page |
-| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), plus the vendored `tom-select.*` and `list.js` |
+| `_lib/` | Shared libraries used by pages: `connection-ui.js` (API connection UI), `mzta-timezones.js` (runtime-generated IANA timezone list for the calendar event / task selects, see [05-options.md](05-options.md)), `mzta-design.css` (shared design system), `autocomplete.css` (placeholder autocomplete dropdown, linked by all 8 pages that use it — written against both token systems via fallback chains), `editor-highlight.css` (backdrop-mirror structure for live `{%placeholder%}` highlighting, parameterized by `--ed-*` custom properties each page supplies), plus the vendored `tom-select.*` and `list.js` |
 
 ## Storage
 

@@ -57,23 +57,48 @@ export const specialPromptToContextMenuID = {
   'prompt_translate_this': contextMenuID_Translate,
 };
 
+// Built-in icons for the default prompts that are not special prompts.
+// These are shipped with the add-on (not in the user-selectable custom icons folder),
+// and act as a fallback: an icon explicitly chosen on the Menu Order page wins.
+// Special prompts get their built-in icon from contextMenuIconsPath instead.
+export const defaultPromptIconsPath = {
+  'prompt_proofread_this': 'moz-extension:images/context_menu/proofread.png',
+  'prompt_classify': 'moz-extension:images/context_menu/classify.png',
+  'prompt_this': 'moz-extension:images/context_menu/prompt_this.png',
+  'prompt_rewrite_formal': 'moz-extension:images/context_menu/rewrite_formal.png',
+  'prompt_rewrite_polite': 'moz-extension:images/context_menu/rewrite_polite.png',
+  'prompt_reply_advanced': 'moz-extension:images/context_menu/prompt_reply_advanced.png',
+  'prompt_reply': 'moz-extension:images/context_menu/prompt_reply.png',
+  'prompt_reply_custom_command': 'moz-extension:images/context_menu/prompt_reply_custom_command.png',
+};
+
 // const defaultContextMenuIcon = 'moz-extension:images/icon-32px.png';
 const defaultContextMenuIcon = '';
+
+// The icon a prompt ships with, ignoring any user choice: the hard-coded icon for
+// special prompts, otherwise the built-in default-prompt icon. '' when there is none.
+// Used both by the resolver below and by the Menu Order icon picker, so that the
+// "restore default" cell always previews exactly what clearing custom_icon yields.
+export function getBuiltInPromptIcon(promptId) {
+  const contextMenuId = specialPromptToContextMenuID[promptId];
+  if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
+    return contextMenuIconsPath[contextMenuId];
+  }
+  return defaultPromptIconsPath[promptId] || '';
+}
 
 export function getContextMenuIcon(prompt) {
   // Back-compat: accept a plain id string too
   const promptId = (typeof prompt === 'string') ? prompt : prompt?.id;
-  const isSpecial = (typeof prompt === 'object' && prompt !== null) ? String(prompt.is_special) === '1' : true;
 
-  if (isSpecial) {
-    const contextMenuId = specialPromptToContextMenuID[promptId];
-    if (contextMenuId && contextMenuIconsPath[contextMenuId]) {
-      return contextMenuIconsPath[contextMenuId];
-    }
-  }
-
+  // A user-chosen icon always wins, for special and non-special prompts alike.
   if (typeof prompt === 'object' && prompt !== null && prompt.custom_icon) {
     return 'moz-extension:' + customMenuIconsPath + prompt.custom_icon;
+  }
+
+  const builtIn = getBuiltInPromptIcon(promptId);
+  if (builtIn) {
+    return builtIn;
   }
 
   return defaultContextMenuIcon;

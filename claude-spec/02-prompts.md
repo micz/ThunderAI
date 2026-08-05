@@ -36,7 +36,7 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 | `position_compose` | number | Sort order for the popup menu in compose view |
 | `position_context` | number | Sort order for the context menu |
 | `show_in` | string | `"popup"` = popup only, `"context"` = context menu only, `"both"` = both, `"none"` = in no menu (unreachable). Default: `"popup"` for default/custom prompts, `"both"` for special prompts. **`show_in` is the single source of truth for reachability** — there is no separate enabled/disabled flag. |
-| `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/` used as the context-menu icon. Empty string = no icon. Only used for non-special prompts (special prompts use their hard-coded icons in `specialPromptToContextMenuID`). Selectable from a dropdown on the Menu Order page, context-menu tab. |
+| `custom_icon` | string | Filename (with extension) of an icon in `images/context_menu/custom/`. A single shared value: the same icon is used in **both** the context menu and the popup menu. Empty string = fall back to the prompt's built-in icon (see Icon Resolution), which for most prompts is not "no icon". Used for **all** prompts, special ones included: a chosen `custom_icon` overrides even a special prompt's hard-coded icon. Selectable from the icon picker on the Menu Order page — in every list of both panels; that page is the only place icons are chosen. |
 
 ### Per-Prompt API Override Properties
 
@@ -67,17 +67,39 @@ These special prompts can have their own dedicated API integration settings (con
 
 ## Menu System
 
+### Icon Resolution
+
+Two functions in `js/mzta-utils.js`, used by both menus and by the Menu Order picker. **Special and non-special prompts follow the same rules** — the only difference is where their built-in icon comes from.
+
+`getBuiltInPromptIcon(promptId)` returns the icon a prompt *ships* with, ignoring any user choice (`''` when none):
+
+1. **Special prompts** — hard-coded icon via `specialPromptToContextMenuID` → `contextMenuIconsPath`
+2. **Other default prompts** — `defaultPromptIconsPath`, keyed by prompt id (e.g. `prompt_proofread_this` → `images/context_menu/proofread.png`)
+
+`getContextMenuIcon(prompt)` resolves what is actually displayed, returning a `moz-extension:`-prefixed path or `''`:
+
+1. **`custom_icon`** — a user-chosen icon in `images/context_menu/custom/`. Wins for **every** prompt, special ones included
+2. **`getBuiltInPromptIcon()`** — the shipped icon, i.e. what clearing `custom_icon` reverts to
+3. `defaultContextMenuIcon` (`''`)
+
+All 8 prompts in `defaultPrompts` have a built-in icon, as do the 7 special prompts that appear in menus — so every shipped prompt has an icon, and only user-created custom prompts start with an empty slot. (`specialPrompts` holds 9 entries; `prompt_summarize_email_template` and `prompt_summarize_email_separator` are not menu items and have no icon.)
+
+To give a new default prompt a shipped icon, drop the PNG in `images/context_menu/` (not in `custom/` — that folder is the user-selectable picker grid) and add one entry to `defaultPromptIconsPath` — no other code changes are needed, since both menus and the Menu Order preview go through these two functions.
+
+`custom_icon` on special prompts persists in `_special_prompts` (whole prompt objects), so no storage-shape change was needed; `getSpecialPrompts()` normalizes a missing `custom_icon` to `""` for prompts saved before icons became selectable.
+
 ### Popup Menu
 - Displays prompts filtered by `show_in` (`"popup"` or `"both"`) and by tab context (`type` property: reading view shows types `0`+`1`, compose view shows types `0`+`2`)
 - Ordering: always position-based using `position_display` (reading view) or `position_compose` (compose view). Alphabetical ordering has been removed
 - Special prompts retain their colored background (CSS class `special_prompt`) in the popup based on `is_special == "1"`
+- Icons: each row shows the prompt's icon, resolved by `getContextMenuIcon()` and passed through in `addShortcutMenu()` as `custom_icon`. Each prompt shows its `custom_icon` if set, otherwise its built-in icon (see Icon Resolution). Icons here are **display-only** — they are chosen on the Menu Order page. The 16px slot is always rendered (blank via `.mzta_item_icon_empty` when there is no icon) so labels stay aligned
 
 ### Context Menu
 - Dynamically built from all prompts with `show_in` set to `"context"` or `"both"`, filtered to reading types only (`type` 0 or 1)
 - Appears as a "ThunderAI" submenu in the `message_list` context
 - Ordering: position-based using `position_context` (fallback to alphabetical only when positions are equal)
 - Special prompts (add_tags, spamfilter, summarize, translate) route through `processEmails()` for batch processing; regular prompts execute via `menus.executeMenuAction()`
-- Icons: special prompts use dedicated icons (defined in `contextMenuIconsPath`); all other prompts use the addon icon (`images/icon-32.png`)
+- Icons: resolved by `getContextMenuIcon()` (see Icon Resolution) — a user-chosen `custom_icon` first, otherwise the prompt's built-in icon (`contextMenuIconsPath` for special prompts, `defaultPromptIconsPath` for the other defaults). Prompts with no icon get none: `defaultContextMenuIcon` is `''`, so `menuOpts.icons` is left unset
 - Add Tags in context menu assigns tags automatically (`addTagsAuto: true`), while in the popup it shows the interactive tag selection form
 
 ### Menu Order Page (`pages/menu_order/`)
@@ -91,6 +113,8 @@ Dedicated page for reordering, enabling, and disabling menu items across both th
 Each list has two sections:
 - **Visible items**: active for the menu (`show_in` includes the menu), draggable to reorder
 - **Hidden items**: inactive for the menu (`show_in` excludes the menu), sorted alphabetically
+
+**Row icons** — every row in every list of both panels shows an icon slot (rendered in `renderListItems()`, between the drag handle and the name). **Every** prompt gets the same clickable picker (`buildIconPicker()` → `openIconPopover()`, a grid of `customMenuIcons` plus a first "restore default" cell) — special prompts included, so their hard-coded icon can be overridden. Selecting writes `custom_icon` on the in-memory prompt and calls `markUnsaved()`; it is persisted by the normal save flow (`_special_prompts` for special prompts, `_default_prompts_properties` for the rest). The preview is drawn by `applyIconToPreview(preview, filename, promptId)`, which falls back to `getBuiltInPromptIcon(promptId)` when no `custom_icon` is set. The first popover cell clears `custom_icon`, and previews the built-in icon (tooltip `menu_order_icon_default`, "Default icon") rather than an empty slot; it shows the greyscale `empty_icon.png` with tooltip `menu_order_icon_none` only for prompts that have no built-in icon, i.e. user-created custom ones. That placeholder carries an `icon_picker_none_empty` class so the dark-mode `filter: invert(1)` applies to it alone and never to a real color icon. Because `custom_icon` is a single shared value and the panels render the same prompt objects, an icon chosen in one panel shows in the other. Rendering the slot in all lists is what makes composing-only (`type: "2"`) prompts reachable, since they never appear in the context panel.
 
 **Row badges** — each row shows two colored badges (rendered in `renderListItems()`): a **type** badge (`.badge_type`) with the value Always / Reading / Composing (from `type` `0`/`1`/`2`), and a **source** badge with the value Default / Special / Custom (`.badge_default` / `.badge_special` / `.badge_custom`, from `is_default` / `is_special`). A static **legend** near the top of the page (`#badge_legend` in the HTML) explains both badge groups; it reuses the same badge CSS classes and i18n labels so its swatches match the rows automatically.
 
@@ -110,7 +134,16 @@ Both sections are draggable and act as drop targets; the section the row lands i
 - Special prompts whose base definition has `show_in: "none"` (internal prompts like `prompt_summarize_email_template` and `prompt_summarize_email_separator`) — retrieved via `getHiddenSpecialPromptIds()`
 - Special prompts whose feature is not active — retrieved from background via `get_active_special_ids` message, which calls `getActiveSpecialPromptsIDs()` with current prefs and `_sparks_presence`
 
-**Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work.
+**Cross-tab reload** — the page listens on `browser.storage.onChanged` for changes to `_default_prompts_properties`, `_custom_prompt`, or `_special_prompts`. When one of those keys changes (e.g. user saves from the Custom Prompts page in another tab), the page reloads its data with a 200ms debounce. Any unsaved local changes are discarded to avoid overwriting the other page's work; the reloader calls `markSaved()` so the page also drops its dirty state and does not warn about changes it just threw away.
+
+**Unsaved-changes tracking** — every mutating interaction (drag, icon pick, Reset all) funnels through `markUnsaved()`, which sets the module-level `somethingChanged` flag, enables `#btnSaveAll` and shows the red `customPrompts_unsaved_changes` banner in `#msgDisplay`. `markSaved()` is the inverse (flag cleared, button disabled, banner hidden). A `beforeunload` listener calls `event.preventDefault()` while `somethingChanged` is set, so closing the tab or navigating away with a pending Save All raises Thunderbird's native confirmation dialog — the same mechanism as the Custom Prompts and Custom Data Placeholders pages (Thunderbird 128+ only; the extension supplies no text for that dialog). Note `saveAll()` clears the flag **after** its `await`s complete, so a failed write leaves the warning armed.
+
+**Reset all** — a `#btnResetAll` button in the command palette (next to Save All, always enabled) restores the factory state of everything this page customizes, via `resetAll()`:
+- **Order**: prompts are re-sorted with special prompts first (alphabetically by resolved display name), then all the others alphabetically, and get sequential positions assigned to `position_display` = `position_compose` = `position_context`. This is the same factory ordering `migrateMenuOrderAlphabetic()` produces for a fresh install.
+- **Visibility**: `show_in` is restored from `getFactoryShowIn(promptId)` (exported by `js/mzta-prompts.js`), which reads the value declared in the built-in `defaultPrompts` / `specialPrompts` arrays and falls back to `"popup"` for user-created custom prompts. So context-only special prompts (`prompt_spamfilter`, `prompt_summarize`, `prompt_translate_this`) land back in the popup panel's Hidden section, not the Visible one.
+- **Icons**: `custom_icon` is cleared to `""` on every prompt, which is all that is needed — the resolution chain falls back to `getBuiltInPromptIcon()` (see Icon Resolution), so shipped icons return and prompts with no built-in icon go back to no icon.
+
+The reset is **in-memory only**: it closes any open icon popover, clears the deep-link highlight, re-renders both panels and calls `markUnsaved()` — exactly like a drag or an icon pick. Nothing is persisted until Save All, so reloading the page discards it; that is why there is no confirmation dialog. `allExcludedSpecialPrompts` is deliberately untouched, since those rows are not shown and are re-appended verbatim by the save flow.
 
 **Save flow**:
 1. Re-concat preserved prompts (hidden-specials + inactive-feature specials) with the UI-visible prompts
