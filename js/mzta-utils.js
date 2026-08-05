@@ -938,6 +938,31 @@ export async function requestSitePermission(url) {
 
 // The following methods are a modified version derived from https://github.com/ali-raheem/Aify/blob/13ff87583bc520fb80f555ab90a90c5c9df797a7/plugin/content_scripts/compose.js
 
+// Thunderbird's signature block ships its own leading <br>
+// (<div class="moz-signature"><br>...), while the cite-prefix block starts
+// directly with text (<div class="moz-cite-prefix">Am ... schrieb:<br></div>).
+// That asymmetry is the whole reason the spacer in insertHtml is conditional:
+// adding a <br> before a block that already begins with one yields a double
+// blank line. Whitespace-only text nodes are skipped, since the compose body
+// is pretty-printed. [#849]
+const startsWithBreak = function (element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+    return false;
+  }
+  let node = element.firstChild;
+  while (node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent.trim() === "") {
+        node = node.nextSibling;
+        continue;
+      }
+      return false;
+    }
+    return node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === "br";
+  }
+  return false;
+}
+
 const insertHtml = function (replyHtml, fullBody_string) {
   const parser = new DOMParser();
   let fullBody = parser.parseFromString(fullBody_string, "text/html");
@@ -970,11 +995,21 @@ const insertHtml = function (replyHtml, fullBody_string) {
     }
   }
 
-  // Single spacer at body level: exactly one blank line between the inserted answer
-  // and whatever follows (signature or quote). A <p><br><br></p> was used here, but
-  // its paragraph margins stacked with the answer's block markup, producing a large
-  // gap, especially in body-text compose mode (mail.compose.default_to_paragraph=false). [#849]
-  fullBody.body.insertBefore(document.createElement("br"), fullBody.body.firstChild);
+  // Context-aware spacer at body level: exactly one blank line between the inserted
+  // answer and whatever follows it, but only when that block does not already begin
+  // with a <br> of its own (see startsWithBreak above). A <p><br><br></p> was used
+  // here unconditionally, but its paragraph margins stacked with the answer's block
+  // markup, producing a large gap, especially in body-text compose mode
+  // (mail.compose.default_to_paragraph=false). [#849]
+  // When there is neither a quote nor a signature (firstElement is null, e.g. a brand
+  // new compose) the answer lands before whatever the body already starts with, and
+  // that node drives the same decision. If the body is empty there is no following
+  // node at all: no spacer is added, since a trailing <br> after the answer would be a
+  // stray blank line rather than a separation.
+  const followingBlock = firstElement || fullBody.body.firstChild;
+  if (followingBlock && !startsWithBreak(followingBlock)) {
+    fullBody.body.insertBefore(document.createElement("br"), fullBody.body.firstChild);
+  }
   //fullBody.body.insertBefore(reply, fullBody.body.firstChild);
   let fragment = document.createDocumentFragment();
   Array.from(reply.body.childNodes).forEach(node => {
