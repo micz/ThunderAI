@@ -970,12 +970,11 @@ const insertHtml = function (replyHtml, fullBody_string) {
     }
   }
 
-  let final_p = document.createElement("p");
-  let br1 = document.createElement("br");
-  let br2 = document.createElement("br");
-  final_p.appendChild(br1);
-  final_p.appendChild(br2);
-  fullBody.body.insertBefore(final_p, fullBody.body.firstChild);
+  // Single spacer at body level: exactly one blank line between the inserted answer
+  // and whatever follows (signature or quote). A <p><br><br></p> was used here, but
+  // its paragraph margins stacked with the answer's block markup, producing a large
+  // gap, especially in body-text compose mode (mail.compose.default_to_paragraph=false). [#849]
+  fullBody.body.insertBefore(document.createElement("br"), fullBody.body.firstChild);
   //fullBody.body.insertBefore(reply, fullBody.body.firstChild);
   let fragment = document.createDocumentFragment();
   Array.from(reply.body.childNodes).forEach(node => {
