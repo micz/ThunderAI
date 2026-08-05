@@ -1577,6 +1577,56 @@
       }
     }
   },
+  "apiwebchat_picker_counter_all": {
+    "message": "All $TOTAL$ changes accepted",
+    "description": "Change picker status shown when every change is accepted",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_step_short": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "description": "Change picker stepper label, compact form used on wide layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_long": {
+    "message": "Change $CURRENT$ of $TOTAL$",
+    "description": "Change picker stepper label, full form used on narrow layouts",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "apiwebchat_picker_step_total": {
+    "message": "$TOTAL$ changes",
+    "description": "Change picker stepper label before the user has navigated to a specific change, narrow layout",
+    "placeholders": {
+      "total": {
+        "content": "$1"
+      }
+    }
+  },
+  "apiwebchat_picker_progress": {
+    "message": "Accepted changes",
+    "description": "Accessible label of the change picker's progress bar"
+  },
+  "apiwebchat_picker_more_actions": {
+    "message": "More actions",
+    "description": "Accessible label of the change picker's overflow menu button"
+  },
   "apiwebchat_picker_edit": {
     "message": "Edit manually",
     "description": "Change picker button that switches from reviewing changes to freely editing the text"

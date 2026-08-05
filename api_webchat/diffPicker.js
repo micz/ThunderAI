@@ -17,7 +17,17 @@
  */
 
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
-import { buildHunkMarkerIcon, buildUseAnswerIcon } from './svgIcons.js';
+import {
+    buildHunkMarkerIcon,
+    buildUseAnswerIcon,
+    buildChevronLeftIcon,
+    buildChevronRightIcon,
+    buildCircleCheckIcon,
+    buildCheckMarkIcon,
+    buildCrossIcon,
+    buildPencilIcon,
+    buildOverflowIcon,
+} from './svgIcons.js';
 
 // <diff-picker> replaces the read-only diff viewer for prompts with
 // use_diff_viewer == "1": the user chooses, per change, which version to keep,
@@ -216,34 +226,125 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       display: block;
     }
 
-    /* Sticky sticks to the nearest scrolling ancestor, which is #messages in
-       <messages-area>'s shadow root. Shadow boundaries do not block it. */
+    /* The UA's [hidden]{display:none} loses to any class rule that sets display
+       - and .mzta-btn-* / .picker-* all do. Without this, setting .hidden on an
+       element in this component is silently a no-op. One rule here rather than a
+       :not([hidden]) guard on each selector: hiding by property is how the whole
+       component drives visibility. */
+    [hidden] {
+      display: none !important;
+    }
+
+    /* ---- Toolbar -----------------------------------------------------------
+       Two tiers inside one bordered container: a CONTEXT STRIP (what state the
+       review is in, and at what granularity) above an ACTIONS ROW (navigate,
+       bulk, commit). The split exists because the flat single row gave a
+       destructive "Reject all" the same visual weight as the primary CTA and
+       wrapped into three ragged lines as soon as the window narrowed.
+
+       Sticky sticks to the nearest scrolling ancestor, which is #messages in
+       <messages-area>'s shadow root. Shadow boundaries do not block it.
+
+       The reflow is driven by a CONTAINER query, not a media query: the picker
+       sits inside the transcript column (max-width 768px in styles.css), so the
+       window width is not what decides whether the row fits. container-type
+       inline-size is safe here because only the inline axis is queried - the
+       picker's height still comes from its content. */
     .picker-toolbar {
       position: sticky;
       top: 0;
       z-index: 5;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 8px;
+      container-type: inline-size;
+      container-name: picker-toolbar;
       margin-bottom: 9px;
-      background: var(--surface-2);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--r-md);
+      border-radius: var(--r-lg);
+      /* NOT overflow:hidden, however much the context strip's background wants
+         clipping into the rounded corners: the overflow menu hangs below the
+         actions row and would be cut off. The strip rounds its own top corners
+         instead. */
+    }
+
+    .picker-context {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      /* -1px so the fill meets the container's own border rather than leaving a
+         hairline of --surface between the two curves. */
+      border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
+    }
+    /* With the strip gone (EDIT mode) the actions row is the top of the
+       container and inherits the rounding. */
+    .picker-context[hidden] + .picker-actions {
+      border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
+    }
+
+    /* On the wide layout the strip is ONE flex line: icon, label, progress and
+       the granularity toggle are all siblings in it. .picker-status exists only
+       so the narrow layout can group the first three onto their own line, so
+       here it must be transparent to the layout - display:contents promotes its
+       children into the strip's flex line, which a plain div would instead
+       swallow into a single item (collapsing the progress bar and eating the
+       strip's gap). The narrow rules below turn it back into a real flex row. */
+    .picker-status {
+      display: contents;
+    }
+
+    .picker-status-icon {
+      display: inline-flex;
+      flex-shrink: 0;
+      color: var(--ok-ink);
     }
 
     .picker-counter {
       font-size: .78125rem;
       font-weight: 600;
-      color: var(--ink-2);
-      margin-right: auto;
-      padding: 0 3px;
+      color: var(--ink);
+      /* The status text yields before the progress bar and the granularity
+         toggle do: it is the only element here that can be truncated without
+         losing an affordance. */
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .picker-toolbar button {
-      font-size: .78125rem;
-      padding: 5px 9px;
+    /* Progress and the flexible spacer are the only things that absorb width -
+       every control is flex-shrink:0 so no label ever wraps. */
+    .picker-progress {
+      flex: 1;
+      min-width: 16px;
+      height: 5px;
+      border-radius: var(--r-pill);
+      background: var(--border);
+      overflow: hidden;
+    }
+    .picker-progress-fill {
+      height: 100%;
+      width: 0;
+      background: var(--ok-ink);
+      transition: width .12s ease;
+    }
+
+    .picker-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 12px;
+    }
+    .picker-actions > * {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .picker-spacer {
+      flex: 1;
+      /* The one exception to the rule above. */
+      flex-shrink: 1;
+      min-width: 0;
     }
 
     /* Granularity toggle: two mutually exclusive options rendered as one
@@ -251,50 +352,252 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
        rather than two unrelated buttons. */
     .picker-gran {
       display: inline-flex;
+      flex-shrink: 0;
       align-items: stretch;
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      overflow: hidden;
+      gap: 2px;
+      padding: 2px;
+      background: var(--hover);
+      border-radius: var(--r-sm);
     }
     .picker-gran button {
       border: none;
-      border-radius: 0;
+      border-radius: calc(var(--r-sm) - 2px);
       margin: 0;
+      padding: 4px 10px;
       background: transparent;
       color: var(--ink-2);
-      font-weight: 500;
+      font-size: .75rem;
+      font-weight: 550;
     }
-    .picker-gran button + button {
-      border-left: 1px solid var(--border);
+    /* Raised, not filled with the accent: this is a view setting sitting next
+       to the primary CTA, and two accent-filled controls in the same bar read
+       as two equally important actions. */
+    .picker-gran button[aria-checked="true"] {
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 2px var(--shadow);
     }
-    /* Not --surface-2: that is the toolbar's own background, so the hover
-       would be invisible. Tinting toward the accent works in both themes. */
-    .picker-gran button:hover:not(:disabled) {
+    .picker-gran button:hover:not(:disabled):not([aria-checked="true"]) {
       background: color-mix(in srgb, var(--accent) 12%, transparent);
       color: var(--ink);
     }
-    /* The selected position, not a hover/active flicker: it has to stay
-       visibly held down. */
-    .picker-gran button[aria-checked="true"] {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      font-weight: 650;
+
+    /* Prev / counter / next as one bordered pill: they are one control with
+       three parts, and separate buttons read as unrelated actions. */
+    .picker-stepper {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      background: var(--surface);
+      overflow: hidden;
     }
-    .picker-gran button[aria-checked="true"]:hover:not(:disabled) {
-      background: var(--accent-dark);
-      color: #fff;
+    .picker-stepper button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink-2);
+      cursor: pointer;
+      font: inherit;
+      transition: background .12s ease, color .12s ease;
+    }
+    .picker-stepper button:hover:not(:disabled) {
+      background: var(--hover);
+      color: var(--ink);
+    }
+    .picker-stepper button:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+    .picker-step-prev {
+      border-right: 1px solid var(--border);
+    }
+    .picker-step-next {
+      border-left: 1px solid var(--border);
+    }
+    .picker-step-label {
+      padding: 0 10px;
+      font-size: .78125rem;
+      font-weight: 550;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    /* Icon-only, so height comes from the box and not from a text line: matches
+       the 34px stepper rather than the 26px .mzta-btn-icon used elsewhere. */
+    .picker-overflow-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--r-md);
+    }
+
+    .picker-reject-btn {
+      height: 34px;
+      padding: 0 12px;
+      font-size: .78125rem;
+    }
+    /* Destructive, so it surfaces its danger tint on hover only - resting, it
+       must not compete with the CTA. */
+    .picker-reject-btn:hover:not(:disabled) {
+      background: var(--err-bg);
+      border-color: var(--err-border);
+      color: var(--err-ink);
     }
 
     .picker-use-btn {
+      height: 34px;
+      padding: 0 14px;
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
+      font-size: .8125rem;
       font-weight: 650;
     }
     .picker-use-btn:hover:not(:disabled) {
       background: var(--accent-dark);
       border-color: var(--accent-dark);
+    }
+
+    /* ---- Overflow menu -----------------------------------------------------
+       Holds the actions that do not earn permanent space: "Accept all" and
+       "Edit manually" always, plus "Reject all" once the bar is too narrow to
+       keep it inline. */
+    .picker-overflow {
+      position: relative;
+      display: inline-flex;
+    }
+    .picker-menu {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 222px;
+      /* Padding and border inside the 222px: shadow roots get no page-level
+         reset, so the default content-box would make this 234px wide and the
+         right-edge anchoring below would compute against the wrong number. */
+      box-sizing: border-box;
+      padding: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+    .picker-menu[hidden] {
+      display: none;
+    }
+    /* Anchored to a button that can sit at the right edge on narrow layouts,
+       where a left-anchored popover would overflow the container. */
+    .picker-menu.is-right {
+      left: auto;
+      right: 0;
+    }
+    .picker-menu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 9px;
+      border: none;
+      border-radius: var(--r-sm);
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: .8125rem;
+      text-align: left;
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+    }
+    .picker-menu button:hover:not(:disabled) {
+      background: var(--hover);
+    }
+    .picker-menu button:disabled {
+      color: var(--ink-3);
+      cursor: default;
+    }
+    .picker-menu button svg {
+      flex-shrink: 0;
+    }
+    .picker-menu .picker-menu-danger:not(:disabled) {
+      color: var(--err-ink);
+    }
+    .picker-menu .picker-menu-danger:hover:not(:disabled) {
+      background: var(--err-bg);
+    }
+
+    /* ---- Narrow layout ----------------------------------------------------
+       One column, 44px touch targets, bulk actions all in the overflow menu.
+       Keyed on the toolbar's own inline size, so it is the column width that
+       decides - not the window's. */
+    @container picker-toolbar (max-width: 419px) {
+      .picker-context {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+      .picker-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .picker-gran {
+        border-radius: var(--r-md);
+      }
+      .picker-gran button {
+        flex: 1;
+        justify-content: center;
+        padding: 7px 0;
+        font-size: .78125rem;
+        border-radius: var(--r-sm);
+      }
+      .picker-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px;
+      }
+      .picker-actions-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .picker-stepper {
+        flex: 1;
+        border-radius: var(--r-md);
+      }
+      .picker-stepper button {
+        width: 46px;
+        height: 44px;
+      }
+      .picker-step-label {
+        flex: 1;
+        text-align: center;
+        font-size: .8125rem;
+      }
+      .picker-overflow-btn {
+        width: 44px;
+        height: 44px;
+      }
+      .picker-use-btn {
+        justify-content: center;
+        width: 100%;
+        height: 44px;
+        font-size: .875rem;
+      }
+      /* Nothing to absorb in a column, and it would add a phantom gap row. */
+      .picker-spacer {
+        display: none;
+      }
     }
 
     .picker-body {
@@ -405,18 +708,12 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       display: block;
     }
 
-    /* Held down while editing, like the granularity toggle's selected position:
-       EDIT is a state you are in, not an action you fired. */
-    .picker-mode-btn[aria-pressed="true"] {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+    /* Checked while editing. A tick and not the accent fill the old inline
+       button used: inside a menu an accent-filled row reads as the primary
+       action of the whole toolbar, which EDIT is not. */
+    .picker-mode-btn[aria-checked="true"] {
       font-weight: 650;
-    }
-    .picker-mode-btn[aria-pressed="true"]:hover:not(:disabled) {
-      background: var(--accent-dark);
-      border-color: var(--accent-dark);
-      color: #fff;
+      color: var(--accent-soft-ink);
     }
 `;
 pickerTemplate.content.appendChild(pickerStyle);
@@ -448,6 +745,12 @@ class DiffPicker extends HTMLElement {
         this._useAnswerHandler = null;
         // 'review' (pick per change) or 'edit' (free-text textarea).
         this._mode = 'review';
+        this._menuOpen = false;
+        // Whether the bulk actions are suppressed by state (zero changes, or
+        // EDIT mode) as opposed to by layout. Set by _updateCounter, read by
+        // _syncRejectAllPlacement; seeded here because a ResizeObserver can fire
+        // before the first _updateCounter of a freshly built picker.
+        this._bulkHidden = false;
 
         this._buildChrome();
 
@@ -455,74 +758,72 @@ class DiffPicker extends HTMLElement {
         // and removed in disconnectedCallback.
         this._onKeydown = this._onKeydown.bind(this);
         this._onEditorResize = this._onEditorResize.bind(this);
+        this._onToolbarResize = this._onToolbarResize.bind(this);
+        this._onDocumentPointerDown = this._onDocumentPointerDown.bind(this);
+        // Which side of the @container breakpoint the last measurement fell on,
+        // so a resize that does not cross it costs nothing.
+        this._wasNarrow = null;
     }
 
     connectedCallback() {
         this.addEventListener('keydown', this._onKeydown);
+        // On the document, not the host: a click anywhere outside the menu has
+        // to close it, and clicks outside the picker never reach the host. Same
+        // add-here / remove-in-disconnectedCallback discipline as the keydown
+        // handler, so nothing accumulates across chat turns.
+        document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
         // The user dragging the textarea's resize handle changes the picker's
         // height with no mutation and no scroll event, so nothing else would
         // notice that the transcript geometry moved.
         if (typeof ResizeObserver !== 'undefined') {
             this._editorObs = new ResizeObserver(this._onEditorResize);
             this._editorObs.observe(this._editor);
+            // The container query restyles the toolbar on its own, but the two
+            // decisions CSS cannot make - which stepper label to use, and which
+            // copy of "Reject all" is live - are measured, so they need a signal
+            // when the width crosses the breakpoint. Also delivers the first
+            // measurement: at _buildChrome time the toolbar has no width yet.
+            this._toolbarObs = new ResizeObserver(this._onToolbarResize);
+            this._toolbarObs.observe(this._toolbar);
         }
     }
 
     disconnectedCallback() {
         this.removeEventListener('keydown', this._onKeydown);
+        document.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
         this._editorObs?.disconnect();
         this._editorObs = null;
+        this._toolbarObs?.disconnect();
+        this._toolbarObs = null;
     }
 
-    // Static chrome, built once: the toolbar, the review body and the (phase 2)
-    // editor. setContent() only ever refills the body.
+    // Click-outside dismissal. composedPath() and not .contains(): the menu is
+    // inside a shadow root, so the event target seen at document level is the
+    // host and .contains() would report every click on the picker as inside the
+    // menu.
+    _onDocumentPointerDown(e) {
+        if (!this._menuOpen) { return; }
+        if (e.composedPath().includes(this._overflowEl)) { return; }
+        this._setMenuOpen(false);
+    }
+
+    // Static chrome, built once: the toolbar, the review body and the editor.
+    // setContent() only ever refills the body.
+    //
+    // The toolbar is TWO TIERS inside one container - a context strip (status,
+    // progress, granularity) above an actions row (stepper, overflow, bulk,
+    // CTA). The flat single row it replaces wrapped into three ragged lines in a
+    // narrow window and gave the destructive "Reject all" the same weight as the
+    // primary CTA. Reflow to a single column is CSS-only (a container query), so
+    // there is exactly one DOM shape to reason about at any width.
     _buildChrome() {
         const toolbar = document.createElement('div');
         toolbar.className = 'picker-toolbar';
         toolbar.setAttribute('role', 'group');
         toolbar.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_picker_toolbar'));
 
-        this._counterEl = document.createElement('span');
-        this._counterEl.className = 'picker-counter';
-        // Announce the new count without moving focus off the toggled hunk.
-        this._counterEl.setAttribute('aria-live', 'polite');
-        toolbar.appendChild(this._counterEl);
-
-        this._granEl = this._buildGranularityToggle();
-        toolbar.appendChild(this._granEl);
-
-        this._prevBtn = this._makeToolbarButton('apiwebchat_picker_prev', 'mzta-btn-tertiary');
-        this._prevBtn.addEventListener('click', () => this._moveCurrent(-1));
-        toolbar.appendChild(this._prevBtn);
-
-        this._nextBtn = this._makeToolbarButton('apiwebchat_picker_next', 'mzta-btn-tertiary');
-        this._nextBtn.addEventListener('click', () => this._moveCurrent(1));
-        toolbar.appendChild(this._nextBtn);
-
-        this._acceptAllBtn = this._makeToolbarButton('apiwebchat_picker_accept_all', 'mzta-btn-secondary');
-        this._acceptAllBtn.addEventListener('click', () => this._setAllStates('accepted'));
-        toolbar.appendChild(this._acceptAllBtn);
-
-        this._rejectAllBtn = this._makeToolbarButton('apiwebchat_picker_reject_all', 'mzta-btn-secondary');
-        this._rejectAllBtn.addEventListener('click', () => this._setAllStates('rejected'));
-        toolbar.appendChild(this._rejectAllBtn);
-
-        this._modeBtn = this._makeToolbarButton('apiwebchat_picker_edit', 'mzta-btn-secondary');
-        this._modeBtn.classList.add('picker-mode-btn');
-        this._modeBtn.setAttribute('aria-pressed', 'false');
-        this._modeBtn.addEventListener('click', () => this._toggleMode());
-        toolbar.appendChild(this._modeBtn);
-
-        // The picker lives in its own transcript turn, below the answer that
-        // owns the action bar. Without this the user would have to scroll back
-        // up to a different turn to apply the choices they just made here.
-        this._useBtn = this._makeToolbarButton('apiwebchat_use_this_answer', 'mzta-btn-secondary');
-        this._useBtn.classList.add('picker-use-btn');
-        this._useBtn.insertBefore(buildUseAnswerIcon(13), this._useBtn.firstChild);
-        this._useBtn.addEventListener('click', () => {
-            if (this._useAnswerHandler) { this._useAnswerHandler(); }
-        });
-        toolbar.appendChild(this._useBtn);
+        toolbar.appendChild(this._buildContextStrip());
+        toolbar.appendChild(this._buildActionsRow());
 
         this._toolbar = toolbar;
         this._root.appendChild(toolbar);
@@ -556,6 +857,233 @@ class DiffPicker extends HTMLElement {
         btn.setAttribute('aria-label', label);
         btn.title = label;
         return btn;
+    }
+
+    // Icon-only button. The label goes to title + aria-label only, so the glyph
+    // is never the sole affordance for a screen reader or on hover.
+    _makeIconButton(i18nKey, icon, cls) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        if (cls) { btn.classList.add(cls); }
+        btn.appendChild(icon);
+        const label = browser.i18n.getMessage(i18nKey);
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        return btn;
+    }
+
+    // Row 1: what state the review is in, and at what granularity. No action
+    // that changes the text lives here - only status and one view setting.
+    _buildContextStrip() {
+        const strip = document.createElement('div');
+        strip.className = 'picker-context';
+
+        // Wrapper so the narrow layout can keep icon + label + progress on one
+        // line while the granularity toggle drops to a second.
+        const status = document.createElement('div');
+        status.className = 'picker-status';
+
+        this._statusIconEl = document.createElement('span');
+        this._statusIconEl.className = 'picker-status-icon';
+        this._statusIconEl.setAttribute('aria-hidden', 'true');
+        this._statusIconEl.appendChild(buildCircleCheckIcon(15));
+        status.appendChild(this._statusIconEl);
+
+        this._counterEl = document.createElement('span');
+        this._counterEl.className = 'picker-counter';
+        // Announce the new count without moving focus off the toggled hunk.
+        this._counterEl.setAttribute('aria-live', 'polite');
+        status.appendChild(this._counterEl);
+
+        // A second, visual reading of the same number the counter announces, so
+        // it is aria-hidden: a progressbar role here would make every toggle
+        // announce twice.
+        this._progressEl = document.createElement('div');
+        this._progressEl.className = 'picker-progress';
+        this._progressEl.setAttribute('aria-hidden', 'true');
+        this._progressFillEl = document.createElement('div');
+        this._progressFillEl.className = 'picker-progress-fill';
+        this._progressEl.appendChild(this._progressFillEl);
+        status.appendChild(this._progressEl);
+
+        strip.appendChild(status);
+        this._statusEl = status;
+
+        this._granEl = this._buildGranularityToggle();
+        strip.appendChild(this._granEl);
+
+        this._contextEl = strip;
+        return strip;
+    }
+
+    // Row 2: navigate, then the actions that change the text, with the primary
+    // CTA last and alone on the right.
+    _buildActionsRow() {
+        const row = document.createElement('div');
+        row.className = 'picker-actions';
+
+        // Stepper and overflow stay adjacent in a wrapper so the narrow layout
+        // gets them side by side on one line instead of stacked.
+        const nav = document.createElement('div');
+        nav.className = 'picker-actions-nav';
+
+        nav.appendChild(this._buildStepper());
+        nav.appendChild(this._buildOverflow());
+        row.appendChild(nav);
+        this._navEl = nav;
+
+        const spacer = document.createElement('div');
+        spacer.className = 'picker-spacer';
+        row.appendChild(spacer);
+
+        // Inline at comfortable widths, in the overflow menu when narrow - the
+        // one bulk action worth reaching without opening a menu, because
+        // rejecting everything is how a user backs out of a bad suggestion.
+        this._rejectAllBtn = this._makeToolbarButton('apiwebchat_picker_reject_all', 'mzta-btn-secondary');
+        this._rejectAllBtn.classList.add('picker-reject-btn');
+        this._rejectAllBtn.addEventListener('click', () => this._setAllStates('rejected'));
+        row.appendChild(this._rejectAllBtn);
+
+        // The picker lives in its own transcript turn, below the answer that
+        // owns the action bar. Without this the user would have to scroll back
+        // up to a different turn to apply the choices they just made here.
+        this._useBtn = this._makeToolbarButton('apiwebchat_use_this_answer', 'mzta-btn-secondary');
+        this._useBtn.classList.add('picker-use-btn');
+        this._useBtn.insertBefore(buildUseAnswerIcon(15), this._useBtn.firstChild);
+        this._useBtn.addEventListener('click', () => {
+            if (this._useAnswerHandler) { this._useAnswerHandler(); }
+        });
+        row.appendChild(this._useBtn);
+
+        this._actionsEl = row;
+        return row;
+    }
+
+    // Previous / position / next as one bordered pill: three parts of a single
+    // control, which two separate buttons around a floating counter did not
+    // convey. The label doubles as the position readout the old toolbar spent a
+    // separate counter on.
+    _buildStepper() {
+        const stepper = document.createElement('div');
+        stepper.className = 'picker-stepper';
+
+        this._prevBtn = this._makeIconButton(
+            'apiwebchat_picker_prev', buildChevronLeftIcon(15), 'picker-step-prev');
+        this._prevBtn.addEventListener('click', () => this._moveCurrent(-1));
+        stepper.appendChild(this._prevBtn);
+
+        this._stepLabelEl = document.createElement('span');
+        this._stepLabelEl.className = 'picker-step-label';
+        stepper.appendChild(this._stepLabelEl);
+
+        this._nextBtn = this._makeIconButton(
+            'apiwebchat_picker_next', buildChevronRightIcon(15), 'picker-step-next');
+        this._nextBtn.addEventListener('click', () => this._moveCurrent(1));
+        stepper.appendChild(this._nextBtn);
+
+        this._stepperEl = stepper;
+        return stepper;
+    }
+
+    // "Accept all" and "Edit manually" are real actions but not ones worth
+    // permanent width: one is a single click away from being undone, the other
+    // is an escape hatch. They live behind the "..." button, along with
+    // "Reject all" once the layout is too narrow to keep it inline.
+    _buildOverflow() {
+        const wrap = document.createElement('div');
+        wrap.className = 'picker-overflow';
+
+        this._overflowBtn = this._makeIconButton(
+            'apiwebchat_picker_more_actions', buildOverflowIcon(16),
+            'mzta-btn-icon');
+        this._overflowBtn.classList.add('picker-overflow-btn');
+        this._overflowBtn.setAttribute('aria-expanded', 'false');
+        this._overflowBtn.setAttribute('aria-haspopup', 'true');
+        this._overflowBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._setMenuOpen(!this._menuOpen);
+        });
+        wrap.appendChild(this._overflowBtn);
+
+        const menu = document.createElement('div');
+        menu.className = 'picker-menu';
+        menu.setAttribute('role', 'menu');
+        menu.hidden = true;
+
+        this._acceptAllBtn = this._makeMenuItem(
+            'apiwebchat_picker_accept_all', buildCheckMarkIcon(15),
+            () => this._setAllStates('accepted'));
+        menu.appendChild(this._acceptAllBtn);
+
+        // The same action as the inline button, not a mirror of its state: only
+        // one of the two is ever visible, so there is no state to keep in sync
+        // beyond the disabled flag _updateCounter sets on both.
+        this._menuRejectAllBtn = this._makeMenuItem(
+            'apiwebchat_picker_reject_all', buildCrossIcon(15),
+            () => this._setAllStates('rejected'));
+        this._menuRejectAllBtn.classList.add('picker-menu-danger');
+        menu.appendChild(this._menuRejectAllBtn);
+
+        this._modeBtn = this._makeMenuItem(
+            'apiwebchat_picker_edit', buildPencilIcon(15),
+            () => this._toggleMode());
+        this._modeBtn.classList.add('picker-mode-btn');
+        // menuitemcheckbox, not menuitem: EDIT is a state you are in, and the
+        // item both reports and leaves it. The CSS held-down styling the old
+        // inline button had is gone with it - inside a menu, a checked item is
+        // conveyed by the role, and an accent-filled menu row would read as the
+        // primary action of the whole toolbar.
+        this._modeBtn.setAttribute('role', 'menuitemcheckbox');
+        menu.appendChild(this._modeBtn);
+
+        wrap.appendChild(menu);
+        this._menuEl = menu;
+        this._menuOpen = false;
+        this._overflowEl = wrap;
+        return wrap;
+    }
+
+    _makeMenuItem(i18nKey, icon, onClick) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('role', 'menuitem');
+        btn.appendChild(icon);
+        const label = browser.i18n.getMessage(i18nKey);
+        const labelEl = document.createElement('span');
+        labelEl.textContent = label;
+        btn.appendChild(labelEl);
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.addEventListener('click', () => {
+            // Every item here is a one-shot action, so the menu has done its
+            // job the moment one fires.
+            this._setMenuOpen(false);
+            onClick();
+        });
+        return btn;
+    }
+
+    _setMenuOpen(open) {
+        const wanted = !!open;
+        if (wanted === this._menuOpen) { return; }
+        this._menuOpen = wanted;
+        this._menuEl.hidden = !wanted;
+        this._overflowBtn.setAttribute('aria-expanded', wanted ? 'true' : 'false');
+        if (wanted) {
+            // Anchored left by default, but on the narrow layout the button sits
+            // at the right edge and a left-anchored popover would overflow.
+            // Measured rather than keyed off the breakpoint, so it stays right
+            // whatever the container query ends up doing.
+            const btnRect = this._overflowBtn.getBoundingClientRect();
+            const barRect = this._toolbar.getBoundingClientRect();
+            const fitsLeft = (btnRect.left + 222) <= barRect.right;
+            this._menuEl.classList.toggle('is-right', !fitsLeft);
+            this._menuEl.querySelector('button:not(:disabled)')?.focus();
+        }
+        // The picker grows by the menu's height only if the transcript cannot
+        // clip it; telling the transcript its geometry may have moved is
+        // cheap and read-only on the other side.
+        this._notifyResize();
     }
 
     // Word-level or sentence-level comparison, switchable while reviewing.
@@ -675,13 +1203,12 @@ class DiffPicker extends HTMLElement {
             editing ? 'apiwebchat_picker_review' : 'apiwebchat_picker_edit');
         // The button is both a state indicator and the way out of that state,
         // so its label has to name the destination, not the current mode.
-        this._modeBtn.textContent = '';
-        const labelEl = document.createElement('span');
-        labelEl.textContent = label;
-        this._modeBtn.appendChild(labelEl);
+        // Only the <span> is retargeted - clearing textContent would take the
+        // icon with it, and the icon is built once.
+        this._modeBtn.querySelector('span').textContent = label;
         this._modeBtn.setAttribute('aria-label', label);
         this._modeBtn.title = label;
-        this._modeBtn.setAttribute('aria-pressed', editing ? 'true' : 'false');
+        this._modeBtn.setAttribute('aria-checked', editing ? 'true' : 'false');
         // Everything that operates on hunks is meaningless over free text.
         this._updateCounter();
     }
@@ -700,6 +1227,21 @@ class DiffPicker extends HTMLElement {
     _onEditorResize() {
         if (this._mode !== 'edit') { return; }
         this._notifyResize();
+    }
+
+    // Only the breakpoint crossing matters, not every pixel: a window drag fires
+    // this continuously, and repainting the label on each frame would be work for
+    // an identical result. Deliberately does NOT _notifyResize() - the transcript
+    // observed this resize itself.
+    _onToolbarResize() {
+        const narrow = this._isNarrow();
+        if (narrow === this._wasNarrow) { return; }
+        this._wasNarrow = narrow;
+        this._updateStepper(this._stepperEl.hidden);
+        this._syncRejectAllPlacement();
+        // An open popover anchored for the other layout would now hang off the
+        // edge, and there is no sensible place to re-anchor it mid-drag.
+        this._setMenuOpen(false);
     }
 
     // Wire the toolbar's "use this answer" button. The handler is invoked with
@@ -913,23 +1455,105 @@ class DiffPicker extends HTMLElement {
         // counter would report a state the visible text no longer reflects.
         const editing = (this._mode === 'edit');
         const hide = editing || (total === 0);
+        const allAccepted = (total > 0 && accepted === total);
 
+        // "All N changes accepted" for the finished state, rather than "N of N":
+        // the default IS everything accepted, so the very first thing the user
+        // reads should say the review is complete, not read like a tally.
         this._counterEl.textContent = hide
             ? ''
-            : browser.i18n.getMessage('apiwebchat_picker_counter', [String(accepted), String(total)]);
+            : (allAccepted
+                ? browser.i18n.getMessage('apiwebchat_picker_counter_all', [String(total)])
+                : browser.i18n.getMessage('apiwebchat_picker_counter', [String(accepted), String(total)]));
 
-        this._counterEl.hidden = hide;
-        this._prevBtn.hidden = hide;
-        this._nextBtn.hidden = hide;
-        this._acceptAllBtn.hidden = hide;
-        this._rejectAllBtn.hidden = hide;
-        // The granularity toggle stays visible with zero changes - switching to
-        // sentences is a reasonable thing to try - but not while editing, where
-        // re-diffing would throw away what the user has typed.
+        // The bar is the same number again, visually. Empty rather than hidden
+        // when there is nothing to show, so the strip's layout does not shift.
+        this._progressFillEl.style.width = (total > 0 && !editing)
+            ? ((accepted / total) * 100) + '%'
+            : '0%';
+
+        this._statusEl.hidden = hide;
+        // The granularity toggle survives the zero-changes state (switching to
+        // sentences is a reasonable thing to try when words found nothing) but
+        // not EDIT mode, where re-diffing would throw away what the user typed.
         this._granEl.hidden = editing;
+        // In EDIT mode both children are gone, so the strip would render as a
+        // bare tinted band with a bottom border. Zero-changes keeps it: the
+        // toggle is still in there.
+        this._contextEl.hidden = editing;
 
+        this._updateStepper(hide);
+
+        this._acceptAllBtn.hidden = hide;
         this._acceptAllBtn.disabled = (accepted === total);
         this._rejectAllBtn.disabled = (accepted === 0);
+        this._menuRejectAllBtn.disabled = (accepted === 0);
+        // Remembered so the layout-driven swap below has the state answer
+        // without recomputing the counts.
+        this._bulkHidden = hide;
+        this._syncRejectAllPlacement();
+        // With every bulk action gone there is nothing left in the menu but
+        // "Edit manually", which is reason enough to keep it - it is the only
+        // way out of the zero-changes state other than the CTA.
+    }
+
+    // The stepper's label doubles as the position readout. It reports the
+    // CURRENT change, so before the user has navigated anywhere there is no
+    // position yet - the label then shows the total alone rather than inventing
+    // a "1 of N" the arrows have not actually reached.
+    _updateStepper(hide) {
+        this._stepperEl.hidden = hide;
+        const count = this._interactive.length;
+        if (hide || count === 0) {
+            this._stepLabelEl.textContent = '';
+            return;
+        }
+
+        const pos = this._interactive.indexOf(this._currentIdx);
+        // The long form only fits the narrow layout, where the stepper spans the
+        // row; at the wide breakpoint it competes with the CTA for width.
+        const narrow = this._isNarrow();
+        if (pos === -1) {
+            // No current change yet - the user has not navigated. "0 / 9" would
+            // claim a position that does not exist and reads like a count of
+            // zero, so show the total on its own until the first move.
+            this._stepLabelEl.textContent = narrow
+                ? browser.i18n.getMessage('apiwebchat_picker_step_total', [String(count)])
+                : String(count);
+        } else {
+            const key = narrow ? 'apiwebchat_picker_step_long' : 'apiwebchat_picker_step_short';
+            this._stepLabelEl.textContent =
+                browser.i18n.getMessage(key, [String(pos + 1), String(count)]);
+        }
+
+        // Clamped, not wrapping: reaching the last change and landing back on
+        // the first would lose the user's place in a long answer.
+        this._prevBtn.disabled = (pos <= 0);
+        this._nextBtn.disabled = (pos === count - 1);
+    }
+
+    // "Reject all" is inline when the actions row has room for it and in the
+    // overflow menu when it does not - never in both, or the same action would
+    // appear twice. The container query handles the layout but cannot move a
+    // node between two parents, so which copy is live is decided here.
+    //
+    // _bulkHidden wins over the layout: a toolbar with nothing to reject shows
+    // the action in neither place.
+    _syncRejectAllPlacement() {
+        const narrow = this._isNarrow();
+        this._rejectAllBtn.hidden = this._bulkHidden || narrow;
+        this._menuRejectAllBtn.hidden = this._bulkHidden || !narrow;
+    }
+
+    // Mirrors the @container breakpoint in the stylesheet. Measured, because CSS
+    // can restyle at a breakpoint but cannot swap text or move a node, and those
+    // two decisions have to agree with the layout. Before the picker is in the
+    // document the width is 0, which would read as narrow; the wide layout is the
+    // right assumption there, and _updateCounter runs again on every state
+    // change once connected.
+    _isNarrow() {
+        const width = this._toolbar.getBoundingClientRect().width;
+        return width > 0 && width <= 419;
     }
 
     // Move focus to the next/previous change, clamping at the ends. Focus lands
@@ -953,6 +1577,9 @@ class DiffPicker extends HTMLElement {
         span.classList.add('is-current');
         this._focusActiveSide(this._currentIdx);
         span.scrollIntoView({ block: 'nearest' });
+        // The stepper label IS the position readout, so it has to follow every
+        // move - including the j/k keyboard path, which comes through here too.
+        this._updateStepper(false);
     }
 
     _focusActiveSide(index) {
@@ -965,6 +1592,15 @@ class DiffPicker extends HTMLElement {
     _onKeydown(e) {
         // Never shadow a browser or OS shortcut.
         if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+        // Before every other guard: the menu is reachable in EDIT mode too, and
+        // an open popover has to be dismissable from the keyboard wherever focus
+        // sits. Escape is not text, so the textarea has no claim on it either.
+        if (e.key === 'Escape' && this._menuOpen) {
+            e.preventDefault();
+            this._setMenuOpen(false);
+            this._overflowBtn.focus();
+            return;
+        }
         // The textarea keeps every key, j and k included: they are text there.
         const target = e.composedPath()[0];
         if (target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT')) { return; }
@@ -999,11 +1635,17 @@ class DiffPicker extends HTMLElement {
                 }
                 break;
             }
+            // ArrowRight/Left alongside j/k: the stepper reads as a left/right
+            // control, so the arrows are what a user tries first. Safe to claim
+            // here - the picker has no horizontally scrollable content and no
+            // text input in REVIEW mode.
             case 'j':
+            case 'ArrowRight':
                 e.preventDefault();
                 this._moveCurrent(1);
                 break;
             case 'k':
+            case 'ArrowLeft':
                 e.preventDefault();
                 this._moveCurrent(-1);
                 break;

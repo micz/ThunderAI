@@ -205,7 +205,9 @@ That is the core interaction:
 - Accessibility: each side is `tabindex="0"` `role="radio"` with `aria-checked` reflecting which is in
   force — the pair is genuinely a two-option choice, which `role="button"` + `aria-pressed` would not
   convey. Each side carries a descriptive `aria-label`. The counter is `aria-live="polite"`.
-- Keyboard: `j`/`k` move between changes, landing focus on the **active** side so the next keystroke
+- Keyboard: `j`/`k` **and `ArrowLeft`/`ArrowRight`** move between changes (the stepper reads as a
+  left/right control, so the arrows are what a user tries first; the picker has no horizontally
+  scrollable content to conflict with), landing focus on the **active** side so the next keystroke
   acts relative to what is actually there. `Space`/`Enter` on the inactive side selects it; on the
   active side it flips to the other one (otherwise the key would appear dead) and focus follows the
   new active side. Modified keys (ctrl/meta/alt) are ignored so browser shortcuts survive, and keys
@@ -215,16 +217,81 @@ That is the core interaction:
 > seeing the original and the suggestion together is the whole point of reviewing a proofread: with
 > one side hidden the user cannot tell what they are choosing between.
 
-Sticky toolbar: the counter ("7 of 12 changes accepted"), the **Words / Sentences** granularity
-toggle, Accept all / Reject all, previous / next, the **Edit manually** mode button, and "Use this
-answer". Buttons reuse `mzta-btn-secondary` / `mzta-btn-tertiary` from `sharedStyles.js`; the
-granularity toggle adds a `.picker-gran` segmented-control skin over two of them.
+### The toolbar
+
+Sticky, and **two tiers inside one bordered container**:
+
+- **Context strip** (`.picker-context`) — status icon, status text, progress bar, and the
+  **Words / Sentences** granularity toggle. Nothing here changes the text; it is state plus one view
+  setting.
+- **Actions row** (`.picker-actions`) — the prev/label/next **stepper** pill, the **"…" overflow
+  menu**, a flexible spacer, "Reject all", and the primary "Use this answer".
+
+It replaced a flat single row that wrapped onto three ragged lines in a narrow window and gave the
+destructive "Reject all" the same visual weight as the primary CTA.
+
+Buttons still reuse `mzta-btn-secondary` / `mzta-btn-icon` from `sharedStyles.js`. The granularity
+toggle is a `.picker-gran` segmented control whose selected position is **raised (surface + shadow),
+not accent-filled** — two accent-filled controls in one bar read as two equally important actions,
+and the CTA has to be the only one.
+
+**Status copy** is `All N changes accepted` when everything is accepted (which is the default state,
+so it is also what the user reads first) and `X of N changes accepted` otherwise. The progress bar is
+the same number again visually, so it is `aria-hidden`: the counter already carries `aria-live`, and a
+`progressbar` role would make every toggle announce twice.
+
+**The stepper label doubles as the position readout**, which is why the old standalone counter is
+gone. Before the user navigates there is no current change, so it shows the total alone (`9`, or
+`9 changes` when narrow) rather than a `0 / 9` that claims a position which does not exist. Prev/Next
+are **clamped, not wrapping** — landing back on the first change after the last would lose the user's
+place in a long answer — and disable at the ends.
+
+**Overflow menu:** *Accept all* and *Edit manually* always; *Reject all* joins them only on the
+narrow layout, where it leaves the actions row. Dismissed by outside `pointerdown` (registered on
+`document`, since clicks outside the picker never reach the host, and matched with `composedPath()`
+because a shadow-DOM target arrives at document level as the host) and by `Escape`, which is handled
+**before** every other keydown guard so it works in EDIT mode too.
+
+### Responsive behaviour
+
+One **container query** on `.picker-toolbar` (`container-type: inline-size`), not a media query: the
+picker sits inside the transcript column (`max-width: 768px`), so window width is not what decides
+whether the row fits.
+
+- **≥420px** — the two rows above; stepper label `7 / 12`; "Reject all" inline.
+- **≤419px** — both rows become columns, touch targets go to 44px, the stepper spans its line with
+  the long `Change 7 of 12` label, the CTA goes full width, and "Reject all" moves into the menu.
+
+CSS restyles at the breakpoint but cannot swap text or move a node between parents, so two decisions
+are **measured** in JS against the same 419px threshold (`_isNarrow()`): which stepper label to use,
+and which copy of "Reject all" is live. A `ResizeObserver` on the toolbar re-runs them, and only when
+the breakpoint is actually crossed (`_wasNarrow`) — a window drag fires it continuously. Before the
+picker is in the document the measured width is 0, which would read as narrow; the wide layout is the
+right assumption there.
+
+**`overflow: hidden` must not go on `.picker-toolbar`**, however much the context strip's background
+wants clipping into the rounded corners: the overflow menu hangs below the actions row and would be
+cut off. The strip rounds its own top corners instead, and `.picker-context[hidden] + .picker-actions`
+takes over the rounding when the strip is gone.
+
+**`.picker-status` is `display: contents` on the wide layout** so its three children join the strip's
+single flex line; a plain div would swallow them into one flex item, collapsing the progress bar and
+eating the strip's gap. The narrow rules turn it back into a real flex row.
+
+### Two CSS traps in this shadow root
+
+- **`[hidden] { display: none !important }` is required.** The UA's `[hidden]` rule loses to any class
+  rule that sets `display`, and `.mzta-btn-*` / `.picker-*` all do — without it, every `.hidden`
+  assignment in the component is silently a no-op.
+- **No backticks in the CSS comments.** The stylesheet is a template literal, so a comment quoting
+  ``display: contents`` terminates it and the module fails to parse. `node --check` does **not** catch
+  this (the file is valid script either way); `import()` does.
 
 **Zero-changes state:** when the answer normalizes identically to the original there is nothing to
-pick, so the counter, navigation and accept/reject-all are hidden and a muted note is shown instead of
+pick, so the status, stepper and accept/reject-all are hidden and a muted note is shown instead of
 a bare "0 of 0 changes accepted". "Use this answer" stays available and still returns the text. The
 granularity toggle stays visible — switching to sentences on a word diff that found nothing is a
-reasonable thing to try.
+reasonable thing to try — so the context strip survives; only EDIT mode empties and hides it.
 
 ### Surgical re-render
 
@@ -245,7 +312,9 @@ than routing through the per-change path N times.
 
 ## REVIEW and EDIT modes
 
-Two mutually exclusive modes, switched by one toolbar button:
+Two mutually exclusive modes, switched by the **Edit manually** item in the overflow menu (a
+`menuitemcheckbox`, since EDIT is a state the item both reports and leaves — inside a menu that is
+conveyed by the role and a tick, where the old inline button used an accent fill):
 
 - **REVIEW** (default) — the per-change picker described above.
 - **EDIT** — a `<textarea>` holding the current composition, freely editable.
@@ -286,11 +355,15 @@ would hide the very changes the button was clicked to see.
 
 ### What is hidden in EDIT
 
-Counter, previous / next, Accept all / Reject all **and** the granularity toggle. All operate on hunks,
-which do not exist over free text — and re-diffing at a new granularity would throw away what the user
-typed. "Use this answer" stays. `_onKeydown` returns early on `_mode === 'edit'`: the textarea guard
-already covers keys typed in the box, but focus can sit on a toolbar button while editing, and `j`/`k`
-must not act there either.
+Status and progress, the stepper, Accept all / Reject all **and** the granularity toggle. All operate
+on hunks, which do not exist over free text — and re-diffing at a new granularity would throw away what
+the user typed. That empties the context strip entirely, so **the strip itself is hidden** rather than
+left as a bare tinted band, and the actions row inherits the container's top rounding.
+
+"Use this answer" stays, as does the overflow button — the menu is how the user gets back out of EDIT.
+`_onKeydown` returns early on `_mode === 'edit'` (after the `Escape` branch, which must keep working
+to dismiss the menu): the textarea guard already covers keys typed in the box, but focus can sit on a
+toolbar button while editing, and `j`/`k`/arrows must not act there either.
 
 ### Opening scroll position
 
@@ -401,7 +474,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 |------|------|
 | `api_webchat/diffPicker.js` | Hunk model, compose functions, `<diff-picker>` element |
 | `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
-| `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder) |
+| `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |
 | `options/mzta-options-default.js` | the global `diff_granularity` preference |
 | `options/mzta-options.html/.js` | the global preference's control in the advanced section |
