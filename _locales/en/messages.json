@@ -143,6 +143,10 @@
     "message": "The text comparison viewer can be selected when the action is set to \"Substitute text\".",
     "description": ""
   },
+  "customPrompts_form_label_clean_embedded_images": {
+    "message": "Remove embedded images from prompt HTML",
+    "description": ""
+  },
   "customPrompts_form_required_fields": {
     "message": "Required fields",
     "description": ""
