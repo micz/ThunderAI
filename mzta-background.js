@@ -929,9 +929,12 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         // Extract sender email for skip checks
         let senderEmail = extractEmail(message.author).toLowerCase();
 
-        // Check if sender is in the skip addresses list
+        // Check if sender is in the skip addresses list.
+        // hasAddressListEntries() is used instead of a plain length check because the list is
+        // saved with normalizeStringList(), which keeps the empty strings: an emptied textarea
+        // is stored as [''] and would read as a configured list.
         let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
-        if (skip_addresses.length > 0) {
+        if (hasAddressListEntries(skip_addresses)) {
             if (senderEmail && skip_addresses.includes(senderEmail)) {
                 taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
                 let report_data = {};

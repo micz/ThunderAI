@@ -130,6 +130,8 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `spamfilter` | `false` | Enable spam filter |
 | `spamfilter_threshold` | `70` | Spam confidence threshold (%) |
 | `spamfilter_enabled_accounts` | `[]` | Accounts where spam filter is active |
+| `spamfilter_skip_addresses` | `[]` | Senders never sent to the AI for spam filtering. **Exact addresses only** — unlike `summarize_auto_senders_list` it has no domain-pattern support, because widening the match would silently change the meaning of lists users have already saved. Tested with `hasAddressListEntries()` (see the note below the table). |
+| `spamfilter_skip_addressbook` | `true` | Skip senders found in any address book (`browser.contacts.quickSearch`) |
 | `spamfilter_show_msg_panel` | `true` | Show info panel on spam detection |
 | `spamfilter_only_inbox` | `false` | Auto spam filter runs only on inbox messages |
 | `summarize` | `false` | Enable email summarization |
@@ -139,11 +141,26 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `summarize_max_messages` | `20` | Maximum number of messages summarized at once in webchat mode. Above this limit `processEmails()` (`mzta-background.js`) blocks the operation and shows the `summarize_too_many_messages` warning. `0` = no limit. Only applies to the webchat/multi-message flow; inline single-message summaries are unaffected. Exposed in the summarize settings page. |
 | `summarize_strip_formatting` | `false` | Strip HTML and Markdown formatting from AI-generated summaries, showing plain text only. |
 | `summarize_auto_senders` | `false` | Auto-summarize emails whose sender matches `summarize_auto_senders_list`. **Independent of `summarize_auto`** — it works even when `summarize_auto = 0`. See [01-architecture.md](01-architecture.md#data-flow-auto-summarize-by-sender-address-list) for the two triggers. |
-| `summarize_auto_senders_list` | `[]` | Sender addresses / domain patterns matched by `matchAddressList()` (`js/mzta-utils.js`): exact address, `@domain.com`, or `*@domain.com`. Stored as an array via `normalizeStringList(value, 2)` — which does **not** drop empty strings, so an empty textarea persists as `['']`; every "is it configured" check therefore goes through `hasAddressListEntries()` rather than `.length`. |
+| `summarize_auto_senders_list` | `[]` | Sender addresses / domain patterns matched by `matchAddressList()` (`js/mzta-utils.js`): exact address, `@domain.com`, or `*@domain.com`. Stored as an array via `normalizeStringList(value, 2)`; tested with `hasAddressListEntries()` (see the note below the table). |
 | `translate` | `true` | Enable email translation |
 | `translate_auto` | `0` | Auto-translate mode: `0` = disabled, `1` = manual (show button), `2` = automatic (translate on message open), `3` = generate on email receive (background pre-cache via `onNewMailReceived`, no UI during generation) |
 | `translate_max_display_length` | `0` | Maximum characters shown in inline translation before truncation. `0` = no limit (show full text). When set, text is truncated at a word boundary and a "See more"/"See less" toggle link is shown. |
 | `translate_lang` | `''` | Target language for translation. Falls back to `default_chatgpt_lang` if empty. |
+
+#### Address-list preferences and the empty-string trap
+
+The address lists edited as a textarea (`spamfilter_skip_addresses`, `summarize_auto_senders_list`)
+are stored as arrays through `normalizeStringList(value, 2)` (`js/mzta-utils.js`), which trims,
+lowercases, dedupes and sorts — but does **not** drop empty strings. An emptied textarea therefore
+persists as `['']`, and a trailing newline leaves a stray `''` behind, so a plain
+`list.length > 0` reads as "the user configured a list" when they configured nothing.
+
+Every "is this list configured?" test must therefore go through **`hasAddressListEntries(list)`**,
+which is true only when at least one entry is non-blank. It is used by the spam filter's
+skip-address check, by `_process_incoming`, by `processEmails()`, by `matchAddressList()` itself,
+and by the summarize page's conditional notice. For the spam filter this is a correctness cleanup
+rather than a bug fix: the `['']` case fell through to a `.includes(senderEmail)` that an empty
+string could never satisfy, so the outer check was simply doing nothing.
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 
