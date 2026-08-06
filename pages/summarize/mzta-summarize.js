@@ -33,7 +33,8 @@ import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-edi
 import {
   normalizeStringList,
   isAPIKeyValue,
-  setTomSelectBorder
+  setTomSelectBorder,
+  hasAddressListEntries
 } from "../../js/mzta-utils.js";
 import {
   initializeSpecificIntegrationUI
@@ -95,6 +96,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     updateConnPanelTint();
     let prefs_summarize = await browser.storage.sync.get({ summarize_enabled_accounts: [], connection_type: 'chatgpt_web' });
+
+    // Auto-summarize senders list
+    // The toggle is a plain .option-input (saved by saveOptions), the list is saved explicitly.
+    let auto_senders_toggle = document.getElementById('summarize_auto_senders');
+    let auto_senders_textarea = document.getElementById('summarize_auto_senders_list');
+    let auto_senders_save_btn = document.getElementById('btn_save_auto_senders');
+
+    let auto_senders_value = await summarize_getAutoSendersList();
+    let auto_senders_string = auto_senders_value.join('\n');
+
+    auto_senders_textarea.value = auto_senders_string;
+
+    auto_senders_textarea.addEventListener('input', (event) => {
+        auto_senders_save_btn.disabled = (event.target.value === auto_senders_string);
+        if(auto_senders_save_btn.disabled){
+            document.getElementById('auto_senders_unsaved').classList.add('hidden');
+        } else {
+            document.getElementById('auto_senders_unsaved').classList.remove('hidden');
+        }
+    });
+
+    auto_senders_save_btn.addEventListener('click', () => {
+        let auto_senders_array_new = normalizeStringList(auto_senders_textarea.value, 2);
+        summarize_setAutoSendersList(auto_senders_array_new);
+        auto_senders_save_btn.disabled = true;
+        auto_senders_string = auto_senders_array_new.join('\n');
+        auto_senders_textarea.value = auto_senders_string;
+        document.getElementById('auto_senders_unsaved').classList.add('hidden');
+        updateAutoSendersNotice();
+    });
+
+    // The list and its Save button are only usable when the feature is switched on.
+    auto_senders_toggle.addEventListener('change', () => {
+        updateAutoSendersState();
+        updateAutoSendersNotice();
+    });
+    updateAutoSendersState();
+    // updateDisplayModeConstraint() only fires on the summarize_auto select, so the notice is
+    // refreshed on its own here (and on the toggle change and after a save).
+    updateAutoSendersNotice();
 
     let summarize_textarea = document.getElementById("summarize_prompt_text");
     let summarize_save_btn = document.getElementById("btn_save_prompt");
@@ -257,6 +298,54 @@ function updateDisplayModeConstraint() {
   } else {
     display_mode_el.disabled = false;
   }
+  updateAutoSendersState();
+  updateAutoSendersNotice();
+}
+
+// Enables or disables the auto-summarize senders card.
+// With summarize_auto === 3 every incoming message is summarized anyway, so the whole card is
+// switched off and an explanatory note is shown. Otherwise only the list and its Save button
+// follow the toggle.
+function updateAutoSendersState(){
+  const toggle_el = document.getElementById('summarize_auto_senders');
+  const list_el = document.getElementById('summarize_auto_senders_list');
+  const save_btn = document.getElementById('btn_save_auto_senders');
+  const note_el = document.getElementById('summarize_auto_senders_disabled_note');
+  if(!toggle_el || !list_el || !save_btn) return;
+
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const allSummarized = (String(summarize_auto_el.value) === '3');
+
+  toggle_el.disabled = allSummarized;
+  list_el.disabled = allSummarized || !toggle_el.checked;
+  // Never re-enable Save here: it is owned by the dirty-state check on the textarea.
+  if(list_el.disabled){
+    save_btn.disabled = true;
+  }
+  if(note_el){
+    note_el.classList.toggle('hidden', !allSummarized);
+  }
+}
+
+// The notice below the summarize_auto select warns that, even though auto-summarize is
+// disabled in general, the senders in the list are still summarized automatically.
+async function updateAutoSendersNotice(){
+  const notice_el = document.getElementById('summarize_auto_senders_notice');
+  if(!notice_el) return;
+  const summarize_auto_el = document.getElementById('summarize_auto');
+  const toggle_el = document.getElementById('summarize_auto_senders');
+  const list = await summarize_getAutoSendersList();
+  const show = (String(summarize_auto_el.value) === '0') && toggle_el.checked && hasAddressListEntries(list);
+  notice_el.classList.toggle('hidden', !show);
+}
+
+async function summarize_getAutoSendersList() {
+  let prefs = await browser.storage.sync.get({summarize_auto_senders_list: prefs_default.summarize_auto_senders_list});
+  return prefs.summarize_auto_senders_list;
+}
+
+function summarize_setAutoSendersList(summarize_auto_senders_list) {
+  browser.storage.sync.set({summarize_auto_senders_list: summarize_auto_senders_list});
 }
 
 function resetSummarizeMaxMessages(){

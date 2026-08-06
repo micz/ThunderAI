@@ -698,6 +698,35 @@ export function normalizeStringList(list, returnType = 0) {
   }
 }
 
+// True when an address list holds at least one usable entry.
+// normalizeStringList() does not drop empty strings, so an empty textarea is
+// stored as [''] and a trailing newline leaves a stray '' behind: a plain
+// list.length check would report those as a configured list.
+export function hasAddressListEntries(list) {
+  if (!Array.isArray(list)) return false;
+  return list.some(item => (typeof item === 'string') && (item.trim() !== ''));
+}
+
+/* Matches the sender of an email against a list of addresses and domain patterns.
+   The author header is the raw "Name <addr@domain>" string; the email is extracted
+   with the same regex used for the spamfilter skip list.
+   Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
+   Returns false on an empty list or an unparseable author. */
+export function matchAddressList(author, list) {
+  if (!author || !hasAddressListEntries(list)) return false;
+  const senderEmail = (String(author).match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+  if (senderEmail === '') return false;
+  const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
+  return list.some(item => {
+    if (typeof item !== 'string') return false;
+    let entry = item.trim().toLowerCase();
+    if (entry === '') return false;
+    if (entry.startsWith('*@')) entry = entry.slice(1);
+    if (entry.startsWith('@')) return senderDomain === entry.slice(1);
+    return senderEmail === entry;
+  });
+}
+
 export function prepareOriginURL(url) {
   return url.endsWith('/') ? `${url}*` : `${url}/*`;
 }

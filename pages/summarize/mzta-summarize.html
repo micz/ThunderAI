@@ -61,6 +61,7 @@
                         <option value="3">__MSG_prefs_OptionText_action_auto_batch__</option>
                     </select>
                     <span class="mzta_help">__MSG_prefs_OptionText_summarize_auto_Info__</span>
+                    <div id="summarize_auto_senders_notice" class="warning hidden">__MSG_Summarize_auto_senders_notice__</div>
                 </div>
 
                 <!-- display mode -->
@@ -107,6 +108,34 @@
                         <span class="track"></span>
                     </label>
                 </div>
+            </div>
+
+            <!-- AUTO-SUMMARIZE SENDERS -->
+            <div class="mzta_section" id="summarize_auto_senders_container">
+                <div class="mzta_prompt_title">__MSG_Summarize_auto_senders_title__<span id="auto_senders_unsaved" class="unsaved hidden"> __MSG_customPrompts_unsaved_changes__</span></div>
+                <p class="mzta_help">
+                    __MSG_Summarize_auto_senders_infoline__
+                    <br>__MSG_Summarize_auto_senders_infoline2__
+                </p>
+                <p class="mzta_help"><b>__MSG_Summarize_auto_senders_api_warning__</b></p>
+                <div class="feature_row">
+                    <div class="feature_info">
+                        <div class="feature_name">__MSG_prefs_OptionText_summarize_auto_senders__</div>
+                        <div class="feature_desc">__MSG_prefs_OptionText_summarize_auto_senders_Info__</div>
+                    </div>
+                    <label class="mzta_switch">
+                        <input type="checkbox" id="summarize_auto_senders" name="summarize_auto_senders" class="option-input" />
+                        <span class="track"></span>
+                    </label>
+                </div>
+                <div class="mzta_field">
+                    <span class="mzta_help">__MSG_prefs_OptionText_summarize_auto_senders_list_Info__</span>
+                    <textarea id="summarize_auto_senders_list" rows="7"></textarea>
+                    <div class="btn_div">
+                        <button id="btn_save_auto_senders" class="btn_primary" disabled>__MSG_save__</button>
+                    </div>
+                </div>
+                <div id="summarize_auto_senders_disabled_note" class="mzta_help hidden">__MSG_Summarize_auto_senders_disabled_note__</div>
             </div>
 
             <!-- PROMPTS -->

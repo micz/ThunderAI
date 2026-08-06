@@ -2339,6 +2339,42 @@
       "message": "Remove HTML and Markdown formatting from the AI-generated summary, showing plain text only.",
       "description": ""
   },
+  "Summarize_auto_senders_title": {
+      "message": "Automatic summary sender list",
+      "description": ""
+  },
+  "Summarize_auto_senders_infoline": {
+      "message": "Emails coming from these senders are summarized automatically, without any click. The summary is generated when the email is received, or when you open it if it was not caught on reception.",
+      "description": ""
+  },
+  "Summarize_auto_senders_infoline2": {
+      "message": "Add one email address per line, or separated by a comma. Use \"@domain.com\" to match every sender of a whole domain.",
+      "description": ""
+  },
+  "Summarize_auto_senders_api_warning": {
+      "message": "Warning: these summaries are generated automatically, so every email from these senders consumes API tokens and may increase the cost of your AI subscription. Keep the list as short as possible.",
+      "description": ""
+  },
+  "Summarize_auto_senders_notice": {
+      "message": "Auto-summarize is disabled, but the summary is still generated automatically for the senders in the list below.",
+      "description": ""
+  },
+  "Summarize_auto_senders_disabled_note": {
+      "message": "Not available when auto-summarize is set to generate the summary on email receive: in that mode every incoming email is already summarized.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders": {
+      "message": "Summarize these senders automatically",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders_Info": {
+      "message": "If enabled, emails coming from the senders listed below are summarized automatically, even when auto-summarize is disabled above.",
+      "description": ""
+  },
+  "prefs_OptionText_summarize_auto_senders_list_Info": {
+      "message": "Sender addresses to summarize automatically:",
+      "description": ""
+  },
   "summarize_see_more": {
       "message": "See more",
       "description": ""
