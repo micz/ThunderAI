@@ -930,9 +930,9 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         let senderEmail = extractEmail(message.author).toLowerCase();
 
         // Check if sender is in the skip addresses list.
-        // hasAddressListEntries() is used instead of a plain length check because the list is
-        // saved with normalizeStringList(), which keeps the empty strings: an emptied textarea
-        // is stored as [''] and would read as a configured list.
+        // hasAddressListEntries() is used instead of a plain length check because a list saved
+        // by a previous version can still hold a stray '' (an emptied textarea was stored as
+        // ['']), which would read as a configured list.
         let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
         if (hasAddressListEntries(skip_addresses)) {
             if (senderEmail && skip_addresses.includes(senderEmail)) {

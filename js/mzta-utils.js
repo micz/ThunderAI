@@ -683,14 +683,22 @@ function sanitizeString(input) {
   return sanitized.toLowerCase().slice(0, 29);
 }
 
-/* returnType:
+/* Normalizes a user-typed list: splits on newlines and commas, trims, lowercases,
+   removes the duplicates and the empty entries, then sorts.
+   Empty entries are dropped because they carry no meaning and would otherwise survive
+   in the saved value: an emptied textarea used to be stored as [''] and a trailing
+   newline left a stray '' behind, which read as a configured list and, with returnType 1,
+   was rendered back as a leading blank line in the textarea.
+   returnType:
   0: string comma separated (default)
   1: string \n separated
   2: array
 */
 export function normalizeStringList(list, returnType = 0) {
-  let _array_new = list.split(/[\n,]+/);
-  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
+  let _array_new = String(list ?? '').split(/[\n,]+/);
+  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase())))
+                    .filter(item => item !== '')
+                    .sort();
   switch(returnType) {
     case 0:
       return _array_new.join(', ');
@@ -719,9 +727,10 @@ export function isMessageInJunkOrTrash(message) {
 }
 
 // True when an address list holds at least one usable entry.
-// normalizeStringList() does not drop empty strings, so an empty textarea is
-// stored as [''] and a trailing newline leaves a stray '' behind: a plain
-// list.length check would report those as a configured list.
+// normalizeStringList() now drops the empty entries at save time, but the lists saved by the
+// previous versions can still hold a stray '' (an emptied textarea was stored as ['']), which a
+// plain list.length check would read as a configured list. This is also what makes the check
+// safe against a value that is not an array at all.
 export function hasAddressListEntries(list) {
   if (!Array.isArray(list)) return false;
   return list.some(item => (typeof item === 'string') && (item.trim() !== ''));

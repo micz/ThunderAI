@@ -149,18 +149,30 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 
 #### Address-list preferences and the empty-string trap
 
-The address lists edited as a textarea (`spamfilter_skip_addresses`, `summarize_auto_senders_list`)
-are stored as arrays through `normalizeStringList(value, 2)` (`js/mzta-utils.js`), which trims,
-lowercases, dedupes and sorts — but does **not** drop empty strings. An emptied textarea therefore
-persists as `['']`, and a trailing newline leaves a stray `''` behind, so a plain
-`list.length > 0` reads as "the user configured a list" when they configured nothing.
+The user-typed lists (`spamfilter_skip_addresses`, `summarize_auto_senders_list`,
+`add_tags_exclusions`, `add_tags_auto_uselist_list`) all go through `normalizeStringList()`
+(`js/mzta-utils.js`), which splits on newlines **and** commas, trims, lowercases, dedupes,
+**drops the empty entries** and sorts. `returnType` selects the shape: `0` comma-separated
+string (default), `1` newline-separated string, `2` array.
 
-Every "is this list configured?" test must therefore go through **`hasAddressListEntries(list)`**,
-which is true only when at least one entry is non-blank. It is used by the spam filter's
-skip-address check, by `_process_incoming`, by `processEmails()`, by `matchAddressList()` itself,
-and by the summarize page's conditional notice. For the spam filter this is a correctness cleanup
-rather than a bug fix: the `['']` case fell through to a `.includes(senderEmail)` that an empty
-string could never satisfy, so the outer check was simply doing nothing.
+Dropping the empty entries is what keeps the saved value honest. Before, an emptied textarea
+persisted as `['']` and a trailing newline left a stray `''` behind, so a plain `list.length > 0`
+read as "the user configured a list" when they configured nothing — and with `returnType 1`
+(`add_tags_auto_uselist_list`, which is stored as a *string*) the `''` was joined back into a
+**leading blank line** that reappeared in the textarea on every save and reload. It also accepts
+a non-string argument (`null`/`undefined` → empty list) rather than throwing on `.split`.
+
+**`hasAddressListEntries(list)` is still required** for every "is this list configured?" test:
+lists saved by previous versions keep their stray `''` until the user next saves that page, and
+the helper is also what makes the check safe against a value that is not an array. It is used by
+the spam filter's skip-address check, by `_process_incoming`, by `processEmails()`, by
+`matchAddressList()` itself, and by the summarize page's conditional notice.
+
+Neither change alters any *matching* outcome, and that is by design — both consumers of a
+possibly-blank entry already neutralized it: the spam filter's `['']` fell through to a
+`.includes(senderEmail)` that an empty string can never satisfy, and `checkExcludedTag()`
+(`js/mzta-addtags-exclusion-list.js`) opens with an explicit `excluded_word === ''` → `false`
+guard, without which `''.includes('')` would have excluded *every* tag.
 
 ### Timezone Select (`pages/_lib/mzta-timezones.js`)
 
