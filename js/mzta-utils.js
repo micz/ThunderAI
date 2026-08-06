@@ -188,7 +188,12 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-function extractEmail(text) {
+// Extracts the first email address found in a string, '' if there is none.
+// Accepts a raw header value like 'Name <addr@domain.com>'.
+// The case is preserved: getIdentityForMessage() compares the result with the
+// identity addresses as they were configured, so callers that need a
+// case-insensitive match have to lowercase it themselves.
+export function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const match = text.match(emailRegex);
@@ -708,13 +713,12 @@ export function hasAddressListEntries(list) {
 }
 
 /* Matches the sender of an email against a list of addresses and domain patterns.
-   The author header is the raw "Name <addr@domain>" string; the email is extracted
-   with the same regex used for the spamfilter skip list.
+   The author header is the raw "Name <addr@domain>" string, parsed with extractEmail().
    Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
    Returns false on an empty list or an unparseable author. */
 export function matchAddressList(author, list) {
   if (!author || !hasAddressListEntries(list)) return false;
-  const senderEmail = (String(author).match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+  const senderEmail = extractEmail(String(author)).toLowerCase();
   if (senderEmail === '') return false;
   const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
   return list.some(item => {

@@ -52,6 +52,7 @@ import {
     hasNoConnectionSelected,
     matchAddressList,
     hasAddressListEntries,
+    extractEmail,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -930,7 +931,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         }
 
         // Extract sender email for skip checks
-        let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+        let senderEmail = extractEmail(message.author).toLowerCase();
 
         // Check if sender is in the skip addresses list
         let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
