@@ -703,6 +703,21 @@ export function normalizeStringList(list, returnType = 0) {
   }
 }
 
+// True when the folder holding the message is flagged with any of the given specialUse values
+// ('inbox', 'junk', 'trash', 'sent', 'drafts', 'templates', 'archives').
+// Safe on a message with no folder (e.g. an attached or detached message), which yields false.
+export function messageFolderHasSpecialUse(message, specialUseList) {
+  const specialUse = message?.folder?.specialUse || [];
+  return specialUseList.some(item => specialUse.includes(item));
+}
+
+// Automatic processing of received emails (auto add_tags, auto spam filter, auto summarize)
+// must never run on messages sitting in a junk or a trash folder: they have already been
+// discarded by the user or by the server, so spending API tokens on them is pointless.
+export function isMessageInJunkOrTrash(message) {
+  return messageFolderHasSpecialUse(message, ['junk', 'trash']);
+}
+
 // True when an address list holds at least one usable entry.
 // normalizeStringList() does not drop empty strings, so an empty textarea is
 // stored as [''] and a trailing newline leaves a stray '' behind: a plain

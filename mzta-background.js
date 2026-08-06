@@ -53,6 +53,8 @@ import {
     matchAddressList,
     hasAddressListEntries,
     extractEmail,
+    messageFolderHasSpecialUse,
+    isMessageInJunkOrTrash,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -676,12 +678,6 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
     } catch (e) {
         taLog.error("Error in _sendIfCurrent: " + e);
     }
-}
-
-// Summaries are never generated automatically for messages sitting in a junk or a trash folder.
-function isMessageInJunkOrTrash(message) {
-    const specialUse = message?.folder?.specialUse || [];
-    return specialUse.includes('junk') || specialUse.includes('trash');
 }
 
 // True when no AI connection can be resolved for the summarize feature, so an automatic
@@ -1959,8 +1955,9 @@ async function processEmails(args) {
             // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
             try {
 
-            // Auto add_tags and spam filter must never run on messages in a junk/spam folder.
-            let message_in_junk = (message.folder?.specialUse || []).includes('junk');
+            // Auto add_tags, spam filter and summarize must never run on messages sitting in a
+            // junk/spam or a trash folder.
+            let message_in_junk_or_trash = isMessageInJunkOrTrash(message);
 
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
@@ -1975,8 +1972,8 @@ async function processEmails(args) {
     
             if (addTagsAuto) {
                 let skipAddTags = false;
-                if(isAutoMode && message_in_junk){
-                    taLog.log("Message in junk folder, skipping add_tags...");
+                if(isAutoMode && message_in_junk_or_trash){
+                    taLog.log("Message in junk or trash folder, skipping add_tags...");
                     skipAddTags = true;
                 }
                 if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
@@ -2039,8 +2036,8 @@ async function processEmails(args) {
     
             if (spamFilter) {
                 let skipSpamFilter = false;
-                if(isAutoMode && message_in_junk){
-                    taLog.log("Message in junk folder, skipping spamfilter...");
+                if(isAutoMode && message_in_junk_or_trash){
+                    taLog.log("Message in junk or trash folder, skipping spamfilter...");
                     skipSpamFilter = true;
                 }
                 if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
@@ -2051,8 +2048,7 @@ async function processEmails(args) {
                     }
                 }
                 if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_only_inbox){
-                    let specialUse = message.folder?.specialUse || [];
-                    if(!specialUse.includes('inbox')){
+                    if(!messageFolderHasSpecialUse(message, ['inbox'])){
                         taLog.log("Message not in inbox, skipping spamfilter (only-inbox mode)...");
                         skipSpamFilter = true;
                     }
@@ -2075,7 +2071,7 @@ async function processEmails(args) {
             let summarizeSenderMatch = summarizeSendersActive && matchAddressList(message.author, summarizeSenders);
             if (summarizeOnReceive || summarizeSenderMatch) {
                 let skipSummarize = false;
-                if (isAutoMode && isMessageInJunkOrTrash(message)) {
+                if (isAutoMode && message_in_junk_or_trash) {
                     taLog.log("Message in junk or trash folder, skipping summarize...");
                     skipSummarize = true;
                 }

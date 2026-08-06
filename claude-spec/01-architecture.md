@@ -173,8 +173,15 @@ exactly one API call. In the `initSummary` handler the sender check is deliberat
 otherwise disabled.
 
 **Shared guards** in both triggers (`mzta-background.js`):
-- `isMessageInJunkOrTrash(message)` — a message whose folder `specialUse` includes `junk` or
-  `trash` is never summarized automatically.
+- `isMessageInJunkOrTrash(message)` (`js/mzta-utils.js`) — a message whose folder `specialUse`
+  includes `junk` or `trash` is never processed automatically. It is **shared with auto add-tags
+  and the auto spam filter**: all three used to test only `junk` (each with its own inline
+  `message.folder?.specialUse || []`), so a message the user or the server had already thrown
+  away still cost API tokens. Inside `processEmails()` the result is computed once per message
+  into `message_in_junk_or_trash` and reused by the three blocks. Built on the generic
+  `messageFolderHasSpecialUse(message, [...])`, which also serves the `spamfilter_only_inbox`
+  check (`['inbox']`) — a different question that the junk/trash wrapper cannot answer. Both are
+  null-safe: a message with no folder yields `false`.
 - `_summarizeConnectionMissing()` — resolves the **effective** connection with
   `getConnectionType(prefs, await getSummarizePrompt(), 'summarize')` and tests it with
   `hasNoConnectionSelected()`, so a summarize-specific integration still works when the global
@@ -588,7 +595,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInJunkOrTrash()` |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |
