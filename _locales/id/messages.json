@@ -105,7 +105,7 @@
         "message": "Aktifkan penampil perbandingan teks"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Penampil perbandingan teks dapat dipilih ketika tindakan diatur ke \"Ganti teks\"."
+        "message": "Tersedia saat \"Action\" adalah \"Substitute text\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Kolom wajib diisi"
@@ -707,10 +707,10 @@
         "message": "Jika dicentang, label tag akan diatur menjadi huruf kecil dengan hanya huruf pertama yang kapital."
     },
     "prefs_SurveyLinkText": {
-        "message": "Bagikan masukan Anda dan bantu meningkatkan ThunderAI!"
+        "message": "Menikmati ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Klik di sini, hanya perlu satu menit!"
+        "message": "Bagikan masukan Anda"
     },
     "prefs_doc_title": {
         "message": "Dokumentasi"
@@ -1679,7 +1679,7 @@
         "message": "Ingin melihat statistik email Anda yang indah?"
     },
     "prefs_THStats_2": {
-        "message": "Klik di sini! Coba ThunderStats!"
+        "message": "Coba ThunderStats!"
     },
     "prefs_OptionText_chatgpt_win_pos_text": {
         "message": "Posisi jendela chat AI"
@@ -1742,7 +1742,7 @@
         "message": "Kelola pengaturan urutan menu"
     },
     "menu_order_info": {
-        "message": "Seret dan lepas item untuk mengubah urutannya. Gunakan toggle untuk menampilkan atau menyembunyikan item di setiap menu."
+        "message": "Seret dan lepas item untuk mengubah urutannya, atau seret item di antara bagian Terlihat dan Tersembunyi untuk menampilkan atau menyembunyikannya di setiap menu. Prompt yang tersembunyi di semua menu akan dinonaktifkan sampai Anda membuatnya terlihat kembali."
     },
     "menu_order_active_items": {
         "message": "Item yang terlihat"
@@ -1940,5 +1940,450 @@
     },
     "prefs_footer_donate": {
         "message": "Buat donasi"
+    },
+    "prefs_full_guide": {
+        "message": "Panduan lengkap"
+    },
+    "prefs_shortcut_label": {
+        "message": "Buka menu ThunderAI dengan"
+    },
+    "prefs_disclaimer_short": {
+        "message": "Model LLM dapat menghasilkan informasi yang salah, dan data Anda mungkin digunakan oleh penyedia untuk melatih model baru."
+    },
+    "prefs_footer_translate": {
+        "message": "Terjemahkan addon"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ prompt",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "Models_Fetch": {
+        "message": "Perbarui daftar"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Bandingkan perubahan berdasarkan"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Cara pemilih perubahan membandingkan teks asli dengan jawaban. \"Kata\" cocok untuk memperbaiki ejaan dan tata bahasa; \"Kalimat\" lebih mudah dibaca ketika jawaban menulis ulang seluruh kalimat. Perlu diingat bahwa pada teks yang terdiri dari satu kalimat, \"Kalimat\" menampilkan seluruh teks sebagai satu perubahan. Anda juga dapat beralih di antara keduanya saat meninjau perubahan."
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Kata"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Kalimat"
+    },
+    "apiwebchat_picker_title": {
+        "message": "Tinjau perubahan"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Tindakan pemilih perubahan"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ dari $TOTAL$ perubahan diterima",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Semua $TOTAL$ perubahan diterima",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Perubahan $CURRENT$ dari $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ perubahan",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Perubahan yang diterima"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Tindakan lainnya"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Edit secara manual"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Kembali ke perubahan"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Teks yang diedit"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Anda sedang mengedit teks secara manual. Kembali ke perubahan akan membandingkan kembali teks yang Anda tulis dengan teks asli, dan setiap pilihan akan diatur ulang."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Bandingkan berdasarkan"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Kata"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Kalimat"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Terima semua"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Tolak semua"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Perubahan sebelumnya"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Perubahan berikutnya"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "Jawaban identik dengan teks asli: tidak ada yang perlu ditinjau."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Kedua teks tidak dapat dibandingkan. Jawaban ditampilkan tanpa perubahan."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Teks asli, dipertahankan: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Teks asli, dibuang: $TEXT$. Aktifkan untuk mempertahankannya.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Teks yang disarankan, dipertahankan: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Teks yang disarankan, dibuang: $TEXT$. Aktifkan untuk mempertahankannya.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Tidak ada teks di sini: bagian ini dihilangkan. Aktifkan versi lain untuk mempertahankan teksnya."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Tidak ada teks di sini. Aktifkan untuk menghilangkan bagian ini."
+    },
+    "apiwebchat_copy": {
+        "message": "Salin"
+    },
+    "apiwebchat_copied": {
+        "message": "Tersalin"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Gagal menyalin"
+    },
+    "apiwebchat_status_error": {
+        "message": "Kesalahan"
+    },
+    "apiwebchat_show_options": {
+        "message": "Tampilkan opsi"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Tindakan jawaban"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Gulir ke yang terbaru"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Ringkasan penalaran"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Minta API untuk memberikan ringkasan penalaran model, yang ditampilkan dalam chat sebagai blok yang dapat diciutkan. Hanya model penalaran terbaru yang mendukungnya, seperti gpt-5, o3, dan o4-mini: model lama seperti o1-pro dan o3-mini melakukan penalaran secara internal tetapi tidak pernah menampilkan ringkasan, sehingga blok tetap tersembunyi. Biarkan dinonaktifkan untuk model tanpa dukungan penalaran."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Upaya penalaran"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Seberapa besar upaya yang digunakan model untuk bernalar sebelum menjawab. Nilai yang lebih rendah menghasilkan jawaban yang lebih cepat dan lebih murah, sedangkan nilai yang lebih tinggi menghasilkan jawaban yang lebih menyeluruh. Biarkan pada default API agar OpenAI yang menentukan. Diabaikan oleh model tanpa dukungan penalaran."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Dinonaktifkan"
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "Default API"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Otomatis"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Terperinci"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Rendah"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Sedang"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Tinggi"
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ placeholder data",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "menu_order_reset_all": {
+        "message": "Atur ulang semua"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Mengembalikan urutan, visibilitas, dan ikon default untuk semua item menu. Tekan Simpan semua untuk menerapkan."
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Prompt yang dipilih juga muncul dalam daftar ini"
+    },
+    "menu_position_btn_label": {
+        "message": "Posisi menu"
+    },
+    "menu_order_icon_default": {
+        "message": "Ikon default"
+    },
+    "menu_order_legend_type": {
+        "message": "Saat ditampilkan:"
+    },
+    "menu_order_legend_type_always": {
+        "message": "Ditampilkan saat membaca dan menulis"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "Ditampilkan hanya saat membaca pesan"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "Ditampilkan hanya saat menulis pesan"
+    },
+    "menu_order_legend_source": {
+        "message": "Jenis prompt:"
+    },
+    "menu_order_legend_source_default": {
+        "message": "Prompt bawaan yang disertakan dengan ThunderAI"
+    },
+    "menu_order_legend_source_special": {
+        "message": "Prompt yang didukung fitur (misalnya, penandaan, kalender)"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "Prompt yang Anda buat"
+    },
+    "prefs_settings_subtitle": {
+        "message": "Pengaturan"
+    },
+    "prefs_disclaimer": {
+        "message": "Model LLM dapat menghasilkan informasi yang salah, dan data Anda mungkin digunakan oleh penyedia untuk melatih model baru. Gunakan dengan risiko Anda sendiri."
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "Pengaturan Koneksi"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "Pengaturan Dasar"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Fitur"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "Aktifkan yang Anda perlukan. Sesuaikan masing-masing melalui layar pengaturannya sendiri."
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "Pilih koneksi AI di atas untuk mengaktifkan fitur-fitur ini."
+    },
+    "prefs_advanced_options": {
+        "message": "Opsi lanjutan"
+    },
+    "prefs_conn_show_advanced": {
+        "message": "Tampilkan opsi lanjutan"
+    },
+    "prefs_conn_hide_advanced": {
+        "message": "Sembunyikan opsi lanjutan"
+    },
+    "prefs_privacy_more_info": {
+        "message": "Klik di sini untuk informasi selengkapnya tentang privasi"
+    },
+    "connTest_idle": {
+        "message": "Koneksi belum diuji"
+    },
+    "connTest_testing": {
+        "message": "Menguji koneksi…"
+    },
+    "connTest_ok": {
+        "message": "Terhubung — $API$ dapat dijangkau",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "Kesalahan — $DETAIL$",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — invalid API key"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "Autentikasi gagal — periksa kunci API Anda"
+    },
+    "connTest_error_network": {
+        "message": "Kesalahan jaringan — endpoint tidak dapat dijangkau"
+    },
+    "connTest_error_timeout": {
+        "message": "Waktu habis — tidak ada respons dari endpoint"
+    },
+    "connTest_link_test": {
+        "message": "Uji sekarang"
+    },
+    "connTest_link_retest": {
+        "message": "Uji ulang"
+    },
+    "connTest_link_retry": {
+        "message": "Coba lagi"
+    },
+    "wizard_title": {
+        "message": "Wizard Penyiapan"
+    },
+    "wizard_step_provider_title": {
+        "message": "Pilih AI Anda"
+    },
+    "wizard_step_provider_sub": {
+        "message": "Setiap layanan memiliki warna sendiri — Anda akan melihatnya digunakan sepanjang proses penyiapan berikutnya."
+    },
+    "wizard_step_connect_sub": {
+        "message": "Masukkan kredensial di bawah ini dan pilih model, lalu uji koneksinya."
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "Hampir tidak ada yang perlu disiapkan di sini."
+    },
+    "wizard_step_tools_title": {
+        "message": "Pilih alat Anda"
+    },
+    "wizard_step_tools_sub": {
+        "message": "Anda dapat mengubah semua ini nanti di Pengaturan."
+    },
+    "wizard_done_title": {
+        "message": "Anda sudah siap"
+    },
+    "wizard_done_body": {
+        "message": "ThunderAI siap digunakan. Klik kanan pesan atau buka jendela penulisan untuk mencobanya. Anda dapat menyesuaikan apa pun nanti di Pengaturan."
+    },
+    "wizard_run_again": {
+        "message": "Jalankan kembali"
+    },
+    "wizard_connect_heading": {
+        "message": "Hubungkan $PROVIDER$",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "Kembali"
+    },
+    "wizard_continue": {
+        "message": "Lanjutkan"
+    },
+    "wizard_finish": {
+        "message": "Selesaikan penyiapan"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "Tidak ada kunci API — masuk saat penggunaan pertama"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "Memerlukan kunci API + model"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "Memerlukan kunci API + model"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "Memerlukan kunci API, model & versi"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "Alamat server lokal + model"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "Alamat server + model"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "Wizard Penyiapan"
+    },
+    "popup_setup_wizard_text": {
+        "message": "ThunderAI belum terhubung ke AI."
+    },
+    "popup_setup_wizard_link": {
+        "message": "Jalankan wizard penyiapan"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— Pilih koneksi AI —"
+    },
+    "options_no_connection_text": {
+        "message": "Belum ada koneksi AI yang dipilih. ThunderAI memerlukannya agar dapat berfungsi."
+    },
+    "options_no_connection_link": {
+        "message": "Jalankan wizard penyiapan"
+    },
+    "msg_no_connection_selected": {
+        "message": "Tidak ada koneksi AI yang dipilih. Buka opsi ThunderAI dan jalankan wizard penyiapan untuk memilihnya."
+    },
+    "editor_placeholder_unknown": {
+        "message": "Placeholder tidak dikenal atau tidak tersedia untuk jenis prompt ini"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Placeholder tidak ditutup: {%} penutup tidak ada"
     }
 }
