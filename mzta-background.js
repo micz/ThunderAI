@@ -55,6 +55,7 @@ import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
     getSpamFilterPrompt,
+    getAddTagsPrompt,
     getSummarizePrompt,
     getTranslatePrompt,
     migrateMenuOrderAlphabetic,
@@ -1906,9 +1907,13 @@ async function processEmails(args) {
                         skipAddTags = true;
                     }
                 }
+                let curr_prompt_add_tags = await getAddTagsPrompt();
+                if (!skipAddTags && !curr_prompt_add_tags) {
+                    console.error("[ThunderAI | Auto add_tags] The 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+                    skipAddTags = true;
+                }
                 if (!skipAddTags) {
                     let specialFullPrompt_add_tags = '';
-                    let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
                     let tags_full_list = await getTagsList();
                     //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
                     let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
