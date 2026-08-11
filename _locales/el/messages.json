@@ -785,12 +785,6 @@
     "CORS_alternative_1": {
         "message": "Προβλήματα με τη ρύθμιση του CORS;"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Σύνταξη σε απλό κείμενο"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Επιλέξτε αυτήν την επιλογή εάν συντάσσετε τα μηνύματα ηλεκτρονικού ταχυδρομείου σε μορφή απλού κειμένου."
-    },
     "Replace_No_Selected_Text": {
         "message": "Δεν έχει επιλεγεί κείμενο, θέλετε να εισαγάγετε την απάντηση του AI στην αρχή του email;"
     },

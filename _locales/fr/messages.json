@@ -861,9 +861,6 @@
     "maybe_CORS_openai_comp": {
         "message": "L'utilisation d'une API compatible avec OpenAI peut nécessiter la configuration des paramètres CORS sur le serveur."
     },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Cochez cette option si vous rédigez les e-mails au format texte brut."
-    },
     "prefs_ollama_num_ctx": {
         "message": "Nombre de jetons de contexte"
     },
@@ -872,9 +869,6 @@
     },
     "prefs_ollama_num_ctx_Info": {
         "message": "Le nombre de jetons de contexte à utiliser pour l'API Ollama. Mettez 0 si vous ne souhaitez pas le passer comme paramètre au serveur."
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Rédaction en texte brut"
     },
     "task_opening_dialog_error": {
         "message": "Erreur lors de l’ouverture de la boîte de dialogue de la tâche"

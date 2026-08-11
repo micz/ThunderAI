@@ -861,12 +861,6 @@
     "maybe_CORS_openai_comp": {
         "message": "L'utilizzo di un'API compatibile con OpenAI potrebbe richiedere la configurazione delle impostazioni CORS sul server."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Composizione in testo semplice"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Seleziona questa opzione se stai scrivendo le email in formato testo semplice."
-    },
     "prefs_ollama_num_ctx": {
         "message": "Numero di token del contesto"
     },

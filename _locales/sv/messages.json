@@ -1125,12 +1125,6 @@
     "prefs_OptionText_get_task_Info": {
         "message": "Om markerat kommer ett alternativ att inkluderas i menyn för att hämta uppgiftsinformation från markerad text."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Skriva i oformaterad text"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Markera det här alternativet om du skriver e-postmeddelandena i oformaterad text."
-    },
     "Replace_No_Selected_Text": {
         "message": "Ingen text vald, vill du infoga AI:ns svar i början av e-postmeddelandet?"
     },

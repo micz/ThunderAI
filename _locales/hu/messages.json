@@ -1162,12 +1162,6 @@
     "CORS_localhost_warn": {
         "message": "Ha a localhost vagy 127.0.0.1 címeket használja, mert az AI szerver a saját PC-jén fut, az <all_urls> jogosultság szükséges."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Írás sima szöveges (plain text) formátumban"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Jelölje be ezt az opciót, ha az e-maileket nem HTML, hanem sima szöveges formátumban írja."
-    },
     "Replace_No_Selected_Text": {
         "message": "Nincs kijelölt szöveg. Szeretné beilleszteni az AI válaszát az e-mail elejére?"
     },

@@ -763,9 +763,6 @@
     "remember_CORS": {
         "message": "記住，您需要在伺服器上設定 CORS 設定！"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "使用純文字撰寫"
-    },
     "ask_integration_permission_2_popup": {
         "message": "點擊此處開啟新分頁並按照說明進行操作。"
     },
@@ -977,9 +974,6 @@
     },
     "prefsInfoDesc_5": {
         "message": "請記住，您可以使用鍵盤快速鍵 CTRL+ALT+A 開啟 ThunderAI 選單。"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "如果您以純文字格式撰寫電子郵件，請勾選此選項。"
     },
     "maybe_CORS_openai_comp": {
         "message": "使用 OpenAI 相容 API 可能需要在伺服器上設定 CORS 設定。"
