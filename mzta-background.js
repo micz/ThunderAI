@@ -1907,10 +1907,13 @@ async function processEmails(args) {
                         skipAddTags = true;
                     }
                 }
-                let curr_prompt_add_tags = await getAddTagsPrompt();
-                if (!skipAddTags && !curr_prompt_add_tags) {
-                    console.error("[ThunderAI | Auto add_tags] The 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
-                    skipAddTags = true;
+                let curr_prompt_add_tags = null;
+                if (!skipAddTags) {
+                    curr_prompt_add_tags = await getAddTagsPrompt();
+                    if (!curr_prompt_add_tags) {
+                        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+                        skipAddTags = true;
+                    }
                 }
                 if (!skipAddTags) {
                     let specialFullPrompt_add_tags = '';
