@@ -1168,12 +1168,6 @@
     "CORS_localhost_warn": {
         "message": "Jika Anda menggunakan localhost atau 127.0.0.1 karena server AI dihosting di PC Anda, izin <all_urls> diperlukan."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Menulis dalam teks biasa"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Centang opsi ini jika Anda menulis email dalam format teks biasa."
-    },
     "Replace_No_Selected_Text": {
         "message": "Tidak ada teks yang dipilih, apakah Anda ingin menyisipkan respons AI di awal email?"
     },

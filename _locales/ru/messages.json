@@ -923,12 +923,6 @@
     "CORS_alternative_1": {
         "message": "Проблемы с настройкой CORS?"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Сочинение обычного текста"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Установите этот флажок, если вы составляете эл. письма в формате обычного текста."
-    },
     "Replace_No_Selected_Text": {
         "message": "Текст не выбран, вы хотите вставить ответ ИИ в начало письма?"
     },

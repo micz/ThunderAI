@@ -1201,12 +1201,6 @@
     "CORS_localhost_warn": {
         "message": "Se você está usando localhost ou 127.0.0.1 porque o servidor de IA está hospedado no seu PC, a permissão <all_urls> é necessária."
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Compondo em texto simples"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Marque esta opção se você está compondo os e-mails em formato de texto simples."
-    },
     "Replace_No_Selected_Text": {
         "message": "Nenhum texto selecionado, gostaria de inserir a resposta da IA no início do e-mail?"
     },
