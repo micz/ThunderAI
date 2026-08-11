@@ -302,10 +302,19 @@ switch (message.command) {
     }
     const r = sel.getRangeAt(0);
     r.deleteContents();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(message.text, 'text/html');
-    r.insertNode(doc.body);
-    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId});
+    if (message.isPlainText) {
+      // In a plain text compose window the line breaks ARE the \n characters,
+      // and the editor renders the body as preformatted text. Going through
+      // DOMParser here would treat those \n as collapsible HTML whitespace and
+      // render each one as a single space - which is exactly how the whole
+      // message ended up as one run-together line. [#855]
+      r.insertNode(document.createTextNode(message.text));
+    } else {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(message.text, 'text/html');
+      r.insertNode(doc.body);
+    }
+    browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId, isPlainText: message.isPlainText === true});
     return Promise.resolve(true);
   }
 

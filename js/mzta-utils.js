@@ -275,23 +275,67 @@ export async function getMailBody(fullMessage, messageId) {
   return {text, html};
 }
 
+// Is this compose window composing in plain text?
+//
+// The compose format is a property of the single window, which Thunderbird
+// reports authoritatively — it is deliberately NOT a global preference, because
+// the same user can have one identity set to plain text and another to HTML.
+//
+// The try/catch is not gratuitous defensiveness: getComposeDetails rejects on a
+// tab that is not (or no longer) a compose tab, and the tabId reaching here
+// arrives by message from the webchat window, so it can be stale.
+export async function isPlainTextCompose(tabId){
+  try {
+    let composeDetails = await messenger.compose.getComposeDetails(tabId);
+    return composeDetails.isPlainText === true;
+  } catch (e) {
+    // HTML is the historical assumption.
+    return false;
+  }
+}
+
+// On a plain text compose window the body lives in `plainTextBody`, not `body`.
+// Writing `body` there makes Thunderbird convert the HTML down to text, which
+// collapses every bare \n as HTML whitespace and loses the line structure —
+// so each of the helpers below has to pick the field that matches the window.
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    // The trailing space is what makes the value differ from the current one,
+    // which is what forces the editor to re-read it.
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: composeDetails.plainTextBody + " "});
+    return;
+  }
   let originalHtmlBody = composeDetails.body + " ";
   await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
 }
 
 export async function getOriginalBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    return composeDetails.plainTextBody;
+  }
   return composeDetails.body;
 }
 
-export async function setBody(tabId, fullHtmlBody){
-  await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
+export async function setBody(tabId, fullBody, isPlainText = false){
+  if(isPlainText){
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullBody});
+    return;
+  }
+  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
 export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    // Plain text: no DOM to splice into, so the reply is prepended to the
+    // existing text (quote and signature included) with a blank line between.
+    let originalTextBody = composeDetails.plainTextBody ?? "";
+    let fullTextBody = stripHtmlKeepLines(replyHtml) + (originalTextBody.trim() === "" ? "" : "\n\n" + originalTextBody);
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullTextBody});
+    return;
+  }
   let originalHtmlBody = composeDetails.body;
   //console.log('originalHtmlBody: ' + originalHtmlBody);
   let fullBody = insertHtml(replyHtml, originalHtmlBody);

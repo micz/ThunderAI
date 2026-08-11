@@ -45,6 +45,7 @@ import {
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
     stripHtmlKeepLines,
+    isPlainTextCompose,
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
     getConnectionType,
@@ -463,11 +464,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
                     original_html = await getOriginalBody(tabId);
-                    let prefs_repl = await browser.storage.sync.get({composing_plain_text: prefs_default.composing_plain_text});
-                    if(prefs_repl.composing_plain_text){
+                    // The compose format is read from the window itself, not from a
+                    // preference: it is a per-message property, so a global setting
+                    // could never be right for a user who writes in both formats.
+                    let isPlainText = await isPlainTextCompose(tabId);
+                    if(isPlainText){
                         text = stripHtmlKeepLines(text);
                     }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId });
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
@@ -476,10 +480,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                     taLog.log("paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
-                    if(prefs_reply.composing_plain_text){
-                        paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);
-                    }
+                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
+                    // No plain-text conversion here: the reply window does not exist
+                    // yet, so its format is not knowable. replaceBody() reads it from
+                    // the created tab and converts there.
                     //console.log('reply_type: ' + prefs_reply.reply_type);
                     let replyType = 'replyToAll';
                     // console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
@@ -501,10 +505,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
                     let _mailMessage = await browser.messages.get(message.mailMessageId);
                     let curr_idn = await getCurrentIdentity(_mailMessage)
+                    // isPlainText is deliberately NOT forced here: omitting it lets the
+                    // reply follow the identity's own compose format, so a user who
+                    // writes in plain text gets a plain text reply. replaceBody() then
+                    // reads the resulting format back off the tab. [#855]
                     let reply_tab = await browser.compose.beginReply(_mailMessage.id, replyType, {
                         type: "reply",
                         //body:  paragraphsHtmlString,
-                        isPlainText: false,
                         identityId: curr_idn,
                     })
                         // Wait for tab loaded.
@@ -535,9 +542,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'compose_reloadBody':
                 async function _reloadBody(tabId) {
+                    // getOriginalBody/setBody must agree on which field they use, or
+                    // this round-trip would push the freshly inserted plain text
+                    // through the HTML body field and collapse its line breaks.
+                    let isPlainText = await isPlainTextCompose(tabId);
                     modified_html = await getOriginalBody(tabId);
-                    await setBody(tabId, original_html);
-                    await setBody(tabId, modified_html);
+                    await setBody(tabId, original_html, isPlainText);
+                    await setBody(tabId, modified_html, isPlainText);
                     return true;
                 }
                 return _reloadBody(message.tabId);

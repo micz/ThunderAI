@@ -84,13 +84,21 @@ const DIFF_FNS = {
 // user has to look at. Normalizing both sides first keeps that noise out of
 // the hunk list. The invariant is therefore stated against the NORMALIZED
 // original, which is what ends up in the email regardless.
+//
+// Blank lines are collapsed to a single \n because the two sides do not arrive
+// equally faithful: the original comes from prompt_info.selection_text /
+// body_text, which cleanupNewlines() has already flattened with \n{2,} -> \n,
+// while the answer side keeps its \n\n through htmlToPlainText(). Capping at
+// \n\n would leave that asymmetry in place and manufacture a hunk out of every
+// paragraph break on multi-paragraph mail - changes the user has no reason to
+// review. Aligning to the lossier side is what removes them. [#855]
 export function normalizeForDiff(text) {
     if (text == null) { return ''; }
     return String(text)
         .replace(/\r\n/g, '\n')
         .replace(/[ \t]+/g, ' ')
         .replace(/ *\n */g, '\n')
-        .replace(/\n{3,}/g, '\n\n')
+        .replace(/\n{2,}/g, '\n')
         .trim();
 }
 

@@ -105,13 +105,29 @@ Both declare only `tokenize()` and inherit the base-class identity `join()` and 
 `diffWordsWithSpace` is whitespace-exact — which the invariant needs — but that also means every
 cosmetic whitespace difference becomes a hunk the user has to look at. So **both sides pass through
 `normalizeForDiff()` before diffing**: CRLF→LF, runs of spaces/tabs collapsed, spaces around newlines
-dropped, 3+ newlines capped at 2, trimmed.
+dropped, **runs of newlines collapsed to one**, trimmed.
 
 The invariant is therefore stated against the **normalized** original, not the byte-exact one. That
-is not a compromise in practice: the result is written into a rich-text compose body via
-`chatgpt_replaceSelectedText`, so byte-exact original whitespace was never preserved end to end
+is not a compromise in practice: byte-exact original whitespace was never preserved end to end
 anyway. The upside is that cosmetic noise never becomes a hunk — `"one two"` vs `"one    two"`
 correctly yields **zero** changes.
+
+#### Why blank lines are collapsed, not capped at two
+
+The two sides do not arrive equally faithful. The original comes from
+`prompt_info.selection_text` / `body_text`, which `cleanupNewlines()` (`js/mzta-utils.js`) has
+**already** flattened with `\n{2,}` → `\n`; the answer side keeps its `\n\n` through
+`htmlToPlainText()`. An earlier `\n{3,}` → `\n\n` left that asymmetry in place, so on
+multi-paragraph mail **every paragraph break became a hunk** — changes the user has no reason to
+review, and which made the real edits harder to find. Aligning the normalization to the lossier
+side is what removes them; measured on a 4-paragraph mail, word level went from 4 changes to 2 and
+sentence level from 2 to 1.
+
+The cost is that the picker cannot *restore* a blank line the original never carried by the time it
+arrived. Preserving them would mean not running `cleanupNewlines()` on the fields that feed the
+picker, which also changes what is sent to the model — deliberately out of scope here.
+
+Verified after the change: 8058 invariant checks over both granularities, zero failures.
 
 > An earlier draft of this feature planned `body_text_raw` / `selection_text_raw` fields on
 > `prompt_info` carrying un-normalized text, so the invariant could hold against the byte-exact
@@ -140,6 +156,22 @@ once the user opens the picker, i.e. only when they have explicitly asked to rev
 The plain-text side never contains literal `<br>` (see `getMailBody()` above), so the picker splits on
 `\n` only. `_buildDiffButton` still applies one defensive `<br>` → `\n` replacement on the resolved
 original, in case a future `prompt_info` ever carries markup in a plain-text field.
+
+### Into a plain text compose window
+
+`composeResultHTML()` turns `\n` into `<br>` unconditionally, which is right for an HTML compose
+window and wrong for a plain text one. The conversion back is **not** the picker's job — it happens
+downstream, where the target window's format is known:
+`mzta-background.js` detects it with `isPlainTextCompose()` and runs `stripHtmlKeepLines()`, and the
+content script inserts a `Text` node instead of parsing HTML. See
+[01-architecture.md](01-architecture.md) → *Writing into a plain text compose window* for the full
+path and why all of its parts are load-bearing.
+
+The picker's `<br>`-only, `<p>`-less output is what made this fail visibly
+([#855](https://github.com/micz/ThunderAI/issues/855)): the bug predates the picker, but
+`stripHtmlKeepLines` was tuned for the `<p>`-wrapped markdown of the non-picker path, and the
+converted `\n` were then re-parsed as collapsible HTML whitespace — collapsing the whole message
+onto one line.
 
 ## The result indirection
 
@@ -476,5 +508,8 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |
+| `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
+| `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n` |
+| `mzta-background.js` | detects the compose format and converts before insertion |
 | `options/mzta-options-default.js` | the global `diff_granularity` preference |
 | `options/mzta-options.html/.js` | the global preference's control in the advanced section |

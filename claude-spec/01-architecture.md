@@ -293,12 +293,36 @@ snapshot with `htmlToPlainText()` — which parses the markup, decoding entities
 and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
 is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
 
-With `composing_plain_text` on, `mzta-background.js` converts that same snapshot with
-`stripHtmlKeepLines()` (`js/mzta-utils.js`) before handing it to the compose window. The line
-structure there is carried by the **tags**, not by the source newlines: the renderer emits
-`<br>\n` and `</p>\n<p>`, so each of those rules consumes the pretty-printing newline that follows
-its tag. Counting both would double every line and make a single `<br>` indistinguishable from a
-paragraph break.
+### Writing into a plain text compose window
+
+Whether the target composes in plain text is read from the window itself —
+`isPlainTextCompose(tabId)` (`js/mzta-utils.js`) wrapping `compose.getComposeDetails()`. It is
+**not** a preference: the compose format is a per-message property, so a global setting could
+never be right for a user whose identities differ. (A `composing_plain_text` pref did exactly
+that until it was removed in favour of this detection — see [#855](https://github.com/micz/ThunderAI/issues/855).)
+
+When it reports plain text, `mzta-background.js` converts the answer snapshot with
+`stripHtmlKeepLines()` (`js/mzta-utils.js`). The line structure there is carried by the
+**tags**, not by the source newlines: the renderer emits `<br>\n` and `</p>\n<p>`, so each of
+those rules consumes the pretty-printing newline that follows its tag. Counting both would
+double every line and make a single `<br>` indistinguishable from a paragraph break.
+
+**Converting is only half the job — the insertion path has to stop treating the result as
+HTML.** Three places cooperate, and all three are required:
+
+- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts a **`Text` node** when
+  `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
+  fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
+  rendered every line break as a single space and the whole message arrived as one line.
+- `getOriginalBody` / `setBody` / `reloadBody` / `replaceBody` (`js/mzta-utils.js`) read and
+  write **`plainTextBody`**, not `body`. Writing `body` on a plain text window makes
+  Thunderbird convert the HTML down to text, undoing the line structure again — which matters
+  most in `compose_reloadBody`, whose `setBody` round-trip runs right after the insertion.
+- `chatgpt_replyMessage` **omits** `isPlainText` from `compose.beginReply` rather than forcing
+  `false`, so the reply follows the identity's own format; `replaceBody()` then reads the
+  format back off the created tab. On a plain text reply there is no DOM to splice into, so
+  the answer is prepended to the existing text with a blank line rather than going through
+  `insertHtml()`.
 
 ### Theming
 

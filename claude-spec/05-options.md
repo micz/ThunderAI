@@ -91,7 +91,6 @@ These are generated programmatically at the bottom of `mzta-options-default.js` 
 | `default_chatgpt_lang` | `''` | Force response language |
 | `default_sign_name` | `''` | Default signature name |
 | `reply_type` | `'reply_all'` | Default reply type |
-| `composing_plain_text` | `false` | Use plain text in compose |
 | `chatgpt_web_model` | `''` | ChatGPT Web model override |
 | `chatgpt_web_tempchat` | `false` | Use temporary chat |
 | `chatgpt_web_project` | `''` | ChatGPT Web project |
