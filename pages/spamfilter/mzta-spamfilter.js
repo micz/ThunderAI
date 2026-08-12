@@ -60,7 +60,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
-        
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(spamfilter_prompt.api_type)) {
+            update_prefs['spamfilter_use_specific_integration'] = true;
+        }
+
         let integration = spamfilter_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {

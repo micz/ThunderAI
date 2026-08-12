@@ -612,6 +612,37 @@ filters on it. Options rows and menu entries must agree — they used to disagre
 enabled in the UI but absent from the menus. The shared predicate is `isApiUsableConnection()`
 (`js/mzta-utils.js`): `!hasNoConnectionSelected(ct) && ct !== 'chatgpt_web'`. **Always feed it an
 effective connection** (`getConnectionType(prefs, null, prefix)`), never the global one.
+
+### The Prompt Is Authoritative For API Parameters
+
+At execution time the **special prompt**, not the prefixed prefs, supplies the API parameters.
+`mzta_specialCommand.initWorker()` (`js/mzta-special-commands.js`) sets `use_specific_api = true`
+whenever `config.api_type` is non-empty — and `config` **is the prompt object**; all seven call
+sites pass it (`js/mzta-menus.js` for add_tags / calendar / task, `mzta-background.js` for
+summarize / translate / spamfilter / auto-add-tags). From then on each key prefers
+``config[`${integration}_${key}`]``, i.e. `prompt.anthropic_model`, `prompt.anthropic_api_key`, …; the
+values read from `storage.sync` are the **global** ones (`anthropic_model`), used only as fallback.
+The `<prefix>_<integration>_<key>` prefs are never read on any execution path.
+
+They are UI state, and they are re-derived from the prompt on every page load: `restoreOptions()`
+overwrites `getting['<prefix>_connection_type']` and each `getting['<prefix>_<integration>_<key>']`
+from the prompt before `setCurrentChoice()`, and the `DOMContentLoaded` block at the top of each
+feature page mirrors the same values back into storage. Both directions therefore agree by
+construction: **the page reads prefs, execution reads the prompt, and both trace back to the
+prompt.** Do not add a migration for these keys — there is no legacy format to convert, and
+`_updatePrompt()` keeps `prompt.api_type` populated for as long as the checkbox is on, so any
+unguarded derivation would simply re-run forever rather than settle.
+
+**`<prefix>_connection_type` and `<prefix>_use_specific_integration` must always be written
+together.** The connection type alone is inert: `getConnectionType()` only reads it when the flag
+is on. This is the one key neither mechanism above maintains — `restoreOptions()` has no branch for
+it — so the `DOMContentLoaded` block must set it explicitly (guarded by `isApiUsableConnection()`,
+so a `chatgpt_web` `api_type` never switches it on). It matters specifically for the two call sites
+that pass `prompt = null` — `_computeActiveSpecialIds()` (menu gating) and `getFeatureConnState()`
+(options row): with no prompt there is no `prompt.api_type` fallback, so the pref pair is the only
+thing standing between them and the global connection. Writing just one half is what made a feature
+configured for its own API vanish from the menus while still executing correctly.
+
 ### Connection Settings Panel — Provider Setup Note (`#miczDescription`)
 
 The per-provider setup note is the **last element inside `#mzta_conn_panel`**, directly
