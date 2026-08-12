@@ -1941,5 +1941,586 @@
     },
     "onboarding_footer_3": {
         "message": "Gefällt Ihnen ThunderAI?"
+    },
+    "prefs_full_guide": {
+        "message": "Vollständige Anleitung",
+        "description": "Link in the provider setup callout, opening the documentation page for the selected provider."
+    },
+    "prefs_shortcut_label": {
+        "message": "ThunderAI-Menü öffnen mit",
+        "description": "Label preceding the keyboard shortcut keys, at the bottom of the options page."
+    },
+    "prefs_disclaimer_short": {
+        "message": "LLM-Modelle können fehlerhafte Informationen erzeugen, und Ihre Daten können vom Anbieter zum Training neuer Modelle verwendet werden.",
+        "description": "Shown at the bottom of the options page body, followed by a link to the privacy information."
+    },
+    "prefs_footer_translate": {
+        "message": "Add-on übersetzen",
+        "description": "Footer link at the bottom of the options page, opening the translation info page."
+    },
+    "prefs_footer_donate": {
+        "message": "Spenden",
+        "description": "Footer link at the bottom of the options page, opening the donation page."
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ Prompts",
+        "description": "Footer count of prompts shown in the list",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "Models_Fetch": {
+        "message": "Liste aktualisieren",
+        "description": "Label of the button that fetches/updates the available models list for an AI provider"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Änderungen vergleichen nach",
+        "description": "Options page: default comparison unit of the proofreading change picker"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Art und Weise, wie die Änderungsauswahl den Originaltext mit der Antwort vergleicht. „Wörter“ eignet sich zum Korrigieren von Rechtschreibung und Grammatik; „Sätze“ ist besser lesbar, wenn die Antwort ganze Sätze umschreibt. Hinweis: Bei einem Text aus nur einem Satz zeigt „Sätze“ den gesamten Text als eine Änderung an. Sie können auch während der Prüfung zwischen beiden wechseln.",
+        "description": ""
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Wörter",
+        "description": "Comparison unit: word by word"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Sätze",
+        "description": "Comparison unit: sentence by sentence"
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Der spezielle Spam-Filter-Prompt fehlt. Falls Sie die speziellen Prompts geändert haben, versuchen Sie, den Standard-Prompt für den Spam-Filter wiederherzustellen.",
+        "description": ""
+    },
+    "apiwebchat_picker_title": {
+        "message": "Änderungen prüfen",
+        "description": "Title of the transcript turn holding the interactive change picker"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Aktionen der Änderungsauswahl",
+        "description": "Accessible label of the change picker toolbar"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ von $TOTAL$ Änderungen übernommen",
+        "description": "Change picker counter",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Alle $TOTAL$ Änderungen übernommen",
+        "description": "Change picker status shown when every change is accepted",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "description": "Change picker stepper label, compact form used on wide layouts",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Änderung $CURRENT$ von $TOTAL$",
+        "description": "Change picker stepper label, full form used on narrow layouts",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ Änderungen",
+        "description": "Change picker stepper label before the user has navigated to a specific change, narrow layout",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Übernommene Änderungen",
+        "description": "Accessible label of the change picker's progress bar"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Weitere Aktionen",
+        "description": "Accessible label of the change picker's overflow menu button"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Manuell bearbeiten",
+        "description": "Change picker button that switches from reviewing changes to freely editing the text"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Zurück zu den Änderungen",
+        "description": "Change picker button that leaves manual editing and compares the edited text against the original again"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Bearbeiteter Text",
+        "description": "Accessible label of the change picker's manual editing text box"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Sie bearbeiten den Text von Hand. Beim Zurückkehren zu den Änderungen wird das, was Sie geschrieben haben, erneut mit dem Originaltext verglichen, und jede Auswahl wird zurückgesetzt.",
+        "description": "Note shown by the change picker while in manual editing mode"
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Vergleichen nach",
+        "description": "Accessible label of the change picker's word/sentence granularity toggle"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Wörter",
+        "description": "Change picker granularity option: compare the texts word by word"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Sätze",
+        "description": "Change picker granularity option: compare the texts sentence by sentence"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Alle übernehmen",
+        "description": ""
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Alle ablehnen",
+        "description": ""
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Vorherige Änderung",
+        "description": ""
+    },
+    "apiwebchat_picker_next": {
+        "message": "Nächste Änderung",
+        "description": ""
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "Die Antwort ist identisch mit dem Originaltext: Es gibt nichts zu prüfen.",
+        "description": "Shown by the change picker when the diff found no differences"
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Die beiden Texte konnten nicht verglichen werden. Die Antwort wird unverändert angezeigt.",
+        "description": "Shown by the change picker when the diff could not be computed"
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Originaltext, beibehalten: $TEXT$",
+        "description": "Accessible label of the original version of a change, when it is the one in use",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Originaltext, verworfen: $TEXT$. Aktivieren, um ihn stattdessen beizubehalten.",
+        "description": "Accessible label of the original version of a change, when it is not the one in use",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Vorschlagtext, beibehalten: $TEXT$",
+        "description": "Accessible label of the suggested version of a change, when it is the one in use",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Vorschlagtext, verworfen: $TEXT$. Aktivieren, um ihn stattdessen beizubehalten.",
+        "description": "Accessible label of the suggested version of a change, when it is not the one in use",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Kein Text hier: Dieser Teil wird weggelassen. Aktivieren Sie die andere Version, um ihren Text beizubehalten.",
+        "description": "Accessible label of the empty side of a change (an insertion with no original, or a deletion with no replacement), when it is the one in use"
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Kein Text hier. Aktivieren, um diesen Teil wegzulassen.",
+        "description": "Accessible label of the empty side of a change, when it is not the one in use"
+    },
+    "apiwebchat_copy": {
+        "message": "Kopieren",
+        "description": "Button in the AI chat window that copies the answer to the clipboard"
+    },
+    "apiwebchat_copied": {
+        "message": "Kopiert",
+        "description": "Confirmation shown briefly after the answer has been copied to the clipboard"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Kopieren fehlgeschlagen",
+        "description": "Shown when the answer could not be copied to the clipboard"
+    },
+    "apiwebchat_status_error": {
+        "message": "Fehler",
+        "description": "Status indicator in the AI chat window when the request failed"
+    },
+    "apiwebchat_show_options": {
+        "message": "Optionen anzeigen",
+        "description": "Accessible label for the arrow that opens the options menu of the main action button"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Aktionen zur Antwort",
+        "description": "Accessible label for the small toolbar shown on each answer in the AI chat window"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Zum Neuesten scrollen",
+        "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Zusammenfassung des Reasoning",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Fordert von der API eine Zusammenfassung des Reasoning des Modells an, die im Chat als einklappbarer Block angezeigt wird. Nur neuere Reasoning-Modelle unterstützen dies, z. B. gpt-5, o3 und o4-mini: ältere wie o1-pro und o3-mini betreiben Reasoning intern, legen aber nie eine Zusammenfassung offen, sodass der Block ausgeblendet bleibt. Für Modelle ohne Reasoning-Unterstützung deaktiviert lassen.",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Reasoning-Aufwand",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Wie viel Aufwand das Modell vor der Antwort in das Reasoning investiert. Niedrigere Werte liefern schnellere und günstigere Antworten, höhere Werte gründlichere. Belassen Sie es beim API-Standard, um OpenAI entscheiden zu lassen. Wird von Modellen ohne Reasoning-Unterstützung ignoriert.",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Deaktiviert",
+        "description": "Option for the reasoning summary dropdown, meaning no summary is requested."
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "API-Standard",
+        "description": "Option for the reasoning effort dropdown, meaning the value is not sent and the API default applies."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Automatisch",
+        "description": "Option for the reasoning summary dropdown: the API picks the summary detail level."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Detailliert",
+        "description": "Option for the reasoning summary dropdown: request a more detailed summary."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Minimal",
+        "description": "Option for the reasoning effort dropdown: the lowest amount of reasoning."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Niedrig",
+        "description": "Option for the reasoning effort dropdown."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Mittel",
+        "description": "Option for the reasoning effort dropdown."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Hoch",
+        "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ Daten-Platzhalter",
+        "description": "Footer count of data placeholders shown in the list",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "menu_order_reset_all": {
+        "message": "Alles zurücksetzen",
+        "description": "Menu order page: button restoring default order, visibility and icons for all menu items"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Stellt die Standardreihenfolge, -sichtbarkeit und -symbole für alle Menüelemente wieder her. Drücken Sie „Alles speichern“, um anzuwenden.",
+        "description": "Menu order page: tooltip for the button restoring default order, visibility and icons for all menu items"
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Der ausgewählte Prompt erscheint auch in dieser Liste",
+        "description": "Tooltip for the dot shown on a sub-tab when the highlighted prompt is present there too"
+    },
+    "menu_position_btn_label": {
+        "message": "Menüposition",
+        "description": "Button in the Custom Prompts editor that opens the Menu Order page and highlights this prompt"
+    },
+    "menu_order_icon_default": {
+        "message": "Standardsymbol",
+        "description": "Icon picker option that clears the custom icon and restores the prompt's built-in default icon"
+    },
+    "menu_order_legend_type": {
+        "message": "Anzeige:",
+        "description": "Heading for the type badge group in the menu order page legend"
+    },
+    "menu_order_legend_type_always": {
+        "message": "Sowohl beim Lesen als auch beim Verfassen angezeigt",
+        "description": "Legend description for the 'Always' type badge"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "Nur beim Lesen einer Nachricht angezeigt",
+        "description": "Legend description for the 'Reading' type badge"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "Nur beim Verfassen einer Nachricht angezeigt",
+        "description": "Legend description for the 'Composing' type badge"
+    },
+    "menu_order_legend_source": {
+        "message": "Prompt-Typ:",
+        "description": "Heading for the source badge group in the menu order page legend"
+    },
+    "menu_order_legend_source_default": {
+        "message": "Mit ThunderAI gelieferter Standard-Prompt",
+        "description": "Legend description for the 'Default' source badge"
+    },
+    "menu_order_legend_source_special": {
+        "message": "Funktionsgestützter Prompt (z. B. Tagging, Kalender)",
+        "description": "Legend description for the 'Special' source badge"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "Selbst erstellter Prompt",
+        "description": "Legend description for the 'Custom' source badge"
+    },
+    "prefs_settings_subtitle": {
+        "message": "Einstellungen",
+        "description": "Subtitle shown under the ThunderAI name in the options page header"
+    },
+    "prefs_disclaimer": {
+        "message": "LLM-Modelle können fehlerhafte Informationen erzeugen, und Ihre Daten können vom Anbieter zum Training neuer Modelle verwendet werden. Verwendung auf eigenes Risiko.",
+        "description": "Disclaimer note shown at the top of the options page body"
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "Verbindungseinstellungen",
+        "description": "Section eyebrow for the connection settings panel on the options page"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "Grundeinstellungen",
+        "description": "Section eyebrow for the basic settings on the options page"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Funktionen",
+        "description": "Section eyebrow for the features list on the options page"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "Aktivieren Sie, was Sie benötigen. Feinabstimmung für jede Funktion über ihren eigenen Einstellungsbildschirm.",
+        "description": "Sub-line under the Features section eyebrow on the options page"
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "Wählen Sie oben eine KI-Verbindung aus, um diese Funktionen zu aktivieren.",
+        "description": "Note shown under the Features subtitle while no AI connection has been selected, explaining why the toggles are disabled"
+    },
+    "prefs_advanced_options": {
+        "message": "Erweiterte Optionen",
+        "description": "Label of the app-level advanced options disclosure on the options page"
+    },
+    "prefs_conn_show_advanced": {
+        "message": "Erweiterte Optionen anzeigen",
+        "description": "Label of the per-connection advanced options disclosure button when collapsed"
+    },
+    "prefs_conn_hide_advanced": {
+        "message": "Erweiterte Optionen ausblenden",
+        "description": "Label of the per-connection advanced options disclosure button when expanded"
+    },
+    "prefs_privacy_more_info": {
+        "message": "Klicken Sie hier für weitere Informationen zum Datenschutz"
+    },
+    "connTest_idle": {
+        "message": "Verbindung noch nicht getestet",
+        "description": "Connection test status strip: initial state before any test has run"
+    },
+    "connTest_testing": {
+        "message": "Verbindung wird getestet…",
+        "description": "Connection test status strip: state while the connectivity check is in progress"
+    },
+    "connTest_ok": {
+        "message": "Verbunden — $API$ erreichbar",
+        "description": "Connection test status strip: success state; $API$ is the provider name",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "Fehler — $DETAIL$",
+        "description": "Connection test status strip: error state; $DETAIL$ is the error message",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — ungültiger API-Schlüssel"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "Authentifizierung fehlgeschlagen — überprüfen Sie Ihren API-Schlüssel",
+        "description": "Connection test status strip: error message for a 401/403 authentication failure"
+    },
+    "connTest_error_network": {
+        "message": "Netzwerkfehler — Endpunkt nicht erreichbar",
+        "description": "Connection test status strip: error message when the endpoint cannot be reached (network/CORS)"
+    },
+    "connTest_error_timeout": {
+        "message": "Zeitüberschreitung — keine Antwort vom Endpunkt",
+        "description": "Connection test status strip: error message when the request exceeds the timeout"
+    },
+    "connTest_link_test": {
+        "message": "Jetzt testen",
+        "description": "Connection test status strip: action link to run the test (idle state)"
+    },
+    "connTest_link_retest": {
+        "message": "Erneut testen",
+        "description": "Connection test status strip: action link to run the test again (success state)"
+    },
+    "connTest_link_retry": {
+        "message": "Erneut versuchen",
+        "description": "Connection test status strip: action link to run the test again (error state)"
+    },
+    "wizard_title": {
+        "message": "Einrichtungsassistent",
+        "description": "Title of the setup wizard page"
+    },
+    "wizard_step_provider_title": {
+        "message": "Wählen Sie Ihre KI",
+        "description": "Setup wizard step 0 heading"
+    },
+    "wizard_step_provider_sub": {
+        "message": "Jeder Dienst hat seine eigene Farbe — Sie wird im gesamten weiteren Verlauf der Einrichtung beibehalten.",
+        "description": "Setup wizard step 0 sub-line"
+    },
+    "wizard_step_connect_sub": {
+        "message": "Geben Sie unten die Anmeldedaten ein und wählen Sie ein Modell, dann testen Sie die Verbindung.",
+        "description": "Setup wizard step 1 (Connect) sub-line for API providers"
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "Hier fast nichts einzurichten.",
+        "description": "Setup wizard step 1 (Connect) sub-line for the ChatGPT Web interface"
+    },
+    "wizard_step_tools_title": {
+        "message": "Wählen Sie Ihre Werkzeuge",
+        "description": "Setup wizard step 2 heading"
+    },
+    "wizard_step_tools_sub": {
+        "message": "All dies können Sie später in den Einstellungen ändern.",
+        "description": "Setup wizard step 2 sub-line"
+    },
+    "wizard_done_title": {
+        "message": "Alles eingerichtet",
+        "description": "Setup wizard done step heading"
+    },
+    "wizard_done_body": {
+        "message": "ThunderAI ist bereit. Klicken Sie mit der rechten Maustaste auf eine Nachricht oder öffnen Sie das Verfassen-Fenster, um es auszuprobieren. Passen Sie alles später in den Einstellungen an.",
+        "description": "Setup wizard done step body text"
+    },
+    "wizard_run_again": {
+        "message": "Erneut durchlaufen",
+        "description": "Setup wizard done step: link to restart the wizard"
+    },
+    "wizard_connect_heading": {
+        "message": "$PROVIDER$ verbinden",
+        "description": "Setup wizard step 1 heading; $PROVIDER$ is the provider display name",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "Zurück",
+        "description": "Setup wizard nav: go to the previous step"
+    },
+    "wizard_continue": {
+        "message": "Weiter",
+        "description": "Setup wizard nav: advance to the next step"
+    },
+    "wizard_finish": {
+        "message": "Einrichtung abschließen",
+        "description": "Setup wizard nav: label on the second-to-last step"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "Kein API-Schlüssel — Anmeldung bei erster Nutzung",
+        "description": "Setup wizard provider card tag line for ChatGPT Web"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "Benötigt API-Schlüssel + Modell",
+        "description": "Setup wizard provider card tag line for ChatGPT OpenAI API"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "Benötigt API-Schlüssel + Modell",
+        "description": "Setup wizard provider card tag line for Google Gemini API"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "Benötigt API-Schlüssel, Modell & Version",
+        "description": "Setup wizard provider card tag line for Anthropic Claude API"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "Lokale Serveradresse + Modell",
+        "description": "Setup wizard provider card tag line for Ollama"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "Serveradresse + Modell",
+        "description": "Setup wizard provider card tag line for OpenAI Compatible API"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Neu bei ThunderAI? Lassen Sie sich vom Einrichtungsassistenten durch das Verbinden Ihrer KI führen.",
+        "description": "Onboarding page banner text inviting the user to launch the setup wizard"
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Einrichtungsassistent starten",
+        "description": "Onboarding page banner link label that launches the setup wizard"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "Einrichtungsassistent",
+        "description": "Options page documentation card label that launches the setup wizard"
+    },
+    "popup_setup_wizard_text": {
+        "message": "ThunderAI ist noch nicht mit einer KI verbunden.",
+        "description": "Popup menu message shown when no AI connection is configured"
+    },
+    "popup_setup_wizard_link": {
+        "message": "Einrichtungsassistent starten",
+        "description": "Popup menu link label that opens the setup wizard"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— KI-Verbindung auswählen —",
+        "description": "Placeholder option of the connection type select, shown when no AI connection has been selected yet"
+    },
+    "options_no_connection_text": {
+        "message": "Noch keine KI-Verbindung ausgewählt. ThunderAI benötigt eine, um zu funktionieren.",
+        "description": "Options page banner text shown when no AI connection has been selected"
+    },
+    "options_no_connection_link": {
+        "message": "Einrichtungsassistent starten",
+        "description": "Options page banner link label that opens the setup wizard"
+    },
+    "msg_no_connection_selected": {
+        "message": "Keine KI-Verbindung ausgewählt. Öffnen Sie die ThunderAI-Optionen und starten Sie den Einrichtungsassistenten, um eine auszuwählen.",
+        "description": "Alert shown when a prompt is run but no AI connection has been selected"
+    },
+    "editor_placeholder_unknown": {
+        "message": "Unbekannter Platzhalter oder für diesen Prompt-Typ nicht verfügbar",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist, or exists but is not available for the prompt's selected type"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Nicht abgeschlossener Platzhalter: schließendes %} fehlt",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"
     }
 }
