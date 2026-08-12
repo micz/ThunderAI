@@ -976,6 +976,12 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         }
 
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
+        if (!curr_prompt_spamfilter) {
+            taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
             curr_prompt: curr_prompt_spamfilter,

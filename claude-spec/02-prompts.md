@@ -65,6 +65,14 @@ Some prompts trigger additional Thunderbird actions beyond just sending text to 
 
 These special prompts can have their own dedicated API integration settings (configured in the Options page). The list of these special prompts is in `options/mzta-options-default.js` as `special_prompts_with_integration`.
 
+### Missing special prompts
+
+The lookup helpers in `js/mzta-prompts.js` (`getSpamFilterPrompt()`, `getAddTagsPrompt()`, `getSummarizePrompt()`, …) are `Array.find()` over `_special_prompts` and return `undefined` when the user has removed or corrupted the entry. Every caller must guard before using the result, and `taPromptUtils.getDefaultLang()` uses optional chaining so a missing prompt yields `''` (no forced language) instead of throwing (issue #855).
+
+Guarded callers, each reporting through the mechanism its feature already has:
+- Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.
+- Spam filter (`mzta-background.js`): logs an error, then `spamReport.saveError()` + `updateSpamPanel(…, "showSpamReport", …)` and returns `{ success: false }`. `saveError()` goes through `saveReportData()`, which clears the session `processing` flag — without this the message would stay stuck showing "check in progress". The text passed to `saveError()` becomes the report's `explanation` and is rendered in the spam panel, so it must be localized (`spamfilter_prompt_missing_explanation`), like the other skip-reason explanations; only the `taLog.error()` line stays English.
+
 ## Menu System
 
 ### Icon Resolution

@@ -1489,6 +1489,10 @@
     "message": "The sender is a contact in the address book.",
     "description": ""
   },
+  "spamfilter_prompt_missing_explanation": {
+    "message": "The Spam Filter special prompt is missing. If you modified the special prompts, try restoring the default Spam Filter prompt.",
+    "description": ""
+  },
   "addressbook_permission_denied": {
     "message": "Address book permission was denied. Please enable the feature again to grant permission.",
     "description": ""
