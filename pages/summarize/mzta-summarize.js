@@ -335,7 +335,7 @@ async function updateAutoSendersNotice(){
   const summarize_auto_el = document.getElementById('summarize_auto');
   const toggle_el = document.getElementById('summarize_auto_senders');
   const list = await summarize_getAutoSendersList();
-  const show = (String(summarize_auto_el.value) === '0') && toggle_el.checked && hasAddressListEntries(list);
+  const show = ((String(summarize_auto_el.value) === '0') || (String(summarize_auto_el.value) === '1')) && toggle_el.checked && hasAddressListEntries(list);
   notice_el.classList.toggle('hidden', !show);
 }
 
