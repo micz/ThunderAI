@@ -1187,6 +1187,40 @@ body.mzta_feature_page .feature_desc {
 }
 body.mzta_feature_page .feature_name { font-size: 15px; font-weight: 600; }
 
+/* Injected connection rows: match the feature-page text scale.
+   connection-ui.js emits most description text as a bare text node inside
+   <label> (after a <br>), not wrapped in .small_info/<i>, so the .mzta_help
+   rule above never reaches it and it falls back to the browser default
+   (~16px) — visibly larger than the descriptions outside the panel. Setting
+   size/colour on the cell lets those un-wrapped nodes inherit the same scale,
+   and the .opt_title/.small_info rules below restore the feature-page label
+   and description sizes that the 1-1-0 panel rules (see the
+   #connection_ui_table block above) would otherwise shrink.
+   The CORS-warning rows are excluded: their amber note styling is only 1-1-1,
+   so the selector below would otherwise override its `color: var(--warning)`
+   with the muted description colour. */
+body.mzta_feature_page #connection_ui_table tr:not([id$="_cors_warning"]) td,
+body.mzta_feature_page #connection_ui_adv_table tr:not([id$="_cors_warning"]) td {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+    text-wrap: pretty;
+}
+body.mzta_feature_page #connection_ui_table .opt_title,
+body.mzta_feature_page #connection_ui_adv_table .opt_title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+body.mzta_feature_page #connection_ui_table .small_info,
+body.mzta_feature_page #connection_ui_table i,
+body.mzta_feature_page #connection_ui_adv_table .small_info,
+body.mzta_feature_page #connection_ui_adv_table i {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--dim);
+}
+
 /* --- Selects / text fields --------------------------------------------- */
 body.mzta_feature_page #mzta_card select {
     min-height: 40px;

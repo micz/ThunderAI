@@ -252,7 +252,41 @@ All six special-prompt feature pages now adopt the shell: `pages/summarize/`, `p
 
 **addtags auto-toggle change.** In the old table layout, `mzta-add-tags.js` revealed the auto-tagging sub-rows (`add_tags_auto_only_inbox_tr`, `add_tags_auto_uselist_tr`) with `style.display = 'table-row'`. Those rows are now `.feature_row` flex blocks inside a card, so the JS was changed to set `style.display = ''` (revert to the CSS default) instead of `'table-row'`; the rows are hidden by default via the page CSS and toggled on when `add_tags_auto` is checked. The `account_selector_container` (now a `.mzta_section` card) is likewise toggled with `''`/`'none'`.
 
-The shell provides: a light `--desk` page background; a centered, `max-width: 760px` column (`#mzta_card` with `margin: 0 auto` + 24px side padding — below the cap it is naturally full-width-minus-padding, no media query needed); each `.mzta_section` rendered as a white rounded **card** (`--panel`, 12px radius, 24px padding, subtle shadow, 24px vertical gap); section headers (`.mzta_section > .mzta_eyebrow`) get a **3px vertical `--accent` bar**; stacked settings inside a card are separated by thin `--line` **row dividers** (the first row after the header/intro has none — and, since the settings card is headerless, a `.mzta_field:first-child` / `.feature_row:first-child` pair covers the case where the row itself opens the card, so no stray divider appears above it); up-sized **typography** (`.opt_title` 15px/600, `.opt_title_small` 13.5px/normal, help/`.feature_desc` 13.5px with `text-wrap: pretty`); a **`.mzta_prompt_title`** class used for **every section-card heading** on the feature pages — same accent-bar treatment as `.mzta_eyebrow` but sized like `.opt_title` (15px/600 instead of 12px/700), since a heading smaller than the labels beneath it read as less important; it is a standalone class (not combined with `.mzta_eyebrow`) and is included in the `+ .mzta_help` / `+ .mzta_field` / `+ .feature_row` sibling selectors so the intro pull-up and first-row no-divider rules still apply. `.mzta_eyebrow` itself is now used on these pages only for the connection-panel sub-header; a header block with a 25px page title, one-line subtitle, and a small app-icon tile (`.mzta_page_icon` / `.mzta_page_title` / `.mzta_page_subtitle`); **compact number fields** via `.mzta_field_num` (label/description left, ~96px centered input — or reset+input group — right); and **focus rings** (`--accent` border + a 3px `color-mix` accent glow, white background) on inputs/selects/textareas — the only focus styling in the design system, deliberately scoped so the options page is unaffected. All rules reuse existing tokens, so dark mode is inherited. It adds no save bar: pages persist on `change` and keep their per-editor Save/Reset buttons. A new feature page adopts the look by adding the class, giving the header the `.mzta_page_*` markup, and putting its settings in `.mzta_section` cards (number fields in `.mzta_field_num`).
+The shell provides: a light `--desk` page background; a centered, `max-width: 760px` column (`#mzta_card` with `margin: 0 auto` + 24px side padding — below the cap it is naturally full-width-minus-padding, no media query needed); each `.mzta_section` rendered as a white rounded **card** (`--panel`, 12px radius, 24px padding, subtle shadow, 24px vertical gap); section headers (`.mzta_section > .mzta_eyebrow`) get a **3px vertical `--accent` bar**; stacked settings inside a card are separated by thin `--line` **row dividers** (the first row after the header/intro has none — and, since the settings card is headerless, a `.mzta_field:first-child` / `.feature_row:first-child` pair covers the case where the row itself opens the card, so no stray divider appears above it); up-sized **typography** (`.opt_title` 15px/600, `.opt_title_small` 13.5px/normal, help/`.feature_desc` 13.5px with `text-wrap: pretty`) — **including the injected connection rows**, so descriptions inside `#mzta_conn_panel` no longer render larger than the ones outside it (see "Connection Panel Typography on Feature Pages" below); a **`.mzta_prompt_title`** class used for **every section-card heading** on the feature pages — same accent-bar treatment as `.mzta_eyebrow` but sized like `.opt_title` (15px/600 instead of 12px/700), since a heading smaller than the labels beneath it read as less important; it is a standalone class (not combined with `.mzta_eyebrow`) and is included in the `+ .mzta_help` / `+ .mzta_field` / `+ .feature_row` sibling selectors so the intro pull-up and first-row no-divider rules still apply. `.mzta_eyebrow` itself is now used on these pages only for the connection-panel sub-header; a header block with a 25px page title, one-line subtitle, and a small app-icon tile (`.mzta_page_icon` / `.mzta_page_title` / `.mzta_page_subtitle`); **compact number fields** via `.mzta_field_num` (label/description left, ~96px centered input — or reset+input group — right); and **focus rings** (`--accent` border + a 3px `color-mix` accent glow, white background) on inputs/selects/textareas — the only focus styling in the design system, deliberately scoped so the options page is unaffected. All rules reuse existing tokens, so dark mode is inherited. It adds no save bar: pages persist on `change` and keep their per-editor Save/Reset buttons. A new feature page adopts the look by adding the class, giving the header the `.mzta_page_*` markup, and putting its settings in `.mzta_section` cards (number fields in `.mzta_field_num`).
+
+#### Connection Panel Typography on Feature Pages
+
+The injected connection rows used to render at three different text sizes, none of which matched the
+rest of the feature page. `connection-ui.js` emits most field description text as a **bare text node**
+inside `<label>` (after a `<br>`), not wrapped in `.small_info`/`<i>`, so the
+`body.mzta_feature_page .mzta_help` rule never reached it and it fell back to the browser default
+(~16px) — visibly *larger* than the 13.5px descriptions outside the panel. The descriptions that *are*
+wrapped rendered at 11.5px, and `#connection_ui_table .opt_title` (1-1-0) beat
+`body.mzta_feature_page .opt_title` (0-2-1), shrinking panel labels to 12px/700 against 15px/600 outside.
+
+The shell therefore re-asserts the feature-page scale inside the panel, in the `body.mzta_feature_page`
+block at the end of `pages/_lib/mzta-design.css`:
+
+- `#connection_ui_table tr:not([id$="_cors_warning"]) td` / same for `#connection_ui_adv_table` — 13.5px,
+  `line-height: 1.5`, `color: var(--dim)`, `text-wrap: pretty`. Setting this on the **cell** is what lets
+  the un-wrapped text nodes inherit the right scale.
+- `.opt_title` inside both tables — back to 15px/600, `color: var(--text)`, matching labels outside the panel.
+- `.small_info` / `<i>` inside both tables — 13.5px, so wrapped and un-wrapped descriptions agree.
+
+Two constraints the selectors encode:
+
+- **The CORS-warning rows are excluded.** Their amber note styling (`#connection_ui_table tr[id$="_cors_warning"] td`)
+  is only 1-1-1, so a `body.…` two-ID selector would override its `color: var(--warning)` with the muted
+  description colour. This mirrors the identical exclusion in the setup wizard.
+- **Form controls are unaffected** — the shared sheet sizes inputs/selects/textarea directly and TomSelect
+  sizes `.ts-control` directly, so neither inherits from the cell.
+
+Scoped to `body.mzta_feature_page`, so the **options page and the setup wizard are untouched** (the wizard
+keeps its own one-step-down 11.5px override in `mzta-setup-wizard.css`, deliberately smaller to suit its
+432px card). `connection-ui.css` loads *after* `mzta-design.css` and sets `span.opt_title{font-weight:bold}`,
+which wins on weight for panel labels — but it does so equally for the labels outside the panel, so the two
+still match. If `connection-ui.js` is ever changed to wrap its description text properly, the `td` rule here
+(and the wizard's) can be dropped.
 
 ### Menu Order Page (`pages/menu_order/`)
 
