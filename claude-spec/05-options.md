@@ -40,10 +40,11 @@ string**: a new user is not given a provider they never chose. Instead the three
 `hasNoConnectionSelected(connection_type)` (`js/mzta-utils.js`) — use it instead of comparing to
 `''` inline. Consequences of the empty state:
 
-- **No special prompt is advertised.** `getActiveSpecialPromptsIDs()` takes a `no_connection` flag
-  and returns an empty list when set; every call site in `mzta-background.js` passes it next to the
-  existing `is_chatgpt_web`. Without this, an empty type would read as "some API is configured"
-  (every check compares only against `chatgpt_web`) and would surface features that cannot run.
+- **No special prompt is advertised**, unless the feature carries its own integration.
+  `getActiveSpecialPromptsIDs()` receives an `effective_conn` map (one resolved connection type per
+  feature prefix) and emits a prompt only when `isApiUsableConnection()` accepts that feature's
+  connection. An empty type must never read as "some API is configured" (a check comparing only
+  against `chatgpt_web` would do exactly that) and would otherwise surface features that cannot run.
 - **The connection select shows a placeholder.** `populateConnectionTypeOptions()`
   (`pages/_lib/connection-ui.js`) prepends a **disabled** `<option value="">`
   (`prefs_Connection_type_none`) for the *global* select only — the per-prompt selects
@@ -527,6 +528,29 @@ one-line wrappers over it (they previously held four copies of the same body). T
 needs no new CSS — `.mzta_switch input[type="checkbox"]:disabled + .track` already sets
 `opacity: .5`. The per-feature `click` handlers (which request Thunderbird permissions) need no guard
 either: a disabled checkbox fires no `click`.
+
+It builds its `tempPrefs` as `{...prefs_opt, connection_type: conntype_select.value}` — **the live
+select value must come last**. It is the not-yet-persisted choice the call is reacting to, while
+`prefs_opt` is the storage snapshot; with the spread the other way round a `prefs_opt` carrying
+`connection_type` would silently discard it. (Today `prefs_opt` is built from
+`getDynamicSettingsDefaults()`, which only ever emits *prefixed* keys and never the global
+`connection_type` — the ordering is defensive, not currently load-bearing.)
+
+**Calendar/Task rows.** `disable_GetCalendarEvent(prefs_opt)` follows the same per-feature rule,
+via `getFeatureConnState(prefs_opt, 'get_calendar_event')` and `…, 'get_task')` — both prefixes are
+in `special_prompts_with_integration`, so they take specific integrations like the other four. It
+previously read the global select directly, which made the UI *more* restrictive than the execution
+path (`mzta-menus.js` already honoured the override). Sparks presence (`checkSparksPresence()`)
+stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_sparks`) is hidden
+when **both** features are unusable on their own connection — with a per-feature judgement, keying
+it on a single global flag would hide a genuinely missing add-on.
+
+**Consistency with the background.** The same effective-connection judgement gates the menus:
+`_computeActiveSpecialIds()` resolves one connection per prefix and `getActiveSpecialPromptsIDs()`
+filters on it. Options rows and menu entries must agree — they used to disagree, leaving a feature
+enabled in the UI but absent from the menus. The shared predicate is `isApiUsableConnection()`
+(`js/mzta-utils.js`): `!hasNoConnectionSelected(ct) && ct !== 'chatgpt_web'`. **Always feed it an
+effective connection** (`getConnectionType(prefs, null, prefix)`), never the global one.
 ### Connection Settings Panel — Provider Setup Note (`#miczDescription`)
 
 The per-provider setup note is the **last element inside `#mzta_conn_panel`**, directly

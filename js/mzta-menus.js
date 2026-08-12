@@ -36,7 +36,7 @@ import {
     cleanupNewlines,
     checkIfTagLabelExists,
     getConnectionType,
-    hasNoConnectionSelected,
+    isApiUsableConnection,
     getContextMenuIcon,
  } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
@@ -246,9 +246,10 @@ export class mzta_Menus {
                             add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
                             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
                             do_debug: prefs_default.do_debug,
+                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -307,7 +308,7 @@ export class mzta_Menus {
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -395,7 +396,7 @@ export class mzta_Menus {
                             calendar_timezone: prefs_default.calendar_timezone,
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};

@@ -804,50 +804,46 @@ export function getAPIsInitMessageString(args = {}) {
   return output;
 }
 
+// Special prompts are gated on the *effective* connection of each feature, not on the
+// global one: a feature pointing at its own API integration stays usable even when the
+// global connection is ChatGPT Web or still unset. `effective_conn` carries one already
+// resolved connection type per feature prefix (see getConnectionType(prefs, null, prefix)),
+// so this function makes the same judgement the options page makes for its feature rows.
 export function getActiveSpecialPromptsIDs(args = {}) {
   const {
     addtags = false,
-    addtags_api = false,
     get_calendar_event = false,
     get_calendar_event_from_clipboard = false,
     get_task = false,
     spamfilter = false,
     summarize = false,
     translate = false,
-    is_chatgpt_web = false,
-    no_connection = false
+    effective_conn = {}
   } = args;
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
-  // No AI connection chosen yet: no special prompt can work, so advertise none.
-  if (no_connection) {
-    return output;
-  }
-  if (is_chatgpt_web) {
-    if (addtags_api && addtags) {
-      output.push('prompt_add_tags');
-    }
-    return output;
-  }
-  if (addtags) {
+  const usable = (prefix) => isApiUsableConnection(effective_conn[prefix]);
+  if (addtags && usable('add_tags')) {
     output.push('prompt_add_tags');
   }
-  if (get_calendar_event) {
+  // Both calendar prompts share the get_calendar_event feature and prefix: the clipboard
+  // variant is never advertised on its own.
+  if (get_calendar_event && usable('get_calendar_event')) {
     output.push('prompt_get_calendar_event');
     if (get_calendar_event_from_clipboard) {
       output.push('prompt_get_calendar_event_from_clipboard');
     }
   }
-  if (get_task) {
+  if (get_task && usable('get_task')) {
     output.push('prompt_get_task');
   }
-  if (spamfilter) {
+  if (spamfilter && usable('spamfilter')) {
     output.push('prompt_spamfilter');
   }
-  if (summarize) {
+  if (summarize && usable('summarize')) {
     output.push('prompt_summarize');
   }
-  if (translate) {
+  if (translate && usable('translate')) {
     output.push('prompt_translate_this');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
@@ -863,6 +859,15 @@ export function hasNoConnectionSelected(connection_type){
 
 export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
+}
+
+// Special features need a real API: neither ChatGPT Web (no API at all) nor an unset
+// connection can drive them. Single source of truth shared by the options rows, the
+// menu gating and the execution guards, so the three can never disagree.
+// Always feed it an *effective* connection type (getConnectionType with a prefix),
+// never the global one, or per-feature integrations get ignored.
+export function isApiUsableConnection(connection_type){
+  return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
 export function extractJsonObject(inputString) {

@@ -223,9 +223,11 @@ function setFeatureManageVisibility(btn, visible){
 // be misleading when no provider has been chosen at all.
 function getFeatureConnState(prefs_opt, prefix){
   let conntype_select = document.getElementById("connection_type");
+  // The live select value must win: it is the not-yet-persisted choice this call is
+  // reacting to, while prefs_opt is the storage snapshot. Keep it last in the spread.
   const tempPrefs = {
-      connection_type: conntype_select.value,
-      ...prefs_opt
+      ...prefs_opt,
+      connection_type: conntype_select.value
   };
   let effective = getConnectionType(tempPrefs, null, prefix);
   let no_connection = hasNoConnectionSelected(effective);
@@ -274,18 +276,21 @@ function disable_Translate(prefs_opt){
   disable_ApiFeature(prefs_opt, 'translate', 'btnManageTranslateInfo');
 }
 
-async function disable_GetCalendarEvent(){
+async function disable_GetCalendarEvent(prefs_opt){
   let get_calendar_event = document.getElementById('get_calendar_event');
   let get_task = document.getElementById('get_task');
   let no_sparks_tr = document.getElementById('no_sparks');
   let no_sparks_text = document.getElementById('no_sparks_text');
   let wrong_sparks_text = document.getElementById('wrong_sparks_text');
   let is_spark_present = await checkSparksPresence();
-  let conntype_select = document.getElementById("connection_type");
-  // These features need an API: unavailable with ChatGPT Web and with no connection selected.
-  let conn_unusable = (conntype_select.value === "chatgpt_web") || hasNoConnectionSelected(conntype_select.value);
-  get_calendar_event.disabled = conn_unusable || !(is_spark_present == 1);
-  get_task.disabled = conn_unusable || !(is_spark_present == 1);
+  // These features need an API: unavailable with ChatGPT Web and with no connection
+  // selected. Judged per feature, like the other API-driven rows, so a specific
+  // integration keeps them available whatever the global connection is.
+  let cal_unusable = getFeatureConnState(prefs_opt, 'get_calendar_event').disabled;
+  let task_unusable = getFeatureConnState(prefs_opt, 'get_task').disabled;
+  // Sparks presence is an orthogonal requirement: both features live in that add-on.
+  get_calendar_event.disabled = cal_unusable || !(is_spark_present == 1);
+  get_task.disabled = task_unusable || !(is_spark_present == 1);
   let get_calendar_event_tr_elements = document.querySelectorAll('.get_calendar_event_tr');
   get_calendar_event_tr_elements.forEach(get_calendar_event_tr => {
     get_calendar_event_tr.style.display = get_calendar_event.disabled ? 'none' : '';
@@ -294,7 +299,10 @@ async function disable_GetCalendarEvent(){
   get_task_tr_elements.forEach(get_task_tr => {
     get_task_tr.style.display = get_task.disabled ? 'none' : '';
   });
-  no_sparks_tr.style.display = ((is_spark_present == 1) || conn_unusable) ? 'none' : '';
+  // The "Sparks missing" notice is only worth showing when at least one of the two
+  // features could actually run: if both are unusable on their connection anyway,
+  // the missing add-on is not what stands in the way.
+  no_sparks_tr.style.display = ((is_spark_present == 1) || (cal_unusable && task_unusable)) ? 'none' : '';
   no_sparks_text.style.display = (is_spark_present == -1) ? 'inline' : 'none';
   wrong_sparks_text.style.display = (is_spark_present == 0) ? 'inline' : 'none';
 }
@@ -659,7 +667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   conntype_select.addEventListener("change", () => disable_SpamFilter(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Summarize(prefs_opt));
   conntype_select.addEventListener("change", () => disable_Translate(prefs_opt));
-  conntype_select.addEventListener("change", disable_GetCalendarEvent);
+  conntype_select.addEventListener("change", () => disable_GetCalendarEvent(prefs_opt));
   conntype_select.addEventListener("change", updateDescription);
   conntype_select.addEventListener("change", updateConnPanelTint);
 
@@ -673,7 +681,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   disable_SpamFilter(prefs_opt);
   disable_Summarize(prefs_opt);
   disable_Translate(prefs_opt);
-  disable_GetCalendarEvent();
+  disable_GetCalendarEvent(prefs_opt);
   updateSpecificApiIndicators(prefs_opt);
 
   browser.storage.onChanged.addListener(async (changes, area) => {

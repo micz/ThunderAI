@@ -187,9 +187,15 @@ It is idempotent: the flag short-circuits reruns, and after it runs no `enabled`
 
 ### Special Prompt Visibility Dependencies
 
-`getActiveSpecialPromptsIDs()` in `js/mzta-utils.js` maps feature prefs to active special prompt IDs. Notable dependency:
+`getActiveSpecialPromptsIDs()` in `js/mzta-utils.js` maps feature prefs to active special prompt IDs.
 
-- `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref.
+Each prompt requires **two** conditions: its feature flag is on, **and** its feature's connection can drive an API. The second is judged per feature, never globally: the function takes an `effective_conn` map — one already-resolved connection type per prefix in `special_prompts_with_integration` — and tests it with `isApiUsableConnection()`. `_computeActiveSpecialIds()` in `mzta-background.js` is the only caller; it builds the map with `getConnectionType(prefs, null, prefix)`, so a feature with `use_specific_integration` stays available even when the global connection is ChatGPT Web or unset. Getting this wrong hides working features from the menus while the options page still shows them enabled.
+
+The `storage.sync.get` feeding it **must** include `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`. Without those keys `getConnectionType()` reads `use_specific_integration` as `undefined` and silently falls back to the global connection — the failure is invisible at the call site, which still looks correct.
+
+Notable dependency:
+
+- `prompt_get_calendar_event_from_clipboard` is emitted only if **both** `get_calendar_event` and `get_calendar_event_from_clipboard` are active. If `get_calendar_event` is off, neither calendar prompt is shown regardless of the clipboard pref. Both share the `get_calendar_event` prefix for the connection check.
 
 ### Summarize: Dual-Mode Prompt System
 

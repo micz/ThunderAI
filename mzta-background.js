@@ -19,7 +19,8 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import {
     prefs_default,
-    getDynamicSettingsDefaults
+    getDynamicSettingsDefaults,
+    special_prompts_with_integration
 } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
@@ -49,7 +50,6 @@ import {
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
     getConnectionType,
-    hasSpecificIntegration,
     hasNoConnectionSelected,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
@@ -200,32 +200,39 @@ function preparePopupMenu(tab) {
 
 // Single source of truth for special-prompt gating.
 // Everything is read fresh from storage on purpose: mixing a fresh changed value with
-// values taken from the prefs_init snapshot used to make addtags_api lag behind the
-// rest by one or more storage change events, hiding the Add Tags command until restart.
+// values taken from the prefs_init snapshot used to make the per-feature integration
+// flags lag behind the rest by one or more storage change events, hiding a command
+// until restart.
 async function _computeActiveSpecialIds() {
     let prefs_reload = await browser.storage.sync.get({
         add_tags: prefs_default.add_tags,
-        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
-        add_tags_connection_type: prefs_default.add_tags_connection_type,
         get_calendar_event: prefs_default.get_calendar_event,
         get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
         get_task: prefs_default.get_task,
         connection_type: prefs_default.connection_type,
         spamfilter: prefs_default.spamfilter,
         summarize: prefs_default.summarize,
-        translate: prefs_default.translate
+        translate: prefs_default.translate,
+        // Needed by getConnectionType() to resolve the per-feature override: without these
+        // keys use_specific_integration reads as undefined and every feature silently falls
+        // back to the global connection.
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
+    // Effective connection per feature, exactly as the options page computes it for its
+    // feature rows: the global connection is only the fallback.
+    let effective_conn = {};
+    for (const prefix of special_prompts_with_integration) {
+        effective_conn[prefix] = getConnectionType(prefs_reload, null, prefix);
+    }
     return getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
-        addtags_api: hasSpecificIntegration(prefs_reload.add_tags_use_specific_integration, prefs_reload.add_tags_connection_type),
         get_calendar_event: doGetSparkFeature(prefs_reload.get_calendar_event),
         get_calendar_event_from_clipboard: doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard),
         get_task: doGetSparkFeature(prefs_reload.get_task),
         spamfilter: prefs_reload.spamfilter,
         summarize: prefs_reload.summarize,
         translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
-        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
+        effective_conn: effective_conn
     });
 }
 
