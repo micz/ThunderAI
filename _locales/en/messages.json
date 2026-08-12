@@ -2777,14 +2777,6 @@
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
   },
-  "prefs_conn_show_advanced": {
-    "message": "Show advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when collapsed"
-  },
-  "prefs_conn_hide_advanced": {
-    "message": "Hide advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when expanded"
-  },
   "prefs_privacy_more_info":{
     "message": "Click here for more info about privacy"
   },
