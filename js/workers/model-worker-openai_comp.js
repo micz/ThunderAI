@@ -77,8 +77,12 @@ self.onmessage = async function(event) {
         if (!response.ok) {
             let error_message = '';
             let errorDetail = '';
+            let error_text = '';
             if(response.is_exception === true){
                 error_message = response.error;
+                // Network-level failure: no status/statusText exist on the returned object,
+                // and error_message already carries the provider name.
+                error_text = error_message;
             }else{
                 try{
                     const errorJSON = await response.json();
@@ -88,9 +92,10 @@ self.onmessage = async function(event) {
                     error_message = response.statusText;
                 }
                 taLog.log("error_message: " + JSON.stringify(error_message));
+                error_text = i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
             }
-            postMessage({ type: 'error', payload: i18nStrings["OpenAIComp_api_request_failed"] + ": " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail });
-            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + error_message + " " + errorDetail);
+            postMessage({ type: 'error', payload: error_text });
+            throw new Error("[ThunderAI] OpenAI Comp API request failed: " + error_text);
         }
 
         const reader = response.body.getReader();

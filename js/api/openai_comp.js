@@ -63,7 +63,7 @@ export class OpenAIComp {
 
     if (!response.ok) {
         const errorDetail = await response.text();
-        let err_msg = "[ThunderAI] OpenAI API Comp request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
+        let err_msg = "[ThunderAI] OpenAI Comp API request failed: " + response.status + " " + response.statusText + ", Detail: " + errorDetail;
         console.error(err_msg);
         let output = {};
         output.ok = false;
@@ -101,19 +101,19 @@ export class OpenAIComp {
         });
         return response;
       }catch (error) {
-          console.error("[ThunderAI] OpenAI API Comp request failed: " + error);
+          console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
           let output = {};
           output.is_exception = true;
           output.ok = false;
-          output.error = "OpenAI API Comp request failed: " + error;
+          output.error = "OpenAI Comp API request failed: " + error;
           return output;
       }
     }catch (error) {
-        console.error("[ThunderAI] OpenAI API Comp request failed: " + error);
+        console.error("[ThunderAI] OpenAI Comp API request failed: " + error);
         let output = {};
         output.is_exception = true;
         output.ok = false;
-        output.error = "OpenAI API Comp request failed: " + error;
+        output.error = "OpenAI Comp API request failed: " + error;
         return output;
     }
   }
