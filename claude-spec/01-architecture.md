@@ -129,6 +129,84 @@ taSummaryStore.saveSummary()
 [later] user opens the message → initSummary → cache hit → showSummary instantly
 ```
 
+### Data Flow: Auto-Summarize by Sender Address List
+
+`summarize_auto_senders` + `summarize_auto_senders_list` summarize emails from specific senders
+automatically, with no click. This is **independent of `summarize_auto`** and works even when
+`summarize_auto = 0`. Matching goes through `matchAddressList(author, list)`
+(`js/mzta-utils.js`), which extracts the address from the raw author header with the same regex
+used by the spamfilter skip list and supports exact addresses, `@domain.com`, and `*@domain.com`.
+
+There are **two triggers**, because `onNewMailReceived` does not fire for every delivery path —
+subscribed IMAP folders that are not checked for new mail, and messages moved by a server-side
+(Sieve) filter after delivery, emit no event:
+
+```
+1. On reception, in whatever folder the message is delivered to
+   browser.messages.onNewMailReceived
+        ↓
+   newEmailListener  (_process_incoming also covers a non-empty sender list)
+        ↓
+   processEmails({ summarizeSenders: [...] })
+        ↓  (per message, inside the shared loop)
+   summarizeOnReceive || matchAddressList(message.author, summarizeSenders)
+        ↓
+   _generateSummaryForMessage(headerMessageId, null, { messageData })   ← silent pre-cache
+
+2. On message open, if reception did not catch it
+   initSummary handler
+        ↓  (after the cache check and the isProcessing() check,
+        ↓   before the `summarize_auto === 0` return)
+   matchAddressList(message.author, prefs.summarize_auto_senders_list)
+        ↓
+   _generateSummaryForMessage(headerMessageId, tabId)                   ← inline, message pane
+```
+
+There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
+`browser.messages.query()` sweep, no recursive folder walk.
+
+**Idempotency** comes from `taSummaryStore` (cache + `isProcessing()`), which
+`_generateSummaryForMessage()` already consults, so a message caught by *both* triggers costs
+exactly one API call. In the `initSummary` handler the sender check is deliberately placed
+**after** the cached-summary and `isProcessing()` early returns for the same reason, and
+**before** the `summarize_auto === 0` return because the list must work with auto-summarize
+otherwise disabled.
+
+**Shared guards** in both triggers (`mzta-background.js`):
+- `isMessageInJunkOrTrash(message)` (`js/mzta-utils.js`) — a message whose folder `specialUse`
+  includes `junk` or `trash` is never processed automatically. It is **shared with auto add-tags
+  and the auto spam filter**: all three used to test only `junk` (each with its own inline
+  `message.folder?.specialUse || []`), so a message the user or the server had already thrown
+  away still cost API tokens. Inside `processEmails()` the result is computed once per message
+  into `message_in_junk_or_trash` and reused by the three blocks. Built on the generic
+  `messageFolderHasSpecialUse(message, [...])`, which also serves the `spamfilter_only_inbox`
+  check (`['inbox']`) — a different question that the junk/trash wrapper cannot answer. Both are
+  null-safe: a message with no folder yields `false`.
+- `_summarizeConnectionMissing()` — resolves the **effective** connection with
+  `getConnectionType(prefs, await getSummarizePrompt(), 'summarize')` and tests it with
+  `hasNoConnectionSelected()`, so a summarize-specific integration still works when the global
+  `connection_type` is empty (v5.0.0 ships it empty and steers the user to the Setup Wizard).
+  On a missing connection the trigger logs via `taLog` and skips **silently** — no alert, no
+  error panel. It returns `true` on its own exception, so a failure never starts a generation.
+
+**Dynamic `onNewMailReceived` registration.** `monitorAllFolders` can only be set when the
+listener is added, so `registerNewMailListener()` owns the registration and re-registers
+(`removeListener` + `addListener`) whenever the computed value changes:
+
+```js
+monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox
+                     || (prefs_init.summarize && prefs_init.summarize_auto_senders))
+```
+
+Auto add-tags monitors the Inbox only by default, but the sender list must catch messages
+delivered anywhere, so enabling it forces monitoring of all folders. It is called at startup
+and from `setupStorageChangeListener()` — chained on `reload_pref_init()` (which is `async`) so
+it observes the refreshed `prefs_init`, and a no-op when the value is unchanged so the
+unconditional pref reload does not churn the listener. This is what lets the option take effect
+without restarting Thunderbird. It is declared as a hoisted `function` because
+`setupStorageChangeListener()` is defined and invoked earlier in the file than the registration
+site.
+
 ### Data Flow: Background Translation on Email Receive (translate_auto = 3)
 
 When `translate_auto = 3`, a translation is generated silently when a new email arrives. Mirrors the summarize on-receive flow:
@@ -541,7 +619,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.) |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInJunkOrTrash()` |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |

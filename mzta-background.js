@@ -51,6 +51,11 @@ import {
     convertNewlinesToParagraphs,
     getConnectionType,
     hasNoConnectionSelected,
+    matchAddressList,
+    hasAddressListEntries,
+    extractEmail,
+    messageFolderHasSpecialUse,
+    isMessageInJunkOrTrash,
     isApiUsableConnection,
     hasSpecificIntegration,
      } from './js/mzta-utils.js';
@@ -111,6 +116,8 @@ const PREFS_INIT_KEYS = {
     spamfilter: prefs_default.spamfilter,
     summarize: prefs_default.summarize,
     summarize_auto: prefs_default.summarize_auto,
+    summarize_auto_senders: prefs_default.summarize_auto_senders,
+    summarize_auto_senders_list: prefs_default.summarize_auto_senders_list,
     translate: prefs_default.translate,
     translate_auto: prefs_default.translate_auto,
     spamfilter_threshold: prefs_default.spamfilter_threshold,
@@ -350,7 +357,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
+
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, summarize_auto_senders: prefs_default.summarize_auto_senders, summarize_auto_senders_list: prefs_default.summarize_auto_senders_list, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
 
                         if (!prefs.summarize) return;
 
@@ -369,6 +377,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
+                        // Auto-summarize the senders in summarize_auto_senders_list. This is the
+                        // second trigger of the feature: it catches the messages the
+                        // onNewMailReceived listener never saw (subscribed IMAP folders that are
+                        // not checked for new mail, or messages moved by a server-side filter).
+                        // It runs after the cache and isProcessing() checks above, so a message
+                        // caught on reception too is never summarized twice, and before the
+                        // summarize_auto check below, because the sender list must work even
+                        // when auto-summarize is disabled in general.
+                        if (prefs.summarize_auto_senders && matchAddressList(message.author, prefs.summarize_auto_senders_list)) {
+                            if (isMessageInJunkOrTrash(message)) {
+                                taLog.log("Message in junk or trash folder, skipping the auto-summarize sender list...");
+                            } else if (await _summarizeConnectionMissing()) {
+                                taLog.log("[ThunderAI] No AI connection selected, skipping the auto-summarize sender list for: " + message.headerMessageId);
+                            } else {
+                                taLog.log("[ThunderAI] Sender in the auto-summarize list, generating summary for: " + message.headerMessageId);
+                                _generateSummaryForMessage(message.headerMessageId, tabId);
+                                return;
+                            }
+                        }
                         // storage.sync.get() only substitutes the default for *missing* keys, so a
                         // null previously written by an empty select (NaN, serialized as null)
                         // would survive and match none of the === comparisons below.
@@ -788,6 +815,24 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
     }
 }
 
+// True when no AI connection can be resolved for the summarize feature, so an automatic
+// summary must be skipped silently. The *effective* connection is checked (the same way
+// _generateSummaryForMessage() resolves it), so a summarize-specific integration keeps working
+// even when the global connection_type is still empty.
+async function _summarizeConnectionMissing() {
+    try {
+        let prefs = await browser.storage.sync.get({
+            connection_type: prefs_default.connection_type,
+            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+        });
+        const summarize_prompt = await getSummarizePrompt();
+        return hasNoConnectionSelected(getConnectionType(prefs, summarize_prompt, 'summarize'));
+    } catch (e) {
+        taLog.error("Error in _summarizeConnectionMissing: " + e);
+        return true;   // on doubt, do not start an automatic generation
+    }
+}
+
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -1021,11 +1066,14 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         }
 
         // Extract sender email for skip checks
-        let senderEmail = (message.author.match(/[\w.-]+@[\w.-]+\.\w+/) || [''])[0].toLowerCase();
+        let senderEmail = extractEmail(message.author).toLowerCase();
 
-        // Check if sender is in the skip addresses list
+        // Check if sender is in the skip addresses list.
+        // hasAddressListEntries() is used instead of a plain length check because a list saved
+        // by a previous version can still hold a stray '' (an emptied textarea was stored as
+        // ['']), which would read as a configured list.
         let skip_addresses = options.skip_addresses || (await browser.storage.sync.get({spamfilter_skip_addresses: prefs_default.spamfilter_skip_addresses})).spamfilter_skip_addresses;
-        if (skip_addresses.length > 0) {
+        if (hasAddressListEntries(skip_addresses)) {
             if (senderEmail && skip_addresses.includes(senderEmail)) {
                 taLog.log("Sender " + senderEmail + " is in the skip addresses list, skipping spam filter.");
                 let report_data = {};
@@ -1651,7 +1699,7 @@ async function reload_pref_init(){
     // does: otherwise every incoming mail wakes the whole pipeline for a no-op. Since the
     // reconciliation turns add_tags off without touching add_tags_auto, that combination
     // is now the common case rather than an edge case.
-    _process_incoming = (prefs_init.add_tags && prefs_init.add_tags_auto) || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
+    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3) || (prefs_init.summarize && prefs_init.summarize_auto_senders && hasAddressListEntries(prefs_init.summarize_auto_senders_list));
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -1784,6 +1832,7 @@ const newEmailListener = (folder, messagesList) => {
             addTagsAuto: add_tags_auto_enabled,
             spamFilter: prefs_init.spamfilter,
             summarizeOnReceive: prefs_init.summarize && prefs_init.summarize_auto === 3,
+            summarizeSenders: (prefs_init.summarize && prefs_init.summarize_auto_senders) ? prefs_init.summarize_auto_senders_list : [],
             translateOnReceive: prefs_init.translate && prefs_init.translate_auto === 3,
             isAutoMode: true,
         });
@@ -1794,6 +1843,28 @@ const newEmailListener = (folder, messagesList) => {
     }
 
     return _newEmailListener();
+}
+
+// Registers browser.messages.onNewMailReceived, re-registering it whenever the folders to be
+// monitored change. The monitorAllFolders argument can only be set when the listener is added,
+// so a preference change needs a removeListener()/addListener() round trip — otherwise the new
+// value would only take effect after a Thunderbird restart.
+// Auto add-tags monitors the Inbox only by default, but the summarize sender list must catch
+// messages delivered anywhere (subscribed IMAP folders not checked for new mail, or messages
+// moved by a server-side filter), so it forces monitoring of all folders.
+let _monitorAllFolders = undefined;   // undefined = never registered, so the first call always registers
+
+function registerNewMailListener(){
+    const monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox || (prefs_init.summarize && prefs_init.summarize_auto_senders));
+    if(monitorAllFolders === _monitorAllFolders){
+        return;
+    }
+    if(_monitorAllFolders !== undefined){
+        browser.messages.onNewMailReceived.removeListener(newEmailListener);
+    }
+    browser.messages.onNewMailReceived.addListener(newEmailListener, monitorAllFolders);
+    _monitorAllFolders = monitorAllFolders;
+    taLog.log("[ThunderAI] New mail listener registered, monitorAllFolders: " + monitorAllFolders);
 }
 
 async function showGenericError(errMsg, source) {
@@ -1841,10 +1912,15 @@ async function processEmails(args) {
         spamFilter = false,
         summarize = false,
         summarizeOnReceive = false,
+        summarizeSenders = [],
         translateOnReceive = false,
         translate = false,
         isAutoMode = false,
     } = args;
+
+    // Auto-summarize restricted to a sender list: the decision is per message, so only the
+    // presence of a usable list can be checked here.
+    const summarizeSendersActive = hasAddressListEntries(summarizeSenders);
 
     taWorkingStatus.startWorking();
     taBatchController.beginBatch();
@@ -1854,10 +1930,11 @@ async function processEmails(args) {
     // and the toolbar icon would be stuck in the loading state forever.
     try {
 
-    // One loop handles addTagsAuto, spamFilter, summarizeOnReceive, and translateOnReceive (on email receive).
+    // One loop handles addTagsAuto, spamFilter, summarizeOnReceive/summarizeSenders, and
+    // translateOnReceive (on email receive).
     // The separate summarize block below handles the context menu flow.
 
-    if (addTagsAuto || spamFilter || summarizeOnReceive || translateOnReceive || translate) {
+    if (addTagsAuto || spamFilter || summarizeOnReceive || summarizeSendersActive || translateOnReceive || translate) {
         let prefs_aats = await browser.storage.sync.get({
             add_tags_maxnum: prefs_default.add_tags_maxnum,
             connection_type: prefs_default.connection_type,
@@ -1900,8 +1977,9 @@ async function processEmails(args) {
             // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
             try {
 
-            // Auto add_tags and spam filter must never run on messages in a junk/spam folder.
-            let message_in_junk = (message.folder?.specialUse || []).includes('junk');
+            // Auto add_tags, spam filter and summarize must never run on messages sitting in a
+            // junk/spam or a trash folder.
+            let message_in_junk_or_trash = isMessageInJunkOrTrash(message);
 
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
@@ -1916,8 +1994,8 @@ async function processEmails(args) {
     
             if (addTagsAuto) {
                 let skipAddTags = false;
-                if(isAutoMode && message_in_junk){
-                    taLog.log("Message in junk folder, skipping add_tags...");
+                if(isAutoMode && message_in_junk_or_trash){
+                    taLog.log("Message in junk or trash folder, skipping add_tags...");
                     skipAddTags = true;
                 }
                 if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
@@ -1998,8 +2076,8 @@ async function processEmails(args) {
     
             if (spamFilter) {
                 let skipSpamFilter = false;
-                if(isAutoMode && message_in_junk){
-                    taLog.log("Message in junk folder, skipping spamfilter...");
+                if(isAutoMode && message_in_junk_or_trash){
+                    taLog.log("Message in junk or trash folder, skipping spamfilter...");
                     skipSpamFilter = true;
                 }
                 if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
@@ -2010,8 +2088,7 @@ async function processEmails(args) {
                     }
                 }
                 if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_only_inbox){
-                    let specialUse = message.folder?.specialUse || [];
-                    if(!specialUse.includes('inbox')){
+                    if(!messageFolderHasSpecialUse(message, ['inbox'])){
                         taLog.log("Message not in inbox, skipping spamfilter (only-inbox mode)...");
                         skipSpamFilter = true;
                     }
@@ -2029,14 +2106,28 @@ async function processEmails(args) {
                 }
             }
 
-            if (summarizeOnReceive) {
-                if (!curr_fullMessage) {
-                    curr_fullMessage = await browser.messages.getFull(message.id);
+            // Summarize on receive, either for every message (summarize_auto === 3) or only for
+            // the senders listed in summarize_auto_senders_list.
+            let summarizeSenderMatch = summarizeSendersActive && matchAddressList(message.author, summarizeSenders);
+            if (summarizeOnReceive || summarizeSenderMatch) {
+                let skipSummarize = false;
+                if (isAutoMode && message_in_junk_or_trash) {
+                    taLog.log("Message in junk or trash folder, skipping summarize...");
+                    skipSummarize = true;
                 }
-                taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId);
-                await _generateSummaryForMessage(message.headerMessageId, null, {
-                    messageData: { message, fullMessage: curr_fullMessage }
-                });
+                if (!skipSummarize && await _summarizeConnectionMissing()) {
+                    taLog.log("[ThunderAI] No AI connection selected, skipping summarize on receive for: " + message.headerMessageId);
+                    skipSummarize = true;
+                }
+                if (!skipSummarize) {
+                    if (!curr_fullMessage) {
+                        curr_fullMessage = await browser.messages.getFull(message.id);
+                    }
+                    taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId + (summarizeOnReceive ? "" : " (sender in the auto-summarize list)"));
+                    await _generateSummaryForMessage(message.headerMessageId, null, {
+                        messageData: { message, fullMessage: curr_fullMessage }
+                    });
+                }
             }
 
             if (translateOnReceive || translate) {
@@ -2150,7 +2241,7 @@ async function processEmails(args) {
     }
 }
 
-browser.messages.onNewMailReceived.addListener(newEmailListener, !prefs_init.add_tags_auto_only_inbox);
+registerNewMailListener();
 
 // Inject script and CSS in all already open message tabs.
 let openTabs = await messenger.tabs.query();

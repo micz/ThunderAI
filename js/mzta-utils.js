@@ -188,7 +188,12 @@ export async function getCurrentIdentity(msgHeader, getFull = false) {
 }
 
 
-function extractEmail(text) {
+// Extracts the first email address found in a string, '' if there is none.
+// Accepts a raw header value like 'Name <addr@domain.com>'.
+// The case is preserved: getIdentityForMessage() compares the result with the
+// identity addresses as they were configured, so callers that need a
+// case-insensitive match have to lowercase it themselves.
+export function extractEmail(text) {
   if((text=='')||(text==undefined)) return '';
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const match = text.match(emailRegex);
@@ -722,14 +727,22 @@ function sanitizeString(input) {
   return sanitized.toLowerCase().slice(0, 29);
 }
 
-/* returnType:
+/* Normalizes a user-typed list: splits on newlines and commas, trims, lowercases,
+   removes the duplicates and the empty entries, then sorts.
+   Empty entries are dropped because they carry no meaning and would otherwise survive
+   in the saved value: an emptied textarea used to be stored as [''] and a trailing
+   newline left a stray '' behind, which read as a configured list and, with returnType 1,
+   was rendered back as a leading blank line in the textarea.
+   returnType:
   0: string comma separated (default)
   1: string \n separated
   2: array
 */
 export function normalizeStringList(list, returnType = 0) {
-  let _array_new = list.split(/[\n,]+/);
-  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase()))).sort();
+  let _array_new = String(list ?? '').split(/[\n,]+/);
+  _array_new = Array.from(new Set(_array_new.map(item => item.trim().toLowerCase())))
+                    .filter(item => item !== '')
+                    .sort();
   switch(returnType) {
     case 0:
       return _array_new.join(', ');
@@ -740,6 +753,50 @@ export function normalizeStringList(list, returnType = 0) {
     default:
       return _array_new.join(', ');
   }
+}
+
+// True when the folder holding the message is flagged with any of the given specialUse values
+// ('inbox', 'junk', 'trash', 'sent', 'drafts', 'templates', 'archives').
+// Safe on a message with no folder (e.g. an attached or detached message), which yields false.
+export function messageFolderHasSpecialUse(message, specialUseList) {
+  const specialUse = message?.folder?.specialUse || [];
+  return specialUseList.some(item => specialUse.includes(item));
+}
+
+// Automatic processing of received emails (auto add_tags, auto spam filter, auto summarize)
+// must never run on messages sitting in a junk or a trash folder: they have already been
+// discarded by the user or by the server, so spending API tokens on them is pointless.
+export function isMessageInJunkOrTrash(message) {
+  return messageFolderHasSpecialUse(message, ['junk', 'trash']);
+}
+
+// True when an address list holds at least one usable entry.
+// normalizeStringList() now drops the empty entries at save time, but the lists saved by the
+// previous versions can still hold a stray '' (an emptied textarea was stored as ['']), which a
+// plain list.length check would read as a configured list. This is also what makes the check
+// safe against a value that is not an array at all.
+export function hasAddressListEntries(list) {
+  if (!Array.isArray(list)) return false;
+  return list.some(item => (typeof item === 'string') && (item.trim() !== ''));
+}
+
+/* Matches the sender of an email against a list of addresses and domain patterns.
+   The author header is the raw "Name <addr@domain>" string, parsed with extractEmail().
+   Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).
+   Returns false on an empty list or an unparseable author. */
+export function matchAddressList(author, list) {
+  if (!author || !hasAddressListEntries(list)) return false;
+  const senderEmail = extractEmail(String(author)).toLowerCase();
+  if (senderEmail === '') return false;
+  const senderDomain = senderEmail.slice(senderEmail.indexOf('@') + 1);
+  return list.some(item => {
+    if (typeof item !== 'string') return false;
+    let entry = item.trim().toLowerCase();
+    if (entry === '') return false;
+    if (entry.startsWith('*@')) entry = entry.slice(1);
+    if (entry.startsWith('@')) return senderDomain === entry.slice(1);
+    return senderEmail === entry;
+  });
 }
 
 export function prepareOriginURL(url) {
