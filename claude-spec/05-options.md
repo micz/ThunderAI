@@ -545,6 +545,33 @@ stays an orthogonal, additional requirement. The "Sparks missing" notice (`#no_s
 when **both** features are unusable on their own connection — with a per-feature judgement, keying
 it on a single global flag would hide a genuinely missing add-on.
 
+### Mandatory Specific Integration (feature settings pages)
+
+When the global connection cannot drive a feature (ChatGPT Web, or nothing selected),
+`initializeSpecificIntegrationUI()` (`pages/_lib/connection-ui.js`) forces
+`use_specific_integration` on, because a specific integration is the only way that feature can run.
+Three rules make that forcing actually stick:
+
+- **The checkbox stays `enabled`, made read-only via `preventDefault()` on `click`** (plus a
+  `data-mandatory` marker). A `disabled` checkbox is skipped by each page's `saveOptions()` sweep
+  over `.option-input` and fires no `change`, so the forced value never reached storage.
+- **The flag is persisted only once a usable connection type is chosen**, by
+  `_persistMandatoryIntegration()` (on the select's `change`, and once on load to repair earlier
+  visits). Writing it earlier would be worse than not writing it: `hasSpecificIntegration()` requires
+  a non-empty connection type, so the pref pair would read as "enabled" while resolving back to the
+  unusable global connection — the feature would look on in the UI and vanish from the menus.
+- **The per-prompt select never shows `chatgpt_web`.** It is built with `no_chatgpt_web: true`, so
+  the value has no `<option>`. Two places used to smuggle it in anyway: the pages inherited the
+  global connection wholesale as the fallback for `<prefix>_connection_type` (now guarded by
+  `isApiUsableConnection()`, falling back to `''`), and `restoreOptions()` synthesized a missing
+  option for any unmatched stored value. That synthesis exists for **model** selects, where a saved
+  model legitimately may not be in the fetched list; connection selects have a *closed* catalogue, so
+  it is suppressed for them via `isClosedCatalogueSelect()` (`pages/_lib/connection-ui.js`).
+  `populateConnectionTypeOptions()` likewise validates the previous value against the options it
+  actually rendered, not the full catalogue. An unmatched value leaves the select blank
+  (`selectedIndex = -1`), which is the intended "nothing chosen yet" state — no provider is ever
+  silently preselected.
+
 **Consistency with the background.** The same effective-connection judgement gates the menus:
 `_computeActiveSpecialIds()` resolves one connection per prefix and `getActiveSpecialPromptsIDs()`
 filters on it. Options rows and menu entries must agree — they used to disagree, leaving a feature

@@ -32,10 +32,12 @@ import { textareaAutocomplete } from "../../js/mzta-placeholders-autocomplete.js
 import { attachEditorHighlight, makeTokenStateResolver } from "../../js/mzta-editor-highlight.js";
 import {
   isAPIKeyValue,
-  setTomSelectBorder
+  setTomSelectBorder,
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
 
@@ -229,14 +231,16 @@ async function restoreOptions() {
             const restoreValue = result[element.id] || default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: restoreValue, text: restoreValue });
               }
               element.tomselect.setValue(restoreValue, true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -261,7 +265,12 @@ async function restoreOptions() {
       if (get_task_prompt.api_type && get_task_prompt.api_type !== '') {
           getting['get_task_connection_type'] = get_task_prompt.api_type;
       } else {
-          getting['get_task_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['get_task_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {
