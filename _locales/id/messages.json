@@ -2236,12 +2236,6 @@
     "prefs_advanced_options": {
         "message": "Opsi lanjutan"
     },
-    "prefs_conn_show_advanced": {
-        "message": "Tampilkan opsi lanjutan"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Sembunyikan opsi lanjutan"
-    },
     "prefs_privacy_more_info": {
         "message": "Klik di sini untuk informasi selengkapnya tentang privasi"
     },

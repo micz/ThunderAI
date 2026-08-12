@@ -1980,8 +1980,7 @@
         "description": "Page d'options : unité de comparaison par défaut du sélecteur de modifications de relecture"
     },
     "prefs_OptionText_diff_granularity_info": {
-        "message": "Façon dont le sélecteur de modifications compare le texte d'origine avec la réponse. « Mots » convient pour corriger l'orthographe et la grammaire ; « Phrases » est plus lisible lorsque la réponse réécrit des phrases entières. Notez que sur un texte composé d'une seule phrase, « Phrases » affiche tout le texte comme une seule modification. Vous pouvez aussi passer de l'un à l'autre pendant la révision des modifications.",
-        "description": ""
+        "message": "Façon dont le sélecteur de modifications compare le texte d'origine avec la réponse. « Mots » convient pour corriger l'orthographe et la grammaire ; « Phrases » est plus lisible lorsque la réponse réécrit des phrases entières. Notez que sur un texte composé d'une seule phrase, « Phrases » affiche tout le texte comme une seule modification. Vous pouvez aussi passer de l'un à l'autre pendant la révision des modifications."
     },
     "prefs_OptionText_diff_granularity_words": {
         "message": "Mots",
@@ -1992,8 +1991,7 @@
         "description": "Unité de comparaison : phrase par phrase"
     },
     "spamfilter_prompt_missing_explanation": {
-        "message": "Le prompt spécial Filtre anti-spam est manquant. Si vous avez modifié les prompts spéciaux, essayez de restaurer le prompt Filtre anti-spam par défaut.",
-        "description": ""
+        "message": "Le prompt spécial Filtre anti-spam est manquant. Si vous avez modifié les prompts spéciaux, essayez de restaurer le prompt Filtre anti-spam par défaut."
     },
     "apiwebchat_picker_title": {
         "message": "Réviser les modifications",
@@ -2094,20 +2092,16 @@
         "description": "Option de granularité du sélecteur de modifications : comparer les textes phrase par phrase"
     },
     "apiwebchat_picker_accept_all": {
-        "message": "Tout accepter",
-        "description": ""
+        "message": "Tout accepter"
     },
     "apiwebchat_picker_reject_all": {
-        "message": "Tout rejeter",
-        "description": ""
+        "message": "Tout rejeter"
     },
     "apiwebchat_picker_prev": {
-        "message": "Modification précédente",
-        "description": ""
+        "message": "Modification précédente"
     },
     "apiwebchat_picker_next": {
-        "message": "Modification suivante",
-        "description": ""
+        "message": "Modification suivante"
     },
     "apiwebchat_picker_no_changes": {
         "message": "La réponse est identique au texte d'origine : il n'y a rien à réviser.",
@@ -2190,20 +2184,16 @@
         "description": "Libellé accessible du bouton flottant dans la fenêtre de chat IA qui revient au contenu le plus récent et reprend le défilement automatique"
     },
     "prefs_OptionText_chatgpt_reasoning_summary": {
-        "message": "Résumé du raisonnement",
-        "description": ""
+        "message": "Résumé du raisonnement"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_Info": {
-        "message": "Demande à l'API un résumé du raisonnement du modèle, affiché dans le chat sous forme de bloc repliable. Seuls les modèles récents à raisonnement le prennent en charge, tels que gpt-5, o3 et o4-mini : les modèles plus anciens comme o1-pro et o3-mini raisonnent en interne mais n'exposent jamais de résumé, le bloc reste donc masqué. Laissez désactivé pour les modèles sans prise en charge du raisonnement.",
-        "description": ""
+        "message": "Demande à l'API un résumé du raisonnement du modèle, affiché dans le chat sous forme de bloc repliable. Seuls les modèles récents à raisonnement le prennent en charge, tels que gpt-5, o3 et o4-mini : les modèles plus anciens comme o1-pro et o3-mini raisonnent en interne mais n'exposent jamais de résumé, le bloc reste donc masqué. Laissez désactivé pour les modèles sans prise en charge du raisonnement."
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
-        "message": "Intensité du raisonnement",
-        "description": ""
+        "message": "Intensité du raisonnement"
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
-        "message": "Quantité d'effort que le modèle consacre au raisonnement avant de répondre. Les valeurs basses donnent des réponses plus rapides et moins coûteuses, les valeurs élevées donnent des réponses plus approfondies. Laissez sur la valeur par défaut de l'API pour laisser OpenAI décider. Ignoré par les modèles sans prise en charge du raisonnement.",
-        "description": ""
+        "message": "Quantité d'effort que le modèle consacre au raisonnement avant de répondre. Les valeurs basses donnent des réponses plus rapides et moins coûteuses, les valeurs élevées donnent des réponses plus approfondies. Laissez sur la valeur par défaut de l'API pour laisser OpenAI décider. Ignoré par les modèles sans prise en charge du raisonnement."
     },
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Désactivé",
@@ -2329,14 +2319,6 @@
     "prefs_advanced_options": {
         "message": "Options avancées",
         "description": "Libellé de la section des options avancées au niveau application sur la page d'options"
-    },
-    "prefs_conn_show_advanced": {
-        "message": "Afficher les options avancées",
-        "description": "Libellé du bouton d'affichage des options avancées par connexion lorsqu'il est replié"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Masquer les options avancées",
-        "description": "Libellé du bouton d'affichage des options avancées par connexion lorsqu'il est déplié"
     },
     "prefs_privacy_more_info": {
         "message": "Cliquez ici pour plus d'informations sur la confidentialité"

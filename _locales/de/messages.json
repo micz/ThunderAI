@@ -1980,8 +1980,7 @@
         "description": "Options page: default comparison unit of the proofreading change picker"
     },
     "prefs_OptionText_diff_granularity_info": {
-        "message": "Art und Weise, wie die Änderungsauswahl den Originaltext mit der Antwort vergleicht. „Wörter“ eignet sich zum Korrigieren von Rechtschreibung und Grammatik; „Sätze“ ist besser lesbar, wenn die Antwort ganze Sätze umschreibt. Hinweis: Bei einem Text aus nur einem Satz zeigt „Sätze“ den gesamten Text als eine Änderung an. Sie können auch während der Prüfung zwischen beiden wechseln.",
-        "description": ""
+        "message": "Art und Weise, wie die Änderungsauswahl den Originaltext mit der Antwort vergleicht. „Wörter“ eignet sich zum Korrigieren von Rechtschreibung und Grammatik; „Sätze“ ist besser lesbar, wenn die Antwort ganze Sätze umschreibt. Hinweis: Bei einem Text aus nur einem Satz zeigt „Sätze“ den gesamten Text als eine Änderung an. Sie können auch während der Prüfung zwischen beiden wechseln."
     },
     "prefs_OptionText_diff_granularity_words": {
         "message": "Wörter",
@@ -1992,8 +1991,7 @@
         "description": "Comparison unit: sentence by sentence"
     },
     "spamfilter_prompt_missing_explanation": {
-        "message": "Der spezielle Spam-Filter-Prompt fehlt. Falls Sie die speziellen Prompts geändert haben, versuchen Sie, den Standard-Prompt für den Spam-Filter wiederherzustellen.",
-        "description": ""
+        "message": "Der spezielle Spam-Filter-Prompt fehlt. Falls Sie die speziellen Prompts geändert haben, versuchen Sie, den Standard-Prompt für den Spam-Filter wiederherzustellen."
     },
     "apiwebchat_picker_title": {
         "message": "Änderungen prüfen",
@@ -2094,20 +2092,16 @@
         "description": "Change picker granularity option: compare the texts sentence by sentence"
     },
     "apiwebchat_picker_accept_all": {
-        "message": "Alle übernehmen",
-        "description": ""
+        "message": "Alle übernehmen"
     },
     "apiwebchat_picker_reject_all": {
-        "message": "Alle ablehnen",
-        "description": ""
+        "message": "Alle ablehnen"
     },
     "apiwebchat_picker_prev": {
-        "message": "Vorherige Änderung",
-        "description": ""
+        "message": "Vorherige Änderung"
     },
     "apiwebchat_picker_next": {
-        "message": "Nächste Änderung",
-        "description": ""
+        "message": "Nächste Änderung"
     },
     "apiwebchat_picker_no_changes": {
         "message": "Die Antwort ist identisch mit dem Originaltext: Es gibt nichts zu prüfen.",
@@ -2190,20 +2184,16 @@
         "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
     },
     "prefs_OptionText_chatgpt_reasoning_summary": {
-        "message": "Zusammenfassung des Reasoning",
-        "description": ""
+        "message": "Zusammenfassung des Reasoning"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_Info": {
-        "message": "Fordert von der API eine Zusammenfassung des Reasoning des Modells an, die im Chat als einklappbarer Block angezeigt wird. Nur neuere Reasoning-Modelle unterstützen dies, z. B. gpt-5, o3 und o4-mini: ältere wie o1-pro und o3-mini betreiben Reasoning intern, legen aber nie eine Zusammenfassung offen, sodass der Block ausgeblendet bleibt. Für Modelle ohne Reasoning-Unterstützung deaktiviert lassen.",
-        "description": ""
+        "message": "Fordert von der API eine Zusammenfassung des Reasoning des Modells an, die im Chat als einklappbarer Block angezeigt wird. Nur neuere Reasoning-Modelle unterstützen dies, z. B. gpt-5, o3 und o4-mini: ältere wie o1-pro und o3-mini betreiben Reasoning intern, legen aber nie eine Zusammenfassung offen, sodass der Block ausgeblendet bleibt. Für Modelle ohne Reasoning-Unterstützung deaktiviert lassen."
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
-        "message": "Reasoning-Aufwand",
-        "description": ""
+        "message": "Reasoning-Aufwand"
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
-        "message": "Wie viel Aufwand das Modell vor der Antwort in das Reasoning investiert. Niedrigere Werte liefern schnellere und günstigere Antworten, höhere Werte gründlichere. Belassen Sie es beim API-Standard, um OpenAI entscheiden zu lassen. Wird von Modellen ohne Reasoning-Unterstützung ignoriert.",
-        "description": ""
+        "message": "Wie viel Aufwand das Modell vor der Antwort in das Reasoning investiert. Niedrigere Werte liefern schnellere und günstigere Antworten, höhere Werte gründlichere. Belassen Sie es beim API-Standard, um OpenAI entscheiden zu lassen. Wird von Modellen ohne Reasoning-Unterstützung ignoriert."
     },
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Deaktiviert",
@@ -2329,14 +2319,6 @@
     "prefs_advanced_options": {
         "message": "Erweiterte Optionen",
         "description": "Label of the app-level advanced options disclosure on the options page"
-    },
-    "prefs_conn_show_advanced": {
-        "message": "Erweiterte Optionen anzeigen",
-        "description": "Label of the per-connection advanced options disclosure button when collapsed"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Erweiterte Optionen ausblenden",
-        "description": "Label of the per-connection advanced options disclosure button when expanded"
     },
     "prefs_privacy_more_info": {
         "message": "Klicken Sie hier für weitere Informationen zum Datenschutz"

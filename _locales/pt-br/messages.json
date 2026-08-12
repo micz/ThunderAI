@@ -1887,12 +1887,6 @@
     "prefs_advanced_options": {
         "message": "Opções avançadas"
     },
-    "prefs_conn_show_advanced": {
-        "message": "Mostrar opções avançadas"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Ocultar opções avançadas"
-    },
     "prefs_privacy_more_info": {
         "message": "Clique aqui para mais informações sobre privacidade"
     },

@@ -1042,8 +1042,7 @@
         "description": "Options page: default comparison unit of the proofreading change picker"
     },
     "prefs_OptionText_diff_granularity_info": {
-        "message": "Sposób, w jaki wybierak zmian porównuje oryginalny tekst z odpowiedzią. „Słowa“ sprawdzają się przy poprawianiu pisowni i gramatyki; „Zdania“ są czytelniejsze, gdy odpowiedź przerabia całe zdania. Zwróć uwagę, że w tekście składającym się z jednego zdania tryb „Zdania“ pokazuje cały tekst jako jedną zmianę. Możesz też przełączać się między trybami podczas przeglądania zmian.",
-        "description": ""
+        "message": "Sposób, w jaki wybierak zmian porównuje oryginalny tekst z odpowiedzią. „Słowa“ sprawdzają się przy poprawianiu pisowni i gramatyki; „Zdania“ są czytelniejsze, gdy odpowiedź przerabia całe zdania. Zwróć uwagę, że w tekście składającym się z jednego zdania tryb „Zdania“ pokazuje cały tekst jako jedną zmianę. Możesz też przełączać się między trybami podczas przeglądania zmian."
     },
     "prefs_OptionText_diff_granularity_words": {
         "message": "Słowa",
@@ -1054,184 +1053,139 @@
         "description": "Comparison unit: sentence by sentence"
     },
     "prefs_OptionText_special_command_timeout": {
-        "message": "Limit czasu poleceń specjalnych (ms)",
-        "description": ""
+        "message": "Limit czasu poleceń specjalnych (ms)"
     },
     "GetTask_PageTitle": {
-        "message": "Zarządzaj ustawieniami zadań",
-        "description": ""
+        "message": "Zarządzaj ustawieniami zadań"
     },
     "GetTask_info_default": {
-        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do utworzenia zadania na podstawie zaznaczonego tekstu.",
-        "description": ""
+        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do utworzenia zadania na podstawie zaznaczonego tekstu."
     },
     "prefs_OptionText_btnManageTaskInfo": {
-        "message": "Zarządzaj ustawieniami zadań",
-        "description": ""
+        "message": "Zarządzaj ustawieniami zadań"
     },
     "task_getting_data_error": {
-        "message": "Błąd podczas pobierania danych zadania",
-        "description": ""
+        "message": "Błąd podczas pobierania danych zadania"
     },
     "task_opening_dialog_error": {
-        "message": "Błąd podczas otwierania okna zadania",
-        "description": ""
+        "message": "Błąd podczas otwierania okna zadania"
     },
     "no_valid_data_received": {
-        "message": "Nie otrzymano prawidłowych danych od AI.",
-        "description": ""
+        "message": "Nie otrzymano prawidłowych danych od AI."
     },
     "prefs_OptionText_add_tags_auto_Info2": {
-        "message": "Wybierz konto, dla którego aktywować tę funkcję, na dole tej strony.",
-        "description": ""
+        "message": "Wybierz konto, dla którego aktywować tę funkcję, na dole tej strony."
     },
     "prefs_OptionText_add_tags_auto_uselist": {
-        "message": "Używaj tylko tych tagów",
-        "description": ""
+        "message": "Używaj tylko tych tagów"
     },
     "prefs_OptionText_add_tags_auto_uselist_Info": {
-        "message": "Jeśli zaznaczone, AI doda tylko tagi z poniższej listy.",
-        "description": ""
+        "message": "Jeśli zaznaczone, AI doda tylko tagi z poniższej listy."
     },
     "prefs_OptionText_add_tags_auto_uselist_list_Info": {
-        "message": "Lista musi zawierać co najmniej jeden tag. Dodaj po jednym tagu w wierszu lub oddzielone przecinkami.",
-        "description": ""
+        "message": "Lista musi zawierać co najmniej jeden tag. Dodaj po jednym tagu w wierszu lub oddzielone przecinkami."
     },
     "prompt_add_tags_use_list": {
-        "message": "Używaj tylko tagów z tej listy oddzielonej przecinkami",
-        "description": ""
+        "message": "Używaj tylko tagów z tej listy oddzielonej przecinkami"
     },
     "prefs_OptionText_add_tags_use_specific_integration_Info": {
-        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do dodawania tagów do e-maili, niezależnie od tego wybranego na stronie opcji ThunderAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do dodawania tagów do e-maili, niezależnie od tego wybranego na stronie opcji ThunderAI."
     },
     "prefs_OptionText_get_calendar_event_use_specific_integration_Info": {
-        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do tworzenia wydarzeń w kalendarzu, niezależnie od tego wybranego na stronie opcji ThunderAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do tworzenia wydarzeń w kalendarzu, niezależnie od tego wybranego na stronie opcji ThunderAI."
     },
     "placeholder_thunderai_translate_lang": {
-        "message": "Język używany w tłumaczeniach wiadomości.",
-        "description": ""
+        "message": "Język używany w tłumaczeniach wiadomości."
     },
     "placeholder_thunderai_translate_exclude_lang": {
-        "message": "Kody języków, których nie należy tłumaczyć, gdy zostaną wykryte.",
-        "description": ""
+        "message": "Kody języków, których nie należy tłumaczyć, gdy zostaną wykryte."
     },
     "placeholder_mail_attachments_info": {
-        "message": "Informacje o załącznikach w wiadomości",
-        "description": ""
+        "message": "Informacje o załącznikach w wiadomości"
     },
     "prefs_OptionText_summarize": {
-        "message": "Podsumuj e-mail",
-        "description": ""
+        "message": "Podsumuj e-mail"
     },
     "prefs_OptionText_summarize_use_specific_integration_Info": {
-        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do podsumowywania wiadomości, niezależnie od tego wybranego na stronie opcji ThunderAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do podsumowywania wiadomości, niezależnie od tego wybranego na stronie opcji ThunderAI."
     },
     "prefs_OptionText_summarize_Info": {
-        "message": "Jeśli zaznaczone, dodaje opcję w menu kontekstowym do podsumowywania wiadomości.",
-        "description": ""
+        "message": "Jeśli zaznaczone, dodaje opcję w menu kontekstowym do podsumowywania wiadomości."
     },
     "prefs_OptionText_btnManageSummarizeInfo": {
-        "message": "Zarządzaj ustawieniami podsumowania",
-        "description": ""
+        "message": "Zarządzaj ustawieniami podsumowania"
     },
     "Summarize_PageTitle": {
-        "message": "Zarządzaj ustawieniami podsumowania",
-        "description": ""
+        "message": "Zarządzaj ustawieniami podsumowania"
     },
     "Summarize_info_default": {
-        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do podsumowywania wiadomości.",
-        "description": ""
+        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do podsumowywania wiadomości."
     },
     "Summarize_prompt_text_title": {
-        "message": "Bieżący tekst polecenia",
-        "description": ""
+        "message": "Bieżący tekst polecenia"
     },
     "prefs_OptionText_use_specific_integration": {
-        "message": "Użyj konkretnego modelu i API",
-        "description": ""
+        "message": "Użyj konkretnego modelu i API"
     },
     "prefs_OptionText_spamfilter_use_specific_integration_Info": {
-        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane dla filtra spamu, niezależnie od tego wybranego na stronie opcji ThunderAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane dla filtra spamu, niezależnie od tego wybranego na stronie opcji ThunderAI."
     },
     "prefs_OptionText_spamfilter_show_msg_panel": {
-        "message": "Pokaż panel zgłoszenia spamu",
-        "description": ""
+        "message": "Pokaż panel zgłoszenia spamu"
     },
     "prefs_OptionText_spamfilter_show_msg_panel_Info": {
-        "message": "Jeśli zaznaczone, nad wiadomością zostanie wyświetlony panel ze zgłoszeniem spamu.",
-        "description": ""
+        "message": "Jeśli zaznaczone, nad wiadomością zostanie wyświetlony panel ze zgłoszeniem spamu."
     },
     "prefs_OptionText_spamfilter_only_inbox": {
-        "message": "Uruchamiaj tylko w odebranych",
-        "description": ""
+        "message": "Uruchamiaj tylko w odebranych"
     },
     "prefs_OptionText_spamfilter_only_inbox_Info": {
-        "message": "Po włączeniu automatyczny filtr spamu sprawdza tylko wiadomości odebrane w folderze Odebrane i ignoruje wiadomości dostarczone do innych folderów.",
-        "description": ""
+        "message": "Po włączeniu automatyczny filtr spamu sprawdza tylko wiadomości odebrane w folderze Odebrane i ignoruje wiadomości dostarczone do innych folderów."
     },
     "SpamFilter_skip_addresses_title": {
-        "message": "Lista pomijanych adresów e-mail",
-        "description": ""
+        "message": "Lista pomijanych adresów e-mail"
     },
     "SpamFilter_skip_addresses_infoline": {
-        "message": "Wiadomości e-mail od tych adresów nie będą wysyłane do AI do filtrowania spamu.",
-        "description": ""
+        "message": "Wiadomości e-mail od tych adresów nie będą wysyłane do AI do filtrowania spamu."
     },
     "SpamFilter_skip_addresses_infoline2": {
-        "message": "Dodaj po jednym adresie e-mail w wierszu lub oddzielone przecinkami.",
-        "description": ""
+        "message": "Dodaj po jednym adresie e-mail w wierszu lub oddzielone przecinkami."
     },
     "spamfilter_skip_addresses_explanation": {
-        "message": "Nadawca znajduje się na liście pomijanych adresów antyspamowych.",
-        "description": ""
+        "message": "Nadawca znajduje się na liście pomijanych adresów antyspamowych."
     },
     "prefs_OptionText_spamfilter_skip_addressbook": {
-        "message": "Pomijaj adresy z książki adresowej",
-        "description": ""
+        "message": "Pomijaj adresy z książki adresowej"
     },
     "prefs_OptionText_spamfilter_skip_addressbook_Info": {
-        "message": "Jeśli zaznaczone, wiadomości e-mail od nadawców z Twoich książek adresowych nie będą wysyłane do AI do filtrowania spamu.",
-        "description": ""
+        "message": "Jeśli zaznaczone, wiadomości e-mail od nadawców z Twoich książek adresowych nie będą wysyłane do AI do filtrowania spamu."
     },
     "spamfilter_skip_addressbook_explanation": {
-        "message": "Nadawca jest kontaktem w książce adresowej.",
-        "description": ""
+        "message": "Nadawca jest kontaktem w książce adresowej."
     },
     "spamfilter_prompt_missing_explanation": {
-        "message": "Brakuje polecenia specjalnego filtra spamu. Jeśli modyfikowałeś polecenia specjalne, spróbuj przywrócić domyślne polecenie filtra spamu.",
-        "description": ""
+        "message": "Brakuje polecenia specjalnego filtra spamu. Jeśli modyfikowałeś polecenia specjalne, spróbuj przywrócić domyślne polecenie filtra spamu."
     },
     "addressbook_permission_denied": {
-        "message": "Odmówiono uprawnień do książki adresowej. Włącz tę funkcję ponownie, aby nadać uprawnienia.",
-        "description": ""
+        "message": "Odmówiono uprawnień do książki adresowej. Włącz tę funkcję ponownie, aby nadać uprawnienia."
     },
     "addressbook_permission_error": {
-        "message": "Błąd podczas żądania uprawnień do książki adresowej. Spróbuj ponownie.",
-        "description": ""
+        "message": "Błąd podczas żądania uprawnień do książki adresowej. Spróbuj ponownie."
     },
     "Spam": {
-        "message": "Spam",
-        "description": ""
+        "message": "Spam"
     },
     "Valid": {
-        "message": "Prawidłowe",
-        "description": ""
+        "message": "Prawidłowe"
     },
     "noActiveCalendar": {
-        "message": "Nie znaleziono edytowalnego kalendarza!",
-        "description": ""
+        "message": "Nie znaleziono edytowalnego kalendarza!"
     },
     "btn_show_differences": {
-        "message": "Pokaż różnice",
-        "description": ""
+        "message": "Pokaż różnice"
     },
     "chatgpt_win_diff_title": {
-        "message": "Różnice między tekstem oryginalnym a zmodyfikowanym",
-        "description": ""
+        "message": "Różnice między tekstem oryginalnym a zmodyfikowanym"
     },
     "apiwebchat_picker_title": {
         "message": "Przejrzyj zmiany",
@@ -1332,20 +1286,16 @@
         "description": "Change picker granularity option: compare the texts sentence by sentence"
     },
     "apiwebchat_picker_accept_all": {
-        "message": "Akceptuj wszystkie",
-        "description": ""
+        "message": "Akceptuj wszystkie"
     },
     "apiwebchat_picker_reject_all": {
-        "message": "Odrzuć wszystkie",
-        "description": ""
+        "message": "Odrzuć wszystkie"
     },
     "apiwebchat_picker_prev": {
-        "message": "Poprzednia zmiana",
-        "description": ""
+        "message": "Poprzednia zmiana"
     },
     "apiwebchat_picker_next": {
-        "message": "Następna zmiana",
-        "description": ""
+        "message": "Następna zmiana"
     },
     "apiwebchat_picker_no_changes": {
         "message": "Odpowiedź jest identyczna z tekstem oryginalnym: nie ma nic do przejrzenia.",
@@ -1400,32 +1350,25 @@
         "description": "Accessible label of the empty side of a change, when it is not the one in use"
     },
     "apiwebchat_you": {
-        "message": "Ty",
-        "description": ""
+        "message": "Ty"
     },
     "apiwebchat_info": {
-        "message": "Informacje",
-        "description": ""
+        "message": "Informacje"
     },
     "apiwebchat_error": {
-        "message": "Błąd",
-        "description": ""
+        "message": "Błąd"
     },
     "apiwebchat_use_this_answer": {
-        "message": "Użyj tej odpowiedzi",
-        "description": ""
+        "message": "Użyj tej odpowiedzi"
     },
     "apiwebchat_stopping": {
-        "message": "Zatrzymywanie",
-        "description": ""
+        "message": "Zatrzymywanie"
     },
     "apiwebchat_receiving_data": {
-        "message": "Pobieranie danych",
-        "description": ""
+        "message": "Pobieranie danych"
     },
     "apiwebchat_done": {
-        "message": "Gotowe!",
-        "description": ""
+        "message": "Gotowe!"
     },
     "apiwebchat_copy": {
         "message": "Kopiuj",
@@ -1456,188 +1399,142 @@
         "description": "Accessible label for the floating button in the AI chat window that jumps back to the newest content and resumes auto-scrolling"
     },
     "hyprland_warning": {
-        "message": "Jeśli masz problemy z otwarciem okna czatu AI, spróbuj ustawić wartości wysokości i szerokości na 0. Ten problem może występować w systemie Linux w niektórych środowiskach, na przykład przy korzystaniu z Hyprland.",
-        "description": ""
+        "message": "Jeśli masz problemy z otwarciem okna czatu AI, spróbuj ustawić wartości wysokości i szerokości na 0. Ten problem może występować w systemie Linux w niektórych środowiskach, na przykład przy korzystaniu z Hyprland."
     },
     "remember_CORS": {
-        "message": "Pamiętaj, że musisz skonfigurować ustawienia CORS na serwerze!",
-        "description": ""
+        "message": "Pamiętaj, że musisz skonfigurować ustawienia CORS na serwerze!"
     },
     "maybe_CORS_openai_comp": {
-        "message": "Korzystanie z API zgodnego z OpenAI może wymagać ustawień CORS na serwerze.",
-        "description": ""
+        "message": "Korzystanie z API zgodnego z OpenAI może wymagać ustawień CORS na serwerze."
     },
     "CORS_alternative_1": {
-        "message": "Problemy z ustawieniem CORS?",
-        "description": ""
+        "message": "Problemy z ustawieniem CORS?"
     },
     "CORS_alternative_2_new": {
-        "message": "Naciśnij poniższy przycisk, aby nadać uprawnienia bieżącemu hostowi i uniknąć problemów z CORS.",
-        "description": ""
+        "message": "Naciśnij poniższy przycisk, aby nadać uprawnienia bieżącemu hostowi i uniknąć problemów z CORS."
     },
     "CORS_give_host_perm": {
-        "message": "Nadaj uprawnienia bieżącemu hostowi",
-        "description": ""
+        "message": "Nadaj uprawnienia bieżącemu hostowi"
     },
     "CORS_localhost_warn": {
-        "message": "Jeśli używasz localhost lub 127.0.0.1, ponieważ serwer AI znajduje się na Twoim komputerze, wymagane jest uprawnienie <all_urls>.",
-        "description": ""
+        "message": "Jeśli używasz localhost lub 127.0.0.1, ponieważ serwer AI znajduje się na Twoim komputerze, wymagane jest uprawnienie <all_urls>."
     },
     "Replace_No_Selected_Text": {
-        "message": "Nie zaznaczono tekstu. Czy chcesz wstawić odpowiedź AI na początku wiadomości?",
-        "description": ""
+        "message": "Nie zaznaczono tekstu. Czy chcesz wstawić odpowiedź AI na początku wiadomości?"
     },
     "prefs_ollama_num_ctx": {
-        "message": "Liczba tokenów kontekstowych",
-        "description": ""
+        "message": "Liczba tokenów kontekstowych"
     },
     "prefs_ollama_num_ctx_Info": {
-        "message": "Liczba tokenów kontekstowych używanych dla API Ollama. Ustaw na 0, jeśli nie chcesz przekazywać tego jako parametru do serwera.",
-        "description": ""
+        "message": "Liczba tokenów kontekstowych używanych dla API Ollama. Ustaw na 0, jeśli nie chcesz przekazywać tego jako parametru do serwera."
     },
     "ask_chatgptweb_permission_1": {
-        "message": "Aby korzystać z integracji ChatGPT Web, musisz nadać wymagane uprawnienia.",
-        "description": ""
+        "message": "Aby korzystać z integracji ChatGPT Web, musisz nadać wymagane uprawnienia."
     },
     "ask_anthropic_api_permission_1": {
-        "message": "Aby korzystać z integracji Claude API, musisz nadać wymagane uprawnienia.",
-        "description": ""
+        "message": "Aby korzystać z integracji Claude API, musisz nadać wymagane uprawnienia."
     },
     "ask_openai_api_permission_1": {
-        "message": "Aby korzystać z integracji OpenAI API, musisz nadać wymagane uprawnienia.",
-        "description": ""
+        "message": "Aby korzystać z integracji OpenAI API, musisz nadać wymagane uprawnienia."
     },
     "ask_integration_permission_2_popup": {
-        "message": "Kliknij tutaj, aby otworzyć nową kartę i postępować zgodnie z instrukcjami.",
-        "description": ""
+        "message": "Kliknij tutaj, aby otworzyć nową kartę i postępować zgodnie z instrukcjami."
     },
     "ask_integration_permission_2": {
-        "message": "Kliknij tutaj, aby kontynuować.",
-        "description": ""
+        "message": "Kliknij tutaj, aby kontynuować."
     },
     "ask_integration_permission_ok": {
-        "message": "Nadano uprawnienia. Możesz kliknąć tutaj, aby zamknąć tę kartę i wrócić do okna głównego.",
-        "description": ""
+        "message": "Nadano uprawnienia. Możesz kliknąć tutaj, aby zamknąć tę kartę i wrócić do okna głównego."
     },
     "AccountSelector_AutoTags": {
-        "message": "Wybierz konta, dla których włączone jest automatyczne tagowanie",
-        "description": ""
+        "message": "Wybierz konta, dla których włączone jest automatyczne tagowanie"
     },
     "AccountSelector_AutoTags_infoline": {
-        "message": "Każda zmiana jest zapisywana natychmiast.",
-        "description": ""
+        "message": "Każda zmiana jest zapisywana natychmiast."
     },
     "AccountSelector_Spamfilter": {
-        "message": "Wybierz konta, dla których włączony jest automatyczny filtr spamu",
-        "description": ""
+        "message": "Wybierz konta, dla których włączony jest automatyczny filtr spamu"
     },
     "prefs_OptionText_chatgpt_web_project": {
-        "message": "Projekt ChatGPT Web",
-        "description": ""
+        "message": "Projekt ChatGPT Web"
     },
     "prefs_OptionText_chatgpt_web_project_info": {
-        "message": "To jest projekt, który będzie wymuszony dla interfejsu ChatGPT Web.",
-        "description": ""
+        "message": "To jest projekt, który będzie wymuszony dla interfejsu ChatGPT Web."
     },
     "prefs_OptionText_chatgpt_web_custom_gpt": {
-        "message": "Niestandardowy GPT ChatGPT Web",
-        "description": ""
+        "message": "Niestandardowy GPT ChatGPT Web"
     },
     "prefs_OptionText_chatgpt_web_custom_gpt_info": {
-        "message": "To jest niestandardowy GPT, który będzie wymuszony dla interfejsu ChatGPT Web.",
-        "description": ""
+        "message": "To jest niestandardowy GPT, który będzie wymuszony dla interfejsu ChatGPT Web."
     },
     "prefs_OptionText_chatgpt_web_custom_data_info": {
-        "message": "Musi to być w następującej formie:",
-        "description": ""
+        "message": "Musi to być w następującej formie:"
     },
     "prefs_OptionText_chatgpt_web_custom_data_info2": {
-        "message": "Właściwą wartość znajdziesz w polu adresu URL przeglądarki po otwarciu powiązanej strony ChatGPT.",
-        "description": ""
+        "message": "Właściwą wartość znajdziesz w polu adresu URL przeglądarki po otwarciu powiązanej strony ChatGPT."
     },
     "customPrompts_Properties": {
-        "message": "Właściwości",
-        "description": ""
+        "message": "Właściwości"
     },
     "customPrompts_show_additional_info": {
-        "message": "Pokaż dodatkowe właściwości",
-        "description": ""
+        "message": "Pokaż dodatkowe właściwości"
     },
     "customPrompts_hide_additional_info": {
-        "message": "Ukryj dodatkowe właściwości",
-        "description": ""
+        "message": "Ukryj dodatkowe właściwości"
     },
     "customPrompts_show_additional_info_show": {
-        "message": "Dodatkowe właściwości",
-        "description": ""
+        "message": "Dodatkowe właściwości"
     },
     "prefs_OptionText_CustomGPT_Warn": {
-        "message": "Jeśli w opcjach lub w poleceniu określono projekt, zastąpi on ustawienie niestandardowego GPT.",
-        "description": ""
+        "message": "Jeśli w opcjach lub w poleceniu określono projekt, zastąpi on ustawienie niestandardowego GPT."
     },
     "prefs_OptionText_Project_No_temporary_chat_warn": {
-        "message": "Jeśli w opcjach lub w poleceniu określono projekt, czat tymczasowy nie będzie używany.",
-        "description": ""
+        "message": "Jeśli w opcjach lub w poleceniu określono projekt, czat tymczasowy nie będzie używany."
     },
     "prefs_Anthropic_API_Key": {
-        "message": "Klucz API Claude",
-        "description": ""
+        "message": "Klucz API Claude"
     },
     "prefs_Connection_type_Anthropic_API": {
-        "message": "Claude API",
-        "description": ""
+        "message": "Claude API"
     },
     "Anthropic_Models": {
-        "message": "Modele Claude",
-        "description": ""
+        "message": "Modele Claude"
     },
     "Anthropic_Models_Error_fetching": {
-        "message": "Błąd podczas pobierania modeli Claude",
-        "description": ""
+        "message": "Błąd podczas pobierania modeli Claude"
     },
     "Anthropic_Version": {
-        "message": "Wersja API Claude",
-        "description": ""
+        "message": "Wersja API Claude"
     },
     "Anthropic_Version_Info": {
-        "message": "WYMAGANE. Nie zmieniaj tej wartości, chyba że wiesz, co robisz. Więcej informacji pod adresem:",
-        "description": ""
+        "message": "WYMAGANE. Nie zmieniaj tej wartości, chyba że wiesz, co robisz. Więcej informacji pod adresem:"
     },
     "prefs_OptionText_anthropic_max_tokens": {
-        "message": "Maks. liczba tokenów",
-        "description": ""
+        "message": "Maks. liczba tokenów"
     },
     "prefs_OptionText_anthropic_max_tokens_Info": {
-        "message": "Maksymalna liczba tokenów do wygenerowania w uzupełnieniu. Liczba tokenów polecenia plus max_tokens nie może przekraczać długości kontekstu modelu.",
-        "description": ""
+        "message": "Maksymalna liczba tokenów do wygenerowania w uzupełnieniu. Liczba tokenów polecenia plus max_tokens nie może przekraczać długości kontekstu modelu."
     },
     "prefs_OptionText_anthropic_extended_thinking_budget": {
-        "message": "Budżet rozszerzonego myślenia (tokeny)",
-        "description": ""
+        "message": "Budżet rozszerzonego myślenia (tokeny)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Maksymalna liczba tokenów, jaką model może przeznaczyć na rozszerzone myślenie. Ustaw na 0, aby wyłączyć rozszerzone myślenie. Po włączeniu wartość temperatury jest ignorowana przez API Claude.",
-        "description": ""
+        "message": "Maksymalna liczba tokenów, jaką model może przeznaczyć na rozszerzone myślenie. Ustaw na 0, aby wyłączyć rozszerzone myślenie. Po włączeniu wartość temperatury jest ignorowana przez API Claude."
     },
     "anthropic_empty_apikey": {
-        "message": "Nie dodałeś klucza API dla Claude API. Wstaw go na stronie opcji.",
-        "description": ""
+        "message": "Nie dodałeś klucza API dla Claude API. Wstaw go na stronie opcji."
     },
     "anthropic_empty_model": {
-        "message": "Nie wybrałeś modelu dla Claude API. Wybierz go na stronie opcji.",
-        "description": ""
+        "message": "Nie wybrałeś modelu dla Claude API. Wybierz go na stronie opcji."
     },
     "anthropic_empty_version": {
-        "message": "Nie dodałeś ciągu wersji dla Claude API. Wstaw go na stronie opcji.",
-        "description": ""
+        "message": "Nie dodałeś ciągu wersji dla Claude API. Wstaw go na stronie opcji."
     },
     "anthropic_api_request_failed": {
-        "message": "Żądanie Claude API nie powiodło się",
-        "description": ""
+        "message": "Żądanie Claude API nie powiodło się"
     },
     "_api_connecting": {
         "message": "Próba połączenia z $api_string$ przy użyciu następującej konfiguracji...",
-        "description": "",
         "placeholders": {
             "api_string": {
                 "content": "$1"
@@ -1645,32 +1542,25 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Model",
-        "description": ""
+        "message": "Model"
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "description": ""
+        "message": "Host"
     },
     "_api_connecting_version": {
-        "message": "Wersja",
-        "description": ""
+        "message": "Wersja"
     },
     "prefs_OpenAIComp_AvailableServices": {
-        "message": "Dostępne usługi",
-        "description": ""
+        "message": "Dostępne usługi"
     },
     "prefs_OpenAIComp_AvailableServices_Info": {
-        "message": "Wybierz jedną z usług dostępnych dla API zgodnego z OpenAI lub wprowadź ją ręcznie.",
-        "description": ""
+        "message": "Wybierz jedną z usług dostępnych dla API zgodnego z OpenAI lub wprowadź ją ręcznie."
     },
     "Custom": {
-        "message": "Niestandardowe",
-        "description": ""
+        "message": "Niestandardowe"
     },
     "OpenAIComp_Configs_ConfirmApply": {
         "message": "Czy na pewno chcesz zastosować konfigurację „$config_name$“?",
-        "description": "",
         "placeholders": {
             "config_name": {
                 "content": "$1"
@@ -1678,36 +1568,28 @@
         }
     },
     "apiwebchat_selection_info": {
-        "message": "Jeśli zaznaczysz tekst, uwzględniona będzie tylko ta część.",
-        "description": ""
+        "message": "Jeśli zaznaczysz tekst, uwzględniona będzie tylko ta część."
     },
     "ChatGPT_chatgpt_api_store": {
-        "message": "Używaj przechowywania",
-        "description": ""
+        "message": "Używaj przechowywania"
     },
     "ChatGPT_chatgpt_api_store_info": {
-        "message": "Jeśli zaznaczone, Twoje czaty będą przechowywane przez OpenAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, Twoje czaty będą przechowywane przez OpenAI."
     },
     "prefs_chatgpt_api_temperature_Info": {
-        "message": "Wartość temperatury próbkowania od 0 do 2. Wyższe wartości, np. 0,8, sprawiają, że wynik jest bardziej losowy, a niższe, np. 0,2, bardziej ukierunkowany i deterministyczny.",
-        "description": ""
+        "message": "Wartość temperatury próbkowania od 0 do 2. Wyższe wartości, np. 0,8, sprawiają, że wynik jest bardziej losowy, a niższe, np. 0,2, bardziej ukierunkowany i deterministyczny."
     },
     "prefs_OptionText_chatgpt_reasoning_summary": {
-        "message": "Podsumowanie wnioskowania",
-        "description": ""
+        "message": "Podsumowanie wnioskowania"
     },
     "prefs_OptionText_chatgpt_reasoning_summary_Info": {
-        "message": "Żąda od API podsumowania wnioskowania modelu, wyświetlanego w czacie jako zwijany blok. Obsługują je tylko nowsze modele z wnioskowaniem, takie jak gpt-5, o3 i o4-mini: starsze, jak o1-pro i o3-mini, wnioskują wewnętrznie, ale nigdy nie udostępniają podsumowania, więc blok pozostaje ukryty. Pozostaw wyłączone dla modeli bez obsługi wnioskowania.",
-        "description": ""
+        "message": "Żąda od API podsumowania wnioskowania modelu, wyświetlanego w czacie jako zwijany blok. Obsługują je tylko nowsze modele z wnioskowaniem, takie jak gpt-5, o3 i o4-mini: starsze, jak o1-pro i o3-mini, wnioskują wewnętrznie, ale nigdy nie udostępniają podsumowania, więc blok pozostaje ukryty. Pozostaw wyłączone dla modeli bez obsługi wnioskowania."
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
-        "message": "Wysiłek wnioskowania",
-        "description": ""
+        "message": "Wysiłek wnioskowania"
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
-        "message": "Ile wysiłku model poświęca na wnioskowanie przed odpowiedzią. Niższe wartości dają szybsze i tańsze odpowiedzi, wyższe bardziej wnikliwe. Pozostaw wartość domyślną API, aby pozwolić OpenAI zdecydować. Ignorowane przez modele bez obsługi wnioskowania.",
-        "description": ""
+        "message": "Ile wysiłku model poświęca na wnioskowanie przed odpowiedzią. Niższe wartości dają szybsze i tańsze odpowiedzi, wyższe bardziej wnikliwe. Pozostaw wartość domyślną API, aby pozwolić OpenAI zdecydować. Ignorowane przez modele bez obsługi wnioskowania."
     },
     "prefs_OptionText_chatgpt_reasoning_disabled": {
         "message": "Wyłączone",
@@ -1742,40 +1624,31 @@
         "description": "Option for the reasoning effort dropdown: the highest amount of reasoning."
     },
     "prefs_ollama_temperature_Info": {
-        "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1.",
-        "description": ""
+        "message": "Temperatura modelu. Zwiększenie temperatury sprawia, że model odpowiada bardziej kreatywnie. Wartość domyślna to 0,8. Zaleca się używanie wartości od 0 do 1."
     },
     "prefs_ollama_think": {
-        "message": "Włącz myślenie",
-        "description": ""
+        "message": "Włącz myślenie"
     },
     "prefs_ollama_think_Info": {
-        "message": "Jeśli zaznaczone, model pomyśli przed udzieleniem odpowiedzi. Ta opcja działa tylko z modelami obsługującymi funkcję „think“.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model pomyśli przed udzieleniem odpowiedzi. Ta opcja działa tylko z modelami obsługującymi funkcję „think“."
     },
     "prefs_ollama_format_json": {
-        "message": "Wymuś wyjście JSON",
-        "description": ""
+        "message": "Wymuś wyjście JSON"
     },
     "prefs_ollama_format_json_Info": {
-        "message": "Jeśli zaznaczone, Ollama zostanie zmuszona do zwrócenia prawidłowej odpowiedzi JSON. Ta opcja działa tylko z modelami obsługującymi ustrukturyzowane wyjście.",
-        "description": ""
+        "message": "Jeśli zaznaczone, Ollama zostanie zmuszona do zwrócenia prawidłowej odpowiedzi JSON. Ta opcja działa tylko z modelami obsługującymi ustrukturyzowane wyjście."
     },
     "chatgpt_win_change_reply_type": {
-        "message": "Kliknij, aby zmienić typ odpowiedzi",
-        "description": ""
+        "message": "Kliknij, aby zmienić typ odpowiedzi"
     },
     "prefs_OptionText_add_tags_exclusions_exact_match": {
-        "message": "Dokładne dopasowanie wykluczeń",
-        "description": ""
+        "message": "Dokładne dopasowanie wykluczeń"
     },
     "prefs_OptionText_add_tags_exclusions_exact_match_Info": {
-        "message": "Jeśli zaznaczone, słowa na liście wykluczeń będą dopasowywane dokładnie do tagów. W przeciwnym razie będą dopasowywane także, gdy stanowią część tagu.",
-        "description": ""
+        "message": "Jeśli zaznaczone, słowa na liście wykluczeń będą dopasowywane dokładnie do tagów. W przeciwnym razie będą dopasowywane także, gdy stanowią część tagu."
     },
     "customDataPH_manageDataPH": {
-        "message": "Zarządzaj symbolami zastępczymi danych",
-        "description": ""
+        "message": "Zarządzaj symbolami zastępczymi danych"
     },
     "customDataPH_placeholdersCount": {
         "message": "$COUNT$ symboli zastępczych danych",
@@ -1787,92 +1660,70 @@
         }
     },
     "customDataPH_manageDataPH_info_default_3": {
-        "message": "Możesz też używać domyślnych symboli zastępczych danych z autouzupełnianiem, tak jak przy pisaniu poleceń niestandardowych.",
-        "description": ""
+        "message": "Możesz też używać domyślnych symboli zastępczych danych z autouzupełnianiem, tak jak przy pisaniu poleceń niestandardowych."
     },
     "customDataPH_manageDataPH_info_default": {
-        "message": "Na tej stronie można zdefiniować niestandardowe symbole zastępcze danych do użycia w poleceniach niestandardowych.",
-        "description": ""
+        "message": "Na tej stronie można zdefiniować niestandardowe symbole zastępcze danych do użycia w poleceniach niestandardowych."
     },
     "customDataPH_manageDataPH_info_default_2": {
-        "message": "Istniejące symbole zastępcze danych o tym samym identyfikatorze zostaną nadpisane. Symbole zastępcze o nowych identyfikatorach zostaną dodane.",
-        "description": ""
+        "message": "Istniejące symbole zastępcze danych o tym samym identyfikatorze zostaną nadpisane. Symbole zastępcze o nowych identyfikatorach zostaną dodane."
     },
     "customDataPH_ExportAll": {
-        "message": "Eksportuj wszystkie niestandardowe symbole zastępcze danych",
-        "description": ""
+        "message": "Eksportuj wszystkie niestandardowe symbole zastępcze danych"
     },
     "customDataPH_Import": {
-        "message": "Importuj nowe symbole zastępcze danych",
-        "description": ""
+        "message": "Importuj nowe symbole zastępcze danych"
     },
     "customDataPH_form_label_Text": {
-        "message": "Tekst symbolu zastępczego danych",
-        "description": ""
+        "message": "Tekst symbolu zastępczego danych"
     },
     "customDataPH_saving_custom": {
-        "message": "Zapisywanie niestandardowych symboli zastępczych danych...",
-        "description": ""
+        "message": "Zapisywanie niestandardowych symboli zastępczych danych..."
     },
     "customDataPH_saved": {
-        "message": "Niestandardowe symbole zastępcze danych zapisane!",
-        "description": ""
+        "message": "Niestandardowe symbole zastępcze danych zapisane!"
     },
     "customDataPH_btnAddNewCommit": {
-        "message": "Dodaj symbol zastępczy danych",
-        "description": ""
+        "message": "Dodaj symbol zastępczy danych"
     },
     "importCustomDataPH_confirmText": {
-        "message": "Za chwilę zaimportujesz nowe niestandardowe symbole zastępcze danych.",
-        "description": ""
+        "message": "Za chwilę zaimportujesz nowe niestandardowe symbole zastępcze danych."
     },
     "importCustomDataPH_start_import": {
-        "message": "Rozpoczynanie importu niestandardowych symboli zastępczych danych...",
-        "description": ""
+        "message": "Rozpoczynanie importu niestandardowych symboli zastępczych danych..."
     },
     "importCustomDataPH_import_completed": {
-        "message": "Import niestandardowych symboli zastępczych danych zakończony! Musisz kliknąć przycisk „Zapisz wszystkie“, aby zapisać zmiany.",
-        "description": ""
+        "message": "Import niestandardowych symboli zastępczych danych zakończony! Musisz kliknąć przycisk „Zapisz wszystkie“, aby zapisać zmiany."
     },
     "importCustomDataPH_invalidFile": {
-        "message": "Plik, który próbujesz zaimportować, nie jest prawidłowym plikiem symboli zastępczych danych.",
-        "description": ""
+        "message": "Plik, który próbujesz zaimportować, nie jest prawidłowym plikiem symboli zastępczych danych."
     },
     "importCustomDataPH_invalidDataPHs": {
-        "message": "Plik, który próbujesz zaimportować, nie zawiera żadnych prawidłowych niestandardowych symboli zastępczych danych.",
-        "description": ""
+        "message": "Plik, który próbujesz zaimportować, nie zawiera żadnych prawidłowych niestandardowych symboli zastępczych danych."
     },
     "customDataPH_add_to_menu": {
-        "message": "Użyteczne w poleceniach dodanych do menu",
-        "description": ""
+        "message": "Użyteczne w poleceniach dodanych do menu"
     },
     "prefs_OptionText_chatgpt_web_br_replace_info": {
-        "message": "Zwróć uwagę, że wszystkie znaczniki <br> w odpowiedzi AI zostaną zastąpione podziałami wierszy.",
-        "description": ""
+        "message": "Zwróć uwagę, że wszystkie znaczniki <br> w odpowiedzi AI zostaną zastąpione podziałami wierszy."
     },
     "prefs_OpenAIComp_ClearModelsList": {
-        "message": "Wyczyść listę modeli",
-        "description": ""
+        "message": "Wyczyść listę modeli"
     },
     "OpenAIComp_ClearModelsList_Confirm": {
-        "message": "Czy na pewno chcesz wyczyścić listę modeli? Tej czynności nie można cofnąć.",
-        "description": ""
+        "message": "Czy na pewno chcesz wyczyścić listę modeli? Tej czynności nie można cofnąć."
     },
     "prefs_api_temperature": {
-        "message": "Temperatura",
-        "description": ""
+        "message": "Temperatura"
     },
     "prefs_openai_comp_temperature_Info": {
-        "message": "Wartość temperatury próbkowania od 0 do 2. Wyższe wartości, np. 0,8, sprawiają, że wynik jest bardziej losowy, a niższe, np. 0,2, bardziej ukierunkowany i deterministyczny.",
-        "description": ""
+        "message": "Wartość temperatury próbkowania od 0 do 2. Wyższe wartości, np. 0,8, sprawiają, że wynik jest bardziej losowy, a niższe, np. 0,2, bardziej ukierunkowany i deterministyczny."
     },
     "chatgpt_click_force_completion": {
-        "message": "Wygląda na to, że nie można ustalić, czy ChatGPT zakończył. Kliknij tutaj, aby wymusić zakończenie zadania.",
-        "description": ""
+        "message": "Wygląda na to, że nie można ustalić, czy ChatGPT zakończył. Kliknij tutaj, aby wymusić zakończenie zadania."
     },
     "warn_API_needed": {
-        "message": "Aby korzystać z tej funkcji, potrzebujesz integracji API zamiast integracji ChatGPT Web. Konkretne API możesz zdefiniować na stronie ustawień funkcji, zaznaczając najpierw pole wyboru powyżej, a następnie klikając przycisk po lewej.",
-        "description": ""
+        "message": "Aby korzystać z tej funkcji, potrzebujesz integracji API zamiast integracji ChatGPT Web. Konkretne API możesz zdefiniować na stronie ustawień funkcji, zaznaczając najpierw pole wyboru powyżej, a następnie klikając przycisk po lewej."
     },
     "prefs_specific_api_indicator": {
         "message": "Używa $1",
@@ -1884,40 +1735,31 @@
         }
     },
     "prefs_google_gemini_thinking_budget": {
-        "message": "Budżet myślenia",
-        "description": ""
+        "message": "Budżet myślenia"
     },
     "prefs_google_gemini_thinking_budget_Info": {
-        "message": "Określ liczbę tokenów używanych do myślenia. Pozostaw to pole puste, jeśli wybrany model nie obsługuje myślenia lub jeśli chcesz użyć metody domyślnej. Wpisz 0, aby wyłączyć myślenie, lub -1, aby włączyć myślenie dynamiczne.",
-        "description": ""
+        "message": "Określ liczbę tokenów używanych do myślenia. Pozostaw to pole puste, jeśli wybrany model nie obsługuje myślenia lub jeśli chcesz użyć metody domyślnej. Wpisz 0, aby wyłączyć myślenie, lub -1, aby włączyć myślenie dynamiczne."
     },
     "prefs_google_gemini_temperature_Info": {
-        "message": "Ten parametr musi być liczbą od 0,0 do 2,0. Steruje losowością wyniku. Wartość domyślna różni się w zależności od modelu. Pozostaw puste, aby nie ustawiać parametru w wywołaniu API.",
-        "description": ""
+        "message": "Ten parametr musi być liczbą od 0,0 do 2,0. Steruje losowością wyniku. Wartość domyślna różni się w zależności od modelu. Pozostaw puste, aby nie ustawiać parametru w wywołaniu API."
     },
     "SelectAll": {
-        "message": "Zaznacz wszystko",
-        "description": ""
+        "message": "Zaznacz wszystko"
     },
     "DeselectAll": {
-        "message": "Odznacz wszystko",
-        "description": ""
+        "message": "Odznacz wszystko"
     },
     "Anthropic_System_Prompt": {
-        "message": "Polecenie systemowe",
-        "description": ""
+        "message": "Polecenie systemowe"
     },
     "Anthropic_System_Prompt_Info": {
-        "message": "Wydajność Claude można poprawić, używając polecenia systemowego do nadania mu roli. Ta technika, zwana nadawaniem ról, to najpotężniejszy sposób używania poleceń systemowych z Claude. Odpowiednia rola może zmienić Claude z ogólnego asystenta w Twojego wirtualnego eksperta dziedzinowego.",
-        "description": ""
+        "message": "Wydajność Claude można poprawić, używając polecenia systemowego do nadania mu roli. Ta technika, zwana nadawaniem ról, to najpotężniejszy sposób używania poleceń systemowych z Claude. Odpowiednia rola może zmienić Claude z ogólnego asystenta w Twojego wirtualnego eksperta dziedzinowego."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Stopień losowości wprowadzony do odpowiedzi. Wartość domyślna to 1,0. Zakres od 0,0 do 1,0. Używaj temperatury bliższej 0,0 dla zadań analitycznych / wielokrotnego wyboru, a bliższej 1,0 dla zadań kreatywnych i generatywnych. Zwróć uwagę, że nawet przy temperaturze 0,0 wyniki nie będą w pełni deterministyczne.",
-        "description": ""
+        "message": "Stopień losowości wprowadzony do odpowiedzi. Wartość domyślna to 1,0. Zakres od 0,0 do 1,0. Używaj temperatury bliższej 0,0 dla zadań analitycznych / wielokrotnego wyboru, a bliższej 1,0 dla zadań kreatywnych i generatywnych. Zwróć uwagę, że nawet przy temperaturze 0,0 wyniki nie będą w pełni deterministyczne."
     },
     "Optional_Permission_Denied_Model_Fetching": {
-        "message": "Odmówiłeś opcjonalnego uprawnienia potrzebnego do pobrania modeli dla tej integracji.",
-        "description": ""
+        "message": "Odmówiłeś opcjonalnego uprawnienia potrzebnego do pobrania modeli dla tej integracji."
     },
     "prefs_OptionText_auto_summary": {
         "message": "Włącz automatyczne podsumowywanie AI dla podglądu wiadomości",
@@ -1940,84 +1782,64 @@
         "description": "Error message shown when the automatic AI summary generation fails"
     },
     "customPrompts_export_include_api_settings": {
-        "message": "Czy chcesz uwzględnić ustawienia API w eksporcie? Miej na uwadze, że klucz API także zostanie zapisany w pliku!",
-        "description": ""
+        "message": "Czy chcesz uwzględnić ustawienia API w eksporcie? Miej na uwadze, że klucz API także zostanie zapisany w pliku!"
     },
     "prefs_OptionText_calendar_no_selection": {
-        "message": "Nie pytaj o zaznaczanie tekstu",
-        "description": ""
+        "message": "Nie pytaj o zaznaczanie tekstu"
     },
     "prefs_OptionText_calendar_no_selection_Info": {
-        "message": "Jeśli zaznaczone, nie ma potrzeby zaznaczania tekstu. Do utworzenia wydarzenia w kalendarzu zostanie użyta cała treść wiadomości.",
-        "description": ""
+        "message": "Jeśli zaznaczone, nie ma potrzeby zaznaczania tekstu. Do utworzenia wydarzenia w kalendarzu zostanie użyta cała treść wiadomości."
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
-        "message": "Polecenie musi zawierać symbol zastępczy {%mail_text_body_or_selected%} lub {%mail_html_body_or_selected%}, aby włączyć tę opcję. Dodaj jeden z tych symboli zastępczych do polecenia lub zresetuj je do wartości domyślnej.",
-        "description": ""
+        "message": "Polecenie musi zawierać symbol zastępczy {%mail_text_body_or_selected%} lub {%mail_html_body_or_selected%}, aby włączyć tę opcję. Dodaj jeden z tych symboli zastępczych do polecenia lub zresetuj je do wartości domyślnej."
     },
     "customPrompts_btnCopy": {
-        "message": "Kopiuj",
-        "description": ""
+        "message": "Kopiuj"
     },
     "copy_text": {
-        "message": "kopiuj",
-        "description": ""
+        "message": "kopiuj"
     },
     "spam_check_in_progress": {
-        "message": "Trwa sprawdzanie spamu...",
-        "description": ""
+        "message": "Trwa sprawdzanie spamu..."
     },
     "prefs_OptionText_summarize_auto": {
-        "message": "Automatycznie podsumowuj wiadomości",
-        "description": ""
+        "message": "Automatycznie podsumowuj wiadomości"
     },
     "prefs_OptionText_summarize_auto_Info": {
-        "message": "Wybierz, czy automatycznie generować podsumowania podczas wyświetlania wiadomości. Wymaga połączenia opartego na API (nie ChatGPT Web).",
-        "description": ""
+        "message": "Wybierz, czy automatycznie generować podsumowania podczas wyświetlania wiadomości. Wymaga połączenia opartego na API (nie ChatGPT Web)."
     },
     "prefs_OptionText_summarize_display_mode": {
-        "message": "Wyświetl podsumowanie w",
-        "description": ""
+        "message": "Wyświetl podsumowanie w"
     },
     "prefs_OptionText_summarize_display_mode_Info": {
-        "message": "Wybierz, gdzie wyświetlić wynik podsumowania. Tryb wewnątrz wiersza pokazuje baner podsumowania bezpośrednio w panelu wiadomości. Tryb okna czatu otwiera okno czatu AI.",
-        "description": ""
+        "message": "Wybierz, gdzie wyświetlić wynik podsumowania. Tryb wewnątrz wiersza pokazuje baner podsumowania bezpośrednio w panelu wiadomości. Tryb okna czatu otwiera okno czatu AI."
     },
     "prefs_OptionText_summarize_max_display_length": {
-        "message": "Maks. długość wyświetlania",
-        "description": ""
+        "message": "Maks. długość wyświetlania"
     },
     "prefs_OptionText_summarize_max_display_length_Info": {
-        "message": "Maksymalna liczba znaków wyświetlanych w podsumowaniu wewnątrz wiersza. Ustaw 0, aby brak limitu.",
-        "description": ""
+        "message": "Maksymalna liczba znaków wyświetlanych w podsumowaniu wewnątrz wiersza. Ustaw 0, aby brak limitu."
     },
     "prefs_OptionText_summarize_max_messages": {
-        "message": "Maks. liczba wiadomości",
-        "description": ""
+        "message": "Maks. liczba wiadomości"
     },
     "prefs_OptionText_summarize_max_messages_Info": {
-        "message": "Maksymalna liczba wiadomości, które można jednocześnie podsumować w trybie webchat. Powyżej tego limitu operacja jest blokowana z ostrzeżeniem. Ustaw 0, aby brak limitu.",
-        "description": ""
+        "message": "Maksymalna liczba wiadomości, które można jednocześnie podsumować w trybie webchat. Powyżej tego limitu operacja jest blokowana z ostrzeżeniem. Ustaw 0, aby brak limitu."
     },
     "prefs_OptionText_summarize_strip_formatting": {
-        "message": "Usuń formatowanie",
-        "description": ""
+        "message": "Usuń formatowanie"
     },
     "prefs_OptionText_summarize_strip_formatting_Info": {
-        "message": "Usuń formatowanie HTML i Markdown z podsumowania wygenerowanego przez AI, wyświetlając tylko zwykły tekst.",
-        "description": ""
+        "message": "Usuń formatowanie HTML i Markdown z podsumowania wygenerowanego przez AI, wyświetlając tylko zwykły tekst."
     },
     "summarize_see_more": {
-        "message": "Pokaż więcej",
-        "description": ""
+        "message": "Pokaż więcej"
     },
     "summarize_see_less": {
-        "message": "Pokaż mniej",
-        "description": ""
+        "message": "Pokaż mniej"
     },
     "summarize_title": {
-        "message": "Przegląd ThunderAI",
-        "description": ""
+        "message": "Przegląd ThunderAI"
     },
     "summarize_too_many_messages": {
         "message": "Zaznaczono $SELECTED$ wiadomości, ale naraz można podsumować co najwyżej $MAX$. Wybierz mniej wiadomości.",
@@ -2032,8 +1854,7 @@
         }
     },
     "get_ai_summary": {
-        "message": "Podsumowanie AI",
-        "description": ""
+        "message": "Podsumowanie AI"
     },
     "batch_stop_processing": {
         "message": "Zatrzymaj przetwarzanie",
@@ -2070,228 +1891,175 @@
         "description": "Source label shown as the prefix of the notice displayed when the user stops the running email processing jobs"
     },
     "summarize_collapse": {
-        "message": "Zwiń podsumowanie",
-        "description": ""
+        "message": "Zwiń podsumowanie"
     },
     "summarize_generating": {
-        "message": "Generowanie podsumowania...",
-        "description": ""
+        "message": "Generowanie podsumowania..."
     },
     "summarize_error": {
-        "message": "Nie udało się wygenerować podsumowania",
-        "description": ""
+        "message": "Nie udało się wygenerować podsumowania"
     },
     "summarize_click_to_generate": {
-        "message": "Kliknij tutaj, aby wygenerować podsumowanie",
-        "description": ""
+        "message": "Kliknij tutaj, aby wygenerować podsumowanie"
     },
     "summarize_chatgpt_web_not_supported": {
-        "message": "Automatyczne podsumowanie wymaga połączenia opartego na API. Skonfiguruj połączenie API w ustawieniach ThunderAI.",
-        "description": ""
+        "message": "Automatyczne podsumowanie wymaga połączenia opartego na API. Skonfiguruj połączenie API w ustawieniach ThunderAI."
     },
     "summarize_refresh": {
-        "message": "Odśwież podsumowanie",
-        "description": ""
+        "message": "Odśwież podsumowanie"
     },
     "spamfilter_refresh": {
-        "message": "Odśwież zgłoszenie spamu",
-        "description": ""
+        "message": "Odśwież zgłoszenie spamu"
     },
     "spamfilter_delete": {
-        "message": "Usuń zgłoszenie spamu",
-        "description": ""
+        "message": "Usuń zgłoszenie spamu"
     },
     "summarize_delete": {
-        "message": "Usuń podsumowanie",
-        "description": ""
+        "message": "Usuń podsumowanie"
     },
     "generic_error_dismiss": {
         "message": "Odrzuć",
         "description": "Menu item to dismiss a generic error panel shown in the message display."
     },
     "prefs_OptionText_translate": {
-        "message": "Przetłumacz e-mail",
-        "description": ""
+        "message": "Przetłumacz e-mail"
     },
     "prefs_OptionText_translate_use_specific_integration_Info": {
-        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do tłumaczenia wiadomości, niezależnie od tego wybranego na stronie opcji ThunderAI.",
-        "description": ""
+        "message": "Jeśli zaznaczone, model i API określone poniżej będą używane do tłumaczenia wiadomości, niezależnie od tego wybranego na stronie opcji ThunderAI."
     },
     "prefs_OptionText_translate_Info": {
-        "message": "Jeśli zaznaczone, dodaje przycisk tłumaczenia w treści wiadomości.",
-        "description": ""
+        "message": "Jeśli zaznaczone, dodaje przycisk tłumaczenia w treści wiadomości."
     },
     "prefs_OptionText_btnManageTranslateInfo": {
-        "message": "Zarządzaj ustawieniami tłumaczenia",
-        "description": ""
+        "message": "Zarządzaj ustawieniami tłumaczenia"
     },
     "Translate_PageTitle": {
-        "message": "Zarządzaj ustawieniami tłumaczenia",
-        "description": ""
+        "message": "Zarządzaj ustawieniami tłumaczenia"
     },
     "Translate_info_default": {
-        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do tłumaczenia wiadomości.",
-        "description": ""
+        "message": "Na tej stronie możesz zmodyfikować domyślne polecenie używane do tłumaczenia wiadomości."
     },
     "Translate_prompt_text_title": {
-        "message": "Bieżący tekst polecenia",
-        "description": ""
+        "message": "Bieżący tekst polecenia"
     },
     "prefs_OptionText_translate_auto": {
-        "message": "Automatycznie tłumacz wiadomości",
-        "description": ""
+        "message": "Automatycznie tłumacz wiadomości"
     },
     "prefs_OptionText_action_auto_disabled": {
-        "message": "Wyłączone",
-        "description": ""
+        "message": "Wyłączone"
     },
     "prefs_OptionText_action_auto_manual": {
-        "message": "Tylko przycisk ręczny",
-        "description": ""
+        "message": "Tylko przycisk ręczny"
     },
     "prefs_OptionText_action_auto_automatic": {
-        "message": "Gdy wiadomość jest otwarta",
-        "description": ""
+        "message": "Gdy wiadomość jest otwarta"
     },
     "prefs_OptionText_translate_auto_Info": {
-        "message": "Wybierz, kiedy tłumaczyć wiadomości: wyłączone, tylko po kliknięciu przycisku lub automatycznie przy otwieraniu wiadomości.",
-        "description": ""
+        "message": "Wybierz, kiedy tłumaczyć wiadomości: wyłączone, tylko po kliknięciu przycisku lub automatycznie przy otwieraniu wiadomości."
     },
     "prefs_OptionText_display_mode_inline": {
-        "message": "Panel wiadomości (wewnątrz wiersza)",
-        "description": ""
+        "message": "Panel wiadomości (wewnątrz wiersza)"
     },
     "prefs_OptionText_display_mode_webchat": {
-        "message": "Okno czatu",
-        "description": ""
+        "message": "Okno czatu"
     },
     "prefs_OptionText_translate_max_display_length": {
-        "message": "Maksymalna długość wyświetlanego tłumaczenia",
-        "description": ""
+        "message": "Maksymalna długość wyświetlanego tłumaczenia"
     },
     "prefs_OptionText_translate_max_display_length_Info": {
-        "message": "Maksymalna liczba znaków pokazywanych w tłumaczeniu wewnątrz wiersza. 0 = brak limitu. Po ustawieniu dłuższy tekst jest ucinany z przełącznikiem „Pokaż więcej“.",
-        "description": ""
+        "message": "Maksymalna liczba znaków pokazywanych w tłumaczeniu wewnątrz wiersza. 0 = brak limitu. Po ustawieniu dłuższy tekst jest ucinany z przełącznikiem „Pokaż więcej“."
     },
     "translate_see_more": {
-        "message": "Pokaż więcej",
-        "description": ""
+        "message": "Pokaż więcej"
     },
     "translate_see_less": {
-        "message": "Pokaż mniej",
-        "description": ""
+        "message": "Pokaż mniej"
     },
     "prefs_OptionText_translate_lang": {
-        "message": "Język docelowy tłumaczenia",
-        "description": ""
+        "message": "Język docelowy tłumaczenia"
     },
     "prefs_OptionText_translate_lang_Info": {
-        "message": "Język, na który tłumaczone są wiadomości. Jeśli puste, używa domyślnego ustawienia języka.",
-        "description": ""
+        "message": "Język, na który tłumaczone są wiadomości. Jeśli puste, używa domyślnego ustawienia języka."
     },
     "prefs_OptionText_translate_exclude_lang": {
-        "message": "Wyklucz języki",
-        "description": ""
+        "message": "Wyklucz języki"
     },
     "prefs_OptionText_translate_exclude_lang_Info": {
-        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it) do pominięcia przy automatycznym tłumaczeniu. Jeśli wiadomość jest w jednym z tych języków, nie zostanie przetłumaczona automatycznie lub przycisk ręczny nie będzie pokazany.",
-        "description": ""
+        "message": "Rozdzielana przecinkami lista kodów języków (np. en, fr, it) do pominięcia przy automatycznym tłumaczeniu. Jeśli wiadomość jest w jednym z tych języków, nie zostanie przetłumaczona automatycznie lub przycisk ręczny nie będzie pokazany."
     },
     "prefs_OptionText_Translate_main_prompt": {
-        "message": "Polecenie opisujące zadanie tłumaczenia:",
-        "description": ""
+        "message": "Polecenie opisujące zadanie tłumaczenia:"
     },
     "translate_generating": {
-        "message": "Tłumaczenie...",
-        "description": ""
+        "message": "Tłumaczenie..."
     },
     "translate_click_to_generate": {
-        "message": "Kliknij tutaj, aby przetłumaczyć tę wiadomość",
-        "description": ""
+        "message": "Kliknij tutaj, aby przetłumaczyć tę wiadomość"
     },
     "get_ai_translation": {
-        "message": "Tłumaczenie AI",
-        "description": ""
+        "message": "Tłumaczenie AI"
     },
     "translate_chatgpt_web_not_supported": {
-        "message": "Automatyczne tłumaczenie wymaga połączenia opartego na API. Skonfiguruj połączenie API w ustawieniach ThunderAI.",
-        "description": ""
+        "message": "Automatyczne tłumaczenie wymaga połączenia opartego na API. Skonfiguruj połączenie API w ustawieniach ThunderAI."
     },
     "translate_refresh": {
-        "message": "Odśwież tłumaczenie",
-        "description": ""
+        "message": "Odśwież tłumaczenie"
     },
     "translate_delete": {
-        "message": "Usuń tłumaczenie",
-        "description": ""
+        "message": "Usuń tłumaczenie"
     },
     "translate_banner_title": {
-        "message": "Tłumaczenie AI",
-        "description": ""
+        "message": "Tłumaczenie AI"
     },
     "translate_error": {
-        "message": "Tłumaczenie nie powiodło się.",
-        "description": ""
+        "message": "Tłumaczenie nie powiodło się."
     },
     "translate_no_language_configured": {
-        "message": "Język tłumaczenia nie jest skonfigurowany. Ustaw język w ustawieniach tłumaczenia lub ustaw domyślny język w ustawieniach ogólnych.",
-        "description": ""
+        "message": "Język tłumaczenia nie jest skonfigurowany. Ustaw język w ustawieniach tłumaczenia lub ustaw domyślny język w ustawieniach ogólnych."
     },
     "translate_skipped": {
         "message": "Pominięto tłumaczenie: język wykluczony lub identyczny z docelowym.",
         "description": "Shown in the translation banner when the email language matches the excluded or target language"
     },
     "antispam_by": {
-        "message": "Antyspam od",
-        "description": ""
+        "message": "Antyspam od"
     },
     "spam_badge_tooltip": {
         "message": "Ocena spamu — Kliknij, aby zobaczyć wyjaśnienie",
         "description": "Tooltip shown on the spam score badge in the toolbar"
     },
     "summary_by": {
-        "message": "Podsumowanie od",
-        "description": ""
+        "message": "Podsumowanie od"
     },
     "translate_by": {
-        "message": "Tłumaczenie od",
-        "description": ""
+        "message": "Tłumaczenie od"
     },
     "prefs_THStats_1": {
-        "message": "Czy chcesz piękne statystyki swoich e-maili?",
-        "description": ""
+        "message": "Czy chcesz piękne statystyki swoich e-maili?"
     },
     "prefs_THStats_2": {
-        "message": "Wypróbuj ThunderStats!",
-        "description": ""
+        "message": "Wypróbuj ThunderStats!"
     },
     "prefs_OptionText_chatgpt_win_pos_text": {
-        "message": "Pozycja okna czatu AI",
-        "description": ""
+        "message": "Pozycja okna czatu AI"
     },
     "prefs_OptionText_chatgpt_win_top": {
-        "message": "Góra",
-        "description": ""
+        "message": "Góra"
     },
     "prefs_OptionText_chatgpt_win_left": {
-        "message": "Lewo",
-        "description": ""
+        "message": "Lewo"
     },
     "prefs_chatgpt_win_save_position": {
-        "message": "Automatycznie zapisuj pozycję okna przy użyciu przycisku zamykania.",
-        "description": ""
+        "message": "Automatycznie zapisuj pozycję okna przy użyciu przycisku zamykania."
     },
     "prefs_chatgpt_win_position_info": {
-        "message": "Pozostaw puste, aby użyć pozycji domyślnej.",
-        "description": ""
+        "message": "Pozostaw puste, aby użyć pozycji domyślnej."
     },
     "prefs_OptionText_action_auto_batch": {
-        "message": "Gdy wiadomość zostanie odebrana",
-        "description": ""
+        "message": "Gdy wiadomość zostanie odebrana"
     },
     "placeholder_string": {
-        "message": "Symbol zastępczy",
-        "description": ""
+        "message": "Symbol zastępczy"
     },
     "menu_order_title": {
         "message": "Kolejność menu",
@@ -2448,14 +2216,6 @@
     "prefs_advanced_options": {
         "message": "Opcje zaawansowane",
         "description": "Label of the app-level advanced options disclosure on the options page"
-    },
-    "prefs_conn_show_advanced": {
-        "message": "Pokaż opcje zaawansowane",
-        "description": "Label of the per-connection advanced options disclosure button when collapsed"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Ukryj opcje zaawansowane",
-        "description": "Label of the per-connection advanced options disclosure button when expanded"
     },
     "prefs_privacy_more_info": {
         "message": "Kliknij tutaj, aby uzyskać więcej informacji o prywatności"
