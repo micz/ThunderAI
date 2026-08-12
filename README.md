@@ -100,7 +100,7 @@ Are you using this addon in your Thunderbird?
 ## Attributions
 
 ### Translations
-- Brazilian Portuguese - Português Brasileiro (pt-br): Bruno Pereira de Souza <img src="https://micz.it/weblate/thunderai/pt-br.svg">
+- Brazilian Portuguese - Português Brasileiro (pt-br): Bruno Pereira de Souza, Generated automatically, [Bruno Scatolin](https://github.com/Brusca) <img src="https://micz.it/weblate/thunderai/pt-br.svg">
 - Chinese (Simplified) - Jiǎntǐ Zhōngwén (简体中文) (zh_Hans): [jeklau](https://github.com/jeklau), [Min9X1n](https://github.com/Min9X1n) <img src="https://micz.it/weblate/thunderai/zh_Hans.svg">
 - Chinese (Traditional) - Fántǐ Zhōngwén (繁體中文) (zh_Hant): [evez](https://github.com/evez) <img src="https://micz.it/weblate/thunderai/zh_Hant.svg">
 - Croatian - Hrvatski (hr): Petar Jedvaj <img src="https://micz.it/weblate/thunderai/hr.svg">
@@ -112,7 +112,7 @@ Are you using this addon in your Thunderbird?
 - Indonesian - Bahasa Indonesia (id): [Arif Budiman](https://github.com/arifpedia) <img src="https://micz.it/weblate/thunderai/id.svg">
 - Italian - Italiano (it): [Mic](https://github.com/micz) <img src="https://micz.it/weblate/thunderai/it.svg">
 - Japanese - Nihongo (日本語) (ja): [Taichi Ito](https://github.com/watya1) <img src="https://micz.it/weblate/thunderai/ja.svg">
-- Polish - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak), [Michał Stankiewicz](https://github.com/stankiewiczmichal), [LukaszJal](https://github.com/LukaszJal) <img src="https://micz.it/weblate/thunderai/pl.svg">
+- Polish - Polski (pl): [neexpl](https://github.com/neexpl), [makkacprzak](https://github.com/makkacprzak), [Michał Stankiewicz](https://github.com/stankiewiczmichal), [LukaszJal](https://github.com/LukaszJal), Generated automatically <img src="https://micz.it/weblate/thunderai/pl.svg">
 - Português - Portuguese (pt): [Silvério Santos](https://github.com/SantosSi), [Afonso Nóbrega](https://hosted.weblate.org/user/nobrega8/)</a>, [Antonio Lucena de Faria](https://hosted.weblate.org/user/alucenafaria/), <img src="https://micz.it/weblate/thunderai/pt.svg">
 - Russian - Russkiy (русский) (ru): [Maksim](https://hosted.weblate.org/user/law820314/) <img src="https://micz.it/weblate/thunderai/ru.svg">
 - Spanish - Español (es): [Gerardo Sobarzo](https://hosted.weblate.org/user/gerardo.sobarzo/), [Andrés Rendón Hernández](https://hosted.weblate.org/user/arendon/), [Erick Limon](https://hosted.weblate.org/user/ErickLimonG/) <img src="https://micz.it/weblate/thunderai/es.svg">

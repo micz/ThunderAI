@@ -59,6 +59,16 @@ export function hasEmptyValueOption(elementId = '') {
   return selects_with_empty_option_suffixes.some((suffix) => elementId === suffix || elementId.endsWith(`_${suffix}`));
 }
 
+// Connection-type selects have a *closed* catalogue: their options are built by
+// populateConnectionTypeOptions() and nothing else is valid. Model selects are the
+// opposite — a saved model may legitimately be missing from the fetched list, so
+// restoreOptions() synthesizes an option for it. Applying that fallback to a
+// connection select is what let a stale `chatgpt_web` appear in the per-prompt
+// selects, which deliberately omit it.
+export function isClosedCatalogueSelect(elementId = '') {
+  return elementId === 'connection_type' || elementId.endsWith('_connection_type');
+}
+
 export async function injectConnectionUI({
     afterTrId = '',
     selectId = '',
@@ -835,6 +845,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_chatgpt_model);
+      autoSelectSingleModel(select_chatgpt_model);
       document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
@@ -879,6 +890,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_google_gemini_model);
+      autoSelectSingleModel(select_google_gemini_model);
       document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
@@ -936,6 +948,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_ollama_model);
+      autoSelectSingleModel(select_ollama_model);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -986,6 +999,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_openai_comp_model);
+      autoSelectSingleModel(select_openai_comp_model);
       document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1042,6 +1056,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_anthropic_model);
+      autoSelectSingleModel(select_anthropic_model);
       document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1129,6 +1144,7 @@ export async function injectConnectionUI({
         create: false,
         maxOptions: null,
         maxItems: 1,
+        closeAfterSelect: true,
         sortField: {
           field: "text",
           direction: "asc"
@@ -1136,9 +1152,12 @@ export async function injectConnectionUI({
       });
       ts.on('change', function() {
         setTomSelectBorder(this);
+        // Drop the focus right after the selection, so the search input is
+        // hidden and the control goes back to its compact state immediately.
+        this.blur();
       });
       if (el.value) {
-        ts.setValue(el.value);
+        ts.setValue(el.value, true);   // silent, the border is set right below
       }
       setTomSelectBorder(ts);
     }
@@ -1227,11 +1246,41 @@ export async function initializeSpecificIntegrationUI({
   // Check global connection type: when the global connection cannot run this
   // prompt (ChatGPT Web) or no connection has been chosen yet, a per-prompt
   // specific integration is mandatory.
+  //
+  // The flag is only *forced in the UI* here, never persisted yet: it is worth
+  // nothing on its own, since a specific integration without a connection type
+  // resolves back to the unusable global one (see hasSpecificIntegration()).
+  // It is written to storage by _persistMandatoryIntegration() below, together
+  // with the first usable connection the user picks — otherwise the feature would
+  // read as enabled while still having nothing to run against, and would silently
+  // disappear from the menus on the next reload.
   let globalPrefs = await browser.storage.sync.get({ connection_type: prefs_default.connection_type });
-  if ((globalPrefs.connection_type === 'chatgpt_web') || hasNoConnectionSelected(globalPrefs.connection_type)) {
+  const mandatory_integration = (globalPrefs.connection_type === 'chatgpt_web')
+      || hasNoConnectionSelected(globalPrefs.connection_type);
+  if (mandatory_integration) {
       use_specific_integration_el.checked = true;
-      use_specific_integration_el.disabled = true;
+      // Kept enabled: a disabled checkbox is excluded from the page's own
+      // saveOptions() sweep, which is one of the reasons the flag never reached
+      // storage. Making it read-only conveys "mandatory" without that side effect.
+      use_specific_integration_el.disabled = false;
+      use_specific_integration_el.dataset.mandatory = 'true';
+      // Read-only semantics for a checkbox: the `readonly` attribute does nothing,
+      // so swallow the interaction instead.
+      use_specific_integration_el.addEventListener('click', (event) => {
+          if (use_specific_integration_el.dataset.mandatory === 'true') event.preventDefault();
+      });
   }
+
+  // Persist `use_specific_integration` only once the pair is actually meaningful,
+  // i.e. once a usable connection type has been chosen.
+  const _persistMandatoryIntegration = async () => {
+      if (!mandatory_integration) return;
+      if (hasNoConnectionSelected(conntype_el.value)) return;
+      const stored = await browser.storage.sync.get({ [use_specific_integration_id]: false });
+      if (stored[use_specific_integration_id]) return;
+      await browser.storage.sync.set({ [use_specific_integration_id]: true });
+      taLog.log(`Specific integration is mandatory for ${prefix}: enabled it alongside ${conntype_el.value}`);
+  };
 
   // Event Listener for Checkbox
   use_specific_integration_el.addEventListener('change', async (event) => {
@@ -1247,6 +1296,9 @@ export async function initializeSpecificIntegrationUI({
   conntype_el.addEventListener('change', async () => {
       _updateVisibility(use_specific_integration_el.checked);
       if (use_specific_integration_el.checked) await _updatePrompt();
+      // A usable connection may have just been chosen: the mandatory flag becomes
+      // meaningful now, so persist it.
+      await _persistMandatoryIntegration();
   });
 
   // The connection type select already has its own dedicated 'change' listener
@@ -1265,7 +1317,10 @@ export async function initializeSpecificIntegrationUI({
   if (use_specific_integration_el.checked) {
       await _updatePrompt();
   }
-  
+  // Covers the case where a usable connection type was already stored from a previous
+  // visit while the flag itself never got persisted.
+  await _persistMandatoryIntegration();
+
   updateWarnings(model_prefix);
 }
 
@@ -1364,6 +1419,22 @@ function syncTomSelect(element) {
   }
 }
 
+// If no model is currently selected and the list contains exactly one real
+// (non-empty) option, select it automatically and persist the choice.
+function autoSelectSingleModel(element) {
+  if (!element) return;
+  if (element.value) return;   // an actual model is already selected
+  const realOptions = Array.from(element.options).filter(option => option.value !== '');
+  if (realOptions.length !== 1) return;
+  element.value = realOptions[0].value;
+  syncTomSelect(element);
+  if (element.tomselect) {
+    element.tomselect.setValue(element.value, true);
+    setTomSelectBorder(element.tomselect);
+  }
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 function toggleTomSelectDisabled(element, disabled) {
   element.disabled = disabled;
   if (element.tomselect) {
@@ -1416,7 +1487,10 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
     conntype_select.appendChild(optionEl);
   }
 
-  if (options.some(o => o.value === prevValue)) {
+  // Validate against the options actually rendered, not the full catalogue: on the
+  // per-prompt selects chatgpt_web has no <option>, so accepting it here would leave
+  // the control showing a value it cannot represent.
+  if (options.some(o => o.value === prevValue && !(no_chatgpt_web && o.value === 'chatgpt_web'))) {
     conntype_select.value = prevValue;
   } else {
     conntype_select.value = "";

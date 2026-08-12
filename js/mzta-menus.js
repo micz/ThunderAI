@@ -36,7 +36,7 @@ import {
     cleanupNewlines,
     checkIfTagLabelExists,
     getConnectionType,
-    hasNoConnectionSelected,
+    isApiUsableConnection,
     getContextMenuIcon,
  } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
@@ -53,6 +53,18 @@ export class mzta_Menus {
     menu_context_display = null;
     menu_listeners = {};
     logger = null;
+
+    // Menu rebuilds must not interleave: loadContextMenus() calls browser.menus.removeAll()
+    // before recreating every item, so a second rebuild starting mid-flight would wipe the
+    // items the first one just created, or fail on duplicate ids. The debounce in
+    // mzta-background.js only covers the storage.onChanged path — the internal and external
+    // reload_menus messages are not synchronized against it, and options pages routinely
+    // both write storage and send the message.
+    // Rebuilds are coalesced rather than queued: rebuilding is idempotent and only the final
+    // state is observable, so N overlapping triggers collapse into the running rebuild plus
+    // a single trailing rerun, instead of N teardown/rebuild cycles each flickering the menus.
+    _rebuildInFlight = null;
+    _rebuildPending = null;
 
     rootMenu = [
     //{ id: 'ItemC', act: (info, tab) => { console.log('ItemC', info, tab, info.menuItemId); alert('ItemC') } },
@@ -75,7 +87,9 @@ export class mzta_Menus {
     async initialize(also_special = []) {    // also_special is an array of active special prompts ids
         this.allPrompts = [];
         this.rootMenu = [];
-        this.shortcutMenu = [];
+        // shortcutMenu is deliberately not cleared here: loadShortcutMenu() replaces it
+        // wholesale at the end of the rebuild, so synchronous readers keep seeing the
+        // previous complete menu instead of an empty one for the whole rebuild.
         this.menu_listeners = {};
         this.allPrompts = await getPrompts(true,also_special);
         this.allPrompts.forEach((prompt) => {
@@ -84,11 +98,10 @@ export class mzta_Menus {
     }
 
     async reload(also_special = []) {
-        // await browser.menus.removeAll().catch(error => {
-        //         console.error("[ThunderAI] ERROR removing the menus: ", error);
-        //     });
-        this.removeClickListener();
-        this.loadMenus(also_special);
+        // removeClickListener() lives inside _loadMenusUnguarded() instead of here, so that
+        // it runs under the rebuild guard and cannot deregister the listener belonging to a
+        // rebuild already in flight.
+        await this.loadMenus(also_special);
     }
 
     addAction = (curr_prompt) => {
@@ -233,9 +246,10 @@ export class mzta_Menus {
                             add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
                             default_chatgpt_lang: prefs_default.default_chatgpt_lang,
                             do_debug: prefs_default.do_debug,
+                            ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'add_tags');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | AddTags] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -294,7 +308,7 @@ export class mzta_Menus {
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
                         });
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_calendar_event');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetCalendarEvent] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -382,7 +396,7 @@ export class mzta_Menus {
                             calendar_timezone: prefs_default.calendar_timezone,
                             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])});
                         let def_conntype = getConnectionType(prefs_at, curr_prompt, 'get_task');
-                        if(hasNoConnectionSelected(def_conntype)||(def_conntype === 'chatgpt_web')){
+                        if(!isApiUsableConnection(def_conntype)){
                             console.error("[ThunderAI | GetTask] Invalid connection type: " + def_conntype);
                             taWorkingStatus.stopWorking();
                             return {ok:'0'};
@@ -489,13 +503,17 @@ export class mzta_Menus {
     };
 
     loadShortcutMenu() {
-        this.shortcutMenu = [];
+        // Built into a local array and swapped in at the end: preparePopupMenu() in the
+        // background reads shortcutMenu synchronously, so mutating it in place would let a
+        // shortcut pressed mid-rebuild render a half-built (or empty) popup.
+        const newShortcutMenu = [];
         this.allPrompts.forEach((prompt) => {
-            this.addShortcutMenu(prompt);
+            this.addShortcutMenu(prompt, newShortcutMenu);
         });
+        this.shortcutMenu = newShortcutMenu;
     }
 
-    addShortcutMenu(prompt) {
+    addShortcutMenu(prompt, target = this.shortcutMenu) {
         let curr_menu_entry = {
             id: prompt.id,
             label: i18nConditionalGet(prompt.name),
@@ -507,7 +525,7 @@ export class mzta_Menus {
             position_context: prompt.position_context,
             custom_icon: getContextMenuIcon(prompt),   // '' when the prompt has no icon
         };
-        this.shortcutMenu.push(curr_menu_entry);
+        target.push(curr_menu_entry);
     }
 
     async loadContextMenus() {
@@ -562,13 +580,39 @@ export class mzta_Menus {
         this.logger.log("Context menus loaded: " + contextPrompts.length + " items");
     }
 
-    async loadMenus(also_special = []) {
+    async _loadMenusUnguarded(also_special = []) {
+        this.removeClickListener();
         await this.initialize(also_special);
         await this.addMenu(this.rootMenu);
         this.addClickListener();
         this.loadShortcutMenu();
         await this.loadContextMenus();
         this.logger.log("Menus loaded");
+    }
+
+    async loadMenus(also_special = []) {
+        // A rebuild is already running: record the newest arguments as the trailing rerun
+        // and wait for it. Every caller arriving during the same window shares that one rerun.
+        if (this._rebuildInFlight) {
+            this._rebuildPending = also_special;
+            return this._rebuildInFlight;
+        }
+        this._rebuildInFlight = (async () => {
+            try {
+                let args = also_special;
+                do {
+                    this._rebuildPending = null;
+                    await this._loadMenusUnguarded(args);
+                    // Re-read after the await: anything that arrived while we were rebuilding
+                    // used prompt data that is now stale, so one more pass is needed to converge.
+                    args = this._rebuildPending;
+                } while (this._rebuildPending !== null);
+            } finally {
+                this._rebuildInFlight = null;
+                this._rebuildPending = null;
+            }
+        })();
+        return this._rebuildInFlight;
     }
 
     listener(info, tab) {

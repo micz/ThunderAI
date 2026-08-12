@@ -959,12 +959,6 @@
     "CORS_alternative_1": {
         "message": "¿Problemas al configurar CORS?"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Redactando en texto plano"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Marca esta opción si estás redactando los correos electrónicos en formato de texto plano."
-    },
     "Replace_No_Selected_Text": {
         "message": "¿Ningún texto seleccionado, deseas insertar la respuesta de la IA al inicio del correo electrónico?"
     },

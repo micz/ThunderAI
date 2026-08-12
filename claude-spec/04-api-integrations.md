@@ -197,7 +197,7 @@ Features in `special_prompts_with_integration` (`add_tags`, `spamfilter`, `summa
 
 For the override to take effect at runtime, the caller **must load that prompt object and pass it as `config`** to `mzta_specialCommand` — and pass the same prompt to `getConnectionType(prefs, prompt, '<feature>')`. `initWorker()` only sets `use_specific_api = true` (and therefore reads the prefixed host/model/etc. from `config`) when `config.api_type` is non-empty; otherwise it falls back to the **global** provider prefs. Passing `config: {}` silently ignores the override even when the connection *type* matches.
 
-Helpers: `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern.
+Helpers: `getAddTagsPrompt()`, `getSpamFilterPrompt()`, `getSummarizePrompt()`, `getTranslatePrompt()` in `js/mzta-prompts.js` (or `loadPrompt(id)`). The execution paths in `mzta-background.js` (`_generateSummaryForMessage`, `_generateTranslationForMessage`, spamfilter, add_tags) follow this pattern. Special-prompt execution paths must read their prompt object from these helpers (which go through `getSpecialPrompts()`), never from `menus.allPrompts` — that array is filtered by `getActiveSpecialPromptsIDs()` and can omit a feature's prompt (e.g. when no global connection is set or the global connection is ChatGPT Web without a per-feature API override) even while the feature's auto-processing is enabled, which would yield `curr_prompt === undefined`.
 
 ## Web Worker Pattern
 
@@ -222,6 +222,30 @@ This keeps API calls off the main thread and avoids blocking the Thunderbird UI.
 - **Timeout:** `sendPrompt()` aborts the request if the worker never replies (no `tokensDone`/`error`). The duration comes from the `special_command_timeout` pref (default `120000` ms), with a hardcoded `SPECIAL_COMMAND_TIMEOUT_DEFAULT` fallback. The pref is configurable in the main options page (always shown — see `claude-spec/05-options.md`). On timeout the promise rejects with a clear error and the worker is terminated by the same `finally`.
 
 `processEmails()` wraps its whole body in `try/finally` so `taWorkingStatus.stopWorking()` always runs, and wraps each message in `try/catch`+`continue` so one failing message does not abort the batch.
+
+### Error contract between `js/api/*` and workers
+
+The provider classes in `js/api/` return **two different shapes** on failure, and workers must branch on `is_exception` before formatting the message:
+
+- **Network-level exception** (server unreachable, DNS failure, CORS rejection): the `catch` block in `fetchResponse()` does **not** return a `Response`. It returns a plain object `{ok: false, is_exception: true, error}` with **no `status` and no `statusText`**, and `error` already includes the provider name (e.g. `"Ollama API request failed: TypeError: NetworkError…"`).
+- **HTTP error** (404, 401, 500…): a real `Response` is returned, so `status`, `statusText` and the JSON body are all available.
+
+Reading `response.status` / `response.statusText` in the exception branch yields a literal `"undefined undefined"` in the user-visible error, and re-prefixing the i18n provider string there duplicates the provider name. All five workers therefore build a single `error_text` variable:
+
+```js
+if(response.is_exception === true){
+    error_message = response.error;
+    error_text = error_message;              // already prefixed; no status/statusText exist
+}else{
+    // …extract error_message / errorDetail from the JSON body…
+    error_text = i18nStrings["<provider>_api_request_failed"] + ": " + response.status + " " + response.statusText
+        + ", Detail: " + error_message + (errorDetail ? " " + errorDetail : "");
+}
+postMessage({ type: 'error', payload: error_text });
+throw new Error("[ThunderAI] <Provider> API request failed: " + error_text);
+```
+
+The `postMessage` payload and the `throw` reuse the same `error_text` so the UI panel and the console message cannot drift apart.
 
 ### Batch cancellation (user-triggered stop)
 
@@ -261,3 +285,4 @@ API calls require host permissions. These are declared as `optional_permissions`
 6. Add the new `connection_type` case to the dispatch logic in `mzta-background.js`
 7. Add required host permissions to `manifest.json` optional_permissions
 8. Add i18n strings to `_locales/en/messages.json`
+9. Branch on `is_exception` in the worker's error block — see [Error contract between `js/api/*` and workers](#error-contract-between-jsapi-and-workers) above

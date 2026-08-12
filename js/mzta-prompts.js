@@ -779,6 +779,10 @@ export async function getSpamFilterPrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_spamfilter');
 }
 
+export async function getAddTagsPrompt(){
+    return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_add_tags');
+}
+
 export async function getSummarizePrompt(){
     return (await getSpecialPrompts()).find(prompt => prompt.id == 'prompt_summarize');
 }

@@ -28,7 +28,7 @@
         "message": "Classificar"
     },
     "prompt_translate_this": {
-        "message": "Traduza isso"
+        "message": "Traduzir"
     },
     "prompt_this": {
         "message": "Prompt isso"
@@ -106,7 +106,7 @@
         "message": "Ativar o visualizador de comparação de texto"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "O visualizador de comparação de texto pode ser selecionado quando a ação está definida como \"Substituir texto\"."
+        "message": "Disponível quando a ação está definida como \"Substituir texto\"."
     },
     "customPrompts_form_required_fields": {
         "message": "Campos obrigatórios"
@@ -650,7 +650,7 @@
         "message": "Se marcado, um item será incluído no menu para aplicar tags aos e-mails."
     },
     "prompt_add_tags": {
-        "message": "Adicione tags a este e-mail"
+        "message": "Adicionar tags"
     },
     "prompt_add_tags_full_text": {
         "message": "Analise o seguinte texto de e-mail e gere um array JSON de tags que resumam seu conteúdo. Use temas, tópicos principais e descritores relevantes como tags. Certifique-se de que as tags sejam concisas e pertinentes ao conteúdo do e-mail.\nTexto do e-mail: {%mail_text_body%}\nConsidere os seguintes detalhes como contexto:\n- Remetente: {%author%}\n- Destinatários: {%recipients%}\n- Lista CC: {%cc_list%}\n- Assunto do e-mail: {%mail_subject%}\nBaseie-se no texto do e-mail e no contexto para gerar as tags, ignorando informações desnecessárias ou detalhes triviais.\nGere uma resposta somente no formato JSON. A saída deve ser apenas um array JSON de tags, sem nenhum comentário ou texto adicional. Aqui está um exemplo do formato JSON a ser usado:\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -914,7 +914,7 @@
         "message": "O separador entre os e-mails:"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Para usar o recurso de eventos de calendário, instale o addon ThunderAI Sparks."
+        "message": "Para usar o recurso de eventos de calendário e tarefas, instale o addon ThunderAI Sparks."
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Para usar os recursos de evento de calendário e tarefa, instale uma versão atualizada do complemento ThunderAI Sparks."
@@ -962,10 +962,10 @@
         "message": "Escolha para qual conta ativar este recurso na parte inferior desta página."
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Forçar tags existentes ao usar a marcação automática ou o menu de contexto"
+        "message": "Forçar tags existentes"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "Se marcado, a IA adicionará apenas tags existentes aos e-mails recém-recebidos e não criará novas tags."
+        "message": "Se marcado, a IA adicionará apenas tags existentes e não criará novas tags."
     },
     "prefs_OptionText_add_tags_auto_uselist": {
         "message": "Usar apenas estas tags"
@@ -1040,7 +1040,7 @@
         "message": "Texto atual do prompt"
     },
     "prompt_spamfilter": {
-        "message": "Detectar e-mails de spam"
+        "message": "Procurar por spam"
     },
     "prompt_spamfilter_full_text": {
         "message": "Analise o seguinte e-mail e determine se é spam ou não. Considere fatores como palavras-chave suspeitas, linguagem promocional excessiva, linhas de assunto enganosas, solicitações de informações pessoais e endereços de remetentes incomuns.\nForneça um valor de 0 (não é spam) a 100 (spam) e uma explicação de no máximo 10 palavras.\nEm caso de ausência de dados da mensagem, defina o valor como 0 (não é spam) e informe o motivo.\nGere uma resposta apenas no formato JSON. Não inclua nenhum texto ou explicação adicional; forneça apenas o JSON. Aqui está o formato a ser usado:\n{\n\"explanation\": \"Breve explicação do seu raciocínio\",\n\"spamValue\": <inteiro de 0 a 100>\n}\nAqui estão as informações do e-mail:\nRemetente: \"{%author%}\"\nAssunto: \"{%mail_subject%}\"\nCorpo HTML: \"{%mail_html_body%}\""
@@ -1085,7 +1085,7 @@
         "message": "O limite de spam está em zero! Você marcará todos os e-mails como spam!"
     },
     "spamfilter_no_reports": {
-        "message": "Nenhuma mensagem foi analisada para spam ainda. Aqui você encontrará uma lista dos últimos 100 relatórios de spam apenas para a sessão atual."
+        "message": "Nenhuma mensagem foi analisada para spam ainda. Aqui você encontrará uma lista dos últimos 100 relatórios de spam."
     },
     "SpamFilter_skip_addresses_title": {
         "message": "Lista de exclusão de endereços de e-mail"
@@ -1200,12 +1200,6 @@
     },
     "CORS_localhost_warn": {
         "message": "Se você está usando localhost ou 127.0.0.1 porque o servidor de IA está hospedado no seu PC, a permissão <all_urls> é necessária."
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Compondo em texto simples"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Marque esta opção se você está compondo os e-mails em formato de texto simples."
     },
     "Replace_No_Selected_Text": {
         "message": "Nenhum texto selecionado, gostaria de inserir a resposta da IA no início do e-mail?"
@@ -1893,12 +1887,6 @@
     "prefs_advanced_options": {
         "message": "Opções avançadas"
     },
-    "prefs_conn_show_advanced": {
-        "message": "Mostrar opções avançadas"
-    },
-    "prefs_conn_hide_advanced": {
-        "message": "Ocultar opções avançadas"
-    },
     "prefs_privacy_more_info": {
         "message": "Clique aqui para mais informações sobre privacidade"
     },
@@ -2161,5 +2149,230 @@
     },
     "onboarding_footer_3": {
         "message": "Você está gostando do ThunderAI?"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Palavras"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Frases"
+    },
+    "apiwebchat_picker_title": {
+        "message": "Checar as alterações"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Alterar ações do seletor"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ de $TOTAL$ alterações foram aceitas",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Todas as $TOTAL$ alterações foram aceitas",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Alteração $CURRENT$ de $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ alterações",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Alterações aceitas"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Mais ações"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Editar manualmente"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Voltar para alterações"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Texto alterado"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Você está alterando o texto manualmente. Voltando as alterações vai comparar o que você escreveu com o texto original novamente e todas as escolhas serão perdidas."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Comparar com"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Palavras"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Frases"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Aceitar tudo"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Rejeitar tudo"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Alteração anterior"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Próxima alteração"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "A resposta é idêntica à original: não há nada para revisar."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Os dois textos não puderam sem comparados. A resposta está sem alteração."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Texto original mantido: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Texto original descartado: $TEXT$. Ativar para manter esse texto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Texto sugerido: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Texto sugerido descartado: $TEXT$. Ativar para manter o texto.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Sem nenhum texto aqui: essa parte foi mantida fora. Ativar a outra versão para manter esse texto."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Nenhum texto aqui. Ativar para ignorar essa parte."
+    },
+    "apiwebchat_copy": {
+        "message": "Copiar"
+    },
+    "apiwebchat_copied": {
+        "message": "Copiado"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Cópia falhou"
+    },
+    "apiwebchat_status_error": {
+        "message": "Erro"
+    },
+    "apiwebchat_show_options": {
+        "message": "Mostrar opções"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Responder ações"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Rolar para o último"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Resumo do raciocínio"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Solicite à API um resumo do raciocínio do modelo, exibido no chat como um bloco expansível. Apenas modelos de raciocínio recentes oferecem suporte a isso, como o gpt-5, o3 e o4-mini; modelos mais antigos, como o o1-pro e o o3-mini, realizam o raciocínio internamente, mas não disponibilizam um resumo, fazendo com que o bloco permaneça oculto. Mantenha a opção desativada para modelos sem suporte a raciocínio."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Esforço de raciocínio"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Quanto esforço o modelo dedica ao raciocínio antes de responder. Valores mais baixos resultam em respostas mais rápidas e econômicas; valores mais altos geram respostas mais detalhadas. Mantenha a configuração padrão da API para deixar a decisão a cargo da OpenAI. Esse parâmetro é ignorado por modelos que não oferecem suporte a raciocínio."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Desabilitado"
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "API padrão"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Auto"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Detalhado"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Mínimo"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Baixo"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Médio"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Alto"
+    },
+    "menu_order_reset_all": {
+        "message": "Resetar tudo"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Restaura a ordem a visibilidade e os ícones padrão de todos os itens de menu. Pressione \"Salvar tudo\" para aplicar."
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "O prompt selecionado também aparece nesta lista"
+    },
+    "menu_order_icon_default": {
+        "message": "Ícone padrão"
+    },
+    "editor_placeholder_unknown": {
+        "message": "Placeholder desconhecido ou não disponível para este tipo de prompt"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Placeholder incorreto: faltando o fechamento %}"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Comparar alterações por"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Como a ferramenta de seleção de alterações compara o texto original com a resposta. A opção \"Palavras\" é adequada para corrigir ortografia e gramática; a opção \"Frases\" facilita a leitura quando a resposta reescreve frases inteiras. Observe que, em um texto composto por uma única frase, a opção \"Frases\" exibe o texto todo como uma única alteração. Você também pode alternar entre as duas opções ao revisar as alterações."
     }
 }

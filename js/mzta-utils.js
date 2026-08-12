@@ -280,23 +280,67 @@ export async function getMailBody(fullMessage, messageId) {
   return {text, html};
 }
 
+// Is this compose window composing in plain text?
+//
+// The compose format is a property of the single window, which Thunderbird
+// reports authoritatively — it is deliberately NOT a global preference, because
+// the same user can have one identity set to plain text and another to HTML.
+//
+// The try/catch is not gratuitous defensiveness: getComposeDetails rejects on a
+// tab that is not (or no longer) a compose tab, and the tabId reaching here
+// arrives by message from the webchat window, so it can be stale.
+export async function isPlainTextCompose(tabId){
+  try {
+    let composeDetails = await messenger.compose.getComposeDetails(tabId);
+    return composeDetails.isPlainText === true;
+  } catch (e) {
+    // HTML is the historical assumption.
+    return false;
+  }
+}
+
+// On a plain text compose window the body lives in `plainTextBody`, not `body`.
+// Writing `body` there makes Thunderbird convert the HTML down to text, which
+// collapses every bare \n as HTML whitespace and loses the line structure —
+// so each of the helpers below has to pick the field that matches the window.
 export async function reloadBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    // The trailing space is what makes the value differ from the current one,
+    // which is what forces the editor to re-read it.
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: composeDetails.plainTextBody + " "});
+    return;
+  }
   let originalHtmlBody = composeDetails.body + " ";
   await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
 }
 
 export async function getOriginalBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    return composeDetails.plainTextBody;
+  }
   return composeDetails.body;
 }
 
-export async function setBody(tabId, fullHtmlBody){
-  await messenger.compose.setComposeDetails(tabId, {body: fullHtmlBody});
+export async function setBody(tabId, fullBody, isPlainText = false){
+  if(isPlainText){
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullBody});
+    return;
+  }
+  await messenger.compose.setComposeDetails(tabId, {body: fullBody});
 }
 
 export async function replaceBody(tabId, replyHtml) {
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
+  if(composeDetails.isPlainText){
+    // Plain text: no DOM to splice into, so the reply is prepended to the
+    // existing text (quote and signature included) with a blank line between.
+    let originalTextBody = composeDetails.plainTextBody ?? "";
+    let fullTextBody = stripHtmlKeepLines(replyHtml) + (originalTextBody.trim() === "" ? "" : "\n\n" + originalTextBody);
+    await messenger.compose.setComposeDetails(tabId, {plainTextBody: fullTextBody});
+    return;
+  }
   let originalHtmlBody = composeDetails.body;
   //console.log('originalHtmlBody: ' + originalHtmlBody);
   let fullBody = insertHtml(replyHtml, originalHtmlBody);
@@ -817,50 +861,46 @@ export function getAPIsInitMessageString(args = {}) {
   return output;
 }
 
+// Special prompts are gated on the *effective* connection of each feature, not on the
+// global one: a feature pointing at its own API integration stays usable even when the
+// global connection is ChatGPT Web or still unset. `effective_conn` carries one already
+// resolved connection type per feature prefix (see getConnectionType(prefs, null, prefix)),
+// so this function makes the same judgement the options page makes for its feature rows.
 export function getActiveSpecialPromptsIDs(args = {}) {
   const {
     addtags = false,
-    addtags_api = false,
     get_calendar_event = false,
     get_calendar_event_from_clipboard = false,
     get_task = false,
     spamfilter = false,
     summarize = false,
     translate = false,
-    is_chatgpt_web = false,
-    no_connection = false
+    effective_conn = {}
   } = args;
   let output = [];
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs args: " + JSON.stringify(args));
-  // No AI connection chosen yet: no special prompt can work, so advertise none.
-  if (no_connection) {
-    return output;
-  }
-  if (is_chatgpt_web) {
-    if (addtags_api && addtags) {
-      output.push('prompt_add_tags');
-    }
-    return output;
-  }
-  if (addtags) {
+  const usable = (prefix) => isApiUsableConnection(effective_conn[prefix]);
+  if (addtags && usable('add_tags')) {
     output.push('prompt_add_tags');
   }
-  if (get_calendar_event) {
+  // Both calendar prompts share the get_calendar_event feature and prefix: the clipboard
+  // variant is never advertised on its own.
+  if (get_calendar_event && usable('get_calendar_event')) {
     output.push('prompt_get_calendar_event');
     if (get_calendar_event_from_clipboard) {
       output.push('prompt_get_calendar_event_from_clipboard');
     }
   }
-  if (get_task) {
+  if (get_task && usable('get_task')) {
     output.push('prompt_get_task');
   }
-  if (spamfilter) {
+  if (spamfilter && usable('spamfilter')) {
     output.push('prompt_spamfilter');
   }
-  if (summarize) {
+  if (summarize && usable('summarize')) {
     output.push('prompt_summarize');
   }
-  if (translate) {
+  if (translate && usable('translate')) {
     output.push('prompt_translate_this');
   }
   // console.log(">>>>>>>>>> getActiveSpecialPromptsIDs output: " + JSON.stringify(output));
@@ -876,6 +916,15 @@ export function hasNoConnectionSelected(connection_type){
 
 export function hasSpecificIntegration(use, conntype){
   return use && (conntype != null) && (conntype !== '');
+}
+
+// Special features need a real API: neither ChatGPT Web (no API at all) nor an unset
+// connection can drive them. Single source of truth shared by the options rows, the
+// menu gating and the execution guards, so the three can never disagree.
+// Always feed it an *effective* connection type (getConnectionType with a prefix),
+// never the global one, or per-feature integrations get ignored.
+export function isApiUsableConnection(connection_type){
+  return !hasNoConnectionSelected(connection_type) && (connection_type !== 'chatgpt_web');
 }
 
 export function extractJsonObject(inputString) {

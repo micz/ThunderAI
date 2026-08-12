@@ -1074,11 +1074,5 @@
     },
     "CORS_localhost_warn": {
         "message": "如果您使用 localhost 或 127.0.0.1，因为 AI 服务器托管在您的 PC 上，则需要 <all_urls> 权限。"
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "以纯文本编写"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "如果您以纯文本格式编写电子邮件，请选中此选项。"
     }
 }

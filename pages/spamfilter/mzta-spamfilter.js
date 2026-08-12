@@ -35,10 +35,12 @@ import {
   getAccountsList,
   isAPIKeyValue,
   normalizeStringList,
-  setTomSelectBorder
+  setTomSelectBorder,
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
@@ -58,7 +60,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (spamfilter_prompt && spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['spamfilter_connection_type'] = spamfilter_prompt.api_type;
-        
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(spamfilter_prompt.api_type)) {
+            update_prefs['spamfilter_use_specific_integration'] = true;
+        }
+
         let integration = spamfilter_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
              for (const key of Object.keys(integration_options_config[integration])) {
@@ -420,22 +433,28 @@ async function restoreOptions() {
           let default_select_value = '';
           if(element.id == 'reply_type') default_select_value = 'reply_all';
           if(element.id == 'connection_type') default_select_value = 'chatgpt_web';
-          if(element.id == 'spamfilter_connection_type') default_select_value = 'chatgpt_api';
+          // No default for spamfilter_connection_type on purpose: an unset specific
+          // integration must show a blank select, not silently preselect a provider
+          // the user never picked (the other feature pages already behave this way).
           const restoreValue = result[element.id] || default_select_value;
           // Ensure option exists before restoring
           let optionExists = Array.from(element.options).some(opt => opt.value === restoreValue);
+          // Never synthesize an option for a connection select: its catalogue is closed.
+          let canSynthesize = !isClosedCatalogueSelect(element.id);
           if (element.tomselect) {
-            if (!optionExists && restoreValue !== '') {
+            if (!optionExists && restoreValue !== '' && canSynthesize) {
               element.tomselect.addOption({ value: restoreValue, text: restoreValue });
             }
             element.tomselect.setValue(restoreValue, true);
             setTomSelectBorder(element.tomselect);
           } else {
-            if (!optionExists && restoreValue !== '') {
+            if (!optionExists && restoreValue !== '' && canSynthesize) {
               let newOption = new Option(restoreValue, restoreValue);
               element.add(newOption);
             }
             element.value = restoreValue;
+            // Either an empty stored value, or one with no matching option (a stale
+            // connection type the select no longer offers): show a blank control.
             if (element.value === '') {
               element.selectedIndex = -1;
             }
@@ -456,7 +475,12 @@ async function restoreOptions() {
       if (spamfilter_prompt.api_type && spamfilter_prompt.api_type !== '') {
           getting['spamfilter_connection_type'] = spamfilter_prompt.api_type;
       } else {
-          getting['spamfilter_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['spamfilter_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

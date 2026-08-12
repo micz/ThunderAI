@@ -371,12 +371,36 @@ snapshot with `htmlToPlainText()` — which parses the markup, decoding entities
 and turning `<br>` and block boundaries into real newlines. The older `stripHtmlTags()` regex
 is still used where the consumer wants tags gone but escapes left alone (the diff viewer).
 
-With `composing_plain_text` on, `mzta-background.js` converts that same snapshot with
-`stripHtmlKeepLines()` (`js/mzta-utils.js`) before handing it to the compose window. The line
-structure there is carried by the **tags**, not by the source newlines: the renderer emits
-`<br>\n` and `</p>\n<p>`, so each of those rules consumes the pretty-printing newline that follows
-its tag. Counting both would double every line and make a single `<br>` indistinguishable from a
-paragraph break.
+### Writing into a plain text compose window
+
+Whether the target composes in plain text is read from the window itself —
+`isPlainTextCompose(tabId)` (`js/mzta-utils.js`) wrapping `compose.getComposeDetails()`. It is
+**not** a preference: the compose format is a per-message property, so a global setting could
+never be right for a user whose identities differ. (A `composing_plain_text` pref did exactly
+that until it was removed in favour of this detection — see [#855](https://github.com/micz/ThunderAI/issues/855).)
+
+When it reports plain text, `mzta-background.js` converts the answer snapshot with
+`stripHtmlKeepLines()` (`js/mzta-utils.js`). The line structure there is carried by the
+**tags**, not by the source newlines: the renderer emits `<br>\n` and `</p>\n<p>`, so each of
+those rules consumes the pretty-printing newline that follows its tag. Counting both would
+double every line and make a single `<br>` indistinguishable from a paragraph break.
+
+**Converting is only half the job — the insertion path has to stop treating the result as
+HTML.** Three places cooperate, and all three are required:
+
+- `replaceSelectedText` (`js/mzta-compose-script.js`) inserts a **`Text` node** when
+  `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
+  fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
+  rendered every line break as a single space and the whole message arrived as one line.
+- `getOriginalBody` / `setBody` / `reloadBody` / `replaceBody` (`js/mzta-utils.js`) read and
+  write **`plainTextBody`**, not `body`. Writing `body` on a plain text window makes
+  Thunderbird convert the HTML down to text, undoing the line structure again — which matters
+  most in `compose_reloadBody`, whose `setBody` round-trip runs right after the insertion.
+- `chatgpt_replyMessage` **omits** `isPlainText` from `compose.beginReply` rather than forcing
+  `false`, so the reply follows the identity's own format; `replaceBody()` then reads the
+  format back off the created tab. On a plain text reply there is no DOM to splice into, so
+  the answer is prepended to the existing text with a blank line rather than going through
+  `insertHtml()`.
 
 ### Theming
 
@@ -659,6 +683,21 @@ Each subdirectory is a self-contained settings/UI page for a specific feature:
 ## Storage
 
 Regular preferences (feature flags, connection settings, `ollama_*`/`chatgpt_*`/etc., `reply_type`, `connection_type`, ...) are read/written via `browser.storage.sync`, keyed by `prefs_default` in `options/mzta-options-default.js`. A small set of large-payload keys — `_custom_prompt`, `_default_prompts_properties`, `_special_prompts`, `_custom_placeholder`, `add_tags_exclusions` — live in `browser.storage.local` instead, because `storage.sync` has a narrow storage quota (see the one-time sync→local migration in `js/mzta-utils.js`, `migrateCustomPromptsStorage()` / `migrateDefaultPromptsPropStorage()`, added for [#129](https://github.com/micz/ThunderAI/issues/129)).
+
+### Background Preference Snapshot and Menu Invalidation
+
+The background script keeps a **snapshot** of the preferences it consults often, in the module-level `prefs_init` object, refreshed by `reload_pref_init()`. The exact set of keys it holds is the module-level `PREFS_INIT_KEYS` constant, which is also what `reload_pref_init()` passes to `storage.sync.get` — the storage-change gate is derived from that same constant so the two cannot drift apart. Besides the snapshot itself, `reload_pref_init()` recomputes `_process_incoming` (whether any auto-processing feature needs incoming mail) and `_sparks_presence`.
+
+Four invariants apply here. The first three were established by [#855](https://github.com/micz/ThunderAI/issues/855); the fourth was added later, when the debounce turned out to cover only one of the three reload paths.
+
+1. **Special-prompt menu gating must read `storage.sync` fresh, never `prefs_init`.** The single source of truth is `_computeActiveSpecialIds()` in `mzta-background.js`; `_reload_menus()`, `_getActiveSpecialIds()` and the startup `menus.loadMenus()` all go through it. Mixing a freshly changed value with values taken from the snapshot is what made the per-feature integration flags lag behind `connection_type`, hiding a command until restart. Reading everything fresh in one `get` removes the whole class of bug rather than resequencing it. That single `get` must also spread `getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])`, since the gate is computed from each feature's **effective** connection — `getConnectionType(prefs, null, prefix)` for every prefix in `special_prompts_with_integration` — and not from the global `connection_type`. A feature pointing at its own API integration must stay available under ChatGPT Web or with no global connection selected, matching what the options page shows (see `claude-spec/05-options.md`).
+2. **`storage.onChanged` handling is coalesced, and refreshes the snapshot before rebuilding menus.** The listener body is synchronous (a 200 ms debounce, the same idiom as `pages/menu_order/mzta-menu-order.js`); the async work lives in the timer, because `onChanged` ignores listener return values. Coalescing here reduces redundant work — a multi-key `storage.sync.set` fires one event carrying several keys, and options pages write one key per change event — but it does **not** by itself prevent overlapping rebuilds from interleaving, since the debounce only covers the `onChanged` path (see invariant 4). The `reload_pref_init()` → `_reload_menus()` order is load-bearing: `doGetSparkFeature()` consults the `_sparks_presence` that the former sets.
+3. **The two staleness flags accumulate across a burst** (`_prefsInitStale`, `_menusStale`) and are cleared only when the debounced work runs. Computing them per event and reading them after the debounce would let a later event overwrite an earlier one's flags, silently dropping a needed rebuild — e.g. a `connection_type` write immediately followed by a non-menu write.
+4. **Menu rebuilds are coalesced inside `mzta_Menus`, not just at the callers.** `loadMenus()` holds a `_rebuildInFlight` promise and a `_rebuildPending` argument slot; the real work moved to `_loadMenusUnguarded()`. Three unsynchronized triggers reach `_reload_menus()` — the internal `reload_menus` message, the external one from Sparks, and the debounced `storage.onChanged` handler — and options pages routinely both write storage *and* send `reload_menus`, so a single click can start two independent reload paths that the debounce cannot serialize against each other. The damage is concrete: `loadContextMenus()` calls `browser.menus.removeAll()` before recreating each item one at a time, so an overlapping rebuild wipes items the first one already created, or fails on duplicate ids. The guard belongs on the class rather than on `_reload_menus()` because the startup `menus.loadMenus()` at module top level does not go through that funnel and is registered *after* the message listeners, so a Sparks reload arriving mid-startup would otherwise run concurrently with the initial build. Rebuilds coalesce rather than queue — rebuilding is idempotent and only the final state is observable, so N triggers collapse into the running rebuild plus one trailing rerun instead of N flickering teardown/rebuild cycles. `removeClickListener()` moved from `reload()` into `_loadMenusUnguarded()` so it runs under the guard and cannot deregister the listener of a rebuild in flight.
+
+The two gates are deliberately separate. `reload_pref_init()` is *not* gated on the menu-relevant key set, because `add_tags_auto`, `summarize_auto` and `translate_auto` feed `_process_incoming` without being menu keys; gating both on the menu set would freeze auto-processing until restart. Gating at all is worthwhile because `reload_pref_init()` calls `checkSparksPresence()`, a `runtime.sendMessage` to an external extension. A consequence to keep in mind: `_sparks_presence` now refreshes only when a `PREFS_INIT_KEYS` key changes, not on every sync write. If it ever needs to be event-driven, `onMessageExternal` is the right hook, not `onChanged`.
+
+Separately, `loadShortcutMenu()` builds into a local array and swaps it in at the end, and `initialize()` deliberately does *not* clear `shortcutMenu`. `preparePopupMenu()` reads `menus.shortcutMenu` **synchronously**, so it never takes the rebuild guard; clearing the array up front left it empty for the whole rebuild, and a shortcut pressed in that window rendered an empty popup. `rootMenu` and `menu_listeners` keep their in-place rebuild on purpose — they are only read by the click listener, whose registration spans the rebuild.
 
 ### Per-Message Data Storage
 

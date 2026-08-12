@@ -19,7 +19,8 @@
 import { mzta_script } from './js/mzta-chatgpt.js';
 import {
     prefs_default,
-    getDynamicSettingsDefaults
+    getDynamicSettingsDefaults,
+    special_prompts_with_integration
 } from './options/mzta-options-default.js';
 import { mzta_Menus } from './js/mzta-menus.js';
 import { taLogger } from './js/mzta-logger.js';
@@ -45,21 +46,24 @@ import {
     sanitizeChatGPTModelData,
     sanitizeChatGPTWebCustomData,
     stripHtmlKeepLines,
+    isPlainTextCompose,
     htmlBodyToPlainText,
     convertNewlinesToParagraphs,
     getConnectionType,
-    hasSpecificIntegration,
     hasNoConnectionSelected,
     matchAddressList,
     hasAddressListEntries,
     extractEmail,
     messageFolderHasSpecialUse,
     isMessageInJunkOrTrash,
+    isApiUsableConnection,
+    hasSpecificIntegration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
 import {
     getSpamFilterPrompt,
+    getAddTagsPrompt,
     getSummarizePrompt,
     getTranslatePrompt,
     migrateMenuOrderAlphabetic,
@@ -96,7 +100,48 @@ var modified_html = '';
 let _process_incoming = false;
 let _sparks_presence = false;
 
+// Every key held by the prefs_init snapshot. Hoisted so the storage.onChanged gate
+// below is derived from the same list reload_pref_init() actually reads, and cannot
+// drift out of sync with it.
+const PREFS_INIT_KEYS = {
+    do_debug: prefs_default.do_debug,
+    add_tags: prefs_default.add_tags,
+    get_calendar_event: prefs_default.get_calendar_event,
+    get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
+    get_task: prefs_default.get_task,
+    connection_type: prefs_default.connection_type,
+    add_tags_auto: prefs_default.add_tags_auto,
+    add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
+    add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
+    spamfilter: prefs_default.spamfilter,
+    summarize: prefs_default.summarize,
+    summarize_auto: prefs_default.summarize_auto,
+    summarize_auto_senders: prefs_default.summarize_auto_senders,
+    summarize_auto_senders_list: prefs_default.summarize_auto_senders_list,
+    translate: prefs_default.translate,
+    translate_auto: prefs_default.translate_auto,
+    spamfilter_threshold: prefs_default.spamfilter_threshold,
+    spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
+    dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+    chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
+    ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+};
+
+// Keys that affect which special prompts are advertised in the menus. The per-feature
+// integration keys are pulled from the generated defaults rather than listed by hand:
+// only add_tags' pair used to be here, so a change to any other feature's specific
+// integration never triggered a menu rebuild.
+const MENU_RELEVANT_KEYS = [
+    'add_tags', 'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
+    'spamfilter', 'summarize', 'translate', 'connection_type',
+    ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
+];
+
 let prefs_init = {};
+// Repair any feature flag left enabled on an unusable connection before anything derives
+// from it: this is where a wizard run or a prefs import from a previous session gets
+// healed, since no options page needs to be opened for it to happen.
+await _reconcileFeatureFlags(await _readFeatureConnPrefs());
 await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
@@ -105,19 +150,6 @@ taBatchController.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
-
-let special_prompts_ids = getActiveSpecialPromptsIDs({
-    addtags: prefs_init.add_tags,
-    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-    get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
-    get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
-    get_task: doGetSparkFeature(prefs_init.get_task),
-    spamfilter: prefs_init.spamfilter,
-    summarize: prefs_init.summarize,
-    translate: prefs_init.translate,
-    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-  });
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -182,45 +214,110 @@ function preparePopupMenu(tab) {
     return output;
 }
 
-async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
-    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
-    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
-    let getTask = doGetSparkFeature(prefs_reload.get_task);
-    const special_prompts_ids = getActiveSpecialPromptsIDs({
+// The exact key set needed to resolve every feature's effective connection. Extracted
+// so the reconciliation and the menu computation read the same keys and cannot drift
+// apart.
+// Everything is read fresh from storage on purpose: mixing a fresh changed value with
+// values taken from the prefs_init snapshot used to make the per-feature integration
+// flags lag behind the rest by one or more storage change events, hiding a command
+// until restart.
+async function _readFeatureConnPrefs() {
+    return await browser.storage.sync.get({
+        add_tags: prefs_default.add_tags,
+        get_calendar_event: prefs_default.get_calendar_event,
+        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
+        get_task: prefs_default.get_task,
+        connection_type: prefs_default.connection_type,
+        spamfilter: prefs_default.spamfilter,
+        summarize: prefs_default.summarize,
+        translate: prefs_default.translate,
+        // Needed by getConnectionType() to resolve the per-feature override: without these
+        // keys use_specific_integration reads as undefined and every feature silently falls
+        // back to the global connection.
+        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+    });
+}
+
+// Self-healing for the feature flags. A flag can survive in storage pointing at a
+// connection that cannot drive it: the setup wizard writes connection_type without ever
+// looking at the flags, and a prefs import or a sync from another profile can land any
+// combination at once. Until now the only repair was disable_ApiFeature() in the options
+// page, which runs only while that page is open — so auto add-tags or the spam filter
+// could keep firing on incoming mail against an unusable connection. Doing it here
+// covers every writer, once.
+// Only true -> false, never the reverse: restoring a flag when a usable connection comes
+// back would silently re-enable a feature the user may have turned off on purpose,
+// exactly as disable_ApiFeature() already declines to do.
+// Mutates and returns the prefs object, so the caller can keep using the healed values
+// without waiting for the write to round-trip.
+async function _reconcileFeatureFlags(prefs) {
+    let to_disable = {};
+    for (const prefix of special_prompts_with_integration) {
+        if (!prefs[prefix]) continue;
+        // A feature that has opted into its own integration is left alone even when that
+        // integration is not usable yet. Its connection does not depend on the global one,
+        // so an unusable value there means "still being configured", not "cannot run" —
+        // and since this repair never turns a flag back on, disabling it would strand the
+        // user: they would finish setting up the integration, see the menus come back, and
+        // still have the feature off. The mandatory-integration flow in
+        // pages/_lib/connection-ui.js drives users straight into exactly that state
+        // whenever the global connection is ChatGPT Web or empty.
+        if (hasSpecificIntegration(prefs[`${prefix}_use_specific_integration`], prefs[`${prefix}_connection_type`])) continue;
+        // ChatGPT Web is left alone for the same reason the options page no longer forces
+        // the toggle off (see getFeatureConnState): the per-feature API is configured from
+        // a page reachable only while the feature is on, so switching it off here would
+        // make the setup impossible. Only a genuinely absent connection is repaired — that
+        // one is not a step on the way to anything, and the options toggle is disabled for
+        // it anyway, so the two agree.
+        // Sparks presence is deliberately NOT considered here: it is transient (the add-on
+        // may just be restarting) and doGetSparkFeature() already gates every read site.
+        // Persisting false on a boot race would be irreversible.
+        if (hasNoConnectionSelected(getConnectionType(prefs, null, prefix))) {
+            to_disable[prefix] = false;
+            prefs[prefix] = false;
+        }
+    }
+    if (Object.keys(to_disable).length > 0) {
+        // console.log and not taLog: this also runs at startup, before taLog is built.
+        console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
+        await browser.storage.sync.set(to_disable);
+    }
+    return prefs;
+}
+
+// Single source of truth for special-prompt gating.
+async function _computeActiveSpecialIds() {
+    let prefs_reload = await _readFeatureConnPrefs();
+    // Repair before judging: a flag left true on an unusable connection is turned off
+    // here, so the menus and everything downstream see the same value the user will find
+    // in the options page.
+    prefs_reload = await _reconcileFeatureFlags(prefs_reload);
+    // Effective connection per feature, exactly as the options page computes it for its
+    // feature rows: the global connection is only the fallback.
+    let effective_conn = {};
+    for (const prefix of special_prompts_with_integration) {
+        effective_conn[prefix] = getConnectionType(prefs_reload, null, prefix);
+    }
+    return getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
-        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-        get_calendar_event: getCalendarEvent,
-        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-        get_task: getTask,
+        get_calendar_event: doGetSparkFeature(prefs_reload.get_calendar_event),
+        get_calendar_event_from_clipboard: doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard),
+        get_task: doGetSparkFeature(prefs_reload.get_task),
         spamfilter: prefs_reload.spamfilter,
         summarize: prefs_reload.summarize,
         translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
-        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
-      });
-    menus.reload(special_prompts_ids);
+        effective_conn: effective_conn
+    });
+}
+
+async function _reload_menus() {
+    await menus.reload(await _computeActiveSpecialIds());
     taLog.log("Reloading menus");
     return true;
 }
 
 async function _getActiveSpecialIds() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
-    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
-    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
-    let getTask = doGetSparkFeature(prefs_reload.get_task);
-    return getActiveSpecialPromptsIDs({
-        addtags: prefs_reload.add_tags,
-        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-        get_calendar_event: getCalendarEvent,
-        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-        get_task: getTask,
-        spamfilter: prefs_reload.spamfilter,
-        summarize: prefs_reload.summarize,
-        translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
-        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
-    });
+    return _computeActiveSpecialIds();
 }
 
 async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
@@ -260,7 +357,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, summarize_auto_senders: prefs_default.summarize_auto_senders, summarize_auto_senders_list: prefs_default.summarize_auto_senders_list });
+
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, summarize_auto_senders: prefs_default.summarize_auto_senders, summarize_auto_senders_list: prefs_default.summarize_auto_senders_list, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
 
                         if (!prefs.summarize) return;
 
@@ -298,12 +396,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 return;
                             }
                         }
+                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // null previously written by an empty select (NaN, serialized as null)
+                        // would survive and match none of the === comparisons below.
+                        let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
 
                         // If summarize_auto is disabled, don't show button or auto-generate
-                        if (prefs.summarize_auto === 0) return;
+                        if (summarize_auto === 0) return;
+
+                        // Everything below needs to actually reach the API, so apply the same
+                        // judgement the menus make: without it the button is drawn on an unusable
+                        // connection and only fails once clicked. Checked here and not earlier
+                        // because a cached summary stays readable regardless of the connection.
+                        // The flag alone is not enough — it stays true whenever the feature
+                        // carries its own (not yet configured) integration, which
+                        // _reconcileFeatureFlags() deliberately leaves alone.
+                        if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
 
                         // Auto mode (summarize_auto === 2) always generates inline
-                        if (prefs.summarize_auto === 2) {
+                        if (summarize_auto === 2) {
                             _generateSummaryForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -394,7 +505,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initTranslation() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length });
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
 
                         if (!prefs.translate) return;
 
@@ -413,11 +524,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
+                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // null previously written by an empty select (NaN, serialized as null)
+                        // would survive and match none of the === comparisons below.
+                        let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
+
                         // If translate_auto is disabled, don't show button or auto-generate
-                        if (prefs.translate_auto === 0) return;
+                        if (translate_auto === 0) return;
+
+                        // Everything below needs to actually reach the API, so apply the same
+                        // judgement the menus make: without it the button is drawn on an unusable
+                        // connection and only fails once clicked. Checked here and not earlier
+                        // because a cached translation stays readable regardless of the
+                        // connection. The flag alone is not enough — it stays true whenever the
+                        // feature carries its own (not yet configured) integration, which
+                        // _reconcileFeatureFlags() deliberately leaves alone.
+                        if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
 
                         // Auto mode (translate_auto === 2) always generates inline
-                        if (prefs.translate_auto === 2) {
+                        if (translate_auto === 2) {
                             _generateTranslationForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -487,11 +612,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log('chatgpt_replaceSelectedText: [' + tabId +'] ' + text)
                     taLog.log("chatgpt_replaceSelectedText text: " + text);
                     original_html = await getOriginalBody(tabId);
-                    let prefs_repl = await browser.storage.sync.get({composing_plain_text: prefs_default.composing_plain_text});
-                    if(prefs_repl.composing_plain_text){
+                    // The compose format is read from the window itself, not from a
+                    // preference: it is a per-message property, so a global setting
+                    // could never be right for a user who writes in both formats.
+                    let isPlainText = await isPlainTextCompose(tabId);
+                    if(isPlainText){
                         text = stripHtmlKeepLines(text);
                     }
-                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId });
+                    await browser.tabs.sendMessage(tabId, { command: "replaceSelectedText", text: text, tabId: tabId, isPlainText: isPlainText });
                     return true;
                 }
                 return _replaceSelectedText(message.tabId, message.text);
@@ -500,10 +628,10 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let paragraphsHtmlString = message.text;
                     //console.log(">>>>>>>>>>>> paragraphsHtmlString: " + paragraphsHtmlString);
                     taLog.log("paragraphsHtmlString: " + paragraphsHtmlString);
-                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type, composing_plain_text: prefs_default.composing_plain_text});
-                    if(prefs_reply.composing_plain_text){
-                        paragraphsHtmlString = stripHtmlKeepLines(paragraphsHtmlString);
-                    }
+                    let prefs_reply = await browser.storage.sync.get({reply_type: prefs_default.reply_type});
+                    // No plain-text conversion here: the reply window does not exist
+                    // yet, so its format is not knowable. replaceBody() reads it from
+                    // the created tab and converts there.
                     //console.log('reply_type: ' + prefs_reply.reply_type);
                     let replyType = 'replyToAll';
                     // console.log(">>>>>>>>>>> chatgpt_replyMessage replyType: " + message.replyType);
@@ -525,10 +653,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     //console.log(">>>>>>>>>>>> message.mailMessageId: " + message.mailMessageId);
                     let _mailMessage = await browser.messages.get(message.mailMessageId);
                     let curr_idn = await getCurrentIdentity(_mailMessage)
+                    // isPlainText is deliberately NOT forced here: omitting it lets the
+                    // reply follow the identity's own compose format, so a user who
+                    // writes in plain text gets a plain text reply. replaceBody() then
+                    // reads the resulting format back off the tab. [#855]
                     let reply_tab = await browser.compose.beginReply(_mailMessage.id, replyType, {
                         type: "reply",
                         //body:  paragraphsHtmlString,
-                        isPlainText: false,
                         identityId: curr_idn,
                     })
                         // Wait for tab loaded.
@@ -559,9 +690,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 break;
             case 'compose_reloadBody':
                 async function _reloadBody(tabId) {
+                    // getOriginalBody/setBody must agree on which field they use, or
+                    // this round-trip would push the freshly inserted plain text
+                    // through the HTML body field and collapse its line breaks.
+                    let isPlainText = await isPlainTextCompose(tabId);
                     modified_html = await getOriginalBody(tabId);
-                    await setBody(tabId, original_html);
-                    await setBody(tabId, modified_html);
+                    await setBody(tabId, original_html, isPlainText);
+                    await setBody(tabId, modified_html, isPlainText);
                     return true;
                 }
                 return _reloadBody(message.tabId);
@@ -743,7 +878,9 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         const summarize_prompt = await getSummarizePrompt();
         const connectionType = getConnectionType(prefs, summarize_prompt, 'summarize');
 
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable and was falling
+        // through into mzta_specialCommand.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
@@ -835,7 +972,9 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         const translate_prompt = await getTranslatePrompt();
         const connectionType = getConnectionType(prefs, translate_prompt, 'translate');
 
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable and was falling
+        // through into mzta_specialCommand.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
             await translationStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
@@ -946,7 +1085,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 report_data.from = curr_fullMessage.headers.from;
                 report_data.message_date = new Date(message.date);
                 report_data.moved = false;
-                report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                report_data.SpamThreshold = getSpamThreshold(prefs);
                 spamReport.saveReportData(report_data, headerMessageId);
                 await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
                 return { success: true };
@@ -978,7 +1117,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                         report_data.from = curr_fullMessage.headers.from;
                         report_data.message_date = new Date(message.date);
                         report_data.moved = false;
-                        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                        report_data.SpamThreshold = getSpamThreshold(prefs);
                         spamReport.saveReportData(report_data, headerMessageId);
                         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
                         return { success: true };
@@ -991,6 +1130,23 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         }
 
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
+        if (!curr_prompt_spamfilter) {
+            taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
+        // The connection can be unusable even with spamfilter still true in storage (a
+        // wizard run, a prefs import): without this the resolved type flowed straight into
+        // mzta_specialCommand. setProcessing() already ran, so report the error through
+        // spamReport instead of returning bare, or the panel would sit on "in progress".
+        let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
+        if (!isApiUsableConnection(spam_conntype)) {
+            console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
             curr_prompt: curr_prompt_spamfilter,
@@ -1004,7 +1160,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
 
         let cmd_spamfilter = new mzta_specialCommand({
             prompt: specialFullPrompt_spamfilter,
-            llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
+            llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
             do_debug: prefs.do_debug,
             config: curr_prompt_spamfilter
@@ -1044,7 +1200,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         report_data.from = curr_fullMessage.headers.from;
         report_data.message_date = new Date(message.date);
         report_data.moved = false;
-        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+        report_data.SpamThreshold = getSpamThreshold(prefs);
 
         if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
             taLog.log("Marking as spam [" + headerMessageId + "]");
@@ -1084,7 +1240,8 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
 
         const summarize_prompt = await getSummarizePrompt();
         const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), summarize_prompt, 'summarize');
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
@@ -1520,6 +1677,14 @@ function applyWindowPositionAndSize(win_options, prefs){
     return win_options;
 }
 
+// A threshold of 0 ("flag everything") is a legitimate setting, so it must not be treated
+// as missing — which is what the previous `prefs.x || prefs_init.x` did, silently
+// substituting the default 70. Only a genuinely absent or non-numeric value falls back;
+// an empty number input stores NaN as null, hence the isFinite() rather than a null check.
+function getSpamThreshold(prefs) {
+    return Number.isFinite(prefs.spamfilter_threshold) ? prefs.spamfilter_threshold : prefs_init.spamfilter_threshold;
+}
+
 function doGetSparkFeature(spark_feature_active) {
     if(spark_feature_active) {
         return (_sparks_presence == 1);
@@ -1529,211 +1694,65 @@ function doGetSparkFeature(spark_feature_active) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({
-        do_debug: prefs_default.do_debug,
-        add_tags: prefs_default.add_tags,
-        get_calendar_event: prefs_default.get_calendar_event,
-        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
-        get_task: prefs_default.get_task,
-        connection_type: prefs_default.connection_type,
-        add_tags_auto: prefs_default.add_tags_auto,
-        add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
-        add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
-        spamfilter: prefs_default.spamfilter,
-        summarize: prefs_default.summarize,
-        summarize_auto: prefs_default.summarize_auto,
-        summarize_auto_senders: prefs_default.summarize_auto_senders,
-        summarize_auto_senders_list: prefs_default.summarize_auto_senders_list,
-        translate: prefs_default.translate,
-        translate_auto: prefs_default.translate_auto,
-        spamfilter_threshold: prefs_default.spamfilter_threshold,
-        spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
-        dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-        chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
-        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-    });
+    prefs_init = await browser.storage.sync.get(PREFS_INIT_KEYS);
+    // add_tags must be checked together with add_tags_auto, exactly as newEmailListener
+    // does: otherwise every incoming mail wakes the whole pipeline for a no-op. Since the
+    // reconciliation turns add_tags off without touching add_tags_auto, that combination
+    // is now the common case rather than an edge case.
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3) || (prefs_init.summarize && prefs_init.summarize_auto_senders && hasAddressListEntries(prefs_init.summarize_auto_senders_list));
     _sparks_presence = await checkSparksPresence();
 }
 
 
+// Coalesce bursts of storage changes: a multi-key storage.sync.set fires a single
+// onChanged carrying several keys, and the options pages write one key per change
+// event, so several events can land within a few milliseconds. menus.reload() tears
+// down and rebuilds every menu, so overlapping rebuilds could interleave; a single
+// trailing rebuild is enough, since rebuilding is idempotent.
+// Same debounce idiom as pages/menu_order/mzta-menu-order.js.
+let _storageChangeDebounce = null;
+// Accumulated across every event in a burst: computing these per event and reading
+// them after the debounce would let a later event's flags overwrite an earlier one's,
+// silently dropping a needed menu rebuild.
+let _prefsInitStale = false;
+let _menusStale = false;
+
 // Register the listener for storage changes
 function setupStorageChangeListener() {
     browser.storage.onChanged.addListener((changes, areaName) => {
         // Check if the change happened in the 'sync' storage area
-        if (areaName === 'sync') {
-            // Process 'add_tags' changes
-            if (changes.add_tags) {
-                const newTags = changes.add_tags.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: newTags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
+        if (areaName !== 'sync') return;
 
-            // Process 'get_calendar_event' changes
-            if (changes.get_calendar_event) {
-                const newCalendarEvent = changes.get_calendar_event.newValue;
-                let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
+        const changed_keys = Object.keys(changes);
+        _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
+        _menusStale = _menusStale || changed_keys.some(key => MENU_RELEVANT_KEYS.includes(key));
+        if (!_prefsInitStale && !_menusStale) return;
 
-            // Process 'get_calendar_event_from_clipboard' changes
-            if (changes.get_calendar_event_from_clipboard) {
-                const newCalendarEventFromClipboard = changes.get_calendar_event_from_clipboard.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(newCalendarEventFromClipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'get_task' changes
-            if (changes.get_task) {
-                const newTask = changes.get_task.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(newTask);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'spamfilter' changes
-            if (changes.spamfilter) {
-                const newSpamfilter = changes.spamfilter.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: newSpamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'summarize' changes
-            if (changes.summarize) {
-                const newSummarize = changes.summarize.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: newSummarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'translate' changes
-            if (changes.translate) {
-                const newTranslate = changes.translate.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: newTranslate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'connection_type' changes
-            if (changes.connection_type) {
-                const newConnectionType = changes.connection_type.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (newConnectionType === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(newConnectionType)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Re-registering the new mail listener needs the refreshed prefs_init, so it is
-            // chained on reload_pref_init() instead of being called right after it.
-            reload_pref_init().then(registerNewMailListener);
-        }
+        clearTimeout(_storageChangeDebounce);
+        _storageChangeDebounce = setTimeout(() => {
+            const do_prefs_init = _prefsInitStale;
+            const do_menus = _menusStale;
+            _prefsInitStale = false;
+            _menusStale = false;
+            // The snapshot must be refreshed first: the menus read storage directly,
+            // but doGetSparkFeature() consults the _sparks_presence that
+            // reload_pref_init() sets.
+            (async () => {
+                // Heal first: reload_pref_init() derives _process_incoming from these
+                // flags and the menus are rebuilt from them, so both must see the
+                // reconciled values rather than a stale true.
+                // _reconcileFeatureFlags() writes back into storage.sync, re-firing this
+                // very listener. That is bounded, not a loop: it only ever flips flags
+                // true -> false, so the follow-up pass finds nothing to disable and writes
+                // nothing. The extra pass is useful anyway — it is what refreshes
+                // prefs_init with the healed values.
+                if (do_prefs_init || do_menus) await _reconcileFeatureFlags(await _readFeatureConnPrefs());
+                if (do_prefs_init) await reload_pref_init();
+                if (do_menus) await _reload_menus();
+            })().catch(error => taLog.error("ERROR handling storage changes: ", error));
+        }, 200);
+        // storage.onChanged ignores listener return values, so the async work stays
+        // inside the timer instead of being returned from here.
     });
 }
 
@@ -1763,7 +1782,7 @@ setupPermissionsRemovedListener();
 // Menus handling
 await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
-menus.loadMenus(special_prompts_ids);
+await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
 // Context menus are now created dynamically by mzta_Menus.loadContextMenus()
@@ -1986,9 +2005,27 @@ async function processEmails(args) {
                         skipAddTags = true;
                     }
                 }
+                let curr_prompt_add_tags = null;
+                let addtags_conntype = '';
+                if (!skipAddTags) {
+                    curr_prompt_add_tags = await getAddTagsPrompt();
+                    if (!curr_prompt_add_tags) {
+                        taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+                        skipAddTags = true;
+                    }
+                }
+                if (!skipAddTags) {
+                    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
+                    // reaches mzta_specialCommand without passing through it. Skipping rather
+                    // than returning, so the other features in this iteration still run.
+                    addtags_conntype = getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags');
+                    if (!isApiUsableConnection(addtags_conntype)) {
+                        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + addtags_conntype);
+                        skipAddTags = true;
+                    }
+                }
                 if (!skipAddTags) {
                     let specialFullPrompt_add_tags = '';
-                    let curr_prompt_add_tags = menus.allPrompts.find(p => p.id === 'prompt_add_tags');
                     let tags_full_list = await getTagsList();
                     //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
                     let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_add_tags);
@@ -2004,10 +2041,10 @@ async function processEmails(args) {
                     specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
                     taLog.log("Special prompt: " + specialFullPrompt_add_tags);
                     // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + addtags_conntype);
                     let cmd_addTags = new mzta_specialCommand({
                         prompt: specialFullPrompt_add_tags,
-                        llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
+                        llm: addtags_conntype,
                         custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
                         do_debug: prefs_aats.do_debug,
                         config: curr_prompt_add_tags

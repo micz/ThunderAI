@@ -1489,6 +1489,10 @@
     "message": "The sender is a contact in the address book.",
     "description": ""
   },
+  "spamfilter_prompt_missing_explanation": {
+    "message": "The Spam Filter special prompt is missing. If you modified the special prompts, try restoring the default Spam Filter prompt.",
+    "description": ""
+  },
   "addressbook_permission_denied": {
     "message": "Address book permission was denied. Please enable the feature again to grant permission.",
     "description": ""
@@ -1805,14 +1809,6 @@
   },
   "CORS_localhost_warn": {
     "message": "If you are using localhost or 127.0.0.1 because the AI server is hosted on your PC, the <all_urls> permission is required.",
-    "description": ""
-  },
-  "prefs_OptionText_composing_plain_text": {
-    "message": "Composing in plain text",
-    "description": ""
-  },
-  "prefs_OptionText_composing_plain_text_Info": {
-    "message": "Check this option if you're composing the emails in plain text format.",
     "description": ""
   },
   "Replace_No_Selected_Text": {
@@ -2816,14 +2812,6 @@
   "prefs_advanced_options": {
     "message": "Advanced options",
     "description": "Label of the app-level advanced options disclosure on the options page"
-  },
-  "prefs_conn_show_advanced": {
-    "message": "Show advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when collapsed"
-  },
-  "prefs_conn_hide_advanced": {
-    "message": "Hide advanced options",
-    "description": "Label of the per-connection advanced options disclosure button when expanded"
   },
   "prefs_privacy_more_info":{
     "message": "Click here for more info about privacy"

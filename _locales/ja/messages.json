@@ -962,12 +962,6 @@
     "CORS_alternative_1": {
         "message": "CORS設定に問題がありますか？"
     },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "プレーンテキストで作成"
-    },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "メールをプレーンテキスト形式で作成している場合は、このオプションをチェックしてください。"
-    },
     "Replace_No_Selected_Text": {
         "message": "テキストが選択されていません。AIの応答をメールの先頭に挿入しますか？"
     },

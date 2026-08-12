@@ -1026,12 +1026,6 @@
     "task_getting_data_error": {
         "message": "Chyba při získávání dat úlohy"
     },
-    "prefs_OptionText_composing_plain_text_Info": {
-        "message": "Zaškrtněte tuto možnost, pokud skládáte emaily ve formátu prostého textu."
-    },
-    "prefs_OptionText_composing_plain_text": {
-        "message": "Psaní v prostém textu"
-    },
     "prefs_ollama_num_ctx": {
         "message": "Počet kontextových tokenů"
     },

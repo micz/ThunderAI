@@ -35,9 +35,11 @@ import {
   isAPIKeyValue,
   setTomSelectBorder,
   hasAddressListEntries
+  isApiUsableConnection
 } from "../../js/mzta-utils.js";
 import {
-  initializeSpecificIntegrationUI
+  initializeSpecificIntegrationUI,
+  isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 
 let autocompleteSuggestions = [];
@@ -54,6 +56,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (summarize_prompt && summarize_prompt.api_type && summarize_prompt.api_type !== '') {
         let update_prefs = {};
         update_prefs['summarize_connection_type'] = summarize_prompt.api_type;
+        // getConnectionType() reads the prefixed connection type only when this flag is on,
+        // so writing the pair one half at a time leaves the value inert. It matters for the
+        // call sites that pass prompt = null (the menu gating in mzta-background.js and the
+        // feature row in mzta-options.js): they have no prompt to fall back on, so the pref
+        // pair is the only way they can see the per-feature connection.
+        // Only for a usable api_type: chatgpt_web has no <option> in the per-prompt select and
+        // isApiUsableConnection() rejects it, so the pair would read as "on" while the feature
+        // stayed hidden from the menus.
+        if (isApiUsableConnection(summarize_prompt.api_type)) {
+            update_prefs['summarize_use_specific_integration'] = true;
+        }
 
         let integration = summarize_prompt.api_type.replace('_api', '');
         if (integration_options_config && integration_options_config[integration]) {
@@ -372,7 +385,12 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'summarize_auto') {
-          options[element.id] = parseInt(element.value, 10);
+          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // serializes as null — and a stored null is *not* replaced by the default in
+          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // every === comparison downstream silently fails. Fall back to the default.
+          let parsed = parseInt(element.value, 10);
+          options[element.id] = Number.isNaN(parsed) ? prefs_default.summarize_auto : parsed;
         } else {
           options[element.id] = element.value;
         }
@@ -422,14 +440,16 @@ async function restoreOptions() {
             const restoreValue = result[element.id] ?? default_select_value;
             // Check if option exists
             let optionExists = Array.from(element.options).some(opt => opt.value === String(restoreValue));
+            // Never synthesize an option for a connection select: its catalogue is closed.
+            let canSynthesize = !isClosedCatalogueSelect(element.id);
             if (element.tomselect) {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 element.tomselect.addOption({ value: String(restoreValue), text: String(restoreValue) });
               }
               element.tomselect.setValue(String(restoreValue), true);
               setTomSelectBorder(element.tomselect);
             } else {
-              if (!optionExists && restoreValue !== '') {
+              if (!optionExists && restoreValue !== '' && canSynthesize) {
                 let newOption = new Option(restoreValue, restoreValue);
                 element.add(newOption);
               }
@@ -454,7 +474,12 @@ async function restoreOptions() {
       if (addtags_prompt.api_type && addtags_prompt.api_type !== '') {
           getting['summarize_connection_type'] = addtags_prompt.api_type;
       } else {
-          getting['summarize_connection_type'] = getting['connection_type'];
+          // Inherit the global connection only when this select can actually offer it:
+          // chatgpt_web has no <option> here (it has no API), so inheriting it would show
+          // a value the control cannot represent. Leave it blank instead.
+          getting['summarize_connection_type'] = isApiUsableConnection(getting['connection_type'])
+              ? getting['connection_type']
+              : '';
       }
       for (const [integration, options] of Object.entries(integration_options_config)) {
           for (const key of Object.keys(options)) {

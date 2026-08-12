@@ -118,7 +118,7 @@ export const taPromptUtils = {
 
     async getDefaultLang(curr_prompt){
         let chatgpt_lang = '';
-        if(String(curr_prompt.define_response_lang) == "1"){
+        if(String(curr_prompt?.define_response_lang) == "1"){
             let prefs = await browser.storage.sync.get({ default_chatgpt_lang: prefs_default.default_chatgpt_lang });
             chatgpt_lang = prefs.default_chatgpt_lang;
             if(chatgpt_lang === ''){
