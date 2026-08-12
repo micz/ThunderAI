@@ -845,6 +845,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_chatgpt_model);
+      autoSelectSingleModel(select_chatgpt_model);
       document.getElementById(getPrefixedId('chatgpt_model_fetch_loading')).style.display = 'none';
     });
     
@@ -889,6 +890,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_google_gemini_model);
+      autoSelectSingleModel(select_google_gemini_model);
       document.getElementById(getPrefixedId('google_gemini_model_fetch_loading')).style.display = 'none';
     });
     
@@ -946,6 +948,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_ollama_model);
+      autoSelectSingleModel(select_ollama_model);
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
     } catch (error) {
       document.getElementById(getPrefixedId('ollama_model_fetch_loading')).style.display = 'none';
@@ -996,6 +999,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_openai_comp_model);
+      autoSelectSingleModel(select_openai_comp_model);
       document.getElementById(getPrefixedId('openai_comp_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1052,6 +1056,7 @@ export async function injectConnectionUI({
         }
       });
       syncTomSelect(select_anthropic_model);
+      autoSelectSingleModel(select_anthropic_model);
       document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1408,6 +1413,22 @@ function syncTomSelect(element) {
   if (element && element.tomselect) {
     element.tomselect.sync();
   }
+}
+
+// If no model is currently selected and the list contains exactly one real
+// (non-empty) option, select it automatically and persist the choice.
+function autoSelectSingleModel(element) {
+  if (!element) return;
+  if (element.value) return;   // an actual model is already selected
+  const realOptions = Array.from(element.options).filter(option => option.value !== '');
+  if (realOptions.length !== 1) return;
+  element.value = realOptions[0].value;
+  syncTomSelect(element);
+  if (element.tomselect) {
+    element.tomselect.setValue(element.value, true);
+    setTomSelectBorder(element.tomselect);
+  }
+  element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function toggleTomSelectDisabled(element, disabled) {

@@ -645,6 +645,15 @@ Three rules make that forcing actually stick:
   actually rendered, not the full catalogue. An unmatched value leaves the select blank
   (`selectedIndex = -1`), which is the intended "nothing chosen yet" state — no provider is ever
   silently preselected.
+- **Models, by contrast, may be auto-selected — but only when the choice is forced.** After a
+  "Fetch models" run, `autoSelectSingleModel()` (`pages/_lib/connection-ui.js`) selects the model
+  when the select has no current value *and* the fetched list yields exactly one option, then
+  dispatches `change` so the pref is saved by the normal `saveOptions` listener. This spares the
+  user a pointless trip through a one-entry dropdown (typical of Ollama and self-hosted
+  OpenAI-compatible endpoints). Note the option count is taken over **non-empty** values only: each
+  provider seeds the select with the stored model before fetching, and an empty pref still yields a
+  `value=""` option, so a raw `options.length === 1` test would never fire. An existing selection is
+  never overwritten.
 
 **Consistency with the background.** The same effective-connection judgement gates the menus:
 `_computeActiveSpecialIds()` resolves one connection per prefix and `getActiveSpecialPromptsIDs()`
