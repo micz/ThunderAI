@@ -234,6 +234,7 @@ function selectProvider(id) {
   });
 
   refreshConnTestVisibility();
+  refreshNextEnabled();
 }
 
 function buildProviderCards() {
@@ -319,8 +320,15 @@ function renderStep() {
   next.classList.toggle('hidden', state.step === 3);
   // "Finish setup" on the second-to-last step of the sequence, else "Continue".
   next.textContent = browser.i18n.getMessage(pos === seq.length - 2 ? 'wizard_finish' : 'wizard_continue');
-  // Can't go past the provider step until a provider has actually been chosen.
-  next.disabled = (state.step === 0) && hasNoConnectionSelected(state.provider);
+  refreshNextEnabled();
+}
+
+// Can't go past the provider step until a provider has actually been chosen.
+// Called both on step render and right after a provider card is clicked, so the
+// button unlocks on the first click without waiting for another render.
+function refreshNextEnabled() {
+  let next = document.getElementById('wiz_next');
+  if (next) next.disabled = (state.step === 0) && hasNoConnectionSelected(state.provider);
 }
 
 function goNext() {

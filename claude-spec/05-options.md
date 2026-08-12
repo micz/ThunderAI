@@ -471,9 +471,15 @@ starts empty too and **no card is marked selected**. Critically, the boot handle
 hidden select, which would persist a `connection_type` the user never picked — merely *opening* the
 wizard would choose a provider for them. Step 0 shows only the provider cards, so no connection-UI
 setup is needed until the first card click, which calls `selectProvider()` itself. While
-`state.provider` is empty, `renderStep()` disables **"Continue"** and `goNext()` refuses to advance,
+`state.provider` is empty, **"Continue"** stays disabled and `goNext()` refuses to advance,
 so a provider-less wizard can never reach the Connect step. `restoreOptions()` leaves the hidden
 select unset (`selectedIndex = -1`) in this state, again persisting nothing.
+
+The disabled state is owned by `refreshNextEnabled()`, called from **both** `renderStep()` and the
+end of `selectProvider()`. The second call is what unlocks the button on the very first card click:
+step 0 triggers no re-render of its own (`renderStep()` runs only from `goNext()`/`goBack()`/restart/
+boot), so if only `renderStep()` set `next.disabled`, a fresh install would dead-end with the card
+selected but "Continue" permanently greyed out. Keep the enabling rule in that one helper.
 
 **Provider-dependent sequence:** `chatgpt_web` skips the "Pick your tools" step
 (`[provider, connect, done]`); every other provider is `[provider, connect, tools, done]`.
