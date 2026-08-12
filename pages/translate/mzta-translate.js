@@ -196,7 +196,12 @@ function saveOptions(e) {
         break;
       case 'select-one':
         if (element.id === 'translate_auto') {
-          options[element.id] = parseInt(element.value, 10);
+          // An empty select (selectedIndex === -1) parses to NaN, which storage.sync
+          // serializes as null — and a stored null is *not* replaced by the default in
+          // storage.sync.get(), so the value stays outside the 0..3 range forever and
+          // every === comparison downstream silently fails. Fall back to the default.
+          let parsed = parseInt(element.value, 10);
+          options[element.id] = Number.isNaN(parsed) ? prefs_default.translate_auto : parsed;
         } else {
           options[element.id] = element.value;
         }

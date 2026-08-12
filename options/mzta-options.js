@@ -233,7 +233,12 @@ function getFeatureConnState(prefs_opt, prefix){
   let no_connection = hasNoConnectionSelected(effective);
   return {
     no_connection: no_connection,
-    disabled: no_connection || (effective === "chatgpt_web"),
+    // ChatGPT Web is deliberately NOT disabling: the per-feature API is configured from
+    // the feature's own settings page, which is only reachable once the feature is on, so
+    // forcing it off here would make that page unreachable and the setup impossible. The
+    // amber "API needed" badge already states the requirement, and the real gate lives
+    // downstream (menus and body buttons both judge the *effective* connection).
+    disabled: no_connection,
     show_api_warning: (effective === "chatgpt_web")
   };
 }
@@ -246,6 +251,10 @@ function disable_ApiFeature(prefs_opt, prefix, manageBtnId){
   let state = getFeatureConnState(prefs_opt, prefix);
 
   let checked_original = checkbox.checked;
+  // Only the "nothing selected at all" state clears the flag. With ChatGPT Web the user
+  // is on their way to configuring a per-feature API, and that page is behind this very
+  // toggle — clearing it here used to strand them: the feature switched itself back off
+  // between enabling it and finishing the setup.
   checkbox.checked = state.disabled ? false : checkbox.checked;
   // With no connection selected the toggle is greyed out: there is nothing to
   // enable the feature against yet.
@@ -694,6 +703,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
       });
       updateSpecificApiIndicators(prefs_opt);
+      // The feature rows are computed from prefs_opt too: configuring a per-feature
+      // integration in another tab changes that feature's effective connection, so the
+      // row (and its "API needed" badge) must be recomputed here as well. Without this
+      // they kept showing the state from the snapshot taken at page load.
+      disable_AddTags(prefs_opt);
+      disable_SpamFilter(prefs_opt);
+      disable_Summarize(prefs_opt);
+      disable_Translate(prefs_opt);
+      await disable_GetCalendarEvent(prefs_opt);
     }
   });
 

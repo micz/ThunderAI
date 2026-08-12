@@ -52,6 +52,7 @@ import {
     getConnectionType,
     hasNoConnectionSelected,
     isApiUsableConnection,
+    hasSpecificIntegration,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -245,12 +246,26 @@ async function _readFeatureConnPrefs() {
 async function _reconcileFeatureFlags(prefs) {
     let to_disable = {};
     for (const prefix of special_prompts_with_integration) {
-        // The *effective* connection, never the global one: a feature pointing at its own
-        // API integration stays valid even when the global connection is empty.
+        if (!prefs[prefix]) continue;
+        // A feature that has opted into its own integration is left alone even when that
+        // integration is not usable yet. Its connection does not depend on the global one,
+        // so an unusable value there means "still being configured", not "cannot run" —
+        // and since this repair never turns a flag back on, disabling it would strand the
+        // user: they would finish setting up the integration, see the menus come back, and
+        // still have the feature off. The mandatory-integration flow in
+        // pages/_lib/connection-ui.js drives users straight into exactly that state
+        // whenever the global connection is ChatGPT Web or empty.
+        if (hasSpecificIntegration(prefs[`${prefix}_use_specific_integration`], prefs[`${prefix}_connection_type`])) continue;
+        // ChatGPT Web is left alone for the same reason the options page no longer forces
+        // the toggle off (see getFeatureConnState): the per-feature API is configured from
+        // a page reachable only while the feature is on, so switching it off here would
+        // make the setup impossible. Only a genuinely absent connection is repaired — that
+        // one is not a step on the way to anything, and the options toggle is disabled for
+        // it anyway, so the two agree.
         // Sparks presence is deliberately NOT considered here: it is transient (the add-on
         // may just be restarting) and doGetSparkFeature() already gates every read site.
         // Persisting false on a boot race would be irreversible.
-        if (prefs[prefix] && !isApiUsableConnection(getConnectionType(prefs, null, prefix))) {
+        if (hasNoConnectionSelected(getConnectionType(prefs, null, prefix))) {
             to_disable[prefix] = false;
             prefs[prefix] = false;
         }
@@ -335,7 +350,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initSummary() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting });
+                        let prefs = await browser.storage.sync.get({ summarize: prefs_default.summarize, summarize_auto: prefs_default.summarize_auto, summarize_display_mode: prefs_default.summarize_display_mode, summarize_max_display_length: prefs_default.summarize_max_display_length, summarize_strip_formatting: prefs_default.summarize_strip_formatting, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
 
                         if (!prefs.summarize) return;
 
@@ -354,11 +369,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
+                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // null previously written by an empty select (NaN, serialized as null)
+                        // would survive and match none of the === comparisons below.
+                        let summarize_auto = Number.isInteger(prefs.summarize_auto) ? prefs.summarize_auto : prefs_default.summarize_auto;
+
                         // If summarize_auto is disabled, don't show button or auto-generate
-                        if (prefs.summarize_auto === 0) return;
+                        if (summarize_auto === 0) return;
+
+                        // Everything below needs to actually reach the API, so apply the same
+                        // judgement the menus make: without it the button is drawn on an unusable
+                        // connection and only fails once clicked. Checked here and not earlier
+                        // because a cached summary stays readable regardless of the connection.
+                        // The flag alone is not enough — it stays true whenever the feature
+                        // carries its own (not yet configured) integration, which
+                        // _reconcileFeatureFlags() deliberately leaves alone.
+                        if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
 
                         // Auto mode (summarize_auto === 2) always generates inline
-                        if (prefs.summarize_auto === 2) {
+                        if (summarize_auto === 2) {
                             _generateSummaryForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -449,7 +478,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 async function _initTranslation() {
                     try {
                         let tabId = sender.tab.id;
-                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length });
+                        let prefs = await browser.storage.sync.get({ translate: prefs_default.translate, translate_auto: prefs_default.translate_auto, translate_max_display_length: prefs_default.translate_max_display_length, connection_type: prefs_default.connection_type, ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']) });
 
                         if (!prefs.translate) return;
 
@@ -468,11 +497,25 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             return;
                         }
 
+                        // storage.sync.get() only substitutes the default for *missing* keys, so a
+                        // null previously written by an empty select (NaN, serialized as null)
+                        // would survive and match none of the === comparisons below.
+                        let translate_auto = Number.isInteger(prefs.translate_auto) ? prefs.translate_auto : prefs_default.translate_auto;
+
                         // If translate_auto is disabled, don't show button or auto-generate
-                        if (prefs.translate_auto === 0) return;
+                        if (translate_auto === 0) return;
+
+                        // Everything below needs to actually reach the API, so apply the same
+                        // judgement the menus make: without it the button is drawn on an unusable
+                        // connection and only fails once clicked. Checked here and not earlier
+                        // because a cached translation stays readable regardless of the
+                        // connection. The flag alone is not enough — it stays true whenever the
+                        // feature carries its own (not yet configured) integration, which
+                        // _reconcileFeatureFlags() deliberately leaves alone.
+                        if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
 
                         // Auto mode (translate_auto === 2) always generates inline
-                        if (prefs.translate_auto === 2) {
+                        if (translate_auto === 2) {
                             _generateTranslationForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -994,7 +1037,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 report_data.from = curr_fullMessage.headers.from;
                 report_data.message_date = new Date(message.date);
                 report_data.moved = false;
-                report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                report_data.SpamThreshold = getSpamThreshold(prefs);
                 spamReport.saveReportData(report_data, headerMessageId);
                 await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
                 return { success: true };
@@ -1026,7 +1069,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                         report_data.from = curr_fullMessage.headers.from;
                         report_data.message_date = new Date(message.date);
                         report_data.moved = false;
-                        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+                        report_data.SpamThreshold = getSpamThreshold(prefs);
                         spamReport.saveReportData(report_data, headerMessageId);
                         await updateSpamPanel(headerMessageId, "showSpamReport", report_data);
                         return { success: true };
@@ -1109,7 +1152,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         report_data.from = curr_fullMessage.headers.from;
         report_data.message_date = new Date(message.date);
         report_data.moved = false;
-        report_data.SpamThreshold = prefs.spamfilter_threshold || prefs_init.spamfilter_threshold;
+        report_data.SpamThreshold = getSpamThreshold(prefs);
 
         if (options.autoMove && jsonObj.spamValue >= report_data.SpamThreshold) {
             taLog.log("Marking as spam [" + headerMessageId + "]");
@@ -1584,6 +1627,14 @@ function applyWindowPositionAndSize(win_options, prefs){
         taLog.log("Applying saved window position: top=" + prefs.chatgpt_win_top + ", left=" + prefs.chatgpt_win_left);
     }
     return win_options;
+}
+
+// A threshold of 0 ("flag everything") is a legitimate setting, so it must not be treated
+// as missing — which is what the previous `prefs.x || prefs_init.x` did, silently
+// substituting the default 70. Only a genuinely absent or non-numeric value falls back;
+// an empty number input stores NaN as null, hence the isFinite() rather than a null check.
+function getSpamThreshold(prefs) {
+    return Number.isFinite(prefs.spamfilter_threshold) ? prefs.spamfilter_threshold : prefs_init.spamfilter_threshold;
 }
 
 function doGetSparkFeature(spark_feature_active) {

@@ -65,8 +65,10 @@ string**: a new user is not given a provider they never chose. Instead the three
   `msg_no_connection_selected` via `sendAlert` instead of only logging.
 - **Feature flags left enabled are healed in the background.** `_reconcileFeatureFlags()`
   (`mzta-background.js`) is the authoritative self-healer: it walks
-  `special_prompts_with_integration` and writes `false` for any flag that is `true` while
-  `isApiUsableConnection()` rejects its effective connection. It runs at startup and at the head of
+  `special_prompts_with_integration` and writes `false` for any flag that is `true` while its
+  effective connection is **absent** (`hasNoConnectionSelected()`). Note this is deliberately
+  narrower than `isApiUsableConnection()`: `chatgpt_web` is left alone, for the reason given under
+  "Feature Rows — Disabled vs. API-Needed". It runs at startup and at the head of
   the debounced `storage.onChanged` handler, so it covers the writers that have no feature UI of
   their own — the setup wizard (which writes `connection_type` through the generic `saveOptions()`
   and never touches the flags), a prefs import, a sync from another profile. `disable_ApiFeature()`
@@ -74,6 +76,13 @@ string**: a new user is not given a provider they never chose. Instead the three
   that page is open, which is why a background pass is needed at all. The reconciliation is
   **one-directional** (`true → false` only) — restoring a flag when a usable connection returns
   would silently re-enable a feature the user may have turned off on purpose.
+  **A feature that has opted into its own integration is skipped entirely**
+  (`hasSpecificIntegration()`): its connection does not depend on the global one, so an unusable
+  value there means "still being configured", not "cannot run". Combined with the one-directional
+  rule, disabling it would strand the user — the mandatory-integration flow forces
+  `use_specific_integration` on precisely when the global connection is ChatGPT Web or empty, so
+  the user would finish configuring the integration, watch the menus come back, and still find the
+  feature switched off with no indication why.
 - **The red permission banners are unaffected**: they are keyed on an explicitly chosen
   `chatgpt_web` / `anthropic_api` / `chatgpt_api`, so none of them can fire in the empty state.
 
@@ -545,9 +554,23 @@ Translate) are unusable in **two distinct** situations, which must be presented 
 
 | Effective connection | Toggle | `warn_API_needed` hint |
 |---|---|---|
-| `chatgpt_web` | unchecked, still clickable | **shown** |
+| `chatgpt_web` | **untouched, clickable** | **shown** |
 | *nothing selected* (`''`) | unchecked **and `disabled`** (greyed) | **hidden** |
 | any API | untouched | hidden |
+
+**ChatGPT Web must not clear the flag.** The row used to force the toggle off (and persist that
+`false`) whenever the effective connection was `chatgpt_web`, while simultaneously showing a hint
+telling the user to go configure a per-feature API. Those two behaviours contradict each other: that
+API is configured from the feature's **own settings page, reachable only while the feature is on**,
+so clearing the flag closed the only route to fixing the situation — the feature switched itself
+back off between being enabled and the setup being finished, and the user was left with a valid
+per-feature connection and a silently disabled feature. Only the "nothing selected at all" state
+still clears it, and there the toggle is `disabled` too, so nothing is being contradicted. The hint
+now carries the whole message, and the real enforcement lives downstream where it belongs: the menus
+(`getActiveSpecialPromptsIDs`), the body buttons (`initSummary` / `initTranslation`) and the
+execution guards all judge the *effective* connection at the moment they run.
+`_reconcileFeatureFlags()` in the background follows the identical rule — it repairs only a
+genuinely absent connection — so the two can never disagree.
 
 The `warn_API_needed` string explicitly says *"you need an API integration rather than the ChatGPT
 Web Integration"* — advice that only makes sense once ChatGPT Web has actually been chosen. With no
@@ -652,6 +675,38 @@ in `mzta-menus.js` does not cover auto/batch), and in `_generateSummaryForMessag
 `connectionType === 'chatgpt_web'`, which let an *empty* connection through. Each guard reports
 through the channel its caller already owns (`spamReport` / `summaryStore` / `translationStore`,
 `skipAddTags` for add_tags), so no state is left marked "in progress".
+
+**The message-body buttons need the same gate.** The Summarize / Translate buttons injected into the
+message display (`js/mzta-compose-script.js`, drawn on the `showSummaryButton` /
+`showTranslationButton` commands) are decided by `initSummary` / `initTranslation` in
+`mzta-background.js`. Those handlers used to gate on the boolean flag alone, so a button could be
+drawn on an unusable connection and fail only once clicked — and, unlike the menus, they never
+consulted `getConnectionType()`. They now apply `isApiUsableConnection()` on the effective
+connection, **after** the cached-result and in-progress branches: a summary or translation already
+stored stays readable no matter what the connection is now. Note these handlers run **once per
+message-display script injection** (the content script fires `initSummary` / `initTranslation` at
+top level); there is no `onMessageDisplayed` listener and no `storage.onChanged` in the content
+script, so a message already open does not pick up a settings change until it is reopened.
+
+**`summarize_auto` / `translate_auto` must never be stored as `null`.** Their `saveOptions()` cases
+run `parseInt(element.value, 10)`, and an empty select (`selectedIndex === -1`, which
+`restoreOptions()` can produce) parses to `NaN` — `storage.sync` serializes that as `null`. A stored
+`null` is **not** replaced by the default in `storage.sync.get({key: default})`, since that only
+substitutes *missing* keys, so the value stays permanently outside the documented `0..3` range and
+every `=== 0` / `=== 2` comparison in `initSummary` / `initTranslation` silently falls through. Both
+ends are now guarded: the pages fall back to `prefs_default` on `NaN`, and the two handlers coerce
+with `Number.isInteger()` before comparing, which also repairs profiles that already stored a
+`null`. Any new numeric-enum pref read with `===` needs the same treatment at both ends.
+
+**Numeric prefs must not fall back with `||`.** `spamfilter_threshold` used
+`prefs.spamfilter_threshold || prefs_init.spamfilter_threshold` at three sites, which discards a
+legitimate **0** ("flag everything") along with the genuinely missing values and silently applies
+the default 70 instead. `getSpamThreshold()` in `mzta-background.js` now guards with
+`Number.isFinite()`, so only an absent or non-numeric value — including the `null` an emptied
+number input stores — falls back. The other numeric prefs (`add_tags_maxnum`,
+`summarize_max_messages`, `summarize_max_display_length`, `translate_max_display_length`) are
+already safe at their consumers, either via `Number.isFinite()` or because `|| 0` / `> 0` is the
+intended behaviour for them; their `saveOptions()` cases are deliberately left untouched.
 
 **No user-facing notification** is emitted when a flag is auto-disabled — only a `console.log`.
 `disable_ApiFeature()` is likewise silent; notifying only from the background would make the same
