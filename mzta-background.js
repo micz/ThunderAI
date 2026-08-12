@@ -51,6 +51,7 @@ import {
     convertNewlinesToParagraphs,
     getConnectionType,
     hasNoConnectionSelected,
+    isApiUsableConnection,
      } from './js/mzta-utils.js';
 import { taPromptUtils } from './js/mzta-utils-prompt.js';
 import { mzta_specialCommand } from './js/mzta-special-commands.js';
@@ -118,14 +119,21 @@ const PREFS_INIT_KEYS = {
     ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
 };
 
-// Keys that affect which special prompts are advertised in the menus.
+// Keys that affect which special prompts are advertised in the menus. The per-feature
+// integration keys are pulled from the generated defaults rather than listed by hand:
+// only add_tags' pair used to be here, so a change to any other feature's specific
+// integration never triggered a menu rebuild.
 const MENU_RELEVANT_KEYS = [
-    'add_tags', 'add_tags_use_specific_integration', 'add_tags_connection_type',
-    'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
-    'spamfilter', 'summarize', 'translate', 'connection_type'
+    'add_tags', 'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
+    'spamfilter', 'summarize', 'translate', 'connection_type',
+    ...Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))
 ];
 
 let prefs_init = {};
+// Repair any feature flag left enabled on an unusable connection before anything derives
+// from it: this is where a wizard run or a prefs import from a previous session gets
+// healed, since no options page needs to be opened for it to happen.
+await _reconcileFeatureFlags(await _readFeatureConnPrefs());
 await reload_pref_init();
 
 let taLog = new taLogger("mzta-background",prefs_init.do_debug);
@@ -198,13 +206,15 @@ function preparePopupMenu(tab) {
     return output;
 }
 
-// Single source of truth for special-prompt gating.
+// The exact key set needed to resolve every feature's effective connection. Extracted
+// so the reconciliation and the menu computation read the same keys and cannot drift
+// apart.
 // Everything is read fresh from storage on purpose: mixing a fresh changed value with
 // values taken from the prefs_init snapshot used to make the per-feature integration
 // flags lag behind the rest by one or more storage change events, hiding a command
 // until restart.
-async function _computeActiveSpecialIds() {
-    let prefs_reload = await browser.storage.sync.get({
+async function _readFeatureConnPrefs() {
+    return await browser.storage.sync.get({
         add_tags: prefs_default.add_tags,
         get_calendar_event: prefs_default.get_calendar_event,
         get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
@@ -218,6 +228,48 @@ async function _computeActiveSpecialIds() {
         // back to the global connection.
         ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
     });
+}
+
+// Self-healing for the feature flags. A flag can survive in storage pointing at a
+// connection that cannot drive it: the setup wizard writes connection_type without ever
+// looking at the flags, and a prefs import or a sync from another profile can land any
+// combination at once. Until now the only repair was disable_ApiFeature() in the options
+// page, which runs only while that page is open — so auto add-tags or the spam filter
+// could keep firing on incoming mail against an unusable connection. Doing it here
+// covers every writer, once.
+// Only true -> false, never the reverse: restoring a flag when a usable connection comes
+// back would silently re-enable a feature the user may have turned off on purpose,
+// exactly as disable_ApiFeature() already declines to do.
+// Mutates and returns the prefs object, so the caller can keep using the healed values
+// without waiting for the write to round-trip.
+async function _reconcileFeatureFlags(prefs) {
+    let to_disable = {};
+    for (const prefix of special_prompts_with_integration) {
+        // The *effective* connection, never the global one: a feature pointing at its own
+        // API integration stays valid even when the global connection is empty.
+        // Sparks presence is deliberately NOT considered here: it is transient (the add-on
+        // may just be restarting) and doGetSparkFeature() already gates every read site.
+        // Persisting false on a boot race would be irreversible.
+        if (prefs[prefix] && !isApiUsableConnection(getConnectionType(prefs, null, prefix))) {
+            to_disable[prefix] = false;
+            prefs[prefix] = false;
+        }
+    }
+    if (Object.keys(to_disable).length > 0) {
+        // console.log and not taLog: this also runs at startup, before taLog is built.
+        console.log("[ThunderAI] Disabling features with an unusable connection: " + Object.keys(to_disable).join(', '));
+        await browser.storage.sync.set(to_disable);
+    }
+    return prefs;
+}
+
+// Single source of truth for special-prompt gating.
+async function _computeActiveSpecialIds() {
+    let prefs_reload = await _readFeatureConnPrefs();
+    // Repair before judging: a flag left true on an unusable connection is turned off
+    // here, so the menus and everything downstream see the same value the user will find
+    // in the options page.
+    prefs_reload = await _reconcileFeatureFlags(prefs_reload);
     // Effective connection per feature, exactly as the options page computes it for its
     // feature rows: the global connection is only the fallback.
     let effective_conn = {};
@@ -738,7 +790,9 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
         const summarize_prompt = await getSummarizePrompt();
         const connectionType = getConnectionType(prefs, summarize_prompt, 'summarize');
 
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable and was falling
+        // through into mzta_specialCommand.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
@@ -830,7 +884,9 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         const translate_prompt = await getTranslatePrompt();
         const connectionType = getConnectionType(prefs, translate_prompt, 'translate');
 
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable and was falling
+        // through into mzta_specialCommand.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('translate_chatgpt_web_not_supported');
             await translationStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: errorMsg } });
@@ -989,6 +1045,17 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return { success: false };
         }
+        // The connection can be unusable even with spamfilter still true in storage (a
+        // wizard run, a prefs import): without this the resolved type flowed straight into
+        // mzta_specialCommand. setProcessing() already ran, so report the error through
+        // spamReport instead of returning bare, or the panel would sit on "in progress".
+        let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
+        if (!isApiUsableConnection(spam_conntype)) {
+            console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'));
+            await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+            return { success: false };
+        }
         let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt_spamfilter);
         let specialFullPrompt_spamfilter = await taPromptUtils.preparePrompt({
             curr_prompt: curr_prompt_spamfilter,
@@ -1002,7 +1069,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
 
         let cmd_spamfilter = new mzta_specialCommand({
             prompt: specialFullPrompt_spamfilter,
-            llm: getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter'),
+            llm: spam_conntype,
             custom_model: curr_prompt_spamfilter.model ? curr_prompt_spamfilter.model : '',
             do_debug: prefs.do_debug,
             config: curr_prompt_spamfilter
@@ -1082,7 +1149,8 @@ async function _openSummaryWebchat(headerMessageId, tabId) {
 
         const summarize_prompt = await getSummarizePrompt();
         const connectionType = getConnectionType(await browser.storage.sync.get(prefs_default), summarize_prompt, 'summarize');
-        if (connectionType === 'chatgpt_web') {
+        // Not just chatgpt_web: an empty connection is equally unusable.
+        if (!isApiUsableConnection(connectionType)) {
             const errorMsg = browser.i18n.getMessage('summarize_chatgpt_web_not_supported');
             await summaryStore.saveError(headerMessageId, errorMsg);
             await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: errorMsg } });
@@ -1528,7 +1596,11 @@ function doGetSparkFeature(spark_feature_active) {
 
 async function reload_pref_init(){
     prefs_init = await browser.storage.sync.get(PREFS_INIT_KEYS);
-    _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
+    // add_tags must be checked together with add_tags_auto, exactly as newEmailListener
+    // does: otherwise every incoming mail wakes the whole pipeline for a no-op. Since the
+    // reconciliation turns add_tags off without touching add_tags_auto, that combination
+    // is now the common case rather than an edge case.
+    _process_incoming = (prefs_init.add_tags && prefs_init.add_tags_auto) || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
@@ -1567,6 +1639,15 @@ function setupStorageChangeListener() {
             // but doGetSparkFeature() consults the _sparks_presence that
             // reload_pref_init() sets.
             (async () => {
+                // Heal first: reload_pref_init() derives _process_incoming from these
+                // flags and the menus are rebuilt from them, so both must see the
+                // reconciled values rather than a stale true.
+                // _reconcileFeatureFlags() writes back into storage.sync, re-firing this
+                // very listener. That is bounded, not a loop: it only ever flips flags
+                // true -> false, so the follow-up pass finds nothing to disable and writes
+                // nothing. The extra pass is useful anyway — it is what refreshes
+                // prefs_init with the healed values.
+                if (do_prefs_init || do_menus) await _reconcileFeatureFlags(await _readFeatureConnPrefs());
                 if (do_prefs_init) await reload_pref_init();
                 if (do_menus) await _reload_menus();
             })().catch(error => taLog.error("ERROR handling storage changes: ", error));
@@ -1796,10 +1877,21 @@ async function processEmails(args) {
                     }
                 }
                 let curr_prompt_add_tags = null;
+                let addtags_conntype = '';
                 if (!skipAddTags) {
                     curr_prompt_add_tags = await getAddTagsPrompt();
                     if (!curr_prompt_add_tags) {
                         taLog.error("Auto add_tags: the 'prompt_add_tags' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Add Tags prompt.");
+                        skipAddTags = true;
+                    }
+                }
+                if (!skipAddTags) {
+                    // Same guard mzta-menus.js applies on the menu path: the auto/batch path
+                    // reaches mzta_specialCommand without passing through it. Skipping rather
+                    // than returning, so the other features in this iteration still run.
+                    addtags_conntype = getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags');
+                    if (!isApiUsableConnection(addtags_conntype)) {
+                        console.error("[ThunderAI | Auto add_tags] Invalid connection type: " + addtags_conntype);
                         skipAddTags = true;
                     }
                 }
@@ -1820,10 +1912,10 @@ async function processEmails(args) {
                     specialFullPrompt_add_tags = taPromptUtils.finalizePrompt_add_tags(specialFullPrompt_add_tags, prefs_aats.add_tags_maxnum, prefs_aats.add_tags_force_lang, prefs_aats.default_chatgpt_lang, prefs_aats.add_tags_auto_uselist, prefs_aats.add_tags_auto_uselist_list);
                     taLog.log("Special prompt: " + specialFullPrompt_add_tags);
                     // console.log(">>>>>>>>>> curr_prompt_add_tags.model: " + curr_prompt_add_tags.model);
-                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + JSON.stringify(getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags')));
+                    // console.log(">>>>>>>>>>>>>>>>> getConnectionType add_tags:" + addtags_conntype);
                     let cmd_addTags = new mzta_specialCommand({
                         prompt: specialFullPrompt_add_tags,
-                        llm: getConnectionType(prefs_aats, curr_prompt_add_tags, 'add_tags'),
+                        llm: addtags_conntype,
                         custom_model: curr_prompt_add_tags.model ? curr_prompt_add_tags.model : '',
                         do_debug: prefs_aats.do_debug,
                         config: curr_prompt_add_tags

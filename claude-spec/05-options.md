@@ -63,6 +63,17 @@ string**: a new user is not given a provider they never chose. Instead the three
 - **Running a prompt alerts the user.** The `default:` case of `openChatGPT()`
   (`mzta-background.js`) distinguishes "no connection" from "unknown type" and sends
   `msg_no_connection_selected` via `sendAlert` instead of only logging.
+- **Feature flags left enabled are healed in the background.** `_reconcileFeatureFlags()`
+  (`mzta-background.js`) is the authoritative self-healer: it walks
+  `special_prompts_with_integration` and writes `false` for any flag that is `true` while
+  `isApiUsableConnection()` rejects its effective connection. It runs at startup and at the head of
+  the debounced `storage.onChanged` handler, so it covers the writers that have no feature UI of
+  their own — the setup wizard (which writes `connection_type` through the generic `saveOptions()`
+  and never touches the flags), a prefs import, a sync from another profile. `disable_ApiFeature()`
+  in the options page remains, but is now only the immediate-feedback path: it runs solely while
+  that page is open, which is why a background pass is needed at all. The reconciliation is
+  **one-directional** (`true → false` only) — restoring a flag when a usable connection returns
+  would silently re-enable a feature the user may have turned off on purpose.
 - **The red permission banners are unaffected**: they are keyed on an explicitly chosen
   `chatgpt_web` / `anthropic_api` / `chatgpt_api`, so none of them can fire in the empty state.
 
@@ -612,6 +623,40 @@ filters on it. Options rows and menu entries must agree — they used to disagre
 enabled in the UI but absent from the menus. The shared predicate is `isApiUsableConnection()`
 (`js/mzta-utils.js`): `!hasNoConnectionSelected(ct) && ct !== 'chatgpt_web'`. **Always feed it an
 effective connection** (`getConnectionType(prefs, null, prefix)`), never the global one.
+
+Three details keep that agreement holding in the background:
+
+- **Reconciliation runs first.** In the debounced `storage.onChanged` handler
+  `_reconcileFeatureFlags()` precedes `reload_pref_init()` and the menu rebuild, so
+  `_process_incoming`, the menus and the options rows all derive from the same healed values rather
+  than a stale `true`. Both it and `_computeActiveSpecialIds()` read through
+  `_readFeatureConnPrefs()`, so the key set cannot drift between them. The reconciliation writes to
+  `storage.sync` from inside a `storage.onChanged` listener, which is bounded rather than a loop:
+  flags only ever go `true → false`, so the follow-up pass finds nothing to disable — and that pass
+  is wanted anyway, being the one that refreshes `prefs_init`.
+- **Reconciliation judges the connection only.** Sparks presence is deliberately excluded: it is
+  transient (the add-on may merely be restarting), `doGetSparkFeature()` already gates every read
+  site, and with no restoration path a `false` persisted on a boot race would be irreversible. This
+  matches `disable_GetCalendarEvent()`, which hides the rows without persisting anything.
+- **`MENU_RELEVANT_KEYS` is generated, not hand-written.** It spreads
+  `Object.keys(getDynamicSettingsDefaults(['use_specific_integration', 'connection_type']))`. It
+  previously listed only `add_tags`' pair, so changing any other feature's specific integration
+  never triggered a menu rebuild.
+
+**Execution guards are the backstop** for the window between a connection change and the
+reconciliation, and for callers that bypass the menus. `isApiUsableConnection()` is checked in
+`_generateSpamReportForMessage()` (which had no check at all — the resolved type flowed straight
+into `mzta_specialCommand`), in the `addTagsAuto` branch of `processEmails()` (the menu-path guard
+in `mzta-menus.js` does not cover auto/batch), and in `_generateSummaryForMessage()`,
+`_generateTranslationForMessage()` and `_openSummaryWebchat()` — the latter three previously tested
+`connectionType === 'chatgpt_web'`, which let an *empty* connection through. Each guard reports
+through the channel its caller already owns (`spamReport` / `summaryStore` / `translationStore`,
+`skipAddTags` for add_tags), so no state is left marked "in progress".
+
+**No user-facing notification** is emitted when a flag is auto-disabled — only a `console.log`.
+`disable_ApiFeature()` is likewise silent; notifying only from the background would make the same
+event noisy or quiet depending on whether an options tab happened to be open. The resulting state is
+already visible in the greyed rows and the missing menu entries.
 
 ### The Prompt Is Authoritative For API Parameters
 
