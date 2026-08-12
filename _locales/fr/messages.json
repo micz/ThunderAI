@@ -1941,5 +1941,586 @@
     },
     "onboarding_footer_3": {
         "message": "Vous aimez ThunderAI ?"
+    },
+    "prefs_full_guide": {
+        "message": "Guide complet",
+        "description": "Lien dans l'encadré de configuration du fournisseur, ouvrant la page de documentation du fournisseur sélectionné."
+    },
+    "prefs_shortcut_label": {
+        "message": "Ouvrir le menu ThunderAI avec",
+        "description": "Libellé précédant les touches de raccourci clavier, en bas de la page d'options."
+    },
+    "prefs_disclaimer_short": {
+        "message": "Les modèles LLM peuvent générer des informations incorrectes, et vos données peuvent être utilisées par le fournisseur pour entraîner de nouveaux modèles.",
+        "description": "Affiché en bas du corps de la page d'options, suivi d'un lien vers les informations de confidentialité."
+    },
+    "prefs_footer_translate": {
+        "message": "Traduire l'extension",
+        "description": "Lien en pied de page de la page d'options, ouvrant la page d'informations sur la traduction."
+    },
+    "prefs_footer_donate": {
+        "message": "Faire un don",
+        "description": "Lien en pied de page de la page d'options, ouvrant la page de don."
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ prompts",
+        "description": "Nombre de prompts affichés dans la liste, en pied de page",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "Models_Fetch": {
+        "message": "Mettre à jour la liste",
+        "description": "Libellé du bouton qui récupère/met à jour la liste des modèles disponibles pour un fournisseur d'IA"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Comparer les modifications par",
+        "description": "Page d'options : unité de comparaison par défaut du sélecteur de modifications de relecture"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Façon dont le sélecteur de modifications compare le texte d'origine avec la réponse. « Mots » convient pour corriger l'orthographe et la grammaire ; « Phrases » est plus lisible lorsque la réponse réécrit des phrases entières. Notez que sur un texte composé d'une seule phrase, « Phrases » affiche tout le texte comme une seule modification. Vous pouvez aussi passer de l'un à l'autre pendant la révision des modifications.",
+        "description": ""
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Mots",
+        "description": "Unité de comparaison : mot par mot"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Phrases",
+        "description": "Unité de comparaison : phrase par phrase"
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Le prompt spécial Filtre anti-spam est manquant. Si vous avez modifié les prompts spéciaux, essayez de restaurer le prompt Filtre anti-spam par défaut.",
+        "description": ""
+    },
+    "apiwebchat_picker_title": {
+        "message": "Réviser les modifications",
+        "description": "Titre du tour de transcription contenant le sélecteur de modifications interactif"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Actions du sélecteur de modifications",
+        "description": "Libellé accessible de la barre d'outils du sélecteur de modifications"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ sur $TOTAL$ modifications acceptées",
+        "description": "Compteur du sélecteur de modifications",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Toutes les $TOTAL$ modifications acceptées",
+        "description": "État du sélecteur de modifications affiché lorsque toutes les modifications sont acceptées",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "description": "Libellé du sélecteur de modifications, forme compacte utilisée sur les grandes largeurs",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Modification $CURRENT$ sur $TOTAL$",
+        "description": "Libellé du sélecteur de modifications, forme complète utilisée sur les petites largeurs",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ modifications",
+        "description": "Libellé du sélecteur de modifications avant que l'utilisateur ne navigue vers une modification spécifique, petite largeur",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Modifications acceptées",
+        "description": "Libellé accessible de la barre de progression du sélecteur de modifications"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Plus d'actions",
+        "description": "Libellé accessible du bouton de menu de débordement du sélecteur de modifications"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Modifier manuellement",
+        "description": "Bouton du sélecteur de modifications qui passe de la révision des modifications à l'édition libre du texte"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Retour aux modifications",
+        "description": "Bouton du sélecteur de modifications qui quitte l'édition manuelle et compare à nouveau le texte modifié avec l'original"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Texte modifié",
+        "description": "Libellé accessible de la zone d'édition manuelle du sélecteur de modifications"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Vous modifiez le texte à la main. Le retour aux modifications comparera à nouveau ce que vous avez écrit avec le texte d'origine, et tous vos choix seront réinitialisés.",
+        "description": "Note affichée par le sélecteur de modifications en mode édition manuelle"
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Comparer par",
+        "description": "Libellé accessible du sélecteur de granularité mots/phrases du sélecteur de modifications"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Mots",
+        "description": "Option de granularité du sélecteur de modifications : comparer les textes mot par mot"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Phrases",
+        "description": "Option de granularité du sélecteur de modifications : comparer les textes phrase par phrase"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Tout accepter",
+        "description": ""
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Tout rejeter",
+        "description": ""
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Modification précédente",
+        "description": ""
+    },
+    "apiwebchat_picker_next": {
+        "message": "Modification suivante",
+        "description": ""
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "La réponse est identique au texte d'origine : il n'y a rien à réviser.",
+        "description": "Affiché par le sélecteur de modifications lorsque le diff n'a trouvé aucune différence"
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "Les deux textes n'ont pas pu être comparés. La réponse est affichée inchangée.",
+        "description": "Affiché par le sélecteur de modifications lorsque le diff n'a pas pu être calculé"
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Texte d'origine, conservé : $TEXT$",
+        "description": "Libellé accessible de la version d'origine d'une modification, lorsqu'elle est celle utilisée",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Texte d'origine, écarté : $TEXT$. Activer pour le conserver à la place.",
+        "description": "Libellé accessible de la version d'origine d'une modification, lorsqu'elle n'est pas celle utilisée",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Texte suggéré, conservé : $TEXT$",
+        "description": "Libellé accessible de la version suggérée d'une modification, lorsqu'elle est celle utilisée",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Texte suggéré, écarté : $TEXT$. Activer pour le conserver à la place.",
+        "description": "Libellé accessible de la version suggérée d'une modification, lorsqu'elle n'est pas celle utilisée",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Aucun texte ici : cette partie est omise. Activez l'autre version pour conserver son texte.",
+        "description": "Libellé accessible du côté vide d'une modification (une insertion sans origine, ou une suppression sans remplacement), lorsqu'il est celui utilisé"
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Aucun texte ici. Activer pour omettre cette partie.",
+        "description": "Libellé accessible du côté vide d'une modification, lorsqu'il n'est pas celui utilisé"
+    },
+    "apiwebchat_copy": {
+        "message": "Copier",
+        "description": "Bouton dans la fenêtre de chat IA qui copie la réponse dans le presse-papiers"
+    },
+    "apiwebchat_copied": {
+        "message": "Copié",
+        "description": "Confirmation affichée brièvement après la copie de la réponse dans le presse-papiers"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Copie échouée",
+        "description": "Affiché lorsque la réponse n'a pas pu être copiée dans le presse-papiers"
+    },
+    "apiwebchat_status_error": {
+        "message": "Erreur",
+        "description": "Indicateur d'état dans la fenêtre de chat IA lorsque la requête a échoué"
+    },
+    "apiwebchat_show_options": {
+        "message": "Afficher les options",
+        "description": "Libellé accessible de la flèche qui ouvre le menu d'options du bouton d'action principal"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Actions de la réponse",
+        "description": "Libellé accessible de la petite barre d'outils affichée sous chaque réponse dans la fenêtre de chat IA"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Défiler vers le plus récent",
+        "description": "Libellé accessible du bouton flottant dans la fenêtre de chat IA qui revient au contenu le plus récent et reprend le défilement automatique"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Résumé du raisonnement",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Demande à l'API un résumé du raisonnement du modèle, affiché dans le chat sous forme de bloc repliable. Seuls les modèles récents à raisonnement le prennent en charge, tels que gpt-5, o3 et o4-mini : les modèles plus anciens comme o1-pro et o3-mini raisonnent en interne mais n'exposent jamais de résumé, le bloc reste donc masqué. Laissez désactivé pour les modèles sans prise en charge du raisonnement.",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Intensité du raisonnement",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Quantité d'effort que le modèle consacre au raisonnement avant de répondre. Les valeurs basses donnent des réponses plus rapides et moins coûteuses, les valeurs élevées donnent des réponses plus approfondies. Laissez sur la valeur par défaut de l'API pour laisser OpenAI décider. Ignoré par les modèles sans prise en charge du raisonnement.",
+        "description": ""
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Désactivé",
+        "description": "Option du menu déroulant du résumé du raisonnement, signifie qu'aucun résumé n'est demandé."
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "Valeur par défaut de l'API",
+        "description": "Option du menu déroulant de l'intensité du raisonnement, signifie que la valeur n'est pas envoyée et que la valeur par défaut de l'API s'applique."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Auto",
+        "description": "Option du menu déroulant du résumé du raisonnement : l'API choisit le niveau de détail du résumé."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Détaillé",
+        "description": "Option du menu déroulant du résumé du raisonnement : demander un résumé plus détaillé."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Minimal",
+        "description": "Option du menu déroulant de l'intensité du raisonnement : la plus faible quantité de raisonnement."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Faible",
+        "description": "Option du menu déroulant de l'intensité du raisonnement."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Moyen",
+        "description": "Option du menu déroulant de l'intensité du raisonnement."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Élevé",
+        "description": "Option du menu déroulant de l'intensité du raisonnement : la plus forte quantité de raisonnement."
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ espaces réservés de données",
+        "description": "Nombre d'espaces réservés de données affichés dans la liste, en pied de page",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "menu_order_reset_all": {
+        "message": "Tout réinitialiser",
+        "description": "Page d'ordre des menus : bouton restaurant l'ordre, la visibilité et les icônes par défaut de tous les éléments de menu"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Restaure l'ordre, la visibilité et les icônes par défaut de tous les éléments de menu. Appuyez sur Tout enregistrer pour appliquer.",
+        "description": "Page d'ordre des menus : infobulle du bouton restaurant l'ordre, la visibilité et les icônes par défaut de tous les éléments de menu"
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Le prompt sélectionné apparaît aussi dans cette liste",
+        "description": "Infobulle du point affiché sur un sous-onglet lorsque le prompt mis en évidence y est aussi présent"
+    },
+    "menu_position_btn_label": {
+        "message": "Position dans le menu",
+        "description": "Bouton dans l'éditeur de prompts personnalisés qui ouvre la page Ordre des menus et met en évidence ce prompt"
+    },
+    "menu_order_icon_default": {
+        "message": "Icône par défaut",
+        "description": "Option du sélecteur d'icône qui efface l'icône personnalisée et restaure l'icône par défaut intégrée du prompt"
+    },
+    "menu_order_legend_type": {
+        "message": "Affiché :",
+        "description": "En-tête du groupe de badges de type dans la légende de la page d'ordre des menus"
+    },
+    "menu_order_legend_type_always": {
+        "message": "Affiché à la fois en lecture et en rédaction",
+        "description": "Description de la légende pour le badge de type « Toujours »"
+    },
+    "menu_order_legend_type_reading": {
+        "message": "Affiché uniquement lors de la lecture d'un message",
+        "description": "Description de la légende pour le badge de type « Lecture »"
+    },
+    "menu_order_legend_type_composing": {
+        "message": "Affiché uniquement lors de la rédaction d'un message",
+        "description": "Description de la légende pour le badge de type « Rédaction »"
+    },
+    "menu_order_legend_source": {
+        "message": "Type de prompt :",
+        "description": "En-tête du groupe de badges de source dans la légende de la page d'ordre des menus"
+    },
+    "menu_order_legend_source_default": {
+        "message": "Prompt intégré fourni avec ThunderAI",
+        "description": "Description de la légende pour le badge de source « Par défaut »"
+    },
+    "menu_order_legend_source_special": {
+        "message": "Prompt lié à une fonctionnalité (ex. étiquetage, calendrier)",
+        "description": "Description de la légende pour le badge de source « Spécial »"
+    },
+    "menu_order_legend_source_custom": {
+        "message": "Prompt que vous avez créé",
+        "description": "Description de la légende pour le badge de source « Personnalisé »"
+    },
+    "prefs_settings_subtitle": {
+        "message": "Paramètres",
+        "description": "Sous-titre affiché sous le nom ThunderAI dans l'en-tête de la page d'options"
+    },
+    "prefs_disclaimer": {
+        "message": "Les modèles LLM peuvent générer des informations incorrectes, et vos données peuvent être utilisées par le fournisseur pour entraîner de nouveaux modèles. À utiliser à vos risques et périls.",
+        "description": "Note d'avertissement affichée en haut du corps de la page d'options"
+    },
+    "prefs_ConnectionSettingsTitle": {
+        "message": "Paramètres de connexion",
+        "description": "Sur-titre de section du panneau des paramètres de connexion sur la page d'options"
+    },
+    "prefs_BasicSettingsTitle": {
+        "message": "Paramètres de base",
+        "description": "Sur-titre de section des paramètres de base sur la page d'options"
+    },
+    "prefs_FeaturesTitle": {
+        "message": "Fonctionnalités",
+        "description": "Sur-titre de section de la liste des fonctionnalités sur la page d'options"
+    },
+    "prefs_FeaturesSubtitle": {
+        "message": "Activez ce dont vous avez besoin. Ajustez chaque fonctionnalité depuis son propre écran de paramètres.",
+        "description": "Ligne sous le sur-titre de la section Fonctionnalités sur la page d'options"
+    },
+    "prefs_FeaturesNoConnection": {
+        "message": "Sélectionnez une connexion IA ci-dessus pour activer ces fonctionnalités.",
+        "description": "Note affichée sous le sous-titre Fonctionnalités tant qu'aucune connexion IA n'a été sélectionnée, expliquant pourquoi les interrupteurs sont désactivés"
+    },
+    "prefs_advanced_options": {
+        "message": "Options avancées",
+        "description": "Libellé de la section des options avancées au niveau application sur la page d'options"
+    },
+    "prefs_conn_show_advanced": {
+        "message": "Afficher les options avancées",
+        "description": "Libellé du bouton d'affichage des options avancées par connexion lorsqu'il est replié"
+    },
+    "prefs_conn_hide_advanced": {
+        "message": "Masquer les options avancées",
+        "description": "Libellé du bouton d'affichage des options avancées par connexion lorsqu'il est déplié"
+    },
+    "prefs_privacy_more_info": {
+        "message": "Cliquez ici pour plus d'informations sur la confidentialité"
+    },
+    "connTest_idle": {
+        "message": "Connexion pas encore testée",
+        "description": "Bandeau d'état du test de connexion : état initial avant tout test"
+    },
+    "connTest_testing": {
+        "message": "Test de la connexion…",
+        "description": "Bandeau d'état du test de connexion : état pendant la vérification de connectivité"
+    },
+    "connTest_ok": {
+        "message": "Connecté — $API$ accessible",
+        "description": "Bandeau d'état du test de connexion : état de réussite ; $API$ est le nom du fournisseur",
+        "placeholders": {
+            "api": {
+                "content": "$1",
+                "example": "Anthropic Claude"
+            }
+        }
+    },
+    "connTest_error": {
+        "message": "Erreur — $DETAIL$",
+        "description": "Bandeau d'état du test de connexion : état d'erreur ; $DETAIL$ est le message d'erreur",
+        "placeholders": {
+            "detail": {
+                "content": "$1",
+                "example": "401 — clé API invalide"
+            }
+        }
+    },
+    "connTest_error_auth": {
+        "message": "Échec de l'authentification — vérifiez votre clé API",
+        "description": "Bandeau d'état du test de connexion : message d'erreur pour un échec d'authentification 401/403"
+    },
+    "connTest_error_network": {
+        "message": "Erreur réseau — point de terminaison injoignable",
+        "description": "Bandeau d'état du test de connexion : message d'erreur lorsque le point de terminaison est injoignable (réseau/CORS)"
+    },
+    "connTest_error_timeout": {
+        "message": "Délai dépassé — aucune réponse du point de terminaison",
+        "description": "Bandeau d'état du test de connexion : message d'erreur lorsque la requête dépasse le délai d'attente"
+    },
+    "connTest_link_test": {
+        "message": "Tester maintenant",
+        "description": "Bandeau d'état du test de connexion : lien d'action pour lancer le test (état initial)"
+    },
+    "connTest_link_retest": {
+        "message": "Re-tester",
+        "description": "Bandeau d'état du test de connexion : lien d'action pour relancer le test (état de réussite)"
+    },
+    "connTest_link_retry": {
+        "message": "Réessayer",
+        "description": "Bandeau d'état du test de connexion : lien d'action pour relancer le test (état d'erreur)"
+    },
+    "wizard_title": {
+        "message": "Assistant de configuration",
+        "description": "Titre de la page de l'assistant de configuration"
+    },
+    "wizard_step_provider_title": {
+        "message": "Choisissez votre IA",
+        "description": "En-tête de l'étape 0 de l'assistant de configuration"
+    },
+    "wizard_step_provider_sub": {
+        "message": "Chaque service a sa propre couleur — vous la retrouverez tout au long du reste de la configuration.",
+        "description": "Ligne sous l'en-tête de l'étape 0 de l'assistant de configuration"
+    },
+    "wizard_step_connect_sub": {
+        "message": "Saisissez les identifiants ci-dessous et choisissez un modèle, puis testez la connexion.",
+        "description": "Ligne sous l'en-tête de l'étape 1 (Connexion) de l'assistant de configuration pour les fournisseurs API"
+    },
+    "wizard_step_connect_sub_web": {
+        "message": "Presque rien à configurer ici.",
+        "description": "Ligne sous l'en-tête de l'étape 1 (Connexion) de l'assistant de configuration pour l'interface ChatGPT Web"
+    },
+    "wizard_step_tools_title": {
+        "message": "Choisissez vos outils",
+        "description": "En-tête de l'étape 2 de l'assistant de configuration"
+    },
+    "wizard_step_tools_sub": {
+        "message": "Vous pouvez modifier tout cela ultérieurement dans les Paramètres.",
+        "description": "Ligne sous l'en-tête de l'étape 2 de l'assistant de configuration"
+    },
+    "wizard_done_title": {
+        "message": "Tout est prêt",
+        "description": "En-tête de l'étape finale de l'assistant de configuration"
+    },
+    "wizard_done_body": {
+        "message": "ThunderAI est prêt. Faites un clic droit sur un message ou ouvrez la fenêtre de rédaction pour l'essayer. Ajustez tout ultérieurement dans les Paramètres.",
+        "description": "Corps de texte de l'étape finale de l'assistant de configuration"
+    },
+    "wizard_run_again": {
+        "message": "Recommencer",
+        "description": "Étape finale de l'assistant de configuration : lien pour relancer l'assistant"
+    },
+    "wizard_connect_heading": {
+        "message": "Connecter $PROVIDER$",
+        "description": "En-tête de l'étape 1 de l'assistant de configuration ; $PROVIDER$ est le nom d'affichage du fournisseur",
+        "placeholders": {
+            "provider": {
+                "content": "$1",
+                "example": "Claude API"
+            }
+        }
+    },
+    "wizard_back": {
+        "message": "Retour",
+        "description": "Navigation de l'assistant de configuration : aller à l'étape précédente"
+    },
+    "wizard_continue": {
+        "message": "Continuer",
+        "description": "Navigation de l'assistant de configuration : passer à l'étape suivante"
+    },
+    "wizard_finish": {
+        "message": "Terminer la configuration",
+        "description": "Navigation de l'assistant de configuration : libellé de l'avant-dernière étape"
+    },
+    "wizard_provider_tag_chatgpt_web": {
+        "message": "Aucune clé API — connexion à la première utilisation",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour ChatGPT Web"
+    },
+    "wizard_provider_tag_chatgpt_api": {
+        "message": "Nécessite une clé API + un modèle",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour l'API OpenAI ChatGPT"
+    },
+    "wizard_provider_tag_google_gemini_api": {
+        "message": "Nécessite une clé API + un modèle",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour l'API Google Gemini"
+    },
+    "wizard_provider_tag_anthropic_api": {
+        "message": "Nécessite clé API, modèle et version",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour l'API Anthropic Claude"
+    },
+    "wizard_provider_tag_ollama_api": {
+        "message": "Adresse de serveur local + modèle",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour Ollama"
+    },
+    "wizard_provider_tag_openai_comp_api": {
+        "message": "Adresse de serveur + modèle",
+        "description": "Ligne d'étiquette de la carte fournisseur dans l'assistant de configuration pour l'API compatible OpenAI"
+    },
+    "onboarding_wizard_banner_text": {
+        "message": "Vous débutez avec ThunderAI ? Laissez l'assistant de configuration vous guider pour connecter votre IA.",
+        "description": "Texte de la bannière de la page d'accueil invitant l'utilisateur à lancer l'assistant de configuration"
+    },
+    "onboarding_wizard_banner_link": {
+        "message": "Lancer l'assistant de configuration",
+        "description": "Libellé du lien de la bannière de la page d'accueil qui lance l'assistant de configuration"
+    },
+    "prefs_doc_setup_wizard_launch": {
+        "message": "Assistant de configuration",
+        "description": "Libellé de la carte de documentation sur la page d'options qui lance l'assistant de configuration"
+    },
+    "popup_setup_wizard_text": {
+        "message": "ThunderAI n'est pas encore connecté à une IA.",
+        "description": "Message du menu popup affiché lorsqu'aucune connexion IA n'est configurée"
+    },
+    "popup_setup_wizard_link": {
+        "message": "Lancer l'assistant de configuration",
+        "description": "Libellé du lien du menu popup qui ouvre l'assistant de configuration"
+    },
+    "prefs_Connection_type_none": {
+        "message": "— Sélectionnez une connexion IA —",
+        "description": "Option de substitution du sélecteur de type de connexion, affichée tant qu'aucune connexion IA n'a été sélectionnée"
+    },
+    "options_no_connection_text": {
+        "message": "Aucune connexion IA sélectionnée pour l'instant. ThunderAI en a besoin pour fonctionner.",
+        "description": "Texte de la bannière de la page d'options affiché lorsqu'aucune connexion IA n'a été sélectionnée"
+    },
+    "options_no_connection_link": {
+        "message": "Lancer l'assistant de configuration",
+        "description": "Libellé du lien de la bannière de la page d'options qui ouvre l'assistant de configuration"
+    },
+    "msg_no_connection_selected": {
+        "message": "Aucune connexion IA sélectionnée. Ouvrez les options ThunderAI et lancez l'assistant de configuration pour en choisir une.",
+        "description": "Alerte affichée lorsqu'un prompt est exécuté mais qu'aucune connexion IA n'a été sélectionnée"
+    },
+    "editor_placeholder_unknown": {
+        "message": "Espace réservé inconnu, ou non disponible pour ce type de prompt",
+        "description": "Infobulle sur un jeton d'espace réservé mis en évidence dans l'éditeur de prompt lorsque l'identifiant de l'espace réservé n'existe pas, ou existe mais n'est pas disponible pour le type de prompt sélectionné"
+    },
+    "editor_placeholder_unterminated": {
+        "message": "Espace réservé non terminé : il manque le %} de fermeture",
+        "description": "Infobulle sur un jeton d'espace réservé mis en évidence dans l'éditeur de prompt lorsque le jeton s'ouvre avec {% mais ne se ferme jamais avec %}"
     }
 }
