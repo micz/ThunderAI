@@ -93,6 +93,38 @@ var modified_html = '';
 let _process_incoming = false;
 let _sparks_presence = false;
 
+// Every key held by the prefs_init snapshot. Hoisted so the storage.onChanged gate
+// below is derived from the same list reload_pref_init() actually reads, and cannot
+// drift out of sync with it.
+const PREFS_INIT_KEYS = {
+    do_debug: prefs_default.do_debug,
+    add_tags: prefs_default.add_tags,
+    get_calendar_event: prefs_default.get_calendar_event,
+    get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
+    get_task: prefs_default.get_task,
+    connection_type: prefs_default.connection_type,
+    add_tags_auto: prefs_default.add_tags_auto,
+    add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
+    add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
+    spamfilter: prefs_default.spamfilter,
+    summarize: prefs_default.summarize,
+    summarize_auto: prefs_default.summarize_auto,
+    translate: prefs_default.translate,
+    translate_auto: prefs_default.translate_auto,
+    spamfilter_threshold: prefs_default.spamfilter_threshold,
+    spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
+    dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
+    chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
+    ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
+};
+
+// Keys that affect which special prompts are advertised in the menus.
+const MENU_RELEVANT_KEYS = [
+    'add_tags', 'add_tags_use_specific_integration', 'add_tags_connection_type',
+    'get_calendar_event', 'get_calendar_event_from_clipboard', 'get_task',
+    'spamfilter', 'summarize', 'translate', 'connection_type'
+];
+
 let prefs_init = {};
 await reload_pref_init();
 
@@ -102,19 +134,6 @@ taBatchController.taLog = taLog;
 let spamReport = new taSpamReport(prefs_init.do_debug);
 let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
-
-let special_prompts_ids = getActiveSpecialPromptsIDs({
-    addtags: prefs_init.add_tags,
-    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-    get_calendar_event: doGetSparkFeature(prefs_init.get_calendar_event),
-    get_calendar_event_from_clipboard: doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard),
-    get_task: doGetSparkFeature(prefs_init.get_task),
-    spamfilter: prefs_init.spamfilter,
-    summarize: prefs_init.summarize,
-    translate: prefs_init.translate,
-    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-  });
 
 browser.composeScripts.register({
     js: [{file: "/js/mzta-compose-script.js"}]
@@ -179,45 +198,45 @@ function preparePopupMenu(tab) {
     return output;
 }
 
-async function _reload_menus() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
-    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
-    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
-    let getTask = doGetSparkFeature(prefs_reload.get_task);
-    const special_prompts_ids = getActiveSpecialPromptsIDs({
-        addtags: prefs_reload.add_tags,
-        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-        get_calendar_event: getCalendarEvent,
-        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-        get_task: getTask,
-        spamfilter: prefs_reload.spamfilter,
-        summarize: prefs_reload.summarize,
-        translate: prefs_reload.translate,
-        is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
-        no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
-      });
-    menus.reload(special_prompts_ids);
-    taLog.log("Reloading menus");
-    return true;
-}
-
-async function _getActiveSpecialIds() {
-    let prefs_reload = await browser.storage.sync.get({add_tags: prefs_default.add_tags, get_calendar_event: prefs_default.get_calendar_event, get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard, get_task: prefs_default.get_task, connection_type: prefs_default.connection_type, spamfilter: prefs_default.spamfilter, summarize: prefs_default.summarize, translate: prefs_default.translate});
-    let getCalendarEvent = doGetSparkFeature(prefs_reload.get_calendar_event);
-    let getCalendarEventFromClipboard = doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard);
-    let getTask = doGetSparkFeature(prefs_reload.get_task);
+// Single source of truth for special-prompt gating.
+// Everything is read fresh from storage on purpose: mixing a fresh changed value with
+// values taken from the prefs_init snapshot used to make addtags_api lag behind the
+// rest by one or more storage change events, hiding the Add Tags command until restart.
+async function _computeActiveSpecialIds() {
+    let prefs_reload = await browser.storage.sync.get({
+        add_tags: prefs_default.add_tags,
+        add_tags_use_specific_integration: prefs_default.add_tags_use_specific_integration,
+        add_tags_connection_type: prefs_default.add_tags_connection_type,
+        get_calendar_event: prefs_default.get_calendar_event,
+        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
+        get_task: prefs_default.get_task,
+        connection_type: prefs_default.connection_type,
+        spamfilter: prefs_default.spamfilter,
+        summarize: prefs_default.summarize,
+        translate: prefs_default.translate
+    });
     return getActiveSpecialPromptsIDs({
         addtags: prefs_reload.add_tags,
-        addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-        get_calendar_event: getCalendarEvent,
-        get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-        get_task: getTask,
+        addtags_api: hasSpecificIntegration(prefs_reload.add_tags_use_specific_integration, prefs_reload.add_tags_connection_type),
+        get_calendar_event: doGetSparkFeature(prefs_reload.get_calendar_event),
+        get_calendar_event_from_clipboard: doGetSparkFeature(prefs_reload.get_calendar_event_from_clipboard),
+        get_task: doGetSparkFeature(prefs_reload.get_task),
         spamfilter: prefs_reload.spamfilter,
         summarize: prefs_reload.summarize,
         translate: prefs_reload.translate,
         is_chatgpt_web: (prefs_reload.connection_type === "chatgpt_web"),
         no_connection: hasNoConnectionSelected(prefs_reload.connection_type)
     });
+}
+
+async function _reload_menus() {
+    await menus.reload(await _computeActiveSpecialIds());
+    taLog.log("Reloading menus");
+    return true;
+}
+
+async function _getActiveSpecialIds() {
+    return _computeActiveSpecialIds();
 }
 
 async function _assign_tags(_data, create_new_tags = true, exclusions_exact_match = false) {
@@ -1495,207 +1514,52 @@ function doGetSparkFeature(spark_feature_active) {
 }
 
 async function reload_pref_init(){
-    prefs_init = await browser.storage.sync.get({
-        do_debug: prefs_default.do_debug,
-        add_tags: prefs_default.add_tags,
-        get_calendar_event: prefs_default.get_calendar_event,
-        get_calendar_event_from_clipboard: prefs_default.get_calendar_event_from_clipboard,
-        get_task: prefs_default.get_task,
-        connection_type: prefs_default.connection_type,
-        add_tags_auto: prefs_default.add_tags_auto,
-        add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
-        add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
-        spamfilter: prefs_default.spamfilter,
-        summarize: prefs_default.summarize,
-        summarize_auto: prefs_default.summarize_auto,
-        translate: prefs_default.translate,
-        translate_auto: prefs_default.translate_auto,
-        spamfilter_threshold: prefs_default.spamfilter_threshold,
-        spamfilter_show_msg_panel: prefs_default.spamfilter_show_msg_panel,
-        dynamic_menu_force_enter: prefs_default.dynamic_menu_force_enter,
-        chatgpt_win_save_position: prefs_default.chatgpt_win_save_position,
-        ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
-    });
+    prefs_init = await browser.storage.sync.get(PREFS_INIT_KEYS);
     _process_incoming = prefs_init.add_tags_auto || prefs_init.spamfilter || (prefs_init.summarize && prefs_init.summarize_auto === 3) || (prefs_init.translate && prefs_init.translate_auto === 3);
     _sparks_presence = await checkSparksPresence();
 }
 
 
+// Coalesce bursts of storage changes: a multi-key storage.sync.set fires a single
+// onChanged carrying several keys, and the options pages write one key per change
+// event, so several events can land within a few milliseconds. menus.reload() tears
+// down and rebuilds every menu, so overlapping rebuilds could interleave; a single
+// trailing rebuild is enough, since rebuilding is idempotent.
+// Same debounce idiom as pages/menu_order/mzta-menu-order.js.
+let _storageChangeDebounce = null;
+// Accumulated across every event in a burst: computing these per event and reading
+// them after the debounce would let a later event's flags overwrite an earlier one's,
+// silently dropping a needed menu rebuild.
+let _prefsInitStale = false;
+let _menusStale = false;
+
 // Register the listener for storage changes
 function setupStorageChangeListener() {
     browser.storage.onChanged.addListener((changes, areaName) => {
         // Check if the change happened in the 'sync' storage area
-        if (areaName === 'sync') {
-            // Process 'add_tags' changes
-            if (changes.add_tags) {
-                const newTags = changes.add_tags.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: newTags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
+        if (areaName !== 'sync') return;
 
-            // Process 'get_calendar_event' changes
-            if (changes.get_calendar_event) {
-                const newCalendarEvent = changes.get_calendar_event.newValue;
-                let getCalendarEvent = doGetSparkFeature(newCalendarEvent);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
+        const changed_keys = Object.keys(changes);
+        _prefsInitStale = _prefsInitStale || changed_keys.some(key => key in PREFS_INIT_KEYS);
+        _menusStale = _menusStale || changed_keys.some(key => MENU_RELEVANT_KEYS.includes(key));
+        if (!_prefsInitStale && !_menusStale) return;
 
-            // Process 'get_calendar_event_from_clipboard' changes
-            if (changes.get_calendar_event_from_clipboard) {
-                const newCalendarEventFromClipboard = changes.get_calendar_event_from_clipboard.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(newCalendarEventFromClipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'get_task' changes
-            if (changes.get_task) {
-                const newTask = changes.get_task.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(newTask);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'spamfilter' changes
-            if (changes.spamfilter) {
-                const newSpamfilter = changes.spamfilter.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: newSpamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'summarize' changes
-            if (changes.summarize) {
-                const newSummarize = changes.summarize.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: newSummarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'translate' changes
-            if (changes.translate) {
-                const newTranslate = changes.translate.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: newTranslate,
-                    is_chatgpt_web: (prefs_init.connection_type === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(prefs_init.connection_type)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            // Process 'connection_type' changes
-            if (changes.connection_type) {
-                const newConnectionType = changes.connection_type.newValue;
-                let getCalendarEvent = doGetSparkFeature(prefs_init.get_calendar_event);
-                let getCalendarEventFromClipboard = doGetSparkFeature(prefs_init.get_calendar_event_from_clipboard);
-                let getTask = doGetSparkFeature(prefs_init.get_task);
-                const special_prompts_ids = getActiveSpecialPromptsIDs({
-                    addtags: prefs_init.add_tags,
-                    addtags_api: hasSpecificIntegration(prefs_init.add_tags_use_specific_integration, prefs_init.add_tags_connection_type),
-                    get_calendar_event: getCalendarEvent,
-                    get_calendar_event_from_clipboard: getCalendarEventFromClipboard,
-                    get_task: getTask,
-                    spamfilter: prefs_init.spamfilter,
-                    summarize: prefs_init.summarize,
-                    translate: prefs_init.translate,
-                    is_chatgpt_web: (newConnectionType === "chatgpt_web"),
-                    no_connection: hasNoConnectionSelected(newConnectionType)
-                  });
-                menus.reload(special_prompts_ids);
-            }
-
-            reload_pref_init();
-        }
+        clearTimeout(_storageChangeDebounce);
+        _storageChangeDebounce = setTimeout(() => {
+            const do_prefs_init = _prefsInitStale;
+            const do_menus = _menusStale;
+            _prefsInitStale = false;
+            _menusStale = false;
+            // The snapshot must be refreshed first: the menus read storage directly,
+            // but doGetSparkFeature() consults the _sparks_presence that
+            // reload_pref_init() sets.
+            (async () => {
+                if (do_prefs_init) await reload_pref_init();
+                if (do_menus) await _reload_menus();
+            })().catch(error => taLog.error("ERROR handling storage changes: ", error));
+        }, 200);
+        // storage.onChanged ignores listener return values, so the async work stays
+        // inside the timer instead of being returned from here.
     });
 }
 
@@ -1725,7 +1589,7 @@ setupPermissionsRemovedListener();
 // Menus handling
 await migrateMenuOrderAlphabetic();
 const menus = new mzta_Menus(openChatGPT, prefs_init.do_debug);
-menus.loadMenus(special_prompts_ids);
+await menus.loadMenus(await _computeActiveSpecialIds());
 
 // Context menu click handling
 // Context menus are now created dynamically by mzta_Menus.loadContextMenus()

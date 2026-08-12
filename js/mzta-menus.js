@@ -88,7 +88,7 @@ export class mzta_Menus {
         //         console.error("[ThunderAI] ERROR removing the menus: ", error);
         //     });
         this.removeClickListener();
-        this.loadMenus(also_special);
+        await this.loadMenus(also_special);
     }
 
     addAction = (curr_prompt) => {
