@@ -184,10 +184,18 @@ otherwise disabled.
   null-safe: a message with no folder yields `false`.
 - `_summarizeConnectionMissing()` — resolves the **effective** connection with
   `getConnectionType(prefs, await getSummarizePrompt(), 'summarize')` and tests it with
-  `hasNoConnectionSelected()`, so a summarize-specific integration still works when the global
+  `isApiUsableConnection()`, so a summarize-specific integration still works when the global
   `connection_type` is empty (v5.0.0 ships it empty and steers the user to the Setup Wizard).
-  On a missing connection the trigger logs via `taLog` and skips **silently** — no alert, no
-  error panel. It returns `true` on its own exception, so a failure never starts a generation.
+  The predicate is the same one used by the menus, by `_generateSummaryForMessage()` and by
+  every other feature: `chatgpt_web` has no API and cannot produce a summary, so it counts as
+  unusable here exactly as an empty connection does. It used to test `hasNoConnectionSelected()`
+  instead, which let `chatgpt_web` through — the run then reached
+  `_generateSummaryForMessage()`, which rejects it only **after** `setProcessing()` and
+  persists the error into `summaryStore`. That is why the pre-check exists at all and why it
+  must use the strict predicate: an automatic trigger would otherwise write an error record
+  for a message the user never asked to summarize. On an unusable connection the trigger logs
+  via `taLog` and skips **silently** — no alert, no error panel. It returns `true` on its own
+  exception, so a failure never starts a generation.
 
 **Dynamic `onNewMailReceived` registration.** `monitorAllFolders` can only be set when the
 listener is added, so `registerNewMailListener()` owns the registration and re-registers

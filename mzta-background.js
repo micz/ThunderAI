@@ -389,7 +389,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             if (isMessageInJunkOrTrash(message)) {
                                 taLog.log("Message in junk or trash folder, skipping the auto-summarize sender list...");
                             } else if (await _summarizeConnectionMissing()) {
-                                taLog.log("[ThunderAI] No AI connection selected, skipping the auto-summarize sender list for: " + message.headerMessageId);
+                                taLog.log("[ThunderAI] No AI connection able to reach an API, skipping the auto-summarize sender list for: " + message.headerMessageId);
                             } else {
                                 taLog.log("[ThunderAI] Sender in the auto-summarize list, generating summary for: " + message.headerMessageId);
                                 _generateSummaryForMessage(message.headerMessageId, tabId);
@@ -815,10 +815,16 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
     }
 }
 
-// True when no AI connection can be resolved for the summarize feature, so an automatic
+// True when the summarize feature has no connection able to reach an API, so an automatic
 // summary must be skipped silently. The *effective* connection is checked (the same way
 // _generateSummaryForMessage() resolves it), so a summarize-specific integration keeps working
 // even when the global connection_type is still empty.
+// The predicate is isApiUsableConnection(), the same one used by the menus, by
+// _generateSummaryForMessage() and by every other feature: chatgpt_web has no API and cannot
+// produce a summary, so it must be treated exactly like a missing connection here. Skipping
+// early matters because _generateSummaryForMessage() rejects it only after setProcessing(),
+// persisting an error into summaryStore — an automatic run would poison the cache for a
+// message the user never asked to summarize.
 async function _summarizeConnectionMissing() {
     try {
         let prefs = await browser.storage.sync.get({
@@ -826,7 +832,7 @@ async function _summarizeConnectionMissing() {
             ...getDynamicSettingsDefaults(['use_specific_integration', 'connection_type'])
         });
         const summarize_prompt = await getSummarizePrompt();
-        return hasNoConnectionSelected(getConnectionType(prefs, summarize_prompt, 'summarize'));
+        return !isApiUsableConnection(getConnectionType(prefs, summarize_prompt, 'summarize'));
     } catch (e) {
         taLog.error("Error in _summarizeConnectionMissing: " + e);
         return true;   // on doubt, do not start an automatic generation
@@ -2116,7 +2122,7 @@ async function processEmails(args) {
                     skipSummarize = true;
                 }
                 if (!skipSummarize && await _summarizeConnectionMissing()) {
-                    taLog.log("[ThunderAI] No AI connection selected, skipping summarize on receive for: " + message.headerMessageId);
+                    taLog.log("[ThunderAI] No AI connection able to reach an API, skipping summarize on receive for: " + message.headerMessageId);
                     skipSummarize = true;
                 }
                 if (!skipSummarize) {
