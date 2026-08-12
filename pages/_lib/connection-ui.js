@@ -1144,6 +1144,7 @@ export async function injectConnectionUI({
         create: false,
         maxOptions: null,
         maxItems: 1,
+        closeAfterSelect: true,
         sortField: {
           field: "text",
           direction: "asc"
@@ -1151,9 +1152,12 @@ export async function injectConnectionUI({
       });
       ts.on('change', function() {
         setTomSelectBorder(this);
+        // Drop the focus right after the selection, so the search input is
+        // hidden and the control goes back to its compact state immediately.
+        this.blur();
       });
       if (el.value) {
-        ts.setValue(el.value);
+        ts.setValue(el.value, true);   // silent, the border is set right below
       }
       setTomSelectBorder(ts);
     }

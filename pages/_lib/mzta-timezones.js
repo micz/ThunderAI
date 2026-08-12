@@ -129,13 +129,17 @@ export function initTimezoneSelect(select) {
     create: false,
     maxOptions: null,   // the list is longer than the default limit
     maxItems: 1,
+    closeAfterSelect: true,
     sortField: null,    // keep the offset ordering, sorting by label would not
   });
   ts.on('change', function() {
     setTomSelectBorder(this);
+    // Drop the focus right after the selection, so the search input is
+    // hidden and the control goes back to its compact state immediately.
+    this.blur();
   });
   if (select.value) {
-    ts.setValue(select.value);
+    ts.setValue(select.value, true);   // silent, the border is set right below
   }
   setTomSelectBorder(ts);
 

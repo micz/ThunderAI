@@ -179,9 +179,16 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
 - Options are sorted by UTC offset, then by id.
 - `Intl.supportedValuesOf()` returns ICU's **legacy canonical** ids: `Asia/Calcutta` (not `Asia/Kolkata`),
   `Asia/Rangoon` (not `Asia/Yangon`), `Asia/Katmandu`, `Europe/Kiev`. This is intentional — no alias layer.
-- The select is wrapped in Tom Select for search. Two config values are load-bearing: `maxOptions: null`
-  (the default caps the dropdown at 50) and `sortField: null` (sorting by label would move every negative
-  offset after the positive ones, since `-` sorts after `+`).
+- The select is wrapped in Tom Select for search. Three config values are load-bearing: `maxOptions: null`
+  (the default caps the dropdown at 50), `sortField: null` (sorting by label would move every negative
+  offset after the positive ones, since `-` sorts after `+`), and `closeAfterSelect: true` (see below).
+- Both Tom Select instances — this one and the model dropdowns in `pages/_lib/connection-ui.js` — combine
+  `closeAfterSelect: true` with a `this.blur()` in the `change` handler, so the control returns to its compact
+  state as soon as an option is picked. Neither is enough alone: Tom Select only hides the search input in
+  `inputState()` when the control is not focused, so without the `blur()` the caret stays on its own line until
+  the user clicks elsewhere; without `closeAfterSelect` the dropdown would linger open. Because the handler
+  blurs, the initial `setValue()` that seeds the stored value is passed `true` (silent) — the border is set by
+  the explicit `setTomSelectBorder()` call right after it.
 - Tom Select theming lives in `pages/_lib/mzta-design.css`, scoped to `#mzta_card` so it covers every select on
   the design-system pages (it used to be scoped to `#connection_ui_table`/`#connection_ui_adv_table`, which left
   other Tom Selects unstyled). The vendored `tom-select.default.min.css` hardcodes light colors, so the control,
