@@ -21,6 +21,7 @@
         <li>Fix: the timezone selector of the calendar event and task settings pages now lists all the timezones known to Thunderbird, including those with a fractional offset, and has a search box [<a href="https://github.com/micz/ThunderAI/issues/843">#843</a>].</li>
         <li><i>[All APIs]</i> Added an option to automatically summarize the emails coming from a list of sender addresses or domains, even when the auto-summarize option is disabled [<a href="https://github.com/micz/ThunderAI/issues/820">#820</a>].</li>
         <li><i>[All APIs]</i> The automatic processing of received emails (autotagging, spam filter and summarize) now skips the messages in the trash folders too, and not only those in the spam folders.</li>
+        <li><i>[All APIs]</i> The automatic processing of received emails (autotagging, spam filter, summarize and translate) now also skips the messages in the drafts, templates, outbox and sent folders, so a draft is no longer summarized or translated while it is being written. A new option in the Add Tags settings allows the autotagging of the sent emails.</li>
         <li>The rewrite prompts are now using the HTML selected text preserving the HTML formatting if present.</li>
         <li>In the custom prompts page is now possibile to search for a prompt filtering the list.</li>
         <li>Various minor bugs fixed.</li>

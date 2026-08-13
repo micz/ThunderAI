@@ -763,11 +763,23 @@ export function messageFolderHasSpecialUse(message, specialUseList) {
   return specialUseList.some(item => specialUse.includes(item));
 }
 
-// Automatic processing of received emails (auto add_tags, auto spam filter, auto summarize)
-// must never run on messages sitting in a junk or a trash folder: they have already been
-// discarded by the user or by the server, so spending API tokens on them is pointless.
-export function isMessageInJunkOrTrash(message) {
-  return messageFolderHasSpecialUse(message, ['junk', 'trash']);
+// Folders the automatic processing (auto add_tags, auto spam filter, auto summarize/translate)
+// must never run on:
+//  - junk/trash: already discarded by the user or by the server, spending API tokens on them
+//    is pointless;
+//  - drafts/templates/outbox/sent: written by the user, not received, so processing them
+//    automatically burns tokens on text the user is still composing (a draft opened while it is
+//    being written would otherwise be summarized or translated on the spot).
+// 'archives' is deliberately absent: an archived message is still a received one.
+// Manual actions (context menu, buttons) are never filtered by this list.
+export const AUTO_SKIP_SPECIAL_USE = ['junk', 'trash', 'drafts', 'templates', 'outbox', 'sent'];
+
+// allowSent re-enables the sent folder only, for the add_tags_auto_include_sent option.
+export function isMessageInAutoSkippedFolder(message, allowSent = false) {
+  const skipList = allowSent
+    ? AUTO_SKIP_SPECIAL_USE.filter(specialUse => specialUse !== 'sent')
+    : AUTO_SKIP_SPECIAL_USE;
+  return messageFolderHasSpecialUse(message, skipList);
 }
 
 // True when an address list holds at least one usable entry.

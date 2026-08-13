@@ -1361,6 +1361,14 @@
     "message": "If checked, the AI will only add tags to emails received in the inbox folder.",
     "description": ""
   },
+  "prefs_OptionText_add_tags_auto_include_sent": {
+    "message": "Also add tags to sent emails",
+    "description": ""
+  },
+  "prefs_OptionText_add_tags_auto_include_sent_Info": {
+    "message": "The automatic processing never runs on the drafts, templates, outbox, junk and trash folders, and it skips the sent folder too. If checked, the AI will also add tags to the emails you send.",
+    "description": ""
+  },
   "prefs_OptionText_add_tags_use_specific_integration_Info": {
     "message": "If checked, the Model and API specified below will be used for adding tags to emails, regardless the one choosen in the ThunderAI options page.",
     "description": ""

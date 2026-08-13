@@ -55,7 +55,7 @@ import {
     hasAddressListEntries,
     extractEmail,
     messageFolderHasSpecialUse,
-    isMessageInJunkOrTrash,
+    isMessageInAutoSkippedFolder,
     isApiUsableConnection,
     hasSpecificIntegration,
      } from './js/mzta-utils.js';
@@ -113,6 +113,7 @@ const PREFS_INIT_KEYS = {
     add_tags_auto: prefs_default.add_tags_auto,
     add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
     add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
+    add_tags_auto_include_sent: prefs_default.add_tags_auto_include_sent,
     spamfilter: prefs_default.spamfilter,
     summarize: prefs_default.summarize,
     summarize_auto: prefs_default.summarize_auto,
@@ -386,8 +387,8 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // summarize_auto check below, because the sender list must work even
                         // when auto-summarize is disabled in general.
                         if (prefs.summarize_auto_senders && matchAddressList(message.author, prefs.summarize_auto_senders_list)) {
-                            if (isMessageInJunkOrTrash(message)) {
-                                taLog.log("Message in junk or trash folder, skipping the auto-summarize sender list...");
+                            if (isMessageInAutoSkippedFolder(message)) {
+                                taLog.log("Message in a folder excluded from the automatic processing, skipping the auto-summarize sender list...");
                             } else if (await _summarizeConnectionMissing()) {
                                 taLog.log("[ThunderAI] No AI connection able to reach an API, skipping the auto-summarize sender list for: " + message.headerMessageId);
                             } else {
@@ -413,8 +414,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // _reconcileFeatureFlags() deliberately leaves alone.
                         if (!isApiUsableConnection(getConnectionType(prefs, null, 'summarize'))) return;
 
-                        // Auto mode (summarize_auto === 2) always generates inline
+                        // Auto mode (summarize_auto === 2) always generates inline, but never on a
+                        // message the user wrote (a draft opened while being composed) or already
+                        // discarded. The manual button below stays available on those folders.
                         if (summarize_auto === 2) {
+                            if (isMessageInAutoSkippedFolder(message)) {
+                                taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic summarize...");
+                                return;
+                            }
                             _generateSummaryForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -541,8 +548,14 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         // _reconcileFeatureFlags() deliberately leaves alone.
                         if (!isApiUsableConnection(getConnectionType(prefs, null, 'translate'))) return;
 
-                        // Auto mode (translate_auto === 2) always generates inline
+                        // Auto mode (translate_auto === 2) always generates inline, but never on a
+                        // message the user wrote (a draft opened while being composed) or already
+                        // discarded. The manual button below stays available on those folders.
                         if (translate_auto === 2) {
+                            if (isMessageInAutoSkippedFolder(message)) {
+                                taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic translation...");
+                                return;
+                            }
                             _generateTranslationForMessage(message.headerMessageId, tabId);
                             return;
                         }
@@ -1857,11 +1870,13 @@ const newEmailListener = (folder, messagesList) => {
 // value would only take effect after a Thunderbird restart.
 // Auto add-tags monitors the Inbox only by default, but the summarize sender list must catch
 // messages delivered anywhere (subscribed IMAP folders not checked for new mail, or messages
-// moved by a server-side filter), so it forces monitoring of all folders.
+// moved by a server-side filter), so it forces monitoring of all folders. Tagging the sent
+// folder does the same: with only-inbox monitoring Thunderbird would never report those
+// messages, so the option could never fire.
 let _monitorAllFolders = undefined;   // undefined = never registered, so the first call always registers
 
 function registerNewMailListener(){
-    const monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox || (prefs_init.summarize && prefs_init.summarize_auto_senders));
+    const monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox || prefs_init.add_tags_auto_include_sent || (prefs_init.summarize && prefs_init.summarize_auto_senders));
     if(monitorAllFolders === _monitorAllFolders){
         return;
     }
@@ -1949,6 +1964,7 @@ async function processEmails(args) {
             add_tags_auto_force_existing: prefs_default.add_tags_auto_force_existing,
             add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
             add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
+            add_tags_auto_include_sent: prefs_default.add_tags_auto_include_sent,
             add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
@@ -1983,9 +1999,12 @@ async function processEmails(args) {
             // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
             try {
 
-            // Auto add_tags, spam filter and summarize must never run on messages sitting in a
-            // junk/spam or a trash folder.
-            let message_in_junk_or_trash = isMessageInJunkOrTrash(message);
+            // Auto add_tags, spam filter, summarize and translate must never run on messages
+            // sitting in a junk/trash folder or in a folder the user writes into (drafts,
+            // templates, outbox, sent). Add_tags gets its own evaluation because it can opt back
+            // into the sent folder.
+            let message_in_skipped_folder = isMessageInAutoSkippedFolder(message);
+            let message_in_skipped_folder_tags = isMessageInAutoSkippedFolder(message, prefs_aats.add_tags_auto_include_sent);
 
             if (addTagsAuto || spamFilter) {
                 curr_fullMessage = await browser.messages.getFull(message.id);
@@ -2000,8 +2019,8 @@ async function processEmails(args) {
     
             if (addTagsAuto) {
                 let skipAddTags = false;
-                if(isAutoMode && message_in_junk_or_trash){
-                    taLog.log("Message in junk or trash folder, skipping add_tags...");
+                if(isAutoMode && message_in_skipped_folder_tags){
+                    taLog.log("Message in a folder excluded from the automatic processing, skipping add_tags...");
                     skipAddTags = true;
                 }
                 if(!skipAddTags && isAutoMode && prefs_aats.add_tags_enabled_accounts.length > 0){
@@ -2082,8 +2101,8 @@ async function processEmails(args) {
     
             if (spamFilter) {
                 let skipSpamFilter = false;
-                if(isAutoMode && message_in_junk_or_trash){
-                    taLog.log("Message in junk or trash folder, skipping spamfilter...");
+                if(isAutoMode && message_in_skipped_folder){
+                    taLog.log("Message in a folder excluded from the automatic processing, skipping spamfilter...");
                     skipSpamFilter = true;
                 }
                 if(!skipSpamFilter && isAutoMode && prefs_aats.spamfilter_enabled_accounts.length > 0){
@@ -2117,8 +2136,8 @@ async function processEmails(args) {
             let summarizeSenderMatch = summarizeSendersActive && matchAddressList(message.author, summarizeSenders);
             if (summarizeOnReceive || summarizeSenderMatch) {
                 let skipSummarize = false;
-                if (isAutoMode && message_in_junk_or_trash) {
-                    taLog.log("Message in junk or trash folder, skipping summarize...");
+                if (isAutoMode && message_in_skipped_folder) {
+                    taLog.log("Message in a folder excluded from the automatic processing, skipping summarize...");
                     skipSummarize = true;
                 }
                 if (!skipSummarize && await _summarizeConnectionMissing()) {
@@ -2137,20 +2156,27 @@ async function processEmails(args) {
             }
 
             if (translateOnReceive || translate) {
-                if (!curr_fullMessage) {
-                    curr_fullMessage = await browser.messages.getFull(message.id);
+                let skipTranslate = false;
+                if (isAutoMode && message_in_skipped_folder) {
+                    taLog.log("Message in a folder excluded from the automatic processing, skipping translate...");
+                    skipTranslate = true;
                 }
-                let translateTabId = null;
-                if (translate) {
-                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                    if (tabs.length > 0) {
-                        translateTabId = tabs[0].id;
+                if (!skipTranslate) {
+                    if (!curr_fullMessage) {
+                        curr_fullMessage = await browser.messages.getFull(message.id);
                     }
+                    let translateTabId = null;
+                    if (translate) {
+                        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                        if (tabs.length > 0) {
+                            translateTabId = tabs[0].id;
+                        }
+                    }
+                    taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
+                    await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
+                        messageData: { fullMessage: curr_fullMessage }
+                    });
                 }
-                taLog.log("[ThunderAI] Generating translation for: " + message.headerMessageId);
-                await _generateTranslationForMessage(message.headerMessageId, translateTabId, {
-                    messageData: { fullMessage: curr_fullMessage }
-                });
             }
 
             } catch (err) {

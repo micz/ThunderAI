@@ -173,15 +173,30 @@ exactly one API call. In the `initSummary` handler the sender check is deliberat
 otherwise disabled.
 
 **Shared guards** in both triggers (`mzta-background.js`):
-- `isMessageInJunkOrTrash(message)` (`js/mzta-utils.js`) — a message whose folder `specialUse`
-  includes `junk` or `trash` is never processed automatically. It is **shared with auto add-tags
-  and the auto spam filter**: all three used to test only `junk` (each with its own inline
-  `message.folder?.specialUse || []`), so a message the user or the server had already thrown
-  away still cost API tokens. Inside `processEmails()` the result is computed once per message
-  into `message_in_junk_or_trash` and reused by the three blocks. Built on the generic
-  `messageFolderHasSpecialUse(message, [...])`, which also serves the `spamfilter_only_inbox`
-  check (`['inbox']`) — a different question that the junk/trash wrapper cannot answer. Both are
-  null-safe: a message with no folder yields `false`.
+- `isMessageInAutoSkippedFolder(message, allowSent = false)` (`js/mzta-utils.js`) — the single
+  folder gate for **all** the automatic paths. A message whose folder `specialUse` intersects
+  `AUTO_SKIP_SPECIAL_USE` (`junk`, `trash`, `drafts`, `templates`, `outbox`, `sent`) is never
+  processed automatically. Two distinct reasons are folded into one list: junk/trash messages
+  have already been thrown away by the user or by the server, and drafts/templates/outbox/sent
+  messages were **written by the user, not received** — automatically summarizing or translating
+  a draft the user is still composing burns tokens on non-final text, which is exactly what
+  happened before this guard existed. `archives` is deliberately **absent**: an archived message
+  is still a received one.
+
+  `allowSent` drops `sent` from the list and backs the `add_tags_auto_include_sent` option — only
+  auto add-tags can opt back into the sent folder. Inside `processEmails()` two values are
+  computed once per message: `message_in_skipped_folder` (spam filter, summarize, translate) and
+  `message_in_skipped_folder_tags` (add-tags, honouring the option). Every guard is additionally
+  gated on `isAutoMode`, so the **manual** paths (context menu, buttons) are never filtered.
+
+  Built on the generic `messageFolderHasSpecialUse(message, [...])`, which also serves the
+  `spamfilter_only_inbox` check (`['inbox']`) — a different question this wrapper cannot answer.
+  Both are null-safe: a message with no folder yields `false`.
+
+  The same helper guards the two message-open auto paths that previously had **no** folder check
+  at all — `summarize_auto === 2` in `initSummary` and `translate_auto === 2` in
+  `initTranslation` — while their manual-button branches (`=== 1`) and the display of an already
+  cached result stay unfiltered.
 - `_summarizeConnectionMissing()` — resolves the **effective** connection with
   `getConnectionType(prefs, await getSummarizePrompt(), 'summarize')` and tests it with
   `isApiUsableConnection()`, so a summarize-specific integration still works when the global
@@ -203,11 +218,14 @@ listener is added, so `registerNewMailListener()` owns the registration and re-r
 
 ```js
 monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox
+                     || prefs_init.add_tags_auto_include_sent
                      || (prefs_init.summarize && prefs_init.summarize_auto_senders))
 ```
 
 Auto add-tags monitors the Inbox only by default, but the sender list must catch messages
-delivered anywhere, so enabling it forces monitoring of all folders. It is called at startup
+delivered anywhere, so enabling it forces monitoring of all folders. `add_tags_auto_include_sent`
+does the same: with only-inbox monitoring Thunderbird would never report a sent message, so the
+option could never fire. It is called at startup
 and from `setupStorageChangeListener()` — chained on `reload_pref_init()` (which is `async`) so
 it observes the refreshed `prefs_init`, and a no-op when the value is unchanged so the
 unconditional pref reload does not churn the listener. This is what lets the option take effect
@@ -683,7 +701,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-menus.js` | Context menu creation and management |
 | `js/mzta-prompts.js` | Prompt definitions (built-in) and custom prompt loading |
 | `js/mzta-placeholders.js` | Placeholder definitions and resolution logic |
-| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInJunkOrTrash()` |
+| `js/mzta-utils.js` | General utilities (email parsing, storage helpers, etc.). Shared message-inspection helpers used by the auto-processing features: `extractEmail()` (the single copy of the address regex — **case-preserving**, since `getIdentityForMessage()` compares against the configured identities), `matchAddressList()` / `hasAddressListEntries()`, `messageFolderHasSpecialUse()` / `isMessageInAutoSkippedFolder()` (+ the `AUTO_SKIP_SPECIAL_USE` list) |
 | `js/mzta-utils-prompt.js` | Prompt-specific utilities (text truncation, lang injection, `buildSummaryPrompt()` for unified summary prompt assembly, `buildTranslationPrompt()` for translation prompt assembly) |
 | `js/mzta-compose-script.js` | Content script for compose and message display: injects AI response into compose window, renders unified toolbar (spam badge, summary/translation trigger buttons) and content panels (generic error, spam explanation, summary, translation) in message display via `#mzta-container` |
 | `js/mzta-chatgpt.js` | ChatGPT Web integration (opens browser window, reads DOM) |

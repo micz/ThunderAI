@@ -40,6 +40,7 @@
 /* Auto-tags sub-rows are shown/hidden by JS (display '' / 'none'). Hidden by
    default so nothing flashes before the JS runs. */
 #add_tags_auto_only_inbox_tr,
+#add_tags_auto_include_sent_tr,
 #add_tags_auto_uselist_tr,
 #addtags_info_additional_statements {
     display: none;

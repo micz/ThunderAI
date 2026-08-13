@@ -136,6 +136,7 @@ export const prefs_default = {
     add_tags_auto: false,
     add_tags_auto_force_existing: false,
     add_tags_auto_only_inbox: true,
+    add_tags_auto_include_sent: false,  // Auto tagging normally skips the sent folder, this re-enables it
     add_tags_auto_uselist: false,
     add_tags_auto_uselist_list: '',
     add_tags_enabled_accounts: [],

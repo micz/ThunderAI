@@ -129,20 +129,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let add_tags_auto_el = document.getElementById('add_tags_auto');
     let add_tags_auto_only_inbox_tr = document.getElementById('add_tags_auto_only_inbox_tr');
+    let add_tags_auto_include_sent_tr = document.getElementById('add_tags_auto_include_sent_tr');
     let account_selector_container = document.getElementById('account_selector_container');
     let add_tags_auto_infoline = document.getElementById('add_tags_auto_infoline');
     let add_tags_auto_uselist_tr = document.getElementById('add_tags_auto_uselist_tr');
+    // The sub-rows are hidden by a CSS rule (see mzta-add-tags.css) so they don't flash before
+    // this runs. Setting style.display = '' only *removes* the inline value, which falls back to
+    // that rule and leaves the row hidden, so each element must be revealed with the explicit
+    // display its own layout needs: 'flex' for the .feature_row rows and for the .mzta_field
+    // allow-list wrapper (a column flexbox), 'block' for the .mzta_section account card.
+    function toggleAutoSubRows(visible) {
+      add_tags_auto_only_inbox_tr.style.display = visible ? 'flex' : 'none';
+      add_tags_auto_include_sent_tr.style.display = visible ? 'flex' : 'none';
+      account_selector_container.style.display = visible ? 'block' : 'none';
+      add_tags_auto_infoline.style.display = visible ? 'inline' : 'none';
+      add_tags_auto_uselist_tr.style.display = visible ? 'flex' : 'none';
+    }
     add_tags_auto_el.addEventListener('click', (event) => {
-      add_tags_auto_only_inbox_tr.style.display = event.target.checked ? '' : 'none';
-      account_selector_container.style.display = event.target.checked ? '' : 'none';
-      add_tags_auto_infoline.style.display = event.target.checked ? 'inline' : 'none';
-      add_tags_auto_uselist_tr.style.display = event.target.checked ? '' : 'none';
-
+      toggleAutoSubRows(event.target.checked);
     });
-    add_tags_auto_only_inbox_tr.style.display = add_tags_auto_el.checked ? '' : 'none';
-    account_selector_container.style.display = add_tags_auto_el.checked ? '' : 'none';
-    add_tags_auto_infoline.style.display = add_tags_auto_el.checked ? 'inline' : 'none';
-    add_tags_auto_uselist_tr.style.display = add_tags_auto_el.checked ? '' : 'none';
+    toggleAutoSubRows(add_tags_auto_el.checked);
 
     let add_tags_auto_uselist = document.getElementById('add_tags_auto_uselist');
     let add_tags_auto_uselist_list = document.getElementById('add_tags_auto_uselist_list');
