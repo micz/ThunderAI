@@ -344,6 +344,11 @@ escaped, never rendered, so the model can't inject markup into the extension UI 
 **`breaks: true`**, which is deliberate: this is a mail composer, so a newline the model wrote is a
 newline the user expects, and a single `\n` inside a paragraph must render as a real `<br>`.
 
+> This describes the **markdown path**, which is the default and covers every prompt that sends plain
+> text. A response that is itself HTML skips markdown-it entirely and is sanitized instead — see
+> *When the answer is HTML* below. The protection is not dropped there, it changes hands: from
+> escaping to an allowlist.
+
 `html: false` means a literal `<br>` echoed by the model would otherwise surface as visible
 `&lt;br&gt;` text. `normalizeEchoedBrTags()` (`api_webchat/streamingMessage.js`) rewrites them to
 newlines before the render, per **run** rather than per tag:
@@ -357,6 +362,57 @@ Deciding the run→break mapping explicitly is what makes the vertical space det
 fall out of markdown-it collapsing consecutive blank lines. Fenced code blocks and inline code spans
 are masked out before the rewrite and restored after, so a `<br>` the user is asking *about* stays in
 the code block as escaped text.
+
+### When the answer is HTML, markdown-it is bypassed
+
+Some prompts deliberately send **HTML** to the model (`{%selected_html%}`,
+`{%mail_html_body_or_selected%}` — see [02-prompts.md](02-prompts.md)). The model then answers in
+HTML, and `html: false` would escape the whole reply into visible `&lt;p&gt;` text. That is exactly
+what happened before this path existed.
+
+`flush()` therefore decides, **once per response**, which shape it is handling:
+
+- `looksLikeHtmlResponse()` tests for a **lead-in followed by a block tag** (`p`, `div`, `ul`, `ol`,
+  `li`, `h1`–`h6`, `blockquote`, `pre`, `table`, `tr`, `td`, `th`, `tbody`, `thead`), or for an
+  orphan *closing* block tag (a reply that opens `Distinti saluti.</p>`).
+- The **lead-in is what makes the test robust**, and it exists because of a real failure: the same
+  prompt run twice produced `<li>…` once (rendered) and `<br><li>…` the next time (every tag
+  escaped). The earlier version anchored the block tag at the very start of the response, so one
+  echoed `<br>` — a token that says nothing about the reply's shape — flipped the whole answer to
+  the markdown path. Tolerated in the lead-in: whitespace, `<br>` runs, comments, a doctype/XML
+  prolog, and a *short* prose prefix ("Ecco il testo: `<p>`…").
+- The prose prefix is bounded to keep the test honest: no `<`, no newline (it must sit on the
+  response's first line), no markdown syntax character, max 40 chars. That is what stops
+  `**Nota:** <p>` or a markdown answer whose *second* paragraph opens with a tag from being swept in.
+- **Code regions are masked first**, the same masking `normalizeEchoedBrTags()` uses. An answer whose
+  subject *is* HTML ("how do I center a `<div>`?") must stay on the markdown path so the markup shows
+  as text in a code block instead of being sanitized into a real element.
+- The decision is **sticky** (`_isHtmlResponse`). Segments break on `\n`, so a later segment of an
+  HTML answer can easily begin with a bare text node that looks like markdown; re-deciding per
+  segment would render one answer half each way.
+- The test may also return **null — "not enough evidence yet"**. A response that has so far produced
+  only lead-in (a lone `<br>`) is *undecided*: the text is held back rather than committed to either
+  path, and the next segment decides with both segments judged together. Without this, `<br>\n<li>…`
+  would reintroduce the original bug one segment later, since a flush fires on every `\n`. The last
+  flush of a response (`flush(final = true)`, from `handleTokensDone`) forces the verdict to markdown
+  so a lead-in-only reply is never left unrendered.
+
+On the HTML path the reply goes through **`sanitizeBlockHtml()`** (`api_webchat/diffPicker.js`)
+instead of markdown-it. Running both would be wrong in either order. `normalizeEchoedBrTags()` is
+skipped too — there is no markdown-it to protect the `<br>` from.
+
+**The sanitizer is the security boundary that `html: false` used to be.** It is the same allowlist
+walk the diff picker uses, parameterized by tag set (`sanitizeAgainst`), so there is exactly one
+sanitization point: `sanitizeInlineHtml()` for inline content, `sanitizeBlockHtml()` for a whole
+answer. Anything not on the list is unwrapped, every attribute is dropped except a `http(s):`/
+`mailto:` `href` on `<a>`.
+
+**Cumulative rendering.** On this path each flush re-sanitizes the *whole response so far* and
+`html` is the whole answer, not the segment — flagged to the caller as `cumulative: true`. Segments
+break wherever the model wrapped a line, frequently *inside* an element; sanitizing `<ul><li>a` alone
+would make `DOMParser` close the tags and leave the next segment a stray closer. `MessagesArea`
+answers by **reusing** the accumulating element rather than retiring it after the flush, and clears
+it in `handleTokensDone()` so the next response opens its own.
 
 **There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
 already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the

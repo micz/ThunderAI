@@ -171,6 +171,11 @@ export class mzta_Menus {
             curr_prompt.selection_html = selection_html;
             body_text = msg_text.text.replace(/[ \t]+/g, ' ').trim();
             curr_prompt.body_text = body_text;
+            // The diff picker's original side. It keeps the mail's own
+            // formatting so that REJECTING a change restores the markup too,
+            // not just the words. Costs the HTML body in the prompt_info
+            // payload, which is why only the picker path reads it.
+            curr_prompt.body_html = msg_text.html;
             //open chatgpt window
             //console.log("Click menu item...");
             let chatgpt_lang = await taPromptUtils.getDefaultLang(curr_prompt);

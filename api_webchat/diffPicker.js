@@ -77,121 +77,305 @@ const DIFF_FNS = {
     sentences: (o, n) => Diff.diffSentences(o, n),
 };
 
-// Both sides pass through this before diffing.
+// (normalizeForDiff() used to live here, collapsing both sides to plain text
+// before diffing. Its job now belongs to normalizeBlockHtml() + blockTextOfHtml,
+// which normalize WITHIN a block: the blank-line collapse it did to keep every
+// paragraph break from becoming a hunk is now structural - paragraph breaks are
+// block boundaries and never reach the text diff at all. [#855])
+
+// Pair up two block lists.
 //
-// diffWordsWithSpace is whitespace-exact, which is what the invariant needs,
-// but it also means every cosmetic whitespace difference becomes a hunk the
-// user has to look at. Normalizing both sides first keeps that noise out of
-// the hunk list. The invariant is therefore stated against the NORMALIZED
-// original, which is what ends up in the email regardless.
-//
-// Blank lines are collapsed to a single \n because the two sides do not arrive
-// equally faithful: the original comes from prompt_info.selection_text /
-// body_text, which cleanupNewlines() has already flattened with \n{2,} -> \n,
-// while the answer side keeps its \n\n through htmlToPlainText(). Capping at
-// \n\n would leave that asymmetry in place and manufacture a hunk out of every
-// paragraph break on multi-paragraph mail - changes the user has no reason to
-// review. Aligning to the lossier side is what removes them. [#855]
-export function normalizeForDiff(text) {
-    if (text == null) { return ''; }
-    return String(text)
-        .replace(/\r\n/g, '\n')
-        .replace(/[ \t]+/g, ' ')
-        .replace(/ *\n */g, '\n')
-        .replace(/\n{2,}/g, '\n')
-        .trim();
+// Diff.diffArrays is safe here for the SAME structural reason diffWordsWithSpace
+// is safe below: ArrayDiff declares only tokenize/join/removeEmpty and overrides
+// neither postProcess nor equals, so the parts it emits partition both block
+// lists exactly. (Diff.diffWords is banned at this level too - see DIFF_FNS.)
+// The comparator includes HTML, not just text+tag. That matters for the
+// invariant: for a context part jsdiff keeps only ONE side's objects and
+// discards which block on the other side it matched, so a "context" block
+// would carry the new side's markup and reject-all would emit the ANSWER'S
+// formatting where the original's belonged. Requiring the html to match too
+// means a context block is genuinely identical on both sides, and any
+// markup-only difference falls through to a replace pair - where the two
+// sides are kept separately and the user can actually choose between them.
+function buildBlockPairs(oldBlocks, newBlocks) {
+    const parts = Diff.diffArrays(oldBlocks, newBlocks, {
+        comparator: (a, b) => a.text === b.text && a.tag === b.tag && a.html === b.html,
+    });
+    if (!parts) { return null; }
+
+    const pairs = [];
+    let i = 0;
+    while (i < parts.length) {
+        if (!parts[i].added && !parts[i].removed) {
+            for (const b of parts[i].value) {
+                pairs.push({ kind: 'context', oldBlock: b, newBlock: b });
+            }
+            i++;
+            continue;
+        }
+        // Gather a maximal run, exactly as the text-level loop does, so the
+        // ordering of added/removed parts cannot matter.
+        let removed = [];
+        let added = [];
+        while (i < parts.length && (parts[i].added || parts[i].removed)) {
+            if (parts[i].added) { added = added.concat(parts[i].value); }
+            else                { removed = removed.concat(parts[i].value); }
+            i++;
+        }
+        // Pair positionally; the surplus on either side is a pure block
+        // insert or delete.
+        const n = Math.max(removed.length, added.length);
+        for (let k = 0; k < n; k++) {
+            const ob = removed[k] || null;
+            const nb = added[k] || null;
+            if (ob && nb)      { pairs.push({ kind: 'replace', oldBlock: ob, newBlock: nb }); }
+            else if (nb)       { pairs.push({ kind: 'insert',  oldBlock: null, newBlock: nb }); }
+            else               { pairs.push({ kind: 'delete',  oldBlock: ob, newBlock: null }); }
+        }
+    }
+    return pairs;
 }
 
-// Turn two plain-text strings into a hunk list.
+// Turn two HTML strings into a list of composed blocks, each holding its own
+// hunks.
 //
 //   Hunk = {
 //     id: number,                                  // stable, sequential
 //     type: 'context' | 'replace' | 'insert' | 'delete',
 //     oldText: string,                             // '' for insert
 //     newText: string,                             // '' for delete
+//     oldHtml: string,                             // the same span, with markup
+//     newHtml: string,
 //     state: 'accepted' | 'rejected'               // ignored for context
 //   }
 //
+//   ComposedBlock = { kind, tag, listType, hunks }
+//
 // Every non-context hunk defaults to 'accepted', so a user who touches nothing
 // gets exactly what they got before the picker existed.
-export function buildHunks(originalText, newText, granularity = 'words') {
-    const oldStr = normalizeForDiff(originalText);
-    const newStr = normalizeForDiff(newText);
+export function buildHunks(originalHtml, newHtml, granularity = 'words') {
+    const oldBlocks = segmentBlocks(originalHtml);
+    const newBlocks = segmentBlocks(newHtml);
+
+    const pairs = buildBlockPairs(oldBlocks, newBlocks);
+    if (!pairs) { return null; }
 
     const diffFn = DIFF_FNS[granularity] || DIFF_FNS.words;
-    const parts = diffFn(oldStr, newStr);
-    // The base diff() returns undefined when a maxEditLength/timeout option
-    // aborts the search. No options are passed today, but a bare .length on
-    // undefined would be a hard crash if that ever changes.
-    if (!parts) { return null; }
-
-    const hunks = [];
+    const blocks = [];
     let id = 0;
-    let i = 0;
-    while (i < parts.length) {
-        if (!parts[i].added && !parts[i].removed) {
-            // Context. Carried in both sides so composeResult can read it
-            // uniformly without special-casing which one to emit.
-            hunks.push({
-                id: id++,
-                type: 'context',
-                oldText: parts[i].value,
-                newText: parts[i].value,
-                state: 'accepted',
+
+    for (const pair of pairs) {
+        // A block present on only one side is one pickable unit: its whole text
+        // on the side it exists, and the empty-side placeholder on the other.
+        if (pair.kind === 'insert' || pair.kind === 'delete') {
+            const b = pair.newBlock || pair.oldBlock;
+            const isInsert = pair.kind === 'insert';
+            blocks.push({
+                kind: pair.kind,
+                tag: b.tag,
+                listType: b.listType,
+                hunks: [{
+                    id: id++,
+                    type: pair.kind,
+                    oldText: isInsert ? '' : b.text,
+                    newText: isInsert ? b.text : '',
+                    oldHtml: isInsert ? '' : b.html,
+                    newHtml: isInsert ? b.html : '',
+                    state: 'accepted',
+                }],
             });
-            i++;
             continue;
         }
-        // Collapse a maximal run of consecutive insert/delete parts into one
-        // hunk. jsdiff emits at most one delete followed by one insert per run
-        // - addToPath() merges same-type components, so two consecutive added
-        // or two consecutive removed parts are structurally impossible - but
-        // accumulating the whole run keeps this correct for any order and any
-        // run length, and costs nothing.
-        let del = '';
-        let ins = '';
-        while (i < parts.length && (parts[i].added || parts[i].removed)) {
-            if (parts[i].added) { ins += parts[i].value; }
-            else                { del += parts[i].value; }
-            i++;
+
+        const ob = pair.oldBlock;
+        const nb = pair.newBlock;
+
+        // A context block still needs one hunk so composeResult can read it
+        // uniformly. Both sides are IDENTICAL here - text, tag and html - which
+        // buildBlockPairs' comparator guarantees, so taking everything from nb
+        // is not a choice between them.
+        if (pair.kind === 'context') {
+            blocks.push({
+                kind: 'context',
+                tag: nb.tag,
+                listType: nb.listType,
+                hunks: [{
+                    id: id++,
+                    type: 'context',
+                    oldText: nb.text,
+                    newText: nb.text,
+                    oldHtml: nb.html,
+                    newHtml: nb.html,
+                    state: 'accepted',
+                }],
+            });
+            continue;
         }
-        hunks.push({
-            id: id++,
-            type: (del !== '' && ins !== '') ? 'replace' : (ins !== '' ? 'insert' : 'delete'),
-            oldText: del,
-            newText: ins,
-            state: 'accepted',
-        });
+
+        // Paired block: the existing text-level diff, unchanged, inside it.
+        const parts = diffFn(ob.text, nb.text);
+        // The base diff() returns undefined when a maxEditLength/timeout option
+        // aborts the search. No options are passed today, but a bare .length on
+        // undefined would be a hard crash if that ever changes.
+        if (!parts) { return null; }
+
+        const hunks = [];
+        // Running offsets into each side's plain text, so each hunk can ask
+        // sliceHtmlByText for its own markup.
+        let oldPos = 0;
+        let newPos = 0;
+        let i = 0;
+        while (i < parts.length) {
+            if (!parts[i].added && !parts[i].removed) {
+                const v = parts[i].value;
+                hunks.push({
+                    id: id++,
+                    type: 'context',
+                    oldText: v,
+                    newText: v,
+                    oldHtml: sliceHtmlByText(ob.html, oldPos, oldPos + v.length, v),
+                    newHtml: sliceHtmlByText(nb.html, newPos, newPos + v.length, v),
+                    state: 'accepted',
+                });
+                oldPos += v.length;
+                newPos += v.length;
+                i++;
+                continue;
+            }
+            // Collapse a maximal run of consecutive insert/delete parts into one
+            // hunk. jsdiff emits at most one delete followed by one insert per run
+            // - addToPath() merges same-type components, so two consecutive added
+            // or two consecutive removed parts are structurally impossible - but
+            // accumulating the whole run keeps this correct for any order and any
+            // run length, and costs nothing.
+            let del = '';
+            let ins = '';
+            while (i < parts.length && (parts[i].added || parts[i].removed)) {
+                if (parts[i].added) { ins += parts[i].value; }
+                else                { del += parts[i].value; }
+                i++;
+            }
+            hunks.push({
+                id: id++,
+                type: (del !== '' && ins !== '') ? 'replace' : (ins !== '' ? 'insert' : 'delete'),
+                oldText: del,
+                newText: ins,
+                oldHtml: del === '' ? '' : sliceHtmlByText(ob.html, oldPos, oldPos + del.length, del),
+                newHtml: ins === '' ? '' : sliceHtmlByText(nb.html, newPos, newPos + ins.length, ins),
+                state: 'accepted',
+            });
+            oldPos += del.length;
+            newPos += ins.length;
+        }
+
+        blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType, hunks });
     }
-    return hunks;
+
+    return blocks;
 }
 
-// Walk the hunks and emit the text the user has chosen.
+// Every hunk in document order, so the flat index the UI uses stays meaningful.
 //
-// THE CORRECTNESS CONTRACT OF THE WHOLE FEATURE:
-//   composeResult(all accepted) === normalizeForDiff(newText)
-//   composeResult(all rejected) === normalizeForDiff(originalText)
-// It follows from the parts partitioning both inputs exactly (see DIFF_FNS)
-// plus buildHunks being a lossless regroup of those parts.
-export function composeResult(hunks) {
-    if (!hunks) { return ''; }
-    let out = '';
-    for (const h of hunks) {
-        if (h.type === 'context')        { out += h.oldText; }
-        else if (h.state === 'accepted') { out += h.newText; }
-        else                             { out += h.oldText; }
+// Takes BLOCKS, not hunks. The two are easy to confuse - the picker holds both,
+// _blocks and the flat _hunks derived from it - and passing the flat array here
+// used to fail as "b.hunks is undefined" several frames down from the call that
+// was actually wrong. Say so where the mistake is made instead.
+export function flatHunks(blocks) {
+    const out = [];
+    for (const b of (blocks || [])) {
+        if (!b || !b.hunks) {
+            console.error('[ThunderAI] flatHunks: expected blocks, got something else', blocks);
+            return out;
+        }
+        for (const h of b.hunks) { out.push(h); }
     }
     return out;
 }
 
-export function hasChanges(hunks) {
-    return !!hunks && hunks.some(h => h.type !== 'context');
+// Walk the blocks and emit the PLAIN TEXT the user has chosen.
+//
+// THE CORRECTNESS CONTRACT OF THE WHOLE FEATURE, at the HTML level:
+//   composeResultHTML(all accepted) === renderBlocks(segmentBlocks(newHtml))
+//   composeResultHTML(all rejected) === renderBlocks(segmentBlocks(originalHtml))
+//
+// It rests on three properties, each locally checkable:
+//   P1  segmentBlocks is a normalization - segment/render is idempotent. The
+//       invariant is stated against the segmented-and-rendered sides, not the
+//       byte-exact input, exactly as it was stated against normalizeForDiff
+//       rather than byte-exact whitespace before.
+//   P2  diffArrays partitions both block lists exactly (see buildBlockPairs).
+//   P3  inside a paired block the existing text-level proof applies verbatim.
+//
+// A block that exists on only one side contributes nothing when its single
+// hunk is rejected - which is what makes reject-all reproduce the original's
+// block list and accept-all the answer's.
+// Which side a CONTEXT hunk should contribute.
+//
+// Context means "the words are the same on both sides", not "the markup is".
+// Inside a replace block the two sides can have marked the same words up
+// differently, so a context hunk that always emitted the new side would make
+// reject-all hand back the ANSWER'S formatting for text the user just rejected
+// - breaking the invariant. It follows the block instead: if every changed hunk
+// in the block is rejected, the block is showing the original and its context
+// must be the original's too.
+//
+// A block with no changed hunks at all is a context block, whose two sides are
+// identical by construction (see buildBlockPairs' comparator), so either answer
+// is correct there.
+function contextSide(block) {
+    for (const h of block.hunks) {
+        if (h.type === 'context') { continue; }
+        if (h.state === 'accepted') { return 'new'; }
+    }
+    return block.hunks.some(h => h.type !== 'context') ? 'old' : 'new';
 }
 
-export function countChanges(hunks) {
+export function composeResult(blocks) {
+    if (!blocks) { return ''; }
+    const lines = [];
+    for (const b of blocks) {
+        const ctx = contextSide(b);
+        let text = '';
+        for (const h of b.hunks) {
+            if (h.type === 'context')        { text += (ctx === 'old') ? h.oldText : h.newText; }
+            else if (h.state === 'accepted') { text += h.newText; }
+            else                             { text += h.oldText; }
+        }
+        // A block whose only hunk was rejected away leaves no line behind.
+        if (text !== '') { lines.push(text); }
+    }
+    return lines.join('\n');
+}
+
+// The same walk, emitting HTML: each block's chosen hunks concatenated and
+// wrapped in that block's own tag. The wrapper is emitted HERE and never lives
+// inside a hunk, which is precisely why no accept/reject combination can
+// unbalance a tag.
+export function composeResultBlocksHTML(blocks) {
+    if (!blocks) { return ''; }
+    const rendered = [];
+    for (const b of blocks) {
+        const ctx = contextSide(b);
+        let html = '';
+        for (const h of b.hunks) {
+            if (h.type === 'context')        { html += (ctx === 'old') ? h.oldHtml : h.newHtml; }
+            else if (h.state === 'accepted') { html += h.newHtml; }
+            else                             { html += h.oldHtml; }
+        }
+        if (html === '') { continue; }
+        rendered.push({ tag: b.tag, listType: b.listType, html: html });
+    }
+    return renderBlocks(rendered);
+}
+
+export function hasChanges(blocks) {
+    return flatHunks(blocks).some(h => h.type !== 'context');
+}
+
+export function countChanges(blocks) {
     let total = 0;
     let accepted = 0;
-    for (const h of (hunks || [])) {
+    for (const h of flatHunks(blocks)) {
         if (h.type === 'context') { continue; }
         total++;
         if (h.state === 'accepted') { accepted++; }
@@ -209,21 +393,424 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
-// Plain text -> a fragment with real <br> elements. The \n-keyed twin of
-// textWithBrToFragment() in messagesArea.js: the picker is plain-text only, so
-// its line breaks arrive as \n and never as markup.
-function textWithNewlinesToFragment(text) {
+// Sanitized HTML -> a fragment. Everything rendered through here has already
+// been through sanitizeInlineHtml, which is the single choke point: nothing
+// that skipped it may ever reach the DOM.
+//
+// (This replaced textWithNewlinesToFragment, the plain-text-only helper the
+// picker used before it kept the answer's formatting.)
+function htmlToFragment(html) {
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
     const fragment = document.createDocumentFragment();
-    const segments = String(text).split('\n');
-    segments.forEach((segment, idx) => {
-        if (segment.length > 0) {
-            fragment.appendChild(document.createTextNode(segment));
-        }
-        if (idx < segments.length - 1) {
-            fragment.appendChild(document.createElement('br'));
-        }
-    });
+    Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
     return fragment;
+}
+
+// ---- HTML segmentation --------------------------------------------------
+//
+// The picker keeps the ANSWER'S FORMATTING, which the plain-text model it
+// replaced could not. The whole design rests on one structural idea:
+//
+//   Split both sides into BLOCKS, pair the blocks, and run the existing
+//   word/sentence diff INSIDE each paired block.
+//
+// A block's wrapper element is emitted whole by the composer and is never
+// carried inside a hunk, and hunk boundaries only ever fall within one block.
+// Therefore NO TAG CAN EVER CROSS A HUNK BOUNDARY, and no sequence of
+// accept/reject choices can emit an opening tag without its closing tag. That
+// is the property the rejected alternatives could not offer: diffing over a
+// token stream with tags as tokens happily emits a hunk whose newText is
+// "</strong> world <em>", because diffWordsWithSpace splits on whitespace and
+// knows nothing about markup.
+//
+// The cost, stated rather than discovered: inline formatting INSIDE a changed
+// hunk follows the side that is chosen, and is not independently pickable.
+// Accepting a reworded sentence takes the answer's bolding with it; rejecting
+// takes the original's. There is no "original words, answer's bold" state.
+
+// Elements that become their own block. Everything else is inline (or is
+// unwrapped by the sanitizer).
+const BLOCK_TAGS = new Set(['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre']);
+
+// The inline allowlist. THIS IS A SECURITY BOUNDARY, not a tidiness pass: the
+// answer is model output on its way into the user's outgoing mail, and the
+// plain-text path this replaces escaped absolutely everything. Anything not
+// listed here is unwrapped (its children survive, the element does not).
+const INLINE_ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'code', 'a', 'br', 'span', 'sub', 'sup']);
+
+// Only http(s) and mailto survive on <a href>. javascript: and data: must not.
+const SAFE_HREF = /^(https?:|mailto:)/i;
+
+// Strip everything but the inline allowlist from a block's inner HTML.
+//
+// Serialization goes back out through innerHTML, which encodes entities
+// correctly for free. Deliberately NOT through a hand-rolled escapeHtml(): on
+// HTML input that would escape the very tags we are trying to keep.
+function sanitizeAgainst(html, allowed) {
+    const doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html');
+    // Walk a static list: unwrapping mutates the tree under a live collection.
+    const els = Array.from(doc.body.querySelectorAll('*'));
+    for (const el of els) {
+        const tag = el.tagName.toLowerCase();
+        if (!allowed.has(tag)) {
+            // Unwrap: keep what the user can read, drop the element itself.
+            // <script>/<style> are unwrapped too, but their children are TEXT
+            // nodes, so the code is neutralized into visible text rather than
+            // being left executable.
+            el.replaceWith(...Array.from(el.childNodes));
+            continue;
+        }
+        for (const attr of Array.from(el.attributes)) {
+            const name = attr.name.toLowerCase();
+            const keep = (tag === 'a' && name === 'href' && SAFE_HREF.test(attr.value.trim()));
+            if (!keep) { el.removeAttribute(attr.name); }
+        }
+    }
+    return doc.body.innerHTML;
+}
+
+export function sanitizeInlineHtml(html) {
+    return sanitizeAgainst(html, INLINE_ALLOWED);
+}
+
+// The same gate, widened to the block tags segmentBlocks() understands.
+//
+// Used on the ANSWER as it arrives from the model, before it is shown: prompts
+// that send HTML to the model get HTML back, and markdown-it (html:false) would
+// escape it into visible &lt;p&gt; text. Sanitizing instead of escaping is what
+// makes that answer usable - but it is model output heading for the user's
+// outgoing mail, so it goes through the same allowlist as everything else.
+//
+// ONE sanitization point, parameterized: a second hand-written copy of this walk
+// would be a second place for the security boundary to drift.
+const BLOCK_ALLOWED = new Set([...INLINE_ALLOWED, ...BLOCK_TAGS, 'ul', 'ol']);
+
+export function sanitizeBlockHtml(html) {
+    return sanitizeAgainst(html, BLOCK_ALLOWED);
+}
+
+// A block's plain text, derived FROM ITS NORMALIZED HTML.
+//
+// Deriving it rather than computing it separately from the source element is
+// the point: sliceHtmlByText maps offsets in this text onto that html, so the
+// two must agree exactly, character for character. Two independent projections
+// that merely look equivalent would drift on the first odd input and every
+// offset after the drift would be silently wrong.
+//
+// <br> projects to exactly one \n. No \n{2,} collapse is applied - by
+// construction a block has no blank lines inside it, and the block list now
+// carries the paragraph structure that used to be encoded as \n\n.
+function blockTextOfHtml(html) {
+    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    doc.querySelectorAll('br').forEach(br => br.replaceWith(doc.createTextNode('\n')));
+    return String(doc.body.textContent || '');
+}
+
+function makeBlock(el, tag, listType = null) {
+    const html = normalizeBlockHtml(sanitizeInlineHtml(el.innerHTML));
+    return {
+        tag: tag,
+        listType: listType,
+        text: blockTextOfHtml(html),
+        html: html,
+    };
+}
+
+// Collapse whitespace inside a block's HTML so that block.html and block.text
+// share ONE projection.
+//
+// This is what makes P1 (segment -> render is idempotent) true by construction
+// rather than by luck, and it is what lets sliceHtmlByText map a text offset
+// onto the markup at all: block.text is READ BACK OUT of this html by
+// blockTextOfHtml, so collapsing here is what defines the offset space both
+// sides use. Text nodes are edited in place, leaving every tag untouched.
+function normalizeBlockHtml(html) {
+    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    const root = doc.body;
+
+    // Text nodes AND <br> in document order: a <br> is a line break for the
+    // purposes of collapsing, so a space on either side of it must go the same
+    // way as a space next to a literal \n.
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    const nodes = [];
+    while (walker.nextNode()) {
+        const n = walker.currentNode;
+        if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); }
+        else if (n.tagName && n.tagName.toLowerCase() === 'br') { nodes.push(n); }
+    }
+
+    const texts = [];
+    let lastWasSpace = true;   // leading whitespace is dropped
+    for (const node of nodes) {
+        if (node.nodeType !== Node.TEXT_NODE) {
+            // <br>: counts as a break, and swallows any space that follows.
+            lastWasSpace = true;
+            // A space already emitted just before the break is redundant.
+            for (let i = texts.length - 1; i >= 0; i--) {
+                if (texts[i].textContent === '') { continue; }
+                texts[i].textContent = texts[i].textContent.replace(/ $/, '');
+                break;
+            }
+            continue;
+        }
+        const s = String(node.textContent)
+            .replace(/\r\n/g, '\n')
+            .replace(/[ \t]+/g, ' ')
+            .replace(/ *\n */g, '\n');
+        let res = '';
+        for (const ch of s) {
+            if (ch === ' ') {
+                if (lastWasSpace) { continue; }
+                lastWasSpace = true;
+                res += ch;
+                continue;
+            }
+            lastWasSpace = (ch === '\n');
+            res += ch;
+        }
+        node.textContent = res;
+        texts.push(node);
+    }
+
+    // Trailing whitespace, mirroring the trim of the right-hand end.
+    for (let i = texts.length - 1; i >= 0; i--) {
+        const t = texts[i].textContent.replace(/[ \n]+$/, '');
+        texts[i].textContent = t;
+        if (t !== '') { break; }
+    }
+
+    return root.innerHTML;
+}
+
+// HTML -> an ordered list of Blocks.
+//
+//   Block = { tag, listType, text, html }   // html is the INNER html, sanitized
+//
+// This is a NORMALIZATION, the way normalizeForDiff was for whitespace: the
+// invariant is stated against the segmented-and-rendered sides, not against
+// the byte-exact input HTML.
+//
+// Nested lists are flattened one level: an inner <li> becomes a block of the
+// inner list's type. Deliberately lossy - the alternative is a recursive tree
+// diff, and nested lists in a proofread answer are rare.
+export function segmentBlocks(html) {
+    const doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html');
+    const blocks = [];
+
+    // A run of consecutive inline/text nodes at this level has no block of its
+    // own, so it is gathered into an implicit <p>. Without this, an answer that
+    // is a bare sentence with no markup would segment to nothing at all.
+    let pending = null;
+    const flushPending = () => {
+        if (!pending) { return; }
+        const block = makeBlock(pending, 'p', null);
+        if (block.text !== '') { blocks.push(block); }
+        pending = null;
+    };
+
+    const walk = (parent, listType) => {
+        for (const node of Array.from(parent.childNodes)) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tag = node.tagName.toLowerCase();
+                if (tag === 'ul' || tag === 'ol') {
+                    flushPending();
+                    walk(node, tag);
+                    continue;
+                }
+                if (tag === 'li') {
+                    flushPending();
+                    // An <li> holding a nested list contributes its own text
+                    // first, then the nested items as sibling blocks.
+                    const nested = Array.from(node.children).filter(c => {
+                        const t = c.tagName.toLowerCase();
+                        return t === 'ul' || t === 'ol';
+                    });
+                    if (nested.length > 0) {
+                        const shallow = node.cloneNode(true);
+                        Array.from(shallow.children).forEach(c => {
+                            const t = c.tagName.toLowerCase();
+                            if (t === 'ul' || t === 'ol') { c.remove(); }
+                        });
+                        const block = makeBlock(shallow, 'li', listType || 'ul');
+                        if (block.text !== '') { blocks.push(block); }
+                        nested.forEach(n => walk(n, n.tagName.toLowerCase()));
+                    } else {
+                        const block = makeBlock(node, 'li', listType || 'ul');
+                        if (block.text !== '') { blocks.push(block); }
+                    }
+                    continue;
+                }
+                if (BLOCK_TAGS.has(tag)) {
+                    flushPending();
+                    const block = makeBlock(node, tag, null);
+                    if (block.text !== '') { blocks.push(block); }
+                    continue;
+                }
+                // Inline element at block level: accumulate into the implicit <p>.
+                if (!pending) { pending = document.createElement('div'); }
+                pending.appendChild(node.cloneNode(true));
+                continue;
+            }
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (String(node.textContent).trim() === '') { continue; }
+                if (!pending) { pending = document.createElement('div'); }
+                pending.appendChild(node.cloneNode(true));
+            }
+        }
+        flushPending();
+    };
+
+    walk(doc.body, null);
+    return blocks;
+}
+
+// Blocks -> HTML. The inverse of segmentBlocks in the only sense that matters:
+// segment -> render -> segment -> render is stable (property P1 of the
+// invariant). Consecutive <li> of the same list type are re-wrapped into a
+// single <ul>/<ol>, so a list survives as one list instead of N one-item lists.
+export function renderBlocks(blocks) {
+    let out = '';
+    let openList = null;
+    for (const b of (blocks || [])) {
+        if (b.tag === 'li') {
+            const type = b.listType || 'ul';
+            if (openList !== type) {
+                if (openList) { out += `</${openList}>`; }
+                out += `<${type}>`;
+                openList = type;
+            }
+            out += `<li>${b.html}</li>`;
+            continue;
+        }
+        if (openList) { out += `</${openList}>`; openList = null; }
+        out += `<${b.tag}>${b.html}</${b.tag}>`;
+    }
+    if (openList) { out += `</${openList}>`; }
+    return out;
+}
+
+// Plain text -> block HTML, one <p> per non-empty line.
+//
+// Used for the EDIT round-trip and wherever a plain-text original has to be
+// given block structure before it can be segmented. Escapes, because the input
+// is genuinely plain text: any '<' in it is a literal character, not markup.
+export function textToBlockHtml(text) {
+    return String(text == null ? '' : text)
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .filter(line => line.trim() !== '')
+        .map(line => `<p>${escapeHtml(line)}</p>`)
+        .join('');
+}
+
+// The HTML for a [start, end) range of a block's plain text, with every
+// enclosing inline tag reopened and reclosed.
+//
+// This is the one genuinely fiddly piece of the block model, so it is built
+// with an escape hatch from the start: if the range cannot be mapped onto the
+// DOM - i.e. the walk here and blockTextOfHtml's projection have drifted - it
+// returns escapeHtml(fallbackText) for that hunk alone. The formatting of that
+// one hunk is lost; malformed markup is never emitted. The console warning is
+// there to make the case diagnosable rather than silent.
+//
+// The range is always WITHIN one block, so the ancestor chain of any touched
+// text node is short and always closes.
+export function sliceHtmlByText(blockHtml, start, end, fallbackText) {
+    const bail = (why) => {
+        console.warn('[ThunderAI] diff picker: HTML slice fell back to plain text (' + why + ')');
+        return escapeHtml(fallbackText == null ? '' : String(fallbackText));
+    };
+
+    if (end <= start) { return ''; }
+
+    try {
+        const doc = new DOMParser().parseFromString(String(blockHtml || ''), 'text/html');
+        const root = doc.body;
+
+        // The offsets live in the space blockTextOfHtml() reads out of this very
+        // html, so walking its text nodes in order reproduces that projection
+        // exactly and an offset maps straight onto a (node, offset) pair.
+        const out = doc.createDocumentFragment();
+        let seen = 0;          // how much of the block's text has been consumed
+
+        // blockHtml has already been through normalizeBlockHtml, so its text
+        // nodes ARE the projection block.text was read from - no re-collapsing
+        // here, which is what keeps the two offset spaces identical.
+
+        // Clone the ancestor chain of a node up to (not including) root, so the
+        // slice carries its <strong>/<em>/<a> wrappers. `leaf` is whatever this
+        // position contributes - a text node, or a <br>.
+        //
+        // Ancestors already rebuilt for a previous leaf are REUSED rather than
+        // cloned again, keyed by the source element. Without this, two text
+        // nodes under one <strong> would come back as
+        // <strong>a</strong><strong> b</strong> - visually identical, but not
+        // equal to what renderBlocks emits, which would break the invariant on
+        // string comparison alone.
+        const shells = new Map();
+        const graft = (node, leafNode) => {
+            // Walk root-ward collecting the chain, then rebuild it top-down so
+            // an existing shell can be reused at any level.
+            const chain = [];
+            let cur = node.parentNode;
+            while (cur && cur !== root) { chain.unshift(cur); cur = cur.parentNode; }
+
+            let parent = out;
+            for (const src of chain) {
+                let shell = shells.get(src);
+                // Only reusable while it is still the last child of its parent:
+                // anything appended after it would otherwise be re-parented into
+                // the middle of the output.
+                if (!shell || shell.parentNode !== parent || parent.lastChild !== shell) {
+                    shell = src.cloneNode(false);
+                    parent.appendChild(shell);
+                    shells.set(src, shell);
+                }
+                parent = shell;
+            }
+            parent.appendChild(leafNode);
+        };
+
+        let done = false;
+        const visit = (node) => {
+            if (done) { return; }
+            if (node.nodeType === Node.TEXT_NODE) {
+                const norm = String(node.textContent);
+                if (norm === '') { return; }
+                const from = seen;
+                const to = seen + norm.length;
+                seen = to;
+                // Overlap of [from, to) with [start, end)
+                const a = Math.max(from, start);
+                const b = Math.min(to, end);
+                if (a < b) { graft(node, doc.createTextNode(norm.slice(a - from, b - from))); }
+                if (seen >= end) { done = true; }
+                return;
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) { return; }
+            if (node.tagName.toLowerCase() === 'br') {
+                const from = seen;
+                seen += 1;   // <br> projects to exactly one \n
+                if (from >= start && from < end) { graft(node, doc.createElement('br')); }
+                if (seen >= end) { done = true; }
+                return;
+            }
+            for (const child of Array.from(node.childNodes)) { visit(child); }
+        };
+
+        for (const child of Array.from(root.childNodes)) { visit(child); }
+
+        // The walk must have covered the requested range. If it did not, the
+        // two projections have drifted and the slice would be silently wrong -
+        // so take the plain-text fallback instead of emitting it.
+        if (seen < end) { return bail('range beyond block text'); }
+
+        const holder = doc.createElement('div');
+        holder.appendChild(out);
+        return holder.innerHTML;
+    } catch (e) {
+        return bail(e && e.message ? e.message : 'exception');
+    }
 }
 
 const pickerTemplate = document.createElement('template');
@@ -613,6 +1200,41 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       white-space: normal;
     }
 
+    /* The body now holds REAL block elements - one per segmented block - so the
+       picker shows the structure it is going to write into the mail. These
+       rules only tame the UA defaults; the page's own font and colours are
+       inherited. Margins are collapsed to a single trailing gap so a paragraph
+       and a list item sit on the same rhythm. */
+    .picker-body p,
+    .picker-body blockquote,
+    .picker-body pre,
+    .picker-body h1,
+    .picker-body h2,
+    .picker-body h3,
+    .picker-body h4,
+    .picker-body h5,
+    .picker-body h6 {
+      margin: 0 0 .5em;
+    }
+    .picker-body > :last-child {
+      margin-bottom: 0;
+    }
+    .picker-body ul,
+    .picker-body ol {
+      margin: 0 0 .5em;
+      padding-inline-start: 1.5em;
+    }
+    .picker-body li {
+      margin: 0;
+    }
+    /* Headings inside the picker are structure, not page chrome: keep them
+       close to body size so a proofread of an h1 does not tower over the rest. */
+    .picker-body h1,
+    .picker-body h2,
+    .picker-body h3 {
+      font-size: 1.05em;
+    }
+
     .picker-note {
       font-size: .71875rem;
       color: var(--ink-3);
@@ -739,8 +1361,12 @@ class DiffPicker extends HTMLElement {
 
         this._root = shadowRoot.querySelector('.picker-root');
         this._granularity = 'words';
-        this._originalText = '';
-        this._newText = '';
+        this._originalHtml = '';
+        this._newHtml = '';
+        // The composition source: blocks, each holding its own hunks.
+        this._blocks = [];
+        // The same hunk objects, flat and in document order, shared BY
+        // REFERENCE with _blocks so the indexed UI paths need no changes.
         this._hunks = [];
         // Aligned 1:1 with _hunks, context entries included, so an index is
         // never recomputed and _renderHunk can stay a pure index lookup.
@@ -1140,11 +1766,11 @@ class DiffPicker extends HTMLElement {
         if (wanted === this._granularity) { return; }
         this._granularity = wanted;
         this._paintGranularity();
-        // From _newText, not from the current composition: the granularity
+        // From _newHtml, not from the current composition: the granularity
         // switch re-compares the ORIGINAL against the ANSWER. Feeding the
         // composed text back in would make the answer's rejected parts
         // unreachable, turning a view setting into a destructive edit.
-        this._rebuild(this._newText);
+        this._rebuild(this._newHtml);
     }
 
     _paintGranularity() {
@@ -1185,20 +1811,25 @@ class DiffPicker extends HTMLElement {
             // two views then start the same size, there is no scroll position to
             // restore afterwards.
             const h = this._bodyEl.offsetHeight;
-            this._editor.value = composeResult(this._hunks);
+            this._editor.value = composeResult(this._blocks);
             if (h > 0) { this._editor.style.height = h + 'px'; }
             this._mode = 'edit';
             this.setAttribute('mode', 'edit');
-            // Warn before the reset happens, not after: coming back re-diffs and
-            // discards the choices, which is surprising if unannounced.
+            // Warn before the loss happens, not after. Coming back re-diffs and
+            // discards the choices - and, since the editor is plain text, the
+            // answer's FORMATTING as well. Both are surprising if unannounced.
             this._showNote('apiwebchat_picker_edit_hint');
         } else {
             // Re-diff the edited text against the ORIGINAL. This resets every
             // choice to accepted - see the comment on _rebuild. _rebuild also
             // resets the note, clearing the edit hint.
+            //
+            // The editor holds plain text but _rebuild segments HTML, so each
+            // line becomes its own <p>: that is what gives the segmenter blocks
+            // to work with, and it is where the answer's formatting is lost.
             this._mode = 'review';
             this.removeAttribute('mode');
-            this._rebuild(this._editor.value);
+            this._rebuild(textToBlockHtml(this._editor.value));
         }
 
         this._paintMode();
@@ -1259,15 +1890,18 @@ class DiffPicker extends HTMLElement {
         this._useAnswerHandler = handler;
     }
 
-    setContent(originalText, newText) {
-        this._originalText = originalText == null ? '' : String(originalText);
-        this._newText = newText == null ? '' : String(newText);
+    // Both sides are HTML. The picker keeps the answer's formatting, and takes
+    // the original's from selection_html / body_html so that REJECTING a change
+    // restores the original's own markup, not just its words.
+    setContent(originalHtml, newHtml) {
+        this._originalHtml = originalHtml == null ? '' : String(originalHtml);
+        this._newHtml = newHtml == null ? '' : String(newHtml);
         // New content always arrives for review: opening straight into the
         // editor would hide the changes the button was clicked to see.
         this._mode = 'review';
         this.removeAttribute('mode');
         this._editor.value = '';
-        this._rebuild(this._newText);
+        this._rebuild(this._newHtml);
         this._paintMode();
     }
 
@@ -1279,22 +1913,35 @@ class DiffPicker extends HTMLElement {
     // the hunks are recomputed against different text (or at a different
     // granularity), so old decisions have no counterpart to map onto, and
     // inventing one would silently misrepresent what the user chose.
-    _rebuild(newText) {
-        this._hunks = buildHunks(this._originalText, newText, this._granularity);
+    _rebuild(newHtml) {
+        // _blocks is the composition source; _hunks is the SAME hunk objects in
+        // document order. Every indexed consumer (_renderHunk, _chooseSide,
+        // _moveCurrent, the keyboard handler) keeps working on the flat array
+        // untouched, because the objects are shared by reference - mutating
+        // hunk.state through _hunks is mutating it in _blocks.
+        this._blocks = buildHunks(this._originalHtml, newHtml, this._granularity);
         this._currentIdx = -1;
 
-        if (this._hunks === null) {
+        if (this._blocks === null) {
             // The diff aborted. Nothing trustworthy to show, and composing a
             // result would be a guess, so say so and fall back to the answer.
-            this._hunks = [{
-                id: 0,
-                type: 'context',
-                oldText: normalizeForDiff(newText),
-                newText: normalizeForDiff(newText),
-                state: 'accepted',
-            }];
+            const blocks = segmentBlocks(newHtml);
+            this._blocks = blocks.map((b, i) => ({
+                kind: 'context',
+                tag: b.tag,
+                listType: b.listType,
+                hunks: [{
+                    id: i,
+                    type: 'context',
+                    oldText: b.text,
+                    newText: b.text,
+                    oldHtml: b.html,
+                    newHtml: b.html,
+                    state: 'accepted',
+                }],
+            }));
             this._showNote('apiwebchat_picker_diff_failed');
-        } else if (!hasChanges(this._hunks)) {
+        } else if (!hasChanges(this._blocks)) {
             // A single context hunk would otherwise render as a bare paragraph
             // under a "0 of 0 changes accepted" toolbar.
             this._showNote('apiwebchat_picker_no_changes');
@@ -1302,6 +1949,8 @@ class DiffPicker extends HTMLElement {
             this._noteEl.hidden = true;
             this._noteEl.textContent = '';
         }
+
+        this._hunks = flatHunks(this._blocks);
 
         this._renderAll();
         this._updateCounter();
@@ -1312,36 +1961,79 @@ class DiffPicker extends HTMLElement {
         this._noteEl.hidden = false;
     }
 
+    // Render the blocks as REAL block elements, with each block's hunks inside
+    // it, so the picker shows the structure it is going to produce instead of
+    // the flat wall of text the plain-text model could only manage.
+    //
+    // _hunkEls / _sideEls / _interactive stay FLAT and globally indexed across
+    // every block. That is deliberate and load-bearing: _renderHunk,
+    // _chooseSide, _moveCurrent, _focusActiveSide and the keyboard handler are
+    // pure index lookups and need no knowledge of blocks at all. Only this
+    // method knows the nesting exists.
     _renderAll() {
         this._bodyEl.textContent = '';
         this._hunkEls = [];
         this._sideEls = [];
         this._interactive = [];
 
-        this._hunks.forEach((hunk, index) => {
-            const span = document.createElement('span');
-            this._hunkEls.push(span);
-            this._sideEls.push(null);
-            this._bodyEl.appendChild(span);
+        let index = 0;
+        let openList = null;   // the <ul>/<ol> currently collecting <li> blocks
 
-            if (hunk.type === 'context') {
-                span.appendChild(textWithNewlinesToFragment(hunk.oldText));
-                return;
+        for (const block of (this._blocks || [])) {
+            let host;
+            if (block.tag === 'li') {
+                const type = block.listType || 'ul';
+                if (!openList || openList.tagName.toLowerCase() !== type) {
+                    openList = document.createElement(type);
+                    this._bodyEl.appendChild(openList);
+                }
+                host = document.createElement('li');
+                openList.appendChild(host);
+            } else {
+                openList = null;
+                host = document.createElement(block.tag);
+                this._bodyEl.appendChild(host);
             }
 
-            span.classList.add('hunk');
-            // Both versions are built ONCE here, never rebuilt: a toggle only
-            // reassigns their active/inactive classes. That is what keeps focus,
-            // tab order and hover intact across a choice.
-            const oldSide = this._buildSide(index, 'old');
-            const newSide = this._buildSide(index, 'new');
-            span.appendChild(oldSide);
-            span.appendChild(newSide);
-            this._sideEls[index] = { old: oldSide, new: newSide };
-            this._interactive.push(index);
+            for (const hunk of block.hunks) {
+                const span = document.createElement('span');
+                this._hunkEls.push(span);
+                this._sideEls.push(null);
+                host.appendChild(span);
 
-            this._renderHunk(index);
-        });
+                if (hunk.type === 'context') {
+                    // Already sanitized by segmentBlocks, so this renders the
+                    // answer's own inline markup rather than escaping it.
+                    //
+                    // Always the new side, where composeResult consults
+                    // contextSide(). The two agree except in one cosmetic case:
+                    // a context hunk inside a replace block whose sides marked
+                    // the SAME words up differently, with every change in that
+                    // block rejected - the picker shows the answer's emphasis
+                    // while the composed result carries the original's. Making
+                    // this dynamic would mean rebuilding context DOM on every
+                    // toggle, which is exactly what the surgical re-render (and
+                    // the focus and tab order that ride on it) exists to avoid.
+                    span.appendChild(htmlToFragment(hunk.newHtml));
+                    index++;
+                    continue;
+                }
+
+                span.classList.add('hunk');
+                // Both versions are built ONCE here, never rebuilt: a toggle only
+                // reassigns their active/inactive classes. That is what keeps focus,
+                // tab order and hover intact across a choice.
+                const oldSide = this._buildSide(index, 'old');
+                const newSide = this._buildSide(index, 'new');
+                span.appendChild(oldSide);
+                span.appendChild(newSide);
+                this._sideEls[index] = { old: oldSide, new: newSide };
+                this._interactive.push(index);
+
+                this._renderHunk(index);
+                index++;
+            }
+        }
     }
 
     // One of the two versions of a change. `which` is 'old' (the original, red)
@@ -1349,6 +2041,7 @@ class DiffPicker extends HTMLElement {
     _buildSide(index, which) {
         const hunk = this._hunks[index];
         const text = (which === 'old') ? hunk.oldText : hunk.newText;
+        const html = (which === 'old') ? hunk.oldHtml : hunk.newHtml;
 
         const side = document.createElement('span');
         side.classList.add('hunk-side', which === 'old' ? 'hunk-side-old' : 'hunk-side-new');
@@ -1369,7 +2062,10 @@ class DiffPicker extends HTMLElement {
             marker.appendChild(buildHunkMarkerIcon());
             side.appendChild(marker);
         } else {
-            side.appendChild(textWithNewlinesToFragment(text));
+            // The hunk's own markup, so each side is shown the way it would be
+            // written into the mail. Sanitized upstream by segmentBlocks; the
+            // aria-label below deliberately stays on the plain text.
+            side.appendChild(htmlToFragment(html));
         }
 
         side.addEventListener('click', (e) => {
@@ -1457,7 +2153,7 @@ class DiffPicker extends HTMLElement {
     }
 
     _updateCounter() {
-        const { accepted, total } = countChanges(this._hunks);
+        const { accepted, total } = countChanges(this._blocks);
         // Hidden with nothing to pick ("0 of 0 changes accepted" reads like a
         // bug) and in EDIT mode, where there are no hunks to operate on: the
         // counter would report a state the visible text no longer reflects.
@@ -1665,15 +2361,22 @@ class DiffPicker extends HTMLElement {
     // straight from the editor without forcing a trip back through REVIEW.
     composeResultText() {
         if (this._mode === 'edit') { return this._editor.value; }
-        return composeResult(this._hunks);
+        return composeResult(this._blocks);
     }
 
+    // The HTML written back into the mail.
+    //
+    // In REVIEW this walks the blocks, so the chosen side's MARKUP comes with
+    // it - the whole point of the block model. escapeHtml is not used on this
+    // path: the hunks' html already went through sanitizeInlineHtml, and
+    // escaping it here would escape the very tags being preserved.
+    //
+    // In EDIT the composition is free text the user typed, so it is escaped and
+    // wrapped in <p> per line - the same shape the block renderer emits, which
+    // keeps the downstream plain-text conversion on one code path.
     composeResultHTML() {
-        // Escape BEFORE substituting <br>, or the tags this adds get escaped
-        // along with the text.
-        return escapeHtml(this.composeResultText())
-            .replace(/\r\n/g, '\n')
-            .replace(/\n/g, '<br>');
+        if (this._mode === 'edit') { return textToBlockHtml(this._editor.value); }
+        return composeResultBlocksHTML(this._blocks);
     }
 }
 

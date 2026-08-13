@@ -23,6 +23,7 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import './splitButton.js';   // registers the <split-button> custom element
 import './diffPicker.js';    // registers the <diff-picker> custom element
+import { textToBlockHtml } from './diffPicker.js';
 import { renderThinkingBlock } from './thinkingBlock.js';
 import { StreamingMessage } from './streamingMessage.js';
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
@@ -812,7 +813,7 @@ class MessagesArea extends HTMLElement {
     }
 
     async handleTokensDone(promptData = null) {
-        this.flushAccumulatingMessage();
+        this.flushAccumulatingMessage(true);
         // A response made only of thinking tokens never creates an accumulating
         // message, so the flush above is a no-op and would leave the indicator
         // spinning forever.
@@ -838,6 +839,11 @@ class MessagesArea extends HTMLElement {
         // and close the turn wrapper.
         this._streaming = null;
         this._currentTurnEl = null;
+        // A cumulative (HTML) response keeps its accumulating element alive
+        // across flushes, so unlike the markdown path it is still set here.
+        // Clearing it is what makes the NEXT response open an element of its own
+        // instead of streaming into this answer.
+        this.accumulatingMessageEl = null;
     }
 
     appendUserMessage(messageText, type="user") {
@@ -1046,11 +1052,14 @@ class MessagesArea extends HTMLElement {
                 // Read the picker NOW, not when the bar was built, so the click
                 // picks up every accept/reject the user has made since.
                 //
-                // Deliberately NOT through removeAloneBRs(): the picker emits
-                // plain text turned into <br>-separated markup with no <p>
-                // wrapper, and removeAloneBRs strips every <br> that has no <p>
-                // ancestor - which would be all of them, collapsing the whole
-                // message into a single run-together line.
+                // Deliberately NOT through removeAloneBRs(). It would now be
+                // SAFE - the picker emits <p>/<li>-wrapped blocks, so every
+                // <br> it produces has a block ancestor, and the collapse that
+                // made this skip mandatory when the output was <br>-only markup
+                // can no longer happen. It is skipped because it is pointless:
+                // the picker's output is canonical by construction, and running
+                // it through a cleaner written for the markdown producer only
+                // adds a way to go wrong.
                 //
                 // The mouse-selection override is skipped too: two mechanisms
                 // competing over the same output is confusing, and the picker is
@@ -1387,30 +1396,36 @@ class MessagesArea extends HTMLElement {
         diffLabelEl.textContent = diffLabel;
         diffvButton.appendChild(diffLabelEl);
         diffvButton.addEventListener('click', async () => {
-            // htmlToPlainText, not stripHtmlTags: the latter DELETES <br> rather
-            // than turning it into a line break, so the read-only viewer used to
-            // diff a single run-together line against a multi-line original and
-            // reported the whole answer as changed. It also decodes entities.
-            const newText = htmlToPlainText(fullTextHTMLAtAssignment);
+            // The answer's HTML goes in UNTOUCHED - keeping its formatting is
+            // the whole point, and the picker segments it into blocks itself.
+            const newHtml = fullTextHTMLAtAssignment;
+
+            // Resolve on the TEXT fields exactly as before, then take the HTML
+            // twin of whichever side won. Choosing on the html fields directly
+            // would risk diffing a selection against a whole body whenever one
+            // of the two happened to be empty.
             let originalText = promptData.prompt_info?.selection_text;
+            let originalHtml = promptData.prompt_info?.selection_html;
             if((originalText == null) || (originalText == "")) {
                 originalText = promptData.prompt_info?.body_text;
+                originalHtml = promptData.prompt_info?.body_html;
             }
             // The special-prompt shape built by js/mzta-utils-prompt.js carries
             // neither field. Those prompts all have use_diff_viewer "0" so we
             // never get here today, but one prompt-definition edit away this
-            // would hand undefined to the tokenizer.
+            // would hand undefined to the segmenter.
             if(originalText == null) { originalText = ""; }
-            // Every current producer emits \n (see getMailBody in
-            // js/mzta-menus.js, where the plain-text fields go through
-            // cleanupNewlines while only the _html ones get <br>). Defensive, so
-            // a prompt_info carrying markup cannot put literal <br> into the
-            // picker's plain text.
-            originalText = String(originalText).replace(/<br\s*\/?>/gi, '\n');
+            // No html twin (an older prompt_info, or a producer that only fills
+            // the text field): give the original block structure from its \n so
+            // it can still be segmented, rather than diffing a formatted answer
+            // against a single unsplittable run.
+            if((originalHtml == null) || (originalHtml == "")) {
+                originalHtml = textToBlockHtml(originalText);
+            }
 
             const granularity = await this._resolveDiffGranularity();
 
-            this.appendDiffPicker(originalText, newText, ownerTurn, granularity, () =>
+            this.appendDiffPicker(originalHtml, newHtml, ownerTurn, granularity, () =>
                 this.handleUseThisAnswerButtonClick(promptData, replyType, fullTextHTMLAtAssignment, ownerTurn));
             diffvButton.disabled = true;
         });
@@ -1420,7 +1435,7 @@ class MessagesArea extends HTMLElement {
     // Open the interactive change picker in a turn of its own.
     // `buildUseAnswerHandler` is a thunk so the picker gets its own "use this
     // answer" action without appendDiffPicker having to know the argument list.
-    appendDiffPicker(originalText, newText, ownerTurn = null, granularity = 'words', buildUseAnswerHandler = null) {
+    appendDiffPicker(originalHtml, newHtml, ownerTurn = null, granularity = 'words', buildUseAnswerHandler = null) {
         // Triggered by a button that may belong to an older answer, part-way
         // through a session. _beginBotTurn moves _currentTurnEl, so save and
         // restore it: the picker must not hijack the turn being streamed, nor
@@ -1434,7 +1449,7 @@ class MessagesArea extends HTMLElement {
 
         const picker = document.createElement('diff-picker');
         picker.setGranularity(granularity);   // before setContent: it picks the diff fn
-        picker.setContent(originalText, newText);
+        picker.setContent(originalHtml, newHtml);
         messageElement.appendChild(picker);
         body.appendChild(messageElement);
 
@@ -1476,12 +1491,15 @@ class MessagesArea extends HTMLElement {
         this._resumeFollowing();
     }
 
-    flushAccumulatingMessage() {
+    // `final` marks the last flush of a response (handleTokensDone). It lets the
+    // streaming state settle a shape decision it is still holding open, so a
+    // response that never produced a block tag is not left unrendered.
+    flushAccumulatingMessage(final = false) {
         if (this.accumulatingMessageEl) {
             // Delegate the token→HTML parsing pipeline to the streaming state.
             // A null result means the flush was deferred (unterminated <think>
             // mid-stream): leave the DOM tokens and accumulator untouched.
-            const result = this._ensureStreaming().flush();
+            const result = this._ensureStreaming().flush(final);
             if (result === null) {
                 return;
             }
@@ -1492,7 +1510,7 @@ class MessagesArea extends HTMLElement {
             // above, which must leave the indicator in place.
             this._removeThinkingIndicator();
 
-            const { html, thinkingText, fullTextHTML } = result;
+            const { html, thinkingText, fullTextHTML, cumulative } = result;
 
             // Keep the immutable snapshot readers (addActionButtons /
             // save-as-summary / diff) working: mirror the response-wide snapshot.
@@ -1529,7 +1547,15 @@ class MessagesArea extends HTMLElement {
                 this.accumulatingMessageEl.appendChild(node);
             });
 
-            this.accumulatingMessageEl = null;
+            // Normally each flush contributes the NEXT piece of the answer, so
+            // the element is retired here and the following segment starts a
+            // fresh one beside it. A cumulative flush (the HTML path) instead
+            // hands back the whole response every time, so the same element must
+            // be reused - retiring it would render the answer once per flush and
+            // leave the copies stacked on screen.
+            if (!cumulative) {
+                this.accumulatingMessageEl = null;
+            }
         }
     }
 
