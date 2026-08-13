@@ -19,7 +19,6 @@
 import { prefs_default } from "../../options/mzta-options-default.js";
 import {
     getLocalStorageUsedSpace,
-    sanitizeHtml,
     openTab
 } from "../../js/mzta-utils.js";
 import { taLogger } from "../../js/mzta-logger.js";
@@ -354,7 +353,7 @@ function handleCancelClick(e) {
     tr.querySelector('.btnDeleteItem').style.display = '';   // Delete btn
     tr.querySelector('.id_output').value = tr.querySelector('.id_show').innerText.toLocaleUpperCase();
     tr.querySelector('.name_output').value = tr.querySelector('.name_show').innerText;
-    tr.querySelector('.text_output').value = sanitizeHtml(tr.querySelector('.text_show').innerHTML).replace(/<br\s*\/?>/gi, "\n");
+    tr.querySelector('.text_output').value = getTextShowSource(tr.querySelector('.text_show'));
 	tr.querySelector('.type_output').value = tr.querySelector('.type').innerText;
     hideItemRowEditor(tr);
 }
@@ -371,12 +370,14 @@ function handleConfirmClick(e) {
     tr.querySelector('.id_show').innerText = String(tr.querySelector('.id_output').value).toLocaleLowerCase();
     tr.querySelector('.name_show').innerText = tr.querySelector('.name_output').value;
     const text_show = tr.querySelector('.text_show');
-    text_show.innerText = tr.querySelector('.text_output').value;
+    // textContent, not innerText: innerText normalises whitespace, which would
+    // silently rewrite the value the user just typed.
+    text_show.textContent = tr.querySelector('.text_output').value;
 	tr.querySelector('.type').innerText = tr.querySelector('.type_output').value;
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     // The row is updated in place (no List.js re-render), so clear the decoration
-    // flag and re-run it to chip the placeholders in the freshly edited text.
-    delete text_show.dataset.phDecorated;
+    // source and re-run it to chip the placeholders in the freshly edited text.
+    delete text_show.dataset.phSource;
     decoratePlaceholderText();
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
@@ -398,23 +399,49 @@ function handleInputChange(e) {
 // mode and edit mode can never disagree on what counts as a token. This also
 // matches values containing '%' (e.g. {%additional_text:50%%}), which the
 // previous /\{%[^%]+%\}/ never did.
-// The guard holds the decorated result rather than a plain '1', so it
-// self-invalidates whenever the span is rewritten from the stored value.
+// The chips are built as DOM nodes, never by assigning an HTML string, so the
+// placeholder text can never be parsed as markup.
+// dataset.phSource holds the plain source text the chips were built from: it is
+// both the idempotency guard (re-decorating the same text is a no-op) and the
+// authoritative value getTextShowSource() reads back when leaving edit mode.
 function decoratePlaceholderText() {
     document.querySelectorAll('#all_custom_dataplaceholders .text_show').forEach(span => {
-        if (span.dataset.phDecorated === span.innerHTML) return;
+        const source = span.textContent;
+        if (span.dataset.phSource === source) return;
+        span.dataset.phSource = source;
         // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
         // each use so a previous call cannot make this one start mid-string.
         PLACEHOLDER_RE.lastIndex = 0;
-        if (!PLACEHOLDER_RE.test(span.innerHTML)) {
-            span.dataset.phDecorated = span.innerHTML;
-            return;
-        }
+        if (!PLACEHOLDER_RE.test(source)) return;
+
+        const frag = document.createDocumentFragment();
+        let last = 0;
         PLACEHOLDER_RE.lastIndex = 0;
-        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE,
-            m => '<span class="ph_chip">' + m + '</span>');
-        span.dataset.phDecorated = span.innerHTML;
+        let match;
+        while ((match = PLACEHOLDER_RE.exec(source)) !== null) {
+            if (match.index > last) {
+                frag.append(source.slice(last, match.index));
+            }
+            const chip = document.createElement('span');
+            chip.className = 'ph_chip';
+            chip.textContent = match[0];
+            frag.append(chip);
+            last = match.index + match[0].length;
+            // A zero-length match would spin forever; step past it.
+            if (match[0].length === 0) PLACEHOLDER_RE.lastIndex++;
+        }
+        if (last < source.length) {
+            frag.append(source.slice(last));
+        }
+        span.replaceChildren(frag);
     });
+}
+
+// The plain text a .text_show span currently represents, chips and all.
+// Prefers the recorded source so the value survives decoration untouched;
+// textContent is the fallback for spans that were never decorated.
+function getTextShowSource(span) {
+    return (span.dataset.phSource !== undefined) ? span.dataset.phSource : span.textContent;
 }
 
 // Keep the card footer data placeholder count in sync with the rendered list.
@@ -439,6 +466,10 @@ function loadCustomDataPHsList(values){
         ],
         item: function(values) {
             values.id = placeholdersUtils.stripCustomDataPH_ID_Prefix(values.id);
+            // Legacy stored values may hold <br> instead of newlines. Normalise once,
+            // here, so the read-only span and the textarea show the same text: List.js
+            // binds .text_show as text and would otherwise render "<br>" literally.
+            values.text = String(values.text).replace(/<br\s*\/?>/gi, "\n");
             let type_output = '';
             switch(String(values.type)){
                 case "0":
@@ -458,7 +489,7 @@ function loadCustomDataPHsList(values){
                     <span class="text text_show"></span>
                     <div class="autocomplete-container editor-wrap">
                         <div class="editor-backdrop" aria-hidden="true"><div class="editor-highlights"></div></div>
-                        <textarea class="hiddendata text_output editor">` + values.text.replace(/<br\s*\/?>/gi, "\n") + `</textarea>
+                        <textarea class="hiddendata text_output editor">` + values.text + `</textarea>
                         <ul class="autocomplete-list hidden"></ul>
                     </div>
                 </td>

@@ -39,14 +39,6 @@ export const PLACEHOLDER_RE = /\{%\s*(.*?)\s*%\}/g;
 // height and the last line can still be scrolled to.
 const TRAILING_PAD = '​';
 
-function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(str) {
-    return escapeHtml(str).replace(/"/g, '&quot;');
-}
-
 /*
  *  Splits text into a flat list of parts:
  *    { text }                        plain text
@@ -112,6 +104,16 @@ export function attachEditorHighlight(textarea, options = {}) {
 
     let getTokenState = options.getTokenState || null;
 
+    const doc = textarea.ownerDocument;
+
+    function caretAnchor() {
+        const span = doc.createElement('span');
+        span.className = 'caret-anchor';
+        return span;
+    }
+
+    // Returns a Node for a token part: either a chip <span> or a bare text node
+    // when the token must stay unstyled.
     function chip(part) {
         // Never warn about the token the user is still typing: that would flash
         // a warning on every keystroke while they type '{%mail_...'. The caret
@@ -120,12 +122,14 @@ export function attachEditorHighlight(textarea, options = {}) {
         const caretInside = part.open
             && textarea.selectionStart >= part.offset
             && textarea.selectionEnd <= part.offset + part.text.length;
-        if (part.open && (caretInside || !getTokenState)) return escapeHtml(part.text);
+        if (part.open && (caretInside || !getTokenState)) return doc.createTextNode(part.text);
 
         const state = getTokenState ? getTokenState(part.inner, part.text) : null;
-        const cls = (state && state.invalid) ? 'ph_chip_live ph_chip_invalid' : 'ph_chip_live';
-        const title = (state && state.title) ? ' title="' + escapeAttr(state.title) + '"' : '';
-        return '<span class="' + cls + '"' + title + '>' + escapeHtml(part.text) + '</span>';
+        const span = doc.createElement('span');
+        span.className = (state && state.invalid) ? 'ph_chip_live ph_chip_invalid' : 'ph_chip_live';
+        if (state && state.title) span.setAttribute('title', state.title);
+        span.textContent = part.text;
+        return span;
     }
 
     // Renders textarea.value into the mirror. When caretOffset is a number, a
@@ -134,7 +138,7 @@ export function attachEditorHighlight(textarea, options = {}) {
     function render(caretOffset) {
         const value = textarea.value;
         const withCaret = typeof caretOffset === 'number';
-        let html = '';
+        const frag = doc.createDocumentFragment();
         let pos = 0;
 
         for (const part of tokenize(value)) {
@@ -148,19 +152,20 @@ export function attachEditorHighlight(textarea, options = {}) {
             // never painted (getCaretRect repaints immediately after).
             if (withCaret && caretOffset > start && caretOffset < end) {
                 const cut = caretOffset - start;
-                html += escapeHtml(part.text.slice(0, cut))
-                     + '<span class="caret-anchor"></span>'
-                     + escapeHtml(part.text.slice(cut));
+                frag.appendChild(doc.createTextNode(part.text.slice(0, cut)));
+                frag.appendChild(caretAnchor());
+                frag.appendChild(doc.createTextNode(part.text.slice(cut)));
                 continue;
             }
-            if (withCaret && caretOffset === start) html += '<span class="caret-anchor"></span>';
-            html += (part.inner === undefined && !part.open)
-                ? escapeHtml(part.text)
-                : chip(part);
+            if (withCaret && caretOffset === start) frag.appendChild(caretAnchor());
+            frag.appendChild((part.inner === undefined && !part.open)
+                ? doc.createTextNode(part.text)
+                : chip(part));
         }
-        if (withCaret && caretOffset >= pos) html += '<span class="caret-anchor"></span>';
+        if (withCaret && caretOffset >= pos) frag.appendChild(caretAnchor());
+        frag.appendChild(doc.createTextNode(TRAILING_PAD));
 
-        highlights.innerHTML = html + TRAILING_PAD;
+        highlights.replaceChildren(frag);
         syncScroll();
     }
 
@@ -206,7 +211,7 @@ export function attachEditorHighlight(textarea, options = {}) {
             textarea.removeEventListener('scroll', syncScroll);
             if (resizeObserver) resizeObserver.disconnect();
             resizeObserver = null;
-            highlights.innerHTML = '';
+            highlights.replaceChildren();
             container.classList.remove('editor-active');
             delete textarea._mztaHighlight;
         },

@@ -1155,7 +1155,7 @@ function decoratePromptText() {
     // DOMContentLoaded handler re-runs this right after the await.
     const canValidate = Array.isArray(activePlaceholders) && activePlaceholders.length > 0;
     const unknownTitle = canValidate
-        ? browser.i18n.getMessage('editor_placeholder_unknown').replace(/"/g, '&quot;')
+        ? browser.i18n.getMessage('editor_placeholder_unknown')
         : '';
 
     document.querySelectorAll('#all_prompts .text_show').forEach(span => {
@@ -1184,15 +1184,41 @@ function decoratePromptText() {
             : (typeSpan ? typeSpan.innerText.trim() : null);
         const type = (rawType === null || rawType === '') ? null : rawType;
 
-        PLACEHOLDER_RE.lastIndex = 0;
-        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE, (m, inner) => {
-            if (!canValidate) return '<span class="ph_chip">' + m + '</span>';
-            if (placeholdersUtils.findPlaceholder(inner, activePlaceholders, type)) {
-                return '<span class="ph_chip">' + m + '</span>';
+        // Rebuilt with DOM nodes rather than an innerHTML write: the token text
+        // comes from user-authored prompts, so it must never be re-parsed as
+        // markup. Existing <br> elements are the only structure this span can
+        // legitimately carry (List.js renders the stored text, which encodes
+        // newlines as <br>), so they are carried over as real elements and
+        // everything else is treated as plain text.
+        const frag = document.createDocumentFragment();
+        span.childNodes.forEach(node => {
+            if (node.nodeType !== Node.TEXT_NODE) {
+                frag.appendChild(node.cloneNode(true));
+                return;
             }
-            return '<span class="ph_chip ph_chip_invalid_read" title="'
-                + unknownTitle + '">' + m + '</span>';
+            const text = node.nodeValue;
+            PLACEHOLDER_RE.lastIndex = 0;
+            let pos = 0;
+            let m;
+            while ((m = PLACEHOLDER_RE.exec(text)) !== null) {
+                if (m.index > pos) {
+                    frag.appendChild(document.createTextNode(text.slice(pos, m.index)));
+                }
+                const chip = document.createElement('span');
+                chip.className = 'ph_chip';
+                if (canValidate && !placeholdersUtils.findPlaceholder(m[1], activePlaceholders, type)) {
+                    chip.classList.add('ph_chip_invalid_read');
+                    chip.title = unknownTitle;
+                }
+                chip.textContent = m[0];
+                frag.appendChild(chip);
+                pos = m.index + m[0].length;
+            }
+            if (pos < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(pos)));
+            }
         });
+        span.replaceChildren(frag);
         span.dataset.phDecorated = span.innerHTML;
     });
 }
@@ -1226,20 +1252,12 @@ function resolvePromptName(name) {
 // tell "nothing to repaint" from "clear the previous highlight".
 let currentSearchNeedle = '';
 
-// Escape a string for safe interpolation into innerHTML.
-function escapeHtmlText(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
-
 // Wrap every occurrence of the search needle in the visible Name and ID cells
 // with <mark class="search_hit">.
 //
 // This must run after *every* List.js render, not just on input: item.values()
-// writes flow through templater.set(), which resets `.name`/`.id` innerHTML from
-// the stored value and so silently drops the marks (the same hazard the
+// writes flow through templater.set(), which resets the `.name`/`.id` content
+// from the stored value and so silently drops the marks (the same hazard the
 // data-phDecorated guard exists for in decoratePromptText).
 //
 // Only `.name_show` / `.id_show` are touched. The `_output` inputs stay
@@ -1265,7 +1283,6 @@ function highlightSearchMatches() {
         }
 
         const lower = plain.toLowerCase();
-        let out = '';
         let pos = 0;
         let at = lower.indexOf(needle);
         if (at === -1) {
@@ -1274,16 +1291,21 @@ function highlightSearchMatches() {
             }
             return;
         }
+        // Built from DOM nodes, never an innerHTML write: the needle and the
+        // surrounding name/ID text are user-supplied and must not be re-parsed
+        // as markup.
+        const frag = document.createDocumentFragment();
         while (at !== -1) {
-            out += escapeHtmlText(plain.slice(pos, at))
-                + '<mark class="search_hit">'
-                + escapeHtmlText(plain.slice(at, at + needle.length))
-                + '</mark>';
+            if (at > pos) frag.appendChild(document.createTextNode(plain.slice(pos, at)));
+            const mark = document.createElement('mark');
+            mark.className = 'search_hit';
+            mark.textContent = plain.slice(at, at + needle.length);
+            frag.appendChild(mark);
             pos = at + needle.length;
             at = lower.indexOf(needle, pos);
         }
-        out += escapeHtmlText(plain.slice(pos));
-        if (span.innerHTML !== out) span.innerHTML = out;
+        if (pos < plain.length) frag.appendChild(document.createTextNode(plain.slice(pos)));
+        span.replaceChildren(frag);
     });
 }
 

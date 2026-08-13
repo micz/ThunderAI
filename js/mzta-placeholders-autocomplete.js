@@ -81,10 +81,6 @@ function caretRect(textarea) {
     return { left: box.left, top: box.top, bottom: box.bottom, height: box.height };
 }
 
-function escapeHtml(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
     const container = textarea.closest('.autocomplete-container');
     if (!container) return null;
@@ -132,7 +128,7 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
     }
 
     function render(matches, typedLength) {
-        autocompleteList.innerHTML = '';
+        autocompleteList.replaceChildren();
         current = matches;
         activeIndex = -1;
 
@@ -142,13 +138,22 @@ export function textareaAutocomplete(textarea, suggestions, type_value = -1) {
             li.setAttribute('role', 'option');
             li.setAttribute('aria-selected', 'false');
             // The typed prefix is bold so it is obvious what is being matched.
-            const typed = escapeHtml(s.command.slice(0, typedLength));
-            const rest = escapeHtml(s.command.slice(typedLength));
-            let html = '<span class="ac_cmd"><b>' + typed + '</b>' + rest + '</span>';
+            // Built through the DOM rather than an HTML string: suggestion
+            // commands and labels are user data (custom placeholders), so no
+            // escaping step can be forgotten here.
+            const cmd = document.createElement('span');
+            cmd.className = 'ac_cmd';
+            const typed = document.createElement('b');
+            typed.textContent = s.command.slice(0, typedLength);
+            cmd.appendChild(typed);
+            cmd.appendChild(document.createTextNode(s.command.slice(typedLength)));
+            li.appendChild(cmd);
             if (s.label && s.label !== s.command) {
-                html += '<span class="ac_desc">' + escapeHtml(s.label) + '</span>';
+                const desc = document.createElement('span');
+                desc.className = 'ac_desc';
+                desc.textContent = s.label;
+                li.appendChild(desc);
             }
-            li.innerHTML = html;
             li.addEventListener('mousedown', (e) => {
                 // mousedown + preventDefault, not click: a click lets the
                 // textarea lose focus and collapse its selection before the
