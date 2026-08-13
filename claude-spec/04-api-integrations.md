@@ -74,7 +74,22 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 - `api-utils.js` must stay free of WebExtension and DOM dependencies — it is pulled into the Web
   Workers through the API classes. This is why the helper does not live in `js/mzta-utils.js`.
 - UI: a `textarea.option-input.option-textarea.check-json` row marked `conn_adv` in
-  `pages/_lib/connection-ui.js`; `warn_InvalidJson` gives red-border feedback on `input`.
+  `pages/_lib/connection-ui.js`, followed by a `div.json_error` whose id is the field's id plus
+  `_error`.
+- **Inline error reporting.** `checkJsonField()` writes the reason into that div via
+  `textContent` (never `innerHTML` — Thunderbird review) and toggles its `hidden` attribute, plus
+  the red border. A red border alone cannot tell the user *what* is wrong, so for a parse failure
+  the raw `error.message` is appended to `prefs_extra_body_error_invalid`: it carries the position
+  of the offending character (e.g. a trailing comma in `{"top_p": 0.9,}` reports position 14). A
+  valid-JSON-but-not-an-object value gets `prefs_extra_body_error_not_object` instead. Styling:
+  `.json_error` in `pages/_lib/connection-ui.css`, colored by the `--jsonError` token (defined for
+  both themes in `pages/_lib/mzta-design.css`, red rather than amber `--warning` because the value
+  is unusable, not merely a caveat).
+- Two entry points: `warn_InvalidJson` on `input` (bound with the `.check-number` listeners), and
+  the exported `checkJsonFields()` sweep, which must run **after** the fields are populated —
+  called in `options/mzta-options.js` after `restoreOptions()` and inside
+  `initializeSpecificIntegrationUI()` after its restore callback, so a malformed value saved by an
+  earlier session is flagged on load instead of looking fine until touched.
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`

@@ -37,6 +37,10 @@
     --success: #1f8a5b;
     --warning: #c9760a;
 
+    /* Inline validation error (malformed JSON in a connection field). Red, not
+       the amber --warning: this is a value the API cannot use, not a caveat. */
+    --jsonError: #b3261e;
+
     /* Code-like text: {%placeholder%} chips in the prompt editors. Same values as
        the --code/--code-bg tokens on the two Custom Prompts / Data Placeholders
        pages, so a placeholder chip looks the same everywhere in the add-on. */
@@ -84,6 +88,10 @@
            token-sized chip needs real contrast against --field. */
         --code: #8fb6ff;
         --codeBg: #1a2740;
+
+        /* Inline validation error (see the light block). Lightened: the light
+           value is too dark to read against --field/--panel here. */
+        --jsonError: #f2837c;
 
         /* Invalid placeholder chip (see the light block). */
         --warnChipText: #f0c07a;

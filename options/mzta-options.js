@@ -39,7 +39,8 @@ import {
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
-  hasEmptyValueOption
+  hasEmptyValueOption,
+  checkJsonFields
 } from '../pages/_lib/connection-ui.js';
 import {
   isTestableConnection,
@@ -682,6 +683,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
+  checkJsonFields();
   updateDescription();
   updateConnPanelTint();
   updateShortcutChips();

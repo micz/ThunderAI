@@ -39,6 +39,16 @@ textarea.option-textarea{
     height: 10em;
 }
 
+/* Inline reason for a malformed .check-json value, filled by checkJsonField().
+   Hidden via the [hidden] attribute when the value is valid, so no space is
+   taken in the common case. The parser message can be long: it must wrap. */
+.json_error{
+    margin-top: 4px;
+    line-height: 1.4;
+    color: var(--jsonError, #b3261e);
+    overflow-wrap: break-word;
+}
+
 label{
     width: -moz-available;
 }

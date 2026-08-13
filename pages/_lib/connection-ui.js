@@ -305,6 +305,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body_error" hidden></div>
         <br>__MSG_prefs_OptionText_chatgpt_extra_body_info__
       </label>
     </td>
@@ -568,6 +569,7 @@ export async function injectConnectionUI({
     <td>
       <label>
         <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" class="option-input option-textarea check-json"></textarea>
+        <div class="json_error" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body_error" hidden></div>
         <br>__MSG_prefs_OptionText_openai_comp_extra_body_info__
       </label>
     </td>
@@ -1228,6 +1230,9 @@ export async function initializeSpecificIntegrationUI({
       await restoreOptionsCallback();
   }
 
+  // Flag any malformed JSON already stored: the fields are filled now.
+  checkJsonFields();
+
   // 3. Setup Logic
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
   const conntype_el = document.getElementById(conntype_select_id);
@@ -1540,18 +1545,47 @@ function warn_InvalidNumber(event){
 
 // Advisory validation only, consistently with warn_InvalidNumber: the value is
 // saved anyway, and the API classes ignore an unusable one at request time.
-function warn_InvalidJson(event){
-  const elementValue = event.target.value;
-  let isValid = true;
+// The reason is reported inline, because a red border alone does not tell the
+// user what is wrong in a JSON snippet: the parser message carries the position
+// of the offending character, which is what makes a typo findable.
+function checkJsonField(field){
+  if(!field) return;
+  const elementValue = field.value;
+  const errorBox = document.getElementById(field.id + '_error');
+  let errorText = '';
+
   if (elementValue.trim() !== '') {
     try {
       const parsed = JSON.parse(elementValue);
-      isValid = (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed));
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        errorText = browser.i18n.getMessage('prefs_extra_body_error_not_object');
+      }
     } catch (error) {
-      isValid = false;
+      // error.message already states what was expected and where. Strip the
+      // engine's "JSON.parse:" prefix (SpiderMonkey adds it, V8 does not): the
+      // label already says the value is invalid JSON, repeating it reads badly.
+      const parserMessage = String(error.message).replace(/^\s*JSON\.parse:\s*/, '');
+      errorText = browser.i18n.getMessage('prefs_extra_body_error_invalid') + ' ' + parserMessage;
     }
   }
-  event.target.style.border = isValid ? '' : '2px solid red';
+
+  field.style.border = errorText === '' ? '' : '2px solid red';
+
+  if (errorBox) {
+    errorBox.textContent = errorText;
+    errorBox.hidden = (errorText === '');
+  }
+}
+
+function warn_InvalidJson(event){
+  checkJsonField(event.target);
+}
+
+// Validate the already-saved values: the listeners only fire while typing, so a
+// malformed value stored by a previous session would otherwise look fine until
+// touched. Must be called after the fields have been filled (restoreOptions).
+export function checkJsonFields(){
+  document.querySelectorAll('.check-json').forEach(field => checkJsonField(field));
 }
 
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {

@@ -845,6 +845,14 @@
     "message": "You can use additional data placeholders.",
     "description": ""
   },
+  "prefs_extra_body_error_invalid": {
+    "message": "Invalid JSON:",
+    "description": "Followed by the parser error message, which states what was expected and at which position."
+  },
+  "prefs_extra_body_error_not_object": {
+    "message": "The value must be a JSON object, enclosed in curly braces.",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_extra_body" : {
     "message": "Extra body data",
     "description": ""
