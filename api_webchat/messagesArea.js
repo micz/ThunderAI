@@ -813,7 +813,7 @@ class MessagesArea extends HTMLElement {
     }
 
     async handleTokensDone(promptData = null) {
-        this.flushAccumulatingMessage();
+        this.flushAccumulatingMessage(true);
         // A response made only of thinking tokens never creates an accumulating
         // message, so the flush above is a no-op and would leave the indicator
         // spinning forever.
@@ -1491,12 +1491,15 @@ class MessagesArea extends HTMLElement {
         this._resumeFollowing();
     }
 
-    flushAccumulatingMessage() {
+    // `final` marks the last flush of a response (handleTokensDone). It lets the
+    // streaming state settle a shape decision it is still holding open, so a
+    // response that never produced a block tag is not left unrendered.
+    flushAccumulatingMessage(final = false) {
         if (this.accumulatingMessageEl) {
             // Delegate the token→HTML parsing pipeline to the streaming state.
             // A null result means the flush was deferred (unterminated <think>
             // mid-stream): leave the DOM tokens and accumulator untouched.
-            const result = this._ensureStreaming().flush();
+            const result = this._ensureStreaming().flush(final);
             if (result === null) {
                 return;
             }

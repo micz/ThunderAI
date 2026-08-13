@@ -372,13 +372,30 @@ what happened before this path existed.
 
 `flush()` therefore decides, **once per response**, which shape it is handling:
 
-- `LEADING_BLOCK_TAG_RE` tests whether the response *starts* with a block tag (`p`, `div`, `ul`,
-  `ol`, `li`, `h1`–`h6`, `blockquote`, `pre`). The test is deliberately narrow — only a block tag,
-  only at the very start — because a false positive mangles a normal answer. `<br>` is excluded: it
-  is already owned by `normalizeEchoedBrTags()` and says nothing about the rest of the reply.
+- `looksLikeHtmlResponse()` tests for a **lead-in followed by a block tag** (`p`, `div`, `ul`, `ol`,
+  `li`, `h1`–`h6`, `blockquote`, `pre`, `table`, `tr`, `td`, `th`, `tbody`, `thead`), or for an
+  orphan *closing* block tag (a reply that opens `Distinti saluti.</p>`).
+- The **lead-in is what makes the test robust**, and it exists because of a real failure: the same
+  prompt run twice produced `<li>…` once (rendered) and `<br><li>…` the next time (every tag
+  escaped). The earlier version anchored the block tag at the very start of the response, so one
+  echoed `<br>` — a token that says nothing about the reply's shape — flipped the whole answer to
+  the markdown path. Tolerated in the lead-in: whitespace, `<br>` runs, comments, a doctype/XML
+  prolog, and a *short* prose prefix ("Ecco il testo: `<p>`…").
+- The prose prefix is bounded to keep the test honest: no `<`, no newline (it must sit on the
+  response's first line), no markdown syntax character, max 40 chars. That is what stops
+  `**Nota:** <p>` or a markdown answer whose *second* paragraph opens with a tag from being swept in.
+- **Code regions are masked first**, the same masking `normalizeEchoedBrTags()` uses. An answer whose
+  subject *is* HTML ("how do I center a `<div>`?") must stay on the markdown path so the markup shows
+  as text in a code block instead of being sanitized into a real element.
 - The decision is **sticky** (`_isHtmlResponse`). Segments break on `\n`, so a later segment of an
   HTML answer can easily begin with a bare text node that looks like markdown; re-deciding per
   segment would render one answer half each way.
+- The test may also return **null — "not enough evidence yet"**. A response that has so far produced
+  only lead-in (a lone `<br>`) is *undecided*: the text is held back rather than committed to either
+  path, and the next segment decides with both segments judged together. Without this, `<br>\n<li>…`
+  would reintroduce the original bug one segment later, since a flush fires on every `\n`. The last
+  flush of a response (`flush(final = true)`, from `handleTokensDone`) forces the verdict to markdown
+  so a lead-in-only reply is never left unrendered.
 
 On the HTML path the reply goes through **`sanitizeBlockHtml()`** (`api_webchat/diffPicker.js`)
 instead of markdown-it. Running both would be wrong in either order. `normalizeEchoedBrTags()` is

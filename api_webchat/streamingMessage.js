@@ -82,7 +82,7 @@ function normalizeEchoedBrTags(text) {
     return rewritten.replace(CODE_MASK_RE, (m, idx) => stash[Number(idx)] ?? m);
 }
 
-// Does this segment open with a BLOCK-level HTML tag?
+// Is this response HTML?
 //
 // The prompts that send HTML to the model (they carry {%selected_html%} /
 // {%mail_html_body_or_selected%}) get HTML back, and markdown-it runs with
@@ -90,15 +90,105 @@ function normalizeEchoedBrTags(text) {
 // is exactly what users saw. This is the test that routes such an answer to the
 // sanitizer instead.
 //
-// Deliberately NARROW, because the cost of a false positive is a mangled normal
-// answer:
-//   - only a BLOCK tag counts, and only at the very START of the response.
-//     A markdown answer that merely mentions <b> mid-sentence is not HTML, and a
-//     model that opens with prose is writing markdown even if markup follows.
-//   - <br> is excluded: normalizeEchoedBrTags() already owns echoed <br> runs on
-//     the markdown path, and a leading <br> says nothing about the rest.
+// The rule is a LEAD-IN followed by a BLOCK TAG. The lead-in is what makes this
+// robust: an earlier version anchored the block tag at the very start of the
+// response, and a single stray token ahead of it flipped the whole answer to the
+// markdown path. That is not hypothetical - the same prompt, run twice, once
+// opened "<li>" (rendered) and once "<br><li>" (every tag escaped), because the
+// model had echoed a <br> from its input. Nothing about the answer differed but
+// its first token, so the routing has to tolerate whatever noise precedes the
+// real markup.
+//
+// Allowed in the lead-in, none of which says anything about the response's shape:
+//   - whitespace
+//   - <br> runs (echoed from an HTML mail body)
+//   - an HTML comment, doctype or XML prolog
+//   - a fragment of a stray sentence, as long as it is SHORT, sits on the
+//     response's first line and carries no markdown syntax - see LEAD_IN_PROSE
+//     below for why that bound exists.
+//
+// Still deliberately narrow in what COUNTS as the signal, because the cost of a
+// false positive is a mangled normal answer:
+//   - only a BLOCK tag counts. A markdown answer that merely mentions <b>
+//     mid-sentence is not HTML.
+//   - <br> alone never counts, on either side of this test: it is the one tag a
+//     markdown answer is genuinely likely to contain, and normalizeEchoedBrTags()
+//     already owns echoed <br> runs on the markdown path.
 // Everything that is not clearly HTML keeps going through markdown-it untouched.
-const LEADING_BLOCK_TAG_RE = /^\s*<(p|div|ul|ol|li|h[1-6]|blockquote|pre)\b[^>]*>/i;
+const BLOCK_TAG = '(?:p|div|ul|ol|li|h[1-6]|blockquote|pre|table|tr|td|th|tbody|thead)';
+
+// The lead-in tolerated before the first block tag: whitespace, echoed <br>
+// runs, comments, a doctype or an XML prolog.
+const LEAD_IN = `(?:\\s|<br\\s*/?>|<!--[\\s\\S]*?-->|<![^>]*>|<\\?[^>]*\\?>)*`;
+// Prose that may precede the markup, bounded on purpose. It buys the case where
+// a model prefixes a few words - "Ecco il testo:" - to markup it was told to
+// emit bare, which is a thing models do under exactly the "reply with only ..."
+// style of prompt these features use. The exclusions ARE the rule, so there is
+// no second check to keep in sync with this one:
+//   - no '<', so it cannot skate past markup that should have been judged;
+//   - no newline, so it stays on the response's first line;
+//   - no markdown syntax character, so "**Nota:** <p>" stays markdown;
+//   - 40 chars, i.e. a few words. A real markdown answer that opens with a
+//     sentence long enough to matter is past the bound before its first tag.
+const LEAD_IN_PROSE = `[^<\\n*_\`~#>\\[\\]|]{0,40}`;
+// Around prose, only SAME-LINE lead-in may appear. LEAD_IN matches \s, newline
+// included, so using it on either side of the prose would accept markdown whose
+// SECOND line merely happens to start with a tag ("Riga uno\n<p>x</p>", and the
+// mirror case "\nRiga uno<p>x</p>"). Blank horizontal space, <br> and comments
+// are fine; a line break is not. The prose branch as a whole is therefore
+// confined to one line - the response's first.
+const LEAD_IN_SAME_LINE = `(?:[ \\t]|<br\\s*/?>|<!--[\\s\\S]*?-->)*`;
+// Two shapes, kept as separate alternatives so the prose one cannot borrow a
+// newline from the other:
+//   1. lead-in (newlines allowed) then the tag  - "<br>\n<li>", "\n\n<p>"
+//   2. same-line lead-in, short prose, same-line lead-in, then the tag
+//      - "Ecco il testo: <p>", and nothing spanning a line break
+const HTML_RESPONSE_RE = new RegExp(
+    `^(?:${LEAD_IN}|${LEAD_IN_SAME_LINE}${LEAD_IN_PROSE}${LEAD_IN_SAME_LINE})<${BLOCK_TAG}\\b[^>]*>`, 'i');
+
+// A closing block tag with no opener ahead of it, e.g. a response that begins
+// "Distinti saluti.</p>". Only reachable on the FIRST flushed segment (the
+// decision is sticky), so it cannot be triggered by the tail of an answer that
+// already chose the markdown path - and a markdown answer has no reason to emit
+// a bare closing block tag at all.
+const ORPHAN_CLOSING_BLOCK_RE = new RegExp(`^[^<]*</${BLOCK_TAG}\\s*>`, 'i');
+
+// Text that is nothing but lead-in: whitespace, <br> runs, comments. It carries
+// no evidence either way, so a response that has produced only this so far is
+// not yet decidable - see looksLikeHtmlResponse's null return.
+const LEAD_IN_ONLY_RE = new RegExp(`^${LEAD_IN}$`, 'i');
+
+// Decide whether a response is HTML.
+//
+// Returns true / false once there is evidence, or NULL while the response so far
+// is all lead-in and could still turn out to be either. Null matters because the
+// caller's decision is sticky and a flush fires on every '\n': a model that emits
+// "<br>\n<li>..." hands this function a lone "<br>" first, and answering false
+// there would lock the whole answer onto the markdown path over a tag that says
+// nothing - the exact failure this rework exists to fix, just one segment later.
+//
+// Code regions are masked out first, for the same reason normalizeEchoedBrTags()
+// masks them: an answer whose subject IS html - "how do I center a <div>?" -
+// must keep going through markdown-it, so that the markup shows up as text in a
+// code block instead of being sanitized into a real element. Without the mask a
+// reply opening with a fenced block would be misread as HTML by its own example.
+function looksLikeHtmlResponse(text) {
+    // The mask keeps the ORIGINAL length, so offsets and the "first line" rules
+    // above still mean what they say. Its filler is deliberately inert - digits
+    // between two U+0000 - so a masked region can never itself look like markup.
+    const masked = String(text).replace(CODE_REGIONS_RE, (match) =>
+        CODE_MASK + '0'.repeat(Math.max(match.length - 2, 0)) + CODE_MASK);
+
+    if (HTML_RESPONSE_RE.test(masked) || ORPHAN_CLOSING_BLOCK_RE.test(masked)) {
+        return true;
+    }
+
+    // No block tag yet. If everything so far is lead-in, withhold the decision
+    // and let the next segment settle it.
+    if (LEAD_IN_ONLY_RE.test(masked)) { return null; }
+
+    return false;
+}
 
 export class StreamingMessage {
 
@@ -121,6 +211,11 @@ export class StreamingMessage {
         // markdown. Re-deciding per segment would render one answer half one way
         // and half the other.
         this._isHtmlResponse = null;
+        // Text flushed while _isHtmlResponse is still undecided. A response that
+        // opens with a lone "<br>" carries no evidence either way, so the verdict
+        // is withheld and the segments are judged together once the markup
+        // arrives. Cleared as soon as the decision is made.
+        this._undecidedText = '';
         // Raw (un-rendered) text of the whole response, accumulated only on the
         // HTML path, where each flush re-sanitizes everything rather than
         // appending a fragment. See flush().
@@ -151,7 +246,14 @@ export class StreamingMessage {
     //   { html:         markdown-rendered HTML for THIS segment (string),
     //     thinkingText: combined thinking content for this segment (string),
     //     fullTextHTML: snapshot of the HTML accrued across the whole response }
-    flush() {
+    // Flush the current segment.
+    //
+    // `final` is set by the caller's last flush of the response. It forces a
+    // verdict on text that is still undecided: a response made of nothing but
+    // lead-in ("<br>" and no more) would otherwise be held back forever and
+    // never rendered. Such text has no block tag by definition, so markdown is
+    // the right home for it.
+    flush(final = false) {
         let fullText = this._segmentText;
 
         // If an unterminated <think> block is present (mid-stream), defer the
@@ -179,10 +281,42 @@ export class StreamingMessage {
         }
         this._thinkingAccumulator = '';
 
-        // Decide the response's shape once, on the first segment that carries
-        // anything, then stay with it (see _isHtmlResponse).
-        if (this._isHtmlResponse === null && fullText.trim() !== '') {
-            this._isHtmlResponse = LEADING_BLOCK_TAG_RE.test(fullText);
+        // Decide the response's shape once, then stay with it (see
+        // _isHtmlResponse). looksLikeHtmlResponse may return null - "not enough
+        // evidence yet" - in which case nothing is committed and the next
+        // segment gets to decide. The whole response so far is what is judged,
+        // not just this segment, so an inconclusive lead-in and the markup that
+        // follows it are weighed together even when a '\n' split them apart.
+        if (this._isHtmlResponse === null) {
+            this._undecidedText += fullText;
+            let verdict = this._undecidedText.trim() === ''
+                ? null
+                : looksLikeHtmlResponse(this._undecidedText);
+            // Last chance: nothing more is coming, so settle it.
+            if (verdict === null && final) { verdict = false; }
+            if (verdict === null) {
+                // Still undecided. Hold the text back rather than rendering it:
+                // committing it to the markdown path now would have to be undone
+                // if the next segment turns out to be markup, and the deferred
+                // text is only ever a lead-in (whitespace, a <br>, a comment),
+                // so nothing meaningful is kept off screen. The raw tokens are
+                // already visible as fading spans meanwhile.
+                //
+                // The thinking text is NOT held back - it is independent of the
+                // response's shape, and swallowing it would strand the thinking
+                // indicator until the next flush.
+                this._segmentText = '';
+                return {
+                    html: '',
+                    thinkingText: combinedThinking,
+                    fullTextHTML: this.getFullTextHTMLSnapshot(),
+                };
+            }
+            this._isHtmlResponse = verdict;
+            // Judged as a whole, so it must be rendered as a whole: put the
+            // deferred lead-in back in front of this segment.
+            fullText = this._undecidedText;
+            this._undecidedText = '';
         }
 
         // HTML answer: sanitize instead of escaping, and skip markdown-it
