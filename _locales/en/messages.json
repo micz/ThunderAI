@@ -449,6 +449,22 @@
       }
     }
   },
+  "customPrompts_promptsCount_filtered": {
+    "message": "$SHOWN$ of $TOTAL$ prompts",
+    "description": "Footer count when the prompts list is filtered by the search field",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "customPrompts_search_placeholder": {
+    "message": "Search by name or ID",
+    "description": "Placeholder for the search field that filters the prompts list by name or ID"
+  },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
     "description": ""

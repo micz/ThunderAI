@@ -21,6 +21,10 @@
     /* Warning (invalid/unknown placeholder token) — distinct from --del-*,
        which means "delete", and from --ok-*, which means success. */
     --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Search hit highlight — deliberately its own pair rather than reusing
+       --warn-* ("invalid token") or --code-* ("placeholder chip"), so a match
+       cannot be misread as either. */
+    --hit-bg:#fff3a3;  --hit-text:#3a2f00;
     --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
     /* Per-panel identity: ChatGPT Web (warm) vs API (cool). */
     --cgw-bg:#ffe6d5;  --cgw-hover:#ffd6bd;  --api-bg:#e0efff;  --api-hover:#c9e2ff;
@@ -42,6 +46,7 @@
         --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
         --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
         --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --hit-bg:#6b5a00;  --hit-text:#fff8d0;
         --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
         --cgw-bg:#270b00;  --cgw-hover:#581900;  --api-bg:#0f2437;  --api-hover:#1b456d;
     }
@@ -280,8 +285,41 @@ button:disabled {
 #command_palette #btnSaveAll { float: none; }
 #command_palette #btnNew { float: none; }
 
-#msgDisplay {
+/* The search field takes the flexible space in the toolbar; #msgDisplay now
+ * sizes to its content so the status text and the input do not fight for room.
+ * Keep the field shorter than the toolbar buttons so the palette height stays
+ * at 54px — the `thead` sticky offset below depends on it. */
+#search_wrap {
     flex: 1;
+    display: flex;
+    min-width: 0;
+    padding-left: 16px;
+}
+
+#prompts_search {
+    width: 100%;
+    max-width: 320px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+#prompts_search::placeholder {
+    color: var(--muted);
+}
+
+#prompts_search:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+#msgDisplay {
+    flex: 0 1 auto;
     padding-left: 16px;
     color: var(--muted);
     font-size: 13px;
@@ -429,6 +467,19 @@ table.prompts_list td.properties { white-space: nowrap; }
     border: 1px solid var(--warn-border);
     padding: 0 5px;   /* offsets the 1px border: same box as a valid chip */
     cursor: help;
+}
+
+/* Matched substring inside the Name / ID cells while the search field is in use.
+   The browser default for <mark> is a hardcoded yellow with near-black text,
+   which is unreadable in the dark theme — both colors are therefore set from
+   design tokens. Metric-neutral (no padding/border) so highlighting cannot
+   reflow the two narrow w08 columns. */
+mark.search_hit {
+    background: var(--hit-bg);
+    color: var(--hit-text);
+    border-radius: 2px;
+    padding: 0;
+    font-weight: 600;
 }
 
 /* ---- Sort headers ---- */

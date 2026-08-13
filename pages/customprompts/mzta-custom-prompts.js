@@ -280,6 +280,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!checkFields()) {
             return;
         }
+        // Clear any active search first: the new row would almost never match it,
+        // and List.js would not render it — leaving the listener wiring below
+        // with no DOM node to attach to.
+        clearPromptsSearch();
         let newItemData = {
             id: String(txtIdNew.value.trim()).toLocaleLowerCase(),
             name: txtNameNew.value.trim(),
@@ -1193,12 +1197,160 @@ function decoratePromptText() {
     });
 }
 
-// Keep the card footer prompt count in sync with the rendered list.
+// Keep the card footer prompt count in sync with the rendered list. When the
+// search filter is narrowing the list, report "shown of total" instead.
 function updatePromptsCount() {
     const el = document.getElementById('prompts_count');
     if (!el) return;
-    const count = promptsList ? promptsList.items.length : 0;
-    el.textContent = browser.i18n.getMessage('customPrompts_promptsCount', [String(count)]);
+    const total = promptsList ? promptsList.items.length : 0;
+    const shown = promptsList ? promptsList.matchingItems.length : total;
+    if (promptsList && promptsList.searched && shown !== total) {
+        el.textContent = browser.i18n.getMessage('customPrompts_promptsCount_filtered', [String(shown), String(total)]);
+    } else {
+        el.textContent = browser.i18n.getMessage('customPrompts_promptsCount', [String(total)]);
+    }
+}
+
+// Built-in prompts store their name as a "__MSG_key__" token, localized only
+// after render by i18n.updateDocument(). Resolve it so the search matches the
+// label the user actually sees. Same approach as resolveName() in mzta-prompts.js.
+function resolvePromptName(name) {
+    const n = name ?? '';
+    if (typeof n === 'string' && n.startsWith('__MSG_') && n.endsWith('__')) {
+        return browser.i18n.getMessage(n.substring(6, n.length - 2)) || n;
+    }
+    return String(n);
+}
+
+// The needle currently painted into the visible rows, so the highlight pass can
+// tell "nothing to repaint" from "clear the previous highlight".
+let currentSearchNeedle = '';
+
+// Escape a string for safe interpolation into innerHTML.
+function escapeHtmlText(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// Wrap every occurrence of the search needle in the visible Name and ID cells
+// with <mark class="search_hit">.
+//
+// This must run after *every* List.js render, not just on input: item.values()
+// writes flow through templater.set(), which resets `.name`/`.id` innerHTML from
+// the stored value and so silently drops the marks (the same hazard the
+// data-phDecorated guard exists for in decoratePromptText).
+//
+// Only `.name_show` / `.id_show` are touched. The `_output` inputs stay
+// untouched, and they are the single source of truth for every save/cancel/copy
+// path (handleConfirmClick, handleCancelClick, handleCopyClick all read
+// `.name_output` / `.id_output`), so no highlight markup can ever reach storage.
+function highlightSearchMatches() {
+    const needle = currentSearchNeedle;
+    document.querySelectorAll('#all_prompts .name_show, #all_prompts .id_show').forEach(span => {
+        // textContent, NOT innerText: these spans are set to display:none while
+        // their row is in edit mode, and innerText returns '' for a hidden
+        // element — which would blank the name/ID instead of re-marking it.
+        // Reading the text back also strips any <mark> from a previous pass, so
+        // re-highlighting is idempotent and marks can never nest.
+        const plain = span.textContent;
+        if (needle === '') {
+            // Nothing to highlight: restore the plain text only if this span was
+            // actually marked up, to avoid pointless DOM writes on every render.
+            if (span.querySelector('mark.search_hit')) {
+                span.textContent = plain;
+            }
+            return;
+        }
+
+        const lower = plain.toLowerCase();
+        let out = '';
+        let pos = 0;
+        let at = lower.indexOf(needle);
+        if (at === -1) {
+            if (span.querySelector('mark.search_hit')) {
+                span.textContent = plain;
+            }
+            return;
+        }
+        while (at !== -1) {
+            out += escapeHtmlText(plain.slice(pos, at))
+                + '<mark class="search_hit">'
+                + escapeHtmlText(plain.slice(at, at + needle.length))
+                + '</mark>';
+            pos = at + needle.length;
+            at = lower.indexOf(needle, pos);
+        }
+        out += escapeHtmlText(plain.slice(pos));
+        if (span.innerHTML !== out) span.innerHTML = out;
+    });
+}
+
+// Filter the list on prompt name and ID only (not the prompt body).
+// Called from loadPromptsList(), which runs again after an import — the listener
+// is therefore attached only once, while the handler reads the current
+// promptsList instance through the module-level variable.
+let promptsSearchBound = false;
+function setupPromptsSearch() {
+    const searchInput = document.getElementById('prompts_search');
+    if (!searchInput) return;
+
+    // An import replaces the List instance; the field must not keep showing a
+    // filter that is no longer applied to the freshly built list.
+    searchInput.value = '';
+    currentSearchNeedle = '';
+
+    if (promptsSearchBound) return;
+    promptsSearchBound = true;
+
+    // List.js lowercases and regex-escapes the search string before handing it
+    // to a custom search function, so compare against the raw input value.
+    const promptsSearch = () => {
+        const needle = searchInput.value.trim().toLowerCase();
+        promptsList.items.forEach(item => {
+            const values = item.values();
+            const name = resolvePromptName(values.name).toLowerCase();
+            const id = String(values.id ?? '').toLowerCase();
+            item.found = name.includes(needle) || id.includes(needle);
+        });
+    };
+
+    searchInput.addEventListener('input', () => {
+        if (!promptsList) return;
+        // A row left open in edit mode would keep unsaved edits in a hidden
+        // node, so revert any open editor before changing what is visible.
+        cancelOpenRowEditors();
+        const needle = searchInput.value.trim();
+        currentSearchNeedle = needle.toLowerCase();
+        // An empty string makes List.js reset the filter entirely.
+        promptsList.search(needle, ['name', 'id'], promptsSearch);
+        // search() triggers 'updated' only when the visible set changes; repaint
+        // unconditionally so narrowing the needle within the same result set
+        // (e.g. "re" -> "rep") still moves the marks.
+        highlightSearchMatches();
+    });
+}
+
+// Drop any active search filter and empty the search field.
+function clearPromptsSearch() {
+    const searchInput = document.getElementById('prompts_search');
+    if (searchInput) searchInput.value = '';
+    currentSearchNeedle = '';
+    if (promptsList && promptsList.searched) promptsList.search('');
+    // Strip the marks even when search() was a no-op and fired no 'updated'.
+    highlightSearchMatches();
+}
+
+// Revert every row currently open in edit mode, discarding its pending edits.
+// handleEditClick() reveals the Cancel button with display:flex, so that is the
+// marker for "this row has an open editor".
+function cancelOpenRowEditors() {
+    document.querySelectorAll('.btnCancelItem').forEach(btn => {
+        if (btn.style.display === 'flex') {
+            btn.click();
+        }
+    });
 }
 
 function loadPromptsList(values){
@@ -1371,7 +1523,12 @@ function loadPromptsList(values){
     promptsList.on('updated', () => {
         decoratePromptText();
         updatePromptsCount();
+        // List.js rewrites the .name/.id spans from the stored values on render,
+        // wiping the <mark> wrappers, so they must be repainted every time.
+        highlightSearchMatches();
     });
+
+    setupPromptsSearch();
 
     checkSelectedBoxes();
     let btnEditItem_elements = document.querySelectorAll(".btnEditItem");
