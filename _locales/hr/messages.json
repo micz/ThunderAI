@@ -499,10 +499,10 @@
         "message": "Odgovori na sljedeću e-poruku \"{%selected_text%}\", s obzirom da je ovo cijela nit e-poruka \"{%mail_html_body%}\". Odgovori samo s potrebnim tekstom i bez dodatnih komentara ili drugog teksta."
     },
     "prompt_rewrite_full_text": {
-        "message": "Prepravi sljedeći tekst kako biste bili pristojniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta."
+        "message": "Prepravi sljedeći tekst kako biste bili pristojniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Prepravi sljedeći tekst da bude formalniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta."
+        "message": "Prepravi sljedeći tekst da bude formalniji. Odgovori samo s prepravljenim tekstom i bez dodatnih komentara ili drugog teksta. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Klasificiraj sljedeći tekst u smislu ljubaznosti, topline, formalnosti, asertivnosti, uvredljivosti dajući postotak za svaku kategoriju. Odgovori samo kategorijom i ocijeni bez dodatnih komentara ili drugog teksta."

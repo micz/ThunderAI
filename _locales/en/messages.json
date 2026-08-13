@@ -850,7 +850,7 @@
     "description": ""
   },
   "prompt_rewrite_full_text": {
-    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text. {%mail_html_body_or_selected%}",
+    "message": "Rewrite the following text to be more polite. Reply with only the re-written text and with no extra comments or other text. {%selected_html%}",
     "description": ""
   },
   "prompt_rewrite_formal_full_text": {

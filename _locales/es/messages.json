@@ -537,10 +537,10 @@
         "message": "Responder al siguiente correo electrónico \"{%mail_text_body%}\". {%additional_text%}. Responder solo con el texto necesario y sin comentarios extra ni otro texto."
     },
     "prompt_rewrite_full_text": {
-        "message": "Reescribe el siguiente texto para que sea más cortés. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto."
+        "message": "Reescribe el siguiente texto para que sea más cortés. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Reescribe el siguiente texto para que sea más formal. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto."
+        "message": "Reescribe el siguiente texto para que sea más formal. Responde solo con el texto reescrito y sin comentarios adicionales ni otro texto. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Clasifique el siguiente texto en términos de Cortesía, Calidez, Formalidad, Asertividad, Ofensividad dando un porcentaje para cada categoría. Responda solo con la categoría y la puntuación sin comentarios extra ni otro texto."

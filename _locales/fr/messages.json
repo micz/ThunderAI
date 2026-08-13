@@ -499,10 +499,10 @@
         "message": "Répondez au courriel suivant \"{%selected_text%}\", en tenant compte qu'il s'agit de l'intégralité du fil de courriels \"{%mail_html_body%}\". Répondez uniquement avec le texte nécessaire, sans commentaires ou autre texte."
     },
     "prompt_rewrite_full_text": {
-        "message": "Réécrivez le texte suivant pour le rendre plus poli. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte."
+        "message": "Réécrivez le texte suivant pour le rendre plus poli. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Réécrivez le texte suivant pour le rendre plus formel. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte."
+        "message": "Réécrivez le texte suivant pour le rendre plus formel. Répondez uniquement avec le texte réécrit, sans commentaires ou autre texte. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifiez le texte suivant en termes de politesse, chaleur, formalité, assertivité, caractère offensant en donnant un pourcentage pour chaque catégorie. Répondez uniquement avec la catégorie et le score, sans commentaires ou autre texte."

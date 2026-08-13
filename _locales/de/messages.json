@@ -499,10 +499,10 @@
         "message": "Antworten Sie auf die folgende E-Mail \"{%selected_text%}\", unter Berücksichtigung, dass dies der vollständige E-Mail-Thread ist \"{%mail_html_body%}\". Antworten Sie nur mit dem benötigten Text und ohne zusätzliche Kommentare oder andere Texte."
     },
     "prompt_rewrite_full_text": {
-        "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte."
+        "message": "Schreiben Sie den folgenden Text höflicher um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte."
+        "message": "Schreiben Sie den folgenden Text formeller um. Antworten Sie nur mit dem umgeschriebenen Text und ohne zusätzliche Kommentare oder andere Texte. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Klassifizieren Sie den folgenden Text nach Höflichkeit, Wärme, Formalität, Bestimmtheit und Anstößigkeit und geben Sie einen Prozentsatz für jede Kategorie an. Antworten Sie nur mit der Kategorie und der Punktzahl ohne zusätzliche Kommentare oder andere Texte."

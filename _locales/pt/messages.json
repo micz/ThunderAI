@@ -513,10 +513,10 @@
         "message": "Responda ao seguinte e-mail \"{%selected_text%}\", a considerar que este é o thread completo de e-mails \"{%mail_html_body%}\". Responda apenas com o texto necessário e sem comentários adicionais ou outros textos."
     },
     "prompt_rewrite_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais educada. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos."
+        "message": "Reescreva o texto a seguir de forma mais formal. Responda apenas com o texto reescrito e sem comentários adicionais ou outros textos. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifique o texto a seguir em termos de Educação, Calor, Formalidade, Assertividade e Ofensividade, a atribuir uma percentagem para cada categoria. Responda apenas com as categorias e as pontuações, sem comentários adicionais ou outros textos."

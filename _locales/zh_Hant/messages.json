@@ -641,7 +641,7 @@
         "message": "請將以下電子郵件翻譯成 **{%thunderai_translate_lang%}**。\n\n**規則：**\n- 同時翻譯主題（Subject）與正文（Body）。\n- 以 JSON 物件格式回傳結果，包含三個欄位：\"subject\"、\"body\" 以及 \"status\"。\n- 如果完成翻譯，status 等於 1。\n- 如果郵件是以 \"{%thunderai_translate_exclude_lang%}\" 其中之一的語言或 {%thunderai_translate_lang%} 語言編寫，請將 body 和 subject 設為空字串，並將 status 設為 -1。\n- 請勿在 JSON 之外添加任何說明、備註或文字。\n\n郵件主題：{%mail_subject%}\n\n郵件正文：{%mail_html_body%}\n\n請僅以 JSON 格式生成回應。輸出應僅包含一個 JSON 物件。以下是要使用的 JSON 格式範例：\n{\n\"subject\": \"subject translation\",\n\"body\": \"body translation\",\n\"status\": \"status result\"\n}"
     },
     "prompt_rewrite_full_text": {
-        "message": "請重寫以下文字，使其更有禮貌。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
+        "message": "請重寫以下文字，使其更有禮貌。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。 {%selected_html%}"
     },
     "prefs_OptionText_add_tags": {
         "message": "新增郵件標籤"
@@ -1063,7 +1063,7 @@
         "message": "如果勾選，使用鍵盤快速鍵 CTRL+ALT+A 將自動傳送選單中所選的提示。否則，提示名稱將顯示給用戶，需要再次按下 Enter 鍵才能傳送。"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "請將以下文字重寫得更正式一些。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。"
+        "message": "請將以下文字重寫得更正式一些。僅回覆重寫的文字，不要提供任何額外的註解或其他文字。 {%selected_html%}"
     },
     "GoogleGemini_SystemInstruction_Info": {
         "message": "當您設定系統指示時，您會為模型提供額外情境來理解任務，提供更客製化的回應，並遵守將要發送的提示的特定指南。"

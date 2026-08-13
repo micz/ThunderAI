@@ -480,7 +480,7 @@
         "message": "AI 建议的最大标签数量。如果不想限制标签数量，请设置为 0。"
     },
     "prompt_rewrite_full_text": {
-        "message": "重写以下文字以使其更加礼貌。仅使用重写的文字进行回复，不要添加额外的评论或其他文字。"
+        "message": "重写以下文字以使其更加礼貌。仅使用重写的文字进行回复，不要添加额外的评论或其他文字。 {%selected_html%}"
     },
     "customprompts_form_label_define_response_lang": {
         "message": "在提示词中定义响应语言"
@@ -606,7 +606,7 @@
         "message": "为电子邮件添加标签"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。"
+        "message": "重写以下文字，使其更加正式。回复时只使用重写的文字，不要添加任何额外的评论或其他文字。 {%selected_html%}"
     },
     "prompt_this_full_text": {
         "message": "仅使用所需的文本进行回复，不需要额外的评论或其他文本。"

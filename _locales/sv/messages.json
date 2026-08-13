@@ -612,10 +612,10 @@
         "message": "Svara på följande e-postmeddelande \"{%mail_text_body%}\". {%additional_text%}. Svara endast med den text som behövs och utan extra kommentarer eller annan text."
     },
     "prompt_rewrite_full_text": {
-        "message": "Skriv om följande text för att vara mer artig. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
+        "message": "Skriv om följande text för att vara mer artig. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text."
+        "message": "Skriv om följande text för att göra den mer formell. Svara endast med den omskrivna texten och utan extra kommentarer eller annan text. {%selected_html%}"
     },
     "prompt_translate_this_full_text": {
         "message": "Översätt e-postmeddelandet nedan till {%thunderai_translate_lang%}.\n\nRegler:\n- Översätt både ämnet och brödtexten.\n- Returnera resultatet som ett JSON-objekt med tre fält: \"subject\", \"body\" och \"status\".\n- Om översättningen har gjorts är statusen lika med 1.\n- Om e-postmeddelandet är skrivet på ett av dessa språk \"{%thunderai_translate_exclude_lang%}\" eller på språket {%thunderai_translate_lang%}, returnera en tom sträng för brödtexten och ämnet och sätt statusen till -1.\n- Lägg inte till förklaringar, anteckningar eller någon text utanför JSON.\n\nE-postämne: {%mail_subject%}\n\nE-postbrödtext: {%mail_html_body%}\n\nGenerera ett svar endast i JSON-format. Utdata ska endast vara ett JSON-objekt. Här är ett exempel på JSON-formatet som ska användas:\n{\n\"subject\": \"ämnesöversättning\",\n\"body\": \"översättning av brödtext\",\n\"status\": \"statusresultat\"\n}"

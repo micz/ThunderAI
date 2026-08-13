@@ -499,10 +499,10 @@
         "message": "Rispondi alla seguente email \"{%selected_text%}\", considerando che questo è l'intero thread di email \"{%mail_html_body%}\". Rispondi solo con il testo necessario, senza commenti aggiuntivi o altro testo."
     },
     "prompt_rewrite_full_text": {
-        "message": "Riformula il seguente testo per renderlo più cortese. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo."
+        "message": "Riformula il seguente testo per renderlo più cortese. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Riformula il seguente testo per renderlo più formale. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo."
+        "message": "Riformula il seguente testo per renderlo più formale. Rispondi solo con il testo riformulato, senza commenti aggiuntivi o altro testo. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Classifica il seguente testo in termini di Cortesia, Calore, Formalità, Assertività, Offensività, indicando una percentuale per ciascuna categoria. Rispondi solo con la categoria e il punteggio, senza commenti aggiuntivi o altro testo."

@@ -596,10 +596,10 @@
         "message": "Válaszolj a következő e-mailre: \\\"{%mail_text_body%}\\\". Kiegészítő utasítás: {%additional_text%}. A válasz kizárólag a szükséges szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
     },
     "prompt_rewrite_full_text": {
-        "message": "Fogalmazd át a következő szöveget udvariasabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+        "message": "Fogalmazd át a következő szöveget udvariasabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Fogalmazd át a következő szöveget hivatalosabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."
+        "message": "Fogalmazd át a következő szöveget hivatalosabb stílusban. A válasz kizárólag az átírt szöveget tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Kategorizáld a következő szöveget az Udvariasság (Politeness), Kedvesség (Warmth), Hivatalos stílus (Formality), Határozottság (Assertiveness) és Sértő tartalom (Offensiveness) szempontjából, százalékos értéket adva mindegyik kategóriára. A válasz kizárólag a kategóriákat és a pontszámokat tartalmazza, mindenféle extra megjegyzés vagy egyéb szöveg nélkül."

@@ -705,10 +705,10 @@
         "message": "Odpovězte na následující e-mail \"{%selected_text%}\", s ohledem na to, že se jedná o celé vlákno e-mailů \"{%mail_html_body%}\". Odpovězte pouze potřebným textem a bez dalších komentářů nebo jiného textu."
     },
     "prompt_rewrite_full_text": {
-        "message": "Přepište následující text, aby byl zdvořilejší. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+        "message": "Přepište následující text, aby byl zdvořilejší. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Přepište následující text, aby byl formálnější. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu."
+        "message": "Přepište následující text, aby byl formálnější. Odpovězte pouze přepsaným textem a bez dalších komentářů nebo jiného textu. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Klasifikujte následující text z hlediska zdvořilosti, vřelosti, formálnosti, asertivity, urážlivosti a uveďte procento pro každou kategorii. Odpovězte pouze kategorií a skóre bez dalších komentářů nebo jiného textu."

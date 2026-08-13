@@ -596,10 +596,10 @@
         "message": "Balas email berikut \"{%mail_text_body%}\". {%additional_text%}. Balas hanya dengan teks yang diperlukan dan tanpa komentar tambahan atau teks lainnya."
     },
     "prompt_rewrite_full_text": {
-        "message": "Tulis ulang teks berikut agar lebih sopan. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya."
+        "message": "Tulis ulang teks berikut agar lebih sopan. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Tulis ulang teks berikut agar lebih formal. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya."
+        "message": "Tulis ulang teks berikut agar lebih formal. Balas hanya dengan teks yang sudah ditulis ulang dan tanpa komentar tambahan atau teks lainnya. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Klasifikasikan teks berikut dalam hal Kesopanan, Kehangatan, Formalitas, Ketegasan, dan Ketersinggungan dengan memberikan persentase untuk setiap kategori. Balas hanya dengan kategori dan nilainya tanpa komentar tambahan atau teks lainnya."

@@ -499,10 +499,10 @@
         "message": "Odpowiedz na poniższy e-mail \"{%selected_text%}\", biorąc pod uwagę, że jest to pełny wątek e-maili \"{%mail_html_body%}\". Odpowiedz wyłącznie wymaganym tekstem, bez dodatkowych komentarzy ani innego tekstu."
     },
     "prompt_rewrite_full_text": {
-        "message": "Przepisz poniższy tekst, aby był bardziej uprzejmy. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu."
+        "message": "Przepisz poniższy tekst, aby był bardziej uprzejmy. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu. {%selected_html%}"
     },
     "prompt_rewrite_formal_full_text": {
-        "message": "Przepisz poniższy tekst, aby był bardziej formalny. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu."
+        "message": "Przepisz poniższy tekst, aby był bardziej formalny. Odpowiedz wyłącznie przepisanym tekstem, bez dodatkowych komentarzy ani innego tekstu. {%selected_html%}"
     },
     "prompt_classify_full_text": {
         "message": "Sklasyfikuj poniższy tekst pod względem uprzejmości, serdeczności, formalności, stanowczości, obraźliwości, podając procent dla każdej kategorii. Odpowiedz wyłącznie kategorią i wynikiem, bez dodatkowych komentarzy ani innego tekstu."
