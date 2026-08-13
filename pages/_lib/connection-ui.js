@@ -296,6 +296,19 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
+  <tr class="conntype_chatgpt_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_chatgpt_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}chatgpt_extra_body" class="option-input option-textarea check-json"></textarea>
+        <br>__MSG_prefs_OptionText_chatgpt_extra_body_info__
+      </label>
+    </td>
+  </tr>
   <tr class="conntype_google_gemini_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_GoogleGemini_API_Key__</span>
@@ -543,6 +556,19 @@ export async function injectConnectionUI({
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_temperature" class="option-input check-number" />
         <br>__MSG_prefs_openai_comp_temperature_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_openai_comp_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_OptionText_openai_comp_extra_body__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <textarea id="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" name="${modelId_prefix ? `${modelId_prefix}` : ''}openai_comp_extra_body" class="option-input option-textarea check-json"></textarea>
+        <br>__MSG_prefs_OptionText_openai_comp_extra_body_info__
       </label>
     </td>
   </tr>
@@ -1117,6 +1143,10 @@ export async function injectConnectionUI({
    document.querySelectorAll('.check-number').forEach(input => {
     input.addEventListener('input', warn_InvalidNumber);
    });
+
+   document.querySelectorAll('.check-json').forEach(input => {
+    input.addEventListener('input', warn_InvalidJson);
+   });
   
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
@@ -1506,6 +1536,22 @@ function warn_InvalidNumber(event){
   } else {
     event.target.style.border = '';
   }
+}
+
+// Advisory validation only, consistently with warn_InvalidNumber: the value is
+// saved anyway, and the API classes ignore an unusable one at request time.
+function warn_InvalidJson(event){
+  const elementValue = event.target.value;
+  let isValid = true;
+  if (elementValue.trim() !== '') {
+    try {
+      const parsed = JSON.parse(elementValue);
+      isValid = (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed));
+    } catch (error) {
+      isValid = false;
+    }
+  }
+  event.target.style.border = isValid ? '' : '2px solid red';
 }
 
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {

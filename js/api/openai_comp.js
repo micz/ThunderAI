@@ -18,6 +18,8 @@
 
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
+import { parseExtraBody } from './api-utils.js';
+
 
 export class OpenAIComp {
 
@@ -27,6 +29,7 @@ export class OpenAIComp {
   use_v1 = true;
   stream = false;
   temperature = '';
+  extra_body = '';
 
   constructor({
     host = '',
@@ -35,6 +38,7 @@ export class OpenAIComp {
     stream = false,
     use_v1 = true,
     temperature = '',
+    extra_body = '',
   } = {}) {
     this.host = (host || '').trim().replace(/\/+$/, "");
     this.model = model;
@@ -42,6 +46,7 @@ export class OpenAIComp {
     this.apiKey = apiKey;
     this.use_v1 = use_v1;
     this.temperature = temperature;
+    this.extra_body = extra_body;
   }
 
 
@@ -91,8 +96,12 @@ export class OpenAIComp {
         const response = await fetch(this.host + (this.use_v1 ? "/v1" : "") + "/chat/completions", {
             method: "POST",
             headers: curr_headers,
-            body: JSON.stringify({ 
-                model: this.model, 
+            // The user-supplied extra data is spread first on purpose: every
+            // parameter ThunderAI manages must win over it, so a wrong entry
+            // cannot change the model or break the streaming.
+            body: JSON.stringify({
+                ...parseExtraBody(this.extra_body),
+                model: this.model,
                 messages: messages,
                 stream: this.stream,
                 ...(maxTokens > 0 ? { 'max_tokens': parseInt(maxTokens) } : {}),

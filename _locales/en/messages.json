@@ -845,6 +845,14 @@
     "message": "You can use additional data placeholders.",
     "description": ""
   },
+  "prefs_OptionText_openai_comp_extra_body" : {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_OptionText_openai_comp_extra_body_info": {
+    "message": "Additional parameters to send with every API call, as a JSON object. Useful for options this service supports but ThunderAI doesn't expose, like disabling the thinking mode: {\"chat_template_kwargs\": {\"thinking\": false}} or {\"top_p\": 0.9}. The parameters managed by ThunderAI (model, messages, streaming, temperature) can't be overridden here. An invalid value is ignored.",
+    "description": ""
+  },
   "prefs_OptionText_openai_comp_use_v1" : {
     "message": "Keep the \"v1\" compatibility",
     "description": ""
@@ -2075,6 +2083,14 @@
   },
   "prefs_OptionText_chatgpt_reasoning_effort": {
     "message": "Reasoning effort",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_extra_body": {
+    "message": "Extra body data",
+    "description": ""
+  },
+  "prefs_OptionText_chatgpt_extra_body_info": {
+    "message": "Additional parameters to send with every API call, as a JSON object, like {\"top_p\": 0.9}. Useful for options the OpenAI API supports but ThunderAI doesn't expose. The parameters managed by ThunderAI (model, input, streaming, temperature, reasoning, instructions) can't be overridden here. An invalid value is ignored.",
     "description": ""
   },
   "prefs_OptionText_chatgpt_reasoning_effort_Info": {

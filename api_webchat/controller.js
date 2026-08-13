@@ -210,7 +210,8 @@ if (worker) {
                 { key: 'developer_messages', labelKey: 'ChatGPT_Developer_Messages', type: 'string' },
                 { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
                 { key: 'reasoning_summary', labelKey: 'prefs_OptionText_chatgpt_reasoning_summary', type: 'string' },
-                { key: 'reasoning_effort', labelKey: 'prefs_OptionText_chatgpt_reasoning_effort', type: 'string' }
+                { key: 'reasoning_effort', labelKey: 'prefs_OptionText_chatgpt_reasoning_effort', type: 'string' },
+                { key: 'extra_body', labelKey: 'prefs_OptionText_chatgpt_extra_body', type: 'string' }
             ],
             google_gemini: [
                 { key: 'system_instruction', labelKey: 'GoogleGemini_SystemInstruction', type: 'string' },
@@ -223,7 +224,8 @@ if (worker) {
                 { key: 'num_ctx', labelKey: 'prefs_ollama_num_ctx', type: 'number_gt_zero' }
             ],
             openai_comp: [
-                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' }
+                { key: 'temperature', labelKey: 'prefs_api_temperature', type: 'string' },
+                { key: 'extra_body', labelKey: 'prefs_OptionText_openai_comp_extra_body', type: 'string' }
             ],
             anthropic: [
                 { key: 'system_prompt', labelKey: 'Anthropic_System_Prompt', type: 'string' },

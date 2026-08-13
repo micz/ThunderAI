@@ -35,7 +35,8 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### OpenAI API (`chatgpt_api`)
 - Module: `js/api/openai_responses.js`
 - Worker: `js/workers/model-worker-openai_responses.js`
-- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`
+- Settings keys: `chatgpt_api_key`, `chatgpt_model`, `chatgpt_developer_messages`, `chatgpt_temperature`, `chatgpt_store`, `chatgpt_reasoning_summary`, `chatgpt_reasoning_effort`, `chatgpt_extra_body`
+- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
 - **Reasoning**: the request body adds `reasoning: { summary, effort }` with only the sub-properties that are set; when both prefs are empty the key is omitted entirely, because models without reasoning support reject it. `chatgpt_reasoning_summary` (`''` | `auto` | `detailed`) is what makes the API emit a readable summary — without it the reasoning item carries only the opaque `encrypted_content` and no thinking block can be shown. `chatgpt_reasoning_effort` (`''` | `minimal` | `low` | `medium` | `high`) tunes how much the model reasons. Note that older reasoning models (o1-pro, o3-mini) never expose a summary even when one is requested. See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui).
 
 ### Ollama (`ollama_api`)
@@ -47,8 +48,33 @@ Content script `js/lib/diff.js` is injected into ChatGPT pages for diff-view sup
 ### OpenAI-Compatible (`openai_comp_api`)
 - Module: `js/api/openai_comp.js`
 - Worker: `js/workers/model-worker-openai_comp.js`
-- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`
-- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry)
+- Settings keys: `openai_comp_host`, `openai_comp_model`, `openai_comp_api_key`, `openai_comp_use_v1`, `openai_comp_chat_name`, `openai_comp_temperature`, `openai_comp_extra_body`
+- Pre-configured providers: `js/api/openai_comp_configs.js` (`custom`, DeepSeek, Grok, Mistral, OpenRouter, Perplexity — `custom` is the default/manual entry). The presets carry only `id`, `name`, `chat_name`, `host`, `use_v1` — there is deliberately no per-preset extra body data.
+- **Extra body data**: see [Extra body data](#extra-body-data-chatgpt_extra_body--openai_comp_extra_body).
+
+### Extra body data (`chatgpt_extra_body` / `openai_comp_extra_body`)
+
+An escape hatch for request parameters ThunderAI does not expose (disabling a server's thinking
+mode, `top_p`, provider-proprietary fields). The pref holds a **raw JSON string** entered by the
+user in the Advanced options of the connection panel; `parseExtraBody()` in
+`js/api/api-utils.js` turns it into an object at request time.
+
+- **Only these two providers.** Ollama, Gemini and Anthropic build differently-shaped bodies and
+  have no such field.
+- **Core parameters are protected.** The parsed object is spread **first** in the request body
+  literal (`openai_comp.js` `fetchResponse`, `openai_responses.js` `request_body`), so everything
+  ThunderAI manages — `model`, `messages`/`input`, `stream`, `temperature`, `max_tokens`,
+  `reasoning`, `instructions` — always wins. A wrong entry cannot change the model or break the
+  streaming. `instructions` in `openai_responses.js` is assigned after the literal, which keeps it
+  protected for the same reason.
+- **Invalid input is ignored, never fatal.** `parseExtraBody()` returns `{}` for a blank string,
+  malformed JSON, or a non-object (array / scalar / `null`), logging a `console.warn`. This is
+  required because the options UI validation is advisory only: `saveOptions` persists the value
+  regardless, so the API class must tolerate garbage.
+- `api-utils.js` must stay free of WebExtension and DOM dependencies — it is pulled into the Web
+  Workers through the API classes. This is why the helper does not live in `js/mzta-utils.js`.
+- UI: a `textarea.option-input.option-textarea.check-json` row marked `conn_adv` in
+  `pages/_lib/connection-ui.js`; `warn_InvalidJson` gives red-border feedback on `input`.
 
 ### Google Gemini (`google_gemini_api`)
 - Module: `js/api/google_gemini.js`

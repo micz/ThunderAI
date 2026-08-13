@@ -26,7 +26,8 @@ export const integration_options_config = {
         temperature: '',
         store: false,
         reasoning_summary: '',
-        reasoning_effort: ''
+        reasoning_effort: '',
+        extra_body: ''
     },
     ollama: {
         host: '',
@@ -42,7 +43,8 @@ export const integration_options_config = {
         api_key: '',
         use_v1: true,
         chat_name: 'OpenAI Comp',
-        temperature: ''
+        temperature: '',
+        extra_body: ''
     },
     google_gemini: {
         api_key: '',

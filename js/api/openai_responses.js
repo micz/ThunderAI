@@ -18,6 +18,8 @@
 
 // Some original methods derived from https://github.com/ali-raheem/Aify/blob/4ece286095ea7a6cf89d696902e6b81b5d1c3a4b/plugin/html/API.js
 
+import { parseExtraBody } from './api-utils.js';
+
 
 export class OpenAI {
 
@@ -29,6 +31,7 @@ export class OpenAI {
   store = false;
   reasoning_summary = '';
   reasoning_effort = '';
+  extra_body = '';
 
   constructor({
     apiKey = '',
@@ -38,7 +41,8 @@ export class OpenAI {
     stream = false,
     store = false,
     reasoning_summary = '',
-    reasoning_effort = ''
+    reasoning_effort = '',
+    extra_body = ''
   } = {}) {
     this.apiKey = apiKey;
     this.model = model;
@@ -48,6 +52,7 @@ export class OpenAI {
     this.store = store;
     this.reasoning_summary = reasoning_summary;
     this.reasoning_effort = reasoning_effort;
+    this.extra_body = extra_body;
   }
 
 
@@ -104,7 +109,11 @@ export class OpenAI {
               ...(this.reasoning_effort != '' ? { 'effort': this.reasoning_effort } : {})
           }
 
+    // The user-supplied extra data is spread first on purpose: every parameter
+    // ThunderAI manages must win over it, so a wrong entry cannot change the
+    // model or break the streaming.
     let request_body = {
+              ...parseExtraBody(this.extra_body),
               model: this.model,
               input: input,
               stream: this.stream,
