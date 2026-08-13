@@ -25,17 +25,33 @@ Implemented in `api_webchat/diffPicker.js`. Introduced by
 
 ## The hunk model
 
-`buildHunks(originalText, newText, granularity)` turns two plain-text strings into a flat list:
+`buildHunks(originalHtml, newHtml, granularity)` turns **two HTML strings** into a list of
+**blocks**, each holding its own hunks:
 
 ```js
+Block = { tag, listType, text, html }           // segmentBlocks() output; html is INNER html
+
+ComposedBlock = {
+  kind: 'context' | 'replace' | 'insert' | 'delete',
+  tag, listType,
+  hunks: Hunk[],
+}
+
 Hunk = {
-  id: number,                                   // stable, sequential
+  id: number,                                   // stable, sequential, across all blocks
   type: 'context' | 'replace' | 'insert' | 'delete',
   oldText: string,                              // '' for insert
   newText: string,                              // '' for delete
+  oldHtml: string,                              // the same span, with its markup
+  newHtml: string,
   state: 'accepted' | 'rejected',               // ignored for context
 }
 ```
+
+`flatHunks(blocks)` returns every hunk in document order. The component keeps **both**: `_blocks`
+is the composition source, `_hunks` is `flatHunks(_blocks)` — **the same objects by reference**, so
+mutating `hunk.state` through the flat array mutates it in the block tree, and every indexed UI path
+(`_renderHunk`, `_chooseSide`, `_moveCurrent`, the keyboard handler) works unchanged on a flat index.
 
 `Diff` emits consecutive parts; `buildHunks` post-processes them so a **maximal run of consecutive
 insert/delete parts collapses into one hunk** — every `added` value summed into `newText`, every
@@ -55,19 +71,52 @@ handles `null` by showing the answer unchanged with an explanatory note.
 
 ## The `composeResult` invariant
 
-This is the correctness contract of the whole feature, because the composed text is written into the
+This is the correctness contract of the whole feature, because the composed HTML is written into the
 user's outgoing email:
 
 ```
-composeResult(all accepted) === normalizeForDiff(newText)
-composeResult(all rejected) === normalizeForDiff(originalText)
+composeResultHTML(all accepted) === renderBlocks(segmentBlocks(newHtml))
+composeResultHTML(all rejected) === renderBlocks(segmentBlocks(originalHtml))
 ```
 
-It follows from two properties: the diff parts **partition both inputs exactly**, and `buildHunks` is
-a lossless regroup of those parts (every part lands in exactly one hunk, in order).
+It rests on three properties, each checkable on its own:
 
-Verified against the real `js/lib/diff.js` over hand-picked samples plus 8000 fuzz checks
-(both granularities): zero failures.
+- **P1 — block partition.** `segmentBlocks()` is a **normalization**, not a round-trip: segment →
+  render → segment → render is stable. The invariant is therefore stated against the
+  *segmented-and-rendered* sides, not the byte-exact input HTML — the same concession the plain-text
+  version made when it stated itself against `normalizeForDiff` rather than byte-exact whitespace.
+- **P2 — block-diff partition.** `Diff.diffArrays` with a `comparator` emits parts that partition
+  both block lists exactly. `ArrayDiff` (`js/lib/diff.js`) declares only `tokenize`/`join`/
+  `removeEmpty` and overrides **neither `postProcess` nor `equals`** — structurally the same reason
+  `diffWordsWithSpace` is safe below.
+- **P3 — inner partition.** Inside a paired block the existing text-level argument applies verbatim.
+
+**Context means the words match, not the markup.** Two places would otherwise leak the answer's
+formatting into a rejected result, and both are load-bearing:
+
+- **`buildBlockPairs`'s comparator matches on `text` *and* `tag` *and* `html`.** For a context part
+  jsdiff keeps only one side's objects and discards which block on the other side it matched, so
+  matching on text alone would give a "context" block carrying the answer's markup — and reject-all
+  would emit it. Requiring `html` to match makes a context block genuinely identical on both sides;
+  a markup-only difference falls through to a `replace` pair, where both sides are kept and the user
+  can choose.
+- **`contextSide(block)` decides which side a context *hunk* contributes.** Inside a `replace` block
+  the two sides can mark the same words up differently, so a context hunk that always emitted
+  `newHtml` would hand back the answer's bold for text the user just rejected. It follows the block:
+  if every changed hunk in the block is rejected, the block is showing the original, so its context
+  must be the original's too.
+
+**The single source of truth for offsets.** `block.html` is normalized (`normalizeBlockHtml`) and
+`block.text` is then **read back out of it** (`blockTextOfHtml`). Deriving the text from the html
+rather than computing it separately is load-bearing: `sliceHtmlByText` maps offsets in `block.text`
+onto `block.html`, so two independent projections that merely *looked* equivalent would drift on the
+first odd input and every offset after the drift would be silently wrong.
+
+> **Not yet re-verified after the HTML rewrite.** The plain-text model was verified over hand-picked
+> samples plus 8000 fuzz checks with zero failures. The block model's harness exists but has to run
+> in the webchat window's devtools console — it needs `DOMParser` and the `Diff` global, neither of
+> which exists in Node, and this project has no npm — so the numbers above have **not** been
+> reproduced for the HTML path. Run the harness before trusting the invariant.
 
 ### Why `Diff.diffWords()` cannot be used
 
@@ -100,34 +149,27 @@ reject-all would silently hand back the AI's spacing.
 Both declare only `tokenize()` and inherit the base-class identity `join()` and no-op
 `postProcess()`, which is exactly what makes the partition property hold.
 
-### `normalizeForDiff` and what the invariant is really against
+### Normalization, and what the invariant is really against
 
 `diffWordsWithSpace` is whitespace-exact — which the invariant needs — but that also means every
-cosmetic whitespace difference becomes a hunk the user has to look at. So **both sides pass through
-`normalizeForDiff()` before diffing**: CRLF→LF, runs of spaces/tabs collapsed, spaces around newlines
-dropped, **runs of newlines collapsed to one**, trimmed.
+cosmetic whitespace difference would become a hunk the user has to look at. Normalization keeps that
+noise out, and the invariant is stated against the **normalized** sides, not the byte-exact ones.
 
-The invariant is therefore stated against the **normalized** original, not the byte-exact one. That
-is not a compromise in practice: byte-exact original whitespace was never preserved end to end
-anyway. The upside is that cosmetic noise never becomes a hunk — `"one two"` vs `"one    two"`
-correctly yields **zero** changes.
+`normalizeForDiff()`, which used to do this over the whole plain-text answer, is **gone**. Its work
+now happens per block, in `normalizeBlockHtml()`: CRLF→LF, runs of spaces/tabs collapsed, spaces
+around newlines dropped, ends trimmed — applied to the block's *text nodes*, leaving its tags alone.
+`"one two"` vs `"one    two"` still yields **zero** changes.
 
-#### Why blank lines are collapsed, not capped at two
+**Blank lines are no longer a normalization problem at all.** The old `\n{2,}` → `\n` collapse existed
+because the two sides arrived unequally faithful — `cleanupNewlines()` had already flattened the
+original's blank lines while the answer kept its `\n\n` — so on multi-paragraph mail every paragraph
+break became a hunk. That asymmetry cannot arise now: **a paragraph break is a block boundary and
+never reaches the text diff**. The related cost is likewise gone, since the block list, not a run of
+`\n`, is what carries paragraph structure.
 
-The two sides do not arrive equally faithful. The original comes from
-`prompt_info.selection_text` / `body_text`, which `cleanupNewlines()` (`js/mzta-utils.js`) has
-**already** flattened with `\n{2,}` → `\n`; the answer side keeps its `\n\n` through
-`htmlToPlainText()`. An earlier `\n{3,}` → `\n\n` left that asymmetry in place, so on
-multi-paragraph mail **every paragraph break became a hunk** — changes the user has no reason to
-review, and which made the real edits harder to find. Aligning the normalization to the lossier
-side is what removes them; measured on a 4-paragraph mail, word level went from 4 changes to 2 and
-sentence level from 2 to 1.
-
-The cost is that the picker cannot *restore* a blank line the original never carried by the time it
-arrived. Preserving them would mean not running `cleanupNewlines()` on the fields that feed the
-picker, which also changes what is sent to the model — deliberately out of scope here.
-
-Verified after the change: 8058 invariant checks over both granularities, zero failures.
+> The plain-text model was verified with 8058 invariant checks over both granularities, zero
+> failures. **Those numbers do not carry over to the block model** — see the caveat under the
+> invariant above.
 
 > An earlier draft of this feature planned `body_text_raw` / `selection_text_raw` fields on
 > `prompt_info` carrying un-normalized text, so the invariant could hold against the byte-exact
@@ -135,43 +177,136 @@ Verified after the change: 8058 invariant checks over both granularities, zero f
 > would have added payload to a message that already carries the mail body and required edits at
 > five `api_send` sites.
 
-## Plain text only
+### Where the answer's HTML comes from
 
-The picker operates on plain text with `\n` line breaks. It does **not** preserve the HTML formatting
-of the AI answer (bold, lists): both sides are normalized to plain text, diffed, recomposed as plain
-text, and only converted back to `<br>` markup when the result is handed to the insertion path.
+`fullTextHTMLAtAssignment` — the snapshot the picker diffs — is produced by
+`StreamingMessage.flush()`, and **which pipeline produced it depends on the prompt**:
 
-Rationale: the hunk model needs a single linear text to be correct — a hunk boundary can fall in the
-middle of a `<strong>` — and the original side arrives as plain text regardless (`getMailBody()` in
-`js/mzta-menus.js` sends `selection`/`text` through `cleanupNewlines()`; `selection_html`/`html`
-get `normalizeHtmlSourceNewlines()`), so a rejected change would have no formatting to restore anyway.
+- **Prompts that send HTML** (`prompt_rewrite_formal`, `prompt_rewrite_polite`) get an HTML answer
+  back. It skips markdown-it and is sanitized with `sanitizeBlockHtml()` instead — see
+  [01-architecture.md](01-architecture.md) → *When the answer is HTML*. This is the case the block
+  model exists for: real markup on both sides.
+- **`prompt_proofread_this` still sends plain text**, so its answer is ordinary markdown rendered by
+  markdown-it, and the ORIGINAL side has no `_html` twin to resolve to.
 
-**Important nuance: this is not a regression for users who don't open the picker.** The formatted
-HTML path is untouched — `handleUseThisAnswerButtonClick()` still inserts
-`fullTextHTMLAtAssignment` when no picker exists on the turn. The plain-text downgrade happens only
-once the user opens the picker, i.e. only when they have explicitly asked to review changes.
+**The `textToBlockHtml()` fallback is therefore not hypothetical — it is proofread's live path.**
+`_buildDiffButton` resolves the original on the text fields, finds no matching HTML field, and wraps
+each line in a `<p>` so the segmenter has blocks to work with. Both shapes are in use at the same
+time and both must keep working; see [02-prompts.md](02-prompts.md) for why the third prompt was left
+on text.
 
-### Line breaks are `\n`, never `<br>`
+### Where the original's HTML comes from
 
-The plain-text side never contains literal `<br>` (see `getMailBody()` above), so the picker splits on
-`\n` only. `_buildDiffButton` still applies one defensive `<br>` → `\n` replacement on the resolved
-original, in case a future `prompt_info` ever carries markup in a plain-text field.
+`_buildDiffButton` resolves the original on the **text** fields exactly as before — `selection_text`,
+falling back to `body_text` — and then takes the **HTML twin of whichever side won**
+(`selection_html` / `body_html`). Choosing on the html fields directly would risk diffing a selection
+against a whole body whenever one of the two happened to be empty. When no html twin exists (an older
+`prompt_info`, or a producer that only fills the text field), `textToBlockHtml(originalText)` gives
+the original block structure rather than leaving the segmenter one unsplittable run.
+
+`selection_html` already existed on `curr_prompt`; **`body_html` is new** — one line in
+`js/mzta-menus.js`, assigning the `msg_text.html` that `getMailBody()` already produced and
+`normalizeHtmlSourceNewlines()` already collapsed. Because `prompt_info` *is* `curr_prompt`,
+forwarded verbatim, that single line is the whole plumbing change and no `api_send` site was touched.
+
+**The payload cost is real and is the one the `*_raw` fields were rejected for**: the full HTML body
+now rides along with the plain-text body. It is bounded (`getCleanBodyHtml()` runs first, source
+newlines are collapsed) but on a heavily-quoted thread it is not nothing. It is paid here because,
+unlike `*_raw`, the feature genuinely needs it — without it, rejecting a change could not restore the
+original's formatting.
+
+## Block-structured HTML
+
+The picker **preserves formatting**. Both sides arrive as HTML, are segmented into blocks, diffed
+within each block, and recomposed as HTML — so the answer's bold/italic/lists survive, and rejecting
+a change restores the **original's** own markup rather than just its words.
+
+This replaced a plain-text-only model, whose stated reason was real: a hunk boundary can fall in the
+middle of a `<strong>`. The block model answers that structurally instead of by giving up.
+
+### Why block segmentation, and not the obvious alternatives
+
+Four approaches were considered:
+
+| | Approach | Verdict |
+|---|---|---|
+| (a) | Plain-text diff + a parallel `{start, end, tags[]}` format map, re-applied at compose time | **Rejected.** Offsets shift the moment a hunk is rejected, so the map must be re-derived per choice; needs a second map for the original side and a rule for a rejected span landing inside a `<strong>` only the new side had. Failure mode is silently mangled markup in outgoing mail. |
+| (b) | Inline tags as diff tokens | **Rejected, worst option.** `diffWordsWithSpace` tokenizes on whitespace, so `<strong>Dear` is one token and the diff happily emits a hunk whose `newText` is `</strong> world <em>`. Reject-all then yields markup that is not even well-formed, which `DOMParser` re-balances unpredictably. |
+| (c) | **Block segmentation** | **Adopted.** See below. |
+| (d) | Map accepted hunks onto the answer's HTML by offset | **Rejected.** Same offset drift as (a), and asymmetric by construction — only the answer's formatting survives, so rejecting cannot restore the original's. Cannot express "this whole `<li>` was rejected". |
+
+**Why (c) is the one that works: no tag can ever cross a hunk boundary.** Hunk boundaries exist only
+*within* a block, and a block's wrapper element is emitted whole by the composer
+(`composeResultBlocksHTML` → `renderBlocks`) and is **never carried inside a hunk**. There is
+therefore no sequence of accept/reject choices that can emit an opening tag without its closing tag.
+It is also the only option whose invariant is *provable* (P1/P2/P3 above) rather than hoped for, and
+it degrades gracefully: a block with no inline markup on either side behaves exactly as before.
+
+### The limitation, stated rather than discovered
+
+**Inline formatting inside a changed hunk follows the side that is chosen, and is not itself
+pickable.** If the answer bolded a word in a sentence it also reworded, accepting takes the bolding
+and rejecting takes the original's markup for that span. There is no third state combining the
+original's words with the answer's bold. That is the price of the only option with a provable
+invariant.
+
+**Nested lists are flattened one level:** an inner `<li>` becomes a block of the inner list's type.
+Deliberately lossy — the alternative is a recursive tree diff, and nested lists in a proofread answer
+are rare.
+
+### The sanitizer is a security boundary
+
+`sanitizeInlineHtml()` is not a tidiness pass. The answer is **model output on its way into the
+user's outgoing mail**, and the plain-text path this replaces escaped absolutely everything, so the
+allowlist is now what stands between the two:
+
+- Kept: `b, strong, i, em, u, s, strike, code, a, br, span, sub, sup`. Everything else is
+  **unwrapped** — its children survive, the element does not.
+- Every attribute is dropped except `href` on `<a>`, and only when it matches `^(https?:|mailto:)`.
+  `javascript:` and `data:` do not survive.
+- Re-serialization goes out through `innerHTML`, which encodes entities correctly for free.
+  Hand-rolled escaping on HTML input would escape the very tags being preserved.
+
+`htmlToFragment()` is the **single choke point** for rendering: nothing that skipped the sanitizer
+may reach the DOM.
+
+### `sliceHtmlByText` and its escape hatch
+
+Each hunk's `oldHtml`/`newHtml` come from `sliceHtmlByText(blockHtml, start, end, fallbackText)`,
+which returns the markup for a text range with every enclosing inline tag reopened and reclosed. The
+range is always *within one block*, so the ancestor chain is short and always closes.
+
+Two details are load-bearing:
+
+- **Ancestor shells are reused, not re-cloned per text node.** Otherwise two text nodes under one
+  `<strong>` come back as `<strong>a</strong><strong> b</strong>` — visually identical, but not
+  string-equal to what `renderBlocks` emits, which breaks the invariant on comparison alone.
+- **If the range cannot be mapped, it falls back to `escapeHtml(fallbackText)` for that hunk alone**
+  and warns to the console. That one hunk loses its formatting; malformed markup is never emitted.
+  Built in from the start rather than added after, because this is the piece most likely to meet
+  input nobody predicted.
+
+### Line breaks
+
+`<br>` is meaningful on both sides now and projects to exactly one `\n` in a block's text.
+`_buildDiffButton`'s old defensive `<br>` → `\n` replacement on the original is **gone** — the
+original is HTML by design and the segmenter is what handles its markup.
 
 ### Into a plain text compose window
 
-`composeResultHTML()` turns `\n` into `<br>` unconditionally, which is right for an HTML compose
-window and wrong for a plain text one. The conversion back is **not** the picker's job — it happens
-downstream, where the target window's format is known:
-`mzta-background.js` detects it with `isPlainTextCompose()` and runs `stripHtmlKeepLines()`, and the
-content script inserts a `Text` node instead of parsing HTML. See
-[01-architecture.md](01-architecture.md) → *Writing into a plain text compose window* for the full
-path and why all of its parts are load-bearing.
+`composeResultHTML()` now emits **`<p>`/`<li>`-wrapped blocks**, structurally the same shape as the
+non-picker markdown path. The conversion back to text is still **not** the picker's job — it happens
+downstream, where the target window's format is known: `mzta-background.js` detects it with
+`isPlainTextCompose()` and runs `stripHtmlKeepLines()`, and the content script inserts a `Text` node
+instead of parsing HTML. See [01-architecture.md](01-architecture.md) → *Writing into a plain text
+compose window* for the full path and why all of its parts are load-bearing.
 
-The picker's `<br>`-only, `<p>`-less output is what made this fail visibly
-([#855](https://github.com/micz/ThunderAI/issues/855)): the bug predates the picker, but
-`stripHtmlKeepLines` was tuned for the `<p>`-wrapped markdown of the non-picker path, and the
-converted `\n` were then re-parsed as collapsible HTML whitespace — collapsing the whole message
-onto one line.
+**This is what changed for #855.** The picker's old `<br>`-only, `<p>`-less output is what made that
+bug visible: `stripHtmlKeepLines` was tuned for `<p>`-wrapped markdown, and the picker's converted
+`\n` were then re-parsed as collapsible HTML whitespace, collapsing the whole message onto one line.
+The picker's output is now in that function's designed happy path, so **no change was needed in
+`js/mzta-utils.js`**. The rest of the #855 machinery (the `Text`-node branch, the `plainTextBody`-aware
+helpers) is still load-bearing for every other producer and is untouched.
 
 ## The result indirection
 
@@ -194,11 +329,13 @@ answer's compact toolbar has to keep handing back that picker's current state.
 
 ### Two things the picker deliberately bypasses
 
-- **`removeAloneBRs()`.** It strips every `<br>` with no `<p>` ancestor. `composeResultHTML()` emits
-  `<br>`-separated text with no `<p>` wrapper, so running it through `removeAloneBRs` would delete
-  **every** line break and collapse the message into one run-together line. The picker branch skips
-  it entirely. `removeAloneBRs` still guards the non-picker path, where it cleans the `<p>`-wrapped
-  markdown answer — a different job.
+- **`removeAloneBRs()`.** It strips every `<br>` with no `<p>` ancestor. **The reason for skipping it
+  has changed, even though the behaviour has not.** It used to be mandatory: `composeResultHTML()`
+  emitted `<br>`-separated text with no `<p>` wrapper, so running it would have deleted *every* line
+  break. Now that the picker emits `<p>`/`<li>`-wrapped blocks, every `<br>` it produces has a block
+  ancestor and the call would be **safe** — it is skipped because it is *pointless*: the picker's
+  output is canonical by construction, and routing it through a cleaner written for the markdown
+  producer only adds a way to go wrong. `removeAloneBRs` still guards the non-picker path.
 - **The mouse-selection override.** `getCurrentSelectionHTML()` is not consulted for a turn with a
   picker, and that turn's `.sel_info` hint is hidden: two mechanisms competing over the same output
   would be confusing, and the picker is the explicit one. Turns without a picker keep the override
@@ -208,10 +345,21 @@ answer's compact toolbar has to keep handing back that picker's current state.
 session are mutually exclusive: every prompt carrying `headerMessageId`/`summaryTabId` has
 `use_diff_viewer: "0"`.
 
-## `composeResultHTML()` escaping order
+## `composeResultHTML()` and escaping
 
-Escape **first**, then substitute `<br>`, or the tags just inserted get escaped too. Within
-`escapeHtml`, `&` must be replaced before `<`/`>` or the entities double-escape into `&amp;lt;`.
+**In REVIEW, nothing is escaped.** The result is built from the hunks' `oldHtml`/`newHtml`, which
+already went through `sanitizeInlineHtml` at segmentation time; escaping them here would escape the
+very tags the feature exists to preserve. Entity correctness comes from DOM serialization
+(`innerHTML`), not from string replacement.
+
+**In EDIT it is escaped**, because the editor holds genuine plain text — a `<` the user typed is a
+literal character, not markup. `textToBlockHtml()` escapes each line and wraps it in `<p>`, which is
+the same block shape the REVIEW path emits, so the downstream plain-text conversion stays on one code
+path.
+
+`escapeHtml` therefore survives for exactly two callers: `textToBlockHtml`, and `sliceHtmlByText`'s
+fallback. Within it, `&` must still be replaced before `<`/`>` or the entities double-escape into
+`&amp;lt;`.
 
 ## UI
 
@@ -220,7 +368,9 @@ Single **inline** view, not two columns — the webchat window is often narrow.
 **Both versions of every change are on screen at once, and you click the one you want to keep.**
 That is the core interaction:
 
-- Context entries render as plain text, with real `<br>` elements for line breaks.
+- The body holds **real block elements** — one per segmented block, with `<li>` runs re-wrapped into
+  a single `<ul>`/`<ol>` — so the picker shows the structure it is going to write into the mail
+  instead of a flat wall of text. Context entries render their own sanitized markup.
 - Each change renders as a wrapper `.hunk` span holding **two** `.hunk-side` spans: the original
   (red, `--err-*`) and the answer's replacement (green, `--ok-*`), in that order.
 - The side currently in force is `.is-active` (full colour, semibold); the other is `.is-inactive`
@@ -354,8 +504,17 @@ conveyed by the role and a tick, where the old inline button used an accent fill
 EDIT exists for the case picking cannot cover: the suggestion is nearly right and the user wants to
 fix one word themselves.
 
-A **`<textarea>`, deliberately not `contenteditable`**: contenteditable would accept pasted rich text
-and quietly break the plain-text-only contract the entire hunk model rests on.
+A **`<textarea>`, deliberately not `contenteditable`**. The original reason — contenteditable accepts
+pasted rich text and breaks the plain-text-only contract — no longer applies now that the picker is
+HTML-aware, but the conclusion stands for a stronger one: **contenteditable produces arbitrary
+user-authored DOM that the segmenter cannot be trusted with**, and the EDIT → REVIEW round-trip has
+to segment whatever comes back. The textarea keeps that output in a shape the pipeline already
+handles.
+
+**The consequence: entering EDIT discards the answer's formatting for the whole composition**, not
+just the accept/reject decisions. The editor is plain text, and coming back re-segments it with
+`textToBlockHtml()` — one `<p>` per line. `apiwebchat_picker_edit_hint` says so, and is shown
+*before* the switch rather than after.
 
 `_mode` (`'review'` | `'edit'`) is the state; `_setMode` mirrors it onto a `mode` attribute on the
 **host**, and the CSS (`:host([mode="edit"])`) swaps the two views. One attribute write, so the two
@@ -370,8 +529,10 @@ through REVIEW. Both consumers in `messagesArea.js` (`composeResultHTML()` at th
 
 ### EDIT → REVIEW re-diffs from scratch
 
-Coming back runs `_rebuild(this._editor.value)` — `buildHunks(originalText, editedText)`, a full
-recompute against the **original**. No merge, no attempt to carry the old hunk list over.
+Coming back runs `_rebuild(textToBlockHtml(this._editor.value))` — `buildHunks(originalHtml,
+editedAsBlocks)`, a full recompute against the **original**. No merge, no attempt to carry the old
+hunk list over. The `textToBlockHtml` wrap is what gives the segmenter blocks to work with, and is
+where the answer's formatting is lost.
 
 **This resets every hunk to `'accepted'`, discarding accept/reject decisions made before**, and the
 counter jumps back to "N of N". That is the design: the hunks are recomputed against different text,
@@ -380,7 +541,8 @@ chose. Same reasoning as the granularity switch. Because it *is* surprising, EDI
 (`apiwebchat_picker_edit_hint`) warning about it **before** it happens rather than after.
 
 The invariant survives the round-trip: after EDIT → REVIEW, reject-all still yields
-`normalizeForDiff(originalText)` — verified.
+`renderBlocks(segmentBlocks(originalHtml))` — the original side never changed, so P1–P3 hold exactly
+as before. (Verified for the plain-text model; see the caveat under the invariant for the HTML one.)
 
 `setContent()` also forces `'review'` and clears the editor: a fresh picker opening into the editor
 would hide the very changes the button was clicked to see.
@@ -463,12 +625,16 @@ they can see the result: word granularity suits an in-place grammar fix, but a p
 whole sentences yields dozens of interleaved micro-hunks at word level and a handful of readable ones
 at sentence level. Measured on a 3-sentence rewrite: **8 changes at word level, 3 at sentence level.**
 
+The toggle now applies **within a block**: the block segmentation absorbs the paragraph-level
+structure that used to generate noise hunks, so the choice is purely about the unit inside a
+paragraph — which is what it was always trying to express.
+
 `setGranularity('words' | 'sentences')` sets the initial value (it does **not** re-diff, so after
 `setContent()` the toolbar toggle is the way in). `_changeGranularity(g)` is the interactive path.
 
 Two properties of the interactive switch matter:
 
-- **It re-diffs from `_newText`, never from the composed text.** Comparing the original against the
+- **It re-diffs from `_newHtml`, never from the composed text.** Comparing the original against the
   current composition would make the answer's rejected parts unreachable, turning a view setting into
   a destructive edit.
 - **It discards every accept/reject decision** — all changes go back to `accepted`. There is no correct
@@ -479,7 +645,9 @@ Two properties of the interactive switch matter:
 
 Caveat worth knowing about `'sentences'`: `SentenceDiff.tokenize` only splits on `[.!?]` followed by
 whitespace, so on **single-sentence** text it degenerates to one delete + one insert covering
-everything — a single "replace it all" hunk. It works well on genuinely multi-sentence text.
+everything — a single "replace it all" hunk. Under the block model this now applies **per block**
+rather than to the whole answer, which is an improvement: a single-sentence paragraph collapsing to
+one replace hunk is a reasonable rendering, where the same thing across an entire answer was not.
 
 `aria-checked` is painted both from `setGranularity()` and at build time in `_buildGranularityToggle()`;
 without the latter a picker left at the default would show neither position as selected.
@@ -504,10 +672,13 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 
 | File | Role |
 |------|------|
-| `api_webchat/diffPicker.js` | Hunk model, compose functions, `<diff-picker>` element |
-| `api_webchat/messagesArea.js` | `_buildDiffButton`, `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
+| `api_webchat/diffPicker.js` | Block segmentation + sanitizer, hunk model, compose functions, `<diff-picker>` element. Also exports `sanitizeBlockHtml()`, the gate the answer path uses |
+| `api_webchat/streamingMessage.js` | Decides per response whether the answer is HTML; sanitizes it instead of running markdown-it |
+| `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
-| `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules) |
+| `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules). `diffArrays` pairs blocks, `diffWordsWithSpace`/`diffSentences` diff within one |
+| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html` |
+| `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's formatting-loss warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
 | `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n` |
 | `mzta-background.js` | detects the compose format and converts before insertion |

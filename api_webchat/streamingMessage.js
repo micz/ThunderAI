@@ -35,6 +35,7 @@
 // script in index.html before the module scripts.
 
 import { stripThinkTags } from '../js/mzta-utils.js';
+import { sanitizeBlockHtml } from './diffPicker.js';
 
 // Fenced code blocks (``` / ~~~, any fence length, with or without an info
 // string) and inline code spans (`…`, ``…``). Matched in this order so a
@@ -81,6 +82,24 @@ function normalizeEchoedBrTags(text) {
     return rewritten.replace(CODE_MASK_RE, (m, idx) => stash[Number(idx)] ?? m);
 }
 
+// Does this segment open with a BLOCK-level HTML tag?
+//
+// The prompts that send HTML to the model (they carry {%selected_html%} /
+// {%mail_html_body_or_selected%}) get HTML back, and markdown-it runs with
+// html:false, so it would escape the answer into visible "&lt;p&gt;" text - which
+// is exactly what users saw. This is the test that routes such an answer to the
+// sanitizer instead.
+//
+// Deliberately NARROW, because the cost of a false positive is a mangled normal
+// answer:
+//   - only a BLOCK tag counts, and only at the very START of the response.
+//     A markdown answer that merely mentions <b> mid-sentence is not HTML, and a
+//     model that opens with prose is writing markdown even if markup follows.
+//   - <br> is excluded: normalizeEchoedBrTags() already owns echoed <br> runs on
+//     the markdown path, and a leading <br> says nothing about the rest.
+// Everything that is not clearly HTML keeps going through markdown-it untouched.
+const LEADING_BLOCK_TAG_RE = /^\s*<(p|div|ul|ol|li|h[1-6]|blockquote|pre)\b[^>]*>/i;
+
 export class StreamingMessage {
 
     constructor() {
@@ -93,6 +112,19 @@ export class StreamingMessage {
         this._thinkingAccumulator = '';
         // Rendered HTML accrued across flushes for this whole response.
         this._fullTextHTML = '';
+        // Whether THIS response is HTML. Decided once, on the first flushed
+        // segment, and then STICKY for the rest of the response.
+        //
+        // Sticky because flush() runs per segment (tokens are flushed on every
+        // '\n'), and a later segment of an HTML answer can easily start with a
+        // bare text node - "Distinti saluti.</p>" - which on its own looks like
+        // markdown. Re-deciding per segment would render one answer half one way
+        // and half the other.
+        this._isHtmlResponse = null;
+        // Raw (un-rendered) text of the whole response, accumulated only on the
+        // HTML path, where each flush re-sanitizes everything rather than
+        // appending a fragment. See flush().
+        this._htmlRawText = '';
     }
 
     handleNewToken(token) {
@@ -146,6 +178,47 @@ export class StreamingMessage {
             combinedThinking += (combinedThinking ? '\n' : '') + inlineThinking;
         }
         this._thinkingAccumulator = '';
+
+        // Decide the response's shape once, on the first segment that carries
+        // anything, then stay with it (see _isHtmlResponse).
+        if (this._isHtmlResponse === null && fullText.trim() !== '') {
+            this._isHtmlResponse = LEADING_BLOCK_TAG_RE.test(fullText);
+        }
+
+        // HTML answer: sanitize instead of escaping, and skip markdown-it
+        // entirely. Running both would be wrong in either order - markdown-it
+        // escapes the tags, and re-parsing its output as markdown mangles the
+        // markup.
+        //
+        // normalizeEchoedBrTags() is skipped too: it rewrites <br> runs into
+        // newlines so that markdown-it does not escape them, and here there is no
+        // markdown-it to protect them from - a <br> is simply a <br>.
+        //
+        // THE WHOLE RESPONSE SO FAR is re-sanitized on every flush, and the
+        // result REPLACES _fullTextHTML instead of being appended to it. That is
+        // the difference that matters on this path: segments break on '\n', which
+        // for HTML falls wherever the model happened to wrap - frequently INSIDE
+        // an element. Sanitizing "<ul><li>a" on its own makes DOMParser close the
+        // tags, and the next segment "</li></ul>" would then be a stray closer;
+        // appending those fragments would accumulate garbage. Re-parsing the
+        // accumulated raw text keeps every element whole.
+        if (this._isHtmlResponse) {
+            this._htmlRawText += fullText;
+            this._fullTextHTML = sanitizeBlockHtml(this._htmlRawText);
+            this._segmentText = '';
+            return {
+                html: this._fullTextHTML,
+                thinkingText: combinedThinking,
+                fullTextHTML: this.getFullTextHTMLSnapshot(),
+                // `html` is the WHOLE response, not this segment. The caller
+                // normally retires the accumulating element after each flush and
+                // starts a new one, which is right when each flush contributes
+                // the next piece; here it must keep reusing the same element, or
+                // the answer would be re-rendered once per flush and pile up on
+                // screen.
+                cumulative: true,
+            };
+        }
 
         fullText = normalizeEchoedBrTags(fullText);
 
