@@ -601,10 +601,10 @@
         "message": "Si coché, l'étiquette des tags sera définie en minuscules avec seulement la première lettre en majuscule."
     },
     "prefs_SurveyLinkText": {
-        "message": "Partagez vos commentaires et aidez à améliorer ThunderAI !"
+        "message": "Vous aimez ThunderAI ?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Cliquez ici, cela ne prend qu'une minute !"
+        "message": "Donner votre avis"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Insérez manuellement le modèle"
@@ -880,7 +880,7 @@
         "message": "GPT personnalisé pour ChatGPT Web"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "La visionneuse de comparaison de texte peut être sélectionnée lorsque l’action est définie sur « Substituer le texte »."
+        "message": "Disponible lorsque l'« Action » est « Remplacer le texte »."
     },
     "ask_chatgptweb_permission_1": {
         "message": "Pour utiliser l'intégration Web de ChatGPT, vous devez accorder l'autorisation requise."
@@ -1376,7 +1376,7 @@
         "message": "Voulez-vous de belles statistiques sur vos e-mails ?"
     },
     "prefs_THStats_2": {
-        "message": "Cliquez ici ! Essayez ThunderStats !"
+        "message": "Essayez ThunderStats !"
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "L'invite doit contenir l'espace réservé {%mail_text_body_or_selected%} ou {%mail_html_body_or_selected%} pour activer cette option. Veuillez ajouter l'un de ces espaces réservés à l'invite ou rétablir la valeur par défaut."
@@ -1684,7 +1684,7 @@
         "message": "Gérer les paramètres d'ordre du menu"
     },
     "menu_order_info": {
-        "message": "Faites glisser et déposez les éléments pour les réordonner. Utilisez l'interrupteur pour afficher ou masquer les éléments dans chaque menu."
+        "message": "Glissez-déposez les éléments pour les réordonner, ou déplacez-les entre les sections « Visibles » et « Masqués » pour les afficher ou les masquer dans chaque menu. Un prompt masqué dans tous les menus est désactivé jusqu'à ce que vous le rendiez à nouveau visible."
     },
     "menu_order_active_items": {
         "message": "Éléments visibles"
@@ -2504,5 +2504,32 @@
     "editor_placeholder_unterminated": {
         "message": "Espace réservé non terminé : il manque le %} de fermeture",
         "description": "Infobulle sur un jeton d'espace réservé mis en évidence dans l'éditeur de prompt lorsque le jeton s'ouvre avec {% mais ne se ferme jamais avec %}"
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Liste des expéditeurs pour le résumé automatique"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "Les e-mails provenant de ces expéditeurs sont résumés automatiquement, sans aucun clic. Le résumé est généré à la réception du message ou lors de son ouverture s'il n'a pas été traité à la réception."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Ajoutez une adresse e-mail par ligne, ou séparez-les par une virgule. Utilisez « @domaine.com » pour inclure tous les expéditeurs d'un domaine entier."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Attention : ces résumés étant générés automatiquement, chaque e-mail provenant de ces expéditeurs consomme des jetons d'API et peut augmenter le coût de votre abonnement IA. Conservez une liste aussi courte que possible."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "Le résumé automatique est désactivé, mais les résumés restent générés automatiquement pour les expéditeurs de la liste ci-dessous."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Non disponible lorsque le résumé automatique est configuré pour générer le résumé à la réception des e-mails : dans ce mode, chaque e-mail entrant est déjà résumé."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Résumer automatiquement ces expéditeurs"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Si cette option est activée, les e-mails provenant des expéditeurs listés ci-dessous sont résumés automatiquement, même si le résumé automatique est désactivé ci-dessus."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Adresses d'expéditeurs à résumer automatiquement :"
     }
 }
