@@ -416,6 +416,21 @@ table.prompts_list td.properties { white-space: nowrap; }
     font-family: var(--font-mono);
 }
 
+/* Invalid token in the read-only prompt text: unknown id, or an id that is not
+   available for the row's prompt type. Uses the same --warn-* tokens that
+   .editor-wrap maps into --ed-warn-* for the edit-mode .ph_chip_invalid, so the
+   two modes agree on colour as well as on validity. Read mode has no mirror to
+   stay metric-neutral for, so this one can afford a real border where the live
+   chip is limited to an inset box-shadow.
+   Two classes, so it beats the .ph_chip rule above regardless of source order. */
+.ph_chip.ph_chip_invalid_read {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    padding: 0 5px;   /* offsets the 1px border: same box as a valid chip */
+    cursor: help;
+}
+
 /* ---- Sort headers ---- */
 table .sort {
     background-image: url(../../images/listjs-arrow-sort-inactive.png);
@@ -748,11 +763,20 @@ table.prompts_list td input:disabled:checked.use_diff_viewer::after {
 
 .text_output { width: 98%; height: 9em; }
 
-.input_new,
+/* Ordinary form fields. The highlighted prompt textarea is excluded via
+   :not(.editor): it MUST stay transparent so the backdrop mirror shows through,
+   and it MUST keep --ed-font, not `inherit`, or its glyphs stop matching the
+   mirror's. `#formNew textarea` (1,0,1) and `.text_output` outrank / tie the
+   shared `.editor-wrap .editor` rule (0,2,0) in pages/_lib/editor-highlight.css,
+   so without this the add-form textarea painted an opaque surface with visible
+   text right on top of its own mirror — the highlight was rendered, just
+   completely covered. List rows were unaffected, which is why the chips showed
+   in row-edit mode but never in the add form. */
+.input_new:not(.editor),
 #formNew input[type="text"],
-#formNew textarea,
+#formNew textarea:not(.editor),
 #formNew select,
-.text_output,
+.text_output:not(.editor),
 .id_output, .name_output, .type_output, .action_output {
     background: var(--panel2);
     color: var(--text);
@@ -763,9 +787,20 @@ table.prompts_list td input:disabled:checked.use_diff_viewer::after {
     font-size: 13px;
 }
 
+/* Same exclusion as above: the editor textarea gets its focus treatment from
+   .editor-wrap:focus-within, which repaints the wrapper (below the mirror)
+   rather than the textarea (above it). */
 #formNew input[type="text"]:focus,
-#formNew textarea:focus,
+#formNew textarea:not(.editor):focus,
 #formNew select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* The editor textarea still needs its focus border, which the rule above no
+   longer supplies. Painted on the textarea itself (it owns the border ring),
+   at (1,1,1) so it beats the shared --ed-border default. */
+#formNew .editor-wrap .editor:focus {
     outline: none;
     border-color: var(--accent);
 }

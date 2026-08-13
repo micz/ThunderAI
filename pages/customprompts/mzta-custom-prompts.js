@@ -126,6 +126,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     activePlaceholders = await getPlaceholders(true);
     autocompleteSuggestions = activePlaceholders.map(mapPlaceholderToSuggestion);
 
+    // The first decoratePromptText() already ran inside loadPromptsList() above,
+    // before this await resolved — with an empty activePlaceholders it could not
+    // tell a valid token from an invalid one, so it chipped them all as valid.
+    // Now that the list is in, re-run it so unknown placeholders turn orange.
+    // data-phDecorated holds the decorated HTML, so this pass is a no-op for
+    // every row whose markup does not actually change.
+    decoratePromptText();
+
     // console.log('>>>>>>>>>>> autocompleteSuggestions: ' + JSON.stringify(autocompleteSuggestions));
     
     // One registration per textarea. This used to be a nested pair of loops,
@@ -700,6 +708,22 @@ function attachHighlightWithValidation(textarea) {
     return handle;
 }
 
+/*
+ *  Writes a value into a textarea programmatically and repaints its highlight
+ *  mirror.
+ *
+ *  A direct `.value =` assignment fires no 'input' event, and the mirror only
+ *  repaints on 'input': the previous text and its chips would stay painted
+ *  behind the new content. Every programmatic write to a `.editor` textarea
+ *  must go through here. Safe on a textarea with no mirror attached.
+ */
+function setEditorValue(textarea, value) {
+    if (!textarea) return;
+    textarea.value = value;
+    const handle = getEditorHighlight(textarea);
+    if (handle) handle.refresh();
+}
+
 function showItemRowEditor(tr) {
     tr.querySelector('.id_output').style.display = 'inline';
     tr.querySelector('.id_show').style.display = 'none';
@@ -1047,8 +1071,12 @@ function handleCopyClick(e) {
     // Populate new form
     document.getElementById('txtIdNew').value = id + '_' + browser.i18n.getMessage("copy_text");
     document.getElementById('txtNameNew').value = name + ' (' + browser.i18n.getMessage("copy_text") + ')';
-    document.getElementById('txtTextNew').value = text;
+    // Type before text: token validity depends on it and setEditorValue repaints
+    // immediately, so writing the text first would paint one frame validated
+    // against the previous prompt's type. Note `selectTypeNew.value = …` fires no
+    // 'change', so the refresh listener on that select does not cover this.
     document.getElementById('selectTypeNew').value = type;
+    setEditorValue(document.getElementById('txtTextNew'), text);
     document.getElementById('selectActionNew').value = action;
     
     document.getElementById('checkboxNeedSelectedNew').checked = need_selected;
@@ -1110,14 +1138,29 @@ function handleCopyClick(e) {
 // Wrap {%placeholder%} tokens in the visible prompt text with a styled chip.
 // Only touches the read-only .text_show spans (never the editable textarea),
 // and is idempotent (skips spans already decorated).
-// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, so read
-// mode and edit mode can never disagree on what counts as a token.
+// Uses PLACEHOLDER_RE, the same pattern the edit-mode backdrop uses, and
+// placeholdersUtils.findPlaceholder, the same predicate the edit-mode resolver
+// uses, so read mode and edit mode can never disagree — neither on what counts
+// as a token, nor on whether that token actually resolves.
 function decoratePromptText() {
+    // activePlaceholders is filled by an await that runs AFTER the first call to
+    // this function (loadPromptsList -> decoratePromptText is synchronous, and
+    // happens earlier in DOMContentLoaded). With an empty list findPlaceholder()
+    // resolves nothing, so classifying now would paint every token on the page
+    // as invalid; skip the validity pass until the list is in. The
+    // DOMContentLoaded handler re-runs this right after the await.
+    const canValidate = Array.isArray(activePlaceholders) && activePlaceholders.length > 0;
+    const unknownTitle = canValidate
+        ? browser.i18n.getMessage('editor_placeholder_unknown').replace(/"/g, '&quot;')
+        : '';
+
     document.querySelectorAll('#all_prompts .text_show').forEach(span => {
         // The guard is keyed to the *decorated result*, not to a plain '1' flag:
         // saving a row makes List.js rewrite this span in place (chips and all)
         // without firing 'updated', so a boolean flag would stay stale and the
         // prompt would lose its highlighting until the next full re-render.
+        // It also self-invalidates when the validity pass changes the markup,
+        // which is what lets the post-await re-run actually repaint.
         if (span.dataset.phDecorated === span.innerHTML) return;
         // PLACEHOLDER_RE carries /g and therefore lastIndex state; reset before
         // each use so a previous call cannot make this one start mid-string.
@@ -1126,9 +1169,26 @@ function decoratePromptText() {
             span.dataset.phDecorated = span.innerHTML;
             return;
         }
+
+        // The row's prompt type, read from the very element
+        // attachHighlightWithValidation() reads in edit mode, so the two modes
+        // filter by type identically.
+        const tr = span.closest('tr');
+        const typeSelect = tr ? tr.querySelector('.type_output') : null;
+        const typeSpan = tr ? tr.querySelector('.type') : null;
+        const rawType = typeSelect ? typeSelect.value
+            : (typeSpan ? typeSpan.innerText.trim() : null);
+        const type = (rawType === null || rawType === '') ? null : rawType;
+
         PLACEHOLDER_RE.lastIndex = 0;
-        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE,
-            m => '<span class="ph_chip">' + m + '</span>');
+        span.innerHTML = span.innerHTML.replace(PLACEHOLDER_RE, (m, inner) => {
+            if (!canValidate) return '<span class="ph_chip">' + m + '</span>';
+            if (placeholdersUtils.findPlaceholder(inner, activePlaceholders, type)) {
+                return '<span class="ph_chip">' + m + '</span>';
+            }
+            return '<span class="ph_chip ph_chip_invalid_read" title="'
+                + unknownTitle + '">' + m + '</span>';
+        });
         span.dataset.phDecorated = span.innerHTML;
     });
 }
@@ -1404,7 +1464,11 @@ function updateUseDiffViewerHint() {
 function clearFields() {
     document.getElementById('txtIdNew').value = '';
     document.getElementById('txtNameNew').value = '';
-    document.getElementById('txtTextNew').value = '';
+    // Not a bare `.value = ''`: that fires no 'input' event, so the highlight
+    // mirror would keep painting the previous prompt's text and chips behind the
+    // now-empty textarea, and they would still be there the next time the add
+    // form is opened.
+    setEditorValue(document.getElementById('txtTextNew'), '');
     document.getElementById('chatGPTWebModelNew').value = '';
     document.getElementById('chatGPTWebProjectNew').value = '';
     document.getElementById('chatGPTWebCustomGPTNew').value = '';

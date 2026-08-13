@@ -178,9 +178,16 @@ The highlight mirror flags tokens that will not resolve. `makeTokenStateResolver
 | Unknown id, or valid id not available for the prompt's type | warning chip + `title` |
 | Unterminated `{%` with no closing `%}` | warning chip + `title` |
 
-**One predicate, two callers.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
+The first two states are also rendered in **read mode** on the Manage Custom Prompts page, where
+`decoratePromptText()` marks an unresolvable token with `.ph_chip_invalid_read` + the same
+`editor_placeholder_unknown` title. The third cannot occur there: that function matches only complete
+`PLACEHOLDER_RE` tokens, so an unterminated `{%` is simply left as plain text.
+
+**One predicate, three callers.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
 resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
-with what the prompt will actually resolve at runtime. It is **sync** and takes an already-fetched list,
+with what the prompt will actually resolve at runtime. `decoratePromptText()` on the Manage Custom Prompts
+page is the third caller, so the read-only list, the live editor and the runtime all share one definition
+of a resolvable placeholder. It is **sync** and takes an already-fetched list,
 because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
 `extractPlaceholders()` omits it, preserving its previous behaviour exactly (it ignores type entirely),
 while the editor supplies the prompt's selected type so a reading-only placeholder in a composing prompt
