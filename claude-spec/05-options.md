@@ -915,6 +915,32 @@ both `style.display` and the `disabled` attribute together, and replaces all pri
 inline `btn.disabled = ...` toggling for these six buttons (on checkbox `click`, on
 `disable_*()` re-evaluation, and on permission-request denial).
 
+### Unsaved-Changes Guard (`pages/_lib/unsaved-guard.js`)
+
+The six feature settings pages (Add Tags, Spam Filter, Summarize, Translate, Calendar
+Event, Task) mix two kinds of controls: plain `.option-input` fields, written to storage
+on `change` (never pending), and **textareas saved explicitly** by a companion Save
+button. Only the latter can hold unsaved text when the tab is closed.
+
+`initUnsavedGuard()` registers a `beforeunload` handler that calls
+`event.preventDefault()` while `hasUnsavedChanges()` is true, so Thunderbird shows its
+native "leave page?" confirmation. [Thunderbird 128+ only]
+
+`hasUnsavedChanges()` derives the dirty state from the DOM instead of a separate flag:
+it returns true when any `button[id^="btn_save"]` is **not** disabled. This works because
+every explicitly saved textarea on these pages follows the same convention — its Save
+button ships `disabled` in the HTML, the textarea's `input` handler enables it when the
+value differs from the stored one, and the click handler disables it again after saving.
+No change to those existing handlers is needed.
+
+The selector deliberately matches only the snake_case `btn_save*` ids used by the feature
+pages. The Custom Prompts, Data Placeholders and Menu Order pages use a single
+camelCase `btnSaveAll` button and keep their own `somethingChanged`-based `beforeunload`
+handler, so they are unaffected.
+
+Each page calls `initUnsavedGuard()` as the first statement of its `DOMContentLoaded`
+handler, so the guard is armed even if later async setup fails.
+
 ## Adding a New Preference
 
 1. Add the key and default value to `prefs_default` in `options/mzta-options-default.js`

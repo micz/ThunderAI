@@ -42,6 +42,7 @@ import {
   initializeSpecificIntegrationUI,
   isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
@@ -49,6 +50,9 @@ let taLog = null;
 let spamReport = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
 
     let prefs = await browser.storage.sync.get({ do_debug: prefs_default.do_debug });
     taLog = new taLogger("mzta-spamfilter-page", prefs.do_debug);

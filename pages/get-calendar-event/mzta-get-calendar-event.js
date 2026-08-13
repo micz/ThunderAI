@@ -40,12 +40,16 @@ import {
   isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
 import { initTimezoneSelect } from "../_lib/mzta-timezones.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
 let taLog = new taLogger("mzta-get-calendar-event-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    // Warn before leaving the page with unsaved textarea text.
+    initUnsavedGuard();
 
     let specialPrompts = await getSpecialPrompts();
     let get_calendar_event_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_get_calendar_event');

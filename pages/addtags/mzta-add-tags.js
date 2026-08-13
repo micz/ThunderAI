@@ -42,12 +42,16 @@ import {
   initializeSpecificIntegrationUI,
   isClosedCatalogueSelect
 } from "../_lib/connection-ui.js";
+import { initUnsavedGuard } from "../_lib/unsaved-guard.js";
 
 let autocompleteSuggestions = [];
 let activePlaceholders = [];
 let taLog = new taLogger("mzta-addtags-page",true);
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  // Warn before leaving the page with unsaved textarea text.
+  initUnsavedGuard();
 
   let specialPrompts = await getSpecialPrompts();
   let addtags_prompt = specialPrompts.find(prompt => prompt.id === 'prompt_add_tags');
