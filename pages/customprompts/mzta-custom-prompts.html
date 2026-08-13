@@ -124,6 +124,14 @@
                    placeholder="__MSG_customPrompts_search_placeholder__"
                    title="__MSG_customPrompts_search_placeholder__"
                    autocomplete="off">
+            <span id="filter_badge" class="hiddendata" role="status" aria-live="polite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span id="filter_badge_text"></span>
+              <button type="button" id="btnClearFilter" title="__MSG_customPrompts_filter_clear__">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>__MSG_customPrompts_filter_clear__</span>
+              </button>
+            </span>
           </div>
           <span id="msgDisplay"></span>
           <button id="btnNew">__MSG_btnNew_string__</button>

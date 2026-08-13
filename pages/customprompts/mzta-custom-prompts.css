@@ -292,13 +292,97 @@ button:disabled {
 #search_wrap {
     flex: 1;
     display: flex;
+    align-items: center;
+    gap: 10px;
     min-width: 0;
     padding-left: 16px;
+}
+
+/* "List is filtered" badge. Uses the --edit-* tokens (informational blue),
+   rather than the warning or delete palettes: a filter is a state, not a
+   problem. It sits next to the search field rather than in #msgDisplay, which is
+   owned by the unsaved-changes/save messaging — see updateFilterIndicator(). */
+#filter_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 3px 4px 3px 8px;
+    border: 1px solid var(--edit-border);
+    border-radius: 999px;
+    background: var(--edit-bg);
+    color: var(--edit-text);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* `hiddendata` is display:none, but #filter_badge sets display:inline-flex.
+   Both are single-class selectors, so source order alone would decide — make
+   the hidden state explicit and unambiguous instead. */
+#filter_badge.hiddendata {
+    display: none;
+}
+
+#filter_badge > svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+}
+
+/* No matches at all: shift to the warning palette, since an empty list is a
+   dead end the user needs to notice. */
+#filter_badge.filter_badge_empty {
+    border-color: var(--warn-border);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+}
+
+#btnClearFilter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--btn-tr);
+}
+
+#btnClearFilter > svg {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+}
+
+#btnClearFilter:hover {
+    background: var(--edit-hover);
+}
+
+#filter_badge.filter_badge_empty #btnClearFilter:hover {
+    /* --warn-* has no hover token; a translucent wash works on either palette. */
+    background: rgba(128, 128, 128, .22);
+}
+
+#btnClearFilter:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 
 #prompts_search {
     width: 100%;
     max-width: 320px;
+    /* Let the field yield space before the filter badge does: the badge is
+       flex:0 0 auto, so without this the input would refuse to shrink and push
+       the badge out of the toolbar on narrow windows. */
+    min-width: 120px;
+    flex: 0 1 320px;
     box-sizing: border-box;
     padding: 6px 10px;
     border: 1px solid var(--border2);

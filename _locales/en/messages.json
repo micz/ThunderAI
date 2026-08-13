@@ -465,6 +465,26 @@
     "message": "Search by name or ID",
     "description": "Placeholder for the search field that filters the prompts list by name or ID"
   },
+  "customPrompts_filter_active": {
+    "message": "Filtered: $SHOWN$ of $TOTAL$",
+    "description": "Toolbar badge shown while the prompts list is filtered by the search field",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "customPrompts_filter_noMatches": {
+    "message": "No matching prompts",
+    "description": "Toolbar badge shown when the search filter matches no prompts at all"
+  },
+  "customPrompts_filter_clear": {
+    "message": "Clear filter",
+    "description": "Button in the toolbar badge that clears the search filter and shows all prompts"
+  },
   "importPrompts_confirmText": {
     "message": "You are about to import new prompts.",
     "description": ""

@@ -1287,6 +1287,34 @@ function highlightSearchMatches() {
     });
 }
 
+// Show/hide the toolbar badge announcing that the list is filtered.
+//
+// This is deliberately NOT routed through #msgDisplay: that span is owned
+// exclusively by setSomethingChanged() / setNothingChanged() / setMessage(),
+// which overwrite its text and toggle its display — an unsaved-changes warning
+// would silently wipe the filter notice, and setNothingChanged() would hide it.
+// The two states are independent and must be able to show at the same time.
+function updateFilterIndicator() {
+    const badge = document.getElementById('filter_badge');
+    const label = document.getElementById('filter_badge_text');
+    if (!badge || !label) return;
+
+    const filtering = !!(promptsList && promptsList.searched && currentSearchNeedle !== '');
+    if (!filtering) {
+        badge.classList.add('hiddendata');
+        label.textContent = '';
+        return;
+    }
+
+    const total = promptsList.items.length;
+    const shown = promptsList.matchingItems.length;
+    label.textContent = (shown === 0)
+        ? browser.i18n.getMessage('customPrompts_filter_noMatches')
+        : browser.i18n.getMessage('customPrompts_filter_active', [String(shown), String(total)]);
+    badge.classList.toggle('filter_badge_empty', shown === 0);
+    badge.classList.remove('hiddendata');
+}
+
 // Filter the list on prompt name and ID only (not the prompt body).
 // Called from loadPromptsList(), which runs again after an import — the listener
 // is therefore attached only once, while the handler reads the current
@@ -1300,9 +1328,22 @@ function setupPromptsSearch() {
     // filter that is no longer applied to the freshly built list.
     searchInput.value = '';
     currentSearchNeedle = '';
+    updateFilterIndicator();
 
     if (promptsSearchBound) return;
     promptsSearchBound = true;
+
+    const btnClearFilter = document.getElementById('btnClearFilter');
+    if (btnClearFilter) {
+        btnClearFilter.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Same teardown as typing the field empty, including reverting any
+            // row left open in edit mode by the previously filtered view.
+            cancelOpenRowEditors();
+            clearPromptsSearch();
+            searchInput.focus();
+        });
+    }
 
     // List.js lowercases and regex-escapes the search string before handing it
     // to a custom search function, so compare against the raw input value.
@@ -1329,6 +1370,7 @@ function setupPromptsSearch() {
         // unconditionally so narrowing the needle within the same result set
         // (e.g. "re" -> "rep") still moves the marks.
         highlightSearchMatches();
+        updateFilterIndicator();
     });
 }
 
@@ -1340,6 +1382,7 @@ function clearPromptsSearch() {
     if (promptsList && promptsList.searched) promptsList.search('');
     // Strip the marks even when search() was a no-op and fired no 'updated'.
     highlightSearchMatches();
+    updateFilterIndicator();
 }
 
 // Revert every row currently open in edit mode, discarding its pending edits.
@@ -1526,6 +1569,8 @@ function loadPromptsList(values){
         // List.js rewrites the .name/.id spans from the stored values on render,
         // wiping the <mark> wrappers, so they must be repainted every time.
         highlightSearchMatches();
+        // Deleting rows while filtered changes both counts, so refresh here too.
+        updateFilterIndicator();
     });
 
     setupPromptsSearch();
