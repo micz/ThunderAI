@@ -33,6 +33,7 @@ import {
     extractJsonObject,
     normalizeDateTimeString,
     normalizeHtmlSourceNewlines,
+    convertNewlinesToBr,
     cleanupNewlines,
     checkIfTagLabelExists,
     getConnectionType,
@@ -109,13 +110,37 @@ export class mzta_Menus {
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
         let curr_message = null;
     
+        // Does this HTML carry line structure of its own (a block tag or a <br>)?
+        //
+        // In an HTML compose window it always does, and normalizeHtmlSourceNewlines()
+        // is right to collapse the source newlines: the tags carry the breaks.
+        // In a PLAIN TEXT compose window there are no tags - the line breaks ARE
+        // the \n characters (the same property the insertion path relies on, see
+        // js/mzta-compose-script.js and issue #855) - so that collapse leaves one
+        // run-together line. Detected by shape because the compose format is not
+        // known here; getComposeDetails would be a second async round trip per
+        // menu action. [#829]
+        const htmlHasLineStructure = (html) =>
+            (html != null) && /<\s*(br|p|div|li|ul|ol|tr|table|h[1-6]|pre|blockquote)\b/i.test(String(html));
+
+        // The HTML twin of a plain text source, rebuilt from the text whose \n
+        // survived. Same rule getMailBody() in js/mzta-utils.js already applies to
+        // a text/plain-only mail (text.replace(/\n/g, "<br>")): a source with no
+        // markup gets its line breaks from its newlines.
+        const htmlOrFromText = (html, text) =>
+            htmlHasLineStructure(html) ? normalizeHtmlSourceNewlines(html) : convertNewlinesToBr(cleanupNewlines(text ?? ''));
+
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-            return {tabId: tabs[0].id, 
-                selection: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" })),
-                selection_html: normalizeHtmlSourceNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })),
-                text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" })),
-                html: normalizeHtmlSourceNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" })),
+            const raw_selection = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedText" });
+            const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
+            const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
+            const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
+            return {tabId: tabs[0].id,
+                selection: cleanupNewlines(raw_selection),
+                selection_html: htmlOrFromText(raw_selection_html, raw_selection),
+                text: cleanupNewlines(raw_text),
+                html: htmlOrFromText(raw_html, raw_text),
                 only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
                 only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };

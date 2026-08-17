@@ -45,16 +45,16 @@ import {
 // handler is registered in connectedCallback() and removed in
 // disconnectedCallback(), so handlers cannot accumulate across chat turns.
 //
-// PLAIN TEXT ONLY. Both sides are normalized into plain text with \n line
-// breaks, diffed, recomposed as plain text, and turned back into <br> markup
-// only at the moment the result is handed to the insertion path. The HTML
-// formatting of the AI answer (bold, lists) does NOT survive the picker. That
-// is a deliberate trade: the hunk model needs a single linear text to be
-// correct, and the original side arrives as plain text anyway (see
-// getMailBody() in js/mzta-menus.js, where selection/text go through
-// cleanupNewlines()). Note the loss only happens on the picker path - a user
-// who never opens the picker still gets the formatted HTML from
-// handleUseThisAnswerButtonClick()'s fullTextHTMLAtAssignment.
+// HTML ON BOTH SIDES. Both sides are segmented into blocks (see segmentBlocks),
+// diffed within each paired block, and recomposed as HTML, so the chosen side's
+// MARKUP comes with it - see the block-model rationale further down. This
+// replaced an earlier plain-text-only model in which the answer's formatting did
+// not survive the picker; the one remaining place formatting is still lost on
+// purpose is the manual EDIT box, which is a plain <textarea> (see _setMode).
+//
+// The conversion back to plain text, when the target compose window is plain
+// text, is NOT done here: it happens downstream where the window's format is
+// known (isPlainTextCompose() + stripHtmlKeepLines() in mzta-background.js).
 //
 // `Diff` is the global from js/lib/diff.js, loaded as a classic script in
 // index.html before the module scripts. It is only touched at call time.
@@ -516,6 +516,38 @@ function makeBlock(el, tag, listType = null) {
     };
 }
 
+// Split an element's children into runs separated by its DIRECT-CHILD <br>.
+//
+// A <br> that is a direct child of a block ENDS that block. In a mail body the
+// line structure is frequently carried by <br> alone - Thunderbird's "Body Text"
+// compose mode separates lines that way, and getMailBody() in js/mzta-utils.js
+// builds the html of a text/plain-only mail as text.replace(/\n/g, "<br>") - so
+// without this a whole body segments to ONE block while the markdown-it answer
+// segments to one <p> per paragraph, and the block pairing is meaningless. [#829]
+//
+// Deliberately NOT done by adding 'br' to BLOCK_TAGS: that set doubles as "tags
+// renderBlocks emits as a wrapper" (and is spread into BLOCK_ALLOWED), and <br>
+// is void - it would come back out as <br>...</br>.
+//
+// Only direct children are split on. A <br> nested inside an inline element
+// (<em>a<br>b</em>) stays inside its run, which is why blockTextOfHtml's
+// <br> -> \n projection and sliceHtmlByText's matching offset accounting are
+// still load-bearing and must not be removed.
+function splitOnBr(el) {
+    const runs = [];
+    let current = document.createElement('div');
+    for (const node of Array.from(el.childNodes)) {
+        if ((node.nodeType === Node.ELEMENT_NODE) && (node.tagName.toLowerCase() === 'br')) {
+            runs.push(current);
+            current = document.createElement('div');
+            continue;
+        }
+        current.appendChild(node.cloneNode(true));
+    }
+    runs.push(current);
+    return runs;
+}
+
 // Collapse whitespace inside a block's HTML so that block.html and block.text
 // share ONE projection.
 //
@@ -593,9 +625,22 @@ function normalizeBlockHtml(html) {
 // Nested lists are flattened one level: an inner <li> becomes a block of the
 // inner list's type. Deliberately lossy - the alternative is a recursive tree
 // diff, and nested lists in a proofread answer are rare.
+//
+// A direct-child <br> is a BLOCK SEPARATOR, not inline content: see splitOnBr
+// for why, and why it is not simply a member of BLOCK_TAGS.
 export function segmentBlocks(html) {
     const doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html');
     const blocks = [];
+
+    // Emit one block per <br>-separated run of EL's children (see splitOnBr).
+    // Empty runs - a trailing <br>, or the blank line in a <br><br> pair - have
+    // no text and are dropped by the same guard that drops empty blocks.
+    const pushBlocks = (el, tag, listType) => {
+        for (const run of splitOnBr(el)) {
+            const block = makeBlock(run, tag, listType);
+            if (block.text !== '') { blocks.push(block); }
+        }
+    };
 
     // A run of consecutive inline/text nodes at this level has no block of its
     // own, so it is gathered into an implicit <p>. Without this, an answer that
@@ -603,8 +648,7 @@ export function segmentBlocks(html) {
     let pending = null;
     const flushPending = () => {
         if (!pending) { return; }
-        const block = makeBlock(pending, 'p', null);
-        if (block.text !== '') { blocks.push(block); }
+        pushBlocks(pending, 'p', null);
         pending = null;
     };
 
@@ -631,19 +675,22 @@ export function segmentBlocks(html) {
                             const t = c.tagName.toLowerCase();
                             if (t === 'ul' || t === 'ol') { c.remove(); }
                         });
-                        const block = makeBlock(shallow, 'li', listType || 'ul');
-                        if (block.text !== '') { blocks.push(block); }
+                        pushBlocks(shallow, 'li', listType || 'ul');
                         nested.forEach(n => walk(n, n.tagName.toLowerCase()));
                     } else {
-                        const block = makeBlock(node, 'li', listType || 'ul');
-                        if (block.text !== '') { blocks.push(block); }
+                        pushBlocks(node, 'li', listType || 'ul');
                     }
+                    continue;
+                }
+                // A <br> between blocks ends the implicit <p> being gathered and
+                // contributes nothing of its own.
+                if (tag === 'br') {
+                    flushPending();
                     continue;
                 }
                 if (BLOCK_TAGS.has(tag)) {
                     flushPending();
-                    const block = makeBlock(node, tag, null);
-                    if (block.text !== '') { blocks.push(block); }
+                    pushBlocks(node, tag, null);
                     continue;
                 }
                 // Inline element at block level: accumulate into the implicit <p>.

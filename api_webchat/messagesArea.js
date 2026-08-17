@@ -1415,11 +1415,20 @@ class MessagesArea extends HTMLElement {
             // never get here today, but one prompt-definition edit away this
             // would hand undefined to the segmenter.
             if(originalText == null) { originalText = ""; }
-            // No html twin (an older prompt_info, or a producer that only fills
-            // the text field): give the original block structure from its \n so
-            // it can still be segmented, rather than diffing a formatted answer
-            // against a single unsplittable run.
-            if((originalHtml == null) || (originalHtml == "")) {
+            // The html twin carries no block structure: either there is none (an
+            // older prompt_info, or a producer that only fills the text field),
+            // or the source was a PLAIN TEXT compose window, whose line breaks
+            // are the \n characters themselves - and those were collapsed to
+            // spaces by normalizeHtmlSourceNewlines() on the way into the prompt
+            // payload. That is right for real HTML, where the tags carry the line
+            // structure, but it leaves a plain text body as one run-together
+            // line. Rebuild from the TEXT field, which kept its \n, rather than
+            // diffing a formatted answer against a single unsplittable run.
+            //
+            // Keyed off the SHAPE of the html, not off a plain-text flag:
+            // isPlainTextCompose() is background-side and nothing on prompt_info
+            // reports the compose format at this point. [#829]
+            if(!hasBlockStructure(originalHtml)) {
                 originalHtml = textToBlockHtml(originalText);
             }
 
@@ -1584,6 +1593,23 @@ class MessagesArea extends HTMLElement {
 
 customElements.define('messages-area', MessagesArea);
 
+
+// Does this HTML carry any line structure of its own?
+//
+// True when it holds a block-level element or a <br>. Both are what the diff
+// picker's segmenter splits on (<br> included - see splitOnBr in diffPicker.js),
+// so this answers exactly the question the caller has: can segmentBlocks() get
+// more than one block out of this, or is it a single undifferentiated run?
+//
+// Parsed rather than regex-matched, for the same reason htmlToPlainText below is:
+// escaped text is genuinely common on this path. A plain text body containing a
+// literal "<div>" arrives as "&lt;div&gt;", which a regex would read as markup
+// and a parser correctly reads as text.
+function hasBlockStructure(html) {
+    if ((html == null) || (String(html).trim() === '')) { return false; }
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
+    return doc.body.querySelector('br, p, div, li, ul, ol, tr, table, h1, h2, h3, h4, h5, h6, pre, blockquote') !== null;
+}
 
 // HTML → the text the user actually sees. Unlike a regex tag-strip this parses
 // the markup, so entities are decoded (&amp; → &) instead of being copied as

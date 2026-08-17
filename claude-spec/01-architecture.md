@@ -442,7 +442,24 @@ also double-space the answer, since markdown-it emits `<p>a<br>\nb</p>` and the 
 
 The complementary half of this lives on the input side: the compose-window HTML placeholders
 go through `normalizeHtmlSourceNewlines()` (`js/mzta-utils.js`), **not** `convertNewlinesToBr()`,
-so the prompt no longer carries a `<br>` at every source newline for the model to copy back. The answer-text snapshot is what the "use this answer" /
+so the prompt no longer carries a `<br>` at every source newline for the model to copy back.
+
+**With one exception, and it is the important one: that rule assumes the source really is HTML.**
+In a plain text compose window there are no tags — the line breaks *are* the `\n` characters — so
+collapsing them to spaces leaves the entire body as one run-together line, which then reaches both
+the model and the diff picker. `getMailBody()` in `js/mzta-menus.js` therefore checks the shape of
+what the content script returned (`htmlHasLineStructure()`): a value holding a block tag or a `<br>`
+is normalized as before, and a value holding neither is rebuilt from its **text** twin with
+`convertNewlinesToBr()`. Same rule `getMailBody()` in `js/mzta-utils.js` already applies to a
+text/plain-only mail, whose html is `text.replace(/\n/g, "<br>")`.
+
+`normalizeHtmlSourceNewlines()` keeps its current behaviour deliberately — the decision belongs at
+the call site, where the source's shape is known, not inside a helper every HTML consumer shares.
+Consumers of a *structure-less* twin must not assume its newlines survived; consumers of a structured
+one are unaffected. See [07-diff-picker.md](07-diff-picker.md) → *Where the original's HTML comes
+from* for the picker's matching backstop.
+
+The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
 turn's buttons tied to their own response.
 

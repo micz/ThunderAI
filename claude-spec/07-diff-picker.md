@@ -200,9 +200,35 @@ on text.
 `_buildDiffButton` resolves the original on the **text** fields exactly as before — `selection_text`,
 falling back to `body_text` — and then takes the **HTML twin of whichever side won**
 (`selection_html` / `body_html`). Choosing on the html fields directly would risk diffing a selection
-against a whole body whenever one of the two happened to be empty. When no html twin exists (an older
-`prompt_info`, or a producer that only fills the text field), `textToBlockHtml(originalText)` gives
-the original block structure rather than leaving the segmenter one unsplittable run.
+against a whole body whenever one of the two happened to be empty.
+
+#### The html twin is only trusted when it carries line structure
+
+The twin is used **only if `hasBlockStructure(originalHtml)`** — i.e. it holds a block-level element
+or a `<br>`. Otherwise the original is rebuilt with `textToBlockHtml(originalText)` from the text
+field, which kept its `\n`.
+
+This guard is wider than "is the twin empty?", and the difference is the fix for the picker showing a
+run-together original:
+
+- **A plain text compose window has no markup.** Its line breaks *are* the `\n` characters (the same
+  property the insertion path relies on — see `js/mzta-compose-script.js` and #855), and
+  `normalizeHtmlSourceNewlines()` collapses every source `\n` to a space on the way into the prompt
+  payload. That is correct for real HTML, where tags carry the breaks, but it leaves a plain text body
+  as **one flattened line**. A twin in that state is non-empty, so an empty-check never rescued it.
+- The old empty-twin case (an older `prompt_info`, or a producer that only fills the text field) is
+  **subsumed**: empty → no block structure → rebuilt. The guard replaces that check rather than adding
+  to it.
+
+**It is keyed off the SHAPE of the html, not off a plain-text flag.** `isPlainTextCompose()`
+(`js/mzta-utils.js`) is background-side, and nothing on `prompt_info` reports the compose format at
+the point the diff button handler runs — its runtime fields are `selection_text`, `selection_html`,
+`body_text`, `body_html`, `custom_text_array`, `headerMessageId`, `summaryTabId`. Plumbing the format
+through the background → webchat message boundary would be a much larger change for the same result.
+
+`hasBlockStructure()` **parses** rather than regex-matching, for the same reason `htmlToPlainText()`
+does: escaped text is common on this path, and a plain text body containing a literal `<div>` arrives
+as `&lt;div&gt;` — markup to a regex, text to a parser.
 
 `selection_html` already existed on `curr_prompt`; **`body_html` is new** — one line in
 `js/mzta-menus.js`, assigning the `msg_text.html` that `getMailBody()` already produced and
@@ -214,6 +240,29 @@ now rides along with the plain-text body. It is bounded (`getCleanBodyHtml()` ru
 newlines are collapsed) but on a heavily-quoted thread it is not nothing. It is paid here because,
 unlike `*_raw`, the feature genuinely needs it — without it, rejecting a change could not restore the
 original's formatting.
+
+#### The same flattening reached the MODEL, not just the picker
+
+`{%selected_html%}` — used by `prompt_rewrite_full_text` and `prompt_rewrite_formal_full_text` —
+resolves to `selection_html` (`js/mzta-placeholders.js`), the *same* collapsed value. So in a plain
+text compose window the **prompt itself** carried the run-together line, and no fix confined to the
+picker could correct what the model was asked to rewrite.
+
+`getMailBody()` in `js/mzta-menus.js` therefore applies one rule to both `selection_html` and `html`:
+**a source with no line structure of its own gets its line breaks from its `\n`.** When
+`htmlHasLineStructure()` is false, the field is built with the existing `convertNewlinesToBr()` from
+the text twin instead of `normalizeHtmlSourceNewlines()`. This is the same treatment `getMailBody()`
+in `js/mzta-utils.js` already applies to a text/plain-only mail.
+
+**`normalizeHtmlSourceNewlines()` itself is unchanged, deliberately.** Widening it would alter every
+HTML consumer; the decision is made at the call site, where the source's shape is known. It still runs
+on any twin that does carry structure, so the HTML compose path is byte-for-byte unaffected.
+
+This also means the picker's guard is normally satisfied *before* it is reached: the payload now
+arrives with `<br>`-separated lines, and `hasBlockStructure()` accepts it. The picker-side rebuild
+remains as the backstop for producers that fill only a text field (e.g. `prompt_proofread_this`).
+
+No locale file changed — the prompt **wording** is untouched, only the substituted value.
 
 ## Block-structured HTML
 
@@ -286,11 +335,37 @@ Two details are load-bearing:
   Built in from the start rather than added after, because this is the piece most likely to meet
   input nobody predicted.
 
-### Line breaks
+### Line breaks: `<br>` is a block separator
 
-`<br>` is meaningful on both sides now and projects to exactly one `\n` in a block's text.
-`_buildDiffButton`'s old defensive `<br>` → `\n` replacement on the original is **gone** — the
-original is HTML by design and the segmenter is what handles its markup.
+**A `<br>` that is a direct child of a block ENDS that block** (`splitOnBr()`, applied at every
+`makeBlock` call site in `segmentBlocks`). In a mail body the line structure is frequently carried by
+`<br>` alone, and without this the whole body segments to **one** block while the markdown-it answer
+segments to one `<p>` per paragraph — so `buildBlockPairs` pairs nothing and every hunk reads as
+changed. Two live producers hit exactly that shape:
+
+- Thunderbird's HTML compose **"Body Text"** mode separates lines with `<br>` inside one `<div>`.
+- `getMailBody()` in `js/mzta-utils.js` builds the html of a **text/plain-only mail** as
+  `text.replace(/\n/g, "<br>")`.
+
+**`<br>` is deliberately NOT a member of `BLOCK_TAGS`.** That set doubles as "tags `renderBlocks`
+emits as a wrapper" and is spread into `BLOCK_ALLOWED`; `<br>` is void, so it would come back out as
+`<br>…</br>`. It is handled as a *separator* instead.
+
+**Only direct children split.** A `<br>` nested inside an inline element (`<em>a<br>b</em>`) stays
+within its run, so:
+
+- `blockTextOfHtml`'s `<br>` → exactly one `\n` projection is **still reachable and must be kept**;
+- `sliceHtmlByText`'s matching `seen += 1` accounting for a `<br>` is **still load-bearing**.
+
+Removing either because "`<br>` is now a boundary" would silently break the offset space for any block
+holding a nested `<br>`.
+
+P1 (segment → render idempotence) is preserved: the empty run left by a trailing `<br>` or the blank
+line in `<br><br>` has no text and is dropped by the same guard that drops empty blocks, so
+re-segmenting the rendered `<p>`-per-line output reproduces the same block list.
+
+`_buildDiffButton`'s old defensive `<br>` → `\n` replacement on the original is still **gone** — the
+segmenter is what handles the original's markup.
 
 ### Into a plain text compose window
 
@@ -674,10 +749,10 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 |------|------|
 | `api_webchat/diffPicker.js` | Block segmentation + sanitizer, hunk model, compose functions, `<diff-picker>` element. Also exports `sanitizeBlockHtml()`, the gate the answer path uses |
 | `api_webchat/streamingMessage.js` | Decides per response whether the answer is HTML; sanitizes it instead of running markdown-it |
-| `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
+| `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `hasBlockStructure` (the original-side canonicalization guard), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules). `diffArrays` pairs blocks, `diffWordsWithSpace`/`diffSentences` diff within one |
-| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html` |
+| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `htmlHasLineStructure` / `htmlOrFromText` rebuild a structure-less html twin from its text |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's formatting-loss warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
 | `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n` |
