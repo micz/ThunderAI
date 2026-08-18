@@ -224,6 +224,7 @@ export class mzta_Menus {
                     break;
                 case 'messageCompose':
                     curr_messages = await browser.compose.getComposeDetails(tabs[0].id);
+                    this.logger.log("Compose isPlainText: " + curr_messages.isPlainText);
                     curr_message = curr_messages;
                     break;
             }
