@@ -459,6 +459,44 @@ Consumers of a *structure-less* twin must not assume its newlines survived; cons
 one are unaffected. See [07-diff-picker.md](07-diff-picker.md) → *Where the original's HTML comes
 from* for the picker's matching backstop.
 
+#### The compose-extraction newline contract
+
+`getOnlyTypedText` / `getOnlyQuotedText` (`js/mzta-compose-script.js`) feed `{%mail_typed_text%}`
+and `{%mail_quoted_text%}`. They used to accumulate `node.textContent + " "`, which lost line
+structure twice over: `textContent` drops `<br>`, so breaks *inside* a node vanished, and the
+space join erased the boundaries *between* top-level nodes. The composed mail therefore reached
+the model as one run-together line, and the diff picker compared a well-formatted answer against
+a one-line original — every line read as changed. [#829]
+
+The extraction now projects each top-level node with `nodeTextKeepLines()` (`<br>` → `\n`, trailing
+break trimmed because Thunderbird's editor ends most lines with a bogus `<br>`) and joins nodes with
+`\n`, or `\n\n` when the node is block-level (`MZTA_BLOCK_LEVEL_RE`: `P`, `BLOCKQUOTE`, `UL`, `OL`,
+`TABLE`, `H1`–`H6`, `PRE`). That is `blockTextOfHtml()`'s projection from `api_webchat/diffPicker.js`
+applied to a live node — **reimplemented, not imported**: the compose script is registered as a
+*classic* content script (`composeScripts.register`), has no module context, and cannot import from
+`js/mzta-utils.js`. A plain text compose window needs no special case: its breaks are already real
+`\n` in the text nodes ([#855]), there are no `<br>` to replace, and nothing doubles up.
+
+The resulting contract, identical across every compose-window kind: **one `\n` between lines, one
+blank line (`\n\n`) between paragraphs.** Paragraph mode gives every `<p>` boundary a blank line, so
+its output is `\n\n`-separated throughout.
+
+`cleanupNewlines()` would undo this — it collapses `\n{2,}` to `\n`. The two placeholders are
+therefore cleaned with **`cleanupNewlinesKeepParagraphs()`** (`js/mzta-utils.js`), identical except
+that it caps at `\n\n` instead of collapsing. `cleanupNewlines()` is left alone on purpose: its
+other callers feed the diff picker's original side and the full-body placeholders, where widening
+the rule would change every existing comparison.
+
+The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-container` breaks, the
+`firstNode`/`lastNode` tracking and the `do_autoselect` range all behave exactly as before. In
+particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
+autoselect range is provably identical.
+
+> Known gap, not fixed here: `getOnlyTypedText` walks `document.body.childNodes` directly rather
+> than `getCleanBodyHtml()`, so injected ThunderAI DOM (`#mzta-container`, `.mzta_dialog`) and the
+> `moz-signature` can contaminate `{%mail_typed_text%}`. Swapping in `getCleanBodyHtml()` would
+> break autoselect — it returns a detached clone, and the range needs live nodes.
+
 The answer-text snapshot is what the "use this answer" /
 "copy" / "save as summary" / diff buttons close over — one instance per turn keeps each
 turn's buttons tied to their own response.

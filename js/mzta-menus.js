@@ -35,6 +35,7 @@ import {
     normalizeHtmlSourceNewlines,
     convertNewlinesToBr,
     cleanupNewlines,
+    cleanupNewlinesKeepParagraphs,
     checkIfTagLabelExists,
     getConnectionType,
     isApiUsableConnection,
@@ -141,8 +142,11 @@ export class mzta_Menus {
                 selection_html: htmlOrFromText(raw_selection_html, raw_selection),
                 text: cleanupNewlines(raw_text),
                 html: htmlOrFromText(raw_html, raw_text),
-                only_typed_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
-                only_quoted_text: cleanupNewlines(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
+                // Paragraph-preserving cleanup, not cleanupNewlines(): these two
+                // carry the mail the user typed, and the blank line between
+                // greeting and body is part of it. [#829]
+                only_typed_text: cleanupNewlinesKeepParagraphs(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_quoted_text: cleanupNewlinesKeepParagraphs(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
     

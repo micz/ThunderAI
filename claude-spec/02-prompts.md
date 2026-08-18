@@ -41,8 +41,11 @@ skips markdown-it and is sanitized instead (see [01-architecture.md](01-architec
 answer is HTML*), and the picker diffs markup against markup.
 
 **`prompt_proofread_this` stays on plain text** because `mail_typed_text` has no HTML twin:
-`getOnlyTypedText` (`js/mzta-compose-script.js`) walks the compose body accumulating `textContent`
-only. Aligning it would mean adding a `getOnlyTypedHtml` handler — same walk, same
+`getOnlyTypedText` (`js/mzta-compose-script.js`) returns text, not markup. That text is no longer
+*flat* — since [#829] the walk preserves line structure (`<br>` → `\n`, block boundaries → `\n\n`;
+see [01-architecture.md](01-architecture.md) → *The compose-extraction newline contract*), so the
+picker's original side is genuine multi-line text rather than one run-together line. What it still
+lacks is inline markup. Aligning it would mean adding a `getOnlyTypedHtml` handler — same walk, same
 `moz-cite-prefix`/`moz-forward-container` breaks, and it would have to keep the `do_autoselect` side
 effect that selects the range — plus a `mail_typed_html` placeholder fed by a new field in
 `getMailBody()`. Not done; the cost is recorded here so the asymmetry does not read as an oversight.

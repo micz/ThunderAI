@@ -31,8 +31,8 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 |----|-------------|------|-----|
 | `mail_text_body` | Full plain text of the email | 0 | |
 | `mail_html_body` | Full HTML of the email | 0 | |
-| `mail_typed_text` | Text typed so far in compose window | 2 | |
-| `mail_quoted_text` | Quoted text in the compose window | 2 | |
+| `mail_typed_text` | Text typed so far in compose window (line structure preserved, see below) | 2 | |
+| `mail_quoted_text` | Quoted text in the compose window (line structure preserved, see below) | 2 | |
 | `mail_subject` | Email subject line | 0 | |
 | `mail_folder_name` | Name of the folder containing the email | 1 | |
 | `mail_folder_path` | Full path of the folder containing the email | 1 | |
@@ -58,6 +58,22 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
+
+### Newline contract of the compose placeholders
+
+`mail_typed_text` and `mail_quoted_text` are the only placeholders whose value is extracted by
+walking the compose window's DOM (`getOnlyTypedText` / `getOnlyQuotedText` in
+`js/mzta-compose-script.js`, consumed at `js/mzta-menus.js` → `getMailBody()`). Both carry the
+mail's real line structure: **one `\n` between lines, one blank line (`\n\n`) between paragraphs**,
+identically in a plain text compose window, in HTML "Body Text" mode and in HTML "Paragraph" mode.
+
+They are cleaned with `cleanupNewlinesKeepParagraphs()` rather than `cleanupNewlines()` — the
+latter collapses `\n{2,}` to `\n` and would destroy the blank line. Do not switch them back, and
+do not relax `cleanupNewlines()` itself: its other callers feed `{%selected_text%}`,
+`{%mail_text_body%}` and the diff picker's original side, which depend on the stricter rule.
+
+Full rationale in [01-architecture.md](01-architecture.md) → *The compose-extraction newline
+contract*. [#829]
 
 ## Dynamic Placeholders
 

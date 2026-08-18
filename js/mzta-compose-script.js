@@ -44,6 +44,38 @@ function getCleanBodyHtml() {
   return clone;
 }
 
+// <p> is Paragraph mode; <div> is Body Text mode. Only <p>-class elements earn a
+// blank line - a <div> is one line - matching how stripHtmlKeepLines() in
+// js/mzta-utils.js treats the same two tags.
+const MZTA_BLOCK_LEVEL_RE = /^(P|BLOCKQUOTE|UL|OL|TABLE|H[1-6]|PRE)$/;
+
+// One top-level node of the compose body, projected to text with its line
+// structure intact.
+//
+// textContent alone is what flattened the body: it drops <br> entirely, so an
+// HTML compose window's lines ran together [#829]. Cloning and replacing each
+// <br> with a "\n" text node is the projection api_webchat/diffPicker.js
+// (blockTextOfHtml) applies to a block's HTML - reimplemented here on the live
+// node rather than imported, because this file is registered as a CLASSIC
+// content script by composeScripts.register and has no module context.
+//
+// PLAIN TEXT compose: the line breaks ARE the \n already inside the text nodes
+// [#855]. There are no <br> to replace, so this returns textContent unchanged
+// and nothing doubles up. One path serves both window kinds.
+function nodeTextKeepLines(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return node.textContent || '';
+  }
+  const clone = node.cloneNode(true);
+  for (const br of clone.querySelectorAll('br')) {
+    br.replaceWith(document.createTextNode('\n'));
+  }
+  // Thunderbird's HTML editor ends most lines with a trailing bogus <br>. That
+  // break is the same one the join in the callers adds - keeping both doubles
+  // every line.
+  return (clone.textContent || '').replace(/\n+$/, '');
+}
+
 // ── Theme colors ────────────────────────────────────────────────────
 function _getThemeColors(spamValue, spamThreshold) {
     const isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -357,7 +389,13 @@ switch (message.command) {
           break;
         }
       }
-      t += node.textContent + " ";
+      // Top-level nodes are lines, joined with "\n" - the old " " join is what
+      // made a multi-line compose body arrive as a single line. A block element
+      // is a paragraph boundary and gets a blank line.
+      if (t !== '') {
+        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
+      }
+      t += nodeTextKeepLines(node);
 
       // Track the first and last nodes for range
       if (!firstNode) {
@@ -402,8 +440,12 @@ switch (message.command) {
         }
       }
   
-      t += node.textContent + " ";
-  
+      // Same line-preserving join as getOnlyTypedText above.
+      if (t !== '') {
+        t += MZTA_BLOCK_LEVEL_RE.test(node.nodeName) ? "\n\n" : "\n";
+      }
+      t += nodeTextKeepLines(node);
+
       if (!firstNode) {
         firstNode = node;
       }

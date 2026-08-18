@@ -446,6 +446,25 @@ export function cleanupNewlines(text) {
   .trim();
 }
 
+// cleanupNewlines() for text whose PARAGRAPH structure matters.
+//
+// Identical to cleanupNewlines() except a blank line survives: \n{2,} is capped
+// at \n\n instead of collapsed to \n. Only the compose-body extractions use it -
+// {%mail_typed_text%} and {%mail_quoted_text%}, whose whole point is that the
+// mail the user actually typed reaches the model with its lines intact [#829].
+// cleanupNewlines() keeps the stricter rule because its other callers feed the
+// diff picker's original side and the full-body placeholders, where a widened
+// rule would change every existing comparison.
+export function cleanupNewlinesKeepParagraphs(text) {
+  return text
+  .replace(/\r\n/g, '\n')
+  .replace(/[ \t]+\n/g, '\n')
+  .replace(/\n{3,}/g, '\n\n')
+  .replace(/[ \t]+/g, ' ')
+  .replace(/&nbsp;/gi,' ')
+  .trim();
+}
+
 // Extract and strip inline <think>...</think> blocks from a model response.
 // Some models emit their reasoning inline in the content stream instead of in a
 // dedicated API field (Ollama without ollama_think, several OpenAI-compatible
