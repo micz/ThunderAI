@@ -144,6 +144,25 @@ export class mzta_Menus {
             this.logger.log("getMailBody raw_html: " + JSON.stringify(raw_html));
             this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
             this.logger.log("getMailBody raw_selection_html: " + JSON.stringify(raw_selection_html));
+
+            // Hoisted out of the object literal below, because the ORDER of the
+            // next two calls is load-bearing.
+            const raw_only_typed_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect });
+            // getOnlyTypedText with do_autoselect has just put a range around the
+            // typed region: read its markup while that range is in force. The
+            // getSelectedHtml above ran BEFORE it, when rangeCount was still 0, so
+            // it returned '' - which left selection_html empty while selection_text
+            // was substituted with the typed text, handing the diff picker a
+            // mismatched text/html pair. Must stay ahead of getOnlyQuotedText,
+            // which has an autoselect branch of its own. [#829]
+            const raw_only_typed_html = do_autoselect
+                ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
+                : '';
+            this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
+            // Computed once: only_typed_html falls back to this same value, and the
+            // two have to be twins.
+            const only_typed_text = cleanupNewlinesKeepParagraphs(raw_only_typed_text);
+
             return {tabId: tabs[0].id,
                 selection: cleanupNewlines(raw_selection),
                 selection_html: htmlOrFromText(raw_selection_html, raw_selection),
@@ -152,7 +171,12 @@ export class mzta_Menus {
                 // Paragraph-preserving cleanup, not cleanupNewlines(): these two
                 // carry the mail the user typed, and the blank line between
                 // greeting and body is part of it. [#829]
-                only_typed_text: cleanupNewlinesKeepParagraphs(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyTypedText", do_autoselect: do_autoselect })),
+                only_typed_text: only_typed_text,
+                // The html twin of only_typed_text, for the diff picker's original
+                // side. htmlOrFromText() so a plain text compose window - whose
+                // cloned range carries no markup - still gets its line breaks from
+                // the \n, exactly as the other two twins do.
+                only_typed_html: htmlOrFromText(raw_only_typed_html, only_typed_text),
                 only_quoted_text: cleanupNewlinesKeepParagraphs(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
             };
         };
@@ -200,6 +224,14 @@ export class mzta_Menus {
             if(selection_text === ''){
                 if(placeholdersUtils.hasPlaceholder(curr_prompt.text, "mail_typed_text")){
                     selection_text = only_typed_text;
+                    // Keep the twin paired with the text field. _buildDiffButton
+                    // resolves the picker's original side on selection_text and
+                    // then takes the html twin of whichever side won, so
+                    // substituting the text alone leaves it diffing the answer
+                    // against a text-rebuilt original - one <p> per hard-wrapped
+                    // line, which pairs with nothing and reads as "everything
+                    // changed". [#829]
+                    selection_html = msg_text.only_typed_html;
                 }
             }
             only_quoted_text = msg_text.only_quoted_text.replace(/[ \t]+/g, ' ').trim();
