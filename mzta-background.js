@@ -393,7 +393,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("[ThunderAI] No AI connection able to reach an API, skipping the auto-summarize sender list for: " + message.headerMessageId);
                             } else {
                                 taLog.log("[ThunderAI] Sender in the auto-summarize list, generating summary for: " + message.headerMessageId);
-                                _generateSummaryForMessage(message.headerMessageId, tabId);
+                                _generateSummaryForMessage(message.headerMessageId, tabId, { messageId: message.id });
                                 return;
                             }
                         }
@@ -422,7 +422,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic summarize...");
                                 return;
                             }
-                            _generateSummaryForMessage(message.headerMessageId, tabId);
+                            _generateSummaryForMessage(message.headerMessageId, tabId, { messageId: message.id });
                             return;
                         }
 
@@ -556,7 +556,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic translation...");
                                 return;
                             }
-                            _generateTranslationForMessage(message.headerMessageId, tabId);
+                            _generateTranslationForMessage(message.headerMessageId, tabId, { messageId: message.id });
                             return;
                         }
 
@@ -786,7 +786,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 spamReport.removeReportData(message.headerMessageId);
                 break;
             case 'refreshSpamReport':
-                _generateSpamReportForMessage(message.headerMessageId);
+                // The panel this comes from lives in the message display, so the sender tab is
+                // showing the very message to re-check: enough to resolve it without a query.
+                _generateSpamReportForMessage(message.headerMessageId, { tabId: sender.tab.id });
                 break;
             case 'batch_status':
                 return Promise.resolve(taBatchController.getStatus());
@@ -811,8 +813,6 @@ function cleanSummaryText(text) {
     return cleaned;
 }
 
-// tabId is optional — if null, runs silently (background pre-cache, no UI update)
-// options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
 // Send a "show result" message to a tab only if it still displays the expected message.
 // Prevents a slow, stale AI result (summary/translation/button) from rendering on a
 // different email after the user has rapidly clicked through several messages.
@@ -826,6 +826,54 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
     } catch (e) {
         taLog.error("Error in _sendIfCurrent: " + e);
     }
+}
+
+// Resolve a message from its headerMessageId, avoiding browser.messages.query()
+// whenever anything faster is known.
+//
+// query() searches every folder of every account, and the background page runs in
+// Thunderbird's parent process: on a large mail store that search freezes the whole
+// application UI for minutes before the AI request is even sent. The docs say as much
+// ("could need a long time to complete, if the user has a lot of messages"), so the
+// query is the LAST resort here, never the first.
+//
+// Order, first hit wins:
+//   b) messageId  -> browser.messages.get(), a direct lookup;
+//   c) tabId      -> the message the tab currently displays;
+//   d) query, narrowed by queryScope ({ accountId } / { folderId }) when the caller
+//      knows where the message lives.
+//
+// Both (b) and (c) are accepted ONLY when the resolved message really is the one asked
+// for. For (c) that is the staleness check _sendIfCurrent() already makes — the user can
+// have clicked through to another email while the work sat queued. For (b) it guards
+// against a numeric id that no longer denotes the same message: ids are per-folder and
+// can be reused once a message is deleted and the folder compacted.
+//
+// Returns the message object, or null when it cannot be resolved — callers keep their
+// own "Message not found" bookkeeping.
+async function _resolveMessage(headerMessageId, messageId = null, tabId = null, queryScope = {}) {
+    if (messageId) {
+        try {
+            const msg = await browser.messages.get(messageId);
+            if (msg && msg.headerMessageId === headerMessageId) return msg;
+        } catch (e) {
+            // Deleted or moved out from under us: fall through to the slower paths.
+            taLog.log("_resolveMessage: messages.get(" + messageId + ") failed, falling back: " + e);
+        }
+    }
+
+    if (tabId) {
+        try {
+            const current = await browser.messageDisplay.getDisplayedMessage(tabId);
+            if (current && current.headerMessageId === headerMessageId) return current;
+        } catch (e) {
+            taLog.log("_resolveMessage: getDisplayedMessage(" + tabId + ") failed, falling back: " + e);
+        }
+    }
+
+    const messageResult = await browser.messages.query({ headerMessageId: headerMessageId, ...queryScope });
+    if (!messageResult || messageResult.messages.length === 0) return null;
+    return messageResult.messages[0];
 }
 
 // True when the summarize feature has no connection able to reach an API, so an automatic
@@ -852,6 +900,9 @@ async function _summarizeConnectionMissing() {
     }
 }
 
+// tabId is optional — if null, runs silently (background pre-cache, no UI update)
+// options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
+// options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -883,14 +934,13 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
         } else {
-            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-            if (!messageResult || messageResult.messages.length === 0) {
+            message = await _resolveMessage(headerMessageId, options.messageId, tabId);
+            if (!message) {
                 await summaryStore.saveError(headerMessageId, "Message not found");
                 await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: "Message not found" } });
                 taWorkingStatus.stopWorking();
                 return;
             }
-            message = messageResult.messages[0];
             fullMessage = await browser.messages.getFull(message.id);
         }
 
@@ -942,6 +992,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 
 // tabId is optional — if null, runs silently (background pre-cache, no UI update)
 // options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
+// options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -978,14 +1029,14 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         if (options.messageData) {
             fullMessage = options.messageData.fullMessage;
         } else {
-            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-            if (!messageResult || messageResult.messages.length === 0) {
+            const message = await _resolveMessage(headerMessageId, options.messageId, tabId);
+            if (!message) {
                 await translationStore.saveError(headerMessageId, "Message not found");
                 await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: "Message not found" } });
                 taWorkingStatus.stopWorking();
                 return;
             }
-            fullMessage = await browser.messages.getFull(messageResult.messages[0].id);
+            fullMessage = await browser.messages.getFull(message.id);
         }
 
         const translate_prompt = await getTranslatePrompt();
@@ -1044,6 +1095,8 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
 }
 
 // options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
+// options.messageId: numeric message id, when the caller has one — see _resolveMessage()
+// options.tabId: only used to resolve the message (the panel finds its own tab) — see _resolveMessage()
 // options.prefs: pass pre-fetched prefs to avoid re-querying
 // options.autoMove: if true, move spam messages to junk folder (default: false)
 async function _generateSpamReportForMessage(headerMessageId, options = {}) {
@@ -1069,13 +1122,12 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             msg_text = options.messageData.msg_text;
             body_text = options.messageData.body_text;
         } else {
-            const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-            if (!messageResult || messageResult.messages.length === 0) {
+            message = await _resolveMessage(headerMessageId, options.messageId, options.tabId);
+            if (!message) {
                 let err_data = await spamReport.saveError(headerMessageId, "Message not found");
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return { success: false };
             }
-            message = messageResult.messages[0];
             curr_fullMessage = await browser.messages.getFull(message.id);
             msg_text = await getMailBody(curr_fullMessage);
             body_text = htmlBodyToPlainText(msg_text.html);
@@ -1246,15 +1298,15 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
     }
 }
 
-async function _openSummaryWebchat(headerMessageId, tabId) {
+// messageId is optional — a numeric message id, when the caller has one. See _resolveMessage().
+async function _openSummaryWebchat(headerMessageId, tabId, messageId = null) {
     try {
-        const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
-        if (!messageResult || messageResult.messages.length === 0) {
+        const curr_message = await _resolveMessage(headerMessageId, messageId, tabId);
+        if (!curr_message) {
             console.error("[ThunderAI] _openSummaryWebchat: Message not found for headerMessageId:", headerMessageId);
             return;
         }
 
-        const curr_message = messageResult.messages[0];
         const curr_message_full = await browser.messages.getFull(curr_message.id);
 
         const summarize_prompt = await getSummarizePrompt();

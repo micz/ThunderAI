@@ -106,7 +106,9 @@ self.onmessage = async function(event) {
             // lots of low-level Google Gemini response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off. The per-line log below covers it, guarded.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
@@ -117,7 +119,10 @@ self.onmessage = async function(event) {
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
                          try {
-                            taLog.log("line: " + JSON.stringify(line));
+                            // Guarded at the call site: taLog.log() gates only the console
+                            // call, so an unguarded JSON.stringify() would run per SSE line
+                            // even with debug off.
+                            if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
                             return JSON.parse(line);
                         } catch (e) {
                             taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);

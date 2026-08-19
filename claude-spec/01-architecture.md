@@ -159,7 +159,7 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
         ↓   before the `summarize_auto === 0` return)
    matchAddressList(message.author, prefs.summarize_auto_senders_list)
         ↓
-   _generateSummaryForMessage(headerMessageId, tabId)                   ← inline, message pane
+   _generateSummaryForMessage(headerMessageId, tabId, { messageId })     ← inline, message pane
 ```
 
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
@@ -253,6 +253,44 @@ taTranslationStore.saveTranslation()
        ↓
 [later] user opens the message → initTranslation → cache hit → showTranslation instantly
 ```
+
+### Resolving a message from its `headerMessageId` (`_resolveMessage`)
+
+Everything cached per message — `taSummaryStore`, `taTranslationStore`, `taSpamReport` — is
+keyed on `headerMessageId`, and the content scripts only ever know that key. The generators
+therefore receive a `headerMessageId` and have to turn it back into a message object.
+
+Doing that with `browser.messages.query({ headerMessageId })` is a **full-store search across
+every folder of every account**. The background page runs in Thunderbird's *parent* process,
+so on a large mail store that search freezes the entire application UI — minutes, before the
+AI request is even sent. The WebExtension docs warn about it explicitly ("could need a long
+time to complete, if the user has a lot of messages").
+
+`_resolveMessage(headerMessageId, messageId, tabId, queryScope)` in `mzta-background.js`
+concentrates the lookup and tries the cheap routes first:
+
+| Order | Source | Used when |
+|---|---|---|
+| — | `options.messageData` | caller already fetched the message (checked by the generators, before this helper) |
+| b | `browser.messages.get(messageId)` | the caller holds a numeric message id |
+| c | `browser.messageDisplay.getDisplayedMessage(tabId)` | a message-display tab is in scope |
+| d | `browser.messages.query()`, narrowed by `queryScope` | nothing else is known |
+
+**Both (b) and (c) verify `headerMessageId` before accepting the result.** For (c) that is the
+same staleness reasoning as `_sendIfCurrent()` — the displayed message can have changed while
+the work sat queued. For (b) it guards against a numeric id that no longer denotes the same
+message: ids are per-folder and can be reused after a delete + compaction. A mismatch falls
+through to the next route rather than returning the wrong message.
+
+The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
+and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
+bookkeeping unchanged.
+
+**Passing the id is the caller's job.** Any handler that already holds a message object should
+pass `{ messageId: message.id }` — a message object carries both identifiers, so this costs
+nothing. `runtime.onMessage` handlers that receive only a `headerMessageId` from a content
+script pass their `sender.tab.id` instead and land on (c). After this, (d) is not reached by
+any normal user-facing path.
 
 ### Stale-result guard (rapid message switching)
 
@@ -357,6 +395,12 @@ Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens an
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
 text to `renderThinkingBlock`.
 
+markdown-it is instantiated **once for the module** (`getMarkdownIt()`, lazily, since
+`window.markdownit` is a classic-script global). It used to be constructed inside `flush()` — i.e.
+once per `
+` of every response — which was most of what made streaming feel slow. The options are
+invariant and `render()` keeps no state between calls, so one shared instance is equivalent.
+
 `flush()` runs markdown-it with **`html: false`** (the default) — raw HTML in the model output is
 escaped, never rendered, so the model can't inject markup into the extension UI — and with
 **`breaks: true`**, which is deliberate: this is a mail composer, so a newline the model wrote is a
@@ -431,6 +475,17 @@ break wherever the model wrapped a line, frequently *inside* an element; sanitiz
 would make `DOMParser` close the tags and leave the next segment a stray closer. `MessagesArea`
 answers by **reusing** the accumulating element rather than retiring it after the flush, and clears
 it in `handleTokensDone()` so the next response opens its own.
+
+**Coalesced, not per line.** Because each render redoes the whole response, doing it on every `\n`
+is O(n²) over a response — and `MessagesArea` then re-parses that whole string with `DOMParser` and
+rebuilds the element's children. The HTML path therefore re-sanitizes only once roughly every
+`HTML_RENDER_CHUNK` (2 KB) of new text, plus always on the final flush. In between, `flush()` returns
+`deferred: true`: the text is already accumulated, `thinkingText` is still handed over (it is
+independent of the response's shape), but the caller must **leave the element's DOM untouched** —
+clearing it for an empty `html` would blank the answer between renders. What keeps the answer
+visibly streaming meanwhile is the live token spans `handleNewToken()` appends, the same mechanism
+the undecided and unterminated-`<think>` branches rely on. The finished answer is unchanged: the
+last flush is always `final` and always renders everything, before `addActionButtons()` snapshots it.
 
 **There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
 already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the
@@ -763,7 +818,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
-| `js/mzta-logger.js` | Debug logging (gated by `do_debug` pref) |
+| `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
 | `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |

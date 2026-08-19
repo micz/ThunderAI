@@ -1519,11 +1519,22 @@ class MessagesArea extends HTMLElement {
             // above, which must leave the indicator in place.
             this._removeThinkingIndicator();
 
-            const { html, thinkingText, fullTextHTML, cumulative } = result;
+            const { html, thinkingText, fullTextHTML, cumulative, deferred } = result;
 
             // Keep the immutable snapshot readers (addActionButtons /
             // save-as-summary / diff) working: mirror the response-wide snapshot.
             this.fullTextHTML = fullTextHTML;
+
+            // A deferred flush carried no new rendering — on the HTML path the
+            // response is re-rendered in chunks rather than on every '\n'. The
+            // thinking indicator above is still dropped and the snapshot still
+            // mirrored, but the element must keep the live token spans it already
+            // has: clearing them for an empty `html` would blank the answer between
+            // renders. It is also never retired here, exactly as for a cumulative
+            // flush — the next render reuses this same element.
+            if (deferred) {
+                return;
+            }
 
             // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
 

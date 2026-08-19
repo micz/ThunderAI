@@ -107,7 +107,9 @@ self.onmessage = async function(event) {
             // lots of low-level Claude response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             
