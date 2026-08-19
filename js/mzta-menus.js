@@ -137,6 +137,13 @@ export class mzta_Menus {
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
             const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
             const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
+            // Raw values as they arrive from the content script, before cleanupNewlines()
+            // and htmlOrFromText() rewrite them. JSON.stringify() so newlines/escapes
+            // stay visible. [#829]
+            this.logger.log("getMailBody raw_text: " + JSON.stringify(raw_text));
+            this.logger.log("getMailBody raw_html: " + JSON.stringify(raw_html));
+            this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
+            this.logger.log("getMailBody raw_selection_html: " + JSON.stringify(raw_selection_html));
             return {tabId: tabs[0].id,
                 selection: cleanupNewlines(raw_selection),
                 selection_html: htmlOrFromText(raw_selection_html, raw_selection),
