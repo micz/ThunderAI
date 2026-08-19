@@ -212,26 +212,45 @@ otherwise disabled.
   via `taLog` and skips **silently** — no alert, no error panel. It returns `true` on its own
   exception, so a failure never starts a generation.
 
-**Dynamic `onNewMailReceived` registration.** `monitorAllFolders` can only be set when the
-listener is added, so `registerNewMailListener()` owns the registration and re-registers
-(`removeListener` + `addListener`) whenever the computed value changes:
+**`onNewMailReceived` registration.** The listener is registered once, at module load, with
+`monitorAllFolders` always set to `true`:
 
 ```js
-monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox
-                     || prefs_init.add_tags_auto_include_sent
-                     || (prefs_init.summarize && prefs_init.summarize_auto_senders))
+browser.messages.onNewMailReceived.addListener(newEmailListener, true);
 ```
 
-Auto add-tags monitors the Inbox only by default, but the sender list must catch messages
-delivered anywhere, so enabling it forces monitoring of all folders. `add_tags_auto_include_sent`
-does the same: with only-inbox monitoring Thunderbird would never report a sent message, so the
-option could never fire. It is called at startup
-and from `setupStorageChangeListener()` — chained on `reload_pref_init()` (which is `async`) so
-it observes the refreshed `prefs_init`, and a no-op when the value is unchanged so the
-unconditional pref reload does not churn the listener. This is what lets the option take effect
-without restarting Thunderbird. It is declared as a hoisted `function` because
-`setupStorageChangeListener()` is defined and invoked earlier in the file than the registration
-site.
+The scope is intentionally maximal. Several features need messages delivered anywhere and not
+just in the Inbox — the spam filter, summarize on receive, the summarize sender list, translate
+on receive, and add-tags on the sent folder — and subscribed IMAP folders not checked for new
+mail, or messages moved by a server-side filter, only surface with the full scope.
+
+`monitorAllFolders` was never a usable filter in the other direction either: with `false`,
+Thunderbird still reports every *normal* (non-special-use) folder, so it could not keep the
+automatic processing inside the Inbox. That is why `add_tags_auto_only_inbox` used to leak —
+messages dropped into a user IMAP folder by a server-side filter were still tagged (issue #863).
+Earlier versions derived the argument from `add_tags_auto_only_inbox`,
+`add_tags_auto_include_sent` and the summarize sender list and re-registered the listener
+(`removeListener` + `addListener`) whenever that value changed; that machinery is gone, since the
+argument is now a constant.
+
+The narrowing happens per message instead, inside `processEmails()`, where each feature applies
+its own checks — `add_tags_auto_only_inbox` (plus `add_tags_auto_include_sent`),
+`spamfilter_only_inbox`, `isMessageInAutoSkippedFolder()`, and the per-account enable lists — all
+gated on `isAutoMode`, so manual and context-menu invocations are never filtered by them. Both
+only-inbox guards use `messageFolderHasSpecialUse()` and are authoritative: they are the only
+thing keeping the automatic processing in the Inbox. `_process_incoming` in `newEmailListener`
+remains the cheap gate that avoids waking the whole pipeline when no automatic feature is enabled.
+
+**Lazy per-message body fetch.** In the `processEmails()` loop, `browser.messages.getFull()` and
+the body conversion are deferred to two per-iteration helpers, `ensureFullMessage()` and
+`ensureBodyText()`, each idempotent. Every feature awaits the one it needs only after all of its
+own skip checks have passed — add-tags and the spam filter await `ensureBodyText()` right before
+building the prompt / report, summarize and translate await `ensureFullMessage()`. A message
+discarded by the guards is therefore never fetched or converted at all, which matters now that
+the listener reports every folder. `ensureBodyText()` prefers the HTML body converted with
+`htmlBodyToPlainText()` and falls back to the whitespace-collapsed plain text part when the HTML
+body is empty. The `finally` block still nulls `curr_fullMessage` / `msg_text` / `body_text` after
+each message.
 
 ### Data Flow: Background Translation on Email Receive (translate_auto = 3)
 

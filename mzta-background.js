@@ -1864,29 +1864,19 @@ const newEmailListener = (folder, messagesList) => {
     return _newEmailListener();
 }
 
-// Registers browser.messages.onNewMailReceived, re-registering it whenever the folders to be
-// monitored change. The monitorAllFolders argument can only be set when the listener is added,
-// so a preference change needs a removeListener()/addListener() round trip — otherwise the new
-// value would only take effect after a Thunderbird restart.
-// Auto add-tags monitors the Inbox only by default, but the summarize sender list must catch
-// messages delivered anywhere (subscribed IMAP folders not checked for new mail, or messages
-// moved by a server-side filter), so it forces monitoring of all folders. Tagging the sent
-// folder does the same: with only-inbox monitoring Thunderbird would never report those
-// messages, so the option could never fire.
-let _monitorAllFolders = undefined;   // undefined = never registered, so the first call always registers
-
-function registerNewMailListener(){
-    const monitorAllFolders = (!prefs_init.add_tags_auto_only_inbox || prefs_init.add_tags_auto_include_sent || (prefs_init.summarize && prefs_init.summarize_auto_senders));
-    if(monitorAllFolders === _monitorAllFolders){
-        return;
-    }
-    if(_monitorAllFolders !== undefined){
-        browser.messages.onNewMailReceived.removeListener(newEmailListener);
-    }
-    browser.messages.onNewMailReceived.addListener(newEmailListener, monitorAllFolders);
-    _monitorAllFolders = monitorAllFolders;
-    taLog.log("[ThunderAI] New mail listener registered, monitorAllFolders: " + monitorAllFolders);
-}
+// The listener scope is intentionally maximal: monitorAllFolders is always true.
+// Several features need messages delivered anywhere and not just in the Inbox — the spam
+// filter, summarize on receive, the summarize sender list, translate on receive, and
+// add-tags on the sent folder — and subscribed IMAP folders not checked for new mail, or
+// messages moved by a server-side filter, only surface with the full scope.
+// monitorAllFolders was never a usable filter anyway: with false, Thunderbird still reports
+// every *normal* (non-special-use) folder, so it could not keep auto processing inside the
+// Inbox while it did hide folders some features need. The scope is therefore left wide and
+// each feature narrows it itself, through its own per-message checks in processEmails()
+// (add_tags_auto_only_inbox, spamfilter_only_inbox, the auto-skipped folder list, ...).
+// _process_incoming in newEmailListener stays the cheap gate that avoids waking the whole
+// pipeline when no automatic feature is enabled at all.
+browser.messages.onNewMailReceived.addListener(newEmailListener, true);
 
 async function showGenericError(errMsg, source) {
     let tabs = await browser.tabs.query({});
@@ -1965,6 +1955,7 @@ async function processEmails(args) {
             add_tags_enabled_accounts: prefs_default.add_tags_enabled_accounts,
             add_tags_exclusions_exact_match: prefs_default.add_tags_exclusions_exact_match,
             add_tags_auto_include_sent: prefs_default.add_tags_auto_include_sent,
+            add_tags_auto_only_inbox: prefs_default.add_tags_auto_only_inbox,
             add_tags_auto_uselist: prefs_default.add_tags_auto_uselist,
             add_tags_auto_uselist_list: prefs_default.add_tags_auto_uselist_list,
             spamfilter_enabled_accounts: prefs_default.spamfilter_enabled_accounts,
@@ -1995,6 +1986,30 @@ async function processEmails(args) {
             let msg_text = null;
             let body_text = '';
 
+            // Fetching the message and converting its body is expensive, so both are done
+            // lazily and only once per message: every feature awaits the helper it needs
+            // right before it actually uses the data, after all its own skip checks have
+            // passed. A message discarded by those checks is never fetched at all.
+            async function ensureFullMessage(){
+                if (!curr_fullMessage) {
+                    curr_fullMessage = await browser.messages.getFull(message.id);
+                }
+            }
+
+            async function ensureBodyText(){
+                await ensureFullMessage();
+                if (msg_text) {
+                    return;
+                }
+                msg_text = await getMailBody(curr_fullMessage);
+                taLog.log("Starting from the HTML body if present and converting to plain text...");
+                body_text = htmlBodyToPlainText(msg_text.html);
+                if( body_text.length == 0 ){
+                    taLog.log("No HTML found in the message body, using plain text...");
+                    body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+                }
+            }
+
             // Isolate per-message errors: a single problematic message must not abort the
             // whole batch. Inner try/catch blocks (add_tags, spamfilter, ...) are kept as-is.
             try {
@@ -2006,17 +2021,6 @@ async function processEmails(args) {
             let message_in_skipped_folder = isMessageInAutoSkippedFolder(message);
             let message_in_skipped_folder_tags = isMessageInAutoSkippedFolder(message, prefs_aats.add_tags_auto_include_sent);
 
-            if (addTagsAuto || spamFilter) {
-                curr_fullMessage = await browser.messages.getFull(message.id);
-                msg_text = await getMailBody(curr_fullMessage);
-                taLog.log("Starting from the HTML body if present and converting to plain text...");
-                body_text = htmlBodyToPlainText(msg_text.html);
-                if( body_text.length == 0 ){
-                    taLog.log("No HTML found in the message body, using plain text...");
-                    body_text = msg_text.text.replace(/\s+/g, ' ').trim();
-                }
-            }
-    
             if (addTagsAuto) {
                 let skipAddTags = false;
                 if(isAutoMode && message_in_skipped_folder_tags){
@@ -2027,6 +2031,16 @@ async function processEmails(args) {
                     let accountId = message.folder.accountId;
                     if(!prefs_aats.add_tags_enabled_accounts.includes(accountId)){
                         taLog.log("Account " + accountId + " not enabled for add_tags, skipping...");
+                        skipAddTags = true;
+                    }
+                }
+                // The listener monitors every folder, so this is the only check keeping the
+                // automatic tagging inside the inbox: without it a message dropped in a normal
+                // folder by a server-side filter would still be tagged.
+                if(!skipAddTags && isAutoMode && prefs_aats.add_tags_auto_only_inbox){
+                    const addtags_allowed_special_use = prefs_aats.add_tags_auto_include_sent ? ['inbox', 'sent'] : ['inbox'];
+                    if(!messageFolderHasSpecialUse(message, addtags_allowed_special_use)){
+                        taLog.log("Message not in " + addtags_allowed_special_use.join('/') + ", skipping add_tags (only-inbox mode)...");
                         skipAddTags = true;
                     }
                 }
@@ -2050,6 +2064,7 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipAddTags) {
+                    await ensureBodyText();
                     let specialFullPrompt_add_tags = '';
                     let tags_full_list = await getTagsList();
                     //  console.log(">>>>>>>>>>>>> curr_prompt_add_tags: " + JSON.stringify(curr_prompt_add_tags));
@@ -2119,6 +2134,7 @@ async function processEmails(args) {
                     }
                 }
                 if (!skipSpamFilter) {
+                    await ensureBodyText();
                     await _generateSpamReportForMessage(
                         message.headerMessageId,
                         {
@@ -2145,9 +2161,7 @@ async function processEmails(args) {
                     skipSummarize = true;
                 }
                 if (!skipSummarize) {
-                    if (!curr_fullMessage) {
-                        curr_fullMessage = await browser.messages.getFull(message.id);
-                    }
+                    await ensureFullMessage();
                     taLog.log("[ThunderAI] Pre-caching summary on receive for: " + message.headerMessageId + (summarizeOnReceive ? "" : " (sender in the auto-summarize list)"));
                     await _generateSummaryForMessage(message.headerMessageId, null, {
                         messageData: { message, fullMessage: curr_fullMessage }
@@ -2162,9 +2176,7 @@ async function processEmails(args) {
                     skipTranslate = true;
                 }
                 if (!skipTranslate) {
-                    if (!curr_fullMessage) {
-                        curr_fullMessage = await browser.messages.getFull(message.id);
-                    }
+                    await ensureFullMessage();
                     let translateTabId = null;
                     if (translate) {
                         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -2272,8 +2284,6 @@ async function processEmails(args) {
         }
     }
 }
-
-registerNewMailListener();
 
 // Inject script and CSS in all already open message tabs.
 let openTabs = await messenger.tabs.query();
