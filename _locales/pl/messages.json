@@ -55,7 +55,7 @@
         "message": "Ponowne indeksowanie listy..."
     },
     "customPrompts_filtering_prompts": {
-        "message": "Filtrowanie polece��..."
+        "message": "Filtrowanie poleceń..."
     },
     "customPrompts_saving_default_prompts": {
         "message": "Zapisywanie domyślnych poleceń..."
@@ -474,6 +474,18 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Możesz użyć dodatkowych symboli zastępczych danych."
     },
+    "prefs_extra_body_error_invalid": {
+        "message": "Nieprawidłowy JSON:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Wartość musi być obiektem JSON, ujętym w nawiasy klamrowe."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Dodatkowe dane treści"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON. Przydatne dla opcji, które ta usługa obsługuje, ale których ThunderAI nie udostępnia, na przykład wyłączenie trybu myślenia: {\"chat_template_kwargs\": {\"thinking\": false}} lub {\"top_p\": 0.9}. Parametrów zarządzanych przez ThunderAI (model, messages, streaming, temperature) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Zachowaj kompatybilność z \"v1\""
     },
@@ -748,7 +760,7 @@
         "message": "Jeśli zaznaczone, AI doda tylko istniejące tagi do nowo odebranych e-maili i nie utworzy nowych."
     },
     "SpamFilter_info_default": {
-        "message": "Na tej stronie możesz edytować domyślny prompt używany do wykrywania e-maili spamowych."
+        "message": "Na tej stronie możesz edytować domyślne polecenie używane do wykrywania e-maili spamowych."
     },
     "From": {
         "message": "Od"
@@ -784,10 +796,16 @@
         "message": "Dodawaj tagi tylko do e-maili w skrzynce odbiorczej"
     },
     "SpamFilter_prompt_text_title": {
-        "message": "Bieżący tekst prompta"
+        "message": "Bieżący tekst polecenia"
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Jeśli zaznaczone, AI doda tagi tylko do e-maili odebranych w folderze skrzynki odbiorczej."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Dodawaj tagi także do wysłanych e-maili"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Automatyczne przetwarzanie nigdy nie jest uruchamiane w folderach kopii roboczych, szablonów, poczty wychodzącej, spamu i kosza, a także pomija folder wysłanych. Jeśli zaznaczone, AI doda tagi również do e-maili, które wysyłasz."
     },
     "SpamFilter_PageTitle": {
         "message": "Zarządzaj ustawieniami filtra spamu"
@@ -808,7 +826,7 @@
         "message": "Widok porównywania tekstów może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
     },
     "empty": {
-        "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu prompta."
+        "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu polecenia."
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
         "message": "Jeżeli zaznaczone, określona strefa czasowa będzie wymuszana dla wydarzeń w kalendarzu."
@@ -996,7 +1014,7 @@
         "message": "Możesz dowolnie modyfikować polecenie. Pierwsze pole to główne polecenie, a drugie pole to szablon dla pojedynczej wiadomości. Lista wiadomości zostanie dołączona do głównego polecenia. Wiadomości zostaną oddzielone separatorem określonym w trzecim polu."
     },
     "prefs_OptionText_Summarize_main_prompt": {
-        "message": "Główny prompt opisujący zadanie, które ma zostać wykonane na wszystkich zaznaczonych wiadomościach e-mail:"
+        "message": "Główne polecenie opisujące zadanie, które ma zostać wykonane na wszystkich zaznaczonych wiadomościach e-mail:"
     },
     "prefs_OptionText_Summarize_email_template": {
         "message": "Szablon dla pojedynczej wiadomości:"
@@ -1032,6 +1050,37 @@
                 "content": "$1"
             }
         }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ z $TOTAL$ poleceń",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Szukaj według nazwy lub ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Przefiltrowano: $SHOWN$ z $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Brak pasujących poleceń"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Wyczyść filtr"
     },
     "Models_Fetch": {
         "message": "Zaktualizuj listę",
@@ -1588,6 +1637,12 @@
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Wysiłek wnioskowania"
     },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Dodatkowe dane treści"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Dodatkowe parametry wysyłane przy każdym wywołaniu API, jako obiekt JSON, na przykład {\"top_p\": 0.9}. Przydatne dla opcji, które API OpenAI obsługuje, ale których ThunderAI nie udostępnia. Parametrów zarządzanych przez ThunderAI (model, input, streaming, temperature, reasoning, instructions) nie można tutaj nadpisać. Nieprawidłowa wartość jest ignorowana."
+    },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Ile wysiłku model poświęca na wnioskowanie przed odpowiedzią. Niższe wartości dają szybsze i tańsze odpowiedzi, wyższe bardziej wnikliwe. Pozostaw wartość domyślną API, aby pozwolić OpenAI zdecydować. Ignorowane przez modele bez obsługi wnioskowania."
     },
@@ -1831,6 +1886,33 @@
     },
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "Usuń formatowanie HTML i Markdown z podsumowania wygenerowanego przez AI, wyświetlając tylko zwykły tekst."
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Lista nadawców do automatycznego podsumowania"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "E-maile od tych nadawców są podsumowywane automatycznie, bez żadnego kliknięcia. Podsumowanie jest generowane w momencie odebrania e-maila lub przy jego otwarciu, jeśli nie został przechwycony przy odbiorze."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Dodaj jeden adres e-mail w każdej linii lub oddziel je przecinkami. Użyj \"@domena.com\", aby dopasować wszystkich nadawców z całej domeny."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Uwaga: te podsumowania są generowane automatycznie, więc każdy e-mail od tych nadawców zużywa tokeny API i może zwiększyć koszt Twojej subskrypcji AI. Utrzymuj listę możliwie krótką."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "Automatyczne podsumowywanie jest wyłączone, ale dla nadawców z poniższej listy podsumowanie nadal jest generowane automatycznie."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Niedostępne, gdy automatyczne podsumowywanie jest ustawione na generowanie podsumowania przy odbiorze e-maila: w tym trybie każdy przychodzący e-mail jest już podsumowywany."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Automatycznie podsumowuj tych nadawców"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Jeśli włączone, e-maile od nadawców wymienionych poniżej są podsumowywane automatycznie, nawet gdy automatyczne podsumowywanie jest wyłączone powyżej."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Adresy nadawców do automatycznego podsumowania:"
     },
     "summarize_see_more": {
         "message": "Pokaż więcej"
