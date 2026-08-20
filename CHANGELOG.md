@@ -25,6 +25,7 @@
         <li><i>[OpenAI API][OpenAI Comp API]</i> Added a new "Extra body data" advanced connection option, to send additional parameters with every API call as a JSON object, like disabling the thinking mode of a model. The parameters already managed by ThunderAI can't be overridden [<a href="https://github.com/micz/ThunderAI/issues/854">#854</a>].</li>
         <li>The rewrite prompts are now using the HTML selected text preserving the HTML formatting if present.</li>
         <li>In the custom prompts page is now possibile to search for a prompt filtering the list.</li>
+        <li>Fix: the <i>{%recipients%}</i> and <i>{%cc_list%}</i> placeholders now also work in the compose window, using the addresses typed in the To and Cc fields.</li>
         <li>Various minor bugs fixed.</li>
         <li>...</li>
       </ul>
