@@ -15,7 +15,7 @@
         "message": "このスレッドに返信"
     },
     "prompt_reply_custom_command": {
-        "message": "コマンドで返信"
+        "message": "コマンドで返信..."
     },
     "prompt_rewrite_polite": {
         "message": "丁寧に書き直す"
@@ -27,7 +27,7 @@
         "message": "分類する"
     },
     "prompt_translate_this": {
-        "message": "翻訳する"
+        "message": "翻訳"
     },
     "prompt_this": {
         "message": "プロンプトを実行"
