@@ -613,10 +613,10 @@
         "message": "Wenn aktiviert, wird die Tags-Beschriftung in Kleinbuchstaben mit nur dem ersten Buchstaben in Großbuchstaben gesetzt."
     },
     "prefs_SurveyLinkText": {
-        "message": "Teilen Sie Ihr Feedback und helfen Sie, ThunderAI zu verbessern!"
+        "message": "Gefällt dir ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Klicken Sie hier, es dauert nur eine Minute!"
+        "message": "Geben Sie Ihr Feedback ab"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Modell manuell einfügen"
@@ -901,7 +901,7 @@
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, wird der temporäre Chat nicht verwendet."
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Die Textvergleichsansicht kann ausgewählt werden, wenn die Aktion auf „Text ersetzen“ eingestellt ist."
+        "message": "Verfügbar, wenn die Aktion „Text ersetzen“ ist."
     },
     "prefs_OptionText_CustomGPT_Warn": {
         "message": "Wenn ein Projekt in den Optionen oder im Prompt angegeben ist, überschreibt es die benutzerdefinierte GPT-Einstellung."
@@ -1379,7 +1379,7 @@
         "message": "Möchtest du schöne Statistiken zu deinen E-Mails erhalten?"
     },
     "prefs_THStats_2": {
-        "message": "Hier klicken! Probiere ThunderStats aus!"
+        "message": "Probiere ThunderStats aus!"
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Der Prompt muss den Platzhalter {%mail_text_body_or_selected%} oder {%mail_html_body_or_selected%} enthalten, um diese Option zu aktivieren. Bitte fügen Sie einen dieser Platzhalter zum Prompt hinzu oder setzen Sie ihn auf den Standardwert zurück."
@@ -1776,7 +1776,7 @@
         "message": "Menü-Reihenfolge verwalten"
     },
     "menu_order_info": {
-        "message": "Elemente per Drag-and-Drop neu anordnen oder über den Umschalter ein-/ausblenden."
+        "message": "Ziehen Sie Elemente per Drag-and-Drop, um ihre Reihenfolge zu ändern, oder ziehen Sie sie zwischen den Abschnitten „Sichtbar“ und „Ausgeblendet“, um sie in jedem Menü anzuzeigen oder auszublenden. Ein in allen Menüs ausgeblendeter Prompt ist so lange deaktiviert, bis Sie ihn wieder sichtbar machen."
     },
     "menu_order_active_items": {
         "message": "Sichtbare Elemente"
@@ -2137,7 +2137,7 @@
         "description": "Accessible label of the change picker's manual editing text box"
     },
     "apiwebchat_picker_edit_hint": {
-        "message": "Sie bearbeiten den Text von Hand. Beim Zurückkehren zu den Änderungen wird das, was Sie geschrieben haben, erneut mit dem Originaltext verglichen, und jede Auswahl wird zurückgesetzt.",
+        "message": "Sie bearbeiten den Text manuell. Wenn Sie ihn ändern, vergleicht das Zurückkehren zu den Änderungen Ihren geschriebenen Text erneut mit dem Originaltext und alle Auswahlen werden zurückgesetzt.",
         "description": "Note shown by the change picker while in manual editing mode"
     },
     "apiwebchat_picker_granularity": {
@@ -2257,7 +2257,7 @@
         "message": "Zusätzliche Body-Daten"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
-        "message": "Zusätzliche Parameter, die bei jedem API-Aufruf mitgesendet werden, als JSON-Objekt, zum Beispiel {\"top_p\": 0.9}. Nützlich für Optionen, die die OpenAI-API unterstützt, ThunderAI aber nicht anbietet. Die von ThunderAI verwalteten Parameter (model, input, streaming, temperature, reasoning, instructions) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
+        "message": "Zusätzliche Parameter, die bei jedem API-Aufruf als JSON-Objekt gesendet werden, wie z. B. {\"top_p\": 0.9}. Nützlich für Optionen, die von der OpenAI-API unterstützt, aber von ThunderAI nicht direkt bereitgestellt werden. Die von ThunderAI verwalteten Parameter (Model, Input, Streaming, Temperature, Reasoning, Instructions) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Wie viel Aufwand das Modell vor der Antwort in das Reasoning investiert. Niedrigere Werte liefern schnellere und günstigere Antworten, höhere Werte gründlichere. Belassen Sie es beim API-Standard, um OpenAI entscheiden zu lassen. Wird von Modellen ohne Reasoning-Unterstützung ignoriert."
