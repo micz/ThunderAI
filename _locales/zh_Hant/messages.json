@@ -300,12 +300,7 @@
         "message": "Claude 模型"
     },
     "_api_connecting_model": {
-        "message": "模型",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "模型"
     },
     "prefs_OpenAIComp_AvailableServices": {
         "message": "可用服務"
@@ -350,12 +345,7 @@
         "message": "主旨"
     },
     "_api_connecting_version": {
-        "message": "版本",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "版本"
     },
     "customPrompts_btnEdit": {
         "message": "編輯"
@@ -436,12 +426,7 @@
         "message": "選取的文字"
     },
     "_api_connecting_host": {
-        "message": "主機",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "主機"
     },
     "thunderai_error_title": {
         "message": "ThunderAI 錯誤"

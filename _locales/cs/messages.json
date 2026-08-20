@@ -894,12 +894,7 @@
         "message": "POVINNÉ. Neměňte tuto hodnotu, pokud nevíte, co děláte. Více informací zde:"
     },
     "_api_connecting_version": {
-        "message": "Verze",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Verze"
     },
     "Custom": {
         "message": "Vlastní"
@@ -999,23 +994,13 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Model",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Model"
     },
     "apiwebchat_selection_info": {
         "message": "Pokud vyberete nějaký text, bude zohledněna pouze tato část."
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Host"
     },
     "prompt_get_task_full_text": {
         "message": "Extrahujte všechny relevantní podrobnosti potřebné k vygenerování úlohy z následujícího textu.Extrahované informace by měly zahrnovat:\n- Datum a čas dokončení (včetně časového pásma, pokud je uvedeno)\n- Shrnutí úlohy\n- Počáteční datum a čas (včetně časového pásma, pokud je uvedeno)\nZajistěte, aby byla data formátována jasně a konzistentně, aby je bylo možné přímo použít k vytváření úloh.\nPokud existují relativní časové odkazy, vezměte v úvahu, že datum a čas emailu jsou \"{%mail_datetime%}\". Vypočítejte počáteční datum a čas na základě této reference. Pokud je vypočítané počáteční datum a čas dřívější než \"{%current_datetime%}\", přepočtěte počáteční datum a čas pomocí \"{%current_datetime%}\" jako základ.\nPokud se vám nepodaří získat jednu nebo více požadovaných informací, odpovězte prázdným řetězcem.\nVygenerujte odpověď pouze ve formátu JSON. Nezahrnujte žádný další text ani vysvětlení; poskytněte pouze JSON. Zde je formát, který má být použit:\n{\n\"InitialDate\": \"YYYYMMDDTHHMMSS\",\n\"dueDate\": \"YYYYMMDDTHHMMSS\",\n\"summary\": \"Shrnutí úlohy zde\"\n}\nPokud nejsou k dispozici žádné informace o datech, odstraňte je.\nZde je text:\"{%selected_text%}\""

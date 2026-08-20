@@ -1035,20 +1035,10 @@
         }
     },
     "_api_connecting_model": {
-        "message": "Modello",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Modello"
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Host"
     },
     "prefs_OpenAIComp_AvailableServices": {
         "message": "Servizi Disponibili"
@@ -1068,12 +1058,7 @@
         "message": "Se selezioni del testo, verrà considerata solo quella parte."
     },
     "_api_connecting_version": {
-        "message": "Versione",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Versione"
     },
     "anthropic_api_request_failed": {
         "message": "Richiesta all'API di Claude non riuscita"

@@ -1032,28 +1032,13 @@
         "message": "Sie haben kein Modell für die Claude-API ausgewählt. Bitte wählen Sie eines auf der Optionsseite aus."
     },
     "_api_connecting_model": {
-        "message": "Modell",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Modell"
     },
     "_api_connecting_host": {
-        "message": "Host",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Host"
     },
     "_api_connecting_version": {
-        "message": "Version",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Version"
     },
     "prefs_OpenAIComp_AvailableServices": {
         "message": "Verfügbare Dienste"
