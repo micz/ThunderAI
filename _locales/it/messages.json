@@ -667,10 +667,10 @@
         "message": "Se selezionato, l'etichetta dei tag sarà impostata in lettere minuscole con solo la prima lettera maiuscola."
     },
     "prefs_SurveyLinkText": {
-        "message": "Condividi il tuo feedback e aiuta a migliorare ThunderAI!"
+        "message": "Ti sta piacendo ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Clicca qui, ci vuole solo un minuto!"
+        "message": "Condividi il tuo feedback"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Inserisci manualmente il modello"
@@ -1081,7 +1081,7 @@
         "message": "Nessun testo selezionato, vuoi inserire la risposta dell'IA all'inizio dell'email?"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Il visualizzatore di confronto del testo può essere selezionato quando l'azione è impostata su \"Sostituisci testo\"."
+        "message": "Disponibile quando l'azione è impostata su \"Sostituisci testo\"."
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
         "message": "Per utilizzare le funzionalità di eventi del calendario e delle attività, installa una versione aggiornata del componente aggiuntivo ThunderAI Sparks."
@@ -1621,7 +1621,7 @@
         "message": "Desideri delle belle statistiche sulle tue email?"
     },
     "prefs_THStats_2": {
-        "message": "Clicca qui! Prova ThunderStats!"
+        "message": "Prova ThunderStats!"
     },
     "prefs_OptionText_calendar_no_selection_missing_placeholder": {
         "message": "Il prompt deve contenere il segnaposto {%mail_text_body_or_selected%} o {%mail_html_body_or_selected%} per abilitare questa opzione. Per favore, aggiungi uno di questi segnaposto al prompt o ripristina quello predefinito."
@@ -2066,7 +2066,7 @@
         "message": "Posizione del menu"
     },
     "menu_order_info": {
-        "message": "Trascina gli elementi per riordinarli. Usa l'interruttore per mostrare o nascondere gli elementi in ogni menu."
+        "message": "Trascina e rilascia gli elementi per riordinarli, oppure trascinali tra le sezioni Visibile e Nascosto per mostrarli o nasconderli in ciascun menu. Un prompt nascosto in ogni menu rimane disabilitato finché non lo rendi nuovamente visibile."
     },
     "menu_order_active_items": {
         "message": "Elementi visibili"
