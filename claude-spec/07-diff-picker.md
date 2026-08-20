@@ -564,6 +564,7 @@ whether the row fits.
 - **≥420px** — the two rows above; stepper label `7 / 12`; "Reject all" inline.
 - **≤419px** — both rows become columns, touch targets go to 44px, the stepper spans its line with
   the long `Change 7 of 12` label, the CTA goes full width, and "Reject all" moves into the menu.
+  In EDIT the inline "Back to changes" spans the nav line, which the stepper has vacated.
 
 CSS restyles at the breakpoint but cannot swap text or move a node between parents, so two decisions
 are **measured** in JS against the same 419px threshold (`_isNarrow()`): which stepper label to use,
@@ -713,7 +714,21 @@ on hunks, which do not exist over free text — and re-diffing at a new granular
 the user typed. That empties the context strip entirely, so **the strip itself is hidden** rather than
 left as a bare tinted band, and the actions row inherits the container's top rounding.
 
-"Use this answer" stays, as does the overflow button — the menu is how the user gets back out of EDIT.
+"Use this answer" stays. **The overflow button does not**: in EDIT the menu would hold nothing but
+"Back to changes", so that action moves out of the menu and onto the actions row as an inline button
+(`.picker-review-btn`, built in `_buildActionsRow`), and the "..." is hidden. Leaving the only
+available command behind a menu made it cost an extra click to find.
+
+`_syncModePlacement()` decides which copy is live — inline in EDIT, the `_modeBtn` menu item in
+REVIEW, **never both** — the same two-copy shape "Reject all" uses, driven by mode rather than by
+width. It also closes the menu, since the mode switch can happen while it is open (the REVIEW-side
+item the user clicked lives in it). Called from `_paintMode()`, which already runs on every mode
+change.
+
+> `.picker-actions-nav` gained an explicit `display: flex` for the **wide** layout as part of this.
+> It was previously declared only inside the narrow container query; the wide layout worked because
+> the stepper and overflow are both `inline-flex`, which silently gave no `gap` to a plain `<button>`
+> sibling.
 `_onKeydown` returns early on `_mode === 'edit'` (after the `Escape` branch, which must keep working
 to dismiss the menu). That early return now carries the editor itself: the `TEXTAREA`/`INPUT` target
 guard above it no longer matches a contenteditable div, and it is also what stops `j`/`k`/arrows

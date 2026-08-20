@@ -982,6 +982,16 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       gap: 8px;
       padding: 11px 12px;
     }
+
+    /* Stepper, overflow and the inline "back to changes" on one line with a real
+       gap. The narrow layout declares this too; it is stated here as well
+       because the wide layout previously leaned on its children all being
+       inline-flex, which silently gave no gap to a plain <button> sibling. */
+    .picker-actions-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .picker-actions > * {
       white-space: nowrap;
       flex-shrink: 0;
@@ -1088,6 +1098,16 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       height: 34px;
       padding: 0 12px;
       font-size: .78125rem;
+    }
+
+    /* The inline way out of EDIT. Matches the stepper's 34px rather than the
+       26px .mzta-btn-icon used elsewhere, so the actions row keeps one height
+       whichever mode it is in. */
+    .picker-review-btn {
+      height: 34px;
+      padding: 0 12px;
+      font-size: .78125rem;
+      gap: 6px;
     }
     /* Destructive, so it surfaces its danger tint on hover only - resting, it
        must not compete with the CTA. */
@@ -1233,6 +1253,14 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       .picker-overflow-btn {
         width: 44px;
         height: 44px;
+      }
+      /* Alone on the nav line in EDIT (the stepper is hidden), so it spans it
+         instead of sitting as a small tab against the left edge. */
+      .picker-review-btn {
+        flex: 1;
+        justify-content: center;
+        height: 44px;
+        font-size: .8125rem;
       }
       .picker-use-btn {
         justify-content: center;
@@ -1671,6 +1699,21 @@ class DiffPicker extends HTMLElement {
 
         nav.appendChild(this._buildStepper());
         nav.appendChild(this._buildOverflow());
+
+        // The way out of EDIT, inline. In EDIT the overflow menu holds nothing
+        // BUT this action - the stepper, the granularity toggle and both bulk
+        // actions all operate on hunks and are hidden - so leaving it behind the
+        // "..." made the only available command cost an extra click to find.
+        // The menu copy stays for REVIEW, where it sits among the other actions
+        // and has to read as one of them; exactly one of the two is ever visible
+        // (see _syncModePlacement), so there is no duplicated action on screen.
+        this._reviewBtn = this._makeToolbarButton('apiwebchat_picker_review', 'mzta-btn-secondary');
+        this._reviewBtn.classList.add('picker-review-btn');
+        this._reviewBtn.insertBefore(buildPencilIcon(15), this._reviewBtn.firstChild);
+        this._reviewBtn.hidden = true;
+        this._reviewBtn.addEventListener('click', () => this._setMode('review'));
+        nav.appendChild(this._reviewBtn);
+
         row.appendChild(nav);
         this._navEl = nav;
 
@@ -2073,6 +2116,10 @@ class DiffPicker extends HTMLElement {
         this._modeBtn.setAttribute('aria-label', label);
         this._modeBtn.title = label;
         this._modeBtn.setAttribute('aria-checked', editing ? 'true' : 'false');
+        // Which copy of the action is live - inline in EDIT, in the menu in
+        // REVIEW. Before _updateCounter, so the counter's own visibility pass
+        // sees the final state of the row.
+        this._syncModePlacement();
         // Everything that operates on hunks is meaningless over free text.
         this._updateCounter();
     }
@@ -2473,6 +2520,22 @@ class DiffPicker extends HTMLElement {
         const narrow = this._isNarrow();
         this._rejectAllBtn.hidden = this._bulkHidden || narrow;
         this._menuRejectAllBtn.hidden = this._bulkHidden || !narrow;
+    }
+
+    // "Back to changes" is inline in EDIT and in the menu in REVIEW - never in
+    // both, or the same action would appear twice. Same two-copy shape as
+    // "Reject all" above, driven by mode rather than by width.
+    //
+    // The overflow button goes with it: in EDIT the menu would otherwise open
+    // holding a single hidden item and nothing else, which reads as a broken
+    // control. Closing the menu here matters because the mode switch can happen
+    // while it is open - the item the user just clicked lives in it.
+    _syncModePlacement() {
+        const editing = (this._mode === 'edit');
+        this._reviewBtn.hidden = !editing;
+        this._modeBtn.hidden = editing;
+        this._overflowEl.hidden = editing;
+        if (editing) { this._setMenuOpen(false); }
     }
 
     // Mirrors the @container breakpoint in the stylesheet. Measured, because CSS
