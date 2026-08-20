@@ -2306,7 +2306,7 @@
         "message": "Texto alterado"
     },
     "apiwebchat_picker_edit_hint": {
-        "message": "Você está alterando o texto manualmente. Voltando as alterações vai comparar o que você escreveu com o texto original novamente e todas as escolhas serão perdidas."
+        "message": "Você está editando o texto manualmente. Se você o alterar, ao voltar às alterações, o que você escreveu será comparado novamente com o texto original e todas as escolhas serão redefinidas."
     },
     "apiwebchat_picker_granularity": {
         "message": "Comparar com"
