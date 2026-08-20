@@ -105,7 +105,7 @@
         "message": "テキスト比較ビューアを有効にする"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "テキスト比較ビューアは、アクションが「テキストを置換」に設定されている場合に選択できます。"
+        "message": "「アクション」が「テキストを置換」の場合に利用できます。"
     },
     "customPrompts_form_required_fields": {
         "message": "必須フィールド"
@@ -701,7 +701,7 @@
         "message": "チェックすると、メールにタグを適用するアイテムがメニューに追加されます。"
     },
     "prompt_add_tags": {
-        "message": "このメールにタグを追加"
+        "message": "タグを追加"
     },
     "prompt_add_tags_full_text": {
         "message": "以下のメールテキストを分析し、その内容を要約するタグのJSON配列を生成してください。テーマ、主要なトピック、関連する説明をタグとして使用してください。タグは簡潔でメールの内容に関連するものにしてください。\nメールテキスト：{%mail_text_body%}\nコンテキストのために以下の詳細を考慮してください：\n- 送信者：{%author%}\n- 宛先：{%recipients%}\n- CCリスト：{%cc_list%}\n- メール件名：{%mail_subject%}\nメールのテキストとコンテキストに基づいてタグを作成し、不要な情報や些細な詳細は無視してください。\nJSON形式のみで応答を生成してください。出力は追加のコメントやテキストなしのタグのJSON配列のみにしてください。使用するJSONフォーマットの例：\n{\n\"tags\": [\"tag1\", \"tag2\", \"tag3\", \"tag4\", \"tag5\"]\n}"
@@ -791,10 +791,10 @@
         "message": "チェックすると、タグのラベルは最初の文字のみ大文字で、残りは小文字になります。"
     },
     "prefs_SurveyLinkText": {
-        "message": "フィードバックを共有してThunderAIの改善にご協力ください！"
+        "message": "ThunderAI はお役に立っていますか？"
     },
     "prefs_SurveyLinkText2": {
-        "message": "ここをクリック、1分で完了！"
+        "message": "フィードバックをお寄せください"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "モデルを手動で入力"
@@ -1085,7 +1085,7 @@
         "message": "現在のプロンプトテキスト"
     },
     "prompt_spamfilter": {
-        "message": "スパムメールを検出"
+        "message": "スパムを解析"
     },
     "prompt_spamfilter_full_text": {
         "message": "以下のメールを分析し、スパムかどうかを判断してください。不審なキーワード、過度な宣伝文句、誤解を招く件名、個人情報の要求、不審な送信者アドレスなどの要素を考慮してください。\n0（スパムではない）から100（スパム）までの値と、10語以内の説明を提供してください。\nメッセージデータが欠落している場合は、値を0（スパムではない）に設定し、理由を示してください。\nJSON形式のみで応答を生成してください。追加のテキストや説明は含めず、JSONのみを提供してください。使用する形式：\n{\n\"explanation\": \"判断理由の簡単な説明\",\n\"spamValue\": <0から100の整数>\n}\n以下がメール情報です：\n送信者：「{%author%}」\n件名：「{%mail_subject%}」\nHTML本文：「{%mail_html_body%}」"
@@ -1130,7 +1130,7 @@
         "message": "スパムしきい値がゼロです！すべてのメールがスパムと判定されます！"
     },
     "spamfilter_no_reports": {
-        "message": "まだスパムスクリーニングされたメッセージはありません。ここには現在のセッションの最新100件のスパムレポートが表示されます。"
+        "message": "まだスパム判定されたメッセージはありません。ここには最新100件のスパムレポートが表示されます。"
     },
     "SpamFilter_skip_addresses_title": {
         "message": "メールアドレスのスキップリスト"
@@ -1442,7 +1442,7 @@
         "message": "各変更は即座に保存されます。"
     },
     "AccountSelector_Spamfilter": {
-        "message": "スパムフィルターを有効にするアカウントを選択"
+        "message": "自動スパムフィルターを有効にするアカウントを選択してください"
     },
     "prefs_OptionText_chatgpt_web_project": {
         "message": "ChatGPT Webプロジェクト"
