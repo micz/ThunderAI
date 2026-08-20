@@ -2,7 +2,7 @@
 
 ThunderAI is a Thunderbird Addon that uses the capabilities of ChatGPT, Google Gemini, Claude or Ollama to enhance email management.
 
-It enables users to analyse, write, correct, assign tags, create calendar events or tasks and optimize their emails, facilitating more effective and professional communication.
+It enables users to analyse, write, correct, translate, summarize, assign tags, create calendar events or tasks and optimize their emails, facilitating more effective and professional communication.
 
 ThunderAI is a tool for anyone looking to improve their email quality, both in content and grammar, making the writing process quicker and more intuitive. 
 
@@ -13,6 +13,9 @@ In any custom prompt you can use additional **[data placeholders](https://micz.i
 Using an API integration, you can activate some automatic features:
 - Tagging incoming emails
 - Moving spam emails to the junk folder
+- Summarizing
+- Translating
+
 
 <br>
 
