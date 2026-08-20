@@ -818,6 +818,7 @@ export function hasAddressListEntries(list) {
 // optional 'addressBooks' permission, which the add-on does not request.
 // A non array value is returned untouched, so an absent field flows through to
 // failSafePlaceholders() unchanged.
+// Thanks to https://github.com/TakiRyo for this method, that is derived from https://github.com/TakiRyo/ThunderAI/commit/0a24bbb92244d9c0ecbd50f298fb0d643c1ce4e9
 export function joinAddressList(list){
   if(!Array.isArray(list)) return list;
   return list.filter(entry => typeof entry === 'string').join(", ");
