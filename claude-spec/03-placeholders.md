@@ -42,9 +42,9 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `selected_html` | Only the selected HTML | 0 | |
 | `additional_text` | User input field (dynamic, shows input in popup) | 0 | ✓ |
 | `junk_score` | Junk score of the email | 1 | |
-| `recipients` | Email recipients (To) | 0 | |
-| `cc_list` | Email CC recipients | 0 | |
-| `author` | Email sender | 0 | |
+| `recipients` | Email recipients (To); while composing, the compose window's To field | 0 | |
+| `cc_list` | Email CC recipients; while composing, the compose window's Cc field | 0 | |
+| `author` | Email sender (reading only — empty while composing, see below) | 0 | |
 | `mail_datetime` | Email date and time | 1 | |
 | `current_datetime` | Current date and time | 0 | |
 | `account_email_address` | Email address of the current account/identity | 0 | |
@@ -74,6 +74,41 @@ do not relax `cleanupNewlines()` itself: its other callers feed `{%selected_text
 
 Full rationale in [01-architecture.md](01-architecture.md) → *The compose-extraction newline
 contract*. [#829]
+
+### The address placeholders in the compose window
+
+`recipients` and `cc_list` are `type: 0`, so they are offered while composing too. `curr_message` is
+**not** the same object in the two contexts, and it is never a hybrid: `js/mzta-menus.js` assigns the
+raw `browser.compose.getComposeDetails()` result in a compose tab, and a MessageHeader in the mail-tab
+and message-display branches.
+
+**Field names differ.** MessageHeader exposes `recipients` / `ccList`, ComposeDetails exposes `to` /
+`cc`, so `getPlaceholdersValues()` reads `curr_message.recipients ?? curr_message.to` and
+`curr_message.ccList ?? curr_message.cc`. Use `??`, not `||`: it selects on field *presence*, so the
+common `ccList: []` (a read message with no Cc) does not make the reading path fall through to a
+ComposeDetails field that does not exist on a MessageHeader.
+
+**Entry types differ.** A MessageHeader's arrays hold plain address strings, but ComposeDetails
+`to`/`cc` entries are either plain strings (`"Name <a@b.com>"`) **or** address book references shaped
+`{id, type}` (contacts and mailing lists). `joinAddressList()` (`js/mzta-utils.js`) therefore keeps
+only string entries before joining — a bare `.join(", ")` would put `[object Object]` into the prompt.
+Address book references are **dropped, not resolved**: resolving them needs the optional
+`addressBooks` permission, which the add-on does not request. A field holding nothing but references
+resolves to an empty string.
+
+`joinAddressList()` returns a non-array value untouched, so an absent field reaches
+`sanitizeMailHeaders()` / `failSafePlaceholders()` unchanged.
+
+**Known gap — `author`.** It is `type: 0` as well, but resolves only `curr_message.author`, so it is
+empty in a compose tab (the ComposeDetails equivalent is `from`). Fixing it is not the same shape as
+the two above: `from` is a *scalar* that can also be an `{id, type}` reference, so it needs a scalar
+`typeof` guard rather than an array filter. It is also semantically debatable — while composing the
+"author" is the user's own identity, which `account_email_address` already exposes via
+`getCurrentIdentity()`.
+
+**Not visible in the calendar-event flow.** `finalizePrompt_get_calendar_event()`
+(`js/mzta-utils-prompt.js`) strips `{%cc_list%}` and `{%recipients%}` out of the prompt entirely for
+that flow, so it is unaffected by any of the above by design.
 
 ## Dynamic Placeholders
 

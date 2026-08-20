@@ -811,6 +811,18 @@ export function hasAddressListEntries(list) {
   return list.some(item => (typeof item === 'string') && (item.trim() !== ''));
 }
 
+// Joins an address list into a comma separated string.
+// In a compose window the ComposeDetails 'to'/'cc' entries can be either plain address strings
+// ("Name <a@b.com>") or address book references shaped {id, type} (contacts and mailing lists).
+// Those references are dropped instead of being resolved: resolving them would require the
+// optional 'addressBooks' permission, which the add-on does not request.
+// A non array value is returned untouched, so an absent field flows through to
+// failSafePlaceholders() unchanged.
+export function joinAddressList(list){
+  if(!Array.isArray(list)) return list;
+  return list.filter(entry => typeof entry === 'string').join(", ");
+}
+
 /* Matches the sender of an email against a list of addresses and domain patterns.
    The author header is the raw "Name <addr@domain>" string, parsed with extractEmail().
    Supported entries: "user@domain.com" (exact), "@domain.com" and "*@domain.com" (whole domain).

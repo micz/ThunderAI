@@ -19,7 +19,8 @@
 import { prefs_default } from '../options/mzta-options-default.js';
 import {
     getMailHeader,
-    sanitizeMailHeaders
+    sanitizeMailHeaders,
+    joinAddressList
  } from './mzta-utils.js';
 
 /*  ================= PLACEHOLDERS PROPERTIES ========================================
@@ -647,10 +648,12 @@ export const placeholdersUtils = {
                     finalSubs['author'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.author));
                     break;
                 case 'recipients':
-                    finalSubs['recipients'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.recipients?.join(", ")));
+                    // 'recipients' when reading a mail (MessageHeader), 'to' when composing (ComposeDetails)
+                    finalSubs['recipients'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(joinAddressList(curr_message.recipients ?? curr_message.to)));
                     break;
                 case 'cc_list':
-                    finalSubs['cc_list'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(curr_message.ccList?.join(", ")));
+                    // 'ccList' when reading a mail (MessageHeader), 'cc' when composing (ComposeDetails)
+                    finalSubs['cc_list'] = placeholdersUtils.failSafePlaceholders(sanitizeMailHeaders(joinAddressList(curr_message.ccList ?? curr_message.cc)));
                     break;
                 case 'junk_score':
                     finalSubs['junk_score'] = placeholdersUtils.failSafePlaceholders(curr_message.junkScore);
