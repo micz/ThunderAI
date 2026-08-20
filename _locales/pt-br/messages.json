@@ -340,6 +340,37 @@
             }
         }
     },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ de $TOTAL$ prompts",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Pesquisar por nome ou ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtrado: $SHOWN$ de $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Nenhum prompt correspondente"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Limpar filtro"
+    },
     "importPrompts_confirmText": {
         "message": "Você está prestes a importar novos prompts."
     },
@@ -597,6 +628,18 @@
     },
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Você pode usar espaços reservados para dados adicionais."
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON inválido:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "O valor deve ser um objeto JSON, entre chaves."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Dados extras do corpo"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON. Útil para opções que este serviço suporta, mas que o ThunderAI não expõe, como desativar o modo de raciocínio: {\"chat_template_kwargs\": {\"thinking\": false}} ou {\"top_p\": 0.9}. Os parâmetros gerenciados pelo ThunderAI (model, messages, streaming, temperature) não podem ser substituídos aqui. Um valor inválido é ignorado."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Manter a compatibilidade com \"v1\""
@@ -985,6 +1028,12 @@
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Se marcado, a IA adicionará tags apenas aos e-mails recebidos na pasta da caixa de entrada."
     },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Adicionar tags também aos e-mails enviados"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "O processamento automático nunca é executado nas pastas de rascunhos, modelos, caixa de saída, spam e lixeira, e também ignora a pasta de enviados. Se marcado, a IA também adicionará tags aos e-mails que você enviar."
+    },
     "prefs_OptionText_add_tags_use_specific_integration_Info": {
         "message": "Se marcado, o Modelo e a API especificados abaixo serão usados para adicionar tags aos e-mails, independentemente do escolhido na página de opções do ThunderAI."
     },
@@ -1107,6 +1156,9 @@
     },
     "spamfilter_skip_addressbook_explanation": {
         "message": "O remetente é um contato no catálogo de endereços."
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "O prompt especial do Filtro de Spam está faltando. Se você modificou os prompts especiais, tente restaurar o prompt padrão do Filtro de Spam."
     },
     "addressbook_permission_denied": {
         "message": "A permissão do catálogo de endereços foi negada. Ative o recurso novamente para conceder a permissão."
@@ -1562,6 +1614,33 @@
     },
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "Remove a formatação HTML e Markdown do resumo gerado pela IA, mostrando apenas texto simples."
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Lista de remetentes para resumo automático"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "Os e-mails vindos destes remetentes são resumidos automaticamente, sem nenhum clique. O resumo é gerado quando o e-mail é recebido, ou quando você o abre, caso não tenha sido capturado no recebimento."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Adicione um endereço de e-mail por linha, ou separados por vírgula. Use \"@dominio.com\" para corresponder a todos os remetentes de um domínio inteiro."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Atenção: estes resumos são gerados automaticamente, portanto cada e-mail destes remetentes consome tokens da API e pode aumentar o custo da sua assinatura de IA. Mantenha a lista o mais curta possível."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "O resumo automático está desativado, mas o resumo continua sendo gerado automaticamente para os remetentes da lista abaixo."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Não disponível quando o resumo automático está configurado para gerar o resumo no recebimento do e-mail: nesse modo, todo e-mail recebido já é resumido."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Resumir estes remetentes automaticamente"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Se ativado, os e-mails vindos dos remetentes listados abaixo são resumidos automaticamente, mesmo quando o resumo automático estiver desativado acima."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Endereços de remetentes a serem resumidos automaticamente:"
     },
     "summarize_see_more": {
         "message": "Ver mais"
@@ -2323,6 +2402,12 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Esforço de raciocínio"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Dados extras do corpo"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Parâmetros adicionais a serem enviados em cada chamada da API, como um objeto JSON, por exemplo {\"top_p\": 0.9}. Útil para opções que a API da OpenAI suporta, mas que o ThunderAI não expõe. Os parâmetros gerenciados pelo ThunderAI (model, input, streaming, temperature, reasoning, instructions) não podem ser substituídos aqui. Um valor inválido é ignorado."
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Quanto esforço o modelo dedica ao raciocínio antes de responder. Valores mais baixos resultam em respostas mais rápidas e econômicas; valores mais altos geram respostas mais detalhadas. Mantenha a configuração padrão da API para deixar a decisão a cargo da OpenAI. Esse parâmetro é ignorado por modelos que não oferecem suporte a raciocínio."
