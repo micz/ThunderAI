@@ -474,6 +474,18 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Sie können zusätzliche Datenplatzhalter verwenden."
     },
+    "prefs_extra_body_error_invalid": {
+        "message": "Ungültiges JSON:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Der Wert muss ein JSON-Objekt sein, eingeschlossen in geschweifte Klammern."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Zusätzliche Body-Daten"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Zusätzliche Parameter, die bei jedem API-Aufruf mitgesendet werden, als JSON-Objekt. Nützlich für Optionen, die dieser Dienst unterstützt, ThunderAI aber nicht anbietet, zum Beispiel das Deaktivieren des Denkmodus: {\"chat_template_kwargs\": {\"thinking\": false}} oder {\"top_p\": 0.9}. Die von ThunderAI verwalteten Parameter (model, messages, streaming, temperature) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "\"v1\"-Kompatibilität beibehalten"
     },
@@ -716,6 +728,12 @@
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Wenn ausgewählt, wird die KI nur Tags zu E-Mails hinzufügen, die im Posteingangsordner empfangen wurden."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Auch gesendeten E-Mails Schlagwörter hinzufügen"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Die automatische Verarbeitung wird niemals auf die Ordner Entwürfe, Vorlagen, Postausgang, Junk und Papierkorb angewendet und überspringt auch den Ordner Gesendet. Wenn diese Option aktiviert ist, fügt die KI auch den von Ihnen gesendeten E-Mails Schlagwörter hinzu."
     },
     "placeholder_thunderai_def_sign": {
         "message": "Standardsignatur wie in den ThunderAI-Optionen definiert."
@@ -1535,6 +1553,33 @@
     "prefs_OptionText_summarize_strip_formatting_Info": {
         "message": "Entfernt HTML und Markdown aus der Zusammenfassung, um nur reinen Text anzuzeigen."
     },
+    "Summarize_auto_senders_title": {
+        "message": "Absenderliste für automatische Zusammenfassung"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "E-Mails von diesen Absendern werden automatisch zusammengefasst, ohne jeden Klick. Die Zusammenfassung wird beim Empfang der E-Mail erstellt oder beim Öffnen, falls sie beim Empfang nicht erfasst wurde."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Fügen Sie eine E-Mail-Adresse pro Zeile hinzu oder trennen Sie sie durch Kommas. Verwenden Sie \"@domain.com\", um alle Absender einer gesamten Domain zu erfassen."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Achtung: Diese Zusammenfassungen werden automatisch erstellt, daher verbraucht jede E-Mail von diesen Absendern API-Tokens und kann die Kosten Ihres KI-Abonnements erhöhen. Halten Sie die Liste so kurz wie möglich."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "Die automatische Zusammenfassung ist deaktiviert, aber für die Absender in der Liste unten wird die Zusammenfassung trotzdem automatisch erstellt."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Nicht verfügbar, wenn die automatische Zusammenfassung so eingestellt ist, dass sie die Zusammenfassung beim Empfang der E-Mail erstellt: In diesem Modus wird bereits jede eingehende E-Mail zusammengefasst."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Diese Absender automatisch zusammenfassen"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Wenn aktiviert, werden E-Mails von den unten aufgeführten Absendern automatisch zusammengefasst, auch wenn die automatische Zusammenfassung oben deaktiviert ist."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Absenderadressen, die automatisch zusammengefasst werden sollen:"
+    },
     "summarize_see_more": {
         "message": "Mehr sehen"
     },
@@ -1956,6 +2001,37 @@
             }
         }
     },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ von $TOTAL$ Prompts",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Nach Name oder ID suchen"
+    },
+    "customPrompts_filter_active": {
+        "message": "Gefiltert: $SHOWN$ von $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Keine passenden Prompts"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Filter zurücksetzen"
+    },
     "Models_Fetch": {
         "message": "Liste aktualisieren",
         "description": "Label of the button that fetches/updates the available models list for an AI provider"
@@ -2176,6 +2252,12 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Reasoning-Aufwand"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Zusätzliche Body-Daten"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Zusätzliche Parameter, die bei jedem API-Aufruf mitgesendet werden, als JSON-Objekt, zum Beispiel {\"top_p\": 0.9}. Nützlich für Optionen, die die OpenAI-API unterstützt, ThunderAI aber nicht anbietet. Die von ThunderAI verwalteten Parameter (model, input, streaming, temperature, reasoning, instructions) können hier nicht überschrieben werden. Ein ungültiger Wert wird ignoriert."
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Wie viel Aufwand das Modell vor der Antwort in das Reasoning investiert. Niedrigere Werte liefern schnellere und günstigere Antworten, höhere Werte gründlichere. Belassen Sie es beim API-Standard, um OpenAI entscheiden zu lassen. Wird von Modellen ohne Reasoning-Unterstützung ignoriert."
