@@ -484,7 +484,7 @@
         "message": "Données supplémentaires du corps"
     },
     "prefs_OptionText_openai_comp_extra_body_info": {
-        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON. Utile pour les options prises en charge par ce service mais non proposées par ThunderAI, comme la désactivation du mode réflexion : {\"chat_template_kwargs\": {\"thinking\": false}} ou {\"top_p\": 0.9}. Les paramètres gérés par ThunderAI (model, messages, streaming, temperature) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
+        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON. Utile pour les options prises en charge par ce service mais non proposées par ThunderAI, comme la désactivation du mode réflexion : {\"chat_template_kwargs\" : {\"thinking\" : false}} ou {\"top_p\" : 0.9}. Les paramètres gérés par ThunderAI (model, messages, streaming, temperature) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
     },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Conserver la compatibilité \"v1\""
@@ -2110,7 +2110,7 @@
         "description": "Libellé accessible de la zone d'édition manuelle du sélecteur de modifications"
     },
     "apiwebchat_picker_edit_hint": {
-        "message": "Vous modifiez le texte à la main. Le retour aux modifications comparera à nouveau ce que vous avez écrit avec le texte d'origine, et tous vos choix seront réinitialisés.",
+        "message": "Vous modifiez le texte à la main. Si vous le modifiez, le fait de revenir aux modifications comparera à nouveau ce que vous avez écrit avec le texte d'origine et chaque choix sera réinitialisé.",
         "description": "Note affichée par le sélecteur de modifications en mode édition manuelle"
     },
     "apiwebchat_picker_granularity": {
@@ -2230,7 +2230,7 @@
         "message": "Données supplémentaires du corps"
     },
     "prefs_OptionText_chatgpt_extra_body_info": {
-        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON, comme {\"top_p\": 0.9}. Utile pour les options prises en charge par l'API OpenAI mais non proposées par ThunderAI. Les paramètres gérés par ThunderAI (model, input, streaming, temperature, reasoning, instructions) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
+        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON, comme {\"top_p\" : 0.9}. Utile pour les options prises en charge par l'API OpenAI mais non proposées par ThunderAI. Les paramètres gérés par ThunderAI (model, input, streaming, temperature, reasoning, instructions) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Quantité d'effort que le modèle consacre au raisonnement avant de répondre. Les valeurs basses donnent des réponses plus rapides et moins coûteuses, les valeurs élevées donnent des réponses plus approfondies. Laissez sur la valeur par défaut de l'API pour laisser OpenAI décider. Ignoré par les modèles sans prise en charge du raisonnement."
