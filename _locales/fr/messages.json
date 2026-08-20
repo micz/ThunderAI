@@ -474,6 +474,18 @@
     "prefs_OptionText_btnManagePrompts_infoline": {
         "message": "Vous pouvez utiliser des espaces réservés pour des données supplémentaires."
     },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON non valide :"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "La valeur doit être un objet JSON, entouré d'accolades."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Données supplémentaires du corps"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON. Utile pour les options prises en charge par ce service mais non proposées par ThunderAI, comme la désactivation du mode réflexion : {\"chat_template_kwargs\": {\"thinking\": false}} ou {\"top_p\": 0.9}. Les paramètres gérés par ThunderAI (model, messages, streaming, temperature) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
+    },
     "prefs_OptionText_openai_comp_use_v1": {
         "message": "Conserver la compatibilité \"v1\""
     },
@@ -734,6 +746,12 @@
     },
     "prefs_OptionText_add_tags_auto_only_inbox_Info": {
         "message": "Si coché, l'IA ajoutera des tags uniquement aux e-mails reçus dans le dossier de la boîte de réception."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Ajouter aussi des étiquettes aux e-mails envoyés"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Le traitement automatique ne s'exécute jamais sur les dossiers brouillons, modèles, boîte d'envoi, indésirables et corbeille, et il ignore également le dossier des messages envoyés. Si cette case est cochée, l'IA ajoutera aussi des étiquettes aux e-mails que tu envoies."
     },
     "placeholder_thunderai_def_sign": {
         "message": "Signature par défaut telle que définie dans les options de ThunderAI."
@@ -1049,28 +1067,13 @@
         "message": "Erreur lors de la tentative de récupération des modèles Claude"
     },
     "_api_connecting_model": {
-        "message": "Modèle",
-        "placeholders": {
-            "model": {
-                "content": "$1"
-            }
-        }
+        "message": "Modèle"
     },
     "_api_connecting_host": {
-        "message": "Hôte",
-        "placeholders": {
-            "api_host": {
-                "content": "$1"
-            }
-        }
+        "message": "Hôte"
     },
     "_api_connecting_version": {
-        "message": "Version",
-        "placeholders": {
-            "api_version": {
-                "content": "$1"
-            }
-        }
+        "message": "Version"
     },
     "placeholder_selected_html": {
         "message": "HTML sélectionné"
@@ -1971,6 +1974,37 @@
             }
         }
     },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ prompts sur $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Rechercher par nom ou ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtré : $SHOWN$ sur $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Aucun prompt correspondant"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Effacer le filtre"
+    },
     "Models_Fetch": {
         "message": "Mettre à jour la liste",
         "description": "Libellé du bouton qui récupère/met à jour la liste des modèles disponibles pour un fournisseur d'IA"
@@ -2191,6 +2225,12 @@
     },
     "prefs_OptionText_chatgpt_reasoning_effort": {
         "message": "Intensité du raisonnement"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Données supplémentaires du corps"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Paramètres supplémentaires à envoyer à chaque appel d'API, sous forme d'objet JSON, comme {\"top_p\": 0.9}. Utile pour les options prises en charge par l'API OpenAI mais non proposées par ThunderAI. Les paramètres gérés par ThunderAI (model, input, streaming, temperature, reasoning, instructions) ne peuvent pas être remplacés ici. Une valeur non valide est ignorée."
     },
     "prefs_OptionText_chatgpt_reasoning_effort_Info": {
         "message": "Quantité d'effort que le modèle consacre au raisonnement avant de répondre. Les valeurs basses donnent des réponses plus rapides et moins coûteuses, les valeurs élevées donnent des réponses plus approfondies. Laissez sur la valeur par défaut de l'API pour laisser OpenAI décider. Ignoré par les modèles sans prise en charge du raisonnement."
