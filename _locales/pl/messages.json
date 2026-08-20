@@ -613,10 +613,10 @@
         "message": "Jeśli zaznaczone, etykieta tagów będzie ustawiona na małe litery z wyjątkiem pierwszej wielkiej litery."
     },
     "prefs_SurveyLinkText": {
-        "message": "Podziel się swoją opinią i pomóż ulepszyć ThunderAI!"
+        "message": "Podoba Ci się ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Kliknij tutaj, to zajmuje tylko minutę!"
+        "message": "Podziel się swoją opinią"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Ręcznie wprowadź model"
@@ -691,7 +691,7 @@
         "message": "Możesz zmienić monit według własnego uznania, ale odpowiedź otrzymana od AI musi być w formacie JSON, jak określono w domyślnym zapytaniu!"
     },
     "prefs_OptionText_get_calendar_event_Sparks_not_present": {
-        "message": "Aby korzystać z funkcji wydarzeń w kalendarzu, zainstaluj dodatek ThunderAI Sparks."
+        "message": "Aby korzystać z funkcji wydarzeń w kalendarzu i zadań, zainstaluj dodatek ThunderAI Sparks."
     },
     "prefs_OptionText_download_now": {
         "message": "Pobierz teraz ThunderAI Sparks!"
@@ -736,10 +736,10 @@
         "message": "Domyślny język zgodnie z opcjami ThunderAI."
     },
     "prompt_spamfilter": {
-        "message": "Wykrywanie e-maili spamowych"
+        "message": "Analizuj pod kątem spamu"
     },
     "prefs_OptionText_add_tags_auto_force_existing": {
-        "message": "Wymuś użycie istniejących tagów podczas automatycznego tagowania lub korzystania z menu kontekstowego"
+        "message": "Wymuś istniejące tagi"
     },
     "prefs_OptionText_add_tags_auto": {
         "message": "Automatycznie dodawaj tagi"
@@ -757,7 +757,7 @@
         "message": "Nie"
     },
     "prefs_OptionText_add_tags_auto_force_existing_Info": {
-        "message": "Jeśli zaznaczone, AI doda tylko istniejące tagi do nowo odebranych e-maili i nie utworzy nowych."
+        "message": "Jeśli zaznaczone, AI doda tylko istniejące tagi i nie utworzy nowych."
     },
     "SpamFilter_info_default": {
         "message": "Na tej stronie możesz edytować domyślne polecenie używane do wykrywania e-maili spamowych."
@@ -820,19 +820,19 @@
         "message": "Próg spamu wynosi zero! Oznaczysz wszystkie e-maile jako spam!"
     },
     "spamfilter_no_reports": {
-        "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie tylko dla bieżącej sesji."
+        "message": "Nie przeskanowano jeszcze żadnych wiadomości pod kątem spamu. Tutaj znajdziesz listę ostatnich 100 raportów o spamie."
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Widok porównywania tekstów może zostać wybrany, kiedy wybrana akcja to \"Tekst zastępczy\"."
+        "message": "Dostępne, gdy \"Akcja\" to \"Tekst zastępczy\"."
     },
     "empty": {
         "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu polecenia."
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {
-        "message": "Jeżeli zaznaczone, określona strefa czasowa będzie wymuszana dla wydarzeń w kalendarzu."
+        "message": "Jeżeli zaznaczone, określona strefa czasowa będzie wymuszana dla wydarzeń w kalendarzu i zadań."
     },
     "prefs_OptionText_get_calendar_event_Sparks_wrong_version": {
-        "message": "By używać wydarzeń w kalendarzu prosimy zainstalować zaktualizowaną wersję dodatku ThunderAI Sparks."
+        "message": "Aby korzystać z funkcji wydarzeń w kalendarzu i zadań, zainstaluj zaktualizowaną wersję dodatku ThunderAI Sparks."
     },
     "customPrompts_form_label_use_diff_viewer": {
         "message": "Włącz podgląd zmian"
@@ -1319,7 +1319,7 @@
         "description": "Accessible label of the change picker's manual editing text box"
     },
     "apiwebchat_picker_edit_hint": {
-        "message": "Edytujesz tekst ręcznie. Powrót do zmian porówna to, co napisałeś, ponownie z tekstem oryginalnym, a każdy wybór zostanie zresetowany.",
+        "message": "Edytujesz tekst ręcznie. Jeśli go zmienisz, powrót do zmian ponownie porówna to, co napisałeś, z tekstem oryginalnym, a każdy wybór zostanie zresetowany.",
         "description": "Note shown by the change picker while in manual editing mode"
     },
     "apiwebchat_picker_granularity": {
