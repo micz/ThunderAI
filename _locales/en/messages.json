@@ -1704,7 +1704,7 @@
     "description": "Accessible label of the change picker's manual editing text box"
   },
   "apiwebchat_picker_edit_hint": {
-    "message": "You are editing the text by hand. This box holds plain text, so any formatting in the answer is lost. Going back to the changes will compare what you wrote with the original text again, and every choice will be reset.",
+    "message": "You are editing the text by hand. If you change it, going back to the changes will compare what you wrote with the original text again and every choice will be reset.",
     "description": "Note shown by the change picker while in manual editing mode"
   },
   "apiwebchat_picker_granularity": {

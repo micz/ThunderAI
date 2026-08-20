@@ -49,8 +49,11 @@ import {
 // diffed within each paired block, and recomposed as HTML, so the chosen side's
 // MARKUP comes with it - see the block-model rationale further down. This
 // replaced an earlier plain-text-only model in which the answer's formatting did
-// not survive the picker; the one remaining place formatting is still lost on
-// purpose is the manual EDIT box, which is a plain <textarea> (see _setMode).
+// not survive the picker. The manual EDIT box is HTML too: a contenteditable
+// whose every input path - the composition it opens on, a paste, a drop - is
+// funnelled through the same allowlist as the answer itself, so formatting
+// survives the REVIEW -> EDIT -> REVIEW round-trip without widening what markup
+// can reach the DOM (see the REVIEW/EDIT section).
 //
 // The conversion back to plain text, when the target compose window is plain
 // text, is NOT done here: it happens downstream where the window's format is
@@ -738,9 +741,10 @@ export function renderBlocks(blocks) {
 
 // Plain text -> block HTML, one <p> per non-empty line.
 //
-// Used for the EDIT round-trip and wherever a plain-text original has to be
-// given block structure before it can be segmented. Escapes, because the input
-// is genuinely plain text: any '<' in it is a literal character, not markup.
+// Used for the plain-text flavour of a paste or drop into the EDIT box, and
+// wherever a plain-text original has to be given block structure before it can
+// be segmented. Escapes, because the input is genuinely plain text: any '<' in
+// it is a literal character, not markup.
 export function textToBlockHtml(text) {
     return String(text == null ? '' : text)
         .replace(/\r\n/g, '\n')
@@ -1251,7 +1255,13 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
        picker shows the structure it is going to write into the mail. These
        rules only tame the UA defaults; the page's own font and colours are
        inherited. Margins are collapsed to a single trailing gap so a paragraph
-       and a list item sit on the same rhythm. */
+       and a list item sit on the same rhythm.
+
+       The EDITOR is in every selector here too, and that is the point rather
+       than tidiness: it holds the same block elements from the same composer, so
+       switching modes must not reflow the text the user is looking at. One
+       selector list for both, not a second copy of the rules under a different
+       prefix - two lists would drift the moment either side gained a tag. */
     .picker-body p,
     .picker-body blockquote,
     .picker-body pre,
@@ -1260,25 +1270,41 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
     .picker-body h3,
     .picker-body h4,
     .picker-body h5,
-    .picker-body h6 {
+    .picker-body h6,
+    .picker-editor p,
+    .picker-editor blockquote,
+    .picker-editor pre,
+    .picker-editor h1,
+    .picker-editor h2,
+    .picker-editor h3,
+    .picker-editor h4,
+    .picker-editor h5,
+    .picker-editor h6 {
       margin: 0 0 .5em;
     }
-    .picker-body > :last-child {
+    .picker-body > :last-child,
+    .picker-editor > :last-child {
       margin-bottom: 0;
     }
     .picker-body ul,
-    .picker-body ol {
+    .picker-body ol,
+    .picker-editor ul,
+    .picker-editor ol {
       margin: 0 0 .5em;
       padding-inline-start: 1.5em;
     }
-    .picker-body li {
+    .picker-body li,
+    .picker-editor li {
       margin: 0;
     }
     /* Headings inside the picker are structure, not page chrome: keep them
        close to body size so a proofread of an h1 does not tower over the rest. */
     .picker-body h1,
     .picker-body h2,
-    .picker-body h3 {
+    .picker-body h3,
+    .picker-editor h1,
+    .picker-editor h2,
+    .picker-editor h3 {
       font-size: 1.05em;
     }
 
@@ -1377,6 +1403,14 @@ pickerStyle.textContent = SHARED_BASE_CSS + BUTTON_CSS + `
       /* Vertical only: a horizontal resize inside a flex column fights the
          layout, and the text wraps anyway. */
       resize: vertical;
+      /* A <div> has no rows attribute and no intrinsic text-box height, so
+         these two are what make the resize handle above behave the way it did
+         on the <textarea> this replaced: the floor gives an empty editor
+         something to grab, and the scroll container is what a dragged-smaller
+         box needs in order to keep its content reachable instead of spilling
+         it over the toolbar below. */
+      min-height: 6em;
+      overflow: auto;
     }
     :host([mode="edit"]) .picker-body {
       display: none;
@@ -1424,8 +1458,12 @@ class DiffPicker extends HTMLElement {
         this._interactive = [];
         this._currentIdx = -1;
         this._useAnswerHandler = null;
-        // 'review' (pick per change) or 'edit' (free-text textarea).
+        // 'review' (pick per change) or 'edit' (free editing, contenteditable).
         this._mode = 'review';
+        // The canonical HTML the editor opened on, while EDIT is active. Lets
+        // leaving EDIT tell a real edit from a look-and-leave, and keep the
+        // accept/reject choices in the second case. null outside EDIT.
+        this._editSnapshot = null;
         this._menuOpen = false;
         // Whether the bulk actions are suppressed by state (zero changes, or
         // EDIT mode) as opposed to by layout. Set by _updateCounter, read by
@@ -1453,7 +1491,7 @@ class DiffPicker extends HTMLElement {
         // add-here / remove-in-disconnectedCallback discipline as the keydown
         // handler, so nothing accumulates across chat turns.
         document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
-        // The user dragging the textarea's resize handle changes the picker's
+        // The user dragging the editor's resize handle changes the picker's
         // height with no mutation and no scroll event, so nothing else would
         // notice that the transcript geometry moved.
         if (typeof ResizeObserver !== 'undefined') {
@@ -1518,10 +1556,33 @@ class DiffPicker extends HTMLElement {
         this._bodyEl.className = 'picker-body';
         this._root.appendChild(this._bodyEl);
 
-        this._editor = document.createElement('textarea');
+        // A contenteditable, not a <textarea>: see the REVIEW/EDIT section for
+        // why that is safe here and what bounds it. role/aria-multiline are what
+        // give an editable div the same semantics the textarea had for free.
+        this._editor = document.createElement('div');
         this._editor.className = 'picker-editor';
+        this._editor.setAttribute('contenteditable', 'true');
+        this._editor.setAttribute('role', 'textbox');
+        this._editor.setAttribute('aria-multiline', 'true');
         this._editor.setAttribute('aria-label', browser.i18n.getMessage('apiwebchat_picker_editor'));
         this._root.appendChild(this._editor);
+
+        // THE BOUNDARY THAT MAKES contenteditable ACCEPTABLE. Left alone, both
+        // gestures hand the editor the source's raw DOM - styles, scripts,
+        // whatever the page had - and that DOM would then be read straight back
+        // out into the user's outgoing mail. Intercepted, each flavour goes
+        // through the same allowlist as the answer: real markup through
+        // sanitizeBlockHtml, plain text escaped by textToBlockHtml. A drop is a
+        // paste by another gesture and gets the identical treatment; skipping
+        // either one is skipping the whole boundary.
+        this._editor.addEventListener('paste', (e) => {
+            e.preventDefault();
+            this._insertSanitized(e.clipboardData);
+        });
+        this._editor.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this._insertSanitized(e.dataTransfer);
+        });
 
         // Sets the mode button's label and aria-pressed for the initial REVIEW
         // state; without it the button would render with no text.
@@ -1837,11 +1898,96 @@ class DiffPicker extends HTMLElement {
     //
     // Picking per change covers the common case, but not "the suggestion is
     // nearly right and I want to fix one word myself". EDIT mode is that escape
-    // hatch: a plain textarea over the current composition.
+    // hatch: the current composition, freely editable.
     //
-    // A <textarea> and not contenteditable, deliberately: contenteditable would
-    // accept pasted rich text and quietly break the plain-text-only contract the
-    // whole hunk model rests on.
+    // A CONTENTEDITABLE, over the <textarea> this replaced. The textarea's old
+    // justification - contenteditable accepts pasted rich text, which breaks the
+    // plain-text-only contract - died with that contract: both sides of the diff
+    // are HTML now, so a plain-text editor was the one place the feature threw
+    // away the very markup it exists to preserve.
+    //
+    // Three things bound what the editable surface can produce, and all three
+    // are load-bearing:
+    //
+    //   - The SEGMENTER already normalizes arbitrary block HTML. Whatever DOM
+    //     the browser's editing commands leave behind, _editorBlockHtml runs it
+    //     through sanitize -> segment -> render, which is the same canonical
+    //     shape _rebuild consumes from the answer. Nothing downstream has to
+    //     trust the editor.
+    //   - PASTE AND DROP ARE INTERCEPTED (see _buildChrome). They are the only
+    //     way markup from outside can enter, so they are the only place the
+    //     allowlist has to be applied on the way IN rather than on the way out.
+    //   - styleWithCSS IS TURNED OFF, so Ctrl+B/I/U emit <b>/<i>/<u> instead of
+    //     <span style>. Not cosmetic: the allowlist strips the style attribute,
+    //     so under the default the shortcuts would silently do nothing.
+
+    // The editor's content, in the pipeline's canonical form.
+    //
+    // sanitize (the security boundary) -> segment -> render is exactly what
+    // _rebuild and composeResultBlocksHTML already emit, which is what lets the
+    // unchanged-check in _setMode be a plain string comparison and keeps the
+    // three readers of the editor from drifting apart.
+    //
+    // Gecko leaves a bare <br> behind in an emptied contenteditable. segmentBlocks
+    // would drop the empty run it produces anyway, but the case is guarded
+    // explicitly because "the editor is empty" is the one input where a wrong
+    // answer writes a stray paragraph into the user's mail.
+    _editorBlockHtml() {
+        const raw = String(this._editor.innerHTML || '').trim();
+        if (raw === '' || /^(?:<br\s*\/?>)+$/i.test(raw)) { return ''; }
+        return renderBlocks(segmentBlocks(sanitizeBlockHtml(raw)));
+    }
+
+    // Insert a paste's or a drop's payload at the caret, allowlisted first.
+    //
+    // htmlToFragment is reused rather than re-implemented: it is the module's
+    // single choke point for "sanitized HTML -> DOM", and this is precisely that
+    // - the fragment here has been through sanitizeBlockHtml or was built by
+    // textToBlockHtml, so it satisfies the same precondition every other caller
+    // does.
+    _insertSanitized(dt) {
+        if (!dt) { return; }
+        const html = dt.getData('text/html');
+        // The html flavour when the source offered one, else the text flavour
+        // escaped: a '<' the user copied out of a code sample is a literal
+        // character, not markup.
+        const frag = htmlToFragment(html
+            ? sanitizeBlockHtml(html)
+            : textToBlockHtml(dt.getData('text/plain') || ''));
+        if (!frag.firstChild) { return; }
+
+        // ShadowRoot.getSelection() is non-standard and Gecko does not implement
+        // it, so in Thunderbird the document's selection is the live one - its
+        // range endpoints do land on nodes inside the shadow tree for a caret the
+        // user placed there. The ?? keeps the standard call first for engines
+        // that do have it.
+        const sel = this._root.getSelection?.() ?? document.getSelection();
+        const range = (sel && sel.rangeCount > 0) ? sel.getRangeAt(0) : null;
+
+        // A caret that is not in the editor (or no caret at all - a drop can
+        // arrive with the selection anywhere) has no meaningful insertion point,
+        // so append instead of guessing. Never insert into a range outside the
+        // editor: that would write sanitized-but-unexpected DOM into the picker's
+        // own chrome.
+        const anchor = range ? range.commonAncestorContainer : null;
+        const inEditor = anchor && (anchor === this._editor || this._editor.contains(anchor));
+        if (!inEditor) {
+            this._editor.appendChild(frag);
+            return;
+        }
+
+        range.deleteContents();
+        // insertNode empties the fragment, so the node to collapse after has to
+        // be captured before the call.
+        const last = frag.lastChild;
+        range.insertNode(frag);
+        if (last) {
+            range.setStartAfter(last);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    }
 
     _toggleMode() {
         this._setMode(this._mode === 'review' ? 'edit' : 'review');
@@ -1858,25 +2004,57 @@ class DiffPicker extends HTMLElement {
             // two views then start the same size, there is no scroll position to
             // restore afterwards.
             const h = this._bodyEl.offsetHeight;
-            this._editor.value = composeResult(this._blocks);
+            // The composition WITH its markup, which is the whole point of the
+            // editable surface: the user edits the formatted text rather than a
+            // flattened transcript of it.
+            this._editor.innerHTML = composeResultBlocksHTML(this._blocks);
+            // Remembered so leaving can tell "edited" from "looked and left".
+            //
+            // Read back through _editorBlockHtml() rather than off innerHTML
+            // directly, so BOTH sides of the comparison on the way out are the
+            // output of the same function. Taking it from innerHTML would assume
+            // the browser's readback is byte-identical to what sanitize ->
+            // segment -> render produces from it; any difference at all - a
+            // normalized void tag, attribute order - would make an untouched
+            // editor compare unequal and silently re-diff, throwing away the
+            // choices this snapshot exists to protect.
+            this._editSnapshot = this._editorBlockHtml();
             if (h > 0) { this._editor.style.height = h + 'px'; }
             this._mode = 'edit';
             this.setAttribute('mode', 'edit');
-            // Warn before the loss happens, not after. Coming back re-diffs and
-            // discards the choices - and, since the editor is plain text, the
-            // answer's FORMATTING as well. Both are surprising if unannounced.
+            // Off, so Ctrl+B/I/U emit <b>/<i>/<u> and not <span style> - which
+            // the allowlist strips, making the shortcuts look broken. Here and
+            // not in the constructor: the command is document-global and only
+            // means anything once an editable surface exists. It is legacy API,
+            // hence the guard - if it is ever removed the editor still works,
+            // only the keyboard shortcuts lose their formatting.
+            try { document.execCommand('styleWithCSS', false, false); } catch (e) { /* not fatal */ }
+            // Warn before it happens, not after: coming back from a CHANGED
+            // editor re-diffs and discards the accept/reject choices.
             this._showNote('apiwebchat_picker_edit_hint');
         } else {
-            // Re-diff the edited text against the ORIGINAL. This resets every
-            // choice to accepted - see the comment on _rebuild. _rebuild also
-            // resets the note, clearing the edit hint.
-            //
-            // The editor holds plain text but _rebuild segments HTML, so each
-            // line becomes its own <p>: that is what gives the segmenter blocks
-            // to work with, and it is where the answer's formatting is lost.
             this._mode = 'review';
             this.removeAttribute('mode');
-            this._rebuild(textToBlockHtml(this._editor.value));
+            const edited = this._editorBlockHtml();
+            if (edited === this._editSnapshot) {
+                // Opened and closed without changing anything. Re-diffing here
+                // would reset every accept/reject choice in exchange for nothing
+                // at all - the text is the one the choices were made against, so
+                // the existing blocks are still exactly right. Both sides of this
+                // comparison are canonical renderBlocks output, so the browser's
+                // own cosmetic editing noise normalizes away rather than reading
+                // as an edit.
+                this._noteEl.hidden = true;
+                this._noteEl.textContent = '';
+                this._renderAll();
+                this._updateCounter();
+            } else {
+                // Re-diff the edited HTML against the ORIGINAL. This resets every
+                // choice to accepted - see the comment on _rebuild. _rebuild also
+                // resets the note, clearing the edit hint.
+                this._rebuild(edited);
+            }
+            this._editSnapshot = null;
         }
 
         this._paintMode();
@@ -1947,7 +2125,8 @@ class DiffPicker extends HTMLElement {
         // editor would hide the changes the button was clicked to see.
         this._mode = 'review';
         this.removeAttribute('mode');
-        this._editor.value = '';
+        this._editor.innerHTML = '';
+        this._editSnapshot = null;
         this._rebuild(this._newHtml);
         this._paintMode();
     }
@@ -2345,19 +2524,21 @@ class DiffPicker extends HTMLElement {
         if (e.ctrlKey || e.metaKey || e.altKey) { return; }
         // Before every other guard: the menu is reachable in EDIT mode too, and
         // an open popover has to be dismissable from the keyboard wherever focus
-        // sits. Escape is not text, so the textarea has no claim on it either.
+        // sits. Escape is not text, so the editor has no claim on it either.
         if (e.key === 'Escape' && this._menuOpen) {
             e.preventDefault();
             this._setMenuOpen(false);
             this._overflowBtn.focus();
             return;
         }
-        // The textarea keeps every key, j and k included: they are text there.
+        // A real text input keeps every key, j and k included: they are text
+        // there. The EDIT box is no longer one of these - it is a contenteditable
+        // div - so keys typed in it are covered by the mode guard below instead.
         const target = e.composedPath()[0];
         if (target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT')) { return; }
-        // Nothing to navigate or toggle in EDIT mode. Belt and braces: the guard
-        // above already covers the textarea itself, but focus can sit on a
-        // toolbar button while editing.
+        // Nothing to navigate or toggle in EDIT mode. This now carries the editor
+        // itself as well as the case it was written for: focus sitting on a
+        // toolbar button while editing, where j/k/arrows must not act either.
         if (this._mode === 'edit') { return; }
 
         switch (e.key) {
@@ -2404,25 +2585,37 @@ class DiffPicker extends HTMLElement {
     }
 
     // The single source of truth for what the user has chosen, in either mode.
-    // In EDIT it is the textarea verbatim, so "Use this answer" and Copy work
-    // straight from the editor without forcing a trip back through REVIEW.
+    // Reading the editor directly is what makes "Use this answer" and Copy work
+    // straight from EDIT without forcing a trip back through REVIEW.
+    //
+    // In EDIT the projection is derived from the SAME normalized html
+    // composeResultHTML() returns, one line per block, exactly as composeResult
+    // does in REVIEW. Deliberately not innerText: two projections of the editor
+    // that merely looked equivalent would let Copy and the inserted mail
+    // disagree - the very drift block.text is read back out of block.html to
+    // avoid - and innerText additionally depends on layout, which is the wrong
+    // thing to depend on for an element the mode switch is about to hide.
     composeResultText() {
-        if (this._mode === 'edit') { return this._editor.value; }
+        if (this._mode === 'edit') {
+            return segmentBlocks(this._editorBlockHtml()).map(b => b.text).join('\n');
+        }
         return composeResult(this._blocks);
     }
 
-    // The HTML written back into the mail.
+    // The HTML written back into the mail. Both modes emit sanitized block HTML;
+    // only the source differs.
     //
     // In REVIEW this walks the blocks, so the chosen side's MARKUP comes with
     // it - the whole point of the block model. escapeHtml is not used on this
     // path: the hunks' html already went through sanitizeInlineHtml, and
     // escaping it here would escape the very tags being preserved.
     //
-    // In EDIT the composition is free text the user typed, so it is escaped and
-    // wrapped in <p> per line - the same shape the block renderer emits, which
+    // In EDIT it is the editor's own content, put through the same
+    // sanitize -> segment -> render pipeline, so the user's formatting survives
+    // and the output is the same canonical shape either way - which is what
     // keeps the downstream plain-text conversion on one code path.
     composeResultHTML() {
-        if (this._mode === 'edit') { return textToBlockHtml(this._editor.value); }
+        if (this._mode === 'edit') { return this._editorBlockHtml(); }
         return composeResultBlocksHTML(this._blocks);
     }
 }

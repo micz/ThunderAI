@@ -472,13 +472,14 @@ already went through `sanitizeInlineHtml` at segmentation time; escaping them he
 very tags the feature exists to preserve. Entity correctness comes from DOM serialization
 (`innerHTML`), not from string replacement.
 
-**In EDIT it is escaped**, because the editor holds genuine plain text — a `<` the user typed is a
-literal character, not markup. `textToBlockHtml()` escapes each line and wraps it in `<p>`, which is
-the same block shape the REVIEW path emits, so the downstream plain-text conversion stays on one code
-path.
+**In EDIT nothing is escaped either.** The editor holds real markup now, so its content goes through
+the same `sanitizeBlockHtml` → `segmentBlocks` → `renderBlocks` pipeline (`_editorBlockHtml()`) and
+comes out in the same canonical block shape the REVIEW path emits — which is what keeps the
+downstream plain-text conversion on one code path. Escaping is applied only where the input genuinely
+*is* plain text: the `text/plain` flavour of a paste or drop.
 
-`escapeHtml` therefore survives for exactly two callers: `textToBlockHtml`, and `sliceHtmlByText`'s
-fallback. Within it, `&` must still be replaced before `<`/`>` or the entities double-escape into
+`escapeHtml` therefore survives for exactly two callers: `textToBlockHtml` (the plain-text paste
+flavour, and the original-side fallback), and `sliceHtmlByText`'s fallback. Within it, `&` must still be replaced before `<`/`>` or the entities double-escape into
 `&amp;lt;`.
 
 ## UI
@@ -512,8 +513,8 @@ That is the core interaction:
   scrollable content to conflict with), landing focus on the **active** side so the next keystroke
   acts relative to what is actually there. `Space`/`Enter` on the inactive side selects it; on the
   active side it flips to the other one (otherwise the key would appear dead) and focus follows the
-  new active side. Modified keys (ctrl/meta/alt) are ignored so browser shortcuts survive, and keys
-  inside a textarea are left alone.
+  new active side. Modified keys (ctrl/meta/alt) are ignored so browser shortcuts survive, keys
+  inside a real text input are left alone, and EDIT mode returns early before any of this.
 
 > An earlier iteration showed only one side at a time and toggled on click. It was changed because
 > seeing the original and the suggestion together is the whole point of reviewing a proofread: with
@@ -619,22 +620,42 @@ Two mutually exclusive modes, switched by the **Edit manually** item in the over
 conveyed by the role and a tick, where the old inline button used an accent fill):
 
 - **REVIEW** (default) — the per-change picker described above.
-- **EDIT** — a `<textarea>` holding the current composition, freely editable.
+- **EDIT** — a sanitized `contenteditable` holding the current composition, freely editable.
 
 EDIT exists for the case picking cannot cover: the suggestion is nearly right and the user wants to
 fix one word themselves.
 
-A **`<textarea>`, deliberately not `contenteditable`**. The original reason — contenteditable accepts
-pasted rich text and breaks the plain-text-only contract — no longer applies now that the picker is
-HTML-aware, but the conclusion stands for a stronger one: **contenteditable produces arbitrary
-user-authored DOM that the segmenter cannot be trusted with**, and the EDIT → REVIEW round-trip has
-to segment whatever comes back. The textarea keeps that output in a shape the pipeline already
-handles.
+A **`contenteditable`**, which replaced a `<textarea>`. The textarea's original reason —
+contenteditable accepts pasted rich text and breaks the plain-text-only contract — **died with that
+contract**: both sides of the diff are HTML now, so a plain-text editor was the one place the feature
+threw away the very markup it exists to preserve. Entering EDIT no longer costs the answer's
+formatting.
 
-**The consequence: entering EDIT discards the answer's formatting for the whole composition**, not
-just the accept/reject decisions. The editor is plain text, and coming back re-segments it with
-`textToBlockHtml()` — one `<p>` per line. `apiwebchat_picker_edit_hint` says so, and is shown
-*before* the switch rather than after.
+The objection the textarea was kept for — *contenteditable produces arbitrary user-authored DOM the
+segmenter cannot be trusted with* — is answered rather than avoided, by three things that are each
+load-bearing:
+
+- **The segmenter already normalizes arbitrary block HTML.** `_editorBlockHtml()` runs the editor's
+  `innerHTML` through `sanitizeBlockHtml` → `segmentBlocks` → `renderBlocks` — the same canonical
+  shape `_rebuild` consumes from the answer — so nothing downstream has to trust the editor. It also
+  guards the empty case explicitly: Gecko leaves a bare `<br>` in an emptied contenteditable, which
+  must not become a spurious block.
+- **`paste` and `drop` are intercepted** (both, in `_buildChrome`). They are the only way markup from
+  outside can enter, so they are the only place the allowlist must be applied on the way *in*:
+  `text/html` through `sanitizeBlockHtml`, else `text/plain` through `textToBlockHtml`, inserted at
+  the caret via the Range API and `htmlToFragment` — the module's existing single choke point for
+  "sanitized HTML → DOM". Skipping either event skips the whole boundary.
+- **`styleWithCSS` is turned off** (`document.execCommand('styleWithCSS', false, false)`, once on
+  entering EDIT) so Ctrl+B/I/U emit `<b>`/`<i>`/`<u>` rather than `<span style>`. Not cosmetic: the
+  allowlist strips the `style` attribute, so under the default the shortcuts would silently do
+  nothing.
+
+**Selection inside the shadow root.** `ShadowRoot.getSelection()` is non-standard and Gecko does not
+implement it, so the caret lookup is `this._root.getSelection?.() ?? document.getSelection()` — in
+Thunderbird the document's selection is the live one, and its range endpoints do land on nodes inside
+the shadow tree. A range whose `commonAncestorContainer` is not within the editor (or no range at
+all, which a drop can produce) falls back to appending at the end, so sanitized DOM can never be
+inserted into the picker's own chrome.
 
 `_mode` (`'review'` | `'edit'`) is the state; `_setMode` mirrors it onto a `mode` attribute on the
 **host**, and the CSS (`:host([mode="edit"])`) swaps the two views. One attribute write, so the two
@@ -642,23 +663,41 @@ views can never both be visible.
 
 ### `composeResultText()` is mode-aware
 
-In EDIT it returns `this._editor.value` verbatim; in REVIEW it returns `composeResult(this._hunks)`.
+In EDIT it returns the editor's plain-text projection — `segmentBlocks(this._editorBlockHtml())`
+joined one line per block, mirroring `composeResult`'s own line join; in REVIEW it returns
+`composeResult(this._hunks)`. The projection is derived from the **same** normalized HTML
+`composeResultHTML()` returns, deliberately not from `innerText`: two projections of the editor that
+merely *looked* equivalent would let Copy and the inserted mail disagree — the very drift
+`block.text` is read back out of `block.html` to avoid — and `innerText` additionally depends on
+layout, which is the wrong thing to depend on for an element the mode switch is about to hide.
 This is what makes **"Use this answer" and Copy work straight from the editor** with no trip back
 through REVIEW. Both consumers in `messagesArea.js` (`composeResultHTML()` at the use-answer site,
 `composeResultText()` at the Copy site) go through these methods, so neither needed changing.
 
-### EDIT → REVIEW re-diffs from scratch
+### EDIT → REVIEW re-diffs only if the text actually changed
 
-Coming back runs `_rebuild(textToBlockHtml(this._editor.value))` — `buildHunks(originalHtml,
-editedAsBlocks)`, a full recompute against the **original**. No merge, no attempt to carry the old
-hunk list over. The `textToBlockHtml` wrap is what gives the segmenter blocks to work with, and is
-where the answer's formatting is lost.
+Coming back computes `_editorBlockHtml()` and compares it against `_editSnapshot`, taken when EDIT
+opened. **Both sides are the output of the same function** — the snapshot is read back through
+`_editorBlockHtml()` too, not off `innerHTML` directly. That is deliberate: taking it from `innerHTML`
+would assume the browser's readback is byte-identical to what sanitize → segment → render produces
+from it, and any difference at all (a normalized void tag, attribute order) would make an untouched
+editor compare unequal and silently re-diff — throwing away the very choices the snapshot exists to
+protect.
 
-**This resets every hunk to `'accepted'`, discarding accept/reject decisions made before**, and the
-counter jumps back to "N of N". That is the design: the hunks are recomputed against different text,
-so old decisions have no counterpart to map onto and inventing one would misrepresent what the user
-chose. Same reasoning as the granularity switch. Because it *is* surprising, EDIT mode shows a note
-(`apiwebchat_picker_edit_hint`) warning about it **before** it happens rather than after.
+- **Identical → the existing `_blocks` are reused.** No re-diff, so **every accept/reject choice
+  survives** a look-and-leave. The comparison is a plain string equality because both sides are
+  canonical `renderBlocks` output, which is what makes the browser's own cosmetic editing noise
+  normalize away instead of reading as an edit. Only the note and counter are reset (via
+  `_renderAll()` + `_updateCounter()`, the part `_rebuild` would otherwise have done).
+- **Different → `_rebuild(edited)`** — `buildHunks(originalHtml, edited)`, a full recompute against
+  the **original**. No merge, no attempt to carry the old hunk list over.
+
+**The re-diff path resets every hunk to `'accepted'`**, and the counter jumps back to "N of N". That
+is the design: the hunks are recomputed against different text, so old decisions have no counterpart
+to map onto and inventing one would misrepresent what the user chose. Same reasoning as the
+granularity switch. Because it *is* surprising, EDIT mode shows a note
+(`apiwebchat_picker_edit_hint`) warning about it **before** it happens rather than after — and the
+hint is conditional (*"if you change it"*), matching the behaviour above.
 
 The invariant survives the round-trip: after EDIT → REVIEW, reject-all still yields
 `renderBlocks(segmentBlocks(originalHtml))` — the original side never changed, so P1–P3 hold exactly
@@ -676,8 +715,9 @@ left as a bare tinted band, and the actions row inherits the container's top rou
 
 "Use this answer" stays, as does the overflow button — the menu is how the user gets back out of EDIT.
 `_onKeydown` returns early on `_mode === 'edit'` (after the `Escape` branch, which must keep working
-to dismiss the menu): the textarea guard already covers keys typed in the box, but focus can sit on a
-toolbar button while editing, and `j`/`k`/arrows must not act there either.
+to dismiss the menu). That early return now carries the editor itself: the `TEXTAREA`/`INPUT` target
+guard above it no longer matches a contenteditable div, and it is also what stops `j`/`k`/arrows
+acting when focus sits on a toolbar button while editing.
 
 ### Opening scroll position
 
@@ -701,7 +741,7 @@ it never applies. The anchor cannot go stale either: the next user prompt re-anc
 
 ### Height and scroll
 
-The textarea opens at the height the review view had. `offsetHeight` is measured **before** hiding it —
+The editor opens at the height the review view had. `offsetHeight` is measured **before** hiding it —
 on a `display: none` element it is 0. Because both views then start the same size, there is no scroll
 position left to restore; the problem largely dissolves rather than being solved.
 
@@ -709,7 +749,9 @@ The picker has **no reference to `MessagesArea`** and must not get one: `message
 `diffPicker.js`, so a reference the other way would invert the dependency. Instead it dispatches a
 `CustomEvent('mzta-picker-resize')` with `bubbles: true` **and `composed: true`** — without `composed`
 the event never crosses the shadow boundary. Fired on a mode switch, and by a `ResizeObserver` on the
-textarea when the user drags its resize handle (silent in REVIEW).
+editor when the user drags its resize handle (silent in REVIEW). A `<div>` has no intrinsic text-box
+height, so `.picker-editor` carries a `min-height` and `overflow: auto` to keep the inherited
+`resize: vertical` behaving as it did on the textarea.
 
 `MessagesArea` listens **once**, delegated on `this.messages` in `connectedCallback` (the event bubbles,
 so one listener serves every picker and there is nothing to tear down per turn) and handles it with
@@ -798,7 +840,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules). `diffArrays` pairs blocks, `diffWordsWithSpace`/`diffSentences` diff within one |
 | `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `htmlHasLineStructure` / `htmlOrFromText` rebuild a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
-| `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's formatting-loss warning |
+| `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
 | `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n` |
 | `mzta-background.js` | detects the compose format and converts before insertion |
