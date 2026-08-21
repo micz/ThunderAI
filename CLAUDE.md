@@ -11,10 +11,10 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 ## Key Rules
 
 1. **Localization:** Modify ONLY `_locales/en/messages.json`. All other locale files are managed via Weblate — never touch them.
-2. **No build system:** There is no bundler, compiler, or package manager. All JS files are plain ES6 modules loaded directly by the browser engine.
+2. **No build system:** There is no bundler, compiler, or package manager. All JS files are plain ES6 modules loaded directly by the browser engine. (This still holds: the only dependency anywhere in the repo is `tools/debug/`'s Python venv, which is a developer tool — it is not shipped, and the extension needs no packaging step to run under it.)
 3. **Module imports:** Use relative paths with `.js` extension (e.g., `import { foo } from '../js/mzta-utils.js'`).
 4. **Placeholder format:** Placeholders in prompt text use the `{%placeholder_id%}` syntax (e.g., `{%mail_text_body_or_selected%}`).
-5. **No test suite:** There is no automated test framework. Testing is done manually in Thunderbird.
+5. **No test suite:** There is no automated test framework, and testing for feature work is done manually in Thunderbird. The one exception is [`tools/debug/`](tools/debug/): an **opt-in** Marionette harness for UI/persistence regressions, with its own venv. It adds no build step for the extension (the add-on is installed as the unpacked repo directory) — see [claude-spec/08-debug-harness.md](claude-spec/08-debug-harness.md).
 6. **Settings defaults:** All new preferences must be added to `options/mzta-options-default.js` in `prefs_default`.
 7. **Keep spec files up to date:** When making code changes that affect a subsystem described in claude-spec/, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 
@@ -52,7 +52,9 @@ ThunderAI is a **Thunderbird WebExtension (Manifest V2)** that integrates multip
 │   ├── en/messages.json    # ← ONLY THIS FILE is edited directly
 │   └── [15 other languages managed by Weblate]
 ├── images/                 # Icons and graphical assets
-└── api_webchat/            # Web chat API interface
+├── api_webchat/            # Web chat API interface
+└── tools/
+    └── debug/              # Opt-in Marionette debug harness (Python venv, not shipped)
 ```
 
 ## Spec Files
@@ -66,4 +68,5 @@ For detailed documentation see [`claude-spec/`](claude-spec/):
 - [05-options.md](claude-spec/05-options.md) — Settings and preferences system
 - [06-localization.md](claude-spec/06-localization.md) — i18n rules and workflow
 - [07-diff-picker.md](claude-spec/07-diff-picker.md) — Interactive change picker for proofreading (hunk model, compose invariant)
+- [08-debug-harness.md](claude-spec/08-debug-harness.md) — Opt-in Marionette debug harness (`tools/debug/`): setup, and the non-obvious Thunderbird/Gecko constraints it works around
 - [99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) — Thunderbird WebExtensions development guidelines (API usage, experiments, review requirements)

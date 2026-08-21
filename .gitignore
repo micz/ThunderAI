@@ -28,3 +28,14 @@ coverage
 dist
 
 .claude
+
+# ThunderAI debug harness (tools/debug)
+tools/debug/.venv/
+tools/debug/__pycache__/
+!tools/debug/logs/
+tools/debug/logs/*
+!tools/debug/logs/.gitkeep
+tools/debug/screenshots/*
+!tools/debug/screenshots/.gitkeep
+tools/debug/dom/*
+!tools/debug/dom/.gitkeep
