@@ -1513,12 +1513,6 @@ class MessagesArea extends HTMLElement {
                 return;
             }
 
-            // Thinking is over for this segment: drop the live indicator now
-            // that the real block is about to be rendered, so the two are never
-            // on screen together. Deliberately after the deferred-flush return
-            // above, which must leave the indicator in place.
-            this._removeThinkingIndicator();
-
             const { html, thinkingText, fullTextHTML, cumulative, deferred } = result;
 
             // Keep the immutable snapshot readers (addActionButtons /
@@ -1527,14 +1521,23 @@ class MessagesArea extends HTMLElement {
 
             // A deferred flush carried no new rendering — on the HTML path the
             // response is re-rendered in chunks rather than on every '\n'. The
-            // thinking indicator above is still dropped and the snapshot still
-            // mirrored, but the element must keep the live token spans it already
-            // has: clearing them for an empty `html` would blank the answer between
-            // renders. It is also never retired here, exactly as for a cumulative
-            // flush — the next render reuses this same element.
+            // snapshot is still mirrored above, but the element must keep the live
+            // token spans it already has: clearing them for an empty `html` would
+            // blank the answer between renders. It is also never retired here,
+            // exactly as for a cumulative flush — the next render reuses this same
+            // element. The "Thinking..." indicator is left in place too: the
+            // thinking for this flush was held back in the accumulator, so until
+            // the next non-deferred flush renders the block the indicator is all
+            // the user has. Dropping it here would briefly show nothing.
             if (deferred) {
                 return;
             }
+
+            // Thinking is over for this segment: drop the live indicator now
+            // that the real block is about to be rendered, so the two are never
+            // on screen together. After the deferred-flush return above, which
+            // must leave the indicator in place.
+            this._removeThinkingIndicator();
 
             // console.log(">>>>>>>>>>>>>>>> flushAccumulatingMessage this.fullTextHTML: " + this.fullTextHTML);
 

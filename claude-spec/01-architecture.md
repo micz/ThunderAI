@@ -159,7 +159,7 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
         ↓   before the `summarize_auto === 0` return)
    matchAddressList(message.author, prefs.summarize_auto_senders_list)
         ↓
-   _generateSummaryForMessage(headerMessageId, tabId, { messageId })     ← inline, message pane
+   _generateSummaryForMessage(headerMessageId, tabId, { resolvedMessage })  ← inline, message pane
 ```
 
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
@@ -266,31 +266,34 @@ so on a large mail store that search freezes the entire application UI — minut
 AI request is even sent. The WebExtension docs warn about it explicitly ("could need a long
 time to complete, if the user has a lot of messages").
 
-`_resolveMessage(headerMessageId, messageId, tabId, queryScope)` in `mzta-background.js`
+`_resolveMessage(headerMessageId, messageId, tabId, resolvedMessage)` in `mzta-background.js`
 concentrates the lookup and tries the cheap routes first:
 
 | Order | Source | Used when |
 |---|---|---|
 | — | `options.messageData` | caller already fetched the message (checked by the generators, before this helper) |
+| a | `resolvedMessage` (the message object itself) | the caller already holds the message (e.g. from `getDisplayedMessage`) |
 | b | `browser.messages.get(messageId)` | the caller holds a numeric message id |
 | c | `browser.messageDisplay.getDisplayedMessage(tabId)` | a message-display tab is in scope |
-| d | `browser.messages.query()`, narrowed by `queryScope` | nothing else is known |
+| d | `browser.messages.query()` | nothing else is known — the last resort |
 
-**Both (b) and (c) verify `headerMessageId` before accepting the result.** For (c) that is the
+**(a), (b) and (c) verify `headerMessageId` before accepting the result.** For (c) that is the
 same staleness reasoning as `_sendIfCurrent()` — the displayed message can have changed while
 the work sat queued. For (b) it guards against a numeric id that no longer denotes the same
-message: ids are per-folder and can be reused after a delete + compaction. A mismatch falls
-through to the next route rather than returning the wrong message.
+message: ids are per-folder and can be reused after a delete + compaction. (a) re-checks for
+the same reason: a caller that resolved the message earlier may now hold a stale reference.
+A mismatch falls through to the next route rather than returning the wrong message.
 
 The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
 and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
 bookkeeping unchanged.
 
-**Passing the id is the caller's job.** Any handler that already holds a message object should
-pass `{ messageId: message.id }` — a message object carries both identifiers, so this costs
-nothing. `runtime.onMessage` handlers that receive only a `headerMessageId` from a content
-script pass their `sender.tab.id` instead and land on (c). After this, (d) is not reached by
-any normal user-facing path.
+**Passing the resolution is the caller's job.** A handler that already holds a message object
+(the `initSummary` / `initTranslation` auto-display paths, which fetched it via
+`getDisplayedMessage`) pass `{ resolvedMessage: message }` — route (a), no further lookup. A
+handler that only holds a numeric id passes `{ messageId }` (route b). `runtime.onMessage`
+handlers that receive only a `headerMessageId` from a content script pass their `sender.tab.id`
+instead and land on (c). After this, (d) is not reached by any normal user-facing path.
 
 ### Stale-result guard (rapid message switching)
 

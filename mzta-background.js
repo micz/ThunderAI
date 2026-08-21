@@ -393,7 +393,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("[ThunderAI] No AI connection able to reach an API, skipping the auto-summarize sender list for: " + message.headerMessageId);
                             } else {
                                 taLog.log("[ThunderAI] Sender in the auto-summarize list, generating summary for: " + message.headerMessageId);
-                                _generateSummaryForMessage(message.headerMessageId, tabId, { messageId: message.id });
+                                _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
                                 return;
                             }
                         }
@@ -422,7 +422,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic summarize...");
                                 return;
                             }
-                            _generateSummaryForMessage(message.headerMessageId, tabId, { messageId: message.id });
+                            _generateSummaryForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
                             return;
                         }
 
@@ -443,6 +443,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let tabId = sender.tab.id;
                     // Fire the inline loading indicator immediately, before any await
                     browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
+                    // No resolve hint: the content script sends only headerMessageId, so
+                    // _resolveMessage lands on the tabId route (c) — the message the user
+                    // just clicked on is the one this tab displays.
                     await _generateSummaryForMessage(message.headerMessageId, tabId);
                 }
                 _triggerSummaryGeneration(message);
@@ -450,12 +453,15 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
             case 'triggerSummaryWebchat':
                 async function _triggerSummaryWebchat(message) {
                     let tabId = sender.tab.id;
+                    // Same as triggerSummaryGeneration: resolves via the tabId route (c).
                     await _openSummaryWebchat(message.headerMessageId, tabId);
                 }
                 _triggerSummaryWebchat(message);
                 break;
             case 'generate_summary':
                 async function _generate_summary(message) {
+                    // Manual trigger: the content script supplies only headerMessageId
+                    // (and message.tabId), so _resolveMessage uses the tabId route (c).
                     await _generateSummaryForMessage(message.headerMessageId, message.tabId);
                 }
                 _generate_summary(message);
@@ -466,11 +472,13 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     let prefs_refresh = await browser.storage.sync.get({ summarize_display_mode: prefs_default.summarize_display_mode });
                     if (prefs_refresh.summarize_display_mode === 'webchat') {
                         await summaryStore.removeSummary(message.headerMessageId);
+                        // Resolves via the tabId route (c) — see triggerSummaryWebchat.
                         await _openSummaryWebchat(message.headerMessageId, tabId);
                     } else {
                         // Fire the inline loading indicator immediately, before any await
                         browser.tabs.sendMessage(tabId, { command: "showSummaryGenerating" });
                         await summaryStore.removeSummary(message.headerMessageId);
+                        // Resolves via the tabId route (c) — see triggerSummaryGeneration.
                         await _generateSummaryForMessage(message.headerMessageId, tabId);
                     }
                 }
@@ -556,7 +564,7 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                 taLog.log("Message in a folder excluded from the automatic processing, skipping the automatic translation...");
                                 return;
                             }
-                            _generateTranslationForMessage(message.headerMessageId, tabId, { messageId: message.id });
+                            _generateTranslationForMessage(message.headerMessageId, tabId, { resolvedMessage: message });
                             return;
                         }
 
@@ -838,20 +846,27 @@ async function _sendIfCurrent(tabId, headerMessageId, payload) {
 // query is the LAST resort here, never the first.
 //
 // Order, first hit wins:
+//   a) resolvedMessage -> the message object the caller already holds (e.g. from
+//      getDisplayedMessage); accepted only when its headerMessageId matches, for the
+//      same reason (b) and (c) verify;
 //   b) messageId  -> browser.messages.get(), a direct lookup;
 //   c) tabId      -> the message the tab currently displays;
-//   d) query, narrowed by queryScope ({ accountId } / { folderId }) when the caller
-//      knows where the message lives.
+//   d) query      -> browser.messages.query(), the LAST resort (see above).
 //
-// Both (b) and (c) are accepted ONLY when the resolved message really is the one asked
+// (a), (b) and (c) are accepted ONLY when the resolved message really is the one asked
 // for. For (c) that is the staleness check _sendIfCurrent() already makes — the user can
 // have clicked through to another email while the work sat queued. For (b) it guards
 // against a numeric id that no longer denotes the same message: ids are per-folder and
-// can be reused once a message is deleted and the folder compacted.
+// can be reused once a message is deleted and the folder compacted. (a) re-checks for the
+// same reason: a caller that resolved the message earlier may now hold a stale reference.
 //
 // Returns the message object, or null when it cannot be resolved — callers keep their
 // own "Message not found" bookkeeping.
-async function _resolveMessage(headerMessageId, messageId = null, tabId = null, queryScope = {}) {
+async function _resolveMessage(headerMessageId, messageId = null, tabId = null, resolvedMessage = null) {
+    if (resolvedMessage && resolvedMessage.headerMessageId === headerMessageId) {
+        return resolvedMessage;
+    }
+
     if (messageId) {
         try {
             const msg = await browser.messages.get(messageId);
@@ -871,7 +886,7 @@ async function _resolveMessage(headerMessageId, messageId = null, tabId = null, 
         }
     }
 
-    const messageResult = await browser.messages.query({ headerMessageId: headerMessageId, ...queryScope });
+    const messageResult = await browser.messages.query({ headerMessageId: headerMessageId });
     if (!messageResult || messageResult.messages.length === 0) return null;
     return messageResult.messages[0];
 }
@@ -903,6 +918,8 @@ async function _summarizeConnectionMissing() {
 // tabId is optional — if null, runs silently (background pre-cache, no UI update)
 // options.messageData: { message, fullMessage } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
+// options.resolvedMessage: the message object the caller already holds (e.g. from
+//   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
 async function _generateSummaryForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -934,7 +951,7 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
             message = options.messageData.message;
             fullMessage = options.messageData.fullMessage;
         } else {
-            message = await _resolveMessage(headerMessageId, options.messageId, tabId);
+            message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
                 await summaryStore.saveError(headerMessageId, "Message not found");
                 await _sendIfCurrent(tabId, headerMessageId, { command: "showSummary", data: { error: true, message: "Message not found" } });
@@ -993,6 +1010,8 @@ async function _generateSummaryForMessage(headerMessageId, tabId = null, options
 // tabId is optional — if null, runs silently (background pre-cache, no UI update)
 // options.messageData: { fullMessage } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
+// options.resolvedMessage: the message object the caller already holds (e.g. from
+//   getDisplayedMessage) — the cheapest route, used by the auto-display paths. See _resolveMessage()
 async function _generateTranslationForMessage(headerMessageId, tabId = null, options = {}) {
     try {
         let prefs = await browser.storage.sync.get({
@@ -1029,7 +1048,7 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
         if (options.messageData) {
             fullMessage = options.messageData.fullMessage;
         } else {
-            const message = await _resolveMessage(headerMessageId, options.messageId, tabId);
+            const message = await _resolveMessage(headerMessageId, options.messageId, tabId, options.resolvedMessage);
             if (!message) {
                 await translationStore.saveError(headerMessageId, "Message not found");
                 await _sendIfCurrent(tabId, headerMessageId, { command: "showTranslation", data: { error: true, message: "Message not found" } });

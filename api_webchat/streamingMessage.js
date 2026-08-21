@@ -283,8 +283,10 @@ export class StreamingMessage {
     //     thinkingText: combined thinking content for this segment (string),
     //     fullTextHTML: snapshot of the HTML accrued across the whole response,
     //     deferred:     when true, `html` holds nothing to render and the caller must
-    //                   leave the accumulating element's DOM as it is. Set on the HTML
-    //                   path between coalesced renders; `thinkingText` is still live. }
+    //                   leave the accumulating element's DOM as it is, and keep the live
+    //                   "Thinking..." indicator. Set on the HTML path between coalesced
+    //                   renders; `thinkingText` is empty (any thinking is held back in
+    //                   the accumulator for the next non-deferred flush). }
     // Flush the current segment.
     //
     // `final` is set by the caller's last flush of the response. It forces a
@@ -391,14 +393,17 @@ export class StreamingMessage {
             // repainting - which is what keeps the answer visibly streaming between
             // renders.
             //
-            // The thinking text still goes back, for the same reason the undecided
-            // branch above hands it over: it is independent of the response's shape,
-            // _thinkingAccumulator has already been drained into it, and swallowing
-            // it here would strand the thinking indicator until the next render.
+            // The thinking text is put back into _thinkingAccumulator rather than
+            // handed over: the caller returns early on `deferred` and would discard
+            // a returned thinkingText, so draining here would strand it. Restoring
+            // the accumulator carries it to the next non-deferred flush, which
+            // renders it with the HTML; until then the caller keeps the live
+            // "Thinking..." indicator on screen.
             if (!final && this._htmlPendingChars < HTML_RENDER_CHUNK) {
+                this._thinkingAccumulator = combinedThinking;
                 return {
                     html: '',
-                    thinkingText: combinedThinking,
+                    thinkingText: '',
                     fullTextHTML: this.getFullTextHTMLSnapshot(),
                     cumulative: true,
                     deferred: true,
