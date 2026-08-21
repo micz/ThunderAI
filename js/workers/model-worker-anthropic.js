@@ -121,6 +121,14 @@ self.onmessage = async function(event) {
                     continue;
                 }
 
+                // Guarded at the call site: taLog.log() gates only the console call,
+                // so an unguarded concatenation would run per SSE line even with debug
+                // off. Placed after the ping filter so keep-alives stay out of the log,
+                // and logs cleanLine rather than JSON.stringify() as the other workers
+                // do: this stream is raw SSE ('event: ...' / 'data: {...}'), already a
+                // string, so stringifying would only re-quote it.
+                if (taLog.do_debug) taLog.log("line: " + cleanLine);
+
                 // Remove "data: " and parse the JSON
                 if (cleanLine.startsWith('data: ')) {
                     const jsonPart = cleanLine.replace(/^data: /, '');

@@ -272,6 +272,17 @@ export class StreamingMessage {
         return String(this._fullTextHTML);
     }
 
+    // The response's shape verdict, once decided: true = HTML answer (sanitized,
+    // re-rendered whole), false = markdown answer (rendered per segment), null =
+    // not decided yet. Exposed so the caller can pick a flush trigger that is safe
+    // for the path: an embedded newline ("foo\nbar") is a safe flush point only on
+    // the HTML path, where the whole response is re-rendered each flush — on the
+    // markdown path flushing there would split a logical line across two segments
+    // (see handleNewToken).
+    get isHtmlResponse() {
+        return this._isHtmlResponse;
+    }
+
     // Flush the current segment. Ports the exact logic of the original
     // MessagesArea.flushAccumulatingMessage() token→HTML pipeline.
     //

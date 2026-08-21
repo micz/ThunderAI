@@ -878,6 +878,16 @@ class MessagesArea extends HTMLElement {
 
         this.fullTextHTML = messageText;
 
+        // Drop the streaming state of the answer this message interrupts, the way
+        // handleTokensDone() does on the normal path. This is the abort path: it is
+        // reached without any final flush, so whatever StreamingMessage was mid-
+        // response still holds its accumulated raw text, its non-zero pending-chars
+        // count and - crucially - its STICKY _isHtmlResponse verdict. Left in place,
+        // the next response streaming into this same element would inherit all of it
+        // and be rendered as a continuation of the failed one.
+        this._streaming = null;
+        this.accumulatingMessageEl = null;
+
         // Terminal message (typically an error): it may abort a stream that was
         // still thinking, so the indicator must not survive into the new turn.
         this._removeThinkingIndicator();
@@ -902,7 +912,8 @@ class MessagesArea extends HTMLElement {
 
         // Feed the raw token to the streaming state (source of truth for parsing)
         // and also render the fading token span for live display.
-        this._ensureStreaming().handleNewToken(token);
+        const streaming = this._ensureStreaming();
+        streaming.handleNewToken(token);
 
         const newTokenElement = document.createElement('span');
         newTokenElement.classList.add('token');
@@ -911,7 +922,21 @@ class MessagesArea extends HTMLElement {
 
         this._scrollIfSticky();
 
-        if (token === '\n') {
+        // When to flush. A bare '\n' token is always a safe flush point. A token
+        // that merely CONTAINS a newline ("foo\nbar", " \n") is a safe flush point
+        // only on the HTML path: flush() re-renders the WHOLE accumulated raw text
+        // there, so splitting at an embedded newline loses nothing. On the markdown
+        // path each flush renders only its own segment and appends it, with no
+        // context across the cut — flushing at "foo\nbar" followed by "baz" would
+        // put "bar" and "baz" in separate segments (separate <p>s) instead of on one
+        // line. So for markdown (and while the shape is still undecided) only a
+        // bare '\n' flushes, preserving the within-line joins of the v5.0.0 path.
+        //
+        // The HTML path needs the looser trigger: it coalesces re-renders to once
+        // every HTML_RENDER_CHUNK, and that threshold is only evaluated inside a
+        // flush. A provider that never sends bare '\n' would otherwise never flush
+        // mid-response and would render the whole answer once, at the final flush.
+        if (token === '\n' || (token.includes('\n') && streaming.isHtmlResponse === true)) {
             this.flushAccumulatingMessage();
         }
     }
@@ -1515,23 +1540,30 @@ class MessagesArea extends HTMLElement {
 
             const { html, thinkingText, fullTextHTML, cumulative, deferred } = result;
 
-            // Keep the immutable snapshot readers (addActionButtons /
-            // save-as-summary / diff) working: mirror the response-wide snapshot.
-            this.fullTextHTML = fullTextHTML;
-
             // A deferred flush carried no new rendering — on the HTML path the
             // response is re-rendered in chunks rather than on every '\n'. The
-            // snapshot is still mirrored above, but the element must keep the live
-            // token spans it already has: clearing them for an empty `html` would
-            // blank the answer between renders. It is also never retired here,
-            // exactly as for a cumulative flush — the next render reuses this same
-            // element. The "Thinking..." indicator is left in place too: the
-            // thinking for this flush was held back in the accumulator, so until
-            // the next non-deferred flush renders the block the indicator is all
-            // the user has. Dropping it here would briefly show nothing.
+            // element must keep the live token spans it already has: clearing them
+            // for an empty `html` would blank the answer between renders. It is also
+            // never retired here, exactly as for a cumulative flush — the next
+            // render reuses this same element. The "Thinking..." indicator is left in
+            // place too: the thinking for this flush was held back in the
+            // accumulator, so until the next non-deferred flush renders the block the
+            // indicator is all the user has. Dropping it here would briefly show
+            // nothing.
+            //
+            // Returned BEFORE the fullTextHTML mirror below: on this path the
+            // snapshot has not been re-sanitized, so it still describes the previous
+            // render and is up to HTML_RENDER_CHUNK behind the text already received.
+            // Publishing it would hand a truncated answer to whichever reader looked
+            // between renders. Nothing is lost by skipping it - the final flush is
+            // never deferred, and addActionButtons() (the only reader) runs after it.
             if (deferred) {
                 return;
             }
+
+            // Keep the immutable snapshot readers (addActionButtons /
+            // save-as-summary / diff) working: mirror the response-wide snapshot.
+            this.fullTextHTML = fullTextHTML;
 
             // Thinking is over for this segment: drop the live indicator now
             // that the real block is about to be rendered, so the two are never

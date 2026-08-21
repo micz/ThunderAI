@@ -400,8 +400,7 @@ text to `renderThinkingBlock`.
 
 markdown-it is instantiated **once for the module** (`getMarkdownIt()`, lazily, since
 `window.markdownit` is a classic-script global). It used to be constructed inside `flush()` — i.e.
-once per `
-` of every response — which was most of what made streaming feel slow. The options are
+once per `\n` of every response — which was most of what made streaming feel slow. The options are
 invariant and `render()` keeps no state between calls, so one shared instance is equivalent.
 
 `flush()` runs markdown-it with **`html: false`** (the default) — raw HTML in the model output is
@@ -483,12 +482,30 @@ it in `handleTokensDone()` so the next response opens its own.
 is O(n²) over a response — and `MessagesArea` then re-parses that whole string with `DOMParser` and
 rebuilds the element's children. The HTML path therefore re-sanitizes only once roughly every
 `HTML_RENDER_CHUNK` (2 KB) of new text, plus always on the final flush. In between, `flush()` returns
-`deferred: true`: the text is already accumulated, `thinkingText` is still handed over (it is
-independent of the response's shape), but the caller must **leave the element's DOM untouched** —
-clearing it for an empty `html` would blank the answer between renders. What keeps the answer
+`deferred: true`: the text is already accumulated, but the caller must **leave the element's DOM
+untouched** — clearing it for an empty `html` would blank the answer between renders. Unlike the
+undecided branch, `thinkingText` is **not** handed over on this path: it is returned empty and any
+thinking is put back into `_thinkingAccumulator`, because the caller returns early on `deferred` and
+would discard a returned value. The next non-deferred flush renders it with the HTML; until then the
+caller keeps the live "Thinking..." indicator on screen. What keeps the answer
 visibly streaming meanwhile is the live token spans `handleNewToken()` appends, the same mechanism
 the undecided and unterminated-`<think>` branches rely on. The finished answer is unchanged: the
 last flush is always `final` and always renders everything, before `addActionButtons()` snapshots it.
+
+Two consequences of coalescing, both handled explicitly:
+
+- **The `fullTextHTML` mirror is skipped while deferred.** `flushAccumulatingMessage()` returns on
+  `deferred` *before* copying the snapshot into `this.fullTextHTML`, because on that path the
+  snapshot was not re-sanitized and trails the received text by up to `HTML_RENDER_CHUNK`.
+  Publishing it would expose a truncated answer to a reader that looked between renders. Nothing
+  is lost: the final flush is never deferred, and `addActionButtons()` — the only reader — runs
+  after it.
+- **The abort path must discard the streaming state.** `appendBotMessage()` (the `'error'` path,
+  the one exit that reaches no final flush) nulls `_streaming` and `accumulatingMessageEl`, the
+  way `handleTokensDone()` does normally. Otherwise the interrupted `StreamingMessage` would keep
+  its accumulated `_htmlRawText`, its non-zero `_htmlPendingChars` and its **sticky**
+  `_isHtmlResponse` verdict, and the next answer streaming into the same element would be
+  rendered as a continuation of the failed one.
 
 **There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
 already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the
@@ -634,8 +651,17 @@ and its buttons. There are no `<hr>` dividers; spacing separates the turns.
 
 Two invariants in `MessagesArea`, both easy to break:
 
-- **`_currentTurnEl` must survive a flush.** A single response flushes on every `'\n'`, so
-  clearing it in `flushAccumulatingMessage()` would open a new wrapper — and render a second
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every bare `\n`
+  token, and — only once the response is known to be HTML — on every token that *contains* a
+  `\n` (`handleNewToken()` tests `token === '\n' || (token.includes('\n') &&
+  streaming.isHtmlResponse === true)`, not just `token === '\n'` — providers tokenize
+  differently and plenty send `"foo\nbar"` as one token, which a strict equality test would
+  never flush). The embedded-newline trigger is gated to the HTML path because `flush()`
+  re-renders the whole accumulated raw text there, so splitting at an embedded newline costs
+  nothing; on the markdown path each flush renders only its own segment, so flushing at
+  `"foo\nbar"` would strand the text after the newline in a separate `<p>`. While the shape is
+  still undecided only a bare `\n` flushes. Clearing `_currentTurnEl` in
+  `flushAccumulatingMessage()` would therefore open a new wrapper — and render a second
   avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
   `handleTokensDone()` reset it. `appendDiffViewer()` can run against an older turn mid-session,
   so it saves and restores the field around `_beginBotTurn()`.
