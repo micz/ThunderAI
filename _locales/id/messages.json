@@ -2373,5 +2373,90 @@
     },
     "editor_placeholder_unterminated": {
         "message": "Placeholder tidak ditutup: {%} penutup tidak ada"
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ dari $TOTAL$ prompt",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Cari berdasarkan nama atau ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Difilter: $SHOWN$ dari $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Tidak ada prompt yang cocok"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Hapus filter"
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "JSON tidak valid:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Nilai harus berupa objek JSON, diapit oleh kurung kurawal."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Data body tambahan"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Parameter tambahan yang dikirim pada setiap panggilan API, sebagai objek JSON. Berguna untuk opsi yang didukung layanan ini tetapi tidak disediakan oleh ThunderAI, seperti menonaktifkan mode berpikir: {\"chat_template_kwargs\": {\"thinking\": false}} atau {\"top_p\": 0.9}. Parameter yang dikelola oleh ThunderAI (model, messages, streaming, temperature) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Tambahkan tag juga ke email terkirim"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Pemrosesan otomatis tidak pernah dijalankan pada folder draf, templat, kotak keluar, sampah, dan tong sampah, serta juga melewati folder terkirim. Jika dicentang, AI juga akan menambahkan tag ke email yang Anda kirim."
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Prompt khusus Filter Spam tidak ditemukan. Jika Anda mengubah prompt khusus, coba pulihkan prompt Filter Spam bawaan."
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Data body tambahan"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Parameter tambahan yang dikirim pada setiap panggilan API, sebagai objek JSON, seperti {\"top_p\": 0.9}. Berguna untuk opsi yang didukung API OpenAI tetapi tidak disediakan oleh ThunderAI. Parameter yang dikelola oleh ThunderAI (model, input, streaming, temperature, reasoning, instructions) tidak dapat ditimpa di sini. Nilai yang tidak valid akan diabaikan."
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Daftar pengirim untuk ringkasan otomatis"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "Email yang berasal dari pengirim berikut akan diringkas secara otomatis, tanpa perlu klik. Ringkasan dibuat saat email diterima, atau saat Anda membukanya jika belum terproses pada saat penerimaan."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Tambahkan satu alamat email per baris, atau dipisahkan dengan koma. Gunakan \"@domain.com\" untuk mencocokkan semua pengirim dari satu domain."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Peringatan: ringkasan ini dibuat secara otomatis, sehingga setiap email dari pengirim tersebut menggunakan token API dan dapat meningkatkan biaya langganan AI Anda. Usahakan daftar ini sesingkat mungkin."
+    },
+    "Summarize_auto_senders_notice": {
+        "message": "Peringkasan otomatis dinonaktifkan, tetapi ringkasan tetap dibuat secara otomatis untuk pengirim dalam daftar di bawah ini."
+    },
+    "Summarize_auto_senders_disabled_note": {
+        "message": "Tidak tersedia saat peringkasan otomatis diatur untuk membuat ringkasan saat email diterima: dalam mode tersebut, setiap email yang masuk sudah diringkas."
+    },
+    "prefs_OptionText_summarize_auto_senders": {
+        "message": "Ringkas pengirim ini secara otomatis"
+    },
+    "prefs_OptionText_summarize_auto_senders_Info": {
+        "message": "Jika diaktifkan, email yang berasal dari pengirim yang terdaftar di bawah ini akan diringkas secara otomatis, bahkan saat peringkasan otomatis di atas dinonaktifkan."
+    },
+    "prefs_OptionText_summarize_auto_senders_list_Info": {
+        "message": "Alamat pengirim yang akan diringkas secara otomatis:"
     }
 }
