@@ -127,7 +127,10 @@ self.onmessage = async function(event) {
             // lots of low-level OpenAI response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer: " + buffer);
+            // No per-chunk dump of `buffer` here: taLog.log() only gates the console
+            // call, so its argument is built whether or not debug is on - and that
+            // argument is the whole unconsumed buffer, rebuilt on every SSE chunk.
+            // The per-line log below covers the same content, guarded properly.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             let parsedLines = [];
@@ -139,7 +142,10 @@ self.onmessage = async function(event) {
                     // .map((line) => JSON.parse(line)); // Parse the JSON string
                     .map((line) => {
                          try {
-                            taLog.log("line: " + JSON.stringify(line));
+                            // Guarded at the call site: taLog.log() gates only the console
+                            // call, so an unguarded JSON.stringify() would run per SSE line
+                            // even with debug off.
+                            if (taLog.do_debug) taLog.log("line: " + JSON.stringify(line));
                             return JSON.parse(line);
                         } catch (e) {
                             taLog.warn("JSON parse warning, skipped line: " + line + " - " + e.message);
@@ -154,7 +160,11 @@ self.onmessage = async function(event) {
             for (const parsedLine of parsedLines) {
                 const { choices } = parsedLine;
                 if (!choices || choices.length === 0) {
-                    taLog.warn("No choices found in parsed line: " + JSON.stringify(parsedLine));
+                    // Debug-gated, unlike most warn() calls: a frame without choices is
+                    // routine here (keep-alives and usage-only frames are what plenty of
+                    // OpenAI-compatible servers send), so this fires per chunk on a normal
+                    // response - and taLog.warn() is never gated by the logger itself.
+                    if (taLog.do_debug) taLog.warn("No choices found in parsed line: " + JSON.stringify(parsedLine));
                     continue;
                 }
                 const { delta } = choices[0];

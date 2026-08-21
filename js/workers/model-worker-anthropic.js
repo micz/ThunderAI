@@ -107,7 +107,9 @@ self.onmessage = async function(event) {
             // lots of low-level Claude response parsing stuff
             const chunk = decoder.decode(value);
             buffer += chunk;
-            taLog.log("buffer " + buffer);
+            // No per-chunk dump of `buffer`: taLog.log() only gates the console call,
+            // so the whole unconsumed buffer would be re-concatenated on every SSE
+            // chunk even with debug off.
             const lines = buffer.split("\n");
             buffer = lines.pop();
             
@@ -118,6 +120,14 @@ self.onmessage = async function(event) {
                 if (cleanLine === '' || cleanLine.startsWith('event: ping')) {
                     continue;
                 }
+
+                // Guarded at the call site: taLog.log() gates only the console call,
+                // so an unguarded concatenation would run per SSE line even with debug
+                // off. Placed after the ping filter so keep-alives stay out of the log,
+                // and logs cleanLine rather than JSON.stringify() as the other workers
+                // do: this stream is raw SSE ('event: ...' / 'data: {...}'), already a
+                // string, so stringifying would only re-quote it.
+                if (taLog.do_debug) taLog.log("line: " + cleanLine);
 
                 // Remove "data: " and parse the JSON
                 if (cleanLine.startsWith('data: ')) {

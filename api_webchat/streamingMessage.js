@@ -190,6 +190,39 @@ function looksLikeHtmlResponse(text) {
     return false;
 }
 
+// The <think> probes used by flush(). Hoisted like every other regex in this file:
+// flush() runs on every '\n' of a response, so nothing it needs should be rebuilt
+// per call. Presence is all that is asked, hence .test() and no capture groups.
+const OPEN_THINK_RE = /<think>/i;
+const CLOSE_THINK_RE = /<\/think>/i;
+
+// One markdown-it instance for the whole module, built on first use.
+//
+// It used to be constructed inside flush(), i.e. once per '\n' of every response -
+// a fresh rule chain, plugin list and normalizer per line, which is most of what
+// made streaming feel slow. The options are invariant and render() keeps no state
+// between calls, so a single shared instance is equivalent.
+//
+// Lazy rather than eager because `window.markdownit` comes from markdown-it.min.js,
+// a classic script in index.html; by the time flush() runs it is certainly there,
+// but module evaluation order relative to it is not something to rely on.
+let _md = null;
+function getMarkdownIt() {
+    if (_md === null) { _md = window.markdownit({ breaks: true }); }
+    return _md;
+}
+
+// How much new raw text must accrue on the HTML path before it is re-rendered.
+//
+// The HTML path cannot append fragments the way the markdown path does: a flush
+// routinely lands mid-tag ("<p>Distinti sal"), so the whole response is re-sanitized
+// each time - O(n) per flush, O(n^2) over a response, on top of the DOMParser pass
+// messagesArea does on the result. Rendering every ~2 KB instead of every '\n' keeps
+// the output identical (the final flush always renders everything) while making the
+// cost proportional to the answer's size rather than to its line count. Between
+// renders the live token spans messagesArea appends still show the text arriving.
+const HTML_RENDER_CHUNK = 2048;
+
 export class StreamingMessage {
 
     constructor() {
@@ -220,6 +253,9 @@ export class StreamingMessage {
         // HTML path, where each flush re-sanitizes everything rather than
         // appending a fragment. See flush().
         this._htmlRawText = '';
+        // Characters appended to _htmlRawText since the last sanitize. Drives the
+        // HTML_RENDER_CHUNK coalescing in flush(); meaningless on the markdown path.
+        this._htmlPendingChars = 0;
     }
 
     handleNewToken(token) {
@@ -236,6 +272,17 @@ export class StreamingMessage {
         return String(this._fullTextHTML);
     }
 
+    // The response's shape verdict, once decided: true = HTML answer (sanitized,
+    // re-rendered whole), false = markdown answer (rendered per segment), null =
+    // not decided yet. Exposed so the caller can pick a flush trigger that is safe
+    // for the path: an embedded newline ("foo\nbar") is a safe flush point only on
+    // the HTML path, where the whole response is re-rendered each flush — on the
+    // markdown path flushing there would split a logical line across two segments
+    // (see handleNewToken).
+    get isHtmlResponse() {
+        return this._isHtmlResponse;
+    }
+
     // Flush the current segment. Ports the exact logic of the original
     // MessagesArea.flushAccumulatingMessage() token→HTML pipeline.
     //
@@ -245,7 +292,12 @@ export class StreamingMessage {
     // Otherwise returns an immutable snapshot object:
     //   { html:         markdown-rendered HTML for THIS segment (string),
     //     thinkingText: combined thinking content for this segment (string),
-    //     fullTextHTML: snapshot of the HTML accrued across the whole response }
+    //     fullTextHTML: snapshot of the HTML accrued across the whole response,
+    //     deferred:     when true, `html` holds nothing to render and the caller must
+    //                   leave the accumulating element's DOM as it is, and keep the live
+    //                   "Thinking..." indicator. Set on the HTML path between coalesced
+    //                   renders; `thinkingText` is empty (any thinking is held back in
+    //                   the accumulator for the next non-deferred flush). }
     // Flush the current segment.
     //
     // `final` is set by the caller's last flush of the response. It forces a
@@ -260,9 +312,7 @@ export class StreamingMessage {
         // markdown render until the closing tag arrives — tokens stay in the DOM
         // as raw fading spans, but the partial <think> content is never sent
         // through markdown-it or promoted to the final thinking block.
-        const openThink = fullText.match(/<think>/i);
-        const closeThink = fullText.match(/<\/think>/i);
-        if (openThink && !closeThink) {
+        if (OPEN_THINK_RE.test(fullText) && !CLOSE_THINK_RE.test(fullText)) {
             return null;
         }
 
@@ -336,10 +386,43 @@ export class StreamingMessage {
         // tags, and the next segment "</li></ul>" would then be a stray closer;
         // appending those fragments would accumulate garbage. Re-parsing the
         // accumulated raw text keeps every element whole.
+        //
+        // Because it re-does the whole response each time, this is the one flush
+        // that is NOT run per '\n': it is coalesced to roughly every
+        // HTML_RENDER_CHUNK characters of new text, plus always on the final flush.
+        // That keeps the finished answer byte-for-byte what it always was - the last
+        // flush renders everything - while turning a per-line cost into a per-chunk
+        // one on long answers.
         if (this._isHtmlResponse) {
             this._htmlRawText += fullText;
-            this._fullTextHTML = sanitizeBlockHtml(this._htmlRawText);
+            this._htmlPendingChars += fullText.length;
             this._segmentText = '';
+
+            // Not enough new text to be worth re-rendering the whole answer yet.
+            // Nothing is lost: the text is already in _htmlRawText, and `deferred`
+            // tells the caller to leave the live token spans on screen rather than
+            // repainting - which is what keeps the answer visibly streaming between
+            // renders.
+            //
+            // The thinking text is put back into _thinkingAccumulator rather than
+            // handed over: the caller returns early on `deferred` and would discard
+            // a returned thinkingText, so draining here would strand it. Restoring
+            // the accumulator carries it to the next non-deferred flush, which
+            // renders it with the HTML; until then the caller keeps the live
+            // "Thinking..." indicator on screen.
+            if (!final && this._htmlPendingChars < HTML_RENDER_CHUNK) {
+                this._thinkingAccumulator = combinedThinking;
+                return {
+                    html: '',
+                    thinkingText: '',
+                    fullTextHTML: this.getFullTextHTMLSnapshot(),
+                    cumulative: true,
+                    deferred: true,
+                };
+            }
+
+            this._fullTextHTML = sanitizeBlockHtml(this._htmlRawText);
+            this._htmlPendingChars = 0;
             return {
                 html: this._fullTextHTML,
                 thinkingText: combinedThinking,
@@ -366,8 +449,7 @@ export class StreamingMessage {
         // simply lost in `_fullTextHTML`, the snapshot the "use this answer" path
         // inserts into the message. With breaks:true markdown-it emits a real <br>,
         // so the chat and the mail show the same line structure.
-        const md = window.markdownit({ breaks: true });
-        const html = md.render(fullText);
+        const html = getMarkdownIt().render(fullText);
 
         this._fullTextHTML += html;
 

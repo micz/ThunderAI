@@ -159,7 +159,7 @@ subscribed IMAP folders that are not checked for new mail, and messages moved by
         ↓   before the `summarize_auto === 0` return)
    matchAddressList(message.author, prefs.summarize_auto_senders_list)
         ↓
-   _generateSummaryForMessage(headerMessageId, tabId)                   ← inline, message pane
+   _generateSummaryForMessage(headerMessageId, tabId, { resolvedMessage })  ← inline, message pane
 ```
 
 There is deliberately **no periodic scan**: no `setInterval`, no `browser.alarms`, no
@@ -273,6 +273,47 @@ taTranslationStore.saveTranslation()
 [later] user opens the message → initTranslation → cache hit → showTranslation instantly
 ```
 
+### Resolving a message from its `headerMessageId` (`_resolveMessage`)
+
+Everything cached per message — `taSummaryStore`, `taTranslationStore`, `taSpamReport` — is
+keyed on `headerMessageId`, and the content scripts only ever know that key. The generators
+therefore receive a `headerMessageId` and have to turn it back into a message object.
+
+Doing that with `browser.messages.query({ headerMessageId })` is a **full-store search across
+every folder of every account**. The background page runs in Thunderbird's *parent* process,
+so on a large mail store that search freezes the entire application UI — minutes, before the
+AI request is even sent. The WebExtension docs warn about it explicitly ("could need a long
+time to complete, if the user has a lot of messages").
+
+`_resolveMessage(headerMessageId, messageId, tabId, resolvedMessage)` in `mzta-background.js`
+concentrates the lookup and tries the cheap routes first:
+
+| Order | Source | Used when |
+|---|---|---|
+| — | `options.messageData` | caller already fetched the message (checked by the generators, before this helper) |
+| a | `resolvedMessage` (the message object itself) | the caller already holds the message (e.g. from `getDisplayedMessage`) |
+| b | `browser.messages.get(messageId)` | the caller holds a numeric message id |
+| c | `browser.messageDisplay.getDisplayedMessage(tabId)` | a message-display tab is in scope |
+| d | `browser.messages.query()` | nothing else is known — the last resort |
+
+**(a), (b) and (c) verify `headerMessageId` before accepting the result.** For (c) that is the
+same staleness reasoning as `_sendIfCurrent()` — the displayed message can have changed while
+the work sat queued. For (b) it guards against a numeric id that no longer denotes the same
+message: ids are per-folder and can be reused after a delete + compaction. (a) re-checks for
+the same reason: a caller that resolved the message earlier may now hold a stale reference.
+A mismatch falls through to the next route rather than returning the wrong message.
+
+The generators keep their own "Message not found" handling: `_resolveMessage()` returns `null`
+and the caller runs its existing `saveError()` / `_sendIfCurrent()` / `taWorkingStatus.stopWorking()`
+bookkeeping unchanged.
+
+**Passing the resolution is the caller's job.** A handler that already holds a message object
+(the `initSummary` / `initTranslation` auto-display paths, which fetched it via
+`getDisplayedMessage`) pass `{ resolvedMessage: message }` — route (a), no further lookup. A
+handler that only holds a numeric id passes `{ messageId }` (route b). `runtime.onMessage`
+handlers that receive only a `headerMessageId` from a content script pass their `sender.tab.id`
+instead and land on (c). After this, (d) is not reached by any normal user-facing path.
+
 ### Stale-result guard (rapid message switching)
 
 Inline summary/translation generation is asynchronous: there can be a multi-second gap
@@ -376,6 +417,11 @@ Per bot response a fresh `StreamingMessage` accumulates raw + thinking tokens an
 returns an **immutable HTML snapshot**; `<messages-area>` renders it and hands the thinking
 text to `renderThinkingBlock`.
 
+markdown-it is instantiated **once for the module** (`getMarkdownIt()`, lazily, since
+`window.markdownit` is a classic-script global). It used to be constructed inside `flush()` — i.e.
+once per `\n` of every response — which was most of what made streaming feel slow. The options are
+invariant and `render()` keeps no state between calls, so one shared instance is equivalent.
+
 `flush()` runs markdown-it with **`html: false`** (the default) — raw HTML in the model output is
 escaped, never rendered, so the model can't inject markup into the extension UI — and with
 **`breaks: true`**, which is deliberate: this is a mail composer, so a newline the model wrote is a
@@ -450,6 +496,35 @@ break wherever the model wrapped a line, frequently *inside* an element; sanitiz
 would make `DOMParser` close the tags and leave the next segment a stray closer. `MessagesArea`
 answers by **reusing** the accumulating element rather than retiring it after the flush, and clears
 it in `handleTokensDone()` so the next response opens its own.
+
+**Coalesced, not per line.** Because each render redoes the whole response, doing it on every `\n`
+is O(n²) over a response — and `MessagesArea` then re-parses that whole string with `DOMParser` and
+rebuilds the element's children. The HTML path therefore re-sanitizes only once roughly every
+`HTML_RENDER_CHUNK` (2 KB) of new text, plus always on the final flush. In between, `flush()` returns
+`deferred: true`: the text is already accumulated, but the caller must **leave the element's DOM
+untouched** — clearing it for an empty `html` would blank the answer between renders. Unlike the
+undecided branch, `thinkingText` is **not** handed over on this path: it is returned empty and any
+thinking is put back into `_thinkingAccumulator`, because the caller returns early on `deferred` and
+would discard a returned value. The next non-deferred flush renders it with the HTML; until then the
+caller keeps the live "Thinking..." indicator on screen. What keeps the answer
+visibly streaming meanwhile is the live token spans `handleNewToken()` appends, the same mechanism
+the undecided and unterminated-`<think>` branches rely on. The finished answer is unchanged: the
+last flush is always `final` and always renders everything, before `addActionButtons()` snapshots it.
+
+Two consequences of coalescing, both handled explicitly:
+
+- **The `fullTextHTML` mirror is skipped while deferred.** `flushAccumulatingMessage()` returns on
+  `deferred` *before* copying the snapshot into `this.fullTextHTML`, because on that path the
+  snapshot was not re-sanitized and trails the received text by up to `HTML_RENDER_CHUNK`.
+  Publishing it would expose a truncated answer to a reader that looked between renders. Nothing
+  is lost: the final flush is never deferred, and `addActionButtons()` — the only reader — runs
+  after it.
+- **The abort path must discard the streaming state.** `appendBotMessage()` (the `'error'` path,
+  the one exit that reaches no final flush) nulls `_streaming` and `accumulatingMessageEl`, the
+  way `handleTokensDone()` does normally. Otherwise the interrupted `StreamingMessage` would keep
+  its accumulated `_htmlRawText`, its non-zero `_htmlPendingChars` and its **sticky**
+  `_isHtmlResponse` verdict, and the next answer streaming into the same element would be
+  rendered as a continuation of the failed one.
 
 **There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
 already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the
@@ -595,8 +670,17 @@ and its buttons. There are no `<hr>` dividers; spacing separates the turns.
 
 Two invariants in `MessagesArea`, both easy to break:
 
-- **`_currentTurnEl` must survive a flush.** A single response flushes on every `'\n'`, so
-  clearing it in `flushAccumulatingMessage()` would open a new wrapper — and render a second
+- **`_currentTurnEl` must survive a flush.** A single response flushes on every bare `\n`
+  token, and — only once the response is known to be HTML — on every token that *contains* a
+  `\n` (`handleNewToken()` tests `token === '\n' || (token.includes('\n') &&
+  streaming.isHtmlResponse === true)`, not just `token === '\n'` — providers tokenize
+  differently and plenty send `"foo\nbar"` as one token, which a strict equality test would
+  never flush). The embedded-newline trigger is gated to the HTML path because `flush()`
+  re-renders the whole accumulated raw text there, so splitting at an embedded newline costs
+  nothing; on the markdown path each flush renders only its own segment, so flushing at
+  `"foo\nbar"` would strand the text after the newline in a separate `<p>`. While the shape is
+  still undecided only a bare `\n` flushes. Clearing `_currentTurnEl` in
+  `flushAccumulatingMessage()` would therefore open a new wrapper — and render a second
   avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
   `handleTokensDone()` reset it. `appendDiffViewer()` can run against an older turn mid-session,
   so it saves and restores the field around `_beginBotTurn()`.
@@ -782,7 +866,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `js/mzta-special-commands.js` | Handles special prompt actions (add_tags, calendar, task) |
 | `js/mzta-spamreport.js` | Spam filter logic |
 | `js/mzta-i18n.js` | i18n helper (wraps `browser.i18n.getMessage`) |
-| `js/mzta-logger.js` | Debug logging (gated by `do_debug` pref) |
+| `js/mzta-logger.js` | Debug logging (`taLogger`). `log()` gates only the `console.log`, **not its argument** — the message string is always built. On a hot path (per SSE chunk / per line in the workers) guard the call site with `if (taLog.do_debug)`, or do not log there at all. `warn()`/`error()` are never gated. |
 | `js/mzta-store.js` | Storage abstraction helpers |
 | `js/mzta-storage.js` | Unified per-message storage layer (`taStorage` class) for summary, spam, and translation data |
 | `js/mzta-summarystore.js` | Summary-specific storage wrapper (`taSummaryStore` class) with caching, truncation, and processing-state tracking |
