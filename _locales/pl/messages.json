@@ -793,7 +793,7 @@
         "message": "Data"
     },
     "prefs_OptionText_add_tags_auto_only_inbox": {
-        "message": "Dodawaj tagi tylko do e-maili w skrzynce odbiorczej"
+        "message": "Dodawaj etykiety tylko do wiadomości e-mail w odebranych"
     },
     "SpamFilter_prompt_text_title": {
         "message": "Bieżący tekst polecenia"
