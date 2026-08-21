@@ -2041,7 +2041,7 @@
         "message": "Teks yang diedit"
     },
     "apiwebchat_picker_edit_hint": {
-        "message": "Anda sedang mengedit teks secara manual. Kembali ke perubahan akan membandingkan kembali teks yang Anda tulis dengan teks asli, dan setiap pilihan akan diatur ulang."
+        "message": "Anda sedang mengedit teks secara manual. Jika Anda mengubahnya, kembali ke perubahan akan membandingkan kembali teks yang Anda tulis dengan teks asli, dan setiap pilihan akan diatur ulang."
     },
     "apiwebchat_picker_granularity": {
         "message": "Bandingkan berdasarkan"
