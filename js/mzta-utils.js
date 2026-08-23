@@ -502,6 +502,28 @@ export function cleanupNewlinesKeepParagraphs(text) {
   .trim();
 }
 
+// The original text/plain MIME part, normalized but NOT reflowed.
+//
+// Deliberately NOT cleanupNewlines(): its \n{2,} -> \n and [ \t]+ -> ' ' collapses
+// would destroy the blank lines and the runs of spaces and tabs that carry the
+// column alignment {%mail_plain_text_part%} exists to preserve (invoice tables,
+// ERP notifications). Only line endings, a leading BOM and trailing whitespace are
+// touched; everything else reaches the model verbatim.
+//
+// The non-breaking space is deliberately NOT converted here either, unlike in the
+// two functions above: this text never went through an HTML parser, so a U+00A0 in
+// it is a character the sender actually put in the plain part, and in a padded
+// column it is crucial.
+export function normalizePlainTextPart(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+  .replace(/^﻿/, '')
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n')
+  .replace(/[ \t]+$/gm, '')
+  .replace(/\s+$/, '');
+}
+
 // Extract and strip inline <think>...</think> blocks from a model response.
 // Some models emit their reasoning inline in the content stream instead of in a
 // dedicated API field (Ollama without ollama_think, several OpenAI-compatible

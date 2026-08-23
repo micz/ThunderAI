@@ -40,6 +40,10 @@ import {
     getConnectionType,
     isApiUsableConnection,
     getContextMenuIcon,
+    // Aliased: the name getMailBody is already taken in this module by the local
+    // content-script extraction below, which is a different thing entirely - it
+    // scrapes the rendered DOM, this one reads the MIME parts.
+    getMailBody as getMailBodyFromParts,
  } from './mzta-utils.js'
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
@@ -266,6 +270,34 @@ export class mzta_Menus {
                     this.logger.log("Compose isPlainText: " + curr_messages.isPlainText);
                     curr_message = curr_messages;
                     break;
+            }
+
+            // {%mail_plain_text_part%} wants the ORIGINAL text/plain MIME part, which
+            // the local getMailBody() above cannot supply: it reads the rendered DOM
+            // through the content script, so its .text is the HTML converted to text,
+            // not a MIME part. Fetch the parts explicitly.
+            //
+            // Guarded on the token actually being present - the same idiom this path
+            // already uses for mail_typed_text - so a prompt that does not use this
+            // placeholder pays for no extra getFull() and is byte-identical to before.
+            //
+            // plain_part is a distinct field, never msg_text.text: the clipboard branch
+            // above overwrites .text, and the resolver must be able to tell "no plain
+            // part" apart from the scrape rather than silently falling back to it.
+            if (placeholdersUtils.hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')) {
+                // '' rather than leaving it unset: the resolver's ?? would otherwise fall
+                // through to msg_text.text, i.e. the HTML conversion this placeholder
+                // exists to avoid. Compose tabs land here too and must resolve empty.
+                msg_text.plain_part = '';
+                if (curr_message && curr_message.id && tabs[0].type !== 'messageCompose') {
+                    try {
+                        const curr_fullMessage = await browser.messages.getFull(curr_message.id);
+                        msg_text.plain_part = (await getMailBodyFromParts(curr_fullMessage, curr_message.id)).text;
+                    } catch (e) {
+                        this.logger.log("mail_plain_text_part: unable to read the original text/plain part: " + e);
+                    }
+                }
+                this.logger.log("mail_plain_text_part: " + JSON.stringify(msg_text.plain_part));
             }
 
             fullPrompt = await taPromptUtils.preparePrompt({

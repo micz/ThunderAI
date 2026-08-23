@@ -58,6 +58,7 @@ placeholders with `is_dynamic: "1"` (take a parameter after `:`).
 | `mail_attachments_info` | Information about the email's attachments | 1 | |
 | `mail_text_body_or_selected` | Plain text body, or selected text if any | 0 | |
 | `mail_html_body_or_selected` | HTML body, or selected HTML if any | 0 | |
+| `mail_plain_text_part` | The original `text/plain` MIME part, verbatim (no HTML conversion) | 1 | |
 
 ### Newline contract of the compose placeholders
 
@@ -107,6 +108,75 @@ existing comparison at once.
 
 Full rationale in [01-architecture.md](01-architecture.md) → *Which path actually feeds
 `{%mail_text_body%}`*.
+
+**This contract does not extend to `{%mail_plain_text_part%}`**, which is a third case with the
+opposite whitespace rule — see the next section before assuming the three behave alike.
+
+### `mail_text_body` vs `mail_plain_text_part`
+
+Two placeholders, two different *sources*, and the difference is the point:
+
+| | `mail_text_body` | `mail_plain_text_part` |
+|---|---|---|
+| Source | the `text/html` part, converted to text | the `text/plain` part, verbatim |
+| Nature | a **reconstruction** | the sender's own bytes |
+| Always available? | yes (synthesized if need be) | **no** — empty when the mail ships no `text/plain` part |
+| Whitespace | one `\n` per block, never a blank line, space runs collapsed | blank lines, spaces and tabs **preserved** |
+| Type | 0 (always) | 1 (reading only) |
+
+`mail_text_body` loses alignment-dependent structure (invoice tables, order confirmations, ERP
+notifications), carries HTML-only noise (preheaders, tracking pixels, "view in browser",
+unsubscribe footers), and costs noticeably more tokens. When the sender ships a
+`multipart/alternative` message the `text/plain` part is already clean, so
+`mail_plain_text_part` exposes it directly.
+
+**Whitespace is preserved on purpose.** The value goes through `normalizePlainTextPart()`
+(`js/mzta-utils.js`), **not** `cleanupNewlines()`: only CRLF/CR → LF, a leading BOM, and trailing
+whitespace (per line and at the end) are touched. The `\n{2,}` → `\n` and `[ \t]+` → `' '`
+collapses that the other body placeholders rely on would destroy exactly the column alignment
+this placeholder exists to deliver. The non-breaking space is also left alone here, unlike in
+`cleanupNewlines()`: this text never met an HTML parser, so a U+00A0 is a character the sender
+really put in the plain part, and in a padded column it is load-bearing.
+
+**Two sources, because there are two `getMailBody`s.** This is the trap:
+
+| Path | `getMailBody` | `.text` is |
+|---|---|---|
+| Automatic (spam filter, auto add-tags, summarize, translate) | `js/mzta-utils.js` | already the concatenated `text/plain` parts |
+| Interactive (reader, message list, popup, calendar event, task) | the **local** one in `js/mzta-menus.js` | the content-script DOM scrape, i.e. HTML→text |
+
+So the automatic paths need nothing but the resolver arm, while `js/mzta-menus.js` has to fetch
+the parts itself. It does one `browser.messages.getFull()` **guarded on the token being present**
+(`hasPlaceholder(curr_prompt.text, 'mail_plain_text_part')`, the same idiom that path already uses
+for `mail_typed_text`) and puts the result in a distinct `msg_text.plain_part` field. Note
+`type: 1` does *not* by itself keep this placeholder off the scraper paths — "reading" includes
+the reader and the message list; it only excludes the compose window, where a received MIME part
+has no meaning.
+
+The resolver reads `msg_text?.plain_part ?? msg_text?.text` — `??`, not `||`, and the order
+matters. `plain_part` is set to `''` explicitly whenever the interactive path finds no message or
+the fetch throws, and nullish coalescing selects on *presence*, so that empty string wins over
+`msg_text.text`. With `||` an empty plain part would fall through to the DOM scrape, which is the
+one outcome this feature must never produce.
+
+**No fallback to the HTML conversion, by design.** A user who picks this placeholder is asking
+for the original part specifically; silently substituting the reconstruction would hide the
+reason the output looks different. When the part is missing the value is the empty string.
+
+**What an absent part actually looks like in the prompt.** `replacePlaceholders()` resolves with
+a `||` chain, so an empty string is indistinguishable from "unresolved": with
+`placeholders_use_default_value` on the token becomes `default_value` (`""`), and with it off the
+literal text `{%mail_plain_text_part%}` survives into the prompt. Not fixed deliberately — that
+chain is shared by all 30 built-ins and widening it would change `{%empty%}` and a `junk_score`
+of `0` at the same time.
+
+**Known limitation — documented, not fixed.** The `text/plain` alternative is *not* reliable in
+general: newsletters often ship a stub ("view this message in your browser"), a URL-only body, an
+empty part, or a version out of sync with the HTML. That is precisely why this is an opt-in
+placeholder rather than a change to `{%mail_text_body%}`. Reach for it on Outlook-style business
+mail, ERP/automated notifications and token-sensitive setups — **not** on marketing mail. Also
+note `getMailBody()` **concatenates** every `text/plain` part it finds, so a multipart message can
+yield several bodies run together.
 
 ### The address placeholders in the compose window
 
@@ -323,13 +393,56 @@ Users can define their own placeholders via `pages/customdataplaceholders/`. Cus
 ## Placeholder Resolution Order
 
 1. Built-in placeholders are defined in `js/mzta-placeholders.js`
-2. Custom placeholders are loaded from storage
-3. At runtime, `mzta-background.js` gathers email data (via Thunderbird APIs)
-4. Each `{%id%}` token in the prompt string is replaced with the resolved value
-5. If a value cannot be resolved, `default_value` is used as fallback
+2. Custom placeholders are loaded from storage (expanded first, by `replaceCustomPlaceholders()`)
+3. At runtime the calling path gathers the email data and hands it to
+   `getPlaceholdersValues()`, which is **demand-driven**: only tokens actually present in the
+   prompt get resolved
+4. `replacePlaceholders()` substitutes each `{%id%}` token, looking the id up in
+   `defaultPlaceholders`
+5. If a value cannot be resolved, `default_value` is used when the
+   `placeholders_use_default_value` pref is on; otherwise the raw token is left in place
+
+**Who supplies the values.** Coverage is uneven, and a placeholder is only as available as its
+source field on the path in question:
+
+| Path | Site | Supplies |
+|---|---|---|
+| Interactive menu (reader, message list, popup, calendar event, task, translate-this) | `js/mzta-menus.js` → `preparePrompt` | everything — the only site passing selection/typed/quoted/tags |
+| Spam filter | `mzta-background.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
+| Auto add-tags (batch loop) | `mzta-background.js` → `preparePrompt` | the same plus `tags_full_list` |
+| Summarize, per-mail template | `js/mzta-utils-prompt.js` → `preparePrompt` | `body_text`, `subject_text`, `msg_text` |
+| Summarize, header + separator prompts | `js/mzta-utils-prompt.js` → `preparePrompt` | only `curr_prompt`/`chatgpt_lang` — every mail placeholder resolves empty |
+| Translation | `js/mzta-utils-prompt.js` → `getPlaceholdersValues` directly | `msg_text`, `mail_subject` — **no `body_text`**, so `{%mail_text_body%}` is empty there |
+| `additional_text` late fill | `api_webchat/controller.js` → `replacePlaceholders` | the deferred half of `skip_additional_text: true` |
 
 ## Adding a New Built-in Placeholder
 
 1. Add the object to the `defaultPlaceholders` array in `js/mzta-placeholders.js`
 2. Add the `name` i18n key to `_locales/en/messages.json` as `placeholder_<id>` (or choose a descriptive key)
-3. Implement the resolution logic in the relevant section of `mzta-background.js`
+3. Add a `case` arm to `getPlaceholdersValues()` in `js/mzta-placeholders.js`
+
+Three things bite when adding one:
+
+- **The array entry is mandatory.** `replacePlaceholders()` looks the id up in
+  `defaultPlaceholders` and returns the raw token when it is absent — so a value produced by
+  `getPlaceholdersValues()` with no matching entry is silently dropped.
+- **A value that is only in `getPlaceholdersValues()`' argument list is not enough.** That
+  function is fed by 6 call sites with *uneven* coverage (see the table under *Placeholder
+  Resolution Order*): only `js/mzta-menus.js` passes selection/typed/quoted/tags, and
+  `buildTranslationPrompt()` passes no `body_text` at all. Check the paths your placeholder needs.
+- **`type: 1` means "reading", not "background".** The reader and the message list are reading
+  contexts served by the content-script scraper in `js/mzta-menus.js`, which has no access to the
+  MIME parts. A placeholder that needs `messages.getFull()` data must fetch it there itself —
+  guarded on `hasPlaceholder()` so prompts that do not use it pay nothing. See
+  *`mail_text_body` vs `mail_plain_text_part`*.
+
+- **An empty string cannot be expressed.** `replacePlaceholders()`' `||` chain treats `''` as
+  unresolved and falls through to `default_value` or the literal token.
+- **Escape `\s` as `\\s` in the two template-string regexes.** `hasPlaceholder()` and
+  `hasCustomPlaceholder()` build their pattern with `` new RegExp(`{%\\s*${placeholder}…`) ``. The
+  doubled backslash is required: in a template string a single `\s` is eaten, leaving the pattern
+  `{%s*<id>`, which matches `{%id%}` only by accident (`s*` = zero `s`) and misses the spaced form
+  `{% id %}` entirely — while `extractPlaceholders()`/`replacePlaceholders()` use a correct
+  `/{%\s*(.*?)\s*%}/` literal and *do* accept spaces. That mismatch let a guard substitute a token
+  whose value was never gathered (fixed for all four call sites: the `mail_plain_text_part` fetch
+  in `js/mzta-menus.js`, `mail_typed_text` ×2, and `additional_text`).

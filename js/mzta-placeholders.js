@@ -53,7 +53,11 @@ import {
 
 */
 
-import { transformTagsLabels, getCurrentIdentity } from './mzta-utils.js';
+import {
+    transformTagsLabels,
+    getCurrentIdentity,
+    normalizePlainTextPart
+} from './mzta-utils.js';
 
 const defaultPlaceholders = [
     {
@@ -316,6 +320,17 @@ const defaultPlaceholders = [
         is_default: "1",
         is_dynamic: "0",
         enabled: 1,
+    },
+    {
+        // The ORIGINAL text/plain MIME part, with no HTML conversion. Reading only
+        // (type 1): a received MIME part has no meaning in a compose window.
+        id: 'mail_plain_text_part',
+        name: "__MSG_placeholder_mail_plain_text_part__",
+        default_value: "",
+        type: 1,
+        is_default: "1",
+        is_dynamic: "0",
+        enabled: 1,
     }
 ];
 
@@ -541,7 +556,11 @@ export const placeholdersUtils = {
         // If a specific placeholder is provided, we search for it
         if (placeholder !== "") {
           // Dynamically build the regex for the specific placeholder
-          regex = new RegExp(`{%\s*${placeholder}(:.*?)?\s*%}`);
+          // \\s, not \s: this is a template string, so a single backslash would be
+          // eaten and the pattern would read {%s*<id> — matching {%id%} only by
+          // accident (zero "s") and missing the spaced form {% id %} entirely,
+          // which replacePlaceholders() does accept.
+          regex = new RegExp(`{%\\s*${placeholder}(:.*?)?\\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {% ... %}
           regex = /{%\s*(.*?)\s*%}/;
@@ -557,7 +576,8 @@ export const placeholdersUtils = {
         // If a specific placeholder is provided, we search for it
         if (placeholder !== "") {
           // Dynamically build the regex for the specific placeholder
-          regex = new RegExp(`{%\s*${placeholder}\s*%}`);
+          // \\s, not \s — same template-string escaping as in hasPlaceholder() above.
+          regex = new RegExp(`{%\\s*${placeholder}\\s*%}`);
         } else {
           // Otherwise, we search for any placeholder in the format {%thunderai_custom_ ... %}
           regex = /{%\s*thunderai_custom_(.*?)\s*%}/;
@@ -610,6 +630,19 @@ export const placeholdersUtils = {
                     break;
                 case 'mail_html_body':
                     finalSubs['mail_html_body'] = placeholdersUtils.failSafePlaceholders(msg_text?.html);
+                    break;
+                case 'mail_plain_text_part':
+                    // The original text/plain part, NOT the HTML conversion that feeds
+                    // body_text. There is deliberately NO fallback to body_text: a user
+                    // picking this placeholder is asking for the original part
+                    // specifically, and silently substituting the reconstruction would
+                    // hide the reason the output looks different.
+                    //
+                    // plain_part is the explicit field the interactive path in
+                    // js/mzta-menus.js fills (its own msg_text.text is the content-script
+                    // scrape, not a MIME part); .text is the utils getMailBody() result on
+                    // the automatic paths, where it already IS the text/plain part.
+                    finalSubs['mail_plain_text_part'] = placeholdersUtils.failSafePlaceholders(normalizePlainTextPart(msg_text?.plain_part ?? msg_text?.text));
                     break;
                 case 'mail_typed_text':
                     finalSubs['mail_typed_text'] = placeholdersUtils.failSafePlaceholders(only_typed_text);

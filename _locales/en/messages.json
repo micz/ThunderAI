@@ -757,6 +757,10 @@
     "message": "Mail body or selected HTML",
     "description": ""
   },
+  "placeholder_mail_plain_text_part": {
+    "message": "Original plain text part of the mail, without any HTML conversion (best for business and automated mail; may be empty or a stub on newsletters)",
+    "description": ""
+  },
   "prefs_OptionText_placeholders_use_default_value": {
     "message": "Placeholders: use default value",
     "description": ""
