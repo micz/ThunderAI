@@ -20,7 +20,8 @@ import { placeholdersUtils } from './mzta-placeholders.js';
 import {
     extractJsonObject,
     getMailBody,
-    htmlBodyToPlainText
+    htmlBodyToPlainText,
+    cleanupNewlines
 } from './mzta-utils.js';
 import { getSpecialPrompts } from './mzta-prompts.js';
 import { prefs_default } from '../options/mzta-options-default.js';
@@ -154,7 +155,7 @@ export const taPromptUtils = {
             const bodyHtml = await getMailBody(entry.fullMessage);
             let bodyText = htmlBodyToPlainText(bodyHtml.html);
             if (bodyText.length === 0) {
-                bodyText = bodyHtml.text || '';
+                bodyText = cleanupNewlines(bodyHtml.text || '');
             }
 
             messages_list.push(await taPromptUtils.preparePrompt({

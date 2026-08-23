@@ -344,7 +344,15 @@ switch (message.command) {
     } else {
       const parser = new DOMParser();
       const doc = parser.parseFromString(message.text, 'text/html');
-      r.insertNode(doc.body);
+      // Insert the parsed NODES, not the <body> element that wraps them: a <body>
+      // nested inside the compose body is invalid markup, and the compose_reloadBody
+      // round-trip below hands it to Thunderbird's serializer, which flattens the
+      // misplaced blocks - destroying the <p> paragraphs the picker emits.
+      const fragment = document.createDocumentFragment();
+      // Iterate over a copy: appending to the fragment removes each node from the
+      // live childNodes NodeList being walked.
+      Array.from(doc.body.childNodes).forEach(node => fragment.appendChild(node));
+      r.insertNode(fragment);
     }
     browser.runtime.sendMessage({command: "compose_reloadBody", tabId: message.tabId, isPlainText: message.isPlainText === true});
     return Promise.resolve(true);

@@ -48,6 +48,7 @@ import {
     stripHtmlKeepLines,
     isPlainTextCompose,
     htmlBodyToPlainText,
+    cleanupNewlines,
     convertNewlinesToParagraphs,
     getConnectionType,
     hasNoConnectionSelected,
@@ -1151,7 +1152,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             msg_text = await getMailBody(curr_fullMessage);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
-                body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+                body_text = cleanupNewlines(msg_text.text);
             }
         }
 
@@ -2077,7 +2078,7 @@ async function processEmails(args) {
                 body_text = htmlBodyToPlainText(msg_text.html);
                 if( body_text.length == 0 ){
                     taLog.log("No HTML found in the message body, using plain text...");
-                    body_text = msg_text.text.replace(/\s+/g, ' ').trim();
+                    body_text = cleanupNewlines(msg_text.text);
                 }
             }
 

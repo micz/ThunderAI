@@ -414,14 +414,11 @@ export function htmlBodyToPlainText(htmlString) {
   
   // Extract text content
   const textContent = doc.body.textContent || "";
-	// Trim whitespace
-	return textContent
-  .replace(/\r\n/g, '\n')
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n{2,}/g, '\n')
-  .replace(/[ \t]+/g, ' ')
-  .replace(/&nbsp;/gi,"")
-  .trim();
+	// Every mail body - HTML branch or plain-text fallback - is tidied by the same
+	// cleanupNewlines(). This used to be a hand-copied twin of it that DELETED &nbsp;
+	// instead of spacing it, welding words together; delegating makes the two
+	// impossible to diverge again.
+	return cleanupNewlines(textContent);
 }
 
 export function removeMozMainHeader(root) {
@@ -436,13 +433,25 @@ export function removeMozMainHeader(root) {
   }
 }
 
+// A non-breaking space IS a space, so BOTH spellings become one: the entity, and
+// the literal U+00A0 that DOMParser hands back once it has decoded &nbsp; in an
+// HTML body. The literal is the one that actually shows up on the HTML path - the
+// entity form only survives in text that never went through a parser - and it used
+// to reach the prompt untouched, an invisible character no whitespace rule here
+// could collapse. Dropping either instead of spacing it would weld the surrounding
+// words together ("Ciao&nbsp;Mario" -> "CiaoMario").
+//
+// Both are converted BEFORE the whitespace rules below, so the spaces they produce
+// get collapsed by [ \t]+ and trimmed at end of line like any other; converting
+// them afterwards, as this did, leaves them uncollapsed.
 export function cleanupNewlines(text) {
   return text
   .replace(/\r\n/g, '\n')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/ /g, ' ')
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{2,}/g, '\n')
   .replace(/[ \t]+/g, ' ')
-  .replace(/&nbsp;/gi,' ')
   .trim();
 }
 
@@ -455,13 +464,18 @@ export function cleanupNewlines(text) {
 // cleanupNewlines() keeps the stricter rule because its other callers feed the
 // diff picker's original side and the full-body placeholders, where a widened
 // rule would change every existing comparison.
+// Same non-breaking-space handling as cleanupNewlines() above, and for the same
+// reason. One consequence is deliberate here: a line holding nothing but &nbsp; is
+// how HTML mail writes a blank line, and it survives as a paragraph break rather
+// than being trimmed away to nothing.
 export function cleanupNewlinesKeepParagraphs(text) {
   return text
   .replace(/\r\n/g, '\n')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/ /g, ' ')
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{3,}/g, '\n\n')
   .replace(/[ \t]+/g, ' ')
-  .replace(/&nbsp;/gi,' ')
   .trim();
 }
 

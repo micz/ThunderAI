@@ -857,7 +857,7 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 | `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `htmlHasLineStructure` / `htmlOrFromText` rebuild a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
-| `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n` |
+| `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n`; the HTML branch inserts a `DocumentFragment` of `doc.body`'s children, never `doc.body` itself, so the `compose_reloadBody` round-trip cannot flatten the picker's `<p>` blocks |
 | `mzta-background.js` | detects the compose format and converts before insertion |
 | `options/mzta-options-default.js` | the global `diff_granularity` preference |
 | `options/mzta-options.html/.js` | the global preference's control in the advanced section |

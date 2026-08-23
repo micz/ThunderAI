@@ -581,6 +581,34 @@ that it caps at `\n\n` instead of collapsing. `cleanupNewlines()` is left alone 
 other callers feed the diff picker's original side and the full-body placeholders, where widening
 the rule would change every existing comparison.
 
+#### Non-breaking spaces, and the order of the cleanup rules
+
+Both cleanup functions convert **two spellings** of the non-breaking space to a plain space: the
+`&nbsp;` entity, and the literal **U+00A0** that `DOMParser` hands back once it has decoded
+`&nbsp;` in an HTML body. The literal is the one that actually appears on the HTML path — the
+entity form only survives in text that never went through a parser — and it used to reach the
+prompt untouched, an invisible character that none of the whitespace rules could collapse. Neither
+spelling may be *dropped* instead of spaced: that welds the surrounding words together
+(`Ciao&nbsp;Mario` -> `CiaoMario`).
+
+**The conversion runs before the whitespace rules, not after.** Only then do the spaces it produces
+get collapsed by `[ \t]+` and trimmed at end of line like any other whitespace; with the conversion
+last, as it once was, they survived uncollapsed.
+
+One consequence is deliberate in `cleanupNewlinesKeepParagraphs()`: a line holding nothing but
+`&nbsp;` is how HTML mail writes a blank line, so `\n \n` becomes `\n\n` and the paragraph break
+survives rather than being trimmed away to nothing.
+
+`htmlBodyToPlainText()` **delegates** to `cleanupNewlines()` rather than repeating its rules. It
+used to carry a hand-copied twin of them whose `&nbsp;` rule *deleted* the entity instead of
+spacing it; delegating makes the two impossible to diverge again.
+
+The plain-text fallbacks that run when `htmlBodyToPlainText()` yields nothing — in
+`_generateSpamReportForMessage` and `processEmails` (`mzta-background.js`) and in
+`taPromptUtils` (`js/mzta-utils-prompt.js`) — call `cleanupNewlines()` too. They previously used
+`.replace(/\s+/g, ' ')`, which destroys **every** newline and flattened the mail into a single
+line.
+
 The node-walking logic is unchanged — the `moz-cite-prefix` / `moz-forward-container` breaks, the
 `firstNode`/`lastNode` tracking and the `do_autoselect` range all behave exactly as before. In
 particular `lastNode` is still keyed off `node.textContent`, **not** the new projection, so the
@@ -623,6 +651,14 @@ HTML.** Three places cooperate, and all three are required:
   `message.isPlainText` is set, instead of routing through `DOMParser`. This is the actual
   fix for #855: in HTML a bare `\n` is collapsible whitespace, so parsing the converted text
   rendered every line break as a single space and the whole message arrived as one line.
+- The HTML branch of the same handler inserts the parsed nodes through a
+  **`DocumentFragment`**, never `doc.body` itself. Inserting the `<body>` element nests a
+  second `<body>` inside the compose body; the `compose_reloadBody` round-trip on the very
+  next line hands that invalid markup to Thunderbird's serializer, which flattens the
+  misplaced blocks and destroys the `<p>` paragraphs the diff picker emits. The fragment's
+  children are collected with `Array.from(doc.body.childNodes)` because `childNodes` is a
+  **live** NodeList — `appendChild` removes each node from the list being walked, so
+  iterating it directly would skip every other node.
 - `getOriginalBody` / `setBody` / `reloadBody` / `replaceBody` (`js/mzta-utils.js`) read and
   write **`plainTextBody`**, not `body`. Writing `body` on a plain text window makes
   Thunderbird convert the HTML down to text, undoing the line structure again — which matters

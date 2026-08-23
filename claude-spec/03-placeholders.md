@@ -75,6 +75,12 @@ do not relax `cleanupNewlines()` itself: its other callers feed `{%selected_text
 Full rationale in [01-architecture.md](01-architecture.md) → *The compose-extraction newline
 contract*. [#829]
 
+Both functions also normalize the **non-breaking space** — the `&nbsp;` entity *and* the literal
+U+00A0 that `DOMParser` produces from it — to a plain space, before the whitespace rules run so the
+result collapses like any other space. Never drop it instead: that welds words together. Full
+rationale in [01-architecture.md](01-architecture.md) → *Non-breaking spaces, and the order of the
+cleanup rules*.
+
 ### The address placeholders in the compose window
 
 `recipients` and `cc_list` are `type: 0`, so they are offered while composing too. `curr_message` is
