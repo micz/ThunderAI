@@ -405,17 +405,51 @@ within its run, so:
 Removing either because "`<br>` is now a boundary" would silently break the offset space for any block
 holding a nested `<br>`.
 
-P1 (segment → render idempotence) is preserved: the empty run left by a trailing `<br>` or the blank
-line in `<br><br>` has no text and is dropped by the same guard that drops empty blocks, so
-re-segmenting the rendered `<p>`-per-line output reproduces the same block list.
+**But the separator is not discarded — it is recorded and put back.** Every block carries a
+`sep` field, `'br'` or `null`, describing the JUNCTION that follows it: `'br'` means "this block is
+joined to the next by a `<br>`, and both came out of the same wrapper". The last run of a wrapper
+always carries `null`. `renderBlocks` reads it and re-joins such a run into one wrapper
+(`openRun`, mirroring the existing `openList` accumulator), so `<p>a<br>b</p>` segments to two
+blocks and renders back as `<p>a<br>b</p>` rather than `<p>a</p><p>b</p>`.
+
+Two independent code paths produce a separator and both set it: `splitOnBr`'s runs inside a wrapper,
+and a `<br>` between blocks at body level, which closes the implicit `<p>` being gathered and marks
+the block it just flushed.
+
+An empty run — a trailing `<br>`, or the blank line in `<br><br>` — is still dropped by the guard
+that drops empty blocks, and the junction it represented is simply not emitted. `pushBlocks` clears
+`sep` on the last block it actually emitted, so a trailing `<br>` can never leave a block pointing at
+a successor belonging to a different wrapper.
+
+**`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
+jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
+trailing `<br>` would collapse into one and reject-all would emit the ANSWER'S line structure.
+Comparing it sends that case to a replace pair, where both sides survive.
+
+**Which side's line structure wins is decided ONCE for the whole composition**, not per block: a
+separator joins two blocks, so an accepted hunk in one and a rejected one in the next would leave the
+junction between them undefined. `composeResultBlocksHTML` sets `structure` to `'new'` if anything at
+all was accepted and `'old'` otherwise — the same rule `contextSide` applies per block. A separator
+then only survives if the block it joined to is still in the output and belongs to that side; a block
+absent from the chosen side (`insert` has no original, `delete` has no answer) ends the run.
+
+P1 (segment → render idempotence) is preserved, and is now a true ROUND TRIP for `<br>`:
+`renderBlocks(segmentBlocks("<p>a<br>b</p>")) === "<p>a<br>b</p>"`. This matters beyond tidiness —
+`_setMode('review')` compares `_editorBlockHtml()` against `_editSnapshot` to decide whether the user
+edited anything, and both are canonical `renderBlocks` output. If the round trip were not a fixed
+point for `sep`, opening and closing EDIT without touching anything would re-diff and silently
+discard every accept/reject choice.
+
+**Consequence for the invariant:** reject-all now returns the original's markup including its
+`<br>`, where before it returned a `<p>`-per-line normalization of it.
 
 `_buildDiffButton`'s old defensive `<br>` → `\n` replacement on the original is still **gone** — the
 segmenter is what handles the original's markup.
 
 ### Into a plain text compose window
 
-`composeResultHTML()` now emits **`<p>`/`<li>`-wrapped blocks**, structurally the same shape as the
-non-picker markdown path. The conversion back to text is still **not** the picker's job — it happens
+`composeResultHTML()` emits **`<p>`/`<li>`-wrapped blocks**, structurally the same shape as the
+non-picker markdown path, and those blocks may contain `<br>` where the chosen side had one. The conversion back to text is still **not** the picker's job — it happens
 downstream, where the target window's format is known: `mzta-background.js` detects it with
 `isPlainTextCompose()` and runs `stripHtmlKeepLines()`, and the content script inserts a `Text` node
 instead of parsing HTML. See [01-architecture.md](01-architecture.md) → *Writing into a plain text

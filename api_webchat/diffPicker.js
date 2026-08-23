@@ -101,8 +101,14 @@ const DIFF_FNS = {
 // markup-only difference falls through to a replace pair - where the two
 // sides are kept separately and the user can actually choose between them.
 function buildBlockPairs(oldBlocks, newBlocks) {
+    // sep is compared for the SAME reason html is: for a context part jsdiff
+    // keeps one side's objects and discards the other, so two blocks that differ
+    // only in their trailing <br> would collapse to one and reject-all would emit
+    // the ANSWER'S line structure. Comparing it sends that case to a replace pair,
+    // where both sides survive and contextSide can choose between them.
     const parts = Diff.diffArrays(oldBlocks, newBlocks, {
-        comparator: (a, b) => a.text === b.text && a.tag === b.tag && a.html === b.html,
+        comparator: (a, b) => a.text === b.text && a.tag === b.tag && a.html === b.html
+                              && (a.sep || null) === (b.sep || null),
     });
     if (!parts) { return null; }
 
@@ -177,6 +183,10 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: pair.kind,
                 tag: b.tag,
                 listType: b.listType,
+                // The block exists on one side only, so the other side has no
+                // junction to contribute.
+                oldSep: isInsert ? null : b.sep,
+                newSep: isInsert ? b.sep : null,
                 hunks: [{
                     id: id++,
                     type: pair.kind,
@@ -202,6 +212,11 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
                 kind: 'context',
                 tag: nb.tag,
                 listType: nb.listType,
+                // sep IS in the comparator, so a context pair matched on it too:
+                // ob and nb are the same object and these two reads agree by
+                // construction, exactly as they do for text, tag and html.
+                oldSep: ob.sep,
+                newSep: nb.sep,
                 hunks: [{
                     id: id++,
                     type: 'context',
@@ -271,7 +286,12 @@ export function buildHunks(originalHtml, newHtml, granularity = 'words') {
             newPos += ins.length;
         }
 
-        blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType, hunks });
+        // Both separators are kept, unlike tag/listType which take the new side
+        // unconditionally: composeResultBlocksHTML chooses between them at
+        // compose time, so reject-all can reproduce the original's line
+        // structure instead of the answer's.
+        blocks.push({ kind: 'replace', tag: nb.tag, listType: nb.listType,
+                      oldSep: ob.sep, newSep: nb.sep, hunks });
     }
 
     return blocks;
@@ -305,7 +325,11 @@ export function flatHunks(blocks) {
 //   P1  segmentBlocks is a normalization - segment/render is idempotent. The
 //       invariant is stated against the segmented-and-rendered sides, not the
 //       byte-exact input, exactly as it was stated against normalizeForDiff
-//       rather than byte-exact whitespace before.
+//       rather than byte-exact whitespace before. For <br> it is now stronger
+//       than idempotence - a true round trip, because the separator survives as
+//       the block's sep (see makeBlock). _setMode('review') depends on that:
+//       it decides "did the user edit anything" by string equality against a
+//       canonical render.
 //   P2  diffArrays partitions both block lists exactly (see buildBlockPairs).
 //   P3  inside a paired block the existing text-level proof applies verbatim.
 //
@@ -322,9 +346,11 @@ export function flatHunks(blocks) {
 // in the block is rejected, the block is showing the original and its context
 // must be the original's too.
 //
-// A block with no changed hunks at all is a context block, whose two sides are
-// identical by construction (see buildBlockPairs' comparator), so either answer
-// is correct there.
+// A block with no changed hunks at all has two sides identical in text and
+// html, so either answer is correct here. That now includes a replace pair the
+// comparator split on the separator alone - same words, same markup, different
+// trailing <br> - because the separator is not chosen here: it is settled once
+// for the whole composition, in composeResultBlocksHTML.
 function contextSide(block) {
     for (const h of block.hunks) {
         if (h.type === 'context') { continue; }
@@ -356,6 +382,22 @@ export function composeResult(blocks) {
 // unbalance a tag.
 export function composeResultBlocksHTML(blocks) {
     if (!blocks) { return ''; }
+
+    // Which side's LINE STRUCTURE the result carries. Unlike the per-block
+    // choice of words, a separator joins two blocks, so it cannot be settled
+    // block by block: an accepted hunk in one place and a rejected one in the
+    // next would leave the junction between them undefined. It is decided once,
+    // for the whole composition, by the same rule contextSide applies per block
+    // - anything accepted means the user is building the answer's version, so
+    // its line structure is the one being built. With nothing accepted the
+    // original stands, which is what makes reject-all give the mail back
+    // unchanged, <br> included.
+    const anyAccepted = blocks.some(b => b.hunks.some(h => (h.type !== 'context') && (h.state === 'accepted')));
+    const structure = anyAccepted ? 'new' : 'old';
+
+    // Pass 1: compose each block's html. Blocks composing to nothing are
+    // dropped here (a rejected insert, an accepted delete), so pass 2 sees only
+    // what actually reaches the output.
     const rendered = [];
     for (const b of blocks) {
         const ctx = contextSide(b);
@@ -366,8 +408,21 @@ export function composeResultBlocksHTML(blocks) {
             else                             { html += h.oldHtml; }
         }
         if (html === '') { continue; }
-        rendered.push({ tag: b.tag, listType: b.listType, html: html });
+        rendered.push({ tag: b.tag, listType: b.listType, html: html, sep: null,
+                        _sep: (structure === 'old') ? (b.oldSep || null) : (b.newSep || null),
+                        _kind: b.kind });
     }
+
+    // Pass 2: a separator only survives if the block it joined to is still
+    // there and belongs to the same side. A <br> that joined two lines in the
+    // original says nothing about a block the answer inserted between them, so
+    // a block absent from the chosen side ('insert' has no original, 'delete'
+    // has no answer) ends the run rather than being joined across.
+    const absent = (structure === 'old') ? 'insert' : 'delete';
+    for (let i = 0; i < rendered.length - 1; i++) {
+        if (rendered[i + 1]._kind !== absent) { rendered[i].sep = rendered[i]._sep; }
+    }
+
     return renderBlocks(rendered);
 }
 
@@ -509,13 +564,19 @@ function blockTextOfHtml(html) {
     return String(doc.body.textContent || '');
 }
 
-function makeBlock(el, tag, listType = null) {
+// sep records the JUNCTION that follows this block: 'br' means "this block is
+// joined to the next one by a <br>, and both came out of the same wrapper".
+// The last run of a wrapper always carries null. renderBlocks reads it to put
+// the separator back, which is what makes segment -> render a true round trip
+// for a <br>-separated body rather than a <p>-per-line normalization.
+function makeBlock(el, tag, listType = null, sep = null) {
     const html = normalizeBlockHtml(sanitizeInlineHtml(el.innerHTML));
     return {
         tag: tag,
         listType: listType,
         text: blockTextOfHtml(html),
         html: html,
+        sep: sep,
     };
 }
 
@@ -531,6 +592,10 @@ function makeBlock(el, tag, listType = null) {
 // Deliberately NOT done by adding 'br' to BLOCK_TAGS: that set doubles as "tags
 // renderBlocks emits as a wrapper" (and is spread into BLOCK_ALLOWED), and <br>
 // is void - it would come back out as <br>...</br>.
+//
+// The separator is not lost by being split on: pushBlocks records it as the
+// block's sep, and renderBlocks re-joins the run and puts the <br> back. See
+// makeBlock.
 //
 // Only direct children are split on. A <br> nested inside an inline element
 // (<em>a<br>b</em>) stays inside its run, which is why blockTextOfHtml's
@@ -639,10 +704,20 @@ export function segmentBlocks(html) {
     // Empty runs - a trailing <br>, or the blank line in a <br><br> pair - have
     // no text and are dropped by the same guard that drops empty blocks.
     const pushBlocks = (el, tag, listType) => {
-        for (const run of splitOnBr(el)) {
-            const block = makeBlock(run, tag, listType);
-            if (block.text !== '') { blocks.push(block); }
-        }
+        const runs = splitOnBr(el);
+        let last = null;
+        runs.forEach((run, i) => {
+            const block = makeBlock(run, tag, listType, (i === runs.length - 1) ? null : 'br');
+            if (block.text === '') { return; }
+            last = block;
+            blocks.push(block);
+        });
+        // A trailing <br> leaves an empty final run that the guard above drops,
+        // which would otherwise leave the last EMITTED block pointing at a
+        // successor that belongs to a different wrapper. The junction a dropped
+        // empty run represented is simply not emitted - the same collapse an
+        // empty line already gets today.
+        if (last) { last.sep = null; }
     };
 
     // A run of consecutive inline/text nodes at this level has no block of its
@@ -685,10 +760,16 @@ export function segmentBlocks(html) {
                     }
                     continue;
                 }
-                // A <br> between blocks ends the implicit <p> being gathered and
-                // contributes nothing of its own.
+                // A <br> between blocks ends the implicit <p> being gathered.
+                // If it did close one, it is the junction between that run and
+                // whatever comes next, so it is recorded exactly as splitOnBr's
+                // separators are - otherwise a bare "A<br>B" at body level would
+                // still come back as two <p>. With no pending run it is a blank
+                // line between two real blocks and contributes nothing.
                 if (tag === 'br') {
+                    const had = (pending !== null);
                     flushPending();
+                    if (had && blocks.length > 0) { blocks[blocks.length - 1].sep = 'br'; }
                     continue;
                 }
                 if (BLOCK_TAGS.has(tag)) {
@@ -718,23 +799,54 @@ export function segmentBlocks(html) {
 // segment -> render -> segment -> render is stable (property P1 of the
 // invariant). Consecutive <li> of the same list type are re-wrapped into a
 // single <ul>/<ol>, so a list survives as one list instead of N one-item lists.
+// Blocks carrying sep:'br' are re-joined into ONE wrapper separated by <br>,
+// which is how the <br> the segmenter consumed gets put back. openRun mirrors
+// the openList accumulator: it holds the tag of the wrapper currently left
+// open, and only blocks of that same tag may join the run.
 export function renderBlocks(blocks) {
     let out = '';
     let openList = null;
-    for (const b of (blocks || [])) {
+    let openRun = null;
+    const list = (blocks || []);
+    for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        const next = list[i + 1] || null;
+        // A run continues only while the next block exists and shares this
+        // block's tag. Defensive: runs come out of one wrapper, so the tags
+        // agree by construction - but an unbalanced wrapper must be impossible
+        // even if some future caller hands over a hand-built block list.
+        const joins = ((b.sep === 'br') && next && (next.tag === b.tag)
+                       && ((b.tag !== 'li') || ((next.listType || 'ul') === (b.listType || 'ul'))));
+
         if (b.tag === 'li') {
             const type = b.listType || 'ul';
-            if (openList !== type) {
-                if (openList) { out += `</${openList}>`; }
-                out += `<${type}>`;
-                openList = type;
+            if (openRun === null) {
+                if (openList !== type) {
+                    if (openList) { out += `</${openList}>`; }
+                    out += `<${type}>`;
+                    openList = type;
+                }
+                out += '<li>';
+                openRun = 'li';
             }
-            out += `<li>${b.html}</li>`;
+            out += b.html;
+            if (joins) { out += '<br>'; continue; }
+            out += '</li>';
+            openRun = null;
             continue;
         }
-        if (openList) { out += `</${openList}>`; openList = null; }
-        out += `<${b.tag}>${b.html}</${b.tag}>`;
+
+        if (openRun === null) {
+            if (openList) { out += `</${openList}>`; openList = null; }
+            out += `<${b.tag}>`;
+            openRun = b.tag;
+        }
+        out += b.html;
+        if (joins) { out += '<br>'; continue; }
+        out += `</${openRun}>`;
+        openRun = null;
     }
+    if (openRun) { out += `</${openRun}>`; }
     if (openList) { out += `</${openList}>`; }
     return out;
 }
@@ -2203,6 +2315,8 @@ class DiffPicker extends HTMLElement {
                 kind: 'context',
                 tag: b.tag,
                 listType: b.listType,
+                oldSep: b.sep,
+                newSep: b.sep,
                 hunks: [{
                     id: i,
                     type: 'context',
