@@ -23,6 +23,15 @@
 const MZTA_INJECTED_SELECTORS = [
   '#mzta-container',
   '.mzta_dialog',
+  // <style>/<script> hold no readable text, but their SOURCE is text: the clone
+  // below is detached, and on a detached node textContent-based extraction reads
+  // stylesheet rules out as if they were body copy. A Word/Outlook mail carries a
+  // long @font-face / .MsoNormal block right at the top of <body>, which is exactly
+  // what was landing in {%mail_text_body%}. Removing them here also keeps them out
+  // of getFullHtml's innerHTML, so the CSS no longer rides along in {%mail_html_body%}
+  // and the diff picker's original side either.
+  'style',
+  'script',
 ];
 
 function getCleanBodyHtml() {
@@ -373,7 +382,14 @@ switch (message.command) {
   }
 
   case "getTextOnly": {
-      return Promise.resolve(getCleanBodyHtml().innerText);
+      // NOT getCleanBodyHtml().innerText, which is what this was: innerText is
+      // defined in terms of LAYOUT and getCleanBodyHtml() returns a DETACHED
+      // clone, so the engine fell back to textContent behaviour - no break for a
+      // block element, none for <br>. A read mail arrived as one welded line.
+      // mztaHtmlNodeToLines() (js/lib/mzta-html-lines.js) is layout-independent
+      // by construction and is the same projection htmlBodyToPlainText() uses on
+      // the background path.
+      return Promise.resolve(mztaHtmlNodeToLines(getCleanBodyHtml()));
   }
 
   case "getFullHtml": {

@@ -603,6 +603,115 @@ survives rather than being trimmed away to nothing.
 used to carry a hand-copied twin of them whose `&nbsp;` rule *deleted* the entity instead of
 spacing it; delegating makes the two impossible to diverge again.
 
+#### `htmlBodyToPlainText()` injects the line structure before reading it
+
+`textContent` emits **no** break for a block-level element, so `<p>`, `<div>`, `<br>`, `<tr>` and
+`<li>` boundaries vanish from it entirely. For a long time the only thing keeping the lines apart
+was the **source whitespace** between tags — which Outlook/Word mail does not have, its markup
+being compact. Every paragraph therefore came out welded to the next one
+(`...quotation below:DMS could be XXXXServer 2TB...`).
+
+The function now inserts real break text nodes into the parsed DOM **before** the `textContent`
+read, by calling `mztaInjectLineBreaks()` after the `display:none` / `<style>` removals. That helper
+lives in **`js/lib/mzta-html-lines.js`** and applies three passes:
+
+1. `td, th` → append a **space** (cells separate with a space, not a newline). First, so the block
+   pass's `<tr>` newline still wins at row level.
+2. `br, hr` → `replaceWith` a `\n` node. Both are void: they carry no text, so the break replaces
+   them rather than being appended inside them.
+3. `p, div, li, tr, h1`–`h6`, `blockquote, pre, table, ul, ol, section, article, header, footer` →
+   append a `\n` node.
+
+Same parse-then-inject recipe as `htmlToPlainText()` (`api_webchat/messagesArea.js`) and
+`blockTextOfHtml()` (`api_webchat/diffPicker.js`) — the add-on treats this as *the* HTML→text
+projection, rather than stripping tags with a regex.
+
+It creates its nodes from `root.ownerDocument`, **not** the ambient `document`: it runs against a
+`DOMParser` document in the background page and against a cloned live body in a content script, and
+must not depend on the caller's own document in either.
+
+**Over-inserting is deliberately safe**, and is why the passes can be blunt: `cleanupNewlines()`
+collapses `\n{2,}` to a single `\n`, so nested blocks (a `<p>` inside a `<div>`, `<li>` inside
+`<ul>`) and empty Outlook spacer paragraphs (`<p class=MsoNormal><o:p>&nbsp;</o:p></p>`) fold away
+instead of becoming blank lines. That collapse is load-bearing here: the output of this function
+never contains a blank line, and pretty-printed HTML (whose source newlines now sit *next to* an
+injected one) does not gain any. Do not relax the rule to "fix" paragraph spacing on this path.
+
+> Known gap: `<pre>` keeps its line breaks but **not** its internal indentation or blank lines —
+> `cleanupNewlines()`'s `[ \t]+` → ` ` and `\n{2,}` → `\n` rules run over the whole string.
+> Preserving it verbatim would need a sentinel/restore pass around that chain: new machinery and a
+> new collision failure mode, for an element that is rare in mail.
+
+#### Which path actually feeds `{%mail_text_body%}`
+
+`htmlBodyToPlainText()` is **not** on the interactive path, and this is the single most misleading
+thing about this area. Two separate extractions exist:
+
+| Path | Extraction | Feeds |
+|---|---|---|
+| Automatic (background) | `htmlBodyToPlainText()` (`js/mzta-utils.js`) | auto add-tags, spam filter, on-receive summarize/translate |
+| Interactive (menu / popup) | `getTextOnly` in `js/mzta-compose-script.js` | `{%mail_text_body%}` when the user runs a prompt |
+
+The interactive chain is `getMailBody()` (`js/mzta-menus.js`) → `getTextOnly` → `getCleanBodyHtml()`
+→ `cleanupNewlines()` → `curr_prompt.body_text`. Fixing one path does nothing for the other; both
+carry the same one-`\n`-per-block, never-a-blank-line contract and must be kept in step.
+
+`js/mzta-compose-script.js` serves **both** window kinds — `composeScripts.register` *and*
+`messageDisplayScripts.register` (`mzta-background.js`) — so "compose script" is a misnomer: it is
+also the reading-side extractor.
+
+#### `getCleanBodyHtml()` returns a DETACHED clone, so `innerText` does not work there
+
+`getCleanBodyHtml()` clones `document.body`. `innerText` is defined in terms of **layout**, and a
+detached node has no layout boxes, so the engine falls back to `textContent` behaviour. `getTextOnly`
+read `getCleanBodyHtml().innerText` and therefore silently got `textContent` semantics: no break for
+a block element, no break for `<br>`. On Outlook/Word mail — compact markup with no whitespace
+between tags — the whole body arrived as one welded line. (`07-diff-picker.md` already warns against
+`innerText` for the same layout-dependence reason.)
+
+Two fixes, both in `getCleanBodyHtml()`'s orbit:
+
+1. **`style` and `script` joined `MZTA_INJECTED_SELECTORS`.** They hold no readable text, but their
+   *source* is text, and `textContent` reads stylesheet rules out as body copy. A Word mail carries a
+   long `@font-face` / `.MsoNormal` block at the top of `<body>`, which is what was landing in the
+   prompt. Removing them in the clone also keeps the CSS out of `getFullHtml`'s `innerHTML`, so it no
+   longer rides along in `{%mail_html_body%}` or the diff picker's original side.
+2. **`getTextOnly` now calls `mztaHtmlNodeToLines()`** instead of `innerText` — the shared
+   projection, layout-independent by construction.
+
+The projection emits **one** `\n` per boundary, deliberately *not* the `\n\n` that
+`MZTA_BLOCK_LEVEL_RE` earns in the typed/quoted walkers: it feeds `{%mail_text_body%}`, whose
+contract is one line per block and no blank lines.
+
+#### `js/lib/mzta-html-lines.js` — one projection, two loaders
+
+The interactive and the automatic path had the *same* bug because each carried its own hand-copied
+twin of the projection, block-tag list included. It now lives in one file, and the two callers are
+`mztaInjectLineBreaks(root)` (in place, for a node the caller already owns) and
+`mztaHtmlNodeToLines(root)` (clones first, returns the text).
+
+The file is a **classic script sharing globals**, not an ES module, because
+`js/mzta-compose-script.js` is loaded by `composeScripts.register` /
+`messageDisplayScripts.register` / `tabs.executeScript` — none of which give it module context, so it
+cannot `import`. It is therefore loaded twice over:
+
+- **content script** — listed *before* `mzta-compose-script.js` in all **three** registration sites
+  (`mzta-background.js`); the array order is the load order. A new injection site must list it too.
+- **background** — a plain `<script>` in `mzta-background.html`, ahead of the `type="module"` entry
+  point, exactly as `markdown-it.min.js` already is. `js/mzta-utils.js` reaches it through
+  `globalThis`.
+
+Safe because `htmlBodyToPlainText()` only ever runs in the background: its callers are
+`mzta-background.js` and `js/mzta-utils-prompt.js`, the latter reached only via `js/mzta-menus.js`,
+and `mzta-background.html` is the only HTML that loads `js/mzta-utils.js`. A settings or popup page
+that starts importing it would need the `<script>` tag too. Same shape as `js/lib/diff.js`, the
+add-on's other classic script shared through a global.
+
+**`{%mail_typed_text%}` / `{%mail_quoted_text%}` are untouched by all of this.** Their walkers read
+`window.document.body.childNodes` **directly**, not the clone (which is the known gap recorded
+below), so neither the `<style>` removal nor the new projection reaches them, and their `\n\n`
+paragraph contract is preserved exactly.
+
 The plain-text fallbacks that run when `htmlBodyToPlainText()` yields nothing — in
 `_generateSpamReportForMessage` and `processEmails` (`mzta-background.js`) and in
 `taPromptUtils` (`js/mzta-utils-prompt.js`) — call `cleanupNewlines()` too. They previously used

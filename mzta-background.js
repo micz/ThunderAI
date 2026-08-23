@@ -154,12 +154,14 @@ let summaryStore = new taSummaryStore(prefs_init.do_debug);
 let translationStore = new taTranslationStore(prefs_init.do_debug);
 
 browser.composeScripts.register({
-    js: [{file: "/js/mzta-compose-script.js"}]
+    // mzta-html-lines.js FIRST: it is a classic script defining the globals
+    // mzta-compose-script.js calls (mztaHtmlNodeToLines). Order is load order.
+    js: [{file: "/js/lib/mzta-html-lines.js"}, {file: "/js/mzta-compose-script.js"}]
 });
 
 // Register the message display script for all newly opened message tabs.
 messenger.messageDisplayScripts.register({
-    js: [{ file: "js/mzta-compose-script.js" }]
+    js: [{ file: "js/lib/mzta-html-lines.js" }, { file: "js/mzta-compose-script.js" }]
 });
 
 browser.contentScripts.register({
@@ -2399,6 +2401,10 @@ for (let messageTab of messageTabs) {
         continue;
     }
     try {
+        // Same two files, same order, as the messageDisplayScripts.register above.
+        await browser.tabs.executeScript(messageTab.id, {
+            file: "js/lib/mzta-html-lines.js"
+        })
         await browser.tabs.executeScript(messageTab.id, {
             file: "js/mzta-compose-script.js"
         })

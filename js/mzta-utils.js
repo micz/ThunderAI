@@ -411,13 +411,36 @@ export function htmlBodyToPlainText(htmlString) {
    // return doc;
   doc.querySelectorAll('[style*="display:none"]').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
   doc.querySelectorAll('style').forEach(e => e.remove());//.querySelector('html').children.not(':visible').remove()
-  
+
+  // The line structure has to be put into the DOM before textContent reads it:
+  // textContent emits NO break for a block-level element, so <p>, <div>, <br>,
+  // <tr> and <li> boundaries vanish and only the SOURCE whitespace between tags
+  // was ever keeping the lines apart. Outlook/Word mail has none - its markup is
+  // compact - so every paragraph came out welded to the next one:
+  //   "...quotation below:DMS could be XXXXServer 2TB..."
+  //
+  // The projection itself lives in js/lib/mzta-html-lines.js, shared with the
+  // INTERACTIVE extraction in js/mzta-compose-script.js (getTextOnly), which had
+  // the very same bug. One rule, one place - they drifted apart precisely because
+  // each carried its own copy. Reached through globalThis because that file must
+  // stay a classic script: the content script that also uses it cannot import.
+  // mzta-background.html loads it before this module, next to markdown-it.
+  //
+  // In place, not on a clone: `doc` is ours, parsed two lines up.
+  globalThis.mztaInjectLineBreaks(doc.body);
+
   // Extract text content
   const textContent = doc.body.textContent || "";
 	// Every mail body - HTML branch or plain-text fallback - is tidied by the same
 	// cleanupNewlines(). This used to be a hand-copied twin of it that DELETED &nbsp;
 	// instead of spacing it, welding words together; delegating makes the two
 	// impossible to diverge again.
+	//
+	// Known gap: <pre> keeps its line breaks but not its internal indentation or
+	// blank lines - cleanupNewlines()'s [ \t]+ and \n{2,} rules run over the whole
+	// string. Preserving it verbatim would need a sentinel/restore pass around that
+	// chain, new machinery and a new collision failure mode for an element that is
+	// rare in mail.
 	return cleanupNewlines(textContent);
 }
 

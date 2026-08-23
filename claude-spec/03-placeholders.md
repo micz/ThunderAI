@@ -81,6 +81,33 @@ result collapses like any other space. Never drop it instead: that welds words t
 rationale in [01-architecture.md](01-architecture.md) → *Non-breaking spaces, and the order of the
 cleanup rules*.
 
+### Newline contract of the body placeholders
+
+`mail_text_body` and `mail_text_body_or_selected` carry the opposite contract to the compose ones:
+**one `\n` per HTML block boundary, and never a blank line.**
+
+**Two different extractions produce them**, and confusing the two is the classic mistake here:
+
+| Path | Extraction |
+|---|---|
+| Interactive (menu / popup) — what a user prompt actually hits | `getTextOnly` → `mztaHtmlNodeToLines(getCleanBodyHtml())` (`js/mzta-compose-script.js`), then `cleanupNewlines()` in `js/mzta-menus.js` |
+| Automatic (background) — auto add-tags, spam filter, on-receive | `htmlBodyToPlainText()` (`js/mzta-utils.js`) |
+
+Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\n`, block elements → a
+trailing `\n`, `<td>`/`<th>` → a space, injected into the DOM **before** the text is read, because
+`textContent` alone drops every block boundary and `innerText` is useless on the detached clone
+`getCleanBodyHtml()` returns. They had the same bug twice precisely because each used to carry its
+own copy — do not re-fork it.
+
+Both then rely on `cleanupNewlines()`, whose `\n{2,}` → `\n` collapse keeps the output blank-line
+free and lets the injection be blunt without doubling anything: nested blocks and empty Outlook
+spacer paragraphs (`<p class=MsoNormal><o:p>&nbsp;</o:p></p>`) fold away rather than becoming blank
+lines. Widening that rule would change these placeholders, the diff picker's original side and every
+existing comparison at once.
+
+Full rationale in [01-architecture.md](01-architecture.md) → *Which path actually feeds
+`{%mail_text_body%}`*.
+
 ### The address placeholders in the compose window
 
 `recipients` and `cc_list` are `type: 0`, so they are offered while composing too. `curr_message` is
