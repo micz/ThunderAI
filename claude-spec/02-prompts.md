@@ -112,6 +112,8 @@ Guarded callers, each reporting through the mechanism its feature already has:
 - Auto add-tags (`mzta-background.js`): logs an error and sets `skipAddTags = true`, leaving the rest of the message pipeline running.
 - Spam filter (`mzta-background.js`): logs an error, then `spamReport.saveError()` + `updateSpamPanel(…, "showSpamReport", …)` and returns `{ success: false }`. `saveError()` goes through `saveReportData()`, which clears the session `processing` flag — without this the message would stay stuck showing "check in progress". The text passed to `saveError()` becomes the report's `explanation` and is rendered in the spam panel, so it must be localized (`spamfilter_prompt_missing_explanation`), like the other skip-reason explanations; only the `taLog.error()` line stays English.
 
+`spamReport.saveError(data_id, error_message, metadata = {})` takes an optional third argument that is spread over the stored record. `_generateSpamReportForMessage()` captures a `message_metadata` snapshot via `_buildReportMetadata()` (subject / from / message_date) and passes it to every `saveError()` call except the "Message not found" one, so error rows in the spam log keep their subject, sender and date columns instead of rendering `undefined`. The snapshot prefers the `getFull()` MIME headers and falls back to the `MessageHeader` fields (`message.subject` / `message.author` / `message.date`), which stay readable when a user filter deletes or moves the message mid-analysis. `subject` and `from` are therefore arrays (MIME header shape) — the log table in `pages/spamfilter/mzta-spamfilter.js` joins them with `Array.isArray(...) ? .join(", ") : ...`, so any fallback value must be array-wrapped too.
+
 ## Menu System
 
 ### Icon Resolution

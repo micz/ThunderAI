@@ -1114,12 +1114,32 @@ async function _generateTranslationForMessage(headerMessageId, tabId = null, opt
     }
 }
 
+// Build a lightweight metadata snapshot (subject, from, message_date) for spam
+// report entries. Prefers the full MIME headers, but falls back to the
+// MessageHeader fields (message.subject / message.author / message.date), which
+// remain readable even when the message storage is no longer available. This
+// keeps the spam log populated when a user filter removes a message while it is
+// being analyzed, or when getFull() returns partial headers.
+// Thanks to https://github.com/racerm3 for the idea, from https://github.com/racerm3/ThunderAI/commit/5ae5e206a733b44d57ef57dcc46968ea7e686e72#diff-ee0e0f04f23f4913865479164d992ff20124eba596df1453f1cde635359fb634
+function _buildReportMetadata(message, curr_fullMessage) {
+    const headers = (curr_fullMessage && curr_fullMessage.headers) || {};
+    const isEmpty = (v) => v === undefined || v === null || (Array.isArray(v) && v.length === 0);
+    return {
+        subject: isEmpty(headers.subject) ? (message?.subject ? [message.subject] : undefined) : headers.subject,
+        from: isEmpty(headers.from) ? (message?.author ? [message.author] : undefined) : headers.from,
+        message_date: message?.date ? new Date(message.date) : undefined
+    };
+}
+
 // options.messageData: { message, fullMessage, body_text, msg_text } — pass pre-fetched data to avoid re-querying
 // options.messageId: numeric message id, when the caller has one — see _resolveMessage()
 // options.tabId: only used to resolve the message (the panel finds its own tab) — see _resolveMessage()
 // options.prefs: pass pre-fetched prefs to avoid re-querying
 // options.autoMove: if true, move spam messages to junk folder (default: false)
 async function _generateSpamReportForMessage(headerMessageId, options = {}) {
+    // Declared outside the try so the final catch can still attach whatever
+    // metadata was captured before the failure.
+    let message_metadata = null;
     try {
         let prefs = options.prefs || await browser.storage.sync.get({
             connection_type: prefs_default.connection_type,
@@ -1141,6 +1161,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             curr_fullMessage = options.messageData.fullMessage;
             msg_text = options.messageData.msg_text;
             body_text = options.messageData.body_text;
+            message_metadata = _buildReportMetadata(message, curr_fullMessage);
         } else {
             message = await _resolveMessage(headerMessageId, options.messageId, options.tabId);
             if (!message) {
@@ -1148,7 +1169,18 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
                 return { success: false };
             }
-            curr_fullMessage = await browser.messages.getFull(message.id);
+            // Snapshot the MessageHeader fields first: getFull() can fail, or resolve
+            // with empty headers, when a user filter removes the message mid-analysis.
+            message_metadata = _buildReportMetadata(message, null);
+            try {
+                curr_fullMessage = await browser.messages.getFull(message.id);
+            } catch (err) {
+                console.error("[ThunderAI | SpamFilter] Error getting the full message: ", err);
+                let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
+                await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
+                return { success: false };
+            }
+            message_metadata = _buildReportMetadata(message, curr_fullMessage);
             msg_text = await getMailBody(curr_fullMessage);
             body_text = htmlBodyToPlainText(msg_text.html);
             if (body_text.length == 0) {
@@ -1172,9 +1204,9 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                 report_data.headerMessageId = headerMessageId;
                 report_data.spamValue = 0;
                 report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addresses_explanation');
-                report_data.subject = curr_fullMessage.headers.subject;
-                report_data.from = curr_fullMessage.headers.from;
-                report_data.message_date = new Date(message.date);
+                report_data.subject = message_metadata.subject;
+                report_data.from = message_metadata.from;
+                report_data.message_date = message_metadata.message_date;
                 report_data.moved = false;
                 report_data.SpamThreshold = getSpamThreshold(prefs);
                 spamReport.saveReportData(report_data, headerMessageId);
@@ -1204,9 +1236,9 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
                         report_data.headerMessageId = headerMessageId;
                         report_data.spamValue = 0;
                         report_data.explanation = browser.i18n.getMessage('spamfilter_skip_addressbook_explanation');
-                        report_data.subject = curr_fullMessage.headers.subject;
-                        report_data.from = curr_fullMessage.headers.from;
-                        report_data.message_date = new Date(message.date);
+                        report_data.subject = message_metadata.subject;
+                        report_data.from = message_metadata.from;
+                        report_data.message_date = message_metadata.message_date;
                         report_data.moved = false;
                         report_data.SpamThreshold = getSpamThreshold(prefs);
                         spamReport.saveReportData(report_data, headerMessageId);
@@ -1223,7 +1255,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         let curr_prompt_spamfilter = await getSpamFilterPrompt();
         if (!curr_prompt_spamfilter) {
             taLog.error("Spam filter: the 'prompt_spamfilter' special prompt is missing, skipping. If you modified the special prompts, try restoring the default Spam Filter prompt.");
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'));
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('spamfilter_prompt_missing_explanation'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return { success: false };
         }
@@ -1234,7 +1266,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         let spam_conntype = getConnectionType(prefs, curr_prompt_spamfilter, 'spamfilter');
         if (!isApiUsableConnection(spam_conntype)) {
             console.error("[ThunderAI | SpamFilter] Invalid connection type: " + spam_conntype);
-            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'));
+            let err_data = await spamReport.saveError(headerMessageId, browser.i18n.getMessage('msg_no_connection_selected'), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return { success: false };
         }
@@ -1264,7 +1296,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             spamfilter_result = (await cmd_spamfilter.sendPrompt()).trim();
         } catch (err) {
             console.error("[ThunderAI | SpamFilter] Error getting spamfilter: ", err);
-            let err_data = await spamReport.saveError(headerMessageId, err.message || String(err));
+            let err_data = await spamReport.saveError(headerMessageId, err.message || String(err), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return { success: false };
         }
@@ -1276,7 +1308,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
             jsonObj = extractJsonObject(spamfilter_result);
         } catch (e) {
             console.error("[ThunderAI | SpamFilter] Error extracting JSON from AI response: ", e);
-            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e));
+            let err_data = await spamReport.saveError(headerMessageId, e.message || String(e), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
             return { success: false };
         }
@@ -1287,9 +1319,9 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         report_data.headerMessageId = headerMessageId;
         report_data.spamValue = jsonObj.spamValue;
         report_data.explanation = jsonObj.explanation;
-        report_data.subject = curr_fullMessage.headers.subject;
-        report_data.from = curr_fullMessage.headers.from;
-        report_data.message_date = new Date(message.date);
+        report_data.subject = message_metadata.subject;
+        report_data.from = message_metadata.from;
+        report_data.message_date = message_metadata.message_date;
         report_data.moved = false;
         report_data.SpamThreshold = getSpamThreshold(prefs);
 
@@ -1311,7 +1343,7 @@ async function _generateSpamReportForMessage(headerMessageId, options = {}) {
         if (error.isConfigError) {
             await updateSpamPanel(headerMessageId, "showSpamReport", { spamValue: -999, explanation: error.message || String(error) });
         } else {
-            let err_data = await spamReport.saveError(headerMessageId, error.message || String(error));
+            let err_data = await spamReport.saveError(headerMessageId, error.message || String(error), message_metadata || {});
             await updateSpamPanel(headerMessageId, "showSpamReport", err_data);
         }
         return { success: false };
