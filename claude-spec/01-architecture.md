@@ -718,7 +718,7 @@ Two invariants in `MessagesArea`, both easy to break:
   still undecided only a bare `\n` flushes. Clearing `_currentTurnEl` in
   `flushAccumulatingMessage()` would therefore open a new wrapper — and render a second
   avatar — part-way through one answer. Only `appendUserMessage()`, `appendBotMessage()` and
-  `handleTokensDone()` reset it. `appendDiffViewer()` can run against an older turn mid-session,
+  `handleTokensDone()` reset it. `appendDiffPicker()` can run against an older turn mid-session,
   so it saves and restores the field around `_beginBotTurn()`.
 - **`_lastFullBarTurn` owns the only full action bar.** `addActionButtons()` calls
   `_degradeFullActionBar()` first, so two full bars never coexist. `.action-bar` and
@@ -824,7 +824,7 @@ early-return when the value is unchanged, which during a stream is every frame:
 ```
 _setAnchor(null)    drop the anchor, no scroll         → handleTokensDone (before its follow)
 scrollToBottom()    real bottom, drop anchor, re-arm → appendBotMessage (terminal/error),
-                                                       appendDiffViewer, #jumpToLatest click
+                                                       appendDiffPicker, #jumpToLatest click
 _resumeFollowing()  re-arm, keep the anchor          → appendUserMessage
 _scrollIfSticky()   follow only if still stuck       → handleNewToken, handleTokensDone,
                                                        handleNewThinkingToken, ResizeObserver
@@ -883,7 +883,7 @@ line and `.sel_info` becomes visible), it lands after an `await browser.storage.
 | `api_webchat/messageInput.js` | `<message-input>` custom element: input field, send/stop buttons, floating status pill (waiting / streaming / done / error), custom-text flow |
 | `api_webchat/splitButton.js` | `<split-button>` custom element: the "use this answer" button + optional reply-type dropdown; owns the outside-click and Escape listener lifecycle (`connectedCallback`/`disconnectedCallback`) |
 | `api_webchat/streamingMessage.js` | `StreamingMessage` class: per-turn token/thinking accumulation, `<think>` handling, markdown-it render; `flush()` returns an immutable HTML snapshot |
-| `api_webchat/diffViewer.js` | `renderDiff(container, original, new)` — one-shot word-diff renderer (uses global `Diff`) |
+| `api_webchat/diffPicker.js` | `<diff-picker>` custom element: block segmentation, hunk model and compose functions for the interactive change picker. Also exports `sanitizeBlockHtml()`, the gate the HTML answer path uses — see [07-diff-picker.md](07-diff-picker.md) |
 | `api_webchat/thinkingBlock.js` | `renderThinkingBlock(container, text, collapsed)` — one-shot `<details class="thinking-block">` renderer |
 | `api_webchat/svgIcons.js` | Inline-SVG icon builders (send/stop/dropdown, sparkle avatar, copy, check, diff, save, close, alert, dot (unused), scroll-to-bottom) built via `createElementNS` — CSP-safe, dependency-free, no `innerHTML`; icons stroke in `currentColor` so they follow the tokens |
 
