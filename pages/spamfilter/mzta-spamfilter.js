@@ -322,11 +322,7 @@ async function loadSpamReport(){
     let report_data = await spamReport.getAllReportData();
     //console.log(">>>>>>>>>>>> loadSpamReport: " + JSON.stringify(report_data));
     //document.getElementById("report_data").textContent = JSON.stringify(report_data, null, 2);
-    if(report_data == undefined){
-      document.getElementById("report_data").innerText = browser.i18n.getMessage("spamfilter_no_reports");
-    }else{
-      populateTable(report_data);
-    }
+    populateTable(report_data);
 }
 
 
@@ -334,6 +330,19 @@ async function loadSpamReport(){
  function populateTable(data) {
   const tableBody = document.getElementById("report_data_body");
   tableBody.innerHTML = ""; // Clear table before inserting new data
+
+  // getAllReportData() resolves to an empty object when nothing has been
+  // screened yet, so the placeholder goes in a row: replacing the table's
+  // content would remove the header row and the tbody itself.
+  if(Object.keys(data).length === 0){
+    const emptyRow = document.createElement("tr");
+    const emptyCell = document.createElement("td");
+    emptyCell.colSpan = 8;
+    emptyCell.textContent = browser.i18n.getMessage("spamfilter_no_reports");
+    emptyRow.appendChild(emptyCell);
+    tableBody.appendChild(emptyRow);
+    return;
+  }
 
   Object.keys(data).forEach(email => {
       const report = data[email];
@@ -347,15 +356,15 @@ async function loadSpamReport(){
       row.appendChild(tdHeaderMessageId);
 
       const tdMessageDate = document.createElement("td");
-      tdMessageDate.textContent = new Date(report.message_date).toLocaleString();
+      tdMessageDate.textContent = report.message_date ? new Date(report.message_date).toLocaleString() : "";
       row.appendChild(tdMessageDate);
 
       const tdFrom = document.createElement("td");
-      tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : report.from;
+      tdFrom.textContent = Array.isArray(report.from) ? report.from.join(", ") : (report.from ?? "");
       row.appendChild(tdFrom);
 
       const tdSubject = document.createElement("td");
-      tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : report.subject;
+      tdSubject.textContent = Array.isArray(report.subject) ? report.subject.join(", ") : (report.subject ?? "");
       row.appendChild(tdSubject);
 
       const tdSpamValue = document.createElement("td");
