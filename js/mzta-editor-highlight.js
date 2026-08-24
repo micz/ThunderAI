@@ -26,6 +26,11 @@
  *  identical text metrics — see the .editor-backdrop / .editor-highlights rules
  *  in the page CSS. Any font, padding or border change on one must be mirrored
  *  on the other, or the highlight drifts away from the text.
+ *
+ *  Consequence for tooltips: the mirror is pointer-events:none, so the `title`
+ *  on a chip can never fire on its own, and elementsFromPoint() cannot find one
+ *  either. It is mirrored onto the textarea on mousemove, via a geometric
+ *  hit-test — see titleAtPoint().
  */
 
 // The one and only placeholder pattern. Shared with decoratePromptText() and
@@ -107,6 +112,10 @@ export function attachEditorHighlight(textarea, options = {}) {
 
     let getTokenState = options.getTokenState || null;
 
+    // Title currently mirrored onto the textarea from the hovered chip, so both
+    // the hover handler and render() can tell whether one is in place.
+    let hoverTitle = '';
+
     const doc = textarea.ownerDocument;
 
     function caretAnchor() {
@@ -179,6 +188,14 @@ export function attachEditorHighlight(textarea, options = {}) {
 
         highlights.replaceChildren(frag);
         syncScroll();
+        // The chips just got replaced, so a title copied from an old one may now
+        // describe a token that no longer exists (or has changed tier). Drop it;
+        // the next mousemove re-reads it from the fresh nodes. Typing hides the
+        // native tooltip anyway, so nothing visible is lost.
+        if (hoverTitle) {
+            hoverTitle = '';
+            textarea.removeAttribute('title');
+        }
     }
 
     function syncScroll() {
@@ -195,27 +212,32 @@ export function attachEditorHighlight(textarea, options = {}) {
      *  pointer-events:none (it must be: it sits under the textarea and would
      *  otherwise swallow clicks, selection and the caret). So the browser never
      *  hovers a chip and the native tooltip can never fire. Read mode has no such
-     *  problem — there the chips ARE the hovered elements.
+     *  problem -- there the chips ARE the hovered elements.
      *
-     *  Fix: keep the title on the textarea instead, and swap it for whichever
-     *  chip is under the pointer. document.elementsFromPoint() sees through the
-     *  transparent textarea and returns the mirror node beneath it, so the
-     *  mapping needs no offset arithmetic of its own.
+     *  Fix: mirror the hovered chip's title onto the textarea, which IS hoverable.
+     *  Finding that chip has to be geometric: elementsFromPoint() does not help,
+     *  because it skips pointer-events:none subtrees entirely rather than seeing
+     *  through them -- it never returns a chip at all. So the chips' own client
+     *  rects are tested instead. getClientRects() (plural) is required: a chip
+     *  wrapped across two lines has one rect per line fragment, and its single
+     *  bounding box would spuriously cover the whole gap between them.
      */
-    let hoverTitle = '';
-    function onMouseMove(e) {
-        let title = '';
-        // Only the chips carry a title, so the first one found under the pointer
-        // is the answer. elementsFromPoint is cheap enough here: it runs on
-        // mousemove over a single small element, not on every keystroke.
-        for (const el of doc.elementsFromPoint(e.clientX, e.clientY)) {
-            if (el.classList && el.classList.contains('ph_chip_live')) {
-                title = el.getAttribute('title') || '';
-                break;
+    function titleAtPoint(x, y) {
+        for (const chipEl of highlights.querySelectorAll('.ph_chip_live[title]')) {
+            for (const r of chipEl.getClientRects()) {
+                if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+                    return chipEl.getAttribute('title') || '';
+                }
             }
-            // Stop at the mirror: anything below it is unrelated page chrome.
-            if (el === highlights) break;
         }
+        return '';
+    }
+
+    function onMouseMove(e) {
+        // Only flagged chips carry a title, so an unflagged token yields '' and
+        // the attribute is removed. Cheap: the query is scoped to the mirror and
+        // matches only the handful of chips that actually have a title.
+        const title = titleAtPoint(e.clientX, e.clientY);
         if (title === hoverTitle) return;   // avoid churning the attribute
         hoverTitle = title;
         if (title) textarea.setAttribute('title', title);

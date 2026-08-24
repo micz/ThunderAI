@@ -402,6 +402,21 @@ The two amber tooltips differ because the situations do: `wrong_type` means *nev
 `mzta-editor-highlight.js` is loaded by every editor page, and importing `mzta-placeholders.js` there
 would pull its whole dependency chain along.
 
+**Tooltips in edit mode go on the textarea, not on the chip.** The chips carry a `title`, but they live
+in the mirror, which is `pointer-events: none` — and must stay that way, since it sits under the textarea
+and would otherwise swallow clicks, selection and the caret. The browser therefore never hovers a chip
+and the native tooltip never fires. `attachEditorHighlight()` closes that gap with a `mousemove` handler
+that finds the chip under the pointer and copies its `title` onto the **textarea**, removing it again on
+`mouseleave`. The lookup is **geometric**, testing the chips' own client rects: `elementsFromPoint()`
+does *not* work here, because it skips `pointer-events: none` subtrees entirely rather than seeing
+through them, so it never returns a chip at all. Use `getClientRects()` (plural), not
+`getBoundingClientRect()` — a chip wrapped across two lines has one rect per line fragment, and its
+single bounding box would spuriously cover the whole gap between them. Both the rects and `clientX/Y`
+are viewport coordinates, so the mirror's scroll offset needs no correction.
+`render()` also drops it, because a repaint replaces the chips and the stored title may describe a token
+that no longer exists; the next `mousemove` re-reads it. Read mode needs none of this — there the chips
+are the hovered elements, which is why `.ph_chip_invalid_read` can simply set `cursor: help`.
+
 **The token under the caret is never flagged.** Typing `{%mail_su` would otherwise flash a warning on
 every keystroke. `chip()` reads `textarea.selectionStart/End` live rather than taking an offset argument,
 because the ordinary repaint path (`refresh()`, on every `input`) passes none.
