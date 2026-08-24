@@ -2451,9 +2451,6 @@
     "onboarding_footer_3": {
         "message": "Ti piace ThunderAI?"
     },
-    "editor_placeholder_unknown": {
-        "message": "Segnaposto sconosciuto, o non disponibile per questo tipo di prompt"
-    },
     "editor_placeholder_unterminated": {
         "message": "Segnaposto non terminato: manca la chiusura %}"
     },

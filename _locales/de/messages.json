@@ -2564,10 +2564,6 @@
         "message": "Keine KI-Verbindung ausgewählt. Öffnen Sie die ThunderAI-Optionen und starten Sie den Einrichtungsassistenten, um eine auszuwählen.",
         "description": "Alert shown when a prompt is run but no AI connection has been selected"
     },
-    "editor_placeholder_unknown": {
-        "message": "Unbekannter Platzhalter oder für diesen Prompt-Typ nicht verfügbar",
-        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist, or exists but is not available for the prompt's selected type"
-    },
     "editor_placeholder_unterminated": {
         "message": "Nicht abgeschlossener Platzhalter: schließendes %} fehlt",
         "description": "Tooltip on a highlighted placeholder token in the prompt editor when the token opens with {% but never closes with %}"

@@ -2448,9 +2448,6 @@
     "menu_order_icon_default": {
         "message": "Ícone padrão"
     },
-    "editor_placeholder_unknown": {
-        "message": "Placeholder desconhecido ou não disponível para este tipo de prompt"
-    },
     "editor_placeholder_unterminated": {
         "message": "Placeholder incorreto: faltando o fechamento %}"
     },

@@ -2537,10 +2537,6 @@
         "message": "Aucune connexion IA sélectionnée. Ouvrez les options ThunderAI et lancez l'assistant de configuration pour en choisir une.",
         "description": "Alerte affichée lorsqu'un prompt est exécuté mais qu'aucune connexion IA n'a été sélectionnée"
     },
-    "editor_placeholder_unknown": {
-        "message": "Espace réservé inconnu, ou non disponible pour ce type de prompt",
-        "description": "Infobulle sur un jeton d'espace réservé mis en évidence dans l'éditeur de prompt lorsque l'identifiant de l'espace réservé n'existe pas, ou existe mais n'est pas disponible pour le type de prompt sélectionné"
-    },
     "editor_placeholder_unterminated": {
         "message": "Espace réservé non terminé : il manque le %} de fermeture",
         "description": "Infobulle sur un jeton d'espace réservé mis en évidence dans l'éditeur de prompt lorsque le jeton s'ouvre avec {% mais ne se ferme jamais avec %}"
