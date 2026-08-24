@@ -28,6 +28,7 @@
         <li>The rewrite prompts are now using the HTML selected text preserving the HTML formatting if present.</li>
         <li>In the custom prompts page it is now possible to search for a prompt filtering the list.</li>
         <li>Fix: the <i>{%recipients%}</i> and <i>{%cc_list%}</i> placeholders now also work in the compose window, using the addresses typed in the To and Cc fields.</li>
+        <li>Many minor improvements.</li>
         <li>Various minor bugs fixed.</li>
         <li>...</li>
       </ul>
