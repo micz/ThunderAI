@@ -2438,9 +2438,6 @@
     "onboarding_footer_3": {
         "message": "ThunderAI をお気に召しましたか?"
     },
-    "editor_placeholder_unknown": {
-        "message": "不明なプレースホルダー、またはこのプロンプトタイプでは使用できません"
-    },
     "editor_placeholder_unterminated": {
         "message": "プレースホルダーが閉じられていません: 終了の %} がありません"
     },

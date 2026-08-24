@@ -2368,9 +2368,6 @@
     "msg_no_connection_selected": {
         "message": "Tidak ada koneksi AI yang dipilih. Buka opsi ThunderAI dan jalankan wizard penyiapan untuk memilihnya."
     },
-    "editor_placeholder_unknown": {
-        "message": "Placeholder tidak dikenal atau tidak tersedia untuk jenis prompt ini"
-    },
     "editor_placeholder_unterminated": {
         "message": "Placeholder tidak ditutup: {%} penutup tidak ada"
     },
