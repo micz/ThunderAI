@@ -926,8 +926,12 @@ export async function transformTagsLabels(labels, tags_list) {
   return output;
 }
 
+// A select marked `data-empty-ok` accepts the empty value as a valid choice
+// (e.g. the timezone: empty means "no timezone enforced"), so it must not be
+// flagged in red.
 export function setTomSelectBorder(el){
-  if (el.getValue() === "") {
+  const emptyIsValid = el.input?.dataset?.emptyOk !== undefined;
+  if (el.getValue() === "" && !emptyIsValid) {
       el.control.style.border = '2px solid red';
   } else {
       el.control.style.border = '1px solid #d0d0d0';

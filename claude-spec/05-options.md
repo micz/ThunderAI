@@ -240,6 +240,12 @@ The timezone `<select>` shown on the Calendar Event (`pages/get-calendar-event/`
 - The stored pref value stays a plain IANA id, so the JSON payload sent to the external Sparks add-on
   (`js/mzta-menus.js`) is unchanged. Values stored by older versions still work through the existing
   `restoreOptions()` fallback.
+- **The timezone is optional.** The empty value is a legitimate choice meaning "no timezone enforced",
+  and it is the factory default (`calendar_timezone: ''`). The `<select>` therefore carries a
+  `data-empty-ok` attribute, which tells `setTomSelectBorder()` (`js/mzta-utils.js`) not to paint the
+  red "missing value" border when nothing is selected — otherwise every fresh profile would open the
+  page with the field already flagged as an error. For every other Tom Select, which has no such
+  attribute, an empty value keeps being highlighted in red.
 
 ### Summarize Settings Page (`pages/summarize/`)
 
