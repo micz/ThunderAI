@@ -458,6 +458,8 @@ export const placeholdersUtils = {
      *  activePHs  placeholder list, as returned by getPlaceholders(true)
      *  type       optional prompt type ('0'/'1'/'2'). When given, a placeholder
      *             only matches if its own type is that type or '0' ("always").
+     *             A placeholder with no type at all counts as '0' -- see the
+     *             comment on foundType below.
      *             Omitted by extractPlaceholders(), whose behaviour is therefore
      *             unchanged (it ignores type entirely).
      *
@@ -474,8 +476,18 @@ export const placeholdersUtils = {
         const found = activePHs.find(ph => ph.id === id
             || (ph.is_dynamic == 1 && id.startsWith(ph.id + ':')));
         if (!found) return null;
+        // A placeholder with no type of its own is treated as type '0' ("always"),
+        // not as a mismatch: a value that carries no context requirement is usable
+        // in every context. Every built-in declares a type, and the Data
+        // Placeholders page always stores the one the user picked, so this guards
+        // the paths that bypass that form -- a JSON import whose entries omit the
+        // field, or hand-edited storage. Rejecting those everywhere but in a
+        // type-'0' prompt would be arbitrary, since nothing about them is
+        // reading- or composing-specific.
+        const foundType = (found.type === null || found.type === undefined
+            || String(found.type).trim() === '') ? '0' : String(found.type);
         if (type !== null && String(type) !== '0'
-            && !(String(found.type) === String(type) || String(found.type) === '0')) {
+            && !(foundType === String(type) || foundType === '0')) {
             return null;
         }
         return found;

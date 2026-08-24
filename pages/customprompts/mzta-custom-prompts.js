@@ -51,6 +51,7 @@ import {
     attachEditorHighlight,
     getEditorHighlight,
     makeTokenStateResolver,
+    classifyPlaceholderType,
     PLACEHOLDER_RE
 } from "../../js/mzta-editor-highlight.js";
 
@@ -695,18 +696,39 @@ function attachHighlightWithValidation(textarea) {
         ? document.getElementById('selectTypeNew')
         : (tr ? tr.querySelector('.type_output') : null);
 
-    if (!existing) {
-        handle.setTokenStateResolver(makeTokenStateResolver(
-            placeholdersUtils.findPlaceholder,
-            activePlaceholders,
-            typeSelect ? () => typeSelect.value : null));
-    }
+    // Installed on EVERY call, not just the first: `existing` is a handle from a
+    // previous entry into edit mode, and the resolver it carries closed over the
+    // typeSelect *found back then*. On the add-form that select does not exist
+    // until the form is built, and a row's .type_output is only reachable once
+    // the row template has been rendered -- so an early attach captured null and
+    // the resolver then skipped type filtering permanently, leaving a
+    // wrong-type token painted as a valid chip forever. setTokenStateResolver()
+    // also repaints, so re-installing is exactly what makes a type edited since
+    // last time take effect.
+    handle.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder,
+        activePlaceholders,
+        typeSelect ? () => typeSelect.value : null));
 
+    // Re-validate when the "add to menu" type is changed: validity depends on it,
+    // and the mirror caches its render, so without this a token stays painted
+    // with the tier it had under the previous type.
+    //
+    // The listener is registered once per select but must NOT close over
+    // `textarea`: on the add-form #selectTypeNew is a single shared element, and
+    // a row's .type_output outlives any one entry into edit mode, so a captured
+    // textarea can be the wrong one (or detached) by the time the event fires.
+    // It therefore resolves the currently-attached editor from the select itself
+    // and refreshes every mirror it can reach.
     if (typeSelect && !typeSelect._mztaHighlightSync) {
         typeSelect._mztaHighlightSync = true;
-        typeSelect.addEventListener('change', () => {
-            const h = getEditorHighlight(textarea);
-            if (h) h.refresh();
+        typeSelect.addEventListener('change', (e) => {
+            const sel = e.currentTarget;
+            const scope = sel.closest('tr') || document;
+            scope.querySelectorAll('textarea.editor').forEach(ta => {
+                const h = getEditorHighlight(ta);
+                if (h) h.refresh();
+            });
         });
     }
     return handle;
@@ -1154,9 +1176,10 @@ function decoratePromptText() {
     // as invalid; skip the validity pass until the list is in. The
     // DOMContentLoaded handler re-runs this right after the await.
     const canValidate = Array.isArray(activePlaceholders) && activePlaceholders.length > 0;
-    const unknownTitle = canValidate
-        ? browser.i18n.getMessage('editor_placeholder_unknown')
+    const missingTitle = canValidate
+        ? browser.i18n.getMessage('editor_placeholder_missing')
         : '';
+
 
     document.querySelectorAll('#all_prompts .text_show').forEach(span => {
         // The guard is keyed to the *decorated result*, not to a plain '1' flag:
@@ -1206,9 +1229,25 @@ function decoratePromptText() {
                 }
                 const chip = document.createElement('span');
                 chip.className = 'ph_chip';
-                if (canValidate && !placeholdersUtils.findPlaceholder(m[1], activePlaceholders, type)) {
-                    chip.classList.add('ph_chip_invalid_read');
-                    chip.title = unknownTitle;
+                // Same two tiers as edit mode: red when the id does not exist
+                // at all, amber when it exists but does not fit this row's type.
+                // The type half is delegated to classifyPlaceholderType(), the
+                // very helper the live resolver uses, so the two modes cannot
+                // disagree -- including on the type-'0' "works in only one
+                // context" warning. `type` may legitimately be null here, and
+                // the helper then returns null (no type filtering).
+                if (canValidate) {
+                    if (!placeholdersUtils.findPlaceholder(m[1], activePlaceholders, null)) {
+                        chip.classList.add('ph_chip_invalid_read', 'ph_chip_error_read');
+                        chip.title = missingTitle;
+                    } else {
+                        const state = classifyPlaceholderType(
+                            placeholdersUtils.findPlaceholder, activePlaceholders, m[1], type);
+                        if (state) {
+                            chip.classList.add('ph_chip_invalid_read');
+                            chip.title = state.title;
+                        }
+                    }
                 }
                 chip.textContent = m[0];
                 frag.appendChild(chip);

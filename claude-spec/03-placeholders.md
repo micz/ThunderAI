@@ -287,7 +287,7 @@ arrow keys wrap around with `scrollIntoView({ block: 'nearest' })`.
 `pages/_lib/editor-highlight.css`, linked by all 8 pages. The three metrics that legitimately differ
 between pages plus the colours are custom properties a page must define on `.editor-wrap`:
 `--ed-padding`, `--ed-font`, `--ed-line-height`, `--ed-surface`, `--ed-surface-focus`, `--ed-border`,
-`--ed-chip-bg/-fg`, `--ed-warn-bg/-fg/-border`. The design-system pages get them from
+`--ed-chip-bg/-fg`, `--ed-warn-bg/-fg/-border`, `--ed-err-bg/-fg/-border`. The design-system pages get them from
 `#mzta_card .editor-wrap` in `mzta-design.css` (9px 11px / inherit / 1.6, matching that file's own
 textarea rules); the two table pages set them locally (7px 10px / mono / 1.55).
 
@@ -326,32 +326,77 @@ The highlight mirror flags tokens that will not resolve. `makeTokenStateResolver
 `js/mzta-editor-highlight.js` builds the per-token callback; a page installs it with
 `handle.setTokenStateResolver(...)`.
 
-| State | Rendering |
-|---|---|
-| Valid placeholder (including dynamic `{%id:value%}`) | normal chip |
-| Unknown id, or valid id not available for the prompt's type | warning chip + `title` |
-| Unterminated `{%` with no closing `%}` | warning chip + `title` |
+**Two tiers, not one.** Red means *nothing can make this token resolve*; amber means *the
+placeholder is real, the context is wrong*. The two have different fixes — correct the typo
+vs. change the prompt type or pick another placeholder — so they must not share a colour.
 
-The first two states are also rendered in **read mode** on the Manage Custom Prompts page, where
-`decoratePromptText()` marks an unresolvable token with `.ph_chip_invalid_read` + the same
-`editor_placeholder_unknown` title. The third cannot occur there: that function matches only complete
-`PLACEHOLDER_RE` tokens, so an unterminated `{%` is simply left as plain text.
+| State | Severity | Rendering |
+|---|---|---|
+| Valid placeholder (including dynamic `{%id:value%}`) | — | `.ph_chip_live` |
+| Id does not exist at all | `error` (**red**) | `.ph_chip_invalid.ph_chip_error` + `title` |
+| Unterminated `{%` with no closing `%}` | `error` (**red**) | `.ph_chip_invalid.ph_chip_error` + `title` |
+| Id exists, but not available for the prompt's type at all | `warn` (**amber**) | `.ph_chip_invalid.ph_chip_warn` + `title` |
+| Id exists, but resolves in only one of a type-`0` prompt's two contexts | `warn` (**amber**) | `.ph_chip_invalid.ph_chip_warn` + `title` |
 
-**One predicate, three callers.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
+`getTokenState` returns `{ invalid: true, severity, title }`. `.ph_chip_invalid` carries the
+shared geometry **and the amber colours**, so a state with `invalid` but no `severity` renders
+exactly as the single-tier version did; only `.ph_chip_error` overrides the three colour values.
+`.ph_chip_warn` consequently has no CSS rule of its own — `chip()` adds it purely to make the
+tier readable in the DOM.
+
+**Telling the two apart costs a second call to the one predicate.** `findPlaceholder()` returns
+`null` for both "unknown id" and "wrong type" and **is deliberately left that way**: widening its
+return type would touch `extractPlaceholders()` (runtime) and `decoratePromptText()`, whose
+contract is documented in three places. So the resolver asks two questions instead —
+`find(inner, list, null)` ("does this id exist at all", type-less, asked **first**) and, only if
+that matched, `find(inner, list, type)` ("is it usable here"). The second `Array.find` is
+therefore paid on valid tokens only, which is negligible beside the `replaceChildren()` the same
+repaint already performs unconditionally. Asking the type-less question first is the whole
+mechanism: reversing the order collapses the tiers back into one.
+
+The first, second and fourth states are also rendered in **read mode** on the Manage Custom
+Prompts page, in the same two tiers: `decoratePromptText()` tests the id with `findPlaceholder(..., null)`
+and marks a missing one `.ph_chip_invalid_read.ph_chip_error_read` (+ `editor_placeholder_missing`), then
+hands the type question to the **same** `classifyPlaceholderType()` the live resolver uses and applies
+`.ph_chip_invalid_read` with whatever title it returns. Sharing that helper is what keeps the type-`0`
+`partial_type` warning identical in both modes. Read mode's `type`
+may legitimately be `null` (no `.type_output`, no `.type` span), and then the second call equals
+the first, so nothing is flagged amber. The unterminated state cannot occur there: that function
+matches only complete `PLACEHOLDER_RE` tokens, so an unterminated `{%` is simply left as plain text.
+
+**One predicate, three call sites — four calls.** `placeholdersUtils.findPlaceholder(inner, activePHs, type = null)` is the
 resolution rule, factored out of `extractPlaceholders()` and called by both, so the editor cannot disagree
 with what the prompt will actually resolve at runtime. `decoratePromptText()` on the Manage Custom Prompts
 page is the third caller, so the read-only list, the live editor and the runtime all share one definition
 of a resolvable placeholder. It is **sync** and takes an already-fetched list,
 because the backdrop runs on every keystroke and cannot `await`. The `type` argument is **optional**:
 `extractPlaceholders()` omits it, preserving its previous behaviour exactly (it ignores type entirely),
-while the editor supplies the prompt's selected type so a reading-only placeholder in a composing prompt
-is flagged. Verified equivalent to the old inline `find` across the token forms the regex produces.
+while the editor and read mode supply the prompt's selected type so a reading-only placeholder in a
+composing prompt is flagged — and each of those two calls it **twice**, type-less then type-filtered,
+to separate the red tier from the amber one (see above). Verified equivalent to the old inline `find`
+across the token forms the regex produces.
 
-A prompt of type `0` accepts placeholders of **any** type here, deliberately diverging from the
-autocomplete's stricter filter (quirk 2 below, left as is): a type-0 prompt runs in both contexts, so a
-type-1 placeholder in it does resolve at runtime, and replicating the dropdown's strictness would paint a
-warning over valid text. Validity matrix: type 0 accepts all; type 1 rejects composing-only; type 2
-rejects reading-only; an unknown id is always flagged.
+**`findPlaceholder()` is not the whole rule — the type half lives in `classifyPlaceholderType()`.**
+`findPlaceholder()` accepts placeholders of **any** type in a type-`0` prompt, which is right for the
+**runtime**: such a prompt runs in both contexts, so a type-1 placeholder in it really does resolve when
+the prompt is launched while reading. But for an **editor** that still deserves a warning — the token
+works in only one of the two contexts the prompt runs in and stays empty in the other. So the editor and
+read mode both delegate the type decision to `classifyPlaceholderType(find, placeholders, inner, type)`
+in `js/mzta-editor-highlight.js`, which handles the type-`0` case itself (comparing the *placeholder's*
+own type) and delegates every other case to `findPlaceholder()`. It is a **highlighting** rule and
+deliberately does not change `findPlaceholder()`, which the runtime shares — so no existing prompt
+changes behaviour.
+
+Highlight matrix (the id is assumed to exist; an unknown id is always red):
+
+| Prompt type ↓ / placeholder → | type 0 (always) | type 1 (reading) | type 2 (composing) | no type |
+|---|---|---|---|---|
+| `0` always | normal | **amber** `partial_type` | **amber** `partial_type` | normal |
+| `1` reading | normal | normal | **amber** `wrong_type` | normal |
+| `2` composing | normal | **amber** `wrong_type` | normal | normal |
+
+The two amber tooltips differ because the situations do: `wrong_type` means *never resolves here*,
+`partial_type` means *resolves in one of this prompt's two contexts, empty in the other*.
 
 `makeTokenStateResolver(find, placeholders, getType)` takes the predicate **injected**, not imported:
 `mzta-editor-highlight.js` is loaded by every editor page, and importing `mzta-placeholders.js` there
@@ -367,20 +412,57 @@ so `attachHighlightWithValidation()` on the two table pages adds a `change` list
 those selectors before — the autocomplete reads the type lazily per keystroke and never needed one.
 The six settings pages pass a constant type `1`, matching the `type_value` they give the autocomplete.
 
+Two details of that function are load-bearing, and getting either wrong makes the **amber tier silently
+unreachable** — every wrong-type token renders as a valid chip:
+
+1. **The resolver is re-installed on every call**, not only when the handle is new. `attachEditorHighlight()`
+   is idempotent and returns the handle from the previous entry into edit mode, and the resolver that handle
+   carries closed over the `typeSelect` found *at that time*. If the select was not reachable then, the
+   captured `getType` is `null` — and `makeTokenStateResolver` skips type filtering entirely when
+   `getType()` yields `null`/`undefined`, permanently. Re-installing also repaints (`setTokenStateResolver()`
+   calls `render()`), which is what picks up a type edited since the row was last open.
+2. **The `change` listener must not close over the textarea.** `#selectTypeNew` is a single shared element
+   and a row's `.type_output` outlives any one entry into edit mode, so a captured `textarea` can be the
+   wrong one — or detached — by the time the event fires. The listener instead resolves the editors from
+   the select itself: `sel.closest('tr')` as the scope (the add-form lives inside a `<tr>` of `#formNew`,
+   so this isolates it from the list rows just as well) and `refresh()` on every attached mirror in it.
+
+**A placeholder with no `type` counts as type `0`.** `findPlaceholder()` normalises a missing, null or
+blank `type` on the *placeholder* to `'0'` ("always") rather than treating it as a mismatch: a value
+that states no context requirement is usable in every context, so rejecting it in every prompt except
+a type-0 one would be arbitrary.
+
+This is **not** a workaround for the Data Placeholders page. Contrary to what this file claimed before,
+custom data placeholders **do** carry a type: the page has an "add to menu" selector (`#selectTypeNew`
+in the add-form, `.type_output` per row), `type` is in the List.js `valueNames`, and `saveAll()` passes
+it straight through — `setCustomPlaceholders()` does not assign it precisely because it arrives from the
+form already set, and has since the feature's first commit (`1b5dea92`). The normalisation guards the
+paths that bypass that form instead: `prepareCustomDataPHsForImport()` copies whatever keys the imported
+JSON happens to carry and never fills in `type`, and storage can be hand-edited.
+
 **Validation list vs suggestion list.** The six settings pages filter `additional_text` out of their
 *suggestions* but validate against the **unfiltered** list: it is a real placeholder they simply do not
 offer, and flagging it would be wrong. The Data Placeholders page is the opposite — its built-ins-only
 restriction is semantic, so the same filtered list drives both.
 
-**Colours.** `--ed-warn-bg/-fg/-border`, from `--warn-*` on the two table pages and `--warnChip*` in
-`mzta-design.css`. Those chip tokens are opaque on purpose: `--warnBg`/`--warnBorder` are 7%/28% alpha
-washes for large disclaimer panels and are invisible at chip size — the same trap as `--accentLight`.
-Tooltips use `editor_placeholder_unknown` / `editor_placeholder_unterminated` (English only).
+**Colours.** Two triples, one per tier: amber `--ed-warn-bg/-fg/-border` and red
+`--ed-err-bg/-fg/-border`, fed from `--warn-*` / `--err-*` on the two table pages and `--warnChip*` /
+`--errChip*` in `mzta-design.css`. All six chip tokens are opaque on purpose: `--warnBg`/`--warnBorder`
+are 7%/28% alpha washes for large disclaimer panels and are invisible at chip size — the same trap as
+`--accentLight`. Red gets its own triple rather than reusing `--del-*` (which means the *delete* action)
+or `--jsonError` (a bare text colour with no background/border pair). The shared file's fallbacks stay
+inert (`transparent`/`inherit`), so a page that defines `--ed-warn-*` but forgets `--ed-err-*` renders a
+red chip **unstyled** rather than misaligned — add both or neither. Tooltips use
+`editor_placeholder_missing` / `editor_placeholder_wrong_type` / `editor_placeholder_partial_type` /
+`editor_placeholder_unterminated` (English only). The old conflated `editor_placeholder_unknown` key was **retired**, not narrowed: its 7
+Weblate translations carried the "or not available for this prompt type" clause, which would have been
+actively wrong on a chip that now means only "does not exist", and Weblate would never have flagged it
+because the source string was unchanged.
 
-Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders,
-hiding type-1 and type-2 ones; `getPlaceholders(true)` returns the list unsorted, so the dropdown is
-in declaration order rather than alphabetical; and `setCustomPlaceholders()` never assigns `type`,
-so custom placeholders may not match the filter at all.
+Known quirks (documented, not currently fixed): a prompt of type `0` sees *only* type-0 placeholders
+in the *autocomplete*, hiding type-1 and type-2 ones (the highlighter now warns rather than hides — see
+the matrix above); and `getPlaceholders(true)` returns the list
+unsorted, so the dropdown is in declaration order rather than alphabetical.
 
 ## Custom Placeholders
 

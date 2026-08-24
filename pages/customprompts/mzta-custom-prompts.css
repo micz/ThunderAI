@@ -18,9 +18,15 @@
     --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
     --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
     --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
-    /* Warning (invalid/unknown placeholder token) — distinct from --del-*,
-       which means "delete", and from --ok-*, which means success. */
+    /* Warning: a placeholder token that exists but is not available for the
+       prompt's type — distinct from --del-*, which means "delete", and from
+       --ok-*, which means success. */
     --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Error: a placeholder token that does not exist at all, or an unterminated
+       one. Red because no change of prompt type can make it resolve. Its own
+       triple rather than --del-*, which means the "delete" action, and opaque
+       like --warn-*: a low-alpha wash is invisible at chip size. */
+    --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
     /* Search hit highlight — deliberately its own pair rather than reusing
        --warn-* ("invalid token") or --code-* ("placeholder chip"), so a match
        cannot be misread as either. */
@@ -46,6 +52,7 @@
         --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
         --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
         --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
         --hit-bg:#6b5a00;  --hit-text:#fff8d0;
         --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
         --cgw-bg:#270b00;  --cgw-hover:#581900;  --api-bg:#0f2437;  --api-hover:#1b456d;
@@ -538,12 +545,13 @@ table.prompts_list td.properties { white-space: nowrap; }
     font-family: var(--font-mono);
 }
 
-/* Invalid token in the read-only prompt text: unknown id, or an id that is not
-   available for the row's prompt type. Uses the same --warn-* tokens that
-   .editor-wrap maps into --ed-warn-* for the edit-mode .ph_chip_invalid, so the
-   two modes agree on colour as well as on validity. Read mode has no mirror to
-   stay metric-neutral for, so this one can afford a real border where the live
-   chip is limited to an inset box-shadow.
+/* Invalid token in the read-only prompt text, in the same two tiers as edit
+   mode: this rule is the amber one — the id exists, but the row's prompt type
+   cannot use it — and .ph_chip_error_read below is the red one. Both use the
+   very --warn-* / --err-* tokens that .editor-wrap maps into --ed-warn-* /
+   --ed-err-*, so the two modes agree on colour as well as on validity. Read mode
+   has no mirror to stay metric-neutral for, so these can afford a real border
+   where the live chips are limited to an inset box-shadow.
    Two classes, so it beats the .ph_chip rule above regardless of source order. */
 .ph_chip.ph_chip_invalid_read {
     color: var(--warn-text);
@@ -551,6 +559,14 @@ table.prompts_list td.properties { white-space: nowrap; }
     border: 1px solid var(--warn-border);
     padding: 0 5px;   /* offsets the 1px border: same box as a valid chip */
     cursor: help;
+}
+
+/* Red tier of the read-mode chip: the id does not exist at all. Three classes,
+   so it beats the two-class amber rule above regardless of source order. */
+.ph_chip.ph_chip_invalid_read.ph_chip_error_read {
+    color: var(--err-text);
+    background: var(--err-bg);
+    border-color: var(--err-border);
 }
 
 /* Matched substring inside the Name / ID cells while the search field is in use.
@@ -999,6 +1015,9 @@ table.prompts_list .action_output {
     --ed-warn-bg: var(--warn-bg);
     --ed-warn-fg: var(--warn-text);
     --ed-warn-border: var(--warn-border);
+    --ed-err-bg: var(--err-bg);
+    --ed-err-fg: var(--err-text);
+    --ed-err-border: var(--err-border);
 }
 
 /* Visibility gating, specific to the two table pages: a row toggles between a

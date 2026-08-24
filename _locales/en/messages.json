@@ -3226,9 +3226,17 @@
     "message": "Do you enjoy ThunderAI?",
     "description": "Onboarding page: footer question before the donation button"
   },
-  "editor_placeholder_unknown": {
-    "message": "Unknown placeholder, or not available for this prompt type",
-    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist, or exists but is not available for the prompt's selected type"
+  "editor_placeholder_missing": {
+    "message": "This placeholder does not exist",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist at all"
+  },
+  "editor_placeholder_partial_type": {
+    "message": "This placeholder works only in part of the contexts this prompt runs in: it stays empty in the other one",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the prompt type is 'always' (runs both while reading and while composing) but the placeholder is reading-only or composing-only, so it resolves in only one of the two contexts"
+  },
+  "editor_placeholder_wrong_type": {
+    "message": "This placeholder is not available for this prompt type",
+    "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder exists but its type is not compatible with the prompt's selected type"
   },
   "editor_placeholder_unterminated": {
     "message": "Unterminated placeholder: missing the closing %}",

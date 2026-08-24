@@ -41,7 +41,10 @@
      --ed-surface-focus  field background while focused (defaults to --ed-surface)
      --ed-border       textarea border colour
      --ed-chip-bg / --ed-chip-fg          valid token chip
-     --ed-warn-bg / --ed-warn-fg / --ed-warn-border   invalid token chip
+     --ed-warn-bg / --ed-warn-fg / --ed-warn-border   amber chip: the placeholder
+                       exists, but this prompt's type cannot use it
+     --ed-err-bg / --ed-err-fg / --ed-err-border      red chip: unknown id, or an
+                       unterminated token — nothing can make it resolve
 
    Fallbacks below are deliberately inert (transparent / inherit) so a page that
    forgets one degrades to "no highlight" rather than to a misaligned mirror.
@@ -129,11 +132,23 @@
     margin: 0 -.2em;
 }
 
-/* Unknown id, wrong placeholder type, or an unterminated token. */
+/* Invalid token, shared geometry. Amber is the default, so a chip carrying only
+   .ph_chip_invalid — no severity tier — renders exactly as it did before.
+   .ph_chip_warn ("exists, wrong prompt type") therefore needs no rule of its
+   own; it is added by chip() only to make the tier readable in the DOM. */
 .editor-wrap .ph_chip_invalid {
     background: var(--ed-warn-bg, transparent);
     color: var(--ed-warn-fg, inherit);
     box-shadow: inset 0 -1px 0 0 var(--ed-warn-border, transparent);
+}
+
+/* Red: the token can never resolve — an unknown id, or an unterminated '{%'.
+   Colours ONLY. A padding, margin or font declaration here would change the
+   chip's advance width and drift the mirror away from the textarea. */
+.editor-wrap .ph_chip_invalid.ph_chip_error {
+    background: var(--ed-err-bg, transparent);
+    color: var(--ed-err-fg, inherit);
+    box-shadow: inset 0 -1px 0 0 var(--ed-err-border, transparent);
 }
 
 /* Zero-width caret marker used to anchor the autocomplete list. */

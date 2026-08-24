@@ -77,9 +77,12 @@ function tokenize(text) {
  *  options   { getTokenState } — optional callback invoked per token as
  *            getTokenState(inner, raw); `inner` is null for an unterminated
  *            token. Returns falsy to render a normal chip, or
- *            { invalid: true, title } to render a warning chip. When omitted,
- *            every complete token renders as a normal chip and unterminated
- *            ones stay unstyled.
+ *            { invalid: true, severity, title } to render a warning chip.
+ *            `severity` is 'error' (red — the token can never resolve) or
+ *            'warn' (amber — it resolves, just not for this prompt type); any
+ *            other value, including none, renders amber. When the callback is
+ *            omitted, every complete token renders as a normal chip and
+ *            unterminated ones stay unstyled.
  *
  *  Returns a handle: { refresh(), getCaretRect(), setTokenStateResolver(),
  *  destroy() }. Calling it twice on the same textarea is a no-op that returns
@@ -126,7 +129,16 @@ export function attachEditorHighlight(textarea, options = {}) {
 
         const state = getTokenState ? getTokenState(part.inner, part.text) : null;
         const span = doc.createElement('span');
-        span.className = (state && state.invalid) ? 'ph_chip_live ph_chip_invalid' : 'ph_chip_live';
+        // Two invalid tiers: 'error' (red) for a token that can never resolve --
+        // an unknown id, or an unterminated '{%' -- and 'warn' (amber) for a real
+        // placeholder this prompt's type simply cannot use. .ph_chip_invalid
+        // carries the shared geometry and the amber default, so a state with no
+        // severity still renders exactly as it did before.
+        span.className = 'ph_chip_live';
+        if (state && state.invalid) {
+            span.classList.add('ph_chip_invalid');
+            span.classList.add(state.severity === 'error' ? 'ph_chip_error' : 'ph_chip_warn');
+        }
         if (state && state.title) span.setAttribute('title', state.title);
         span.textContent = part.text;
         return span;
@@ -176,6 +188,45 @@ export function attachEditorHighlight(textarea, options = {}) {
 
     function onInput() { render(); }
 
+    /*
+     *  Tooltips in edit mode.
+     *
+     *  The chips carry a `title`, but they live in the mirror, which is
+     *  pointer-events:none (it must be: it sits under the textarea and would
+     *  otherwise swallow clicks, selection and the caret). So the browser never
+     *  hovers a chip and the native tooltip can never fire. Read mode has no such
+     *  problem — there the chips ARE the hovered elements.
+     *
+     *  Fix: keep the title on the textarea instead, and swap it for whichever
+     *  chip is under the pointer. document.elementsFromPoint() sees through the
+     *  transparent textarea and returns the mirror node beneath it, so the
+     *  mapping needs no offset arithmetic of its own.
+     */
+    let hoverTitle = '';
+    function onMouseMove(e) {
+        let title = '';
+        // Only the chips carry a title, so the first one found under the pointer
+        // is the answer. elementsFromPoint is cheap enough here: it runs on
+        // mousemove over a single small element, not on every keystroke.
+        for (const el of doc.elementsFromPoint(e.clientX, e.clientY)) {
+            if (el.classList && el.classList.contains('ph_chip_live')) {
+                title = el.getAttribute('title') || '';
+                break;
+            }
+            // Stop at the mirror: anything below it is unrelated page chrome.
+            if (el === highlights) break;
+        }
+        if (title === hoverTitle) return;   // avoid churning the attribute
+        hoverTitle = title;
+        if (title) textarea.setAttribute('title', title);
+        else textarea.removeAttribute('title');
+    }
+
+    function onMouseLeave() {
+        hoverTitle = '';
+        textarea.removeAttribute('title');
+    }
+
     // The textarea is user-resizable, so the mirror must follow its box. The
     // observer only reads scroll offsets and never writes layout, so it cannot
     // feed back into itself.
@@ -187,6 +238,8 @@ export function attachEditorHighlight(textarea, options = {}) {
 
     textarea.addEventListener('input', onInput);
     textarea.addEventListener('scroll', syncScroll);
+    textarea.addEventListener('mousemove', onMouseMove);
+    textarea.addEventListener('mouseleave', onMouseLeave);
 
     const handle = {
         // Repaint from the current value; call after programmatic changes or
@@ -209,6 +262,9 @@ export function attachEditorHighlight(textarea, options = {}) {
         destroy() {
             textarea.removeEventListener('input', onInput);
             textarea.removeEventListener('scroll', syncScroll);
+            textarea.removeEventListener('mousemove', onMouseMove);
+            textarea.removeEventListener('mouseleave', onMouseLeave);
+            textarea.removeAttribute('title');
             if (resizeObserver) resizeObserver.disconnect();
             resizeObserver = null;
             highlights.replaceChildren();
@@ -228,7 +284,20 @@ export function getEditorHighlight(textarea) {
 }
 
 /*
- *  Builds the getTokenState callback that flags invalid tokens.
+ *  Builds the getTokenState callback that flags invalid tokens, in two tiers:
+ *
+ *    severity 'error' (red)    unknown id, or an unterminated '{%' — no prompt
+ *                              type can make either resolve
+ *    severity 'warn'  (amber)  a real placeholder whose type this prompt cannot
+ *                              use, e.g. a reading-only one in a composing prompt
+ *
+ *  Telling the two apart needs two questions, so `find` is called twice: once
+ *  type-less ("does this id exist at all") and, only if that matched, once with
+ *  the type ("is it usable here"). findPlaceholder() returns null for both cases
+ *  and is deliberately left that way — extractPlaceholders() and
+ *  decoratePromptText() depend on its current contract. The second call is
+ *  therefore paid on valid tokens only, which is negligible next to the
+ *  replaceChildren() the same repaint already performs unconditionally.
  *
  *  find          the resolution predicate, i.e. placeholdersUtils.findPlaceholder.
  *                Injected rather than imported: this module is loaded by every
@@ -246,20 +315,67 @@ export function getEditorHighlight(textarea) {
  */
 export function makeTokenStateResolver(find, placeholders, getType = null) {
     return function (inner) {
-        // inner === null means an unterminated '{%' with no closing '%}'.
+        // inner === null means an unterminated '{%' with no closing '%}'. Red: a
+        // syntax error, not a context mismatch — no prompt type resolves it.
         if (inner === null) {
             return {
                 invalid: true,
+                severity: 'error',
                 title: browser.i18n.getMessage('editor_placeholder_unterminated'),
             };
         }
+        // Does the id exist at all? Asked type-less, and asked first: this is
+        // what separates the red tier from the amber one.
+        if (!find(inner, placeholders, null)) {
+            return {
+                invalid: true,
+                severity: 'error',
+                title: browser.i18n.getMessage('editor_placeholder_missing'),
+            };
+        }
         const type = getType ? getType() : null;
-        const found = find(inner, placeholders,
-            (type === null || type === undefined) ? null : type);
-        if (found) return null;
+        return classifyPlaceholderType(find, placeholders, inner, type);
+    };
+}
+
+/*
+ *  The type half of the validity rule, shared by the live editor and by read
+ *  mode so the two cannot drift apart. Assumes the id already exists.
+ *
+ *  Returns null when the token is fine for this prompt type, or an amber state.
+ *  Never returns 'error': a missing id is the caller's concern.
+ *
+ *  The type-'0' arm is the reason this is not a plain findPlaceholder() call. A
+ *  type-'0' prompt ("always") runs in BOTH contexts, so findPlaceholder()
+ *  accepts every placeholder there -- correct for the runtime, which really does
+ *  resolve a reading-only token when the prompt is launched while reading. For
+ *  an editor that is still worth a warning: such a token works in only one of
+ *  the two contexts the prompt runs in and stays empty in the other. So the
+ *  '0' case is decided here by comparing the placeholder's own type, rather
+ *  than delegated. This is a *highlighting* rule and deliberately does not
+ *  touch findPlaceholder(), which the runtime shares.
+ */
+export function classifyPlaceholderType(find, placeholders, inner, type) {
+    if (type === null || type === undefined) return null;
+    const promptType = String(type);
+    if (promptType === '0') {
+        const found = find(inner, placeholders, null);
+        // A placeholder with no type of its own counts as '0' (see
+        // findPlaceholder), so it is unconditionally fine here.
+        const phType = (found && found.type !== null && found.type !== undefined
+            && String(found.type).trim() !== '') ? String(found.type) : '0';
+        if (phType === '0') return null;
         return {
             invalid: true,
-            title: browser.i18n.getMessage('editor_placeholder_unknown'),
+            severity: 'warn',
+            title: browser.i18n.getMessage('editor_placeholder_partial_type'),
         };
+    }
+    if (find(inner, placeholders, promptType)) return null;
+    // It exists, but this prompt's type cannot use it at all.
+    return {
+        invalid: true,
+        severity: 'warn',
+        title: browser.i18n.getMessage('editor_placeholder_wrong_type'),
     };
 }

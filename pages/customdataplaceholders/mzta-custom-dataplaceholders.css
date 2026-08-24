@@ -18,9 +18,15 @@
     --edit-bg:#e7f0ff;  --edit-text:#155bd4;  --edit-border:#bcd6ff;  --edit-hover:#d8e8ff;
     --del-text:#c4413f;  --del-border:#f0cccc;  --del-hover-bg:#fdecec;  --del-hover-text:#d13438;
     --ok-text:#1a7f37;  --ok-bg:#e6f4ea;  --ok-border:#bfe3c9;
-    /* Warning (invalid/unknown placeholder token) — distinct from --del-*,
-       which means "delete", and from --ok-*, which means success. */
+    /* Warning: a placeholder token that exists but is not available for the
+       prompt's type — distinct from --del-*, which means "delete", and from
+       --ok-*, which means success. */
     --warn-text:#8a5300;  --warn-bg:#fdf1dc;  --warn-border:#e0a44a;
+    /* Error: a placeholder token that does not exist at all, or an unterminated
+       one. Red because no change of prompt type can make it resolve. Its own
+       triple rather than --del-*, which means the "delete" action, and opaque
+       like --warn-*: a low-alpha wash is invisible at chip size. */
+    --err-text:#a52826;  --err-bg:#fbe3e3;  --err-border:#d98b8a;
     --icon-hover-bg:#eceef2;  --save-bg:#eceef2;  --save-text:#a0a4ae;  --box:#ffffff;
 
     --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -40,6 +46,7 @@
         --del-text:#d78d8d;  --del-border:#4a2a2c;  --del-hover-bg:#3a1f22;  --del-hover-text:#ff6b6b;
         --ok-text:#7cd992;  --ok-bg:#16281c;  --ok-border:#234d2e;
         --warn-text:#f0c07a;  --warn-bg:#3a2c14;  --warn-border:#7a5a22;
+        --err-text:#f0a3a1;  --err-bg:#3d1b1b;  --err-border:#7d3a38;
         --icon-hover-bg:#33323b;  --save-bg:#2b2a33;  --save-text:#6f6f79;  --box:#2b2a33;
     }
 }
@@ -519,6 +526,9 @@ label:has(input[type="checkbox"]:disabled) { cursor: default; }
     --ed-warn-bg: var(--warn-bg);
     --ed-warn-fg: var(--warn-text);
     --ed-warn-border: var(--warn-border);
+    --ed-err-bg: var(--err-bg);
+    --ed-err-fg: var(--err-text);
+    --ed-err-border: var(--err-border);
 }
 
 /* Visibility gating, as on the Custom Prompts page: a row toggles between a

@@ -296,18 +296,39 @@ function attachHighlightWithValidation(textarea) {
         ? document.getElementById('selectTypeNew')
         : (tr ? tr.querySelector('.type_output') : null);
 
-    if (!existing) {
-        handle.setTokenStateResolver(makeTokenStateResolver(
-            placeholdersUtils.findPlaceholder,
-            activePlaceholders,
-            typeSelect ? () => typeSelect.value : null));
-    }
+    // Installed on EVERY call, not just the first: `existing` is a handle from a
+    // previous entry into edit mode, and the resolver it carries closed over the
+    // typeSelect *found back then*. On the add-form that select does not exist
+    // until the form is built, and a row's .type_output is only reachable once
+    // the row template has been rendered -- so an early attach captured null and
+    // the resolver then skipped type filtering permanently, leaving a
+    // wrong-type token painted as a valid chip forever. setTokenStateResolver()
+    // also repaints, so re-installing is exactly what makes a type edited since
+    // last time take effect.
+    handle.setTokenStateResolver(makeTokenStateResolver(
+        placeholdersUtils.findPlaceholder,
+        activePlaceholders,
+        typeSelect ? () => typeSelect.value : null));
 
+    // Re-validate when the "add to menu" type is changed: validity depends on it,
+    // and the mirror caches its render, so without this a token stays painted
+    // with the tier it had under the previous type.
+    //
+    // The listener is registered once per select but must NOT close over
+    // `textarea`: on the add-form #selectTypeNew is a single shared element, and
+    // a row's .type_output outlives any one entry into edit mode, so a captured
+    // textarea can be the wrong one (or detached) by the time the event fires.
+    // It therefore resolves the currently-attached editor from the select itself
+    // and refreshes every mirror it can reach.
     if (typeSelect && !typeSelect._mztaHighlightSync) {
         typeSelect._mztaHighlightSync = true;
-        typeSelect.addEventListener('change', () => {
-            const h = getEditorHighlight(textarea);
-            if (h) h.refresh();
+        typeSelect.addEventListener('change', (e) => {
+            const sel = e.currentTarget;
+            const scope = sel.closest('tr') || document;
+            scope.querySelectorAll('textarea.editor').forEach(ta => {
+                const h = getEditorHighlight(ta);
+                if (h) h.refresh();
+            });
         });
     }
     return handle;

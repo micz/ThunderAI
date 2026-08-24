@@ -47,12 +47,22 @@
     --code: #1d4ed8;
     --codeBg: #e7efff;
 
-    /* Invalid {%placeholder%} chip. Opaque, unlike the --warn* disclaimer washes
-       above: a token-sized chip needs real contrast. Same values as the two
-       Custom Prompts / Data Placeholders pages. */
+    /* {%placeholder%} chip that exists but is not available for the prompt's
+       type. Opaque, unlike the --warn* disclaimer washes above: a token-sized
+       chip needs real contrast. Same values as the two Custom Prompts / Data
+       Placeholders pages. */
     --warnChipText: #8a5300;
     --warnChipBg: #fdf1dc;
     --warnChipBorder: #e0a44a;
+
+    /* {%placeholder%} chip that does not exist at all, or an unterminated token.
+       Red because no prompt type can make it resolve, where --warnChip* means
+       "real placeholder, wrong context". Opaque for the same reason, and its own
+       triple rather than --jsonError, which is a bare text colour with no
+       background/border pair. Same values as the two table pages' --err-*. */
+    --errChipText: #a52826;
+    --errChipBg: #fbe3e3;
+    --errChipBorder: #d98b8a;
 
     /* Monospace stack for placeholder tokens and other code-like text. Same
        name and value as the local token on the two Custom Prompts / Data
@@ -93,10 +103,15 @@
            value is too dark to read against --field/--panel here. */
         --jsonError: #f2837c;
 
-        /* Invalid placeholder chip (see the light block). */
+        /* Wrong-type placeholder chip (see the light block). */
         --warnChipText: #f0c07a;
         --warnChipBg: #3a2c14;
         --warnChipBorder: #7a5a22;
+
+        /* Missing placeholder chip (see the light block). */
+        --errChipText: #f0a3a1;
+        --errChipBg: #3d1b1b;
+        --errChipBorder: #7d3a38;
 
         /* ThunderStats (green) tint */
         --statsAccent: #54c07a75;
@@ -360,6 +375,11 @@ input, select, button, textarea { font-family: inherit; }
     --ed-warn-bg: var(--warnChipBg);
     --ed-warn-fg: var(--warnChipText);
     --ed-warn-border: var(--warnChipBorder);
+    /* Red tier: the id does not exist, or the token is unterminated. Same
+       opaque-not-a-wash caution as --warnChip* above. */
+    --ed-err-bg: var(--errChipBg);
+    --ed-err-fg: var(--errChipText);
+    --ed-err-border: var(--errChipBorder);
 }
 input.win_prop { width: 100px; }
 span.dims_label { width: 75px; display: inline-block; font-size: 12px; color: var(--dim); }
