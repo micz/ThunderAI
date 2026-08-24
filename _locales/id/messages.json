@@ -517,6 +517,9 @@
     "placeholder_mail_html_body_or_selected": {
         "message": "Isi email HTML atau HTML yang dipilih"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Bagian teks biasa asli dari email, tanpa konversi apa pun dari bagian HTML (paling baik untuk email bisnis dan otomatis; mungkin kosong atau berupa stub pada newsletter)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Placeholder: gunakan nilai bawaan"
     },
@@ -2367,6 +2370,15 @@
     },
     "msg_no_connection_selected": {
         "message": "Tidak ada koneksi AI yang dipilih. Buka opsi ThunderAI dan jalankan wizard penyiapan untuk memilihnya."
+    },
+    "editor_placeholder_missing": {
+        "message": "Placeholder ini tidak ada"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Placeholder ini hanya berfungsi di sebagian konteks tempat prompt ini dijalankan: tetap kosong di konteks lainnya"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Placeholder ini tidak tersedia untuk tipe prompt ini"
     },
     "editor_placeholder_unterminated": {
         "message": "Placeholder tidak ditutup: {%} penutup tidak ada"

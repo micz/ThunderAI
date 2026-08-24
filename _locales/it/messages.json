@@ -483,6 +483,9 @@
     "placeholder_author": {
         "message": "Autore"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Parte in testo semplice originale della mail, senza alcuna conversione della parte HTML (ideale per mail aziendali e automatizzate; può essere vuota o un stub nelle newsletter)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Segnaposti: usa valore predefinito"
     },
@@ -2450,6 +2453,15 @@
     },
     "onboarding_footer_3": {
         "message": "Ti piace ThunderAI?"
+    },
+    "editor_placeholder_missing": {
+        "message": "Questo placeholder non esiste"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Questo placeholder funziona solo in uno dei contesti in cui viene eseguito questo prompt: resta vuoto nell'altro"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Questo placeholder non è disponibile per questo tipo di prompt"
     },
     "editor_placeholder_unterminated": {
         "message": "Segnaposto non terminato: manca la chiusura %}"

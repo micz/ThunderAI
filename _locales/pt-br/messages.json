@@ -575,6 +575,9 @@
     "placeholder_mail_html_body_or_selected": {
         "message": "Corpo do e-mail ou HTML selecionado"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Parte em texto simples original do e-mail, sem qualquer conversão da parte HTML (ideal para e-mails comerciais e automatizados; pode estar vazia ou ser um resumo em newsletters)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Marcadores de posição: usar valor padrão"
     },
@@ -2447,6 +2450,15 @@
     },
     "menu_order_icon_default": {
         "message": "Ícone padrão"
+    },
+    "editor_placeholder_missing": {
+        "message": "Este placeholder não existe"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Este placeholder funciona apenas em parte dos contextos em que este prompt é executado: permanece vazio no outro"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Este placeholder não está disponível para este tipo de prompt"
     },
     "editor_placeholder_unterminated": {
         "message": "Placeholder incorreto: faltando o fechamento %}"

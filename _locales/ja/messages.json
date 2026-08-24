@@ -571,6 +571,9 @@
     "placeholder_mail_html_body_or_selected": {
         "message": "メール本文または選択したHTML"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "メールの元のプレーンテキスト部分（HTML部分からの変換なし。ビジネスメールや自動メールに最適。ニュースレターでは空またはスタブの場合があります）"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "プレースホルダー：デフォルト値を使用"
     },
@@ -2437,6 +2440,15 @@
     },
     "onboarding_footer_3": {
         "message": "ThunderAI をお気に召しましたか?"
+    },
+    "editor_placeholder_missing": {
+        "message": "このプレースホルダーは存在しません"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "このプレースホルダーは、このプロンプトが実行されるコンテキストの一部でのみ機能し、もう一方では空のままになります"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "このプレースホルダーはこのプロンプトタイプでは使用できません"
     },
     "editor_placeholder_unterminated": {
         "message": "プレースホルダーが閉じられていません: 終了の %} がありません"

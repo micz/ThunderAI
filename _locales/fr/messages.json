@@ -441,6 +441,9 @@
     "placeholder_author": {
         "message": "Auteur"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Partie en texte simple d'origine du courriel, sans aucune conversion depuis la partie HTML (idéale pour les courriels professionnels et automatisés ; peut être vide ou un résumé dans les newsletters)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Espaces réservés : utiliser la valeur par défaut"
     },
@@ -2536,6 +2539,18 @@
     "msg_no_connection_selected": {
         "message": "Aucune connexion IA sélectionnée. Ouvrez les options ThunderAI et lancez l'assistant de configuration pour en choisir une.",
         "description": "Alerte affichée lorsqu'un prompt est exécuté mais qu'aucune connexion IA n'a été sélectionnée"
+    },
+    "editor_placeholder_missing": {
+        "message": "Ce placeholder n'existe pas",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist at all"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Ce placeholder ne fonctionne que dans une partie des contextes où ce prompt s'exécute : il reste vide dans l'autre",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the prompt type is 'always' (runs both while reading and while composing) but the placeholder is reading-only or composing-only, so it resolves in only one of the two contexts"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Ce placeholder n'est pas disponible pour ce type de prompt",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder exists but its type is not compatible with the prompt's selected type"
     },
     "editor_placeholder_unterminated": {
         "message": "Espace réservé non terminé : il manque le %} de fermeture",

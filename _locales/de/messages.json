@@ -441,6 +441,9 @@
     "placeholder_author": {
         "message": "Autor"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Originaler Klartext-Teil der Mail, ohne jegliche Umwandlung aus dem HTML-Teil (am besten für geschäftliche und automatisierte Mails; kann bei Newslettern leer oder unvollständig sein)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Platzhalter: standardwert verwenden"
     },
@@ -2563,6 +2566,18 @@
     "msg_no_connection_selected": {
         "message": "Keine KI-Verbindung ausgewählt. Öffnen Sie die ThunderAI-Optionen und starten Sie den Einrichtungsassistenten, um eine auszuwählen.",
         "description": "Alert shown when a prompt is run but no AI connection has been selected"
+    },
+    "editor_placeholder_missing": {
+        "message": "Dieser Platzhalter existiert nicht",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist at all"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Dieser Platzhalter funktioniert nur in einem Teil der Kontexte, in denen dieser Prompt läuft: im anderen bleibt er leer",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the prompt type is 'always' (runs both while reading and while composing) but the placeholder is reading-only or composing-only, so it resolves in only one of the two contexts"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Dieser Platzhalter ist für diesen Prompt-Typ nicht verfügbar",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder exists but its type is not compatible with the prompt's selected type"
     },
     "editor_placeholder_unterminated": {
         "message": "Nicht abgeschlossener Platzhalter: schließendes %} fehlt",

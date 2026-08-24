@@ -441,6 +441,9 @@
     "placeholder_author": {
         "message": "Autor"
     },
+    "placeholder_mail_plain_text_part": {
+        "message": "Oryginalna część zwykłego tekstu wiadomości, bez żadnej konwersji z części HTML (najlepsza dla wiadomości biznesowych i automatycznych; w newsletterach może być pusta lub skrócona)"
+    },
     "prefs_OptionText_placeholders_use_default_value": {
         "message": "Symbole zastępcze: użyj wartości domyślnej"
     },
@@ -2639,6 +2642,18 @@
     "onboarding_footer_3": {
         "message": "Czy podoba Ci się ThunderAI?",
         "description": "Onboarding page: footer question before the donation button"
+    },
+    "editor_placeholder_missing": {
+        "message": "Ten placeholder nie istnieje",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder id does not exist at all"
+    },
+    "editor_placeholder_partial_type": {
+        "message": "Ten placeholder działa tylko w części kontekstów, w których uruchamia się ten prompt: w pozostałych pozostaje pusty",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the prompt type is 'always' (runs both while reading and while composing) but the placeholder is reading-only or composing-only, so it resolves in only one of the two contexts"
+    },
+    "editor_placeholder_wrong_type": {
+        "message": "Ten placeholder nie jest dostępny dla tego typu promptu",
+        "description": "Tooltip on a highlighted placeholder token in the prompt editor when the placeholder exists but its type is not compatible with the prompt's selected type"
     },
     "editor_placeholder_unterminated": {
         "message": "Niezamknięty symbol zastępczy: brak zamykającego %}",
