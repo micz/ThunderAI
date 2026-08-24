@@ -758,7 +758,7 @@
     "description": ""
   },
   "placeholder_mail_plain_text_part": {
-    "message": "Original plain text part of the mail, without any HTML conversion (best for business and automated mail; may be empty or a stub on newsletters)",
+    "message": "Original plain text part of the mail, without any conversion from the HTML part (best for business and automated mail; may be empty or a stub on newsletters)",
     "description": ""
   },
   "prefs_OptionText_placeholders_use_default_value": {
