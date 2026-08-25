@@ -69,6 +69,28 @@ export function isClosedCatalogueSelect(elementId = '') {
   return elementId === 'connection_type' || elementId.endsWith('_connection_type');
 }
 
+// The connection-type catalogue: single source of truth for both the <option>
+// list built by populateConnectionTypeOptions() and the label lookup below, so a
+// provider can never appear in one and not the other.
+const CONNECTION_TYPE_OPTIONS = [
+  { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
+  { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
+  { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
+  { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
+  { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
+  { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
+];
+
+// Localized provider name for a connection type. Returns '' for an empty value
+// ("inherit the global connection"), and the raw value for anything unknown, so a
+// stale stored type is still visible rather than silently blank.
+export function getConnectionTypeLabel(value = '') {
+  if (!value) return '';
+  const opt = CONNECTION_TYPE_OPTIONS.find(o => o.value === value);
+  if (!opt) return value;
+  return browser.i18n.getMessage(opt.msgKey) || value;
+}
+
 export async function injectConnectionUI({
     afterTrId = '',
     selectId = '',
@@ -1514,14 +1536,7 @@ function populateConnectionTypeOptions(selectId, no_chatgpt_web = false) {
 
   const prevValue = conntype_select.value;
 
-  const options = [
-    { value: 'chatgpt_web',        msgKey: 'prefs_Connection_type_ChatGPT_Web' },
-    { value: 'chatgpt_api',        msgKey: 'prefs_Connection_type_ChatGPT_API' },
-    { value: 'google_gemini_api',  msgKey: 'prefs_Connection_type_Google_Gemini_API' },
-    { value: 'anthropic_api',      msgKey: 'prefs_Connection_type_Anthropic_API' },
-    { value: 'ollama_api',         msgKey: 'prefs_Connection_type_Ollama_API' },
-    { value: 'openai_comp_api',    msgKey: 'prefs_Connection_type_OpenAI_Comp_API' }
-  ];
+  const options = CONNECTION_TYPE_OPTIONS;
 
   conntype_select.replaceChildren();
 

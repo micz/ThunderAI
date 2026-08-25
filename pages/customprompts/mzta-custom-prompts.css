@@ -1245,6 +1245,45 @@ input.input_additional[type="text"] {
     text-decoration: underline;
 }
 
+/* ---- Advanced connection fields disclosure (per form) ----
+   The .conn_adv rows injected by connection-ui.js are relocated into
+   .conn_adv_table by relocateConnAdvRows(), so the panel opens *below* this
+   button and the button itself stays put. `hidden` is set from JS when the
+   selected provider exposes no advanced field; the attribute alone would be
+   overridden by the display below, hence the [hidden] guard. */
+.conn_adv_btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 5px;
+    border: none;
+    border-radius: 8px;
+    background: var(--api-hover);
+    color: var(--text);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+}
+
+.conn_adv_btn[hidden] { display: none; }
+
+.conn_adv_btn:hover { text-decoration: underline; }
+
+.conn_adv_btn::after {
+    content: ' \25BE';   /* ▾ collapsed */
+}
+
+.conn_adv_btn[aria-expanded="true"]::after {
+    content: ' \25B4';   /* ▴ expanded */
+}
+
+/* Same stacked treatment as the main injected table above. */
+.conn_adv_table {
+    width: 100%;
+    table-layout: fixed;
+    margin-top: 6px;
+}
+
 label:has(input[type="checkbox"]) { cursor: pointer; }
 
 /* ============================ Export dialog ============================ */

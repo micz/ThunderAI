@@ -422,8 +422,18 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 **Field tiering.** In the shared template inside `injectConnectionUI()`
 (`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
 `conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages and on the custom prompts page
-(none of them render a toggle button), so there every advanced field shows flat.
+The `conn_adv` class is inert on the 6 feature pages (they render no toggle button),
+so there every advanced field shows flat. The **custom prompts page does render one
+per form** (`.conn_adv_btn` + `.conn_adv_table`, one pair in the add form and one per
+list row): because several editors can be open at once, its relocation helper
+`relocateConnAdvRows(scopeEl)` and `showAdvConnectionOptions(scopeEl, connType)` are
+**scoped to one form**, unlike the options page's document-wide
+`querySelectorAll('#connection_ui_table tr.conn_adv')` — a global query there would
+move every other open row's advanced rows into whichever form was touched last. The
+disclosure itself is one delegated `click` listener at module scope, since List.js
+re-renders rows on search/sort and per-button listeners would be lost. Rows that left
+the main table are no longer reachable from `showConnectionOptions()` (which walks up
+from the select), hence the separate per-provider sync.
 Note that the ChatGPT Web `conn_adv` rows are not merely inert on those pages — they
 are **not injected at all**, because they pass `no_chatgpt_web: true` (see
 [04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those

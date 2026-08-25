@@ -112,6 +112,13 @@
                     <tr id="api_ui_anchor">
                     </tr>
                 </table>
+                <!-- Advanced connection fields: the .conn_adv rows injected above are
+                     moved into this table by relocateConnAdvRows(), so expanding the
+                     button opens them below it (same pattern as the options page). -->
+                <button type="button" class="conn_adv_btn" aria-expanded="false" hidden>__MSG_prefs_advanced_options__</button>
+                <table class="conn_adv_table hidden" style="width: 100%; text-align: left;">
+                    <tbody></tbody>
+                </table>
             </td>
         </tr>
     </table>

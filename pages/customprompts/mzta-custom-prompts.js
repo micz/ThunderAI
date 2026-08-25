@@ -31,7 +31,8 @@ import {
     injectConnectionUI,
     showConnectionOptions,
     updateWarnings,
-    checkJsonFieldsByPrefix
+    checkJsonFieldsByPrefix,
+    getConnectionTypeLabel
 } from "../../pages/_lib/connection-ui.js";
 import {
     getLocalStorageUsedSpace,
@@ -215,10 +216,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     //         break;
     //     }
     // }
+    // Move this form's advanced rows behind its disclosure button.
+    const newFormConnScope = document.getElementById('api_ui_container');
+    relocateConnAdvRows(newFormConnScope);
+
     apiSelect.addEventListener('change', () => {
         showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
+        showAdvConnectionOptions(newFormConnScope, apiSelect.value);
     });
     showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
+    showAdvConnectionOptions(newFormConnScope, apiSelect.value);
 
     // The per-prompt ChatGPT Web overrides only ever apply when the effective
     // connection is ChatGPT Web: that means the global connection is chatgpt_web
@@ -583,12 +590,20 @@ function handleEditClick(e) {
                 resetApiSettings(selectId, id);
             }
         }).then(() => {
+            const scopeEl = tr.querySelector('.api_additional_info');
+            relocateConnAdvRows(scopeEl);
             populateConnectionUI(tr, id, prefix, selectId);
             updateWarnings(prefix);
+            const sel = document.getElementById(selectId);
+            showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
+            sel && sel.addEventListener('change', () => showAdvConnectionOptions(scopeEl, sel.value));
         });
     } else {
+        const scopeEl = tr.querySelector('.api_additional_info');
         populateConnectionUI(tr, id, prefix, selectId);
         updateWarnings(prefix);
+        const sel = document.getElementById(selectId);
+        showAdvConnectionOptions(scopeEl, sel ? sel.value : '');
     }
 
     // Show/Hide buttons
@@ -602,6 +617,110 @@ function handleEditClick(e) {
     showItemRowEditor(tr);
     toggleDiffviewer(e);
     toggleAdditionalPropertiesShow(tr);
+}
+
+/* ---------------------------------------------------------------------------
+   Advanced connection fields (per form)
+
+   injectConnectionUI() marks its advanced rows with .conn_adv. The options page
+   moves them into a second table behind a disclosure button; this page does the
+   same, but **scoped to one form at a time**: several editors can be open at
+   once (handleEditClick never tears an injected block down), so the options
+   page's document-wide `querySelectorAll('#connection_ui_table tr.conn_adv')`
+   would vacuum up every other open row's advanced fields into whichever form
+   was touched last. Every query below therefore starts from `scopeEl`.
+   --------------------------------------------------------------------------- */
+
+// `scopeEl` is the element wrapping one form's connection UI: the <td> for the
+// add form (#api_ui_container) or the row's .api_additional_info container.
+function relocateConnAdvRows(scopeEl) {
+    if (!scopeEl) return;
+    const advBody = scopeEl.querySelector('.conn_adv_table tbody');
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    if (!advBody || !btn) return;
+
+    // Only the rows of *this* form, and not ones already relocated.
+    scopeEl.querySelectorAll('tr.conn_adv').forEach(tr => {
+        if (!advBody.contains(tr)) advBody.appendChild(tr);
+    });
+    btn.hidden = (advBody.children.length === 0);
+}
+
+// Collapse the advanced panel and reset the button state.
+function resetConnAdv(scopeEl) {
+    if (!scopeEl) return;
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    const panel = scopeEl.querySelector('.conn_adv_table');
+    if (!btn || !panel) return;
+    btn.setAttribute('aria-expanded', 'false');
+    panel.classList.add('hidden');
+}
+
+// Keep the relocated rows in sync with the selected provider: they left the main
+// table, so showConnectionOptions() (which walks up from the select) no longer
+// reaches them.
+function showAdvConnectionOptions(scopeEl, connType) {
+    if (!scopeEl) return;
+    const advTable = scopeEl.querySelector('.conn_adv_table');
+    if (!advTable) return;
+    advTable.querySelectorAll('tr[class*="conntype_"]').forEach(tr => {
+        tr.style.display = tr.classList.contains('conn_adv') && tr.classList.contains('conntype_' + connType) ? '' : 'none';
+    });
+    // Nothing to reveal for this provider ⇒ hide the button entirely.
+    const btn = scopeEl.querySelector('.conn_adv_btn');
+    if (btn) {
+        const anyVisible = [...advTable.querySelectorAll('tr[class*="conntype_"]')].some(tr => tr.style.display !== 'none');
+        btn.hidden = !anyVisible;
+        if (!anyVisible) resetConnAdv(scopeEl);
+    }
+}
+
+// One delegated listener for every disclosure button on the page, present and
+// future (List.js re-renders rows on search/sort, so per-button listeners would
+// be lost). Bound once at module scope.
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('.conn_adv_btn');
+    if (!btn) return;
+    e.preventDefault();
+    const scopeEl = btn.parentElement;
+    const panel = scopeEl && scopeEl.querySelector('.conn_adv_table');
+    if (!panel) return;
+    const open = panel.classList.toggle('hidden') === false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+// The read-only per-row connection display shows a *localized* provider name,
+// while the raw api_type stays in data-api-type. Every conditional in this file
+// reads the raw value through getRowApiType(): comparing the visible text against
+// '' / 'undefined' would break as soon as the text is translated.
+function setRowApiType(tr, apiType) {
+    const raw = (apiType === undefined || apiType === null) ? '' : String(apiType);
+    // Keep the hidden raw span (List.js's own field) in step, or the next read
+    // through getRowApiType() would return the pre-edit value.
+    const rawEl = tr.querySelector('.api_type');
+    if (rawEl) rawEl.innerText = raw;
+
+    const el = tr.querySelector('.api_type_show');
+    if (!el) return;
+    el.dataset.apiType = raw;
+    el.innerText = getConnectionTypeLabel(raw);
+}
+
+// Raw api_type for a list row, '' when the prompt inherits the global connection.
+// `.api_type` is the authoritative source: it is listed in List.js valueNames, so
+// List.js rewrites it on every render (which is also why the localized label must
+// live on a separate element — List.js would overwrite it with the raw value).
+// data-api-type is the fallback for rows updated in place by setRowApiType().
+function getRowApiType(tr) {
+    const rawEl = tr.querySelector('.api_type');
+    if (rawEl) {
+        const raw = rawEl.innerText.trim();
+        return (raw === 'undefined') ? '' : raw;
+    }
+    const el = tr.querySelector('.api_type_show');
+    if (!el) return '';
+    const raw = el.dataset.apiType;
+    return (raw === undefined || raw === 'undefined') ? '' : raw;
 }
 
 // Shows the add-form's [ChatGPT Web] disclosure only while those overrides can
@@ -900,7 +1019,7 @@ function toggleAdditionalPropertiesShow(tr) {
     let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show');
     let chatGPTWebProject_show = tr.querySelector('.chatgpt_web_project_show');
     let chatGPTWebCustomGPT_show = tr.querySelector('.chatgpt_web_custom_gpt_show');
-    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+    if(prefs.connection_type == 'chatgpt_web' && getRowApiType(tr) === '') {
         if ((chatGPTWebModel_show.innerText !== '' && chatGPTWebModel_show.innerText !== 'undefined') || 
             (chatGPTWebProject_show.innerText !== '' && chatGPTWebProject_show.innerText !== 'undefined') || 
             (chatGPTWebCustomGPT_show.innerText !== '' && chatGPTWebCustomGPT_show.innerText !== 'undefined')) {
@@ -963,22 +1082,14 @@ function handleChatGPTWebInfoToggleClick(e) {
 function toggleApiPropertiesShow(tr) {
     let element = tr.querySelector('.api_additional_info_show');
     let api_type_show = tr.querySelector('.api_type_show');
+    const hasApiType = getRowApiType(tr) !== '';
 
-    if (api_type_show.innerText !== '' && api_type_show.innerText !== 'undefined') {
-        element.style.display = 'flex';
-    } else {
-        element.style.display = 'none';
-    }
-
-    if(api_type_show.innerText === '' || api_type_show.innerText === 'undefined') {
-        api_type_show.parentNode.style.display = 'none';
-    } else {
-        api_type_show.parentNode.style.display = 'inline';
-    }
+    element.style.display = hasApiType ? 'flex' : 'none';
+    api_type_show.parentNode.style.display = hasApiType ? 'inline' : 'none';
 }
 
 function toggleAdditionalPropertiesEditor(tr) {
-    if(prefs.connection_type == 'chatgpt_web' && tr.querySelector('.api_type_show').innerText == '') {
+    if(prefs.connection_type == 'chatgpt_web' && getRowApiType(tr) === '') {
         let info_toggle = tr.querySelector('.chatgpt_web_additional_info_toggle');
         info_toggle.style.display = 'block';
         let chatGPTWebModel_show = tr.querySelector('.chatgpt_web_model_show').innerText;
@@ -994,9 +1105,7 @@ function toggleAdditionalPropertiesEditor(tr) {
 
     let api_info_toggle = tr.querySelector('.api_additional_info_toggle');
     api_info_toggle.style.display = 'block';
-    let api_type_show = tr.querySelector('.api_type_show').innerText;
-
-    if (api_type_show !== '' && api_type_show !== 'undefined') {
+    if (getRowApiType(tr) !== '') {
         api_info_toggle.click();
     }
 }
@@ -1100,11 +1209,13 @@ function handleConfirmClick(e) {
     tr.querySelector('.type_show').innerText = tr.querySelector('.type_output').selectedOptions[0].text;
     tr.querySelector('.action').innerText = tr.querySelector('.action_output').value;
     tr.querySelector('.action_show').innerText = tr.querySelector('.action_output').selectedOptions[0].text;
-    if (newValues.api_type !== '') {
-        tr.querySelector('.api_type_show').innerText = newValues.api_type;
-        toggleApiPropertiesShow(tr);
-    
-    }
+    // Unconditional: clearing the override (Reset → Confirm) is just as much an
+    // update as setting one. Guarding on a non-empty api_type left the row showing
+    // the previous provider, and — since the read-only block is hidden by
+    // toggleApiPropertiesShow, which was inside the guard — left it visible too.
+    // Both helpers handle '' (empty label, empty dataset, block hidden).
+    setRowApiType(tr, newValues.api_type);
+    toggleApiPropertiesShow(tr);
     // the checkboxes update is handled directly by themselves
     hideItemRowEditor(tr);
     // List.js rewrote .text_show from the saved value, which strips the chips and
@@ -1635,6 +1746,13 @@ function loadPromptsList(values){
                                 <tr id="api_ui_anchor_` + values.id + `"><td style="display:none"></td></tr>
                             </tbody>
                         </table>
+                        <!-- Advanced connection fields: the .conn_adv rows injected
+                             above are moved into this table by relocateConnAdvRows()
+                             so expanding opens them below the button. -->
+                        <button type="button" class="conn_adv_btn" aria-expanded="false" hidden>__MSG_prefs_advanced_options__</button>
+                        <table class="conn_adv_table hidden" style="width:100%; text-align:left;">
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </td>
                 <td class="w08 menu_cell"><div class="menu_cell_inner"><span class="field_title_s">__MSG_customPrompts_add_to_menu__:</span>
@@ -1680,7 +1798,7 @@ function loadPromptsList(values){
                         <div class="chatgpt_web_additional_info_row"><span class="field_title">__MSG_prefs_OptionText_chatgpt_web_custom_gpt__:</span><span class="chatgpt_web_custom_gpt chatgpt_web_custom_gpt_show">` + values.chatgpt_web_custom_gpt + `</span></div>
                     </div>
                     <div class="api_additional_info_show small_info">
-                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type api_type_show">` + values.api_type + `</span></div>
+                        <div class="api_additional_info_row"><span class="field_title">__MSG_prefs_Connection_type__:</span><br/><span class="api_type" hidden></span><span class="api_type_show" data-api-type="` + (values.api_type || '') + `">` + getConnectionTypeLabel(values.api_type) + `</span></div>
                     </div>
                 </td>
                 <td class="actions_cell">

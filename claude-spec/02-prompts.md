@@ -138,7 +138,7 @@ Each prompt can override the global API connection. These mirror the keys in `in
 
 | Property | Description |
 |----------|-------------|
-| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. |
+| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. In the custom prompts list the value is displayed **localized** via `getConnectionTypeLabel()` (exported from `pages/_lib/connection-ui.js`, backed by the same `CONNECTION_TYPE_OPTIONS` catalogue that builds the `<option>` list). The raw value stays machine-readable in the hidden `.api_type` span — the one List.js owns through `valueNames` — mirrored onto `data-api-type`; **every conditional must read it through `getRowApiType(tr)`**, never by comparing the visible text, which is translated. |
 | `chatgpt_web_model` | Override ChatGPT Web model |
 | `chatgpt_web_project` | Override ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | Override custom GPT |
