@@ -422,7 +422,45 @@ fields in `#mzta_conn_panel`. Each provider's fields are tiered into **core** an
 **Field tiering.** In the shared template inside `injectConnectionUI()`
 (`pages/_lib/connection-ui.js`), every advanced field row carries the marker class
 `conn_adv` in addition to its `conntype_<provider>` class. Core rows carry no marker.
-The `conn_adv` class is inert on the 6 feature pages (they render no toggle button).
+The `conn_adv` class is inert on the 6 feature pages and on the custom prompts page
+(none of them render a toggle button), so there every advanced field shows flat.
+Note that the ChatGPT Web `conn_adv` rows are not merely inert on those pages — they
+are **not injected at all**, because they pass `no_chatgpt_web: true` (see
+[04-api-integrations.md](04-api-integrations.md), ChatGPT Web section, for why those
+rows must keep unprefixed ids and therefore exist only once per page).
+
+**Prefix propagation invariant.** `showConnectionOptions(conntype_select, modelId_prefix)`
+ends by calling `updateCORSWarnings(modelId_prefix)`, and `modelId_prefix` defaults to
+`''`. Every call site on a prefixed page must therefore pass the prefix explicitly —
+omitting it does not fail loudly, it silently targets the *unprefixed* elements (on the
+custom prompts page that meant a row's provider change toggling the add-form's CORS
+warning and mutating the shared `varConnectionUI.permission_*` state from the wrong
+form's host values). The two calls inside `injectConnectionUI()` pass their own
+`modelId_prefix`; on pages that inject more than once (custom prompts: one add-form plus
+one per edited row) each injection must use a distinct prefix — `new_prompt_` for the
+add form, `prompt_<id>_` per row — so no two forms ever share an element id.
+
+**JSON field validation on restore.** The `*_extra_body` textareas carry `.check-json`
+and are validated live by an `input` listener. Restoring a saved value assigns
+`.value`, which fires **no** input event, so a previously saved malformed JSON would
+show no red border or error message until the user touched the field. Every code path
+that writes values into a connection form must therefore validate afterwards. On the
+options page and the wizard `checkJsonFields()` (document-wide) is correct because
+they host a single form; pages hosting several forms at once must use
+`checkJsonFieldsByPrefix(prefix)` instead — validating document-wide from one form
+repaints, and on empty fields *clears*, the other open forms' error state. Custom
+prompts calls it after all four write paths: the add-form defaults fill, `handleCopyClick`,
+`populateConnectionUI`, and `resetApiSettings` (clearing needs it too, or a stale red
+border survives on a now-empty, valid field).
+
+**Per-injection binding scope.** The `.check-json` / `.check-number` `input` listeners
+inside `injectConnectionUI()` are bound over the rows **that call injected**, not via a
+document-wide `querySelectorAll`. With a document-wide query, a page injecting N times
+re-binds every previously injected field on each new injection, so listener count grows
+quadratically (1 add-form + 3 edited rows ⇒ 4 listeners per add-form field, each
+keystroke running the validator 4×). All `.check-json`/`.check-number` fields originate
+from the injected template — none are declared in page HTML — so the narrower scope
+loses no coverage.
 
 **The toggle.** A full-width button `#mzta_conn_adv_btn` sits directly below the core
 `#connection_ui_table`, inside the tinted panel. It mirrors the app-level

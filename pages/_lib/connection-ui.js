@@ -100,20 +100,15 @@ export async function injectConnectionUI({
     document.head.appendChild(style);
   }
 
-  let tpl = `
-  <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
-    <td>
-      <label>
-        <span class="opt_title">__MSG_prefs_Connection_type__</span>
-      </label>
-    </td>
-    <td>
-      <label style="display: flex; align-items: center;">
-        <select id="${selectId}" name="${selectId}" class="option-input"></select>
-        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
-      </label>
-    </td>
-  </tr>
+  // The ChatGPT Web rows carry *unprefixed* ids on purpose: on the options page
+  // and in the setup wizard the element id IS the pref key (saveOptions writes
+  // options[element.id]), so prefixing them there would break persistence.
+  // The flip side is that they can only ever exist once per page, which is why
+  // they are injected only when `no_chatgpt_web` is false — every other consumer
+  // (per-prompt and per-feature panels) passes `no_chatgpt_web: true`, never
+  // offers the `chatgpt_web` option, and would otherwise get N duplicate copies
+  // of these ids from its N injections.
+  const chatgpt_web_rows = `
   <tr class="conntype_chatgpt_web${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_apiwebchat_info__</span>
@@ -191,7 +186,22 @@ export async function injectConnectionUI({
         <br><br><button id="btnChatGPTWeb_Tab">__MSG_OpenChatGPTTab__</button>
         <br><br>__MSG_OpenChatGPTTab_Info2__
     </td>
-  </tr>
+  </tr>`;
+
+  let tpl = `
+  <tr id="${selectId}_tr"${tr_class ? ` class="${tr_class}"` : ''}>
+    <td>
+      <label>
+        <span class="opt_title">__MSG_prefs_Connection_type__</span>
+      </label>
+    </td>
+    <td>
+      <label style="display: flex; align-items: center;">
+        <select id="${selectId}" name="${selectId}" class="option-input"></select>
+        ${customButtonLabel ? `<button id="${modelId_prefix}customButton" style="margin-left: 10px;">${customButtonLabel}</button>` : ''}
+      </label>
+    </td>
+  </tr>${no_chatgpt_web ? '' : chatgpt_web_rows}
   <tr class="conntype_chatgpt_api${tr_class ? ` ${tr_class}` : ''}">
     <td><label>
       <span class="opt_title">__MSG_prefs_ChatGPT_API_Key__</span>
@@ -672,11 +682,18 @@ export async function injectConnectionUI({
 
   const parent = anchorTr.parentElement;
   let last = anchorTr;
+  // Keep the nodes this call inserted: pages may inject more than once (custom
+  // prompts does, one add-form plus one per edited row), so any per-field wiring
+  // below must be scoped to *these* rows. A document-wide querySelectorAll would
+  // re-bind every previously injected field on each new injection.
+  const injectedRows = [];
   rows.forEach(row => {
     const node = document.importNode(row, true);
     parent.insertBefore(node, last.nextSibling);
     last = node;
+    injectedRows.push(node);
   });
+  const queryInjected = (sel) => injectedRows.flatMap(r => [...r.querySelectorAll(sel)]);
 
   const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
 
@@ -693,15 +710,18 @@ export async function injectConnectionUI({
     console.error('[ThuderAI | injectConnectionUI] Select not found after insertion.');
   }
 
-  conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select));
+  conntype_select.addEventListener("change", () => showConnectionOptions(conntype_select, modelId_prefix));
   conntype_select.addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_GoogleGemini_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   conntype_select.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
-  document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
-  document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
+  // The ChatGPT Web rows exist only when they were injected (see chatgpt_web_rows).
+  if (!no_chatgpt_web) {
+    document.getElementById("chatgpt_web_project").addEventListener("input", validateCustomData_ChatGPTWeb);
+    document.getElementById("chatgpt_web_custom_gpt").addEventListener("input", validateCustomData_ChatGPTWeb);
+  }
   document.getElementById(getPrefixedId("chatgpt_api_key")).addEventListener("change", () => warn_ChatGPT_APIKeyEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("ollama_host")).addEventListener("change", () => warn_Ollama_HostEmpty(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_host")).addEventListener("change", () => warn_OpenAIComp_HostEmpty(modelId_prefix));
@@ -712,7 +732,7 @@ export async function injectConnectionUI({
   document.getElementById(getPrefixedId("openai_comp_chat_name")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
   document.getElementById(getPrefixedId("openai_comp_use_v1")).addEventListener("input", () => resetOpenAICompConfigs(modelId_prefix));
 
-  showConnectionOptions(conntype_select);
+  showConnectionOptions(conntype_select, modelId_prefix);
   loadOpenAICompConfigs(modelId_prefix);
   warn_ChatGPT_APIKeyEmpty(modelId_prefix);
   warn_Ollama_HostEmpty(modelId_prefix);
@@ -765,8 +785,9 @@ export async function injectConnectionUI({
       icon_img_anthropic_api_key.src = type === 'password' ? "/images/pwd-show.png" : "/images/pwd-hide.png";
   });
 
+  // Null when the ChatGPT Web rows were not injected (see chatgpt_web_rows).
   const btnChatGPTWeb_Tab = document.getElementById('btnChatGPTWeb_Tab');
-  btnChatGPTWeb_Tab.addEventListener('click', async () => {
+  btnChatGPTWeb_Tab?.addEventListener('click', async () => {
     let prefs_mod = await browser.storage.sync.get({
       chatgpt_web_model: prefs_default.chatgpt_web_model,
       chatgpt_web_project: prefs_default.chatgpt_web_project,
@@ -1142,11 +1163,12 @@ export async function injectConnectionUI({
       }
     });
 
-   document.querySelectorAll('.check-number').forEach(input => {
+   // Scoped to the rows this call injected (see queryInjected).
+   queryInjected('.check-number').forEach(input => {
     input.addEventListener('input', warn_InvalidNumber);
    });
 
-   document.querySelectorAll('.check-json').forEach(input => {
+   queryInjected('.check-json').forEach(input => {
     input.addEventListener('input', warn_InvalidJson);
    });
   
@@ -1586,6 +1608,17 @@ function warn_InvalidJson(event){
 // touched. Must be called after the fields have been filled (restoreOptions).
 export function checkJsonFields(){
   document.querySelectorAll('.check-json').forEach(field => checkJsonField(field));
+}
+
+// Same check, restricted to one form. Needed by pages that host several
+// connection forms at once (custom prompts: the add form plus one per edited
+// row): validating document-wide from one form would repaint — and on empty
+// fields clear — the other forms' error state. `prefix` is the form's
+// modelId_prefix; ids are unique per form, so matching on it is exact.
+export function checkJsonFieldsByPrefix(prefix = ''){
+  document.querySelectorAll('.check-json').forEach(field => {
+    if (field.id.startsWith(prefix)) checkJsonField(field);
+  });
 }
 
 function warn_ChatGPT_APIKeyEmpty(modelId_prefix) {

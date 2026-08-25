@@ -138,7 +138,7 @@ Each prompt can override the global API connection. These mirror the keys in `in
 
 | Property | Description |
 |----------|-------------|
-| `connection_type` | Override API type for this prompt |
+| `api_type` | Override API type for this prompt. **Note the name:** on the *prompt object* the property is `api_type`; `connection_type` is the *pref* name (global `connection_type` and the per-feature `{prefix}_connection_type`). `getConnectionType()` reads `prompt.api_type`. |
 | `chatgpt_web_model` | Override ChatGPT Web model |
 | `chatgpt_web_project` | Override ChatGPT Web project |
 | `chatgpt_web_custom_gpt` | Override custom GPT |

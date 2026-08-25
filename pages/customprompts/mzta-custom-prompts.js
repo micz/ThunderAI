@@ -30,7 +30,8 @@ import {
 import {
     injectConnectionUI,
     showConnectionOptions,
-    updateWarnings
+    updateWarnings,
+    checkJsonFieldsByPrefix
 } from "../../pages/_lib/connection-ui.js";
 import {
     getLocalStorageUsedSpace,
@@ -54,6 +55,12 @@ import {
     classifyPlaceholderType,
     PLACEHOLDER_RE
 } from "../../js/mzta-editor-highlight.js";
+
+// Id prefix for the add-new-prompt form's injected connection fields. Every
+// injection on this page must carry a prefix: injectConnectionUI() runs once for
+// this form plus once per row put into edit mode, so unprefixed fields would
+// collide across forms (and used to silently share the add form's elements).
+const NEW_PROMPT_PREFIX = 'new_prompt_';
 
 let prefs = null;
 var promptsList = null;
@@ -170,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await injectConnectionUI({
         afterTrId: 'api_ui_anchor',
         selectId: 'new_prompt_api_type',
+        modelId_prefix: NEW_PROMPT_PREFIX,
         no_chatgpt_web: true,
         taLog: taLog,
         customButtonLabel: browser.i18n.getMessage("Reset"),
@@ -182,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const [integration, options] of Object.entries(integration_options_config)) {
         for (const key of Object.keys(options)) {
             const propName = `${integration}_${key}`;
-            const inputEl = document.getElementById(propName);
+            const inputEl = document.getElementById(NEW_PROMPT_PREFIX + propName);
             if (inputEl && prefs[propName] !== undefined) {
                  if (inputEl.type === 'checkbox') {
                      inputEl.checked = (prefs[propName] === true || prefs[propName] === 'true');
@@ -192,6 +200,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
+    // Same reason as in populateConnectionUI: these assignments fire no input
+    // event, so a malformed extra_body inherited from the global prefs would
+    // sit unflagged in the add form.
+    checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
 
     i18n.updateDocument();
 
@@ -204,13 +216,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     //     }
     // }
     apiSelect.addEventListener('change', () => {
-        showConnectionOptions(apiSelect);
+        showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
     });
-    showConnectionOptions(apiSelect);
+    showConnectionOptions(apiSelect, NEW_PROMPT_PREFIX);
+
+    // The per-prompt ChatGPT Web overrides only ever apply when the effective
+    // connection is ChatGPT Web: that means the global connection is chatgpt_web
+    // AND this prompt sets no api_type override (mirrors the row-level condition
+    // in toggleAdditionalPropertiesEditor). Re-evaluated on every api_type
+    // change, since the user can pick an override while the form is open.
+    updateChatGPTWebInfoVisibility();
+    apiSelect.addEventListener('change', updateChatGPTWebInfoVisibility);
 
     if(prefs.connection_type == 'chatgpt_web') {
-        // for the new item form
-        document.getElementById('chatgpt_web_additional_info_toggle').style.display = 'table-row';
         // for the edit list items form
         document.querySelectorAll('.chatgpt_web_additional_info_toggle').forEach(element => {
             element.addEventListener('click', handleChatGPTWebInfoToggleClick);
@@ -327,7 +345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             //     break;
         }
 
-        const apiValues = getAPIValuesFromUI();
+        const apiValues = getAPIValuesFromUI(NEW_PROMPT_PREFIX);
         Object.assign(newItemData, apiValues);
 
         let newItem = promptsList.add(newItemData);
@@ -586,9 +604,66 @@ function handleEditClick(e) {
     toggleAdditionalPropertiesShow(tr);
 }
 
+// Shows the add-form's [ChatGPT Web] disclosure only while those overrides can
+// actually take effect: global connection chatgpt_web and no per-prompt api_type.
+// When hiding it, the expanded row is collapsed and its label reset, so reopening
+// later does not start out mislabelled ("Hide" over a closed row).
+function updateChatGPTWebInfoVisibility() {
+    const toggle = document.getElementById('chatgpt_web_additional_info_toggle');
+    const row = document.getElementById('chatgpt_web_additional_info');
+    if (!toggle || !row) return;
+
+    const apiSelect = document.getElementById('new_prompt_api_type');
+    const applies = (prefs.connection_type === 'chatgpt_web') && !(apiSelect && apiSelect.value);
+
+    toggle.style.display = applies ? 'table-row' : 'none';
+    if (!applies) {
+        row.style.display = 'none';
+        const subspan = toggle.querySelector('td span');
+        if (subspan) {
+            subspan.innerText = browser.i18n.getMessage('customPrompts_show_additional_info') + ' [ChatGPT Web]';
+        }
+    }
+}
+
+// Opens one of the add-form disclosures if it is currently closed, keeping its
+// label in sync. Not a plain toggle.click(): the API toggle's handler tests
+// `display === 'none'`, so on a panel whose display is still '' (never touched)
+// a click would take the *close* branch and leave it shut.
+function openAddFormDisclosure(toggleId, rowId, labelSuffix) {
+    const toggle = document.getElementById(toggleId);
+    const row = document.getElementById(rowId);
+    if (!toggle || !row) return;
+    if (row.style.display === 'table-row') return;   // already open
+
+    row.style.display = 'table-row';
+    const subspan = toggle.querySelector('span');
+    if (subspan) {
+        subspan.innerText = browser.i18n.getMessage('customPrompts_hide_additional_info') + ' ' + labelSuffix;
+    }
+}
+
+// True when the copied prompt carries any per-prompt API override worth showing.
+// Mirrors the row-level rule in toggleAdditionalPropertiesEditor, which opens the
+// [API] panel whenever api_type is set.
+function hasApiOverrideValues(itemValues) {
+    if (itemValues.api_type) return true;
+    for (const [integration, options] of Object.entries(integration_options_config)) {
+        for (const key of Object.keys(options)) {
+            const val = itemValues[`${integration}_${key}`];
+            // Checkboxes round-trip as either boolean or string (see the
+            // `=== true || === 'true'` reads elsewhere), and an unchecked box is
+            // the default, not an override — so both falses are ignored.
+            if (val === undefined || val === '' || val === false || val === 'false') continue;
+            return true;
+        }
+    }
+    return false;
+}
+
 function resetApiSettings(selectId, id = null) {
-    let prefix = '';
-    if (id) prefix = `prompt_${id}_`;
+    // No id means the add-new form, whose fields carry NEW_PROMPT_PREFIX.
+    let prefix = id ? `prompt_${id}_` : NEW_PROMPT_PREFIX;
     const selectEl = document.getElementById(selectId);
     if (selectEl) {
         selectEl.value = '';
@@ -624,6 +699,9 @@ function resetApiSettings(selectId, id = null) {
         }
         item.values(newValues);
     }
+    // Clearing the fields does not fire input either, so a red border left from
+    // a malformed value would survive the reset on a now-empty (valid) field.
+    checkJsonFieldsByPrefix(prefix);
     setSomethingChanged();
 }
 
@@ -634,7 +712,7 @@ function populateConnectionUI(tr, id, prefix, selectId) {
     const selectEl = document.getElementById(selectId);
     if (selectEl) {
         selectEl.value = itemValues.api_type || '';
-        showConnectionOptions(selectEl);
+        showConnectionOptions(selectEl, prefix);
     }
 
     for (const [integration, options] of Object.entries(integration_options_config)) {
@@ -671,6 +749,11 @@ function populateConnectionUI(tr, id, prefix, selectId) {
             }
         }
     }
+    // Values are assigned with .value / .checked, which fire no input event, so
+    // the live .check-json validation never runs on restore: a previously saved
+    // malformed extra_body would show no red border or error until touched.
+    // Scoped to this form's prefix so it cannot repaint another open editor.
+    checkJsonFieldsByPrefix(prefix);
     i18n.updateDocument();
 }
 
@@ -1127,7 +1210,7 @@ function handleCopyClick(e) {
         for (const [integration, options] of Object.entries(integration_options_config)) {
             for (const key of Object.keys(options)) {
                 const propName = `${integration}_${key}`;
-                const inputEl = document.getElementById(propName);
+                const inputEl = document.getElementById(NEW_PROMPT_PREFIX + propName);
                 if (inputEl) {
                     let val = itemValues[propName];
                     if (val === undefined) val = '';
@@ -1144,6 +1227,27 @@ function handleCopyClick(e) {
                     }
                 }
             }
+        }
+        // Copied values are assigned directly too: validate what we just wrote.
+        checkJsonFieldsByPrefix(NEW_PROMPT_PREFIX);
+
+        // Reveal what was copied: a collapsed panel would hide the fact that the
+        // new prompt already carries API overrides. Same intent as the row editor
+        // (toggleAdditionalPropertiesEditor), which auto-opens when data exists.
+        if (hasApiOverrideValues(itemValues)) {
+            openAddFormDisclosure('api_additional_info_toggle', 'api_additional_info', '[API]');
+        }
+    }
+
+    // The ChatGPT Web overrides live outside the api_type block (they apply when
+    // the global connection is ChatGPT Web and no api_type is set), so they are
+    // checked separately — and only if the disclosure is actually applicable.
+    if ((chatgpt_web_model !== '' && chatgpt_web_model !== undefined) ||
+        (chatgpt_web_project !== '' && chatgpt_web_project !== undefined) ||
+        (chatgpt_web_custom_gpt !== '' && chatgpt_web_custom_gpt !== undefined)) {
+        const cgwToggle = document.getElementById('chatgpt_web_additional_info_toggle');
+        if (cgwToggle && cgwToggle.style.display !== 'none') {
+            openAddFormDisclosure('chatgpt_web_additional_info_toggle', 'chatgpt_web_additional_info', '[ChatGPT Web]');
         }
     }
 
@@ -1752,7 +1856,15 @@ function clearFields() {
     document.getElementById('formNew').style.display = 'none';
 }
 
-function getAPIValuesFromUI(prefix = '') {
+// `prefix` is mandatory: every injected connection field on this page is prefixed
+// (NEW_PROMPT_PREFIX for the add form, `prompt_<id>_` per row). An empty prefix
+// matches nothing, so `if (inputEl)` would skip every field and silently return
+// {} instead of failing — the exact way a missed prefix stays invisible here.
+function getAPIValuesFromUI(prefix) {
+    if (!prefix) {
+        console.error('[ThunderAI | getAPIValuesFromUI] called without a prefix; no API values would be read.');
+        return {};
+    }
     let values = {};
     for (const [integration, options] of Object.entries(integration_options_config)) {
         for (const key of Object.keys(options)) {
