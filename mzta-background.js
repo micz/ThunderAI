@@ -625,9 +625,9 @@ messenger.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             }
                         }
                         return browser.windows.remove(window_id).then(() => {
-                            taLog.log("ChatGPT window closed successfully.");
+                            taLog.log("AI chat window closed successfully.");
                         }).catch((error) => {
-                            taLog.error("Error closing ChatGPT window:", error);
+                            taLog.error("Error closing AI chat window:", error);
                         });
                     }
                     return _closeChatGptWindow(message.window_id);
