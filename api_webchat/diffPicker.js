@@ -657,23 +657,22 @@ export function segmentBlocks(html) {
     const blocks = [];
 
     // Emit one block per <br>-separated run of EL's children (see splitOnBr).
-    // Empty runs - a trailing <br>, or the blank line in a <br><br> pair - have
-    // no text and are dropped by the same guard that drops empty blocks.
+    // Empty runs have no text and are not emitted, but they still carry meaning:
+    // an empty run BETWEEN two non-empty ones is a blank line (a <br><br> pair),
+    // which is a PARAGRAPH break, so the block before it ends its wrapper
+    // (sep=null) and renderBlocks emits the next run as its own <p>. Only a
+    // SINGLE <br> to an adjacent non-empty run is an in-paragraph line break
+    // (sep='br'). A trailing <br> (empty final run) likewise leaves sep=null, so
+    // the last emitted block of a wrapper never points at a successor belonging
+    // to a different wrapper.
     const pushBlocks = (el, tag, listType) => {
-        const runs = splitOnBr(el);
-        let last = null;
-        runs.forEach((run, i) => {
-            const block = makeBlock(run, tag, listType, (i === runs.length - 1) ? null : 'br');
-            if (block.text === '') { return; }
-            last = block;
-            blocks.push(block);
-        });
-        // A trailing <br> leaves an empty final run that the guard above drops,
-        // which would otherwise leave the last EMITTED block pointing at a
-        // successor that belongs to a different wrapper. The junction a dropped
-        // empty run represented is simply not emitted - the same collapse an
-        // empty line already gets today.
-        if (last) { last.sep = null; }
+        const runs = splitOnBr(el).map(run => makeBlock(run, tag, listType, null));
+        for (let i = 0; i < runs.length; i++) {
+            if (runs[i].text === '') { continue; }
+            const nextNonEmpty = (i + 1 < runs.length) && runs[i + 1].text !== '';
+            runs[i].sep = nextNonEmpty ? 'br' : null;
+            blocks.push(runs[i]);
+        }
     };
 
     // A run of consecutive inline/text nodes at this level has no block of its
@@ -717,15 +716,20 @@ export function segmentBlocks(html) {
                     continue;
                 }
                 // A <br> between blocks ends the implicit <p> being gathered.
-                // If it did close one, it is the junction between that run and
-                // whatever comes next, so it is recorded exactly as splitOnBr's
-                // separators are - otherwise a bare "A<br>B" at body level would
-                // still come back as two <p>. With no pending run it is a blank
-                // line between two real blocks and contributes nothing.
+                // The FIRST <br> after a run is a single-line junction ('br'), so
+                // a bare "A<br>B" at body level comes back as one <p>. A SECOND
+                // consecutive <br> (only whitespace in between) is a blank line, so
+                // it promotes that junction to a paragraph break (sep=null) and the
+                // two runs come back as separate <p> - matching the <br><br> rule
+                // inside a wrapper (see pushBlocks).
                 if (tag === 'br') {
                     const had = (pending !== null);
                     flushPending();
-                    if (had && blocks.length > 0) { blocks[blocks.length - 1].sep = 'br'; }
+                    if (blocks.length > 0) {
+                        const lastBlock = blocks[blocks.length - 1];
+                        if (had) { lastBlock.sep = 'br'; }
+                        else if (lastBlock.sep === 'br') { lastBlock.sep = null; }
+                    }
                     continue;
                 }
                 if (BLOCK_TAGS.has(tag)) {

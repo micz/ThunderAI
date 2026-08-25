@@ -430,10 +430,17 @@ Two independent code paths produce a separator and both set it: `splitOnBr`'s ru
 and a `<br>` between blocks at body level, which closes the implicit `<p>` being gathered and marks
 the block it just flushed.
 
-An empty run — a trailing `<br>`, or the blank line in `<br><br>` — is still dropped by the guard
-that drops empty blocks, and the junction it represented is simply not emitted. `pushBlocks` clears
-`sep` on the last block it actually emitted, so a trailing `<br>` can never leave a block pointing at
-a successor belonging to a different wrapper.
+An empty run is not emitted, but its POSITION decides the junction of the block before it. A
+**single** `<br>` to an adjacent non-empty run is an in-paragraph line break (`sep = 'br'`, the two
+lines re-join into one wrapper). A **blank line** — an empty run between two non-empty ones, i.e.
+`<br><br>` — is a **paragraph break**: the block before it ends its wrapper (`sep = null`) and the
+next run renders as its own `<p>`, so `<p>a<br><br>b</p>` comes back as `<p>a</p><p>b</p>` and the
+blank line survives (this is the fix for the picker importing paragraphs as single-spaced lines). The
+body-level `<br>` walk mirrors this: the first `<br>` after a run sets `sep = 'br'`, a second
+consecutive one (only whitespace between) promotes it to `null`. A **trailing** `<br>` (empty final
+run) leaves `sep = null` on the last emitted block, so a `<br>` can never leave a block pointing at a
+successor belonging to a different wrapper. Verified against P1 and the accept-all / reject-all
+invariant, running the real module in a browser (the harness `07`'s invariant caveat asks for).
 
 **`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
 jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
