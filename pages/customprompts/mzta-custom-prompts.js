@@ -1812,13 +1812,12 @@ function checkSelectedBoxes(checkboxes = null) {
 
     // Iterate through the checkboxes
     checkboxes.forEach(checkbox => {
-        // Check if the 'checked' attribute is "0"
-        if (checkbox.getAttribute('checked_val') == "0") {
-            // Uncheck the checkbox
-            checkbox.checked = false;
-        } else {
-            checkbox.checked = true;
-        }
+        // On only for an explicit "1". This used to ask the inverse question
+        // ("is it 0?"), which sent every unexpected value -- "", a missing
+        // attribute, null -- down the else branch and rendered it as ON, while
+        // every consumer compares against "1" and read the same value as OFF.
+        const value = checkbox.getAttribute('checked_val');
+        checkbox.checked = (value === "1");
     });
 }
 

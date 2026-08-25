@@ -96,6 +96,17 @@
 
 import { integration_options_config } from "../../options/mzta-options-default.js";
 
+// The five boolean-ish prompt flags documented above. Canonical representation
+// is the string "0"/"1" -- that is what the definitions below declare, and what
+// normalizePromptFlags() collapses every stored value back to.
+export const promptBooleanFlags = [
+    'need_selected',
+    'need_signature',
+    'need_custom_text',
+    'define_response_lang',
+    'use_diff_viewer',
+];
+
 const defaultPrompts = [
     {
         id: 'prompt_reply',
@@ -509,6 +520,10 @@ export async function preparePromptsForImport(prompts){
     // Backward-compat: old backups may still carry the removed `enabled` flag.
     // Map enabled == 0 to show_in === 'none' and drop the field.
     output.forEach(normalizeEnabledToShowIn);
+    // A backup file carries whatever representation the version that wrote it
+    // used (numbers, strings, or a missing key), and the merge above copies it
+    // verbatim -- so collapse the flags to the canonical "0"/"1" here too.
+    output.forEach((prompt) => normalizePromptFlags(prompt));
     output.sort((a, b) => a.id.localeCompare(b.id));
     // console.log(">>>>>>>>>>> preparePromptsForImport final output: " + JSON.stringify(output));
     return output;
@@ -522,6 +537,39 @@ export function normalizeEnabledToShowIn(prompt) {
         prompt.show_in = 'none';
     }
     delete prompt.enabled;
+}
+
+// True only for the values that legitimately mean "on". Everything else --
+// including the out-of-domain "" that setDefaultPromptsProperties used to write
+// -- means "off". Kept deliberately strict: a corrupted value must never turn a
+// behaviour on.
+export function isPromptFlagOn(value) {
+    return value === 1 || value === "1" || value === true;
+}
+
+// Normalizing helper, same shape as normalizeEnabledToShowIn above: mutating,
+// idempotent, one prompt at a time. The customprompts UI writes these flags as
+// numbers while the built-ins are strings, and a missing value used to degrade
+// to "" -- three representations for one field. This collapses them to "0"/"1"
+// and guarantees every key is present, so consumers can compare against "1"
+// without caring where the prompt came from.
+//
+// `fallbacks` supplies the value to use when the stored one is out of domain
+// (neither 0/1 nor "0"/"1"). Default prompts pass their built-in value here so a
+// corrupted override falls back to what the prompt ships with, rather than to a
+// blanket "0" which would silently disable prompts built with the flag on.
+export function normalizePromptFlags(prompt, fallbacks = {}) {
+    promptBooleanFlags.forEach((flag) => {
+        const value = prompt[flag];
+        if (value === 0 || value === "0") {
+            prompt[flag] = "0";
+        } else if (isPromptFlagOn(value)) {
+            prompt[flag] = "1";
+        } else {
+            // Out of domain ("", undefined, "undefined", null, ...).
+            prompt[flag] = isPromptFlagOn(fallbacks[flag]) ? "1" : "0";
+        }
+    });
 }
 
 async function getDefaultPrompts_withProps() {
@@ -538,6 +586,7 @@ async function getDefaultPrompts_withProps() {
             prompt.position_display = pos;
             prompt.position_compose = pos;
             prompt.position_context = pos;
+            normalizePromptFlags(prompt);
             pos++;
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [no prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
@@ -545,10 +594,18 @@ async function getDefaultPrompts_withProps() {
         let pos = 1000;
         defaultPrompts_prop.forEach((prompt) => {
             prompt.text = browser.i18n.getMessage(prompt.text);
+            // Captured before the stored properties overwrite them: they are the
+            // fallback for an override that is out of domain (see below).
+            const builtInFlags = { ...prompt };
             if(prefs._default_prompts_properties?.[prompt.id]){
                 prompt.position_compose = prefs._default_prompts_properties[prompt.id].position_compose;
                 prompt.position_display = prefs._default_prompts_properties[prompt.id].position_display;
                 prompt.position_context = prefs._default_prompts_properties[prompt.id]?.position_context || prompt.position_display;
+                // need_custom_text is the only one of the five flags persisted for
+                // default prompts, so it is the only one that can come back out of
+                // domain (older versions wrote "" for a missing value). Assign it
+                // raw here; normalizePromptFlags() below turns a bad value back
+                // into the built-in rather than silently forcing it off.
                 prompt.need_custom_text = prefs._default_prompts_properties[prompt.id].need_custom_text;
                 prompt.chatgpt_web_model = prefs._default_prompts_properties[prompt.id].chatgpt_web_model;
                 prompt.chatgpt_web_project = prefs._default_prompts_properties[prompt.id].chatgpt_web_project;
@@ -562,6 +619,7 @@ async function getDefaultPrompts_withProps() {
                 prompt.position_context = pos;
                 pos++;
             }
+            normalizePromptFlags(prompt, builtInFlags);
         })
         // console.log('>>>>>>>>>>>> getDefaultPrompts_withProps [prop saved] defaultPrompts_prop: ' + JSON.stringify(defaultPrompts_prop));
     }
@@ -576,9 +634,11 @@ async function getCustomPrompts() {
         return [];
     } else {
         prefs._custom_prompt.forEach(prompt => {
-            if (prompt.use_diff_viewer === undefined) {
-                prompt.use_diff_viewer = "0";
-            }
+            // The customprompts UI writes these as numbers; collapse them (and any
+            // missing value, which used to leave use_diff_viewer undefined) to the
+            // canonical "0"/"1". Custom prompts have no built-in to fall back to,
+            // so an out-of-domain value means off.
+            normalizePromptFlags(prompt);
             if(prompt.chatgpt_web_model === undefined){
                 prompt.chatgpt_web_model = "";
             }
@@ -609,7 +669,10 @@ export async function setDefaultPromptsProperties(prompts) {
             position_compose: (prompt.position_compose === undefined || prompt.position_compose === "undefined") ? "" : prompt.position_compose,
             position_display: (prompt.position_display === undefined || prompt.position_display === "undefined") ? "" : prompt.position_display,
             position_context: (prompt.position_context === undefined || prompt.position_context === "undefined") ? "" : prompt.position_context,
-            need_custom_text: (prompt.need_custom_text === undefined || prompt.need_custom_text === "undefined") ? "" : prompt.need_custom_text,
+            // Never persist an out-of-domain value: "" used to be written for a
+            // missing flag, and it reads as "on" in the editor but "off"
+            // everywhere else. Store the canonical "0"/"1" instead.
+            need_custom_text: isPromptFlagOn(prompt.need_custom_text) ? "1" : "0",
             chatgpt_web_model: (prompt.chatgpt_web_model === undefined || prompt.chatgpt_web_model === "undefined") ? "" : prompt.chatgpt_web_model,
             chatgpt_web_project: (prompt.chatgpt_web_project === undefined || prompt.chatgpt_web_project === "undefined") ? "" : prompt.chatgpt_web_project,
             chatgpt_web_custom_gpt: (prompt.chatgpt_web_custom_gpt === undefined || prompt.chatgpt_web_custom_gpt === "undefined") ? "" : prompt.chatgpt_web_custom_gpt,
@@ -637,6 +700,7 @@ export async function getSpecialPrompts(){
             // Icons are selectable for special prompts too; empty means "use the
             // hard-coded built-in icon" (see getBuiltInPromptIcon()).
             prompt.custom_icon = "";
+            normalizePromptFlags(prompt);
         })
         return def_specPrompts;
     } else {
@@ -659,6 +723,12 @@ export async function getSpecialPrompts(){
             if (prompt.custom_icon === undefined || prompt.custom_icon === "undefined") {
                 prompt.custom_icon = "";
             }
+            // This getter is exported and called directly by buildSummaryPrompt()/
+            // buildTranslationPrompt() and by the feature pages, bypassing
+            // getPrompts() -- so it has to normalize the flags itself. Fall back to
+            // the shipped definition when a saved value is out of domain.
+            const builtIn = specialPrompts.find((sp) => sp.id === prompt.id);
+            normalizePromptFlags(prompt, builtIn || {});
         });
 
         // console.log(">>>>>>>>>>>>> getSpecialPrompts updatedPrompts: " + JSON.stringify(updatedPrompts));

@@ -26,6 +26,61 @@ Prompts are the core user-facing feature of ThunderAI. Each prompt defines an AI
 
 > **Note:** These numeric-looking properties are stored as **strings** (`"0"`/`"1"`/`"2"`) in the prompt objects in `js/mzta-prompts.js`, not as JS numbers. The prompt body lives in the `text` property (there is no `prompt` property).
 
+#### The five boolean flags are normalized on read
+
+`need_selected`, `need_signature`, `need_custom_text`, `define_response_lang` and
+`use_diff_viewer` are collectively `promptBooleanFlags` in `js/mzta-prompts.js`. Their
+**canonical representation is the string `"0"`/`"1"`**, and that is guaranteed at read time —
+consumers may compare against `"1"` without caring which store the prompt came from.
+
+Three representations used to coexist for the same field: the built-in arrays declare strings,
+the Custom Prompts editor writes **numbers** (`1`/`0`), and `setDefaultPromptsProperties()`
+used to write **`""`** for a missing value. That empty string was the worst of the three,
+because it is out of domain in both directions: the editor's `checkSelectedBoxes()` asked *"is
+it `"0"`?"* and so rendered anything else — `""` included — as **on**, while every consumer
+asks *"is it `"1"`?"* and read the very same value as **off**. A default prompt could therefore
+show "Ask for additional text" enabled and not ask for it.
+
+`normalizePromptFlags(prompt, fallbacks)` collapses all of this: `1`/`"1"`/`true` → `"1"`,
+everything else → `"0"`, with every key guaranteed present. It is mutating, idempotent and
+single-prompt, mirroring `normalizeEnabledToShowIn()`. The `fallbacks` argument supplies the
+value for an out-of-domain input — default and special prompts pass their **built-in
+definition**, so a corrupted override reverts to what the prompt ships with instead of being
+forced off (which would silently disable `prompt_reply_custom_command`, whose built-in is
+`"1"`).
+
+It is applied in the **three producers**, not in `getPrompts()`. That placement is deliberate:
+`getSpecialPrompts()` is exported and called *directly* — by `buildSummaryPrompt()` /
+`buildTranslationPrompt()` in `js/mzta-utils-prompt.js` and by the six feature pages — so it
+bypasses `getPrompts()` entirely. Normalizing only in `getPrompts()` would leave the whole
+summarize/translate path uncovered.
+
+| Site | Fallback |
+|---|---|
+| `getDefaultPrompts_withProps()` | the built-in prompt, captured before the stored properties overwrite it |
+| `getCustomPrompts()` | none — custom prompts have no built-in, so out of domain means off |
+| `getSpecialPrompts()` (both branches) | the matching entry in `specialPrompts` |
+| `preparePromptsForImport()` | none — a backup file carries whatever the writing version used |
+
+`setDefaultPromptsProperties()` also stops emitting `""`, closing the original source.
+
+Because there is no separate storage migration, repair is **lazy but automatic**: a corrupted
+value is normalized on the next read and consolidated on the next save. This flips the
+wholesale re-writers — `pages/menu_order/` and `migrateMenuOrderAlphabetic()`, which rewrite
+all three stores from `getPrompts()` — from perpetuating the corruption to repairing it.
+
+The Custom Prompts editor writing numbers is left alone on purpose: the read-side
+normalization absorbs it. The deliberately loose comparisons in consumers
+(`api_webchat/controller.js`, `api_webchat/messagesArea.js`) are likewise untouched — with the
+domain guaranteed upstream they are harmless, though note they are only *accidentally* safe
+against numbers today (`==` coercion, `String()`, or template interpolation), so tightening one
+to `===` without the normalization in place would have silently broken it.
+
+> **`need_custom_text` is the only one of the five persisted for default prompts** — it is in
+> the `allowedKeys` list in `preparePromptsForExport()` and the only flag written by
+> `setDefaultPromptsProperties()`. The other four always come from the built-in array, which is
+> why the corruption above could only ever affect `need_custom_text`.
+
 ### The picker prompts send HTML — except one
 
 The three prompts with `use_diff_viewer: "1"` are **not uniform**, and the difference is deliberate:
