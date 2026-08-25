@@ -180,6 +180,10 @@ export class StreamingMessage {
         // never here, so truncation is left off. The extracted reasoning is added to
         // the running inline-thinking total (this segment is only ever seen once,
         // since _segmentText is cleared below).
+        // No leading trim (third argument left off): this is a SEGMENT, not the whole
+        // response, so the space opening it is interior to the answer once appended to
+        // _htmlRawText below. Trimming it welds the last word of the previous segment to
+        // the first word of this one ("the" + " body" -> "thebody").
         const stripped = stripThinkTags(fullText);
         if (stripped.thinking) {
             this._inlineThinking += (this._inlineThinking ? '\n' : '') + stripped.thinking;

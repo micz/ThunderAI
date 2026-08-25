@@ -202,7 +202,9 @@
                         // the content stream) need it stripped for the same reason. An
                         // unterminated block means a truncated reply: drop the leftover too,
                         // rather than handing raw reasoning to the caller's parser.
-                        const cleaned = stripThinkTags(this.full_message, true).text;
+                        // The whole response is passed here, so the leading whitespace a
+                        // removed block leaves behind is safe to trim (third argument).
+                        const cleaned = stripThinkTags(this.full_message, true, true).text;
                         this.logger.log("tokensDone: " + cleaned);
                         resolve(cleaned); // Resolve the promise with the full message
                         break;

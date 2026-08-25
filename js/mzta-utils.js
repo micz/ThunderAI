@@ -490,7 +490,12 @@ export function normalizePlainTextPart(text) {
 // dropped, so callers that parse the response never receive raw reasoning.
 // Streaming callers leave it false and instead defer the flush until the closing
 // tag arrives.
-export function stripThinkTags(text, truncateUnterminated = false) {
+//
+// `trimLeading` drops the whitespace a removed <think> block leaves at the start.
+// Only correct for callers passing the WHOLE response: a per-segment caller must
+// leave it false, or the space opening a segment - interior to the text once the
+// segments are glued together - is destroyed, welding two words into one.
+export function stripThinkTags(text, truncateUnterminated = false, trimLeading = false) {
   if (!text) {
     return { text: '', thinking: '' };
   }
@@ -513,7 +518,7 @@ export function stripThinkTags(text, truncateUnterminated = false) {
     }
   }
 
-  return { text: out.replace(/^\s+/, ''), thinking: thinking };
+  return { text: trimLeading ? out.replace(/^\s+/, '') : out, thinking: thinking };
 }
 
 // Only for PLAIN text. Applying this to already-formed HTML injects spurious <br>

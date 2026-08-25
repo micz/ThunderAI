@@ -468,6 +468,12 @@ into **running totals** (never drained), so each cumulative render hands back th
 `messagesArea` rebuilds the thinking block with it — a per-flush drain would blank the reasoning on
 the second render of a thinking-then-long answer.
 
+One consequence of calling `stripThinkTags()` **per segment** rather than once per response: its
+leading-whitespace trim must stay off here (it is opt-in via the third argument, default off). The
+space that opens a segment is interior to the answer once the segments are concatenated into
+`_htmlRawText`, so trimming it fuses two words across the boundary. Whole-response callers such as
+`mzta-special-commands.js` opt in; this one must not.
+
 **Historical note — the removed router.** `flush()` used to decide, once per response, whether the
 answer was HTML:
 
