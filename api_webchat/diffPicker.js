@@ -17,6 +17,17 @@
  */
 
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
+// The sanitizer + tag taxonomy live in the shared rich-text layer - ONE security
+// boundary, ONE allowlist. This module used to define them; they moved so the
+// webchat renderer and the picker cannot drift apart. The segmentation machinery
+// below (blockTextOfHtml / segmentBlocks / sliceHtmlByText / normalizeBlockHtml)
+// deliberately stayed here: blockTextOfHtml is the offset-space anchor
+// sliceHtmlByText maps against, and its invariant must not change.
+import {
+    sanitizeInlineHtml,
+    sanitizeBlockHtml,
+    BLOCK_TAGS,
+} from '../js/mzta-richtext.js';
 import {
     buildHunkMarkerIcon,
     buildUseAnswerIcon,
@@ -486,66 +497,11 @@ function htmlToFragment(html) {
 // Accepting a reworded sentence takes the answer's bolding with it; rejecting
 // takes the original's. There is no "original words, answer's bold" state.
 
-// Elements that become their own block. Everything else is inline (or is
-// unwrapped by the sanitizer).
-const BLOCK_TAGS = new Set(['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre']);
-
-// The inline allowlist. THIS IS A SECURITY BOUNDARY, not a tidiness pass: the
-// answer is model output on its way into the user's outgoing mail, and the
-// plain-text path this replaces escaped absolutely everything. Anything not
-// listed here is unwrapped (its children survive, the element does not).
-const INLINE_ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'code', 'a', 'br', 'span', 'sub', 'sup']);
-
-// Only http(s) and mailto survive on <a href>. javascript: and data: must not.
-const SAFE_HREF = /^(https?:|mailto:)/i;
-
-// Strip everything but the inline allowlist from a block's inner HTML.
-//
-// Serialization goes back out through innerHTML, which encodes entities
-// correctly for free. Deliberately NOT through a hand-rolled escapeHtml(): on
-// HTML input that would escape the very tags we are trying to keep.
-function sanitizeAgainst(html, allowed) {
-    const doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html');
-    // Walk a static list: unwrapping mutates the tree under a live collection.
-    const els = Array.from(doc.body.querySelectorAll('*'));
-    for (const el of els) {
-        const tag = el.tagName.toLowerCase();
-        if (!allowed.has(tag)) {
-            // Unwrap: keep what the user can read, drop the element itself.
-            // <script>/<style> are unwrapped too, but their children are TEXT
-            // nodes, so the code is neutralized into visible text rather than
-            // being left executable.
-            el.replaceWith(...Array.from(el.childNodes));
-            continue;
-        }
-        for (const attr of Array.from(el.attributes)) {
-            const name = attr.name.toLowerCase();
-            const keep = (tag === 'a' && name === 'href' && SAFE_HREF.test(attr.value.trim()));
-            if (!keep) { el.removeAttribute(attr.name); }
-        }
-    }
-    return doc.body.innerHTML;
-}
-
-export function sanitizeInlineHtml(html) {
-    return sanitizeAgainst(html, INLINE_ALLOWED);
-}
-
-// The same gate, widened to the block tags segmentBlocks() understands.
-//
-// Used on the ANSWER as it arrives from the model, before it is shown: prompts
-// that send HTML to the model get HTML back, and markdown-it (html:false) would
-// escape it into visible &lt;p&gt; text. Sanitizing instead of escaping is what
-// makes that answer usable - but it is model output heading for the user's
-// outgoing mail, so it goes through the same allowlist as everything else.
-//
-// ONE sanitization point, parameterized: a second hand-written copy of this walk
-// would be a second place for the security boundary to drift.
-const BLOCK_ALLOWED = new Set([...INLINE_ALLOWED, ...BLOCK_TAGS, 'ul', 'ol']);
-
-export function sanitizeBlockHtml(html) {
-    return sanitizeAgainst(html, BLOCK_ALLOWED);
-}
+// BLOCK_TAGS, INLINE_ALLOWED, BLOCK_ALLOWED, SAFE_HREF and the sanitizer
+// (sanitize / sanitizeInlineHtml / sanitizeBlockHtml) now live in
+// js/mzta-richtext.js and are imported at the top of this file. BLOCK_TAGS here
+// is still the SEGMENTATION set the code below reads - the shared module keeps
+// it deliberately narrow (no ul/ol/tr/table) for exactly that reason.
 
 // A block's plain text, derived FROM ITS NORMALIZED HTML.
 //

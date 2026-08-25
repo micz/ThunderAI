@@ -91,23 +91,43 @@ cleanup rules*.
 
 | Path | Extraction |
 |---|---|
-| Interactive (menu / popup) — what a user prompt actually hits | `getTextOnly` → `mztaHtmlNodeToLines(getCleanBodyHtml())` (`js/mzta-compose-script.js`), then `cleanupNewlines()` in `js/mzta-menus.js` |
-| Automatic (background) — auto add-tags, spam filter, on-receive | `htmlBodyToPlainText()` (`js/mzta-utils.js`) |
+| Interactive (menu / popup) — what a user prompt actually hits | `getTextOnly` → `mztaHtmlNodeToLines(getCleanBodyHtml())` (`js/mzta-compose-script.js`), then `normalizePlain()` in `js/mzta-menus.js` |
+| Automatic (background) — auto add-tags, spam filter, on-receive | `htmlBodyToPlainText()` = `normalizePlain(htmlToLines(html))` (`js/mzta-utils.js`) |
 
-Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\n`, block elements → a
-trailing `\n`, `<td>`/`<th>` → a space, injected into the DOM **before** the text is read, because
-`textContent` alone drops every block boundary and `innerText` is useless on the detached clone
-`getCleanBodyHtml()` returns. They had the same bug twice precisely because each used to carry its
-own copy — do not re-fork it.
+Both share **one** projection, `js/lib/mzta-html-lines.js`: `<br>`/`<hr>` → `\n`, a paragraph (`<p>`)
+→ `\n\n`, every other block element → a trailing `\n`, `<td>`/`<th>` → a space, injected into the DOM
+**before** the text is read, because `textContent` alone drops every block boundary and `innerText`
+is useless on the detached clone `getCleanBodyHtml()` returns. They had the same bug twice precisely
+because each used to carry its own copy — do not re-fork it.
 
-Both then rely on `cleanupNewlines()`, whose `\n{2,}` → `\n` collapse keeps the output blank-line
-free and lets the injection be blunt without doubling anything: nested blocks and empty Outlook
-spacer paragraphs (`<p class=MsoNormal><o:p>&nbsp;</o:p></p>`) fold away rather than becoming blank
-lines. Widening that rule would change these placeholders, the diff picker's original side and every
-existing comparison at once.
+Both then rely on `normalizePlain()` (default — the old `cleanupNewlines`), whose `\n{2,}` → `\n`
+collapse keeps the output blank-line free and lets the projection be blunt without doubling anything:
+the `\n\n` a `<p>` produced, nested blocks, and empty Outlook spacer paragraphs
+(`<p class=MsoNormal><o:p>&nbsp;</o:p></p>`) all fold away rather than becoming blank lines. The
+paragraph tier (`\n\n`) exists for the *insertion* side, which uses `normalizePlain(..., {
+keepParagraphs })` to keep the blank line; on the body-extraction side the default collapse removes
+it, so the contract is unchanged. Widening the collapse rule would change these placeholders, the diff
+picker's original side and every existing comparison at once.
+
+**The collapse invariant:** every projection consumer that feeds `{%mail_text_body%}` MUST route
+through `normalizePlain()` default. The `<p>` → `\n\n` tier means a consumer that skips it would emit
+doubled lines.
 
 Full rationale in [01-architecture.md](01-architecture.md) → *Which path actually feeds
 `{%mail_text_body%}`*.
+
+### Selection twins (`selected_text` / `selected_html`)
+
+`selected_text` and `selected_html` are derived from **one** normalization in `js/mzta-menus.js`
+(`selectionTwin()`), not two independent calls, so the pair AGREES — the diff picker's original side
+depends on it (see [07-diff-picker.md](07-diff-picker.md)). The shared `hasLineStructure()` decides:
+a fragment carrying its own tags is trusted (its markup kept, the text twin read back out of the same
+fragment with `htmlToLines()`); a structure-less plain-text selection has its text taken from the
+`\n` and its html rebuilt with `linesToHtml(..., { mode: 'br' })`. A range cutting mid-`<b>` yields an
+unbalanced fragment that `DOMParser` auto-closes, so no half-open tag leaks into either twin. The
+autoselect fallback is preserved: with no selection and a prompt that uses `{%mail_typed_text%}`,
+`selection_text` falls back to `only_typed_text` (paragraph-preserving) and its `only_typed_html`
+twin.
 
 **This contract does not extend to `{%mail_plain_text_part%}`**, which is a third case with the
 opposite whitespace rule — see the next section before assuming the three behave alike.

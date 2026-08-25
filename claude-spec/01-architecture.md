@@ -422,94 +422,62 @@ markdown-it is instantiated **once for the module** (`getMarkdownIt()`, lazily, 
 once per `\n` of every response — which was most of what made streaming feel slow. The options are
 invariant and `render()` keeps no state between calls, so one shared instance is equivalent.
 
-`flush()` runs markdown-it with **`html: false`** (the default) — raw HTML in the model output is
-escaped, never rendered, so the model can't inject markup into the extension UI — and with
-**`breaks: true`**, which is deliberate: this is a mail composer, so a newline the model wrote is a
-newline the user expects, and a single `\n` inside a paragraph must render as a real `<br>`.
+### One render path, no router
 
-> This describes the **markdown path**, which is the default and covers every prompt that sends plain
-> text. A response that is itself HTML skips markdown-it entirely and is sanitized instead — see
-> *When the answer is HTML* below. The protection is not dropped there, it changes hands: from
-> escaping to an allowlist.
+Every answer goes through **one** path (`renderResponse()` in `streamingMessage.js`):
 
-`html: false` means a literal `<br>` echoed by the model would otherwise surface as visible
-`&lt;br&gt;` text. `normalizeEchoedBrTags()` (`api_webchat/streamingMessage.js`) rewrites them to
-newlines before the render, per **run** rather than per tag:
+```
+renderResponse(raw) = sanitize(markdownit({ html: true, breaks: true }).render(raw), { allowBlocks: true })
+```
 
-| echoed | becomes | renders as |
-|---|---|---|
-| one `<br>` | `\n` | a line break (`<br>`, via `breaks: true`) |
-| two or more `<br>` | `\n\n` | exactly one blank line, whether the model wrote 2 or 8 |
+markdown IS a superset that admits inline and block HTML (CommonMark), so there is no
+markdown-vs-HTML decision to make — the old router (`looksLikeHtmlResponse()`, the sticky
+`_isHtmlResponse` verdict, the `null`/undecided state, `normalizeEchoedBrTags()`, the two render
+branches, `BLOCK_TAG`/`LEAD_IN*` machinery) is **gone**.
 
-Deciding the run→break mapping explicitly is what makes the vertical space deterministic; it used to
-fall out of markdown-it collapsing consecutive blank lines. Fenced code blocks and inline code spans
-are masked out before the rewrite and restored after, so a `<br>` the user is asking *about* stays in
-the code block as escaped text.
+- **`breaks: true`** keeps the model's `\n` as a real `<br>` — this is a mail composer, not a
+  markdown document, so a newline the model wrote is a newline the user expects, in the chat AND in
+  the inserted mail (`fullTextHTML`).
+- **`html: true`** lets inline HTML (`<b>`) render instead of being escaped. This is the hybrid fix:
+  `Ciao <b>Mario</b>\ngrazie` → `<p>Ciao <b>Mario</b><br>grazie</p>` — bold rendered AND the line
+  break kept. The old router forced such an answer down one pure branch (escape the tags) or the
+  other (drop the `\n`), each losing half of it.
+- **`html: true` disables markdown-it's escaping**, so its output is now UNTRUSTED model HTML on its
+  way into outgoing mail. It MUST cross `sanitize(..., { allowBlocks: true })` — the ONE allowlist
+  walk in `js/mzta-richtext.js`, the same one the diff picker uses. No second copy.
+- **Code fences still show markup as text**: markdown-it escapes HTML inside code blocks regardless
+  of `html: true`, so "how do I center a `<div>`?" is unaffected.
+- **`BLOCK_ALLOWED` is a superset of everything markdown-it emits** — it was widened with the table
+  family and `hr` so a markdown table or rule does not get unwrapped. `img` stays stripped.
 
-### When the answer is HTML, markdown-it is bypassed
+### Streaming: re-render the whole accumulated raw each time
 
-Some prompts deliberately send **HTML** to the model (`{%selected_html%}`,
-`{%mail_html_body_or_selected%}` — see [02-prompts.md](02-prompts.md)). The model then answers in
-HTML, and `html: false` would escape the whole reply into visible `&lt;p&gt;` text. That is exactly
-what happened before this path existed.
+A flush routinely lands mid-tag (`<p>Distinti sal`) or mid-inline-tag (`<b>Mar` | `io</b>`), so
+segments cannot be rendered and appended independently — the WHOLE accumulated raw text is
+re-rendered on each flush and the result REPLACES `_fullTextHTML` (`cumulative: true`). Re-parsing
+the whole raw text, not concatenating per-segment output, is what keeps every element — and every
+raw tag split across a segment boundary — whole. To keep that O(n) re-render from becoming O(n²)
+over a response it is coalesced to roughly every `HTML_RENDER_CHUNK` (2 KB) of new text, plus always
+on the final flush; between renders (`deferred: true`) the live token spans `messagesArea` appends
+show the text arriving. This is the mechanism the old HTML-answer branch already used and proved
+correct; it is now the only path.
 
-`flush()` therefore decides, **once per response**, which shape it is handling:
+The `<think>` handling is unchanged: the unterminated-`<think>` guard still defers mid-stream, and
+`stripThinkTags()` still separates reasoning from the answer. Worker and inline thinking accumulate
+into **running totals** (never drained), so each cumulative render hands back the whole reasoning and
+`messagesArea` rebuilds the thinking block with it — a per-flush drain would blank the reasoning on
+the second render of a thinking-then-long answer.
 
-- `looksLikeHtmlResponse()` tests for a **lead-in followed by a block tag** (`p`, `div`, `ul`, `ol`,
-  `li`, `h1`–`h6`, `blockquote`, `pre`, `table`, `tr`, `td`, `th`, `tbody`, `thead`), or for an
-  orphan *closing* block tag (a reply that opens `Distinti saluti.</p>`).
-- The **lead-in is what makes the test robust**, and it exists because of a real failure: the same
-  prompt run twice produced `<li>…` once (rendered) and `<br><li>…` the next time (every tag
-  escaped). The earlier version anchored the block tag at the very start of the response, so one
-  echoed `<br>` — a token that says nothing about the reply's shape — flipped the whole answer to
-  the markdown path. Tolerated in the lead-in: whitespace, `<br>` runs, comments, a doctype/XML
-  prolog, and a *short* prose prefix ("Ecco il testo: `<p>`…").
-- The prose prefix is bounded to keep the test honest: no `<`, no newline (it must sit on the
-  response's first line), no markdown syntax character, max 40 chars. That is what stops
-  `**Nota:** <p>` or a markdown answer whose *second* paragraph opens with a tag from being swept in.
-- **Code regions are masked first**, the same masking `normalizeEchoedBrTags()` uses. An answer whose
-  subject *is* HTML ("how do I center a `<div>`?") must stay on the markdown path so the markup shows
-  as text in a code block instead of being sanitized into a real element.
-- The decision is **sticky** (`_isHtmlResponse`). Segments break on `\n`, so a later segment of an
-  HTML answer can easily begin with a bare text node that looks like markdown; re-deciding per
-  segment would render one answer half each way.
-- The test may also return **null — "not enough evidence yet"**. A response that has so far produced
-  only lead-in (a lone `<br>`) is *undecided*: the text is held back rather than committed to either
-  path, and the next segment decides with both segments judged together. Without this, `<br>\n<li>…`
-  would reintroduce the original bug one segment later, since a flush fires on every `\n`. The last
-  flush of a response (`flush(final = true)`, from `handleTokensDone`) forces the verdict to markdown
-  so a lead-in-only reply is never left unrendered.
+**Historical note — the removed router.** `flush()` used to decide, once per response, whether the
+answer was HTML:
 
-On the HTML path the reply goes through **`sanitizeBlockHtml()`** (`api_webchat/diffPicker.js`)
-instead of markdown-it. Running both would be wrong in either order. `normalizeEchoedBrTags()` is
-skipped too — there is no markdown-it to protect the `<br>` from.
-
-**The sanitizer is the security boundary that `html: false` used to be.** It is the same allowlist
-walk the diff picker uses, parameterized by tag set (`sanitizeAgainst`), so there is exactly one
-sanitization point: `sanitizeInlineHtml()` for inline content, `sanitizeBlockHtml()` for a whole
-answer. Anything not on the list is unwrapped, every attribute is dropped except a `http(s):`/
-`mailto:` `href` on `<a>`.
-
-**Cumulative rendering.** On this path each flush re-sanitizes the *whole response so far* and
-`html` is the whole answer, not the segment — flagged to the caller as `cumulative: true`. Segments
-break wherever the model wrapped a line, frequently *inside* an element; sanitizing `<ul><li>a` alone
-would make `DOMParser` close the tags and leave the next segment a stray closer. `MessagesArea`
-answers by **reusing** the accumulating element rather than retiring it after the flush, and clears
-it in `handleTokensDone()` so the next response opens its own.
-
-**Coalesced, not per line.** Because each render redoes the whole response, doing it on every `\n`
-is O(n²) over a response — and `MessagesArea` then re-parses that whole string with `DOMParser` and
-rebuilds the element's children. The HTML path therefore re-sanitizes only once roughly every
-`HTML_RENDER_CHUNK` (2 KB) of new text, plus always on the final flush. In between, `flush()` returns
-`deferred: true`: the text is already accumulated, but the caller must **leave the element's DOM
-untouched** — clearing it for an empty `html` would blank the answer between renders. Unlike the
-undecided branch, `thinkingText` is **not** handed over on this path: it is returned empty and any
-thinking is put back into `_thinkingAccumulator`, because the caller returns early on `deferred` and
-would discard a returned value. The next non-deferred flush renders it with the HTML; until then the
-caller keeps the live "Thinking..." indicator on screen. What keeps the answer
-visibly streaming meanwhile is the live token spans `handleNewToken()` appends, the same mechanism
-the undecided and unterminated-`<think>` branches rely on. The finished answer is unchanged: the
-last flush is always `final` and always renders everything, before `addActionButtons()` snapshots it.
+a lead-in followed by a block tag (`looksLikeHtmlResponse()`) routed the reply to
+`sanitizeBlockHtml()` instead of markdown-it; a bounded prose prefix, code masking, a **sticky**
+`_isHtmlResponse` verdict and a `null` "not enough evidence yet" state made the test robust across the
+per-`\n` flushes. All of that machinery — and `normalizeEchoedBrTags()`, which existed only to keep
+markdown-it (`html: false`) from escaping echoed `<br>` runs — is deleted. With `html: true` a `<br>`
+is simply a `<br>`, and there is no path to route to. The one piece the HTML branch already had right
+and that survives verbatim is the **cumulative, coalesced re-render** described above.
 
 Two consequences of coalescing, both handled explicitly:
 
@@ -522,9 +490,8 @@ Two consequences of coalescing, both handled explicitly:
 - **The abort path must discard the streaming state.** `appendBotMessage()` (the `'error'` path,
   the one exit that reaches no final flush) nulls `_streaming` and `accumulatingMessageEl`, the
   way `handleTokensDone()` does normally. Otherwise the interrupted `StreamingMessage` would keep
-  its accumulated `_htmlRawText`, its non-zero `_htmlPendingChars` and its **sticky**
-  `_isHtmlResponse` verdict, and the next answer streaming into the same element would be
-  rendered as a continuation of the failed one.
+  its accumulated `_htmlRawText` and its non-zero `_htmlPendingChars`, and the next answer streaming
+  into the same element would be rendered as a continuation of the failed one.
 
 **There is no newline→`<br>` post-pass over the rendered DOM.** With `breaks: true` every break is
 already a real `<br>` element in the HTML — and therefore in `fullTextHTML`, the snapshot the
@@ -542,10 +509,10 @@ so the prompt no longer carries a `<br>` at every source newline for the model t
 In a plain text compose window there are no tags — the line breaks *are* the `\n` characters — so
 collapsing them to spaces leaves the entire body as one run-together line, which then reaches both
 the model and the diff picker. `getMailBody()` in `js/mzta-menus.js` therefore checks the shape of
-what the content script returned (`htmlHasLineStructure()`): a value holding a block tag or a `<br>`
-is normalized as before, and a value holding neither is rebuilt from its **text** twin with
-`convertNewlinesToBr()`. Same rule `getMailBody()` in `js/mzta-utils.js` already applies to a
-text/plain-only mail, whose html is `text.replace(/\n/g, "<br>")`.
+what the content script returned (the shared `hasLineStructure()`): a value holding a block tag or a
+`<br>` is normalized as before, and a value holding neither is rebuilt from its **text** twin with
+`linesToHtml(..., { mode: 'br' })`. Same rule `getMailBody()` in `js/mzta-utils.js` already applies
+to a text/plain-only mail, whose html is synthesized with the same `linesToHtml`.
 
 `normalizeHtmlSourceNewlines()` keeps its current behaviour deliberately — the decision belongs at
 the call site, where the source's shape is known, not inside a helper every HTML consumer shares.
@@ -683,29 +650,44 @@ The projection emits **one** `\n` per boundary, deliberately *not* the `\n\n` th
 `MZTA_BLOCK_LEVEL_RE` earns in the typed/quoted walkers: it feeds `{%mail_text_body%}`, whose
 contract is one line per block and no blank lines.
 
-#### `js/lib/mzta-html-lines.js` — one projection, two loaders
+#### The rich-text layer — `js/lib/mzta-html-lines.js` (classic) + `js/mzta-richtext.js` (module)
 
-The interactive and the automatic path had the *same* bug because each carried its own hand-copied
-twin of the projection, block-tag list included. It now lives in one file, and the two callers are
-`mztaInjectLineBreaks(root)` (in place, for a node the caller already owns) and
-`mztaHtmlNodeToLines(root)` (clones first, returns the text).
+The add-on used to hand-reimplement the same handful of HTML↔text conversions in ~9 places with
+divergent block-tag lists. They now live in **one** layer, split across two files by the
+classic-script constraint:
 
-The file is a **classic script sharing globals**, not an ES module, because
-`js/mzta-compose-script.js` is loaded by `composeScripts.register` /
-`messageDisplayScripts.register` / `tabs.executeScript` — none of which give it module context, so it
-cannot `import`. It is therefore loaded twice over:
+- **`js/lib/mzta-html-lines.js`** — a **classic script sharing globals**, hosting the DOM
+  **projection** and the plain-text **normalizer** / **converters**:
+  `mztaInjectLineBreaks(node)` / `mztaHtmlNodeToLines(node)` (the projection), `mztaHtmlToLines(str)`
+  (string entry point), `mztaNormalizePlain(text, {keepParagraphs, keepColumns})`,
+  `mztaLinesToHtml(text, {mode})`, and the one heuristic `mztaHasLineStructure(html)`. The projection
+  is **two-tier**: a `<p>` boundary becomes a blank line (`\n\n`), every other block boundary and
+  `<br>`/`<hr>` a single `\n`, table cells a space — and `mztaNormalizePlain` picks the outcome
+  (default collapses `\n{2,}` for the body contract, `{keepParagraphs}` caps at `\n\n` for insertion,
+  `{keepColumns}` is verbatim for `{%mail_plain_text_part%}`).
+- **`js/mzta-richtext.js`** — an **ES module** hosting the ONE **sanitizer** + **tag taxonomy** (see
+  the render section above and [07-diff-picker.md](07-diff-picker.md)), plus **`globalThis`
+  re-exports** of the projection above (`htmlToLines`/`linesToHtml`/`normalizePlain`/
+  `hasLineStructure`) so module-world callers get a clean `import`. The re-exports resolve the global
+  at CALL time, so the module loads fine even where the classic script is absent as long as they are
+  not called there.
+
+The classic file is a classic script — not an ES module — because `js/mzta-compose-script.js` is
+loaded by `composeScripts.register` / `messageDisplayScripts.register` / `tabs.executeScript`, none
+of which give it module context, so it cannot `import`. It is loaded on **four** surfaces:
 
 - **content script** — listed *before* `mzta-compose-script.js` in all **three** registration sites
   (`mzta-background.js`); the array order is the load order. A new injection site must list it too.
 - **background** — a plain `<script>` in `mzta-background.html`, ahead of the `type="module"` entry
-  point, exactly as `markdown-it.min.js` already is. `js/mzta-utils.js` reaches it through
-  `globalThis`.
+  point, exactly as `markdown-it.min.js`. `js/mzta-utils.js` reaches it through `globalThis`.
+- **webchat** — a plain `<script>` in `api_webchat/index.html`, ahead of the module scripts, because
+  `js/mzta-utils.js` (imported there for `convertNewlinesToBr`, now a `globalThis` shim) needs it.
 
-Safe because `htmlBodyToPlainText()` only ever runs in the background: its callers are
-`mzta-background.js` and `js/mzta-utils-prompt.js`, the latter reached only via `js/mzta-menus.js`,
-and `mzta-background.html` is the only HTML that loads `js/mzta-utils.js`. A settings or popup page
-that starts importing it would need the `<script>` tag too. Same shape as `js/lib/diff.js`, the
-add-on's other classic script shared through a global.
+`js/mzta-utils.js`'s conversion helpers (`htmlBodyToPlainText`, `stripHtmlKeepLines`, `cleanupNewlines`
+/ `cleanupNewlinesKeepParagraphs` / `normalizePlainTextPart`, `convertNewlinesToBr` /
+`convertNewlinesToParagraphs`) are now thin shims that delegate to the classic globals — one source of
+truth, reached anywhere the classic script is loaded. A settings or popup page that starts calling one
+of them would need the `<script>` tag too. Same shape as `js/lib/diff.js`.
 
 **`{%mail_typed_text%}` / `{%mail_quoted_text%}` are untouched by all of this.** Their walkers read
 `window.document.body.childNodes` **directly**, not the clone (which is the known gap recorded
