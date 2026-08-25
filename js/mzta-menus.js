@@ -423,9 +423,10 @@ export class mzta_Menus {
                         *  {
                         *   "startDate": "20250104T183000Z",
                         *   "endDate": "20250104T193000Z",
-                        *   "summary": "ThunderAI Sparks",
+                        *   "description": "Detailed event description including agenda, action items, and relevant notes from the email.",
                         *   "forceAllDay": false,
-                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]"
+                        *   "location": "YourLocation",
+                        *   "attendees": [attendee1@example.com,attendee2@example.com,attendee3@example.com]
                         *  } 
                         */
                         fullPrompt = taPromptUtils.finalizePrompt_get_calendar_event(fullPrompt);
@@ -511,7 +512,9 @@ export class mzta_Menus {
                         *  {
                         *   "InitialDate": "YYYYMMDDTHHMMSS",
                         *   "dueDate": "YYYYMMDDTHHMMSS",
-                        *   "summary": "Task summary here"
+                        *   "summary": "Task summary here",
+                        *   "description": "Detailed task description including action items, and relevant notes from the email.",
+                        *   "location": "YourLocation"
                         *  } 
                         */
                         this.logger.log("fullPrompt: " + fullPrompt);
