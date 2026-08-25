@@ -23,7 +23,7 @@ import {
 
 import { customMenuIconsPath } from '../pages/menu_order/mzta-custom-menu-icons.js'
 
-const sparks_min = '1.2.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
+const sparks_min = '3.0.0'; // Minimum version of ThunderAI-Sparks required for the add-on to work
 const MICZ_IT_LOCALIZED_LANGS = ['es', 'de', 'fr', 'it'];
 
 export const getMenuContextCompose = () => 'compose_action_menu';
