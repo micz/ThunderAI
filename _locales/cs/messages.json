@@ -914,7 +914,7 @@
     "prefs_OptionText_add_tags_auto_Info2": {
         "message": "Vyberte účet, pro který chcete aktivovat tuto funkci, dole na této stránce."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Tento zástupný symbol nepřidává žádný text, ale zabraňuje automatickému přidání těla emailu na konec výzvy."
     },
     "ask_anthropic_api_permission_1": {

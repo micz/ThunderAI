@@ -812,7 +812,7 @@
     "placeholder_thunderai_def_lang": {
         "message": "Язык по умолчанию, определенный в опциях ThunderAI."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Эта вставка не добавляет никакого текста, но предотвращает автоматическое добавление тела письма в конец запроса."
     },
     "prefs_OptionText_spamfilter": {

@@ -990,7 +990,7 @@
     "prefs_OptionText_max_prompt_length_Info": {
         "message": "這是提示中可以使用的最大字元數。否則，將顯示錯誤訊息。此值在 ChatGPT 網頁介面中不可編輯。將其設為零可停用檢查。"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "此佔位符不會加入任何文本，但它可以防止電子郵件本文自動附加在提示的末尾。"
     },
     "prefs_OptionText_placeholders_use_default_value_info": {

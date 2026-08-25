@@ -1038,7 +1038,7 @@
     "placeholder_thunderai_def_sign": {
         "message": "Standardsignatur som definierad i ThunderAI-alternativ."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Den här platshållaren lägger inte till någon text, men den förhindrar att e-postmeddelandets brödtext läggs till automatiskt i slutet av prompten."
     },
     "prefs_OptionText_spamfilter_threshold": {

@@ -918,7 +918,7 @@
     "prefs_OptionText_chatgpt_web_project": {
         "message": "ChatGPT-Webprojekt"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Dieser Platzhalter fügt keinen Text hinzu, verhindert jedoch, dass der E-Mail-Text automatisch am Ende des Prompts angehängt wird."
     },
     "OpenChatGPTTab_Info2": {

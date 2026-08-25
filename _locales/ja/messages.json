@@ -1054,7 +1054,7 @@
     "placeholder_mail_attachments_info": {
         "message": "メール内の添付ファイルに関する情報"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "このプレースホルダーはテキストを追加しませんが、メール本文がプロンプトの最後に自動的に追加されるのを防ぎます。"
     },
     "prefs_OptionText_spamfilter": {

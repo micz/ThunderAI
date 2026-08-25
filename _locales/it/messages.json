@@ -1119,7 +1119,7 @@
     "prefs_OptionText_add_tags_auto_Info2": {
         "message": "Scegli per quale account attivare questa funzionalità in fondo a questa pagina."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Questo segnaposto non aggiunge testo, ma impedisce che il corpo dell'email venga automaticamente aggiunto alla fine del prompt."
     },
     "prompt_get_task": {

@@ -828,7 +828,7 @@
     "customPrompts_form_label_use_diff_viewer_title": {
         "message": "Dostępne, gdy \"Akcja\" to \"Tekst zastępczy\"."
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Ten tekst zastępczy nie dodaje żadnego tekstu, tylko zapobiega przed automatycznym wstawianiem treści emaila na końcu polecenia."
     },
     "prefs_OptionText_calendar_enforce_timezone_Info": {

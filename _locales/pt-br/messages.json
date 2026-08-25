@@ -1058,7 +1058,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Informações sobre os anexos no e-mail"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Este espaço reservado não adiciona nenhum texto, mas impede que o corpo do e-mail seja anexado automaticamente ao final do prompt."
     },
     "prefs_OptionText_spamfilter": {

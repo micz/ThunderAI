@@ -1417,7 +1417,7 @@
     "message": "Information about the attachments in the email",
     "description": ""
   },
-  "empty": {
+  "placeholder_empty": {
     "message": "This placeholder doesn't add any text, but it prevents the email body from being automatically appended at the end of the prompt.",
     "description": ""
   },

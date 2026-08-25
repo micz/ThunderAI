@@ -842,7 +842,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Información sobre los archivos adjuntos en el correo electrónico"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Este marcador de posición no añade texto, pero evita que el cuerpo del correo se añada automáticamente al final del prompt."
     },
     "prefs_OptionText_spamfilter": {

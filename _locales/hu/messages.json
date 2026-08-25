@@ -973,7 +973,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Információk az e-mailben található mellékletekről"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Ez a helyőrző nem ad hozzá szöveget, de megakadályozza, hogy a levéltörzs automatikusan a prompt végére legyen fűzve."
     },
     "prefs_OptionText_spamfilter": {

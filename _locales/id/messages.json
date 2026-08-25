@@ -976,7 +976,7 @@
     "placeholder_mail_attachments_info": {
         "message": "Informasi tentang lampiran dalam email"
     },
-    "empty": {
+    "placeholder_empty": {
         "message": "Placeholder ini tidak menambahkan teks apa pun, tetapi mencegah isi email ditambahkan secara otomatis di akhir prompt."
     },
     "prefs_OptionText_spamfilter": {
