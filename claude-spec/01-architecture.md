@@ -820,6 +820,17 @@ Two invariants in `MessagesArea`, both easy to break:
   created, so it stays bound to that answer's own text rather than to whatever is on screen
   later.
 
+**Self-closing `chatgpt_close` must be fire-and-forget.** Every button that finishes an
+action (reply / replace / save-summary / plain close) ends by sending
+`{command: "chatgpt_close", window_id}` to close *its own* window. `runtime.sendMessage`
+returns a promise awaiting the background reply, but the command destroys the very context
+waiting for it, so the promise rejects with `Actor 'Conduits' destroyed before query
+'RuntimeMessage' was resolved`. These calls are therefore left un-awaited **and** carry a
+`.catch(() => {})` to swallow that expected rejection — the preceding action call (e.g.
+`chatgpt_replyMessage`, `chatgpt_replaceSelectedText`) is still `await`ed because its reply
+is needed before the window goes away. Same pattern in `js/mzta-chatgpt.js` (the legacy
+fixed-div buttons).
+
 ### Scrolling (prompt-anchored following)
 
 **Exactly one box scrolls: `#messages`** inside the `<messages-area>` shadow root. The host is
