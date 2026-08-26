@@ -2027,6 +2027,22 @@
     "message": "Claude API request failed",
     "description": ""
   },
+  "anthropic_err_hint_temperature": {
+    "message": "The selected Claude model ($MODEL$) does not accept the Temperature setting. Clear the Temperature field, or use the Effort setting instead.",
+    "description": ""
+  },
+  "anthropic_err_hint_budget_tokens": {
+    "message": "The selected Claude model ($MODEL$) does not accept a manual extended thinking budget. Set the Extended thinking budget to 0 and use the Effort setting instead.",
+    "description": ""
+  },
+  "anthropic_err_hint_thinking_type": {
+    "message": "The selected Claude model ($MODEL$) does not accept this thinking configuration. Check the Extended thinking budget and Effort settings.",
+    "description": ""
+  },
+  "anthropic_err_hint_effort": {
+    "message": "The selected Claude model ($MODEL$) does not accept this Effort level. Choose a different level in the options page.",
+    "description": ""
+  },
   "_api_connecting": {
     "message": "Attempting to connect to $api_string$ using the following configuration...",
     "description": "",

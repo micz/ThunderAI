@@ -20,7 +20,10 @@
  *  The original code has been released under the Apache License, Version 2.0.
  */
 
-import { Anthropic } from '../api/anthropic.js';
+import {
+    Anthropic,
+    describeAnthropicError
+} from '../api/anthropic.js';
 import { taLogger } from '../mzta-logger.js';
 
 let anthropic = null;
@@ -68,6 +71,12 @@ self.onmessage = async function(event) {
                     const errorJSON = await response.json();
                     errorDetail = JSON.stringify(errorJSON);
                     error_message = errorJSON.error.message;
+                    if(response.status === 400){
+                        // A 400 naming a request parameter usually means the
+                        // selected model rejects an option the user configured;
+                        // say which one instead of only echoing the raw detail.
+                        error_message = describeAnthropicError(error_message, anthropic ? anthropic.model : '', i18nStrings);
+                    }
                 }catch(e){
                     error_message = response.statusText;
                 }
