@@ -666,19 +666,6 @@ export async function injectConnectionUI({
       </label>
     </td>
   </tr>
-  <tr class="conntype_anthropic_api${tr_class ? ` ${tr_class}` : ''}">
-    <td>
-      <label>
-        <span class="opt_title">__MSG_Anthropic_Version__</span>
-      </label>
-    </td>
-    <td>
-      <label>
-        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" class="option-input" />
-        <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
-      </label>
-    </td>
-  </tr>
   <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
     <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_max_tokens__</span></td>
     <td>
@@ -705,6 +692,19 @@ export async function injectConnectionUI({
         <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" class="option-input"></select>
         <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_effort_unsupported__</span>
         <br>__MSG_prefs_OptionText_anthropic_effort_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td>
+      <label>
+        <span class="opt_title">__MSG_Anthropic_Version__</span>
+      </label>
+    </td>
+    <td>
+      <label>
+        <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_version" class="option-input" />
+        <br>__MSG_Anthropic_Version_Info__ <a href="https://docs.anthropic.com/en/api/versioning">https://docs.anthropic.com/en/api/versioning</a>
       </label>
     </td>
   </tr>
