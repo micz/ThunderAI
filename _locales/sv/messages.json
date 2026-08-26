@@ -1937,5 +1937,17 @@
     },
     "apiwebchat_copy": {
         "message": "Kopiera"
+    },
+    "prefs_OptionText_diff_granularity_words": {
+        "message": "Ord"
+    },
+    "prefs_OptionText_diff_granularity_sentences": {
+        "message": "Meningar"
+    },
+    "prefs_extra_body_error_invalid": {
+        "message": "Ogiltig JSON:"
+    },
+    "prefs_extra_body_error_not_object": {
+        "message": "Värdet måste vara ett JSON-objekt, omgivet av klammerparenteser."
     }
 }
