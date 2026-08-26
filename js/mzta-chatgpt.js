@@ -224,7 +224,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
         case "0":     // close window
             btn_ok.textContent = browser.i18n.getMessage("chatgpt_win_close");
             btn_ok.onclick = async function() {
-                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             };
             fixedDiv.appendChild(btn_ok);
             break;
@@ -253,7 +253,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 const currentReplyType = btn_ok.getAttribute('data-reply-type');
                 // console.log(">>>>>>>>>> btn_ok reply type: " + JSON.stringify(currentReplyType));
                 await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: response, tabId: tabId, mailMessageId: mailMessageId, replyType: currentReplyType});
-                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             });
             btn_ok.classList.add('mzta-btn_reply');
             // change reply type button
@@ -297,7 +297,7 @@ function addCustomDiv(prompt_action,tabId,mailMessageId) {
                 const response = getSelectedHtml();
                 //console.log('replace text: '+tabId)
                 await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: response, tabId: tabId, mailMessageId: mailMessageId});
-                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId});
+                browser.runtime.sendMessage({command: "chatgpt_close", window_id: mztaWinId}).catch(() => {});
             };
             fixedDiv.appendChild(btn_ok);
             break;

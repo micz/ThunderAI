@@ -270,7 +270,9 @@ export async function getMailBody(fullMessage, messageId) {
     }
   }
   if(html === "") {
-    html = text.replace(/\n/g, "<br>");
+    // No text/html part: synthesize it from the text/plain part, whose breaks are
+    // \n. The ONE text->html converter, shared with every other newline->br site.
+    html = globalThis.mztaLinesToHtml(text, { mode: 'br' });
   } else {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -303,18 +305,6 @@ export async function isPlainTextCompose(tabId){
 // Writing `body` there makes Thunderbird convert the HTML down to text, which
 // collapses every bare \n as HTML whitespace and loses the line structure —
 // so each of the helpers below has to pick the field that matches the window.
-export async function reloadBody(tabId){
-  let composeDetails = await messenger.compose.getComposeDetails(tabId);
-  if(composeDetails.isPlainText){
-    // The trailing space is what makes the value differ from the current one,
-    // which is what forces the editor to re-read it.
-    await messenger.compose.setComposeDetails(tabId, {plainTextBody: composeDetails.plainTextBody + " "});
-    return;
-  }
-  let originalHtmlBody = composeDetails.body + " ";
-  await messenger.compose.setComposeDetails(tabId, {body: originalHtmlBody});
-}
-
 export async function getOriginalBody(tabId){
   let composeDetails = await messenger.compose.getComposeDetails(tabId);
   if(composeDetails.isPlainText){
@@ -386,18 +376,22 @@ export function sanitizeMailHeaders(input){
 // is almost always just pretty-printing next to a tag that already means a
 // break. Counting both would double every line — a single <br> would come out
 // as a blank line and be indistinguishable from a paragraph break.
+// HTML -> plain text for INSERTION into a plain-text compose window. The line
+// structure is carried by the tags, and a paragraph (<p>) becomes a blank line
+// while every other block boundary and <br> becomes a single \n - exactly the
+// shape the diff picker's <p>/<li> output and the markdown renderer's
+// "<p>...<br>...</p>" both need.
+//
+// This used to be a hand-rolled regex tuned for that output. It now goes through
+// the ONE DOM projection (mztaHtmlToLines) + the ONE normalizer
+// (mztaNormalizePlain, keepParagraphs) shared with extraction, so the insertion
+// and extraction sides can no longer drift. Reached through globalThis because
+// the projection lives in the classic js/lib/mzta-html-lines.js.
 export function stripHtmlKeepLines(htmlString) {
-  return htmlString
-    .replace(/\r\n/g, '\n')
-    .replace(/<br\s*\/?>[ \t]*\n?/gi, '\n')  // <br> IS the break: eat the source newline after it
-    .replace(/&lt;br\s*\/?&gt;[ \t]*\n?/gi, '\n') // literal <br> that survived HTML escaping
-    .replace(/\n?[ \t]*<p>/gi, '')           // removes <p> tags
-    .replace(/<\/p>[ \t]*\n?/gi, '\n\n')     // a paragraph boundary is a blank line
-    .replace(/<\/(li|tr|div|h[1-6]|blockquote)>[ \t]*\n?/gi, '\n')  // one block = one line
-    .replace(/\n?[ \t]*<(li|tr|div|h[1-6]|blockquote)[^>]*>/gi, '\n')
-    .replace(/<[^>]*>[ \t]*\n?/g, '')        // removes any other HTML tag (and its trailing newline)
-    .replace(/\n{3,}/g, '\n\n')              // never more than one blank line
-    .trim();                                 // removes leading/trailing whitespace
+  return globalThis.mztaNormalizePlain(
+    globalThis.mztaHtmlToLines(htmlString),
+    { keepParagraphs: true }
+  );
 }
 export function htmlBodyToPlainText(htmlString) {
 	// Create a new DOMParser instance
@@ -432,16 +426,16 @@ export function htmlBodyToPlainText(htmlString) {
   // Extract text content
   const textContent = doc.body.textContent || "";
 	// Every mail body - HTML branch or plain-text fallback - is tidied by the same
-	// cleanupNewlines(). This used to be a hand-copied twin of it that DELETED &nbsp;
-	// instead of spacing it, welding words together; delegating makes the two
-	// impossible to diverge again.
+	// normalizer (mztaNormalizePlain default = the old cleanupNewlines), so the
+	// {%mail_text_body%} contract "one \n per block, never a blank line" holds: the
+	// \n\n a <p> produced folds away under the \n{2,} -> \n collapse.
 	//
 	// Known gap: <pre> keeps its line breaks but not its internal indentation or
-	// blank lines - cleanupNewlines()'s [ \t]+ and \n{2,} rules run over the whole
-	// string. Preserving it verbatim would need a sentinel/restore pass around that
-	// chain, new machinery and a new collision failure mode for an element that is
-	// rare in mail.
-	return cleanupNewlines(textContent);
+	// blank lines - the [ \t]+ and \n{2,} rules run over the whole string.
+	// Preserving it verbatim would need a sentinel/restore pass around that chain,
+	// new machinery and a new collision failure mode for an element that is rare in
+	// mail.
+	return globalThis.mztaNormalizePlain(textContent);
 }
 
 export function removeMozMainHeader(root) {
@@ -456,72 +450,29 @@ export function removeMozMainHeader(root) {
   }
 }
 
-// A non-breaking space IS a space, so BOTH spellings become one: the entity, and
-// the literal U+00A0 that DOMParser hands back once it has decoded &nbsp; in an
-// HTML body. The literal is the one that actually shows up on the HTML path - the
-// entity form only survives in text that never went through a parser - and it used
-// to reach the prompt untouched, an invisible character no whitespace rule here
-// could collapse. Dropping either instead of spacing it would weld the surrounding
-// words together ("Ciao&nbsp;Mario" -> "CiaoMario").
+// The plain-text normalizer now lives ONCE, in the classic js/lib/mzta-html-lines.js
+// (mztaNormalizePlain), shared by extraction, insertion and the compose scrape so
+// they can no longer drift. These three keep their names as thin shims over it:
 //
-// Both are converted BEFORE the whitespace rules below, so the spaces they produce
-// get collapsed by [ \t]+ and trimmed at end of line like any other; converting
-// them afterwards, as this did, leaves them uncollapsed.
+//   cleanupNewlines             default      \n{2,} -> \n  (body contract: one \n
+//                                            per block, never a blank line)
+//   cleanupNewlinesKeepParagraphs {keepParagraphs} \n{3,} -> \n\n  (a single blank
+//                                            line survives: compose extractions
+//                                            {%mail_typed_text%}/{%mail_quoted_text%})
+//   normalizePlainTextPart      {keepColumns} VERBATIM  ({%mail_plain_text_part%}:
+//                                            column alignment and U+00A0 preserved)
+//
+// The non-breaking-space and ordering rationale is documented at mztaNormalizePlain.
 export function cleanupNewlines(text) {
-  return text
-  .replace(/\r\n/g, '\n')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/ /g, ' ')
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n{2,}/g, '\n')
-  .replace(/[ \t]+/g, ' ')
-  .trim();
+  return globalThis.mztaNormalizePlain(text);
 }
 
-// cleanupNewlines() for text whose PARAGRAPH structure matters.
-//
-// Identical to cleanupNewlines() except a blank line survives: \n{2,} is capped
-// at \n\n instead of collapsed to \n. Only the compose-body extractions use it -
-// {%mail_typed_text%} and {%mail_quoted_text%}, whose whole point is that the
-// mail the user actually typed reaches the model with its lines intact [#829].
-// cleanupNewlines() keeps the stricter rule because its other callers feed the
-// diff picker's original side and the full-body placeholders, where a widened
-// rule would change every existing comparison.
-// Same non-breaking-space handling as cleanupNewlines() above, and for the same
-// reason. One consequence is deliberate here: a line holding nothing but &nbsp; is
-// how HTML mail writes a blank line, and it survives as a paragraph break rather
-// than being trimmed away to nothing.
 export function cleanupNewlinesKeepParagraphs(text) {
-  return text
-  .replace(/\r\n/g, '\n')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/ /g, ' ')
-  .replace(/[ \t]+\n/g, '\n')
-  .replace(/\n{3,}/g, '\n\n')
-  .replace(/[ \t]+/g, ' ')
-  .trim();
+  return globalThis.mztaNormalizePlain(text, { keepParagraphs: true });
 }
 
-// The original text/plain MIME part, normalized but NOT reflowed.
-//
-// Deliberately NOT cleanupNewlines(): its \n{2,} -> \n and [ \t]+ -> ' ' collapses
-// would destroy the blank lines and the runs of spaces and tabs that carry the
-// column alignment {%mail_plain_text_part%} exists to preserve (invoice tables,
-// ERP notifications). Only line endings, a leading BOM and trailing whitespace are
-// touched; everything else reaches the model verbatim.
-//
-// The non-breaking space is deliberately NOT converted here either, unlike in the
-// two functions above: this text never went through an HTML parser, so a U+00A0 in
-// it is a character the sender actually put in the plain part, and in a padded
-// column it is crucial.
 export function normalizePlainTextPart(text) {
-  if (text === null || text === undefined) return '';
-  return String(text)
-  .replace(/^﻿/, '')
-  .replace(/\r\n/g, '\n')
-  .replace(/\r/g, '\n')
-  .replace(/[ \t]+$/gm, '')
-  .replace(/\s+$/, '');
+  return globalThis.mztaNormalizePlain(text, { keepColumns: true });
 }
 
 // Extract and strip inline <think>...</think> blocks from a model response.
@@ -539,7 +490,12 @@ export function normalizePlainTextPart(text) {
 // dropped, so callers that parse the response never receive raw reasoning.
 // Streaming callers leave it false and instead defer the flush until the closing
 // tag arrives.
-export function stripThinkTags(text, truncateUnterminated = false) {
+//
+// `trimLeading` drops the whitespace a removed <think> block leaves at the start.
+// Only correct for callers passing the WHOLE response: a per-segment caller must
+// leave it false, or the space opening a segment - interior to the text once the
+// segments are glued together - is destroyed, welding two words into one.
+export function stripThinkTags(text, truncateUnterminated = false, trimLeading = false) {
   if (!text) {
     return { text: '', thinking: '' };
   }
@@ -562,14 +518,14 @@ export function stripThinkTags(text, truncateUnterminated = false) {
     }
   }
 
-  return { text: out.replace(/^\s+/, ''), thinking: thinking };
+  return { text: trimLeading ? out.replace(/^\s+/, '') : out, thinking: thinking };
 }
 
 // Only for PLAIN text. Applying this to already-formed HTML injects spurious <br>
 // at every source newline (indentation, line breaks between tags) — use
 // normalizeHtmlSourceNewlines() for HTML instead.
 export function convertNewlinesToBr(text) {
-  return text.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
+  return globalThis.mztaLinesToHtml(text, { mode: 'br' });
 }
 
 // Collapses the source newlines of an HTML string without turning them into markup.
@@ -585,19 +541,7 @@ export function normalizeHtmlSourceNewlines(html) {
 }
 
 export function convertNewlinesToParagraphs(input) {
-  return input
-    .split('\n')
-    .map(line => `<p>${escapeHtml(line)}</p>`)
-    .join('');
-}
-
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return globalThis.mztaLinesToHtml(input, { mode: 'p' });
 }
 
 

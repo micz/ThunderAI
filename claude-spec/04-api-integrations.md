@@ -144,6 +144,16 @@ servers). `StreamingMessage.flush()` extracts and strips these via the shared
 detected mid-stream, the flush is deferred until the closing tag arrives (that guard
 lives in `streamingMessage.js`, not in the helper).
 
+The helper's third argument, `trimLeading` (default `false`), drops the whitespace a
+removed block leaves at the start of the text. It is only correct for callers passing
+the **whole** response. The streaming flush passes a single *segment*, so it must leave
+it off: the space opening a segment is interior to the answer once the segments are
+concatenated into `_htmlRawText`, and trimming it welds the last word of the previous
+segment to the first word of this one (`"il"` + `" body"` → `"ilbody"`). Because the
+flush fires on any token containing `\n`, the segment boundary — and therefore the
+damage — lands at positions that depend on the provider's chunking rather than on the
+answer's content, which is what makes such a bug read as intermittent.
+
 Both paths are combined into `combinedThinking` and rendered by
 `renderThinkingBlock()` (`api_webchat/thinkingBlock.js`) as a
 `<details class="thinking-block">` prepended to the answer. Nothing is rendered when
@@ -200,9 +210,11 @@ it, so reasoning must never reach the resolved value:
 
 - `newThinkingToken` messages are explicitly discarded and never appended to `full_message`.
 - Inline `<think>` blocks are stripped from `full_message` with
-  `stripThinkTags(text, true)` before the promise resolves. The `true` flag also drops
+  `stripThinkTags(text, true, true)` before the promise resolves. The second flag drops
   a dangling unterminated `<think>` (a truncated reply) rather than handing raw
-  reasoning to the caller's parser.
+  reasoning to the caller's parser. The third enables the leading-whitespace trim, which
+  is safe here because `full_message` is the whole response — unlike the per-segment
+  streaming caller above.
 
 ## Font zoom in the webchat UI
 

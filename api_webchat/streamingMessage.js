@@ -20,175 +20,48 @@
 // (one chat turn). It is a plain class — no custom element, no DOM ownership.
 // It accumulates raw tokens and thinking tokens, applies the unterminated
 // <think> guard, extracts inline <think>...</think> blocks (via the shared
-// stripThinkTags() helper in js/mzta-utils.js), renders markdown via markdown-it,
-// and accrues the resulting HTML across the (possibly several) flushes a single
-// response can produce (the accumulating element is flushed mid-stream on every '\n').
+// stripThinkTags() helper in js/mzta-utils.js), and renders the WHOLE response
+// so far through ONE path on each flush.
 //
-// A response can flush multiple times, so `fullTextHTML` accrues across flushes
-// within the instance and is exposed only as an IMMUTABLE STRING SNAPSHOT via
-// flush()'s return value / getFullTextHTMLSnapshot(). Callers snapshot this at
-// button-build time; returning a live getter into mutable state would let a
-// later turn corrupt an earlier turn's buttons — hence one instance per turn,
-// never reused, and never a reference into internal mutable state.
+// ── One render path, no router ───────────────────────────────────────────────
+//
+// markdown IS a superset that admits inline and block HTML (CommonMark), so there
+// is no markdown-vs-HTML decision to make: every answer goes through
+//
+//     renderResponse(raw) = sanitize(markdownit({html:true, breaks:true}).render(raw))
+//
+//   breaks:true  keeps the model's '\n' as a real <br> - this is a mail composer,
+//                not a markdown document, so a newline the model wrote is a
+//                newline the user expects, in the chat AND in the inserted mail.
+//   html:true    lets inline HTML (<b>) render instead of being escaped. That is
+//                exactly the hybrid fix: "Ciao <b>Mario</b>\ngrazie" becomes
+//                "<p>Ciao <b>Mario</b><br>grazie</p>" - bold rendered AND the line
+//                break kept. The old router forced such an answer down one of two
+//                pure branches, each of which lost half of it.
+//
+// html:true disables markdown-it's escaping, so the output is now UNTRUSTED model
+// HTML on its way into outgoing mail. It MUST cross the sanitizer - the same ONE
+// allowlist walk everything else uses (js/mzta-richtext.js). Code fences are still
+// safe: markdown-it escapes HTML inside code blocks regardless of html:true, so
+// "how do I center a <div>?" still shows the markup as text.
+//
+// ── Streaming: re-render the whole accumulated raw each time ──────────────────
+//
+// A flush routinely lands mid-tag ("<p>Distinti sal") or mid-inline-tag
+// ("<b>Mar" | "io</b>"), so segments cannot be rendered and appended
+// independently - the whole accumulated raw text is re-rendered each flush and
+// the result REPLACES _fullTextHTML (cumulative). Re-parsing the whole raw text,
+// not concatenating per-segment output, is what keeps every element - and every
+// raw tag split across a segment boundary - whole. To keep that O(n) re-render
+// from becoming O(n^2) over a response it is coalesced to roughly every
+// HTML_RENDER_CHUNK characters of new text, plus always on the final flush; in
+// between, the live token spans messagesArea appends show the text arriving.
 //
 // `window.markdownit` is the global from markdown-it.min.js, loaded as a classic
 // script in index.html before the module scripts.
 
 import { stripThinkTags } from '../js/mzta-utils.js';
-import { sanitizeBlockHtml } from './diffPicker.js';
-
-// Fenced code blocks (``` / ~~~, any fence length, with or without an info
-// string) and inline code spans (`…`, ``…``). Matched in this order so a
-// backtick inside a fence is never mistaken for the start of a span.
-const CODE_REGIONS_RE = /(^|\n)([ \t]{0,3})(`{3,}|~{3,})([^\n]*)\n[\s\S]*?(?:\n[ \t]{0,3}\3[ \t]*(?=\n|$)|$)|(`+)[\s\S]*?\5/g;
-
-// A run of literal <br> tags, whitespace between them included. The run is the
-// unit on purpose: see normalizeEchoedBrTags().
-const BR_RUN_RE = /(?:<br\s*\/?>\s*)+/gi;
-
-// The model may echo literal <br> tags coming from an HTML mail body. markdown-it
-// runs with html:false, so they would be escaped to &lt;br&gt; and shown as visible
-// text. Rewrite them to newlines instead, before the render.
-//
-// The rewrite is done per RUN, not per tag, so the vertical space is decided here
-// rather than falling out of markdown-it's blank-line collapsing:
-//   one <br>            -> '\n'    (a line break; breaks:true renders it as <br>)
-//   two or more <br>    -> '\n\n'  (exactly one paragraph break, hence one blank
-//                                   line — whether the model wrote 2 or 8 of them)
-// Without this, 2 <br> and 8 <br> both happened to produce one blank line only as
-// a side effect of consecutive blank lines collapsing; the amount of space was not
-// something the code decided.
-//
-// Code is masked out first: a <br> the user is asking the model ABOUT belongs in
-// the code block as escaped text, exactly as markdown-it would render it. Both
-// fenced blocks and inline spans are replaced by a placeholder that survives the
-// rewrite untouched and is put back before the render. The placeholder uses U+0000,
-// which cannot appear in a model response.
-const CODE_MASK = '\u0000';
-const CODE_MASK_RE = /\u0000(\d+)\u0000/g;
-
-function normalizeEchoedBrTags(text) {
-    const stash = [];
-    const masked = text.replace(CODE_REGIONS_RE, (match) => {
-        stash.push(match);
-        return CODE_MASK + (stash.length - 1) + CODE_MASK;
-    });
-
-    const rewritten = masked.replace(BR_RUN_RE, (run) => {
-        const count = (run.match(/<br\s*\/?>/gi) || []).length;
-        return count > 1 ? '\n\n' : '\n';
-    });
-
-    return rewritten.replace(CODE_MASK_RE, (m, idx) => stash[Number(idx)] ?? m);
-}
-
-// Is this response HTML?
-//
-// The prompts that send HTML to the model (they carry {%selected_html%} /
-// {%mail_html_body_or_selected%}) get HTML back, and markdown-it runs with
-// html:false, so it would escape the answer into visible "&lt;p&gt;" text - which
-// is exactly what users saw. This is the test that routes such an answer to the
-// sanitizer instead.
-//
-// The rule is a LEAD-IN followed by a BLOCK TAG. The lead-in is what makes this
-// robust: an earlier version anchored the block tag at the very start of the
-// response, and a single stray token ahead of it flipped the whole answer to the
-// markdown path. That is not hypothetical - the same prompt, run twice, once
-// opened "<li>" (rendered) and once "<br><li>" (every tag escaped), because the
-// model had echoed a <br> from its input. Nothing about the answer differed but
-// its first token, so the routing has to tolerate whatever noise precedes the
-// real markup.
-//
-// Allowed in the lead-in, none of which says anything about the response's shape:
-//   - whitespace
-//   - <br> runs (echoed from an HTML mail body)
-//   - an HTML comment, doctype or XML prolog
-//   - a fragment of a stray sentence, as long as it is SHORT, sits on the
-//     response's first line and carries no markdown syntax - see LEAD_IN_PROSE
-//     below for why that bound exists.
-//
-// Still deliberately narrow in what COUNTS as the signal, because the cost of a
-// false positive is a mangled normal answer:
-//   - only a BLOCK tag counts. A markdown answer that merely mentions <b>
-//     mid-sentence is not HTML.
-//   - <br> alone never counts, on either side of this test: it is the one tag a
-//     markdown answer is genuinely likely to contain, and normalizeEchoedBrTags()
-//     already owns echoed <br> runs on the markdown path.
-// Everything that is not clearly HTML keeps going through markdown-it untouched.
-const BLOCK_TAG = '(?:p|div|ul|ol|li|h[1-6]|blockquote|pre|table|tr|td|th|tbody|thead)';
-
-// The lead-in tolerated before the first block tag: whitespace, echoed <br>
-// runs, comments, a doctype or an XML prolog.
-const LEAD_IN = `(?:\\s|<br\\s*/?>|<!--[\\s\\S]*?-->|<![^>]*>|<\\?[^>]*\\?>)*`;
-// Prose that may precede the markup, bounded on purpose. It buys the case where
-// a model prefixes a few words - "Ecco il testo:" - to markup it was told to
-// emit bare, which is a thing models do under exactly the "reply with only ..."
-// style of prompt these features use. The exclusions ARE the rule, so there is
-// no second check to keep in sync with this one:
-//   - no '<', so it cannot skate past markup that should have been judged;
-//   - no newline, so it stays on the response's first line;
-//   - no markdown syntax character, so "**Nota:** <p>" stays markdown;
-//   - 40 chars, i.e. a few words. A real markdown answer that opens with a
-//     sentence long enough to matter is past the bound before its first tag.
-const LEAD_IN_PROSE = `[^<\\n*_\`~#>\\[\\]|]{0,40}`;
-// Around prose, only SAME-LINE lead-in may appear. LEAD_IN matches \s, newline
-// included, so using it on either side of the prose would accept markdown whose
-// SECOND line merely happens to start with a tag ("Riga uno\n<p>x</p>", and the
-// mirror case "\nRiga uno<p>x</p>"). Blank horizontal space, <br> and comments
-// are fine; a line break is not. The prose branch as a whole is therefore
-// confined to one line - the response's first.
-const LEAD_IN_SAME_LINE = `(?:[ \\t]|<br\\s*/?>|<!--[\\s\\S]*?-->)*`;
-// Two shapes, kept as separate alternatives so the prose one cannot borrow a
-// newline from the other:
-//   1. lead-in (newlines allowed) then the tag  - "<br>\n<li>", "\n\n<p>"
-//   2. same-line lead-in, short prose, same-line lead-in, then the tag
-//      - "Ecco il testo: <p>", and nothing spanning a line break
-const HTML_RESPONSE_RE = new RegExp(
-    `^(?:${LEAD_IN}|${LEAD_IN_SAME_LINE}${LEAD_IN_PROSE}${LEAD_IN_SAME_LINE})<${BLOCK_TAG}\\b[^>]*>`, 'i');
-
-// A closing block tag with no opener ahead of it, e.g. a response that begins
-// "Distinti saluti.</p>". Only reachable on the FIRST flushed segment (the
-// decision is sticky), so it cannot be triggered by the tail of an answer that
-// already chose the markdown path - and a markdown answer has no reason to emit
-// a bare closing block tag at all.
-const ORPHAN_CLOSING_BLOCK_RE = new RegExp(`^[^<]*</${BLOCK_TAG}\\s*>`, 'i');
-
-// Text that is nothing but lead-in: whitespace, <br> runs, comments. It carries
-// no evidence either way, so a response that has produced only this so far is
-// not yet decidable - see looksLikeHtmlResponse's null return.
-const LEAD_IN_ONLY_RE = new RegExp(`^${LEAD_IN}$`, 'i');
-
-// Decide whether a response is HTML.
-//
-// Returns true / false once there is evidence, or NULL while the response so far
-// is all lead-in and could still turn out to be either. Null matters because the
-// caller's decision is sticky and a flush fires on every '\n': a model that emits
-// "<br>\n<li>..." hands this function a lone "<br>" first, and answering false
-// there would lock the whole answer onto the markdown path over a tag that says
-// nothing - the exact failure this rework exists to fix, just one segment later.
-//
-// Code regions are masked out first, for the same reason normalizeEchoedBrTags()
-// masks them: an answer whose subject IS html - "how do I center a <div>?" -
-// must keep going through markdown-it, so that the markup shows up as text in a
-// code block instead of being sanitized into a real element. Without the mask a
-// reply opening with a fenced block would be misread as HTML by its own example.
-function looksLikeHtmlResponse(text) {
-    // The mask keeps the ORIGINAL length, so offsets and the "first line" rules
-    // above still mean what they say. Its filler is deliberately inert - digits
-    // between two U+0000 - so a masked region can never itself look like markup.
-    const masked = String(text).replace(CODE_REGIONS_RE, (match) =>
-        CODE_MASK + '0'.repeat(Math.max(match.length - 2, 0)) + CODE_MASK);
-
-    if (HTML_RESPONSE_RE.test(masked) || ORPHAN_CLOSING_BLOCK_RE.test(masked)) {
-        return true;
-    }
-
-    // No block tag yet. If everything so far is lead-in, withhold the decision
-    // and let the next segment settle it.
-    if (LEAD_IN_ONLY_RE.test(masked)) { return null; }
-
-    return false;
-}
+import { sanitizeBlockHtml } from '../js/mzta-richtext.js';
 
 // The <think> probes used by flush(). Hoisted like every other regex in this file:
 // flush() runs on every '\n' of a response, so nothing it needs should be rebuilt
@@ -208,19 +81,26 @@ const CLOSE_THINK_RE = /<\/think>/i;
 // but module evaluation order relative to it is not something to rely on.
 let _md = null;
 function getMarkdownIt() {
-    if (_md === null) { _md = window.markdownit({ breaks: true }); }
+    if (_md === null) { _md = window.markdownit({ html: true, breaks: true }); }
     return _md;
 }
 
-// How much new raw text must accrue on the HTML path before it is re-rendered.
+// The ONE render path. markdown-it (html:true) may pass raw model HTML through, so
+// its output is untrusted and MUST cross the sanitizer before it is shown or
+// inserted into mail. allowBlocks:true - a whole answer, block + inline.
+function renderResponse(raw) {
+    return sanitizeBlockHtml(getMarkdownIt().render(raw));
+}
+
+// How much new raw text must accrue before the whole answer is re-rendered.
 //
-// The HTML path cannot append fragments the way the markdown path does: a flush
-// routinely lands mid-tag ("<p>Distinti sal"), so the whole response is re-sanitized
-// each time - O(n) per flush, O(n^2) over a response, on top of the DOMParser pass
-// messagesArea does on the result. Rendering every ~2 KB instead of every '\n' keeps
-// the output identical (the final flush always renders everything) while making the
-// cost proportional to the answer's size rather than to its line count. Between
-// renders the live token spans messagesArea appends still show the text arriving.
+// A flush routinely lands mid-tag, so the whole response is re-rendered each time
+// - O(n) per flush, O(n^2) over a response, on top of the DOMParser pass
+// messagesArea does on the result. Rendering every ~2 KB instead of every '\n'
+// keeps the output identical (the final flush always renders everything) while
+// making the cost proportional to the answer's size rather than to its line count.
+// Between renders the live token spans messagesArea appends still show the text
+// arriving.
 const HTML_RENDER_CHUNK = 2048;
 
 export class StreamingMessage {
@@ -230,31 +110,22 @@ export class StreamingMessage {
         // mirroring the original per-element token collection).
         this._segmentText = '';
         // Thinking tokens fed by the worker (any provider that exposes reasoning
-        // in a dedicated stream field); reset on each flush,
-        // mirroring the original this.thinkingAccumulator behavior.
+        // in a dedicated stream field). A RUNNING TOTAL for the whole response,
+        // never drained: every render is cumulative (rebuilds the whole element,
+        // thinking block included), so each flush hands back the WHOLE thinking and
+        // messagesArea replaces the block with it. Draining per flush would blank
+        // the reasoning on the second render of a thinking-then-long answer.
         this._thinkingAccumulator = '';
+        // Inline <think>...</think> reasoning, accumulated across flushes into a
+        // running total for the same reason as _thinkingAccumulator.
+        this._inlineThinking = '';
         // Rendered HTML accrued across flushes for this whole response.
         this._fullTextHTML = '';
-        // Whether THIS response is HTML. Decided once, on the first flushed
-        // segment, and then STICKY for the rest of the response.
-        //
-        // Sticky because flush() runs per segment (tokens are flushed on every
-        // '\n'), and a later segment of an HTML answer can easily start with a
-        // bare text node - "Distinti saluti.</p>" - which on its own looks like
-        // markdown. Re-deciding per segment would render one answer half one way
-        // and half the other.
-        this._isHtmlResponse = null;
-        // Text flushed while _isHtmlResponse is still undecided. A response that
-        // opens with a lone "<br>" carries no evidence either way, so the verdict
-        // is withheld and the segments are judged together once the markup
-        // arrives. Cleared as soon as the decision is made.
-        this._undecidedText = '';
-        // Raw (un-rendered) text of the whole response, accumulated only on the
-        // HTML path, where each flush re-sanitizes everything rather than
-        // appending a fragment. See flush().
+        // Raw (un-rendered, think-stripped) text of the WHOLE response, since each
+        // flush re-renders everything rather than appending a fragment.
         this._htmlRawText = '';
-        // Characters appended to _htmlRawText since the last sanitize. Drives the
-        // HTML_RENDER_CHUNK coalescing in flush(); meaningless on the markdown path.
+        // Characters appended to _htmlRawText since the last render. Drives the
+        // HTML_RENDER_CHUNK coalescing in flush().
         this._htmlPendingChars = 0;
     }
 
@@ -272,194 +143,101 @@ export class StreamingMessage {
         return String(this._fullTextHTML);
     }
 
-    // The response's shape verdict, once decided: true = HTML answer (sanitized,
-    // re-rendered whole), false = markdown answer (rendered per segment), null =
-    // not decided yet. Exposed so the caller can pick a flush trigger that is safe
-    // for the path: an embedded newline ("foo\nbar") is a safe flush point only on
-    // the HTML path, where the whole response is re-rendered each flush — on the
-    // markdown path flushing there would split a logical line across two segments
-    // (see handleNewToken).
-    get isHtmlResponse() {
-        return this._isHtmlResponse;
-    }
-
-    // Flush the current segment. Ports the exact logic of the original
-    // MessagesArea.flushAccumulatingMessage() token→HTML pipeline.
+    // Flush the current segment: re-render the WHOLE accumulated raw text.
     //
     // Returns null when the flush is deferred (an unterminated <think> block is
     // present mid-stream) — in that case NOTHING is consumed, exactly as before.
     //
     // Otherwise returns an immutable snapshot object:
-    //   { html:         markdown-rendered HTML for THIS segment (string),
-    //     thinkingText: combined thinking content for this segment (string),
+    //   { html:         the whole rendered+sanitized answer so far (string),
+    //     thinkingText: combined thinking content (string),
     //     fullTextHTML: snapshot of the HTML accrued across the whole response,
+    //     cumulative:   always true — `html` is the WHOLE answer, so the caller
+    //                   reuses the one accumulating element instead of retiring it
+    //                   per flush,
     //     deferred:     when true, `html` holds nothing to render and the caller must
     //                   leave the accumulating element's DOM as it is, and keep the live
-    //                   "Thinking..." indicator. Set on the HTML path between coalesced
-    //                   renders; `thinkingText` is empty (any thinking is held back in
-    //                   the accumulator for the next non-deferred flush). }
-    // Flush the current segment.
+    //                   "Thinking..." indicator. Set between coalesced renders;
+    //                   `thinkingText` is empty (any thinking is held back in the
+    //                   accumulator for the next non-deferred flush). }
     //
-    // `final` is set by the caller's last flush of the response. It forces a
-    // verdict on text that is still undecided: a response made of nothing but
-    // lead-in ("<br>" and no more) would otherwise be held back forever and
-    // never rendered. Such text has no block tag by definition, so markdown is
-    // the right home for it.
+    // `final` is set by the caller's last flush of the response; it forces a render
+    // even if less than HTML_RENDER_CHUNK has accrued, so the finished answer is
+    // always complete.
     flush(final = false) {
         let fullText = this._segmentText;
 
         // If an unterminated <think> block is present (mid-stream), defer the
-        // markdown render until the closing tag arrives — tokens stay in the DOM
-        // as raw fading spans, but the partial <think> content is never sent
-        // through markdown-it or promoted to the final thinking block.
+        // render until the closing tag arrives — tokens stay in the DOM as raw
+        // fading spans, but the partial <think> content is never sent through the
+        // renderer or promoted to the final thinking block.
         if (OPEN_THINK_RE.test(fullText) && !CLOSE_THINK_RE.test(fullText)) {
             return null;
         }
 
-        // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip them
-        // from fullText. Unterminated blocks are handled by the guard above, never here,
-        // so truncation is left off.
+        // Extract inline <think>...</think> blocks (Ollama / OpenAI Comp) and strip
+        // them from fullText. Unterminated blocks are handled by the guard above,
+        // never here, so truncation is left off. The extracted reasoning is added to
+        // the running inline-thinking total (this segment is only ever seen once,
+        // since _segmentText is cleared below).
+        // No leading trim (third argument left off): this is a SEGMENT, not the whole
+        // response, so the space opening it is interior to the answer once appended to
+        // _htmlRawText below. Trimming it welds the last word of the previous segment to
+        // the first word of this one ("the" + " body" -> "thebody").
         const stripped = stripThinkTags(fullText);
-        const inlineThinking = stripped.thinking;
+        if (stripped.thinking) {
+            this._inlineThinking += (this._inlineThinking ? '\n' : '') + stripped.thinking;
+        }
         fullText = stripped.text;
 
-        // Combined thinking content: worker-side (Anthropic / Ollama / Gemini /
-        // OpenAI Comp / OpenAI Responses) + inline (<think> tags)
+        // Combined thinking content: worker-side running total (Anthropic / Ollama /
+        // Gemini / OpenAI Comp / OpenAI Responses) + inline running total (<think>
+        // tags). The WHOLE thing, every render - not drained.
         let combinedThinking = this._thinkingAccumulator;
-        if (inlineThinking) {
-            combinedThinking += (combinedThinking ? '\n' : '') + inlineThinking;
-        }
-        this._thinkingAccumulator = '';
-
-        // Decide the response's shape once, then stay with it (see
-        // _isHtmlResponse). looksLikeHtmlResponse may return null - "not enough
-        // evidence yet" - in which case nothing is committed and the next
-        // segment gets to decide. The whole response so far is what is judged,
-        // not just this segment, so an inconclusive lead-in and the markup that
-        // follows it are weighed together even when a '\n' split them apart.
-        if (this._isHtmlResponse === null) {
-            this._undecidedText += fullText;
-            let verdict = this._undecidedText.trim() === ''
-                ? null
-                : looksLikeHtmlResponse(this._undecidedText);
-            // Last chance: nothing more is coming, so settle it.
-            if (verdict === null && final) { verdict = false; }
-            if (verdict === null) {
-                // Still undecided. Hold the text back rather than rendering it:
-                // committing it to the markdown path now would have to be undone
-                // if the next segment turns out to be markup, and the deferred
-                // text is only ever a lead-in (whitespace, a <br>, a comment),
-                // so nothing meaningful is kept off screen. The raw tokens are
-                // already visible as fading spans meanwhile.
-                //
-                // The thinking text is NOT held back - it is independent of the
-                // response's shape, and swallowing it would strand the thinking
-                // indicator until the next flush.
-                this._segmentText = '';
-                return {
-                    html: '',
-                    thinkingText: combinedThinking,
-                    fullTextHTML: this.getFullTextHTMLSnapshot(),
-                };
-            }
-            this._isHtmlResponse = verdict;
-            // Judged as a whole, so it must be rendered as a whole: put the
-            // deferred lead-in back in front of this segment.
-            fullText = this._undecidedText;
-            this._undecidedText = '';
+        if (this._inlineThinking) {
+            combinedThinking += (combinedThinking ? '\n' : '') + this._inlineThinking;
         }
 
-        // HTML answer: sanitize instead of escaping, and skip markdown-it
-        // entirely. Running both would be wrong in either order - markdown-it
-        // escapes the tags, and re-parsing its output as markdown mangles the
-        // markup.
-        //
-        // normalizeEchoedBrTags() is skipped too: it rewrites <br> runs into
-        // newlines so that markdown-it does not escape them, and here there is no
-        // markdown-it to protect them from - a <br> is simply a <br>.
-        //
-        // THE WHOLE RESPONSE SO FAR is re-sanitized on every flush, and the
-        // result REPLACES _fullTextHTML instead of being appended to it. That is
-        // the difference that matters on this path: segments break on '\n', which
-        // for HTML falls wherever the model happened to wrap - frequently INSIDE
-        // an element. Sanitizing "<ul><li>a" on its own makes DOMParser close the
-        // tags, and the next segment "</li></ul>" would then be a stray closer;
-        // appending those fragments would accumulate garbage. Re-parsing the
-        // accumulated raw text keeps every element whole.
-        //
-        // Because it re-does the whole response each time, this is the one flush
-        // that is NOT run per '\n': it is coalesced to roughly every
-        // HTML_RENDER_CHUNK characters of new text, plus always on the final flush.
-        // That keeps the finished answer byte-for-byte what it always was - the last
-        // flush renders everything - while turning a per-line cost into a per-chunk
-        // one on long answers.
-        if (this._isHtmlResponse) {
-            this._htmlRawText += fullText;
-            this._htmlPendingChars += fullText.length;
-            this._segmentText = '';
+        // Accumulate this (think-stripped) segment into the whole-response raw
+        // text. The render is over the whole thing, not this segment.
+        this._htmlRawText += fullText;
+        this._htmlPendingChars += fullText.length;
+        this._segmentText = '';
 
-            // Not enough new text to be worth re-rendering the whole answer yet.
-            // Nothing is lost: the text is already in _htmlRawText, and `deferred`
-            // tells the caller to leave the live token spans on screen rather than
-            // repainting - which is what keeps the answer visibly streaming between
-            // renders.
-            //
-            // The thinking text is put back into _thinkingAccumulator rather than
-            // handed over: the caller returns early on `deferred` and would discard
-            // a returned thinkingText, so draining here would strand it. Restoring
-            // the accumulator carries it to the next non-deferred flush, which
-            // renders it with the HTML; until then the caller keeps the live
-            // "Thinking..." indicator on screen.
-            if (!final && this._htmlPendingChars < HTML_RENDER_CHUNK) {
-                this._thinkingAccumulator = combinedThinking;
-                return {
-                    html: '',
-                    thinkingText: '',
-                    fullTextHTML: this.getFullTextHTMLSnapshot(),
-                    cumulative: true,
-                    deferred: true,
-                };
-            }
-
-            this._fullTextHTML = sanitizeBlockHtml(this._htmlRawText);
-            this._htmlPendingChars = 0;
+        // Not enough new text to be worth re-rendering the whole answer yet.
+        // Nothing is lost: the text is already in _htmlRawText, and `deferred`
+        // tells the caller to leave the live token spans on screen rather than
+        // repainting - which is what keeps the answer visibly streaming between
+        // renders.
+        //
+        // thinkingText is empty here: on a deferred flush the caller returns early
+        // and renders no thinking block, keeping the live "Thinking..." indicator
+        // instead. The reasoning is safe in the running totals and the next
+        // non-deferred flush hands back the whole of it.
+        if (!final && this._htmlPendingChars < HTML_RENDER_CHUNK) {
             return {
-                html: this._fullTextHTML,
-                thinkingText: combinedThinking,
+                html: '',
+                thinkingText: '',
                 fullTextHTML: this.getFullTextHTMLSnapshot(),
-                // `html` is the WHOLE response, not this segment. The caller
-                // normally retires the accumulating element after each flush and
-                // starts a new one, which is right when each flush contributes
-                // the next piece; here it must keep reusing the same element, or
-                // the answer would be re-rendered once per flush and pile up on
-                // screen.
                 cumulative: true,
+                deferred: true,
             };
         }
 
-        fullText = normalizeEchoedBrTags(fullText);
-
-        // Convert Markdown to DOM nodes using the markdown-it library.
-        //
-        // breaks:true is deliberate and is what makes the answer survive into the
-        // mail. This is a mail composer, not a markdown document: a newline the
-        // model wrote is a newline the user expects to see. With the default
-        // breaks:false a single '\n' inside a paragraph renders as a bare newline
-        // in the HTML, which is whitespace and collapses to a space — the break is
-        // simply lost in `_fullTextHTML`, the snapshot the "use this answer" path
-        // inserts into the message. With breaks:true markdown-it emits a real <br>,
-        // so the chat and the mail show the same line structure.
-        const html = getMarkdownIt().render(fullText);
-
-        this._fullTextHTML += html;
-
-        // This segment has been consumed.
-        this._segmentText = '';
-
+        // Re-render the whole accumulated raw text and REPLACE _fullTextHTML: a raw
+        // tag split across a segment boundary ("<b>Mar" | "io</b>") is only whole
+        // when the whole text is re-parsed, never when per-segment output is
+        // concatenated.
+        this._fullTextHTML = renderResponse(this._htmlRawText);
+        this._htmlPendingChars = 0;
         return {
-            html: html,
+            html: this._fullTextHTML,
             thinkingText: combinedThinking,
             fullTextHTML: this.getFullTextHTMLSnapshot(),
+            // `html` is the WHOLE response, not this segment. The caller must keep
+            // reusing the same accumulating element, or the answer would be
+            // re-rendered once per flush and pile up on screen.
+            cumulative: true,
         };
     }
 }

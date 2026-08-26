@@ -17,6 +17,17 @@
  */
 
 import { SHARED_BASE_CSS, BUTTON_CSS } from './sharedStyles.js';
+// The sanitizer + tag taxonomy live in the shared rich-text layer - ONE security
+// boundary, ONE allowlist. This module used to define them; they moved so the
+// webchat renderer and the picker cannot drift apart. The segmentation machinery
+// below (blockTextOfHtml / segmentBlocks / sliceHtmlByText / normalizeBlockHtml)
+// deliberately stayed here: blockTextOfHtml is the offset-space anchor
+// sliceHtmlByText maps against, and its invariant must not change.
+import {
+    sanitizeInlineHtml,
+    sanitizeBlockHtml,
+    BLOCK_TAGS,
+} from '../js/mzta-richtext.js';
 import {
     buildHunkMarkerIcon,
     buildUseAnswerIcon,
@@ -486,66 +497,11 @@ function htmlToFragment(html) {
 // Accepting a reworded sentence takes the answer's bolding with it; rejecting
 // takes the original's. There is no "original words, answer's bold" state.
 
-// Elements that become their own block. Everything else is inline (or is
-// unwrapped by the sanitizer).
-const BLOCK_TAGS = new Set(['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre']);
-
-// The inline allowlist. THIS IS A SECURITY BOUNDARY, not a tidiness pass: the
-// answer is model output on its way into the user's outgoing mail, and the
-// plain-text path this replaces escaped absolutely everything. Anything not
-// listed here is unwrapped (its children survive, the element does not).
-const INLINE_ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'code', 'a', 'br', 'span', 'sub', 'sup']);
-
-// Only http(s) and mailto survive on <a href>. javascript: and data: must not.
-const SAFE_HREF = /^(https?:|mailto:)/i;
-
-// Strip everything but the inline allowlist from a block's inner HTML.
-//
-// Serialization goes back out through innerHTML, which encodes entities
-// correctly for free. Deliberately NOT through a hand-rolled escapeHtml(): on
-// HTML input that would escape the very tags we are trying to keep.
-function sanitizeAgainst(html, allowed) {
-    const doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html');
-    // Walk a static list: unwrapping mutates the tree under a live collection.
-    const els = Array.from(doc.body.querySelectorAll('*'));
-    for (const el of els) {
-        const tag = el.tagName.toLowerCase();
-        if (!allowed.has(tag)) {
-            // Unwrap: keep what the user can read, drop the element itself.
-            // <script>/<style> are unwrapped too, but their children are TEXT
-            // nodes, so the code is neutralized into visible text rather than
-            // being left executable.
-            el.replaceWith(...Array.from(el.childNodes));
-            continue;
-        }
-        for (const attr of Array.from(el.attributes)) {
-            const name = attr.name.toLowerCase();
-            const keep = (tag === 'a' && name === 'href' && SAFE_HREF.test(attr.value.trim()));
-            if (!keep) { el.removeAttribute(attr.name); }
-        }
-    }
-    return doc.body.innerHTML;
-}
-
-export function sanitizeInlineHtml(html) {
-    return sanitizeAgainst(html, INLINE_ALLOWED);
-}
-
-// The same gate, widened to the block tags segmentBlocks() understands.
-//
-// Used on the ANSWER as it arrives from the model, before it is shown: prompts
-// that send HTML to the model get HTML back, and markdown-it (html:false) would
-// escape it into visible &lt;p&gt; text. Sanitizing instead of escaping is what
-// makes that answer usable - but it is model output heading for the user's
-// outgoing mail, so it goes through the same allowlist as everything else.
-//
-// ONE sanitization point, parameterized: a second hand-written copy of this walk
-// would be a second place for the security boundary to drift.
-const BLOCK_ALLOWED = new Set([...INLINE_ALLOWED, ...BLOCK_TAGS, 'ul', 'ol']);
-
-export function sanitizeBlockHtml(html) {
-    return sanitizeAgainst(html, BLOCK_ALLOWED);
-}
+// BLOCK_TAGS, INLINE_ALLOWED, BLOCK_ALLOWED, SAFE_HREF and the sanitizer
+// (sanitize / sanitizeInlineHtml / sanitizeBlockHtml) now live in
+// js/mzta-richtext.js and are imported at the top of this file. BLOCK_TAGS here
+// is still the SEGMENTATION set the code below reads - the shared module keeps
+// it deliberately narrow (no ul/ol/tr/table) for exactly that reason.
 
 // A block's plain text, derived FROM ITS NORMALIZED HTML.
 //
@@ -701,23 +657,22 @@ export function segmentBlocks(html) {
     const blocks = [];
 
     // Emit one block per <br>-separated run of EL's children (see splitOnBr).
-    // Empty runs - a trailing <br>, or the blank line in a <br><br> pair - have
-    // no text and are dropped by the same guard that drops empty blocks.
+    // Empty runs have no text and are not emitted, but they still carry meaning:
+    // an empty run BETWEEN two non-empty ones is a blank line (a <br><br> pair),
+    // which is a PARAGRAPH break, so the block before it ends its wrapper
+    // (sep=null) and renderBlocks emits the next run as its own <p>. Only a
+    // SINGLE <br> to an adjacent non-empty run is an in-paragraph line break
+    // (sep='br'). A trailing <br> (empty final run) likewise leaves sep=null, so
+    // the last emitted block of a wrapper never points at a successor belonging
+    // to a different wrapper.
     const pushBlocks = (el, tag, listType) => {
-        const runs = splitOnBr(el);
-        let last = null;
-        runs.forEach((run, i) => {
-            const block = makeBlock(run, tag, listType, (i === runs.length - 1) ? null : 'br');
-            if (block.text === '') { return; }
-            last = block;
-            blocks.push(block);
-        });
-        // A trailing <br> leaves an empty final run that the guard above drops,
-        // which would otherwise leave the last EMITTED block pointing at a
-        // successor that belongs to a different wrapper. The junction a dropped
-        // empty run represented is simply not emitted - the same collapse an
-        // empty line already gets today.
-        if (last) { last.sep = null; }
+        const runs = splitOnBr(el).map(run => makeBlock(run, tag, listType, null));
+        for (let i = 0; i < runs.length; i++) {
+            if (runs[i].text === '') { continue; }
+            const nextNonEmpty = (i + 1 < runs.length) && runs[i + 1].text !== '';
+            runs[i].sep = nextNonEmpty ? 'br' : null;
+            blocks.push(runs[i]);
+        }
     };
 
     // A run of consecutive inline/text nodes at this level has no block of its
@@ -761,15 +716,20 @@ export function segmentBlocks(html) {
                     continue;
                 }
                 // A <br> between blocks ends the implicit <p> being gathered.
-                // If it did close one, it is the junction between that run and
-                // whatever comes next, so it is recorded exactly as splitOnBr's
-                // separators are - otherwise a bare "A<br>B" at body level would
-                // still come back as two <p>. With no pending run it is a blank
-                // line between two real blocks and contributes nothing.
+                // The FIRST <br> after a run is a single-line junction ('br'), so
+                // a bare "A<br>B" at body level comes back as one <p>. A SECOND
+                // consecutive <br> (only whitespace in between) is a blank line, so
+                // it promotes that junction to a paragraph break (sep=null) and the
+                // two runs come back as separate <p> - matching the <br><br> rule
+                // inside a wrapper (see pushBlocks).
                 if (tag === 'br') {
                     const had = (pending !== null);
                     flushPending();
-                    if (had && blocks.length > 0) { blocks[blocks.length - 1].sep = 'br'; }
+                    if (blocks.length > 0) {
+                        const lastBlock = blocks[blocks.length - 1];
+                        if (had) { lastBlock.sep = 'br'; }
+                        else if (lastBlock.sep === 'br') { lastBlock.sep = null; }
+                    }
                     continue;
                 }
                 if (BLOCK_TAGS.has(tag)) {

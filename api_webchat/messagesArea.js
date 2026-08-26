@@ -881,10 +881,10 @@ class MessagesArea extends HTMLElement {
         // Drop the streaming state of the answer this message interrupts, the way
         // handleTokensDone() does on the normal path. This is the abort path: it is
         // reached without any final flush, so whatever StreamingMessage was mid-
-        // response still holds its accumulated raw text, its non-zero pending-chars
-        // count and - crucially - its STICKY _isHtmlResponse verdict. Left in place,
-        // the next response streaming into this same element would inherit all of it
-        // and be rendered as a continuation of the failed one.
+        // response still holds its accumulated raw text and its non-zero pending-
+        // chars count. Left in place, the next response streaming into this same
+        // element would inherit all of it and be rendered as a continuation of the
+        // failed one.
         this._streaming = null;
         this.accumulatingMessageEl = null;
 
@@ -922,21 +922,14 @@ class MessagesArea extends HTMLElement {
 
         this._scrollIfSticky();
 
-        // When to flush. A bare '\n' token is always a safe flush point. A token
-        // that merely CONTAINS a newline ("foo\nbar", " \n") is a safe flush point
-        // only on the HTML path: flush() re-renders the WHOLE accumulated raw text
-        // there, so splitting at an embedded newline loses nothing. On the markdown
-        // path each flush renders only its own segment and appends it, with no
-        // context across the cut — flushing at "foo\nbar" followed by "baz" would
-        // put "bar" and "baz" in separate segments (separate <p>s) instead of on one
-        // line. So for markdown (and while the shape is still undecided) only a
-        // bare '\n' flushes, preserving the within-line joins of the v5.0.0 path.
-        //
-        // The HTML path needs the looser trigger: it coalesces re-renders to once
-        // every HTML_RENDER_CHUNK, and that threshold is only evaluated inside a
-        // flush. A provider that never sends bare '\n' would otherwise never flush
-        // mid-response and would render the whole answer once, at the final flush.
-        if (token === '\n' || (token.includes('\n') && streaming.isHtmlResponse === true)) {
+        // When to flush: any token that CONTAINS a newline. flush() re-renders the
+        // WHOLE accumulated raw text every time (there is one render path now), so
+        // splitting at an embedded newline loses nothing - "foo\nbar" and a bare
+        // '\n' are equally safe cut points. The threshold that actually coalesces
+        // the re-renders (HTML_RENDER_CHUNK) is evaluated inside flush(); this
+        // trigger only decides how often flush() is CONSULTED. A provider that never
+        // sends a '\n' at all still renders everything at the final flush.
+        if (token.includes('\n')) {
             this.flushAccumulatingMessage();
         }
     }
@@ -1109,12 +1102,17 @@ class MessagesArea extends HTMLElement {
                 case "1":     // do reply
                     // console.log("[ThunderAI] (do reply) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     await browser.runtime.sendMessage({command: "chatgpt_replyMessage", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId, replyType: replyType});
-                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+                    // Fire-and-forget: this closes our own window, unloading the
+                    // context before the query can resolve. Swallow the expected
+                    // "Actor 'Conduits' destroyed" rejection instead of leaving it
+                    // as an unhandled promise rejection.
+                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
                     break;
                 case "2":     // replace text
                     //  console.log("[ThunderAI] (replace text) fullTextHTMLAtAssignment: " + fullTextHTMLAtAssignment);
                     await browser.runtime.sendMessage({command: "chatgpt_replaceSelectedText", text: finalText, tabId: promptData.tabId, mailMessageId: promptData.mailMessageId});
-                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+                    // Fire-and-forget: see the note above in the reply case.
+                    browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
                     break;
             }
         }
@@ -1163,7 +1161,7 @@ class MessagesArea extends HTMLElement {
         closeButton.textContent = browser.i18n.getMessage("chatgpt_win_close");
         closeButton.classList.add('close_btn', 'mzta-btn-tertiary');
         closeButton.addEventListener('click', async () => {
-            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});    // close window
+            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});    // close window
         });
         if(promptData.action != "0") {
             actionButtons.appendChild(splitButton);
@@ -1386,7 +1384,7 @@ class MessagesArea extends HTMLElement {
                 headerMessageId: promptData.prompt_info.headerMessageId,
                 tabId: promptData.prompt_info.summaryTabId || promptData.tabId,
             });
-            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id});
+            browser.runtime.sendMessage({command: "chatgpt_close", window_id: (await browser.windows.getCurrent()).id}).catch(() => {});
         });
         return saveSummaryButton;
     }

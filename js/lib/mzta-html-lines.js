@@ -16,16 +16,21 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// The ONE HTML -> plain text line projection, shared by the two extractions that
-// feed {%mail_text_body%}:
+// The DOM line-projection layer, plus the plain-text normalizer and the
+// text->html converters. This is the classic-script half of the rich-text layer;
+// js/mzta-richtext.js (an ES module) re-exports everything here through
+// globalThis, and additionally hosts the sanitizer + tag taxonomy.
 //
+// It carries the ONE HTML -> lines projection, shared by:
 //   interactive (menu/popup)  js/mzta-compose-script.js  -> getTextOnly
 //   automatic  (background)   js/mzta-utils.js           -> htmlBodyToPlainText()
+//   insertion  (plain text)   js/mzta-utils.js           -> stripHtmlKeepLines()
+//                             mzta-background.js         -> _replaceSelectedText()
 //
-// Both used to carry their own hand-copied twin of this, including the block-tag
-// list spelled out twice. They are the same rule and must stay the same rule:
-// fixing a boundary in one and not the other is precisely how these two drifted
-// apart before.
+// Every one of those used to carry its own hand-copied twin of the conversion,
+// including the block-tag list spelled out several times. They are the same rule
+// and must stay the same rule: fixing a boundary in one and not the other is
+// precisely how these drifted apart before.
 //
 // ── Why this file is a CLASSIC script, not an ES module ──────────────────────
 //
@@ -44,14 +49,34 @@
 // Same shape as js/lib/diff.js, which is likewise a classic script shared
 // through a global by a content script and a page script.
 
-// Structural break: one \n. NOT a paragraph break (\n\n) - the consumers'
-// contract for the mail body is one line per block and never a blank line, and
-// cleanupNewlines() collapses \n{2,} on the receiving end anyway. That collapse
-// is what lets this list be blunt: nested blocks (a <p> inside a <div>, <li>
-// inside <ul>) and empty Outlook spacer paragraphs
-// (<p class=MsoNormal><o:p>&nbsp;</o:p></p>) fold away instead of doubling up.
+// ── The two projection tiers ─────────────────────────────────────────────────
+//
+// A PARAGRAPH boundary projects to a blank line (\n\n); every other block
+// boundary projects to a single line break (\n). This mirrors what the two
+// converters this file replaces did between them: stripHtmlKeepLines() turned
+// </p> into \n\n and every other block close into a single \n, while
+// mztaInjectLineBreaks() emitted a single \n for every block. Splitting the
+// projection into two tiers lets ONE projection serve both contracts, with the
+// choice made downstream by mztaNormalizePlain():
+//
+//   default              (cleanupNewlines)     collapses \n{2,} -> \n, so the
+//                        body contract "one \n per block, never a blank line"
+//                        holds - the \n\n a <p> produced folds away.
+//   { keepParagraphs }   (keepParagraphs)      caps \n{3,} -> \n\n, so the blank
+//                        line a <p> produced SURVIVES for compose insertion,
+//                        while every other single \n stays single.
+//
+// The paragraph tier is <p> ONLY, deliberately: a blank line between every <li>
+// or table row would be the regression in the other direction.
+const MZTA_PARA_BLOCK_SELECTOR = 'p';
+
+// Structural break: one \n. NOT a paragraph break. cleanupNewlines() collapses
+// \n{2,} on the receiving end, which is what lets this list be blunt: nested
+// blocks (a <div> inside a <div>, <li> inside <ul>) and empty Outlook spacer
+// paragraphs fold away instead of doubling up. <p> is deliberately absent here -
+// it is the paragraph tier above.
 const MZTA_LINE_BLOCK_SELECTOR =
-  'p, div, li, tr, h1, h2, h3, h4, h5, h6, blockquote, pre, table, ul, ol, section, article, header, footer';
+  'div, li, tr, h1, h2, h3, h4, h5, h6, blockquote, pre, table, ul, ol, section, article, header, footer';
 
 // <br> and <hr> are VOID: they hold no text, so the break replaces them rather
 // than being appended inside them (appendChild on a void element is a no-op).
@@ -60,6 +85,14 @@ const MZTA_LINE_VOID_SELECTOR = 'br, hr';
 // Table cells separate with a SPACE, not a newline - the row is the line, and
 // the <tr> in the block selector above already ends it.
 const MZTA_LINE_CELL_SELECTOR = 'td, th';
+
+// Detects whether an HTML fragment carries its own line structure (a block-level
+// element or a <br>). The ONE surviving heuristic, used only for FRAGMENTS - a
+// selection Range or a compose-window twin - where no authoritative format
+// exists (a Range is not a MIME part; in a plain-text window it has no tags at
+// all). Never used to decide the format of a whole message, which has an
+// authoritative source.
+const MZTA_LINE_STRUCTURE_RE = /<\s*(br|p|div|li|ul|ol|tr|table|h[1-6]|pre|blockquote)\b/i;
 
 // Inject the line structure into `root`, IN PLACE, then let the caller read the
 // text out of it.
@@ -70,7 +103,7 @@ const MZTA_LINE_CELL_SELECTOR = 'td, th';
 // apart, and Outlook/Word markup is compact - it has none - so every paragraph
 // came out welded to the next ("...quotation below:DMS could be XXXXServer 2TB").
 // innerText would respect the boundaries, but it is defined in terms of LAYOUT
-// and returns nothing useful on a detached node, which is exactly what both
+// and returns nothing useful on a detached node, which is exactly what the
 // callers hand in (a DOMParser document, or a cloned body).
 //
 // `root` MUST be a node the caller owns (a parsed document's body, or a clone) -
@@ -87,16 +120,96 @@ function mztaInjectLineBreaks(root) {
   for (const el of root.querySelectorAll(MZTA_LINE_BLOCK_SELECTOR)) {
     el.appendChild(doc.createTextNode('\n'));
   }
+  // Paragraph tier: a blank line. Runs after the structural pass; <p> is not in
+  // that selector, so the two never touch the same element.
+  for (const el of root.querySelectorAll(MZTA_PARA_BLOCK_SELECTOR)) {
+    el.appendChild(doc.createTextNode('\n\n'));
+  }
   return root;
 }
 
-// The whole of `root` projected to text with its line structure intact.
+// The whole of `root` (a NODE) projected to text with its line structure intact.
 // Clones first, so the caller's node is left untouched.
 function mztaHtmlNodeToLines(root) {
   return mztaInjectLineBreaks(root.cloneNode(true)).textContent || '';
 }
 
-// Both functions are plain top-level declarations, so in a classic script they
+// The same projection with a STRING entry point, for the module-world callers
+// (htmlToLines): parse to an owned document, then project. Returns text with the
+// two-tier line structure; the caller runs mztaNormalizePlain() to pick the
+// body-vs-paragraph contract.
+function mztaHtmlToLines(htmlString) {
+  const doc = new DOMParser().parseFromString(String(htmlString == null ? '' : htmlString), 'text/html');
+  return mztaInjectLineBreaks(doc.body).textContent || '';
+}
+
+// The ONE plain-text normalizer, parameterized by two flags.
+//
+//   default              cleanupNewlines: CRLF->LF, both spellings of the
+//                        non-breaking space -> ' ' (BEFORE the whitespace rules,
+//                        so they collapse like any space; dropping either welds
+//                        words), trailing-per-line trim, \n{2,} -> \n, space
+//                        runs -> ' ', trim. The {%mail_text_body%} contract.
+//   { keepParagraphs }   as above but \n{3,} -> \n\n: a single blank line
+//                        survives. Feeds the compose extractions
+//                        ({%mail_typed_text%}/{%mail_quoted_text%}) and plain-
+//                        text insertion, whose point is that the typed/answer
+//                        lines reach their target intact.
+//   { keepColumns }      VERBATIM: only CRLF/CR->LF, a leading BOM and trailing
+//                        whitespace. Never collapses blank lines, space runs, or
+//                        the non-breaking space - the column alignment
+//                        {%mail_plain_text_part%} exists to deliver, and a U+00A0
+//                        the sender really put in the plain part. keepColumns
+//                        wins over keepParagraphs when both are set.
+function mztaNormalizePlain(text, { keepParagraphs = false, keepColumns = false } = {}) {
+  if (keepColumns) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/^﻿/, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\s+$/, '');
+  }
+  return String(text == null ? '' : text)
+    .replace(/\r\n/g, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/ /g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(keepParagraphs ? /\n{3,}/g : /\n{2,}/g, keepParagraphs ? '\n\n' : '\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+function mztaEscapeHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// text -> html. mode:'br' turns every \n into a <br> (for a value inserted into
+// an HTML body where the breaks are carried by \n); mode:'p' wraps each line in
+// an escaped <p>. Only for PLAIN text: on already-formed HTML the 'br' mode
+// would inject a spurious <br> at every source newline.
+function mztaLinesToHtml(text, { mode = 'br' } = {}) {
+  const s = String(text == null ? '' : text);
+  if (mode === 'p') {
+    return s.split('\n').map(line => `<p>${mztaEscapeHtml(line)}</p>`).join('');
+  }
+  return s.replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
+}
+
+// true iff the fragment carries its own line structure (a block/line tag). The
+// ONE surviving heuristic - used only for fragments (see MZTA_LINE_STRUCTURE_RE).
+function mztaHasLineStructure(html) {
+  return (html != null) && MZTA_LINE_STRUCTURE_RE.test(String(html));
+}
+
+// All of the above are plain top-level declarations, so in a classic script they
 // are already globals - there is deliberately no export here (`export` is a
 // syntax error outside a module, and this file must stay loadable as a content
-// script). js/mzta-utils.js reaches them through globalThis for the same reason.
+// script). js/mzta-utils.js and js/mzta-richtext.js reach them through globalThis
+// for the same reason.

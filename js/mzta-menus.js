@@ -33,9 +33,6 @@ import {
     extractJsonObject,
     normalizeDateTimeString,
     normalizeHtmlSourceNewlines,
-    convertNewlinesToBr,
-    cleanupNewlines,
-    cleanupNewlinesKeepParagraphs,
     checkIfTagLabelExists,
     getConnectionType,
     isApiUsableConnection,
@@ -45,6 +42,12 @@ import {
     // scrapes the rendered DOM, this one reads the MIME parts.
     getMailBody as getMailBodyFromParts,
  } from './mzta-utils.js'
+import {
+    hasLineStructure,
+    htmlToLines,
+    linesToHtml,
+    normalizePlain,
+} from './mzta-richtext.js';
 import { taPromptUtils } from './mzta-utils-prompt.js';
 import { taLogger } from './mzta-logger.js';
 import { placeholdersUtils } from './mzta-placeholders.js';
@@ -115,25 +118,40 @@ export class mzta_Menus {
         let curr_menu_entry = {id: curr_prompt.id, is_default: curr_prompt.is_default, name: curr_prompt.name};
         let curr_message = null;
     
-        // Does this HTML carry line structure of its own (a block tag or a <br>)?
+        // The HTML twin of a source, decided by shape with the ONE shared heuristic
+        // (hasLineStructure, js/mzta-richtext.js): an HTML fragment keeps its tags
+        // (source newlines collapsed - the tags carry the breaks), a structure-less
+        // one is rebuilt from the text whose \n survived. Same rule getMailBody() in
+        // js/mzta-utils.js applies to a text/plain-only mail.
         //
-        // In an HTML compose window it always does, and normalizeHtmlSourceNewlines()
-        // is right to collapse the source newlines: the tags carry the breaks.
-        // In a PLAIN TEXT compose window there are no tags - the line breaks ARE
-        // the \n characters (the same property the insertion path relies on, see
-        // js/mzta-compose-script.js and issue #855) - so that collapse leaves one
-        // run-together line. Detected by shape because the compose format is not
-        // known here; getComposeDetails would be a second async round trip per
-        // menu action. [#829]
-        const htmlHasLineStructure = (html) =>
-            (html != null) && /<\s*(br|p|div|li|ul|ol|tr|table|h[1-6]|pre|blockquote)\b/i.test(String(html));
-
-        // The HTML twin of a plain text source, rebuilt from the text whose \n
-        // survived. Same rule getMailBody() in js/mzta-utils.js already applies to
-        // a text/plain-only mail (text.replace(/\n/g, "<br>")): a source with no
-        // markup gets its line breaks from its newlines.
+        // Detected by shape because the compose format is not known here:
+        // getComposeDetails would be a second async round trip per menu action, and
+        // in a PLAIN TEXT compose window there are no tags - the line breaks ARE the
+        // \n, so collapsing them as HTML would weld the body into one line. [#829]
         const htmlOrFromText = (html, text) =>
-            htmlHasLineStructure(html) ? normalizeHtmlSourceNewlines(html) : convertNewlinesToBr(cleanupNewlines(text ?? ''));
+            hasLineStructure(html) ? normalizeHtmlSourceNewlines(html) : linesToHtml(normalizePlain(text ?? ''), { mode: 'br' });
+
+        // The selection twins, derived from ONE normalization so selected_text and
+        // selected_html AGREE - the diff picker's original side depends on the pair
+        // matching (see claude-spec/07-diff-picker.md). Computing them from two
+        // independent inputs (selection.toString() vs cloneContents().innerHTML) let
+        // them drift.
+        //
+        //   fragment has structure -> trust its tags: keep the markup, and read the
+        //                             TEXT twin back OUT of the same fragment.
+        //   no structure (plain)   -> the \n ARE the breaks: text from them, html
+        //                             rebuilt from that text.
+        //
+        // A range cutting mid-<b> yields an unbalanced fragment; the DOMParser inside
+        // htmlToLines (and later inside the picker) auto-closes it, so no half-open
+        // tag leaks into either twin.
+        const selectionTwin = (rawHtml, rawText) => {
+            if (hasLineStructure(rawHtml)) {
+                return { text: normalizePlain(htmlToLines(rawHtml)), html: normalizeHtmlSourceNewlines(rawHtml) };
+            }
+            const text = normalizePlain(rawText ?? '');
+            return { text, html: linesToHtml(text, { mode: 'br' }) };
+        };
 
         const getMailBody = async (tabs, do_autoselect = false) => {
             //const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -141,9 +159,8 @@ export class mzta_Menus {
             const raw_selection_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" });
             const raw_text = await browser.tabs.sendMessage(tabs[0].id, { command: "getTextOnly" });
             const raw_html = await browser.tabs.sendMessage(tabs[0].id, { command: "getFullHtml" });
-            // Raw values as they arrive from the content script, before cleanupNewlines()
-            // and htmlOrFromText() rewrite them. JSON.stringify() so newlines/escapes
-            // stay visible. [#829]
+            // Raw values as they arrive from the content script, before the twins
+            // rewrite them. JSON.stringify() so newlines/escapes stay visible. [#829]
             this.logger.log("getMailBody raw_text: " + JSON.stringify(raw_text));
             this.logger.log("getMailBody raw_html: " + JSON.stringify(raw_html));
             this.logger.log("getMailBody raw_selection: " + JSON.stringify(raw_selection));
@@ -163,25 +180,25 @@ export class mzta_Menus {
                 ? await browser.tabs.sendMessage(tabs[0].id, { command: "getSelectedHtml" })
                 : '';
             this.logger.log("getMailBody raw_only_typed_html: " + JSON.stringify(raw_only_typed_html));
-            // Computed once: only_typed_html falls back to this same value, and the
-            // two have to be twins.
-            const only_typed_text = cleanupNewlinesKeepParagraphs(raw_only_typed_text);
+            // Paragraph-preserving: these carry the mail the user typed, and the
+            // blank line between greeting and body is part of it. Computed once:
+            // only_typed_html falls back to this same value, and the two are twins. [#829]
+            const only_typed_text = normalizePlain(raw_only_typed_text, { keepParagraphs: true });
+
+            const sel = selectionTwin(raw_selection_html, raw_selection);
 
             return {tabId: tabs[0].id,
-                selection: cleanupNewlines(raw_selection),
-                selection_html: htmlOrFromText(raw_selection_html, raw_selection),
-                text: cleanupNewlines(raw_text),
+                selection: sel.text,
+                selection_html: sel.html,
+                text: normalizePlain(raw_text),
                 html: htmlOrFromText(raw_html, raw_text),
-                // Paragraph-preserving cleanup, not cleanupNewlines(): these two
-                // carry the mail the user typed, and the blank line between
-                // greeting and body is part of it. [#829]
                 only_typed_text: only_typed_text,
                 // The html twin of only_typed_text, for the diff picker's original
                 // side. htmlOrFromText() so a plain text compose window - whose
                 // cloned range carries no markup - still gets its line breaks from
-                // the \n, exactly as the other two twins do.
+                // the \n, exactly as the other twins do.
                 only_typed_html: htmlOrFromText(raw_only_typed_html, only_typed_text),
-                only_quoted_text: cleanupNewlinesKeepParagraphs(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }))
+                only_quoted_text: normalizePlain(await browser.tabs.sendMessage(tabs[0].id, { command: "getOnlyQuotedText" }), { keepParagraphs: true })
             };
         };
     

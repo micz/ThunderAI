@@ -361,6 +361,20 @@ allowlist is now what stands between the two:
 - Re-serialization goes out through `innerHTML`, which encodes entities correctly for free.
   Hand-rolled escaping on HTML input would escape the very tags being preserved.
 
+**The sanitizer and the tag taxonomy live in `js/mzta-richtext.js`, not here.** `sanitizeAgainst`,
+`sanitize({allowBlocks})`, `sanitizeInlineHtml`, `sanitizeBlockHtml`, `BLOCK_TAGS`, `INLINE_ALLOWED`,
+`BLOCK_ALLOWED`, `SAFE_HREF` — one copy, imported by both the picker and the webchat renderer, so the
+security boundary cannot drift between them. The picker imports the three sanitizers plus the
+**segmentation** `BLOCK_TAGS` (still `{p,div,li,h1-6,blockquote,pre}` — deliberately narrow, no
+`ul/ol/tr/table`). `blockTextOfHtml`, `segmentBlocks`, `sliceHtmlByText`, `normalizeBlockHtml` and
+`makeBlock` **stay in `diffPicker.js`**: `blockTextOfHtml` is the offset-space anchor
+`sliceHtmlByText` maps against, and moving it risks the P1/P2/P3 invariant that has no harness here.
+
+**`BLOCK_ALLOWED` was widened** (for the renderer, which now emits markdown tables and `hr`) with the
+table family `table, thead, tbody, tr, td, th` and `hr`. That widening is a **separate addend on
+`BLOCK_ALLOWED` only** — it must **never** propagate into `BLOCK_TAGS`, or `segmentBlocks()` would
+start treating a `<tr>` as a diffable block. `img` stays stripped.
+
 `htmlToFragment()` is the **single choke point** for rendering: nothing that skipped the sanitizer
 may reach the DOM.
 
@@ -416,10 +430,17 @@ Two independent code paths produce a separator and both set it: `splitOnBr`'s ru
 and a `<br>` between blocks at body level, which closes the implicit `<p>` being gathered and marks
 the block it just flushed.
 
-An empty run — a trailing `<br>`, or the blank line in `<br><br>` — is still dropped by the guard
-that drops empty blocks, and the junction it represented is simply not emitted. `pushBlocks` clears
-`sep` on the last block it actually emitted, so a trailing `<br>` can never leave a block pointing at
-a successor belonging to a different wrapper.
+An empty run is not emitted, but its POSITION decides the junction of the block before it. A
+**single** `<br>` to an adjacent non-empty run is an in-paragraph line break (`sep = 'br'`, the two
+lines re-join into one wrapper). A **blank line** — an empty run between two non-empty ones, i.e.
+`<br><br>` — is a **paragraph break**: the block before it ends its wrapper (`sep = null`) and the
+next run renders as its own `<p>`, so `<p>a<br><br>b</p>` comes back as `<p>a</p><p>b</p>` and the
+blank line survives (this is the fix for the picker importing paragraphs as single-spaced lines). The
+body-level `<br>` walk mirrors this: the first `<br>` after a run sets `sep = 'br'`, a second
+consecutive one (only whitespace between) promotes it to `null`. A **trailing** `<br>` (empty final
+run) leaves `sep = null` on the last emitted block, so a `<br>` can never leave a block pointing at a
+successor belonging to a different wrapper. Verified against P1 and the accept-all / reject-all
+invariant, running the real module in a browser (the harness `07`'s invariant caveat asks for).
 
 **`sep` is part of `buildBlockPairs`' comparator**, for the same reason `html` is: for a context part
 jsdiff keeps one side's objects and discards the other, so two blocks differing only in their
@@ -449,17 +470,24 @@ segmenter is what handles the original's markup.
 ### Into a plain text compose window
 
 `composeResultHTML()` emits **`<p>`/`<li>`-wrapped blocks**, structurally the same shape as the
-non-picker markdown path, and those blocks may contain `<br>` where the chosen side had one. The conversion back to text is still **not** the picker's job — it happens
-downstream, where the target window's format is known: `mzta-background.js` detects it with
-`isPlainTextCompose()` and runs `stripHtmlKeepLines()`, and the content script inserts a `Text` node
-instead of parsing HTML. See [01-architecture.md](01-architecture.md) → *Writing into a plain text
-compose window* for the full path and why all of its parts are load-bearing.
+non-picker render path, and those blocks may contain `<br>` where the chosen side had one. The
+conversion back to text is still **not** the picker's job — it happens downstream, where the target
+window's format is known: `mzta-background.js` detects it with `isPlainTextCompose()` and runs
+`stripHtmlKeepLines()`, and the content script inserts a `Text` node instead of parsing HTML. See
+[01-architecture.md](01-architecture.md) → *Writing into a plain text compose window* for the full
+path and why all of its parts are load-bearing.
+
+**`stripHtmlKeepLines()` is now DOM-based, not a regex.** It is a thin shim over the shared rich-text
+layer: `normalizePlain(htmlToLines(html), { keepParagraphs: true })`. `htmlToLines`'s two-tier
+projection turns `<p>` into a blank line (`\n\n`) and every other block boundary / `<br>` into a
+single `\n`, and `{ keepParagraphs }` preserves exactly that — byte-compatible with the old regex for
+the picker's `<p>`/`<li>`/`<br>` output.
 
 **This is what changed for #855.** The picker's old `<br>`-only, `<p>`-less output is what made that
-bug visible: `stripHtmlKeepLines` was tuned for `<p>`-wrapped markdown, and the picker's converted
-`\n` were then re-parsed as collapsible HTML whitespace, collapsing the whole message onto one line.
-The picker's output is now in that function's designed happy path, so **no change was needed in
-`js/mzta-utils.js`**. The rest of the #855 machinery (the `Text`-node branch, the `plainTextBody`-aware
+bug visible: `stripHtmlKeepLines` expected `<p>`-wrapped markdown, and the picker's converted `\n`
+were then re-parsed as collapsible HTML whitespace, collapsing the whole message onto one line. The
+picker's output is now in that function's designed happy path, so **no change was needed in the
+insertion path**. The rest of the #855 machinery (the `Text`-node branch, the `plainTextBody`-aware
 helpers) is still load-bearing for every other producer and is untouched.
 
 ## The result indirection
@@ -883,12 +911,13 @@ the picker (`prompt_proofread_this`, `prompt_rewrite_formal`, `prompt_rewrite_po
 
 | File | Role |
 |------|------|
-| `api_webchat/diffPicker.js` | Block segmentation + sanitizer, hunk model, compose functions, `<diff-picker>` element. Also exports `sanitizeBlockHtml()`, the gate the answer path uses |
-| `api_webchat/streamingMessage.js` | Decides per response whether the answer is HTML; sanitizes it instead of running markdown-it |
+| `js/mzta-richtext.js` | The ONE sanitizer + tag taxonomy: `sanitize`/`sanitizeInlineHtml`/`sanitizeBlockHtml`, `BLOCK_TAGS`/`INLINE_ALLOWED`/`BLOCK_ALLOWED`/`SAFE_HREF`; plus `globalThis` re-exports of the classic projection (`htmlToLines`/`linesToHtml`/`normalizePlain`/`hasLineStructure`). Imported by the picker and the renderer |
+| `api_webchat/diffPicker.js` | Block segmentation, hunk model, compose functions, `<diff-picker>` element. Imports the sanitizer + `BLOCK_TAGS` from `mzta-richtext.js`; keeps `blockTextOfHtml`/`sliceHtmlByText`/`segmentBlocks` (the offset machinery) |
+| `api_webchat/streamingMessage.js` | The ONE render path: `renderResponse(raw) = sanitize(markdownit({html:true,breaks:true}).render(raw))`. No markdown-vs-HTML router |
 | `api_webchat/messagesArea.js` | `_buildDiffButton` (resolves both sides' HTML), `hasBlockStructure` (the original-side canonicalization guard), `appendDiffPicker`, the `_mztaPicker` indirection, `_onPickerResize` |
 | `api_webchat/svgIcons.js` | `buildHunkMarkerIcon` (the empty-side placeholder); the toolbar's chevron / circle-check / check / cross / pencil / overflow icons |
 | `js/lib/diff.js` | jsdiff; provides the `Diff` global (classic script, loaded before the modules). `diffArrays` pairs blocks, `diffWordsWithSpace`/`diffSentences` diff within one |
-| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `htmlHasLineStructure` / `htmlOrFromText` rebuild a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
+| `js/mzta-menus.js` | sets `curr_prompt.body_html` (the picker's original side) alongside `body_text` / `selection_html`; `selectionTwin()` derives `selected_text`/`selected_html` from ONE normalization (shared `hasLineStructure` + `htmlToLines`/`linesToHtml`) so the pair agrees; `htmlOrFromText` rebuilds a structure-less html twin from its text; captures `only_typed_html` off the auto-selected range and pairs it onto `selection_html` when `mail_typed_text` is substituted |
 | `_locales/en/messages.json` | `apiwebchat_picker_*`, including the EDIT hint's conditional choice-reset warning |
 | `js/mzta-utils.js` | `isPlainTextCompose`, `stripHtmlKeepLines`, and the `plainTextBody`-aware body helpers |
 | `js/mzta-compose-script.js` | `replaceSelectedText` — the `Text`-node branch that preserves `\n`; the HTML branch inserts a `DocumentFragment` of `doc.body`'s children, never `doc.body` itself, so the `compose_reloadBody` round-trip cannot flatten the picker's `<p>` blocks |
