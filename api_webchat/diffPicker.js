@@ -2122,7 +2122,14 @@ class DiffPicker extends HTMLElement {
             // The composition WITH its markup, which is the whole point of the
             // editable surface: the user edits the formatted text rather than a
             // flattened transcript of it.
-            this._editor.innerHTML = composeResultBlocksHTML(this._blocks);
+            //
+            // Inserted through htmlToFragment (DOMParser + appendChild) rather
+            // than .innerHTML: the Thunderbird review policy forbids live-DOM
+            // .innerHTML writes, and setHTML() would need TB 148+ while this
+            // add-on supports 140. composeResultBlocksHTML's output is built
+            // from already-sanitized blocks, so the helper's precondition holds
+            // exactly as it does at every other render site here.
+            this._editor.replaceChildren(htmlToFragment(composeResultBlocksHTML(this._blocks)));
             // Remembered so leaving can tell "edited" from "looked and left".
             //
             // Read back through _editorBlockHtml() rather than off innerHTML
@@ -2244,7 +2251,7 @@ class DiffPicker extends HTMLElement {
         // editor would hide the changes the button was clicked to see.
         this._mode = 'review';
         this.removeAttribute('mode');
-        this._editor.innerHTML = '';
+        this._editor.replaceChildren();
         this._editSnapshot = null;
         this._rebuild(this._newHtml);
         this._paintMode();
