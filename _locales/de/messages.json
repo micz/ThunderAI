@@ -1250,7 +1250,7 @@
         "message": "Dieser Parameter muss eine Zahl zwischen 0,0 und 2,0 sein. Er steuert den Zufallsgrad der Ausgabe. Der Standardwert variiert je nach Modell. Lassen Sie das Feld leer, um den Parameter im API-Aufruf nicht festzulegen."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Grad der Zufälligkeit in der Antwort. Der Standardwert ist 1,0. Der Bereich liegt zwischen 0,0 und 1,0. Verwenden Sie eine Temperatur näher an 0,0 für analytische Aufgaben oder Multiple-Choice-Fragen und näher an 1,0 für kreative und generative Aufgaben. Beachten Sie, dass die Ergebnisse selbst bei einer Temperatur von 0,0 nicht vollständig deterministisch sind."
+        "message": "Grad der Zufälligkeit in der Antwort. Der Bereich liegt zwischen 0,0 und 1,0; bleibt das Feld leer, wird der Standardwert 1,0 verwendet. Neuere Claude-Modelle akzeptieren diese Einstellung überhaupt nicht und verwenden stattdessen die Einstellung Aufwand: Ist eines davon ausgewählt, wird dieses Feld deaktiviert und sein Wert nicht gesendet."
     },
     "placeholder_mail_text_body_or_selected": {
         "message": "E-Mail-Inhalt oder markierter Text"
@@ -1501,7 +1501,7 @@
         "message": "Budget für erweitertes Denken (Tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Maximale Anzahl an Tokens, die das Modell für erweitertes Denken (Extended Thinking) verwenden darf. Auf 0 setzen, um das erweiterte Denken zu deaktivieren. Wenn diese Funktion aktiviert ist, wird der Temperature-Wert von der Claude-API ignoriert."
+        "message": "Maximale Anzahl an Tokens, die das Modell für erweitertes Denken (Extended Thinking) verwenden darf. Auf 0 setzen, um das erweiterte Denken zu deaktivieren. Der Wert muss kleiner als Max Tokens sein. Neuere Claude-Modelle akzeptieren kein manuelles Budget und verwenden stattdessen die Einstellung Aufwand: Ist eines davon ausgewählt, wird dieses Feld deaktiviert und sein Wert nicht gesendet."
     },
     "prefs_ollama_format_json": {
         "message": "JSON-Ausgabe erzwingen"

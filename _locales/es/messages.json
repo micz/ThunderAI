@@ -1219,7 +1219,7 @@
         "message": "Has denegado el permiso opcional necesario para obtener los modelos de esta integración."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Cantidad de aleatoriedad inyectada en la respuesta. Por defecto es 1.0. Varía de 0.0 a 1.0. Usa una temperatura más cercana a 0.0 para tareas analíticas / de opción múltiple, y más cercana a 1.0 para tareas creativas y generativas. Ten en cuenta que incluso con una temperatura de 0.0, los resultados no serán completamente determinísticos."
+        "message": "Cantidad de aleatoriedad inyectada en la respuesta. Varía de 0.0 a 1.0; si dejas el campo vacío, se usa el valor predeterminado 1.0. Los modelos de Claude más recientes no aceptan este ajuste en absoluto y usan en su lugar el ajuste Esfuerzo: cuando uno de ellos está seleccionado, este campo se deshabilita y su valor no se envía."
     },
     "Anthropic_System_Prompt_Info": {
         "message": "Puedes mejorar el rendimiento de Claude usando un Prompt del Sistema para asignarle un rol. Esta técnica, conocida como prompting de rol, es la forma más poderosa de usar prompts del sistema con Claude. El rol adecuado puede convertir a Claude de un asistente general en tu experto virtual en el dominio."
@@ -1685,7 +1685,7 @@
         "message": "Presupuesto de pensamiento extendido (tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Máximo de tokens que el modelo puede gastar en pensamiento extendido. Configúralo en 0 para deshabilitar el pensamiento extendido. Cuando está habilitado, el valor de la temperatura es ignorado por la API de Claude."
+        "message": "Máximo de tokens que el modelo puede gastar en pensamiento extendido. Configúralo en 0 para deshabilitar el pensamiento extendido. Debe ser menor que Máximo de tokens. Los modelos de Claude más recientes no aceptan un límite manual y usan en su lugar el ajuste Esfuerzo: cuando uno de ellos está seleccionado, este campo se deshabilita y su valor no se envía."
     },
     "generic_error_dismiss": {
         "message": "Descartar"

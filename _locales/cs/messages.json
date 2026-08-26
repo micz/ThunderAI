@@ -1410,7 +1410,7 @@
         "message": "Výkon modelu Claude můžete vylepšit použitím systémového promptu k přidělení role. Tato technika, známá jako „role prompting“, je nejúčinnějším způsobem použití systémových promptů u modelu Claude. Správná role může změnit Clauda z obecného asistenta na vašeho virtuálního odborníka v dané oblasti."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Míra náhodnosti vkládaná do odpovědi. Výchozí hodnota je 1,0. Rozsah od 0,0 do 1,0. Teplotu blízkou 0,0 použijte pro analytické úkoly nebo výběr z více možností, teplotu blízkou 1,0 pro kreativní a generativní úkoly. Upozorňujeme, že i při teplotě 0,0 nebudou výsledky plně deterministické."
+        "message": "Míra náhodnosti vkládaná do odpovědi. Rozsah od 0,0 do 1,0; pokud pole ponecháte prázdné, použije se výchozí hodnota 1,0. Novější modely Claude toto nastavení vůbec nepřijímají a místo něj používají nastavení Úsilí: pokud je vybrán některý z nich, je toto pole zakázáno a jeho hodnota se neodesílá."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmítli jste volitelné oprávnění potřebné pro načtení modelů pro tuto integraci."

@@ -36,6 +36,7 @@ import {
 import { taStorage } from '../js/mzta-storage.js';
 import {
   injectConnectionUI,
+  updateAnthropicModelCapabilityUI,
   varConnectionUI,
   showConnectionOptions,
   updateWarnings,
@@ -683,6 +684,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   showConnectionOptions(conntype_select);
   showAdvConnectionOptions();
+  updateAnthropicModelCapabilityUI();
   checkJsonFields();
   updateDescription();
   updateConnPanelTint();

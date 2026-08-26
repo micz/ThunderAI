@@ -60,7 +60,8 @@ export const integration_options_config = {
         max_tokens: 4096,
         system_prompt: '',
         temperature: '',
-        extended_thinking_budget: 0
+        extended_thinking_budget: 0,
+        effort: ''
     }
 };
 

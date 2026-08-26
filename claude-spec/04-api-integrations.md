@@ -103,8 +103,41 @@ user in the Advanced options of the connection panel; `parseExtraBody()` in
 ### Anthropic / Claude (`anthropic_api`)
 - Module: `js/api/anthropic.js`
 - Worker: `js/workers/model-worker-anthropic.js`
-- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`
-- **Extended thinking**: when `anthropic_extended_thinking_budget > 0`, the request body adds `thinking: { type: 'enabled', budget_tokens: N }` and **omits** `temperature` (the Claude API forbids setting temperature with extended thinking). See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
+- Settings keys: `anthropic_api_key`, `anthropic_model`, `anthropic_version`, `anthropic_max_tokens`, `anthropic_system_prompt`, `anthropic_temperature`, `anthropic_extended_thinking_budget`, `anthropic_effort`
+- **Capability table** (`js/api/anthropic_model_capabilities.js`): which request parameters a Claude
+  model accepts depends on the model, and sending one it rejects is a hard 400 — not a silently
+  ignored field. `getAnthropicModelCapabilities(modelId)` matches by **model ID prefix** (so dated
+  variants such as `claude-sonnet-4-5-20250929` resolve to their family, longest prefix first) and
+  returns `{thinkingModes, supportsBudgetTokens, supportsSamplingParams, supportsEffort,
+  effortLevels, defaultThinking}`, plus `disabledThinkingMaxEffort` on the one model that needs it.
+  An unknown ID — users can type any model name — falls back to `ANTHROPIC_MODERN_CAPABILITIES`,
+  deliberately assuming the *modern* contract: a stale setting then degrades to a valid request,
+  whereas assuming the legacy contract would send `temperature`/`budget_tokens` and earn a 400.
+  **The table must be updated as new models ship.**
+- **Request body construction** is entirely driven by that table, and every field is opt-in:
+  - `temperature` is sent only when `supportsSamplingParams` and the user set a value. It is now
+    **independent of the thinking configuration** — the old rule that extended thinking suppressed
+    temperature no longer holds, because on newer models temperature is rejected outright regardless.
+  - `thinking: {type:'enabled', budget_tokens: N}` only when `supportsBudgetTokens` and N > 0.
+  - `thinking: {type:'disabled'}` only where it changes something — i.e. `defaultThinking === 'adaptive'`
+    (newer models think unless told not to, which silently eats `max_tokens` and truncates the reply).
+    On models that already default to no thinking the field stays omitted, so their request bodies are
+    byte-identical to what they were before the table existed.
+  - `output_config: {effort}` only when `supportsEffort` and the level is valid for that model.
+    Omitted when the level equals `ANTHROPIC_DEFAULT_EFFORT` (`high`), which is the API default —
+    kept behind that named constant so it is easy to change.
+  - Any other combination omits the field entirely. **A configuration that is impossible for the
+    selected model degrades to a valid request, never to a 400.** Stored prefs are never rewritten:
+    the user may switch back to an older model, so incompatibility is resolved at request-build time
+    (here) and at display time (the options page disables the field with a note).
+- **400 error hints**: `describeAnthropicError(detail, model, i18nStrings)` inspects a 400 body and,
+  when the message names `temperature` / `top_p` / `top_k` / `thinking.type` / `budget_tokens` /
+  `effort`, prepends a localized hint naming the incompatible option; otherwise the raw detail is
+  returned unchanged. It takes `i18nStrings` as a parameter because it runs inside a Web Worker,
+  where `browser.i18n` is unavailable — the same threading already used for
+  `anthropic_api_request_failed`.
+
+See [Thinking output in the webchat UI](#thinking-output-in-the-webchat-ui) for how the resulting stream is surfaced.
 
 ## Thinking output in the webchat UI
 

@@ -2008,7 +2008,7 @@
     "description": ""
   },
   "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. When enabled, the temperature value is ignored by the Claude API.",
+    "message": "Maximum tokens the model may spend on extended thinking. Set to 0 to disable extended thinking. Must be lower than Max Tokens. Newer Claude models do not accept a manual budget and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
     "description": ""
   },
   "anthropic_empty_apikey": {
@@ -2041,6 +2041,50 @@
   },
   "anthropic_err_hint_effort": {
     "message": "The selected Claude model ($MODEL$) does not accept this Effort level. Choose a different level in the options page.",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_effort": {
+    "message": "Effort",
+    "description": ""
+  },
+  "prefs_OptionText_anthropic_effort_Info": {
+    "message": "How much reasoning effort the model should spend on a request. Higher levels give better answers on complex tasks but cost more tokens and take longer. Leave it on the default to let the Claude API decide. Older Claude models do not support this setting.",
+    "description": ""
+  },
+  "anthropic_effort_default": {
+    "message": "Default (decided by the API)",
+    "description": "Empty option of the Claude effort selector, meaning no effort value is sent."
+  },
+  "Anthropic_Effort_Level_low": {
+    "message": "Low",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_medium": {
+    "message": "Medium",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_high": {
+    "message": "High",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_xhigh": {
+    "message": "Extra high",
+    "description": ""
+  },
+  "Anthropic_Effort_Level_max": {
+    "message": "Maximum",
+    "description": ""
+  },
+  "anthropic_note_temperature_unsupported": {
+    "message": "The selected model does not accept a Temperature value and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
+    "description": ""
+  },
+  "anthropic_note_budget_tokens_unsupported": {
+    "message": "The selected model does not accept a manual extended thinking budget and ignores this field. Use the Effort setting instead. The value is kept in case you switch back to an older model.",
+    "description": ""
+  },
+  "anthropic_note_effort_unsupported": {
+    "message": "The selected model does not support the Effort setting. Use the Extended thinking budget instead.",
     "description": ""
   },
   "_api_connecting": {
@@ -2328,7 +2372,7 @@
     "description": ""
   },
   "prefs_anthropic_temperature_Info": {
-    "message": "Amount of randomness injected into the response. Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 for analytical / multiple choice, and closer to 1.0 for creative and generative tasks. Note that even with temperature of 0.0, the results will not be fully deterministic.",
+    "message": "Amount of randomness injected into the response. Ranges from 0.0 to 1.0, and defaults to 1.0 when left empty. Newer Claude models do not accept this setting at all and use the Effort setting instead: when one of them is selected this field is disabled and its value is not sent.",
     "description": ""
   },
   "Optional_Permission_Denied_Model_Fetching": {

@@ -1571,7 +1571,7 @@
         "message": "Budżet rozszerzonego myślenia (tokeny)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Maksymalna liczba tokenów, jaką model może przeznaczyć na rozszerzone myślenie. Ustaw na 0, aby wyłączyć rozszerzone myślenie. Po włączeniu wartość temperatury jest ignorowana przez API Claude."
+        "message": "Maksymalna liczba tokenów, jaką model może przeznaczyć na rozszerzone myślenie. Ustaw na 0, aby wyłączyć rozszerzone myślenie. Wartość musi być mniejsza niż Max Tokens. Nowsze modele Claude nie przyjmują ręcznego limitu i zamiast niego używają ustawienia Wysiłek: gdy wybrany jest jeden z nich, to pole jest wyłączone, a jego wartość nie jest wysyłana."
     },
     "anthropic_empty_apikey": {
         "message": "Nie dodałeś klucza API dla Claude API. Wstaw go na stronie opcji."
@@ -1814,7 +1814,7 @@
         "message": "Wydajność Claude można poprawić, używając polecenia systemowego do nadania mu roli. Ta technika, zwana nadawaniem ról, to najpotężniejszy sposób używania poleceń systemowych z Claude. Odpowiednia rola może zmienić Claude z ogólnego asystenta w Twojego wirtualnego eksperta dziedzinowego."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Stopień losowości wprowadzony do odpowiedzi. Wartość domyślna to 1,0. Zakres od 0,0 do 1,0. Używaj temperatury bliższej 0,0 dla zadań analitycznych / wielokrotnego wyboru, a bliższej 1,0 dla zadań kreatywnych i generatywnych. Zwróć uwagę, że nawet przy temperaturze 0,0 wyniki nie będą w pełni deterministyczne."
+        "message": "Stopień losowości wprowadzony do odpowiedzi. Zakres od 0,0 do 1,0; jeśli pole pozostanie puste, używana jest wartość domyślna 1,0. Nowsze modele Claude w ogóle nie przyjmują tego ustawienia i zamiast niego używają ustawienia Wysiłek: gdy wybrany jest jeden z nich, to pole jest wyłączone, a jego wartość nie jest wysyłana."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Odmówiłeś opcjonalnego uprawnienia potrzebnego do pobrania modeli dla tej integracji."

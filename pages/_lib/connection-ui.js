@@ -27,6 +27,10 @@ import { OpenAIComp } from '../../js/api/openai_comp.js'
 import { GoogleGemini } from '../../js/api/google_gemini.js';
 import { Anthropic } from '../../js/api/anthropic.js';
 import {
+  getAnthropicModelCapabilities,
+  ANTHROPIC_EFFORT_LEVELS
+} from '../../js/api/anthropic_model_capabilities.js';
+import {
   validateCustomData_ChatGPTWeb,
   sanitizeChatGPTModelData,
   sanitizeChatGPTWebCustomData,
@@ -644,7 +648,8 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="text" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature" class="option-input check-number" />
-        <br>__MSG_prefs_anthropic_temperature_Info__
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_temperature_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_temperature_unsupported__</span>
+        __MSG_prefs_anthropic_temperature_Info__
       </label>
     </td>
   </tr>
@@ -688,7 +693,18 @@ export async function injectConnectionUI({
     <td>
       <label>
         <input type="number" id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget" class="option-input" />
-        <br>__MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_extended_thinking_budget_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_budget_tokens_unsupported__</span>
+        __MSG_prefs_OptionText_anthropic_extended_thinking_budget_Info__
+      </label>
+    </td>
+  </tr>
+  <tr class="conntype_anthropic_api conn_adv${tr_class ? ` ${tr_class}` : ''}">
+    <td><span class="opt_title">__MSG_prefs_OptionText_anthropic_effort__</span></td>
+    <td>
+      <label>
+        <select id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" name="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort" class="option-input"></select>
+        <span id="${modelId_prefix ? `${modelId_prefix}` : ''}anthropic_effort_unsupported" class="anthropic_caps_note" style="display:none">__MSG_anthropic_note_effort_unsupported__</span>
+        <br>__MSG_prefs_OptionText_anthropic_effort_Info__
       </label>
     </td>
   </tr>
@@ -1086,6 +1102,11 @@ export async function injectConnectionUI({
   select_anthropic_model.value = prefs.anthropic_model;
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_APIKeyEmpty(modelId_prefix));
   select_anthropic_model.addEventListener("change", () => warn_Anthropic_VersionEmpty(modelId_prefix));
+  select_anthropic_model.addEventListener("change", () => updateAnthropicModelCapabilityUI(modelId_prefix));
+  // No initial call here: this runs before restoreOptions() has written the saved
+  // model into the select, so the capabilities would be computed from an empty
+  // model ID. The page calls updateAnthropicModelCapabilityUI() itself after the
+  // restore, next to showConnectionOptions().
 
   document.getElementById(getPrefixedId('btnUpdateAnthropicModels')).addEventListener('click', async () => {
     document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'inline';
@@ -1128,6 +1149,7 @@ export async function injectConnectionUI({
       });
       syncTomSelect(select_anthropic_model);
       autoSelectSingleModel(select_anthropic_model);
+      updateAnthropicModelCapabilityUI(modelId_prefix);
       document.getElementById(getPrefixedId('anthropic_model_fetch_loading')).style.display = 'none';
     });
     
@@ -1276,6 +1298,10 @@ export async function initializeSpecificIntegrationUI({
 
   // Flag any malformed JSON already stored: the fields are filled now.
   checkJsonFields();
+
+  // Same reason: the saved Claude model is in the select now, so the per-model
+  // option availability can finally be computed.
+  updateAnthropicModelCapabilityUI(model_prefix);
 
   // 3. Setup Logic
   const use_specific_integration_el = document.getElementById(use_specific_integration_id);
@@ -1732,6 +1758,59 @@ function warn_OpenAIComp_HostEmpty(modelId_prefix) {
     }
     btnGiveAllUrlsPermission_openai_comp_api.disabled = false;
   }
+}
+
+// Newer Claude models reject options that older ones require (temperature and a
+// manual extended thinking budget), and expose `effort` in their place. Rather
+// than dropping the stored values -- the user may switch back to an older model
+// -- the fields stay visible and populated and are disabled with a note saying
+// the selected model ignores them. The request builder in js/api/anthropic.js
+// enforces the same table, so a stale value is never actually sent.
+export function updateAnthropicModelCapabilityUI(modelId_prefix = '') {
+  const getPrefixedId = (id) => `${modelId_prefix ? `${modelId_prefix}` : ''}${id}`;
+  const modelAnthropic = getModelEl('anthropic_model', modelId_prefix);
+  if(!modelAnthropic) return;
+  const caps = getAnthropicModelCapabilities(modelAnthropic.value);
+
+  const applyState = (fieldId, supported) => {
+    const field = document.getElementById(getPrefixedId(fieldId));
+    const note = document.getElementById(getPrefixedId(fieldId + '_unsupported'));
+    if(field) field.disabled = !supported;
+    if(note) note.style.display = supported ? 'none' : '';
+  };
+
+  applyState('anthropic_temperature', caps.supportsSamplingParams);
+  applyState('anthropic_extended_thinking_budget', caps.supportsBudgetTokens);
+  applyState('anthropic_effort', caps.supportsEffort);
+
+  const effortSelect = document.getElementById(getPrefixedId('anthropic_effort'));
+  if(!effortSelect) return;
+
+  // Keep whatever is stored selected even when this model does not offer it, so
+  // the value survives a round trip through a model that cannot use it.
+  const current = effortSelect.value;
+  const levels = caps.supportsEffort ? caps.effortLevels : ANTHROPIC_EFFORT_LEVELS;
+  effortSelect.textContent = '';
+
+  const emptyOption = document.createElement('option');
+  emptyOption.value = '';
+  emptyOption.text = browser.i18n.getMessage('anthropic_effort_default');
+  effortSelect.appendChild(emptyOption);
+
+  levels.forEach((level) => {
+    const option = document.createElement('option');
+    option.value = level;
+    option.text = browser.i18n.getMessage('Anthropic_Effort_Level_' + level);
+    effortSelect.appendChild(option);
+  });
+
+  if(current !== '' && !levels.includes(current)) {
+    const staleOption = document.createElement('option');
+    staleOption.value = current;
+    staleOption.text = current;
+    effortSelect.appendChild(staleOption);
+  }
+  effortSelect.value = current;
 }
 
 function warn_Anthropic_APIKeyEmpty(modelId_prefix) {

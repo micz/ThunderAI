@@ -41,6 +41,11 @@
        the amber --warning: this is a value the API cannot use, not a caveat. */
     --jsonError: #b3261e;
 
+    /* Inline note saying the selected Claude model ignores an option (see
+       .anthropic_caps_note). Dark blue, not --jsonError red: nothing is wrong
+       with the stored value, it simply does not apply to this model. */
+    --capsNote: #14448c;
+
     /* Code-like text: {%placeholder%} chips in the prompt editors. Same values as
        the --code/--code-bg tokens on the two Custom Prompts / Data Placeholders
        pages, so a placeholder chip looks the same everywhere in the add-on. */
@@ -102,6 +107,11 @@
         /* Inline validation error (see the light block). Lightened: the light
            value is too dark to read against --field/--panel here. */
         --jsonError: #f2837c;
+
+        /* Model-capability note (see the light block). Light blue: the Claude
+           connection rows have a dark bordeaux background here, against which
+           the light-theme dark blue would be unreadable. */
+        --capsNote: #93c0f5;
 
         /* Wrong-type placeholder chip (see the light block). */
         --warnChipText: #f0c07a;

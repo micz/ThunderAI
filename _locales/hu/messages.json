@@ -1262,7 +1262,7 @@
         "message": "Kiterjesztett gondolkodási keret (tokenek)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Azon tokenek maximális száma, amit a modell kiterjesztett gondolkodásra (extended thinking) fordíthat. Állítsa 0-ra a kikapcsolásához. Ha engedélyezve van, a Claude API figyelmen kívül hagyja a temperature (hőmérséklet) értéket."
+        "message": "Azon tokenek maximális száma, amit a modell kiterjesztett gondolkodásra (extended thinking) fordíthat. Állítsa 0-ra a kikapcsolásához. Az értéknek kisebbnek kell lennie, mint a Max Tokens. Az újabb Claude modellek nem fogadnak el kézi keretet, helyette az Erőfeszítés beállítást használják: ha ilyen modell van kiválasztva, ez a mező le van tiltva, és az értéke nem kerül elküldésre."
     },
     "anthropic_empty_apikey": {
         "message": "Nem adott meg API-kulcsot a Claude API-hoz. Kérjük, illesszen be egyet a beállítások oldalon."
@@ -1445,7 +1445,7 @@
         "message": "Javíthatja a Claude teljesítményét egy Rendszerprompt használatával, amellyel szerepkört adhat neki. Ez a technika (szerep-promptolás) a leghatékonyabb módja a Claude irányításának. A megfelelő szerepkörrel a Claude egy általános asszisztensből az Ön virtuális szakértőjévé válhat."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "A válaszba vitt véletlenszerűség mértéke. Alapértelmezése 1.0. Értéke 0.0 és 1.0 között mozoghat. Használjon 0.0-hoz közeli értéket analitikus / feleletválasztós feladatokhoz, és 1.0-hoz közelit a kreatív és generatív feladatokhoz. Megjegyzés: a kimenet még 0.0-s értéknél sem lesz teljesen determinisztikus."
+        "message": "A válaszba vitt véletlenszerűség mértéke. Értéke 0.0 és 1.0 között mozoghat; ha a mezőt üresen hagyja, az alapértelmezett 1.0 érték lép életbe. Az újabb Claude modellek egyáltalán nem fogadják el ezt a beállítást, helyette az Erőfeszítés beállítást használják: ha ilyen modell van kiválasztva, ez a mező le van tiltva, és az értéke nem kerül elküldésre."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Megtagadta a modellek lekéréséhez szükséges opcionális jogosultságot ehhez az integrációhoz."

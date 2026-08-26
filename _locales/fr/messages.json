@@ -1247,7 +1247,7 @@
         "message": "Ce paramètre doit être un nombre compris entre 0,0 et 2,0. Il contrôle le caractère aléatoire du résultat. La valeur par défaut varie selon le modèle. Laissez ce champ vide pour ne pas définir le paramètre dans l'appel d'API."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Degré d'aléa injecté dans la réponse. La valeur par défaut est 1,0. La plage de valeurs s'étend di 0,0 à 1,0. Utilisez une température proche de 0,0 pour des tâches analytiques ou des choix multiples, et proche de 1,0 pour des tâches créatives et génératives. Notez que même avec une température de 0,0, les résultats ne seront pas totalement déterministes."
+        "message": "Degré d'aléa injecté dans la réponse. La plage de valeurs s'étend de 0,0 à 1,0 ; si le champ est laissé vide, la valeur par défaut 1,0 est utilisée. Les modèles Claude récents n'acceptent pas du tout ce paramètre et utilisent à la place le paramètre Effort : lorsque l'un d'eux est sélectionné, ce champ est désactivé et sa valeur n'est pas envoyée."
     },
     "reset": {
         "message": "Réinitialiser"
@@ -1439,7 +1439,7 @@
         "message": "Budget de réflexion étendue (tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Nombre maximum de tokens que le modèle peut utiliser pour la réflexion étendue. Réglez sur 0 pour désactiver. Lorsqu'il est activé, la valeur de la température est ignorée par l'API Claude."
+        "message": "Nombre maximum de tokens que le modèle peut utiliser pour la réflexion étendue. Réglez sur 0 pour désactiver. La valeur doit être inférieure à Max Tokens. Les modèles Claude récents n'acceptent pas de budget manuel et utilisent à la place le paramètre Effort : lorsque l'un d'eux est sélectionné, ce champ est désactivé et sa valeur n'est pas envoyée."
     },
     "prefs_ollama_format_json": {
         "message": "Forcer le format JSON"

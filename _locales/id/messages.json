@@ -1271,7 +1271,7 @@
         "message": "Anggaran extended thinking (token)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Jumlah maksimum token yang dapat digunakan model untuk extended thinking. Atur ke 0 untuk menonaktifkan extended thinking. Saat diaktifkan, nilai temperature akan diabaikan oleh Claude API."
+        "message": "Jumlah maksimum token yang dapat digunakan model untuk extended thinking. Atur ke 0 untuk menonaktifkan extended thinking. Nilainya harus lebih kecil dari Max Tokens. Model Claude yang lebih baru tidak menerima batas manual dan menggunakan pengaturan Effort sebagai gantinya: saat salah satunya dipilih, kolom ini dinonaktifkan dan nilainya tidak dikirim."
     },
     "anthropic_empty_apikey": {
         "message": "Anda belum menambahkan API Key untuk Claude API. Silakan masukkan di halaman opsi."
@@ -1454,7 +1454,7 @@
         "message": "Anda dapat meningkatkan performa Claude dengan menggunakan System Prompt untuk memberinya peran. Teknik ini, yang dikenal sebagai role prompting, adalah cara paling kuat untuk menggunakan system prompt dengan Claude. Peran yang tepat dapat mengubah Claude dari asisten umum menjadi pakar domain virtual Anda."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Jumlah keacakan yang disuntikkan ke dalam respons. Nilai bawaan adalah 1.0. Rentangnya dari 0.0 hingga 1.0. Gunakan temperature yang mendekati 0.0 untuk tugas analitis / pilihan ganda, dan mendekati 1.0 untuk tugas kreatif dan generatif. Perlu dicatat bahwa bahkan dengan temperature 0.0, hasilnya tidak akan sepenuhnya deterministik."
+        "message": "Jumlah keacakan yang disuntikkan ke dalam respons. Rentangnya dari 0.0 hingga 1.0; jika dikosongkan, nilai bawaan 1.0 yang digunakan. Model Claude yang lebih baru sama sekali tidak menerima pengaturan ini dan menggunakan pengaturan Effort sebagai gantinya: saat salah satunya dipilih, kolom ini dinonaktifkan dan nilainya tidak dikirim."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Anda telah menolak izin opsional yang diperlukan untuk mengambil model bagi integrasi ini."

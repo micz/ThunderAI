@@ -1356,7 +1356,7 @@
         "message": "Orçamento de pensamento estendido (tokens)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Máximo de tokens que o modelo pode gastar com pensamento estendido. Defina como 0 para desativar o pensamento estendido. Quando ativado, o valor de temperatura é ignorado pela API do Claude."
+        "message": "Máximo de tokens que o modelo pode gastar com pensamento estendido. Defina como 0 para desativar o pensamento estendido. Deve ser menor que Max Tokens. Os modelos Claude mais recentes não aceitam um limite manual e usam a configuração Esforço em seu lugar: quando um deles está selecionado, este campo é desativado e seu valor não é enviado."
     },
     "anthropic_empty_apikey": {
         "message": "Você não adicionou uma chave de API para a API do Claude. Insira uma na página de opções."
@@ -1547,7 +1547,7 @@
         "message": "Você pode melhorar o desempenho do Claude usando um Prompt do Sistema para dar a ele um papel. Essa técnica, conhecida como prompt de papel, é a maneira mais poderosa de usar prompts do sistema com o Claude. O papel certo pode transformar o Claude de um assistente geral em seu especialista virtual de domínio."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Quantidade de aleatoriedade injetada na resposta. O padrão é 1,0. Varia de 0,0 a 1,0. Use temperatura mais próxima de 0,0 para análises/múltipla escolha e mais próxima de 1,0 para tarefas criativas e generativas. Observe que mesmo com temperatura de 0,0, os resultados não serão totalmente determinísticos."
+        "message": "Quantidade de aleatoriedade injetada na resposta. Varia de 0,0 a 1,0; se o campo for deixado vazio, o valor padrão 1,0 é usado. Os modelos Claude mais recentes não aceitam essa configuração e usam a configuração Esforço em seu lugar: quando um deles está selecionado, este campo é desativado e seu valor não é enviado."
     },
     "Optional_Permission_Denied_Model_Fetching": {
         "message": "Você negou a permissão opcional necessária para buscar modelos para esta integração."

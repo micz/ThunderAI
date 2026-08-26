@@ -1492,7 +1492,7 @@
         "message": "Questo parametro deve essere un numero compreso tra 0.0 e 2.0. Questo valore controlla la casualità dell'output. Il valore predefinito varia a seconda del modello. Lascialo vuoto per evitare di impostare il parametro nella chiamata API."
     },
     "prefs_anthropic_temperature_Info": {
-        "message": "Quantità di casualità iniettata nella risposta. Il valore predefinito è 1,0. L'intervallo va da 0,0 a 1,0. Utilizza una temperatura più vicina a 0,0 per compiti analitici o a scelta multipla, e più vicina a 1,0 per compiti creativi e generativi. Nota che, anche con una temperatura di 0,0, i risultati non saranno completamente deterministici."
+        "message": "Quantità di casualità iniettata nella risposta. L'intervallo va da 0,0 a 1,0; se il campo viene lasciato vuoto, viene usato il valore predefinito 1,0. I modelli Claude più recenti non accettano affatto questa impostazione e usano al suo posto l'impostazione Sforzo: quando è selezionato uno di essi, questo campo viene disabilitato e il suo valore non viene inviato."
     },
     "placeholder_mail_text_body_or_selected": {
         "message": "Corpo dell'email o testo selezionato"
@@ -1779,7 +1779,7 @@
         "message": "Budget per il pensiero esteso (token)"
     },
     "prefs_OptionText_anthropic_extended_thinking_budget_Info": {
-        "message": "Numero massimo di token che il modello può utilizzare per il pensiero esteso. Imposta a 0 per disabilitare. Quando abilitato, il valore della temperatura viene ignorato dall'API di Claude."
+        "message": "Numero massimo di token che il modello può utilizzare per il pensiero esteso. Imposta a 0 per disabilitare. Deve essere inferiore a Max Tokens. I modelli Claude più recenti non accettano un budget manuale e usano al suo posto l'impostazione Sforzo: quando è selezionato uno di essi, questo campo viene disabilitato e il suo valore non viene inviato."
     },
     "prefs_ollama_format_json": {
         "message": "Forza output JSON"
