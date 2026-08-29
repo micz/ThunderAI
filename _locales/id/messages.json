@@ -2467,5 +2467,38 @@
     },
     "prefs_OptionText_summarize_auto_senders_list_Info": {
         "message": "Alamat pengirim yang akan diringkas secara otomatis:"
+    },
+    "prefs_OptionText_anthropic_effort": {
+        "message": "Upaya"
+    },
+    "prefs_OptionText_anthropic_effort_Info": {
+        "message": "Seberapa besar upaya penalaran yang harus dikeluarkan model untuk sebuah permintaan. Tingkat yang lebih tinggi memberikan jawaban yang lebih baik pada tugas kompleks, tetapi membutuhkan lebih banyak token dan waktu lebih lama. Biarkan pada nilai default agar API Claude yang menentukan. Model Claude lama tidak mendukung pengaturan ini."
+    },
+    "anthropic_effort_default": {
+        "message": "Default (ditentukan oleh API)"
+    },
+    "Anthropic_Effort_Level_low": {
+        "message": "Rendah"
+    },
+    "Anthropic_Effort_Level_medium": {
+        "message": "Sedang"
+    },
+    "Anthropic_Effort_Level_high": {
+        "message": "Tinggi"
+    },
+    "Anthropic_Effort_Level_xhigh": {
+        "message": "Sangat tinggi"
+    },
+    "Anthropic_Effort_Level_max": {
+        "message": "Maksimal"
+    },
+    "anthropic_note_temperature_unsupported": {
+        "message": "Model yang dipilih tidak menerima nilai Temperature dan mengabaikan bidang ini. Gunakan pengaturan Upaya sebagai gantinya. Nilai ini tetap disimpan jika Anda beralih kembali ke model lama."
+    },
+    "anthropic_note_budget_tokens_unsupported": {
+        "message": "Model yang dipilih tidak menerima anggaran pemikiran diperluas manual dan mengabaikan bidang ini. Gunakan pengaturan Upaya sebagai gantinya. Nilai ini tetap disimpan jika Anda beralih kembali ke model lama."
+    },
+    "anthropic_note_effort_unsupported": {
+        "message": "Model yang dipilih tidak mendukung pengaturan Upaya. Gunakan anggaran Pemikiran diperluas sebagai gantinya."
     }
 }
