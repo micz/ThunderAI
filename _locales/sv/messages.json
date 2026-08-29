@@ -1949,5 +1949,17 @@
     },
     "prefs_extra_body_error_not_object": {
         "message": "Värdet måste vara ett JSON-objekt, omgivet av klammerparenteser."
+    },
+    "menu_order_reset_all": {
+        "message": "Återställ alla"
+    },
+    "menu_order_reset_all_tooltip": {
+        "message": "Återställer standardordningen, synligheten och ikonerna för alla menyalternativ. Tryck på Spara alla för att tillämpa."
+    },
+    "menu_order_tab_dot_tooltip": {
+        "message": "Den valda prompten visas även i den här listan"
+    },
+    "menu_position_btn_label": {
+        "message": "Menyposition"
     }
 }
