@@ -237,7 +237,7 @@
         "message": "Aktivera visaren för textjämförelse"
     },
     "customPrompts_form_label_use_diff_viewer_title": {
-        "message": "Textjämförelsevisaren kan väljas när åtgärden är inställd på \"Ersätt text\"."
+        "message": "Tillgänglig när \"Åtgärd\" är \"Ersätt text\"."
     },
     "customPrompts_btnAddNewCommit": {
         "message": "Lägg till prompten"
@@ -645,10 +645,10 @@
         "message": "Aktuell prompttext"
     },
     "prefs_SurveyLinkText": {
-        "message": "Dela din feedback och hjälp till att förbättra ThunderAI!"
+        "message": "Gillar du ThunderAI?"
     },
     "prefs_SurveyLinkText2": {
-        "message": "Klicka här, det tar bara en minut!"
+        "message": "Dela din feedback"
     },
     "prefs_OpenAIComp_ForceModel": {
         "message": "Infoga modell manuellt"
@@ -1360,7 +1360,7 @@
         "message": "Vill du ha snygg statistik om dina e-postmeddelanden?"
     },
     "prefs_THStats_2": {
-        "message": "Klicka här! Testa ThunderStats!"
+        "message": "Testa ThunderStats!"
     },
     "antispam_by": {
         "message": "Antispam av"
@@ -1712,7 +1712,7 @@
         "message": "Hantera menyordningsinställningar"
     },
     "menu_order_info": {
-        "message": "Dra och släpp objekt för att ändra ordningen på dem. Använd växlingsknappen för att visa eller dölja objekt i varje meny."
+        "message": "Dra och släpp objekt för att ändra ordningen på dem, eller dra dem mellan avsnitten Synliga och Dolda för att visa eller dölja dem i varje meny. En prompt som är dold i varje meny är inaktiverad tills du gör den synlig igen."
     },
     "menu_order_active_items": {
         "message": "Synliga objekt"
@@ -1961,5 +1961,349 @@
     },
     "menu_position_btn_label": {
         "message": "Menyposition"
+    },
+    "prefs_full_guide": {
+        "message": "Fullständig guide"
+    },
+    "prefs_shortcut_label": {
+        "message": "Öppna ThunderAI-menyn med"
+    },
+    "prefs_disclaimer_short": {
+        "message": "LLM-modeller kan generera felaktig information, och dina data kan användas av leverantören för att träna nya modeller."
+    },
+    "prefs_footer_translate": {
+        "message": "Översätt tillägget"
+    },
+    "customPrompts_promptsCount": {
+        "message": "$COUNT$ promptar",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "customPrompts_promptsCount_filtered": {
+        "message": "$SHOWN$ av $TOTAL$ promptar",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_search_placeholder": {
+        "message": "Sök efter namn eller ID"
+    },
+    "customPrompts_filter_active": {
+        "message": "Filtrerad: $SHOWN$ av $TOTAL$",
+        "placeholders": {
+            "shown": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "customPrompts_filter_noMatches": {
+        "message": "Inga matchande promptar"
+    },
+    "customPrompts_filter_clear": {
+        "message": "Rensa filter"
+    },
+    "Models_Fetch": {
+        "message": "Uppdatera lista"
+    },
+    "placeholder_mail_plain_text_part": {
+        "message": "Ursprunglig vanlig textdel av e-postmeddelandet, utan någon konvertering från HTML-delen (bäst för företags- och automatiserad e-post; kan vara tom eller en stubbe i nyhetsbrev)"
+    },
+    "prefs_OptionText_diff_granularity": {
+        "message": "Jämför ändringar efter"
+    },
+    "prefs_OptionText_diff_granularity_info": {
+        "message": "Hur ändringsväljaren jämför originaltexten med svaret. \"Ord\" passar för att korrigera stavning och grammatik; \"Meningar\" är lättare att läsa när svaret skriver om hela meningar. Observera att i en text som består av en enda mening visar \"Meningar\" hela texten som en ändring. Du kan också växla mellan de två medan du granskar ändringarna."
+    },
+    "prefs_OptionText_openai_comp_extra_body": {
+        "message": "Extra innehållsdata"
+    },
+    "prefs_OptionText_openai_comp_extra_body_info": {
+        "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt. Användbart för alternativ som den här tjänsten stöder men som ThunderAI inte exponerar, som att inaktivera tänkandeläget: {\"chat_template_kwargs\": {\"thinking\": false}} eller {\"top_p\": 0.9}. Parametrarna som hanteras av ThunderAI (modell, meddelanden, strömning, temperatur) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
+    },
+    "prefs_OptionText_add_tags_auto_include_sent": {
+        "message": "Lägg även till taggar i skickade e-postmeddelanden"
+    },
+    "prefs_OptionText_add_tags_auto_include_sent_Info": {
+        "message": "Den automatiska bearbetningen körs aldrig på mapparna Utkast, Mallar, Utkorgen, Skräppost och Papperskorgen, och den hoppar även över mappen Skickat. Om markerad kommer AI:n också att lägga till taggar i de e-postmeddelanden du skickar."
+    },
+    "spamfilter_prompt_missing_explanation": {
+        "message": "Den speciella prompten för skräppostfiltret saknas. Om du har ändrat de speciella promptarna kan du försöka återställa standardprompten för skräppostfiltret."
+    },
+    "apiwebchat_picker_title": {
+        "message": "Granska ändringarna"
+    },
+    "apiwebchat_picker_toolbar": {
+        "message": "Ändra väljaråtgärder"
+    },
+    "apiwebchat_picker_counter": {
+        "message": "$ACCEPTED$ av $TOTAL$ ändringar accepterade",
+        "placeholders": {
+            "accepted": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_counter_all": {
+        "message": "Alla $TOTAL$ ändringar på accepterade",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_step_short": {
+        "message": "$CURRENT$ / $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_long": {
+        "message": "Ändra $CURRENT$ av $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "apiwebchat_picker_step_total": {
+        "message": "$TOTAL$ ändringar",
+        "placeholders": {
+            "total": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_progress": {
+        "message": "Accepterade ändringar"
+    },
+    "apiwebchat_picker_more_actions": {
+        "message": "Fler åtgärder"
+    },
+    "apiwebchat_picker_edit": {
+        "message": "Redigera manuellt"
+    },
+    "apiwebchat_picker_review": {
+        "message": "Tillbaka till ändringar"
+    },
+    "apiwebchat_picker_editor": {
+        "message": "Redigerad text"
+    },
+    "apiwebchat_picker_edit_hint": {
+        "message": "Du redigerar texten för hand. Om du ändrar den, kommer du att jämföra det du skrev med originaltexten igen om du går tillbaka till ändringarna och alla val återställs."
+    },
+    "apiwebchat_picker_granularity": {
+        "message": "Jämför med"
+    },
+    "apiwebchat_picker_granularity_words": {
+        "message": "Ord"
+    },
+    "apiwebchat_picker_granularity_sentences": {
+        "message": "Meningar"
+    },
+    "apiwebchat_picker_accept_all": {
+        "message": "Acceptera alla"
+    },
+    "apiwebchat_picker_reject_all": {
+        "message": "Avvisa alla"
+    },
+    "apiwebchat_picker_prev": {
+        "message": "Föregående ändring"
+    },
+    "apiwebchat_picker_next": {
+        "message": "Nästa ändring"
+    },
+    "apiwebchat_picker_no_changes": {
+        "message": "Svaret är identiskt med originaltexten: det finns inget att granska."
+    },
+    "apiwebchat_picker_diff_failed": {
+        "message": "De två texterna kunde inte jämföras. Svaret visas oförändrat."
+    },
+    "apiwebchat_picker_side_old_active": {
+        "message": "Originaltext, behöll: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_old_inactive": {
+        "message": "Ursprunglig text, kasserad: $TEXT$. Aktivera för att behålla den istället.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_active": {
+        "message": "Föreslagen text, behöll: $TEXT$",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_new_inactive": {
+        "message": "Föreslagen text, kasserad: $TEXT$. Aktivera för att behålla den istället.",
+        "placeholders": {
+            "text": {
+                "content": "$1"
+            }
+        }
+    },
+    "apiwebchat_picker_side_empty_active": {
+        "message": "Ingen text här: den här delen är utelämnad. Aktivera den andra versionen för att behålla texten."
+    },
+    "apiwebchat_picker_side_empty_inactive": {
+        "message": "Ingen text här. Aktivera för att utelämna den här delen."
+    },
+    "apiwebchat_copied": {
+        "message": "Kopierad"
+    },
+    "apiwebchat_copy_failed": {
+        "message": "Kopieringen misslyckades"
+    },
+    "apiwebchat_status_error": {
+        "message": "Fel"
+    },
+    "apiwebchat_show_options": {
+        "message": "Visa alternativ"
+    },
+    "apiwebchat_turn_tools": {
+        "message": "Svarsåtgärder"
+    },
+    "apiwebchat_scroll_to_latest": {
+        "message": "Scrolla till senaste"
+    },
+    "anthropic_err_hint_temperature": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte temperaturinställningen. Avmarkera fältet Temperatur eller använd inställningen Ansträngning istället."
+    },
+    "anthropic_err_hint_budget_tokens": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte en manuell utökad tankebudget. Sätt den utökade tankebudgeten till 0 och använd inställningen Ansträngning istället."
+    },
+    "anthropic_err_hint_thinking_type": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte denna tankekonfiguration. Kontrollera inställningarna för utökad tankebudget och ansträngning."
+    },
+    "anthropic_err_hint_effort": {
+        "message": "Den valda Claude-modellen ($MODEL$) accepterar inte denna ansträngningsnivå. Välj en annan nivå på alternativsidan."
+    },
+    "prefs_OptionText_anthropic_effort": {
+        "message": "Ansträngning"
+    },
+    "prefs_OptionText_anthropic_effort_Info": {
+        "message": "Hur mycket resonemangsarbete modellen ska lägga ner på en begäran. Högre nivåer ger bättre svar på komplexa uppgifter men kostar fler tokens och tar längre tid. Låt den vara på standardinställningen för att låta Claude API bestämma. Äldre Claude-modeller stöder inte den här inställningen."
+    },
+    "anthropic_effort_default": {
+        "message": "Standard (bestäms av API:et)"
+    },
+    "Anthropic_Effort_Level_low": {
+        "message": "Låg"
+    },
+    "Anthropic_Effort_Level_medium": {
+        "message": "Medium"
+    },
+    "Anthropic_Effort_Level_high": {
+        "message": "Hög"
+    },
+    "Anthropic_Effort_Level_xhigh": {
+        "message": "Extra hög"
+    },
+    "Anthropic_Effort_Level_max": {
+        "message": "Max"
+    },
+    "anthropic_note_temperature_unsupported": {
+        "message": "Den valda modellen accepterar inte ett temperaturvärde och ignorerar det här fältet. Använd inställningen Ansträngning istället. Värdet sparas ifall du byter tillbaka till en äldre modell."
+    },
+    "anthropic_note_budget_tokens_unsupported": {
+        "message": "Den valda modellen accepterar inte en manuell utökad tankebudget och ignorerar detta fält. Använd inställningen Ansträngning istället. Värdet behålls ifall du byter tillbaka till en äldre modell."
+    },
+    "anthropic_note_effort_unsupported": {
+        "message": "Den valda modellen stöder inte inställningen Ansträngning. Använd istället den utökade tankebudgeten."
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary": {
+        "message": "Sammanfattning av resonemang"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_Info": {
+        "message": "Be API:et om en sammanfattning av modellens resonemang, visat i chatten som ett hopfällbart block. Endast nyare resonemangsmodeller stöder det, såsom gpt-5, o3 och o4-mini: äldre modeller som o1-pro och o3-mini resonerar internt men visar aldrig en sammanfattning, så blocket förblir dolt. Lämna inaktiverat för modeller utan resonemangsstöd."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort": {
+        "message": "Resonemangsansträngning"
+    },
+    "prefs_OptionText_chatgpt_extra_body": {
+        "message": "Extra innehållsdata"
+    },
+    "prefs_OptionText_chatgpt_extra_body_info": {
+        "message": "Ytterligare parametrar att skicka med varje API-anrop, som ett JSON-objekt, som {\"top_p\": 0.9}. Användbart för alternativ som OpenAI API stöder men ThunderAI inte exponerar. Parametrarna som hanteras av ThunderAI (modell, indata, strömning, temperatur, resonemang, instruktioner) kan inte åsidosättas här. Ett ogiltigt värde ignoreras."
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_Info": {
+        "message": "Hur mycket ansträngning modellen lägger ner på att resonera innan svaret ges. Lägre värden ger snabbare och billigare svar, högre värden ger mer utförliga. Låt API:et vara standard för att låta OpenAI bestämma. Ignoreras av modeller utan resonemangsstöd."
+    },
+    "prefs_OptionText_chatgpt_reasoning_disabled": {
+        "message": "Inaktiverad"
+    },
+    "prefs_OptionText_chatgpt_reasoning_api_default": {
+        "message": "API standard"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_auto": {
+        "message": "Automatisk"
+    },
+    "prefs_OptionText_chatgpt_reasoning_summary_detailed": {
+        "message": "Detaljerad"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_minimal": {
+        "message": "Minimal"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_low": {
+        "message": "Låg"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_medium": {
+        "message": "Medium"
+    },
+    "prefs_OptionText_chatgpt_reasoning_effort_high": {
+        "message": "Hög"
+    },
+    "customDataPH_placeholdersCount": {
+        "message": "$COUNT$ dataplatshållare",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "Summarize_auto_senders_title": {
+        "message": "Automatisk sammanfattning avsändarlista"
+    },
+    "Summarize_auto_senders_infoline": {
+        "message": "E-postmeddelanden från dessa avsändare sammanfattas automatiskt, utan att du behöver klicka. Sammanfattningen genereras när e-postmeddelandet tas emot, eller när du öppnar det om det inte upptäcktes vid mottagandet."
+    },
+    "Summarize_auto_senders_infoline2": {
+        "message": "Lägg till en e-postadress per rad, eller separerad med ett kommatecken. Använd \"@domain.com\" för att matcha alla avsändare för en hel domän."
+    },
+    "Summarize_auto_senders_api_warning": {
+        "message": "Varning: dessa sammanfattningar genereras automatiskt, så varje e-postmeddelande från dessa avsändare förbrukar API-tokens och kan öka kostnaden för din AI-prenumeration. Håll listan så kort som möjligt."
+    },
+    "menu_order_icon_default": {
+        "message": "Standardikon"
     }
 }
